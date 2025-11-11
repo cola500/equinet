@@ -1,0 +1,351 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
+import { signOut } from "next-auth/react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { format } from "date-fns"
+import { sv } from "date-fns/locale"
+import { toast } from "sonner"
+
+interface Booking {
+  id: string
+  bookingDate: string
+  startTime: string
+  endTime: string
+  status: string
+  horseName?: string
+  horseInfo?: string
+  customerNotes?: string
+  service: {
+    name: string
+    price: number
+  }
+  customer: {
+    firstName: string
+    lastName: string
+    email: string
+    phone?: string
+  }
+}
+
+export default function ProviderBookingsPage() {
+  const router = useRouter()
+  const { user, isLoading, isProvider } = useAuth()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("pending")
+
+  useEffect(() => {
+    if (!isLoading && !isProvider) {
+      router.push("/login")
+    }
+  }, [isProvider, isLoading, router])
+
+  useEffect(() => {
+    if (isProvider) {
+      fetchBookings()
+    }
+  }, [isProvider])
+
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch("/api/bookings")
+      if (response.ok) {
+        const data = await response.json()
+        setBookings(data)
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error)
+      toast.error("Kunde inte hämta bokningar")
+    }
+  }
+
+  const updateBookingStatus = async (bookingId: string, status: string) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update booking")
+      }
+
+      toast.success("Bokning uppdaterad!")
+      fetchBookings()
+
+      // Automatically switch to the appropriate filter after status update
+      if (status === "confirmed") {
+        setFilter("confirmed")
+      } else if (status === "completed") {
+        setFilter("all")
+      }
+    } catch (error) {
+      console.error("Error updating booking:", error)
+      toast.error("Kunde inte uppdatera bokning")
+    }
+  }
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" })
+  }
+
+  if (isLoading || !isProvider) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Laddar...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const filteredBookings = bookings.filter((booking) => {
+    if (filter === "all") return true
+    return booking.status === filter
+  })
+
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
+      completed: "bg-blue-100 text-blue-800",
+    }
+
+    const labels = {
+      pending: "Väntar på svar",
+      confirmed: "Bekräftad",
+      cancelled: "Avbokad",
+      completed: "Genomförd",
+    }
+
+    return (
+      <span className={`text-xs px-2 py-1 rounded ${styles[status as keyof typeof styles]}`}>
+        {labels[status as keyof typeof labels] || status}
+      </span>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold text-green-800">
+            Equinet
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">{user?.name}</span>
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              Logga ut
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-6">
+            <Link
+              href="/provider/dashboard"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/provider/services"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Mina tjänster
+            </Link>
+            <Link
+              href="/provider/bookings"
+              className="py-3 border-b-2 border-green-600 text-green-600 font-medium"
+            >
+              Bokningar
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Bokningar</h1>
+          <p className="text-gray-600 mt-1">Hantera dina kundbokningar</p>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setFilter("pending")}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "pending"
+                ? "bg-green-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            Väntar på svar ({bookings.filter((b) => b.status === "pending").length})
+          </button>
+          <button
+            onClick={() => setFilter("confirmed")}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "confirmed"
+                ? "bg-green-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            Bekräftade ({bookings.filter((b) => b.status === "confirmed").length})
+          </button>
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "all"
+                ? "bg-green-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            Alla ({bookings.length})
+          </button>
+        </div>
+
+        {/* Bookings List */}
+        {filteredBookings.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-gray-600">
+                Inga bokningar att visa för detta filter.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredBookings.map((booking) => (
+              <Card key={booking.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>{booking.service.name}</CardTitle>
+                      <CardDescription>
+                        {booking.customer.firstName} {booking.customer.lastName}
+                      </CardDescription>
+                    </div>
+                    {getStatusBadge(booking.status)}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm text-gray-700">
+                        Bokningsdetaljer
+                      </h3>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Datum:</span>{" "}
+                        <span className="font-medium">
+                          {format(new Date(booking.bookingDate), "d MMMM yyyy", {
+                            locale: sv,
+                          })}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Tid:</span>{" "}
+                        <span className="font-medium">
+                          {booking.startTime} - {booking.endTime}
+                        </span>
+                      </div>
+                      {booking.horseName && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Häst:</span>{" "}
+                          <span className="font-medium">{booking.horseName}</span>
+                        </div>
+                      )}
+                      <div className="text-sm">
+                        <span className="text-gray-600">Pris:</span>{" "}
+                        <span className="font-medium">{booking.service.price} kr</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm text-gray-700">
+                        Kundinformation
+                      </h3>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Email:</span>{" "}
+                        <span className="font-medium">{booking.customer.email}</span>
+                      </div>
+                      {booking.customer.phone && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Telefon:</span>{" "}
+                          <span className="font-medium">{booking.customer.phone}</span>
+                        </div>
+                      )}
+                      {booking.horseInfo && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Hästinfo:</span>{" "}
+                          <p className="text-gray-800 mt-1">{booking.horseInfo}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {booking.customerNotes && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded">
+                      <p className="text-sm text-gray-600">
+                        <strong>Kundkommentarer:</strong> {booking.customerNotes}
+                      </p>
+                    </div>
+                  )}
+
+                  {booking.status === "pending" && (
+                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        onClick={() => updateBookingStatus(booking.id, "confirmed")}
+                        className="flex-1"
+                      >
+                        Acceptera
+                      </Button>
+                      <Button
+                        onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        Avböj
+                      </Button>
+                    </div>
+                  )}
+
+                  {booking.status === "confirmed" && (
+                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        onClick={() => updateBookingStatus(booking.id, "completed")}
+                        className="flex-1"
+                      >
+                        Markera som genomförd
+                      </Button>
+                      <Button
+                        onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Avboka
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}

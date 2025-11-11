@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# editor lock files
+.~lock.*
+*~
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -39,3 +43,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# prisma
+*.db
+*.db-journal
+prisma/dev.db

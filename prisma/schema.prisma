@@ -1,0 +1,100 @@
+// Equinet - Booking platform for horse service providers
+// Database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  userType      String    // 'provider' eller 'customer'
+  firstName     String
+  lastName      String
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  provider      Provider?
+  bookings      Booking[]
+  notifications Notification[]
+}
+
+model Provider {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName    String
+  description     String?
+  address         String?
+  city            String?
+  postalCode      String?
+  serviceArea     String?   // JSON array av områden
+  profileImageUrl String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  services        Service[]
+  availability    Availability[]
+  bookings        Booking[]
+}
+
+model Service {
+  id              String   @id @default(uuid())
+  providerId      String
+  provider        Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  price           Float
+  durationMinutes Int
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  bookings        Booking[]
+}
+
+model Availability {
+  id          String   @id @default(uuid())
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int      // 0-6 (måndag-söndag)
+  startTime   String   // Format: "09:00"
+  endTime     String   // Format: "17:00"
+  isActive    Boolean  @default(true)
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  customerId    String
+  customer      User     @relation(fields: [customerId], references: [id])
+  providerId    String
+  provider      Provider @relation(fields: [providerId], references: [id])
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id])
+  bookingDate   DateTime
+  startTime     String
+  endTime       String
+  status        String   @default("pending") // pending, confirmed, cancelled, completed
+  customerNotes String?
+  horseName     String?
+  horseInfo     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
