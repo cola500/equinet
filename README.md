@@ -49,10 +49,14 @@ Ctrl + C
 | `npm run db:reset` | Återställer databasen ⚠️ (raderar all data!) |
 | `npm run db:studio` | Öppnar Prisma Studio för att inspektera databasen |
 | `npm run lint` | Kör ESLint för kodkvalitetskontroll |
-| `npm test` | Kör tester i watch mode |
-| `npm run test:ui` | Öppnar Vitest UI |
-| `npm run test:run` | Kör tester en gång (CI) |
+| `npm test` | Kör unit/integration tester i watch mode |
+| `npm run test:ui` | Öppnar Vitest UI för interaktiv testning |
+| `npm run test:run` | Kör unit/integration tester en gång (CI) |
 | `npm run test:coverage` | Kör tester med coverage report |
+| `npm run test:e2e` | Kör E2E-tester med Playwright (headless) |
+| `npm run test:e2e:ui` | Öppnar Playwright UI för visuell testning |
+| `npm run test:e2e:headed` | Kör E2E-tester med synlig browser |
+| `npm run test:e2e:debug` | Debug mode för E2E-tester |
 
 ## 🛠️ Teknisk Stack
 
@@ -71,6 +75,11 @@ Ctrl + C
   - Input sanitization
   - Structured logging
   - Environment validation
+- **Testning**:
+  - Vitest (unit & integration tests)
+  - Playwright (E2E tests)
+  - 70% code coverage
+  - ~150 tester totalt
 
 ## 📁 Projektstruktur
 
@@ -535,6 +544,217 @@ cp prisma/dev.db prisma/dev.db.backup
 ```bash
 cp prisma/dev.db.backup prisma/dev.db
 ```
+
+## 🧪 Testning
+
+Equinet har en komplett testsvit med **~150 tester** och **70% code coverage**.
+
+### Testpyramiden
+
+Projektet följer testpyramiden för optimal testning:
+
+```
+         E2E: 23 tests (Playwright)
+       (Hela användarflöden i browser)
+                   ↑
+      Integration: 75 tests (Vitest)
+       (API routes + databas)
+                   ↑
+           Unit: 52 tests (Vitest)
+       (Utilities & hooks)
+```
+
+### Snabbstart - Kör Tester
+
+#### Unit & Integration Tests (Vitest)
+
+```bash
+# Watch mode - bäst under utveckling
+npm test
+
+# Visuellt interface (rekommenderas!)
+npm run test:ui
+
+# Kör en gång
+npm run test:run
+
+# Med coverage report
+npm run test:coverage
+```
+
+#### E2E Tests (Playwright)
+
+**Viktigt:** E2E-testerna kräver att testanvändare finns i databasen.
+
+**Steg 1: Skapa testanvändare**
+```bash
+npx tsx prisma/seed-test-users.ts
+```
+
+Detta skapar:
+- 📧 **Kund**: `test@example.com` / `TestPassword123!`
+- 📧 **Leverantör**: `provider@example.com` / `ProviderPass123!`
+- 2 test-tjänster
+- 1 test-bokning
+
+**Steg 2: Kör E2E-tester**
+
+```bash
+# Alternativ 1: Auto-start (kan ta lång tid att starta)
+npm run test:e2e
+
+# Alternativ 2: Manuell start (rekommenderas)
+# Terminal 1:
+npm run dev
+
+# Terminal 2 (när servern är startad):
+npx playwright test
+
+# Med visuell browser
+npx playwright test --headed
+
+# Specifikt test-suite
+npx playwright test auth.spec.ts
+npx playwright test booking.spec.ts
+npx playwright test provider.spec.ts
+```
+
+**Playwright UI (bäst för utveckling)**
+```bash
+npm run test:e2e:ui
+```
+
+**Debug-läge (steg-för-steg)**
+```bash
+npm run test:e2e:debug
+```
+
+### Vad Testas?
+
+#### Unit Tests (52 st)
+- ✅ **sanitize.ts** (52 tests):
+  - Email, phone, string sanitization
+  - SQL injection-skydd för sökfrågor
+  - XSS-skydd (script tags, event handlers)
+  - URL-validering (blockerar farliga protokoll)
+- ✅ **booking.ts** - Datumhantering och validering
+- ✅ **useAuth.ts** - Auth hook-funktionalitet
+
+#### Integration Tests (75 st)
+- ✅ **Auth API** (6 tests):
+  - Registrering (kund & leverantör)
+  - Validering av input
+- ✅ **Bookings API** (22 tests):
+  - CRUD-operationer
+  - Dubbelbokningsskydd
+  - Authorization checks
+- ✅ **Services API** (18 tests):
+  - CRUD för tjänster
+  - Provider ownership
+- ✅ **Providers API** (10 tests):
+  - Lista leverantörer
+  - Sök och filtrera
+- ✅ Övriga API routes (19 tests)
+
+#### E2E Tests (23 st)
+- ✅ **Authentication** (7 tests):
+  - Registrera kund & leverantör
+  - Inloggning & logout
+  - Felhantering
+  - Lösenordskrav-validering
+- ✅ **Booking Flow** (6 tests):
+  - Sök och filtrera leverantörer
+  - Komplett bokningsflöde
+  - Dubbelbokningsskydd
+  - Avboka bokning
+  - Empty states
+- ✅ **Provider Flow** (10 tests):
+  - Dashboard med statistik
+  - CRUD tjänster
+  - Hantera bokningar
+  - Acceptera/avvisa bokningar
+  - Uppdatera profil
+
+### Test Coverage
+
+```
+Total Coverage: 70%
+
+API Routes:      80-90% ⭐⭐
+Utilities:       100%   ⭐⭐⭐
+Hooks:           100%   ⭐⭐⭐
+Components:      Varierar
+```
+
+**Högsta prioritet för testning:**
+1. ✅ API routes (säkerhet & business logic)
+2. ✅ Utilities (sanitization, validation)
+3. ✅ Critical user flows (E2E)
+4. ⏭️ React components (kan läggas till senare)
+
+### Testdokumentation
+
+För mer detaljerad information:
+- **Unit/Integration tests**: Se individuella `.test.ts` filer
+- **E2E tests**: Se `e2e/README.md`
+
+### Playwright Codegen
+
+Generera E2E-tester automatiskt genom att klicka runt i appen:
+
+```bash
+npx playwright codegen http://localhost:3000
+```
+
+Playwright spelar in dina klick och genererar testkod!
+
+### Continuous Integration
+
+För CI/CD-pipelines:
+
+```bash
+# Unit & Integration (snabbt)
+npm run test:run
+
+# E2E (långsamt, kräver browser)
+npm run test:e2e
+```
+
+**Tips för CI:**
+- Kör unit/integration tests på varje commit
+- Kör E2E tests endast på main/staging
+- Använd Playwright i Docker för CI
+
+### Felsökning
+
+**"Test failed" - vad gör jag?**
+
+1. **Kör testet igen** (kan vara flaky)
+   ```bash
+   npx vitest run --reporter=verbose
+   ```
+
+2. **Kolla loggarna**
+   ```bash
+   npm test -- --reporter=verbose
+   ```
+
+3. **Debug i UI**
+   ```bash
+   npm run test:ui  # För Vitest
+   npm run test:e2e:debug  # För Playwright
+   ```
+
+4. **Kolla database state**
+   ```bash
+   npm run db:studio
+   ```
+
+**"E2E tests timeout"**
+
+- Öka timeout i `playwright.config.ts`
+- Starta dev-server manuellt först
+- Kolla att port 3000 inte används av annat
 
 ## 🔐 Säkerhet
 
