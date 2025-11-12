@@ -209,16 +209,21 @@ User (Customer) ──┐
 - [x] Markera bokningar som genomförda
 - [x] Automatisk tab-växling efter statusändringar
 - [x] Detaljerad kundinfo vid bokning
+- [x] Leverantörsprofilsida för företagsinformation
 
 ### ✅ Kundfunktioner
-- [x] Customer dashboard med senaste bokningar
-- [x] Publikt leverantörsgalleri med kort
-- [x] Sökning och filtrering av leverantörer
+- [x] Förenklat kundflöde - leverantörsgalleriet som huvudsida
+- [x] Användarmeny med dropdown (bokningar, profil, logga ut)
+- [x] Publikt leverantörsgalleri med avancerad sökning
+- [x] Sök och filtrera leverantörer efter namn/beskrivning och ort
+- [x] Automatisk sökning med debounce (500ms)
+- [x] Visuella filter-badges med möjlighet att ta bort enskilda filter
 - [x] Leverantörsdetaljsida med tjänster
 - [x] Bokningsdialog med kalenderpicker
 - [x] Hästinformation och kundommentarer
 - [x] Lista alla egna bokningar
 - [x] Avboka bokningar
+- [x] Kundprofilsida för att redigera personlig information
 
 ### ✅ UI/UX
 - [x] Responsiv design (desktop, tablet, mobil)
@@ -227,6 +232,9 @@ User (Customer) ──┐
 - [x] Konsekvent färgschema (grön-vit tema)
 - [x] Loading states
 - [x] Error handling
+- [x] Dropdown-menyer för användare (renare navigation)
+- [x] Visuella filter-badges för sökning
+- [x] Automatisk sökning med debounce
 
 ### ✅ Tekniskt
 - [x] TypeScript genom hela projektet
@@ -238,21 +246,38 @@ User (Customer) ──┐
 
 ## 🔮 Framtida Förbättringar
 
-### Prioriterade Features
-- [ ] Email-notifikationer vid bokningar & statusändringar
-- [ ] Kalendervy med faktisk tillgänglighet
-- [ ] Betalningsintegration (Stripe/Klarna)
-- [ ] Bilduppladdning för profiler och tjänster
-- [ ] Omdömen och recensioner
-- [ ] Favoritmarkering av leverantörer
+### Prioritet 1 (Quick Wins)
+- [ ] Implementera availability-schemat i UI
+  - Låt leverantörer sätta öppettider per veckodag
+  - Visa tillgängliga tider vid bokning
+  - Blockera dubbelbokningar
+- [ ] Förbättra Dashboard
+  - Diagram/charts för statistik
+  - Senaste aktivitet
+  - Kommande bokningar
 
-### Avancerade Features
-- [ ] Realtidsnotifikationer (WebSockets)
-- [ ] SMS-påminnelser via Twilio
-- [ ] Google Calendar-synkronisering
-- [ ] Exportera bokningar till PDF/CSV
-- [ ] Statistik och rapporter för leverantörer
-- [ ] Mobilapp (React Native)
+### Prioritet 2 (Större Features)
+- [ ] Email-notifikationer
+  - Vid ny bokning
+  - Vid statusändringar
+  - Påminnelser
+- [ ] Bilduppladdning
+  - Profilbilder för användare
+  - Företagsloggor för leverantörer
+  - Bilder för tjänster
+- [ ] Betalningsintegration (Stripe/Klarna)
+- [ ] Recensioner & Betyg
+  - Kunder kan betygsätta leverantörer
+  - Visa genomsnittligt betyg
+  - Skrivna recensioner
+
+### Prioritet 3 (Avancerat)
+- [ ] Realtidsnotifikationer (WebSockets/Pusher)
+- [ ] SMS-påminnelser (Twilio)
+- [ ] Google Calendar-synk
+- [ ] Exportera bokningar (PDF/CSV)
+- [ ] Mobilapp (React Native/Expo)
+- [ ] Admin-panel för plattformsadministration
 - [ ] Subscription-modell för leverantörer
 - [ ] Geolocation-baserad sökning
 
@@ -529,5 +554,5 @@ Privat projekt - Ingen licens specificerad.
 ---
 
 **Skapad**: November 2025
-**Senast uppdaterad**: 2025-11-11
+**Senast uppdaterad**: 2025-11-12
 **Version**: 1.0.0 MVP

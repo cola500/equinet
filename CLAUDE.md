@@ -1,774 +1,512 @@
-# CLAUDE.md - Projektdokumentation för AI-assistent
+# CLAUDE.md - Utvecklingsguide för AI-assistenter
 
-Detta dokument innehåller viktig information om Equinet-projektet för framtida AI-assisterade utvecklingssessioner.
+Detta dokument beskriver **hur** vi arbetar i Equinet-projektet. För information om **vad** som är byggt och planeras, se README.md.
 
-## 📌 Projektöversikt
+## 📌 Projektkontext
 
 **Projektnamn**: Equinet
 **Typ**: Bokningsplattform för hästtjänster (MVP)
-**Status**: ✅ Fungerande MVP med förbättrad UX
-**Skapad**: November 2025
+**Huvudspråk**: Svenska (dokumentation & UI), Engelska (kod & kommentarer)
 **Senast uppdaterad**: 2025-11-12
 
-### Projektbeskrivning
-En fullstack webbapplikation som kopplar samman hästägare med tjänsteleverantörer (hovslagare, veterinärer, etc.). Plattformen har två separata användarflöden med olika funktionalitet för kunder och leverantörer.
+## 🛠️ Teknisk Stack & Arkitektur
 
-## 🎯 Nuvarande Status
-
-### ✅ Fullt Implementerat
-
-#### Autentisering & Användare
-- [x] NextAuth.js v4 med credentials provider
-- [x] Användarregistrering med rollval (customer/provider)
-- [x] bcrypt password hashing
-- [x] Session management med JWT
-- [x] Custom useAuth hook (`src/hooks/useAuth.ts`)
-- [x] Rollbaserad route protection
-
-#### Databas & Backend
-- [x] Prisma ORM med SQLite
-- [x] Komplett databasschema (User, Provider, Service, Availability, Booking, Notification)
-- [x] CRUD API routes för services (`/api/services`)
-- [x] Booking API med status management (`/api/bookings`)
-- [x] Provider API för publikt galleri (`/api/providers`)
-- [x] Zod validation på alla API endpoints
-
-#### Kundfunktioner
-- [x] Förenklat kundflöde - leverantörsgalleriet som huvudsida
-- [x] Användarmeny med dropdown (bokningar, profil, logga ut)
-- [x] Publikt leverantörsgalleri (`/providers`) med avancerad sökning
-- [x] Sök och filtrera leverantörer efter namn/beskrivning och ort
-- [x] Automatisk sökning med debounce (500ms)
-- [x] Visuella filter-badges med möjlighet att ta bort enskilda filter
-- [x] Leverantörsdetaljsida med tjänster (`/providers/[id]`)
-- [x] Bokningsdialog med kalenderpicker
-- [x] Hästinformation och kommentarer vid bokning
-- [x] Lista alla egna bokningar (`/customer/bookings`)
-- [x] Avboka bokningar
-- [x] Kundprofilsida för att redigera personlig information (`/customer/profile`)
-
-#### Leverantörsfunktioner
-- [x] Provider dashboard med statistik (`/provider/dashboard`)
-- [x] Tjänstehantering CRUD (`/provider/services`)
-- [x] Aktivera/inaktivera tjänster
-- [x] Bokningshantering med filter (`/provider/bookings`)
-- [x] Acceptera/avvisa/genomför bokningar
-- [x] Automatisk tab-växling efter statusändringar
-- [x] Detaljerad kundinfo vid bokning
-- [x] Leverantörsprofilsida för företagsinformation (`/provider/profile`)
-
-#### UI/UX
-- [x] shadcn/ui komponenter (button, card, input, dropdown-menu, etc)
-- [x] Responsiv design (Tailwind CSS v4)
-- [x] Toast notifications (Sonner)
-- [x] Svensk lokalisering (date-fns sv locale)
-- [x] Loading states
-- [x] Error handling
-- [x] Dropdown-menyer för användare (renare navigation)
-- [x] Visuella filter-badges för sökning
-- [x] Automatisk sökning med debounce
-
-## 🐛 Kända Problem & Fixar
-
-### Problem som är Lösta
-
-1. **Next.js 16 Params Promise Issue** (LÖST)
-   - Problem: Dynamic route params är nu Promises i Next.js 15/16
-   - Påverkade: `/api/services/[id]`, `/api/bookings/[id]`, `/api/providers/[id]`
-   - Fix: Ändrade `{ params: { id: string } }` → `{ params: Promise<{ id: string }> }`
-   - Måste awaita: `const { id } = await params`
-
-2. **shadcn/ui Components Missing** (LÖST)
-   - Problem: Komponenter installerades inte vid första setup
-   - Fix: `npx shadcn@latest add button input card dialog select calendar form label textarea --yes`
-
-3. **Toggle Active Service Validation Error** (LÖST)
-   - Problem: Hela service-objektet (inklusive Date-objekt) skickades i PUT request
-   - Fix: Skicka endast required fields (name, description, price, durationMinutes, isActive)
-   - Fil: `src/app/provider/services/page.tsx:137-175`
-
-4. **Bokningar Försvinner Efter Accept** (LÖST - UX Fix)
-   - Problem: Bekräftade bokningar "försvann" eftersom filtret var kvar på "pending"
-   - Fix: Automatisk tab-växling efter statusändringar
-   - Fil: `src/app/provider/bookings/page.tsx:66-93`
-
-5. **TypeScript Zod Validation Errors** (LÖST)
-   - Problem: `error.errors` finns inte i Zod, och felaktig enum errorMap syntax
-   - Fix: Ändrade alla `error.errors` till `error.issues` och fixade enum syntax
-   - Påverkade: Alla API routes med Zod validation
-
-### Kända Begränsningar (By Design)
-
-- Använder SQLite för lokal utveckling (byt till PostgreSQL för produktion)
-- Ingen email-funktionalitet (notifikationer via UI endast)
-- Ingen betalningsintegration
-- Availability-modellen används ej i UI ännu (förberedd för framtida features)
-- Notification-modellen används ej ännu
-
-## 🔑 Viktiga Filer & Koncept
-
-### Kritiska Konfigurationsfiler
-
-1. **`.env.local`** (GIT-IGNORED)
-   ```env
-   DATABASE_URL="file:./dev.db"
-   NEXTAUTH_SECRET="[genererad secret]"
-   NEXTAUTH_URL="http://localhost:3000"
-   ```
-
-2. **`prisma/schema.prisma`**
-   - Databasschema med alla modeller
-   - Kör `npx prisma generate` efter ändringar
-   - Kör `npx prisma db push` för att uppdatera databas
-
-3. **`src/lib/auth.ts`**
-   - NextAuth konfiguration
-   - Callbacks för JWT och session
-   - Lägger till `userType` och `providerId` i session
-
-### Viktiga Kodfiler
-
-**Autentisering:**
-- `src/app/api/auth/[...nextauth]/route.ts` - NextAuth handler
-- `src/app/api/auth/register/route.ts` - Registrerings-endpoint
-- `src/hooks/useAuth.ts` - Client-side auth hook
-
-**API Routes:**
-- `src/app/api/services/route.ts` - GET (lista), POST (skapa)
-- `src/app/api/services/[id]/route.ts` - PUT (uppdatera), DELETE
-- `src/app/api/bookings/route.ts` - GET (lista), POST (skapa)
-- `src/app/api/bookings/[id]/route.ts` - PUT (status), DELETE
-- `src/app/api/providers/route.ts` - GET (publikt galleri)
-- `src/app/api/providers/[id]/route.ts` - GET (detaljer)
-
-**Kund-sidor:**
-- `src/app/customer/dashboard/page.tsx`
-- `src/app/customer/bookings/page.tsx`
-- `src/app/providers/page.tsx` - Publikt galleri
-- `src/app/providers/[id]/page.tsx` - Provider detalj + bokning
-
-**Leverantörs-sidor:**
-- `src/app/provider/dashboard/page.tsx`
-- `src/app/provider/services/page.tsx`
-- `src/app/provider/bookings/page.tsx`
-
-## 🛠️ Teknisk Stack
+### Huvudsakliga Teknologier
 
 ```
 Next.js 16 (App Router)
-├── TypeScript
+├── TypeScript (strict mode)
 ├── Tailwind CSS v4
 ├── Prisma ORM
-│   └── SQLite (dev)
+│   └── SQLite (dev) → PostgreSQL (prod)
 ├── NextAuth.js v4
 │   └── Credentials Provider
-├── shadcn/ui
-│   ├── Radix UI primitives
-│   └── Custom components
-├── React Hook Form
-│   └── Zod validation
+├── shadcn/ui + Radix UI
+├── React Hook Form + Zod
 ├── date-fns (sv locale)
 └── Sonner (toasts)
 ```
 
-## 📝 Arbetsflöde & Kommandon
+### Viktiga Arkitektur-Beslut
 
-### Daglig Utveckling
-```bash
-npm run dev              # Starta dev server (port 3000)
-npm run db:studio        # Öppna Prisma Studio (port 5555)
-```
+1. **App Router Pattern**
+   - Använder Next.js 15/16 App Router (INTE pages router)
+   - Server Components by default, "use client" när nödvändigt
+   - Dynamic routes har `params` som Promise - måste awaitas
 
-### Databasändringar
+2. **Databas-först Approach**
+   - Prisma schema är "source of truth"
+   - Generera types från Prisma
+   - Använd Prisma Client singleton (`src/lib/prisma.ts`)
+
+3. **Validering på Båda Sidor**
+   - Client: React Hook Form + Zod (bättre UX, snabb feedback)
+   - Server: Zod (säkerhet, kan inte hoppas över)
+   - Dela gärna schema mellan client/server
+
+4. **Autentisering & Auktorisering**
+   - NextAuth v4 med JWT sessions
+   - Custom callbacks i `src/lib/auth.ts` lägger till userType & providerId
+   - useAuth hook för client-side (`src/hooks/useAuth.ts`)
+   - Alla API routes kontrollerar session & userType
+
+## 🎯 Utvecklingsworkflow
+
+### Dagliga Kommandon
+
 ```bash
-# Efter schema-ändringar
-npx prisma generate      # Generera Prisma Client
+# Utveckling
+npm run dev              # Starta dev server (localhost:3000)
+npm run db:studio        # Prisma Studio (localhost:5555)
+
+# Databas
+npx prisma generate      # Efter schema-ändringar
 npx prisma db push       # Pusha schema till databas
+npm run db:reset         # ⚠️ Återställ (raderar all data!)
 
-# Återställ databasen (RADERAR ALL DATA)
-npm run db:reset
-npm run setup
+# Felsökning
+rm -rf .next && npm run dev    # Rensa cache
+npx tsc --noEmit                # TypeScript check
 ```
 
-### Debugging
+### När du lägger till nya features
+
+#### 1. Planering
+- Fundera på databasschema först
+- Skissa API endpoints
+- Tänk på både kund- och leverantörsperspektiv
+- Använd TodoWrite för att tracka steg
+
+#### 2. Implementering (Databas-först)
 ```bash
-# Rensa Next.js cache
-rm -rf .next
-npm run dev
+# a) Uppdatera schema
+vim prisma/schema.prisma
 
-# Kolla Prisma Client
-npx prisma generate
+# b) Generera & pusha
+npx prisma generate && npx prisma db push
 
-# TypeScript check
-npx tsc --noEmit
+# c) Skapa API routes med Zod validation
+
+# d) Bygg UI med shadcn komponenter
 ```
 
-### Testning
+#### 3. Testning (TDD - Red, Green, Refactor)
 ```bash
-npm test              # Kör tester i watch mode
-npm run test:ui       # Öppna Vitest UI (rekommenderas!)
-npm run test:run      # Kör tester en gång (CI)
-npm run test:coverage # Kör tester med coverage report
-```
-
-## 🧪 Test-Driven Development (TDD)
-
-### ⚠️ VIKTIGT: Detta projekt följer TDD-principer
-
-**Alla nya features och bugfixar ska utvecklas med TDD-approach.**
-
-### TDD-cykeln (Red-Green-Refactor)
-
-```
-1. 🔴 RED: Skriv ett test som failar
-   - Skriv testet INNAN du skriver koden
-   - Testet ska beskriva önskat beteende
-   - Kör testet och verifiera att det failar
-
-2. 🟢 GREEN: Skriv minsta möjliga kod för att få testet att passa
-   - Fokusera på att få testet grönt, inte perfekt kod
-   - Håll det enkelt
-
-3. 🔵 REFACTOR: Förbättra koden
-   - Nu när testet är grönt, förbättra implementationen
-   - Optimera, rensa, förbättra läsbarhet
-   - Testet ska fortfarande vara grönt
-
-4. ♻️ UPPREPA: Gå tillbaka till steg 1 för nästa feature
-```
-
-### Vad Ska Testas?
-
-#### ✅ Testa ALLTID (High Priority)
-
-**1. API Routes** - Mest kritiskt!
-```typescript
-// Exempel: src/app/api/auth/register/route.test.ts
-- ✅ Happy path (successful request)
-- ✅ Validation errors (invalid input)
-- ✅ Edge cases (user already exists, etc)
-- ✅ Error handling (database errors, etc)
-```
-
-**2. Utility Functions** - Enkelt att testa!
-```typescript
-// Exempel: src/lib/utils/booking.test.ts
-- ✅ Pure functions (input → output)
-- ✅ Business logic
-- ✅ Data transformations
-- ✅ Edge cases
-```
-
-**3. Custom Hooks** - Viktiga att testa
-```typescript
-// Exempel: src/hooks/useAuth.test.ts
-- ✅ Hook return values
-- ✅ State changes
-- ✅ Different scenarios
-```
-
-**4. Complex Business Logic**
-- Bokningslogik (overlap-checking, availability)
-- Validering (utöver Zod schemas)
-- Beräkningar (priser, tider, etc)
-
-#### 🤔 Testa IBLAND (Medium Priority)
-
-**React Components**
-- Endast kritiska komponenter med komplex logik
-- Formulär med avancerad validering
-- Komponenter med mycket conditional rendering
-- **INTE**: Enkla presentationskomponenter
-
-**Integration Tests**
-- Viktiga user flows
-- API → Database → Response
-- Endast för kritiska features
-
-#### ❌ Testa INTE (Low Value)
-
-- Enkla presentationskomponenter utan logik
-- Tredjepartsbibliotek (de har sina egna tester)
-- Next.js internals
-- shadcn/ui komponenter (redan testade)
-- CSS/styling
-
-### Teststruktur
-
-```
-equinet/
-├── src/
-│   ├── app/
-│   │   └── api/
-│   │       └── auth/
-│   │           └── register/
-│   │               ├── route.ts
-│   │               └── route.test.ts        ← Test bredvid implementation
-│   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   └── useAuth.test.ts                  ← Test bredvid hook
-│   └── lib/
-│       └── utils/
-│           ├── booking.ts
-│           └── booking.test.ts              ← Test bredvid utility
-└── tests/
-    └── setup.ts                             ← Global test setup
-```
-
-### Test-naming Conventions
-
-```typescript
-describe('functionName / ComponentName / API endpoint', () => {
-  it('should [expected behavior] when [condition]', () => {
-    // Test implementation
-  })
-})
-```
-
-**Exempel:**
-```typescript
-describe('POST /api/bookings', () => {
-  it('should create booking when valid data is provided', () => {})
-  it('should return 400 when date is in the past', () => {})
-  it('should return 401 when user is not authenticated', () => {})
-})
-
-describe('calculateBookingEndTime', () => {
-  it('should add duration to start time correctly', () => {})
-  it('should handle overnight bookings', () => {})
-})
-```
-
-### Arrange-Act-Assert Pattern
-
-**Följ AAA-pattern i alla tester:**
-
-```typescript
-it('should create a new user', async () => {
-  // Arrange - Setup test data and mocks
-  const mockUser = { id: '123', email: 'test@example.com' }
-  vi.mocked(prisma.user.create).mockResolvedValue(mockUser)
-
-  // Act - Execute the function being tested
-  const result = await createUser({ email: 'test@example.com' })
-
-  // Assert - Verify the outcome
-  expect(result).toEqual(mockUser)
-  expect(prisma.user.create).toHaveBeenCalledWith({
-    data: { email: 'test@example.com' }
-  })
-})
-```
-
-### Mocking Guidelines
-
-**1. Mock External Dependencies**
-```typescript
-// Mock Prisma
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: { create: vi.fn() }
-  }
-}))
-
-// Mock NextAuth
-vi.mock('next-auth/react', () => ({
-  useSession: vi.fn()
-}))
-```
-
-**2. Mock Environment Variables**
-```typescript
-// In tests/setup.ts
-process.env.NEXTAUTH_SECRET = 'test-secret'
-```
-
-**3. Mock Dates/Times**
-```typescript
-import { vi, beforeEach } from 'vitest'
-
-beforeEach(() => {
-  vi.useFakeTimers()
-  vi.setSystemTime(new Date('2025-11-15T12:00:00Z'))
-})
-```
-
-### TDD Workflow för Nya Features
-
-**Exempel: Lägga till ny API endpoint**
-
-```bash
-# 1. Skapa test-filen FÖRST
+# Skriv tester FÖRST
 touch src/app/api/new-feature/route.test.ts
 
-# 2. Skriv tester för önskat beteende
-# 3. Kör testerna - de ska faila (RED)
+# Kör tester i watch mode
 npm test
 
-# 4. Skapa implementation-filen
-touch src/app/api/new-feature/route.ts
+# Implementera minsta kod för grönt test
 
-# 5. Implementera minsta möjliga kod för att få testerna gröna (GREEN)
-# 6. Kör testerna igen
-npm test
-
-# 7. Refaktorera koden (REFACTOR)
-# 8. Kör testerna igen för att säkerställa de fortfarande är gröna
-npm test
+# Refaktorera när testerna är gröna
 ```
 
-### Viktiga Testverktyg
+## 🧪 Test-Driven Development
 
-**Vitest**
-- Test runner (som Jest men snabbare)
-- `describe()`, `it()`, `expect()`, `beforeEach()`, etc
+### TDD är Obligatoriskt
 
-**React Testing Library**
-- Testa React components och hooks
-- `renderHook()`, `render()`, `screen`, `fireEvent`
+**Skriv ALLTID tester innan implementation för:**
+- ✅ API routes (högst prioritet!)
+- ✅ Utility functions
+- ✅ Custom hooks
+- ✅ Komplex business logic
 
-**Vitest UI**
-- Grafiskt interface för att köra och debugga tester
-- `npm run test:ui` - öppna i browser
+### TDD-cykeln
 
-### Code Coverage
-
-**Målsättning:**
-- API Routes: **≥ 80% coverage**
-- Utilities: **≥ 90% coverage**
-- Hooks: **≥ 80% coverage**
-- Overall: **≥ 70% coverage**
-
-```bash
-# Generera coverage report
-npm run test:coverage
-
-# Öppna HTML report
-open coverage/index.html
+```
+🔴 RED   → Skriv test som failar (beskriv önskat beteende)
+🟢 GREEN → Minsta kod för att få testet grönt
+🔵 REFACTOR → Förbättra koden, testen ska vara gröna
+♻️  UPPREPA → Nästa feature/beteende
 ```
 
-### Continuous Testing
-
-**Kör tester kontinuerligt under utveckling:**
-
-```bash
-# Watch mode - kör tester automatiskt vid filändringar
-npm test
-
-# Eller använd Vitest UI för bättre overview
-npm run test:ui
-```
-
-### CI/CD Integration
-
-**Tester ska köras automatiskt i CI/CD:**
-
-```yaml
-# Exempel för GitHub Actions (framtida)
-- name: Run tests
-  run: npm run test:run
-
-- name: Check coverage
-  run: npm run test:coverage
-```
-
-### Tips & Best Practices
-
-#### ✅ DO
-
-- **Skriv tester innan kod** (TDD!)
-- **Testa beteende, inte implementation** - testa vad koden gör, inte hur
-- **Ett test per beteende** - håll testerna små och fokuserade
-- **Använd beskrivande testnamn** - "should create booking when..." istället för "test 1"
-- **Mock externa beroenden** - databas, API-anrop, etc
-- **Testa edge cases** - null, undefined, tomma arrayer, extremvärden
-- **Kör alla tester innan du commitar**
-
-#### ❌ DON'T
-
-- **Skippa inte tester för "det är bara en liten ändring"**
-- **Testa inte implementation details** - testa inte interna funktioner som inte är exporterade
-- **Duplicera inte tester** - om två tester gör samma sak, ta bort en
-- **Lämna inte kommenterade-bort tester** - ta bort eller fixa dem
-- **Gör inte tester beroende av varandra** - varje test ska kunna köras isolerat
-- **Mocka inte allt** - använd riktiga funktioner när det går
-
-### Debugging Tester
+### Test-naming Convention
 
 ```typescript
-// Logga värden under test
-console.log('Result:', result)
+describe('POST /api/bookings', () => {
+  it('should create booking when valid data is provided', async () => {
+    // Arrange - Setup
+    // Act - Execute
+    // Assert - Verify
+  })
 
-// Använd Vitest UI för att debugga
-// npm run test:ui
-
-// Kör endast ett specifikt test
-it.only('should test this specific case', () => {})
-
-// Skippa ett test temporärt
-it.skip('should test this later', () => {})
-
-// Debug en specifik fil
-npm test booking.test.ts
+  it('should return 400 when date is in the past', async () => {})
+  it('should return 401 when user is not authenticated', async () => {})
+})
 ```
 
-### Exempel på Bra Tester
+### Vad ska INTE testas?
 
-**Se dessa filer för exempel:**
-- `src/app/api/auth/register/route.test.ts` - API route testing
-- `src/lib/utils/booking.test.ts` - Utility function testing
-- `src/hooks/useAuth.test.ts` - React hook testing
+- ❌ Enkla presentationskomponenter
+- ❌ Tredjepartsbibliotek
+- ❌ shadcn/ui komponenter
+- ❌ CSS/styling
 
-## 🚀 Nästa Steg & Förbättringar
+### Testverktyg
 
-### Prioritet 1 (Quick Wins)
-- [ ] Implementera availability-schemat i UI
-  - Låt leverantörer sätta öppettider per veckodag
-  - Visa tillgängliga tider vid bokning
-  - Blockera dubbelbokningar
-- [ ] Lägg till profilsidor
-  - Kund kan redigera sin profil
-  - Leverantör kan redigera företagsinformation
-- [ ] Förbättra Dashboard
-  - Diagram/charts för statistik
-  - Senaste aktivitet
-  - Kommande bokningar
-- [ ] Sökfunktion
-  - Sök leverantörer efter namn eller ort
-  - Filtrera efter tjänstetyp
+```bash
+npm test              # Watch mode (bäst under utveckling)
+npm run test:ui       # Vitest UI (rekommenderas!)
+npm run test:run      # Single run (CI/CD)
+npm run test:coverage # Coverage report
+```
 
-### Prioritet 2 (Större Features)
-- [ ] Email-notifikationer
-  - Vid ny bokning
-  - Vid statusändringar
-  - Påminnelser
-  - Använd Resend eller SendGrid
-- [ ] Bilduppladdning
-  - Profilbilder för användare
-  - Företagsloggor för leverantörer
-  - Bilder för tjänster
-  - Använd Cloudinary eller AWS S3
-- [ ] Betalningsintegration
-  - Stripe eller Klarna
-  - Bokningsavgift eller provision
-  - Fakturering
-- [ ] Recensioner & Betyg
-  - Kunder kan betygsätta leverantörer
-  - Visa genomsnittligt betyg
-  - Skrivna recensioner
+**Coverage-mål:**
+- API Routes: ≥80%
+- Utilities: ≥90%
+- Hooks: ≥80%
+- Overall: ≥70%
 
-### Prioritet 3 (Avancerat)
-- [ ] Realtidsnotifikationer (WebSockets/Pusher)
-- [ ] SMS-påminnelser (Twilio)
-- [ ] Google Calendar-synk
-- [ ] Exportera bokningar (PDF/CSV)
-- [ ] Mobilapp (React Native/Expo)
-- [ ] Admin-panel för plattformsadministration
-- [ ] Subscription-modell för leverantörer
-- [ ] Geolocation-baserad sökning
+## 🔑 Kritiska Filer & Patterns
 
-## 🔒 Säkerhetsnoteringar
+### Konfiguration
+
+1. **`.env.local`** (GIT-IGNORED!)
+```env
+DATABASE_URL="file:./dev.db"
+NEXTAUTH_SECRET="[openssl rand -base64 32]"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+2. **`prisma/schema.prisma`**
+   - Databasschema (source of truth)
+   - Kör `npx prisma generate` efter ändringar
+
+3. **`src/lib/auth.ts`**
+   - NextAuth konfiguration
+   - Callbacks lägger till userType & providerId i session
+
+### Filstruktur Convention
+
+```
+src/app/api/[feature]/
+├── route.ts              # GET, POST för lista/skapa
+├── route.test.ts         # Tester för route.ts
+├── [id]/
+│   ├── route.ts          # GET, PUT, DELETE för specifik
+│   └── route.test.ts     # Tester
+```
+
+### API Route Pattern
+
+```typescript
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { z } from "zod"
+
+// Zod schema
+const schema = z.object({
+  field: z.string()
+})
+
+export async function POST(request: Request) {
+  try {
+    // 1. Auth check
+    const session = await getServerSession(authOptions)
+    if (!session) return new Response("Unauthorized", { status: 401 })
+
+    // 2. Parse & validate
+    const body = await request.json()
+    const validated = schema.parse(body)
+
+    // 3. Authorization check (äger användaren resursen?)
+    // ...
+
+    // 4. Databas-operation
+    const result = await prisma.model.create({ data: validated })
+
+    return NextResponse.json(result)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation error", details: error.issues },
+        { status: 400 }
+      )
+    }
+    console.error("Error:", error)
+    return new Response("Internal error", { status: 500 })
+  }
+}
+```
+
+## 🐛 Vanliga Gotchas & Fixes
+
+### 1. Next.js 16 Dynamic Params
+**Problem:** `params` är en Promise nu (ändrades i Next.js 15/16)
+
+```typescript
+// ❌ Gammal syntax (funkar inte)
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params  // Error!
+}
+
+// ✅ Ny syntax
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params  // Måste awaita!
+}
+```
+
+### 2. Prisma Client Regeneration
+**Problem:** TypeScript errors efter schema-ändringar
+
+```bash
+# Fix:
+npx prisma generate
+# Starta om TS server i VS Code:
+# Cmd+Shift+P → "TypeScript: Restart TS Server"
+```
+
+### 3. Zod Error Handling
+**Problem:** `error.errors` finns inte (ändrades i senare versioner)
+
+```typescript
+// ❌ Fel
+catch (error) {
+  if (error instanceof z.ZodError) {
+    return { error: error.errors }  // errors finns inte
+  }
+}
+
+// ✅ Rätt
+catch (error) {
+  if (error instanceof z.ZodError) {
+    return { error: error.issues }  // använd issues
+  }
+}
+```
+
+### 4. Enum med Custom Error Messages
+```typescript
+// ❌ Fel syntax
+userType: z.enum(["customer", "provider"], {
+  errorMap: () => ({ message: "Fel typ" })
+})
+
+// ✅ Rätt syntax
+userType: z.enum(["customer", "provider"], {
+  message: "Fel typ"
+})
+```
+
+### 5. Turbopack Cache Issues
+**Problem:** Svart skärm, 500 errors, .next/dev kan inte skapas
+
+```bash
+# Fix:
+pkill -f "next dev"
+rm -rf .next node_modules/.cache
+npm run dev
+```
+
+### 6. NextAuth Session Updates
+**Problem:** Session uppdateras inte automatiskt efter profile changes
+
+```typescript
+// Använd update() från useSession
+const { data: session, update } = useSession()
+
+// Efter profile update:
+await update()
+```
+
+## 🎨 UI/UX Patterns
+
+### Design System
+
+**Färger:**
+- Primary: `green-600` (#16a34a)
+- Background: `gray-50` (#f9fafb)
+- Text: `gray-900` / `gray-600`
+
+**Komponenter:**
+- Använd shadcn/ui (`npx shadcn@latest add [component]`)
+- Alla UI komponenter i `src/components/ui/`
+
+### Standard Layout Pattern
+
+```tsx
+<div className="min-h-screen bg-gray-50">
+  {/* Header */}
+  <header className="bg-white border-b">
+    <div className="container mx-auto px-4 py-4">
+      {/* Logo & Navigation */}
+    </div>
+  </header>
+
+  {/* Main Content */}
+  <main className="container mx-auto px-4 py-8">
+    <h1 className="text-3xl font-bold mb-8">Page Title</h1>
+    <div className="max-w-2xl">
+      {/* Content */}
+    </div>
+  </main>
+</div>
+```
+
+### Form Pattern (React Hook Form + Zod)
+
+```tsx
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+
+const schema = z.object({
+  name: z.string().min(1, "Namn krävs")
+})
+
+function MyForm() {
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { name: "" }
+  })
+
+  const onSubmit = async (data: z.infer<typeof schema>) => {
+    // Submit logic
+  }
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      {/* Form fields */}
+    </form>
+  )
+}
+```
+
+## 🔒 Säkerhet
 
 ### Implementerat
-- ✅ bcrypt password hashing (10 salt rounds)
-- ✅ NextAuth session management
-- ✅ HTTP-only cookies
+- ✅ bcrypt password hashing (10 rounds)
+- ✅ HTTP-only cookies (NextAuth)
 - ✅ CSRF protection (NextAuth)
 - ✅ SQL injection protection (Prisma)
 - ✅ XSS protection (React escaping)
-- ✅ Input validation (Zod på client & server)
-- ✅ Authorization checks på API routes
+- ✅ Input validation (Zod client & server)
+- ✅ Authorization checks (session + ownership)
+
+### Checklist för Nya API Routes
+- [ ] Kontrollera session (authenticated?)
+- [ ] Validera input (Zod schema)
+- [ ] Kontrollera ägarskap (användarens resource?)
+- [ ] Zod error handling (catch ZodError)
+- [ ] Database error handling
+- [ ] Logga errors (console.error)
 
 ### TODO för Produktion
-- [ ] Rate limiting på API routes
+- [ ] Rate limiting
 - [ ] HTTPS enforcement
-- [ ] Content Security Policy headers
-- [ ] PostgreSQL istället för SQLite
+- [ ] CSP headers
+- [ ] PostgreSQL (ersätt SQLite)
 - [ ] Password strength requirements
-- [ ] 2FA (two-factor authentication)
-- [ ] Security audit
-- [ ] GDPR compliance
+- [ ] 2FA
 
-## 🧪 Testning
+## 🚨 Debugging-Strategier
 
-### Manual Testing Checklist
+### API Route Errors
 
-**Kund-flöde:**
-- [ ] Registrera som kund
-- [ ] Logga in
-- [ ] Bläddra leverantörer
-- [ ] Se leverantörsdetaljer
-- [ ] Boka en tjänst
-- [ ] Se bokningar
-- [ ] Avboka
+1. **Kolla console logs** (både client & server)
+```typescript
+console.log("Request body:", body)
+console.error("Error details:", error)
+```
 
-**Leverantör-flöde:**
-- [ ] Registrera som leverantör
-- [ ] Logga in
-- [ ] Se dashboard-statistik
-- [ ] Skapa tjänst
-- [ ] Redigera tjänst
-- [ ] Inaktivera tjänst
-- [ ] Se inkommande bokning
-- [ ] Acceptera bokning
-- [ ] Markera som genomförd
+2. **Testa med curl/Postman**
+```bash
+curl -X POST http://localhost:3000/api/endpoint \
+  -H "Content-Type: application/json" \
+  -d '{"field": "value"}'
+```
 
-**Edge Cases:**
-- [ ] Försök boka inaktiv tjänst
-- [ ] Försök accessa annans bokning
-- [ ] Försök redigera annans tjänst
-- [ ] Ogiltiga formulärdata
-- [ ] Tom databas
-- [ ] Många bokningar (pagination framtida feature)
+3. **Inspektera Prisma Studio**
+```bash
+npm run db:studio
+# Verifiera att data ser rätt ut
+```
 
-### Automatiserad Testning (TODO)
-- [ ] Jest för unit tests
-- [ ] React Testing Library för component tests
-- [ ] Playwright för e2e tests
-- [ ] API integration tests
+### Client-Side Errors
 
-## 📚 Resurser & Dokumentation
+1. **Använd React DevTools**
+2. **Kolla Network tab** (se faktiska requests)
+3. **Console.log state changes**
+4. **Hard refresh** (Cmd+Shift+R / Ctrl+Shift+R)
 
-### Externa Dokumentation
+### TypeScript Errors
+
+```bash
+# Check all errors
+npx tsc --noEmit
+
+# Regenerate Prisma types
+npx prisma generate
+
+# Restart TS Server (VS Code)
+Cmd+Shift+P → "TypeScript: Restart TS Server"
+```
+
+## 📚 Resurser
+
+### Extern Dokumentation
 - [Next.js 16 Docs](https://nextjs.org/docs)
 - [Prisma Docs](https://www.prisma.io/docs)
 - [NextAuth.js Docs](https://next-auth.js.org)
 - [shadcn/ui Docs](https://ui.shadcn.com)
 - [Zod Docs](https://zod.dev)
+- [Vitest Docs](https://vitest.dev)
 
-### Projektets Dokumentation
-- `README.md` - Användarmanual och setup guide
-- `CLAUDE.md` - Detta dokument (för AI-assistenter)
-- `/prisma/schema.prisma` - Databasschema med kommentarer
+### Intern Dokumentation
+- **README.md** - Vad som är byggt, roadmap, användarguide
+- **CLAUDE.md** - Detta dokument (arbetsprocesser)
+- **prisma/schema.prisma** - Databasschema
 
-## 💡 Tips för Framtida Utveckling
+## 💡 Best Practices Checklista
 
-### När du lägger till nya features:
+### Innan du börjar koda
+- [ ] Läs CLAUDE.md (detta dokument)
+- [ ] Kolla README.md för projektöversikt
+- [ ] Förstå databasschema (prisma/schema.prisma)
+- [ ] Kör `npm run dev` och testa appen manuellt
 
-1. **Planera först**
-   - Fundera på databasschema-ändringar
-   - Skissa API endpoints
-   - Tänk på både kund- och leverantörsperspektiv
+### När du kodar
+- [ ] Följ TDD (tester först!)
+- [ ] Använd TypeScript strict mode (ingen `any`)
+- [ ] Validera input med Zod på både client & server
+- [ ] Kontrollera auth & authorization
+- [ ] Logga errors tydligt
+- [ ] Använd svenska i UI-texter
+- [ ] Använd engelska i kod & kommentarer
 
-2. **Databas-först approach**
-   - Uppdatera `schema.prisma`
-   - Kör `npx prisma generate && npx prisma db push`
-   - Skapa API routes
-   - Bygg UI
+### Innan du commitar
+- [ ] Kör alla tester (`npm test`)
+- [ ] Kör TypeScript check (`npx tsc --noEmit`)
+- [ ] Testa manuellt i browser
+- [ ] Uppdatera README.md om du lagt till features
+- [ ] Skriv tydligt commit message (svenska OK)
 
-3. **Validering på båda sidor**
-   - Client-side: React Hook Form + Zod (bättre UX)
-   - Server-side: Zod (säkerhet)
-   - Dela gärna schema mellan client/server
+### När något inte fungerar
+1. Läs felmeddelandet noga
+2. Kolla console logs (både client & server)
+3. Testa i isolation (curl, Postman, Prisma Studio)
+4. Kolla "Vanliga Gotchas" i detta dokument
+5. Rensa cache (`.next`, `node_modules/.cache`)
 
-4. **Error Handling**
-   - Använd toast notifications för user feedback
-   - Logga errors på server
-   - Returnera tydliga felmeddelanden
-
-5. **TypeScript**
-   - Låt Prisma generera types
-   - Använd Zod för runtime validation OCH type inference
-   - Undvik `any` - använd `unknown` om nödvändigt
-
-### Vanliga Gotchas
-
-1. **Next.js 16 Dynamic Params**
-   - Kom ihåg att `params` är en Promise nu
-   - `const { id } = await params`
-
-2. **Prisma Client**
-   - Måste regenereras efter schema-ändringar
-   - Använd singleton pattern (`src/lib/prisma.ts`)
-
-3. **NextAuth Session**
-   - Session uppdateras inte automatiskt
-   - Använd `update()` från `useSession()` om du ändrar userdata
-
-4. **Date Handling**
-   - Använd date-fns med sv locale
-   - Spara som ISO strings i databas
-   - Konvertera till Date-objekt i UI
-
-## 🎨 Design System
-
-### Färger
-- Primary: Green-600 (`#16a34a`)
-- Background: Gray-50 (`#f9fafb`)
-- Text: Gray-900 / Gray-600
-- Error: Red-600
-- Success: Green-600
-- Warning: Yellow-600
-
-### Komponenter
-Använder shadcn/ui med Tailwind. Alla komponenter i `src/components/ui/`.
-
-### Layout Pattern
-```typescript
-<div className="min-h-screen bg-gray-50">
-  {/* Header */}
-  <header className="bg-white border-b">
-    {/* Navigation & User Menu */}
-  </header>
-
-  {/* Navigation Tabs (om applicable) */}
-  <nav className="bg-white border-b">
-    {/* Secondary Navigation */}
-  </nav>
-
-  {/* Main Content */}
-  <main className="container mx-auto px-4 py-8">
-    {/* Page Content */}
-  </main>
-</div>
-```
-
-## 🔄 Senaste Ändringar (Changelog)
+## 🔄 Senaste Ändringar i Arbetsflödet
 
 ### 2025-11-12
-- ✅ **Förbättrad UX för kunder:**
-  - Kunder hamnar nu direkt i leverantörsgalleriet vid login (istället för dashboard)
-  - Lagt till användarmeny med dropdown (bokningar, profil, logga ut)
-  - Renare navigation utan onödiga flikar
-  - Tagit bort `/customer/dashboard` - behövs inte längre
-- ✅ **Avancerad sökfunktion:**
-  - Sök och filtrera leverantörer efter namn/beskrivning
-  - Filtrera leverantörer efter ort
-  - Automatisk sökning med debounce (500ms)
-  - Visuella filter-badges som visar aktiva filter
-  - Möjlighet att ta bort enskilda filter med ×-knappen
-  - "Rensa"-knapp för att ta bort alla filter
-- ✅ **Profilsidor:**
-  - Kundprofilsida för att redigera personlig information
-  - Leverantörsprofilsida för företagsinformation
-  - API routes för profilhantering (`/api/profile`, `/api/provider/profile`)
-- ✅ **TypeScript-förbättringar:**
-  - Fixat alla Zod validation errors (`error.errors` → `error.issues`)
-  - Fixat enum errorMap syntax
-  - Fixat test-fil type errors
-- ✅ **Komponenter:**
-  - Lagt till shadcn dropdown-menu komponent
-  - Konsistent användarmeny på alla kundsidor
-
-### 2025-11-11
-- ✅ Fixat Next.js 16 params Promise issue i alla dynamic routes
-- ✅ Fixat toggle active service validation error
-- ✅ Lagt till automatisk tab-växling i bookings efter statusändring
-- ✅ Förbättrat error logging i både client och server
-- ✅ Skapat omfattande README.md
-- ✅ Lagt till npm scripts (setup, db:reset, db:studio)
-- ✅ Skapat CLAUDE.md för framtida sessioner
-
-### Initial Implementation
-- ✅ Grundläggande autentisering & rollhantering
-- ✅ Databas setup med Prisma
-- ✅ CRUD för services
-- ✅ Bokningssystem
-- ✅ Dashboard för både kunder och leverantörer
-- ✅ Publikt leverantörsgalleri
+- Separerade CLAUDE.md (hur vi jobbar) från README.md (vad vi byggt)
+- Förtydligade TDD-workflow
+- Lade till fler debugging-strategier
+- Dokumenterade vanliga gotchas bättre
 
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2025-11-12
-**För frågor**: Se README.md eller projektdokumentationen
+**För projektöversikt**: Se README.md
+**För frågor om vad som är byggt**: Se README.md
+**För frågor om hur vi jobbar**: Detta dokument
