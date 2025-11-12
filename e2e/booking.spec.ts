@@ -18,7 +18,7 @@ test.describe('Booking Flow (Customer)', () => {
     await page.goto('/providers');
 
     // Verifiera att sidan laddats
-    await expect(page.getByRole('heading', { name: /hitta leverantörer/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /hitta tjänsteleverantörer/i })).toBeVisible();
 
     // Använd sökfältet
     await page.getByPlaceholder(/sök/i).fill('hovslagning');

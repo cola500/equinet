@@ -332,7 +332,7 @@ export default function ProvidersPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {providers.map((provider) => (
-                <Card key={provider.id} className="hover:shadow-lg transition-shadow">
+                <Card key={provider.id} className="hover:shadow-lg transition-shadow" data-testid="provider-card">
                   <CardHeader>
                     <CardTitle>{provider.businessName}</CardTitle>
                     <CardDescription>

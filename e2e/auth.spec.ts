@@ -26,11 +26,11 @@ test.describe('Authentication Flow', () => {
     // Submitta formuläret
     await page.getByRole('button', { name: /skapa konto/i }).click();
 
-    // Vänta på redirect - kunder redirectas till providers
-    await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
+    // Vänta på redirect till login (med registered=true parameter)
+    await expect(page).toHaveURL(/\/login\?registered=true/, { timeout: 10000 });
 
-    // Verifiera att vi ser providers-sidan
-    await expect(page.getByText(/hitta din perfekta|sök efter|tjänster/i)).toBeVisible();
+    // Verifiera att success-meddelande visas (via toast)
+    await expect(page.getByText(/kontot har skapats/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should register a new provider', async ({ page }) => {
@@ -60,11 +60,11 @@ test.describe('Authentication Flow', () => {
     // Submitta formuläret
     await page.getByRole('button', { name: /skapa konto/i }).click();
 
-    // Vänta på redirect och verifiera att vi är inloggade
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
+    // Vänta på redirect till login
+    await expect(page).toHaveURL(/\/login\?registered=true/, { timeout: 10000 });
 
-    // Verifiera att vi ser leverantörens dashboard
-    await expect(page.getByText(/dashboard/i)).toBeVisible();
+    // Verifiera att success-meddelande visas
+    await expect(page.getByText(/kontot har skapats/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should login as existing customer', async ({ page }) => {
@@ -109,11 +109,14 @@ test.describe('Authentication Flow', () => {
     // Vänta på providers page
     await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
 
-    // Klicka på logout (kan vara i en dropdown)
-    await page.getByRole('button', { name: /logga ut|log out/i }).click();
+    // Öppna användar-dropdown (klicka på användarnamn/email eller dropdown-trigger)
+    await page.getByRole('button', { name: /test@example\.com|test testsson/i }).click();
 
-    // Verifiera redirect till startsidan eller login
-    await expect(page).toHaveURL(/\/(login)?$/, { timeout: 5000 });
+    // Klicka på "Logga ut" i dropdownen
+    await page.getByRole('menuitem', { name: /logga ut/i }).click();
+
+    // Verifiera redirect till startsidan
+    await expect(page).toHaveURL('/', { timeout: 5000 });
   });
 
   test('should validate password requirements', async ({ page }) => {
