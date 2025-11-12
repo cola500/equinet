@@ -247,6 +247,7 @@ describe('POST /api/bookings', () => {
 
     vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([]) // No overlapping bookings
     vi.mocked(prisma.booking.create).mockResolvedValue(mockBooking as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {

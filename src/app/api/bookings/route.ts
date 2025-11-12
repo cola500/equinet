@@ -86,8 +86,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new booking
 export async function POST(request: NextRequest) {
+  let session: any = null
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
 
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
