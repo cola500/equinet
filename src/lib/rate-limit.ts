@@ -106,4 +106,19 @@ export const rateLimiters = {
    * Password reset: 3 attempts per hour
    */
   passwordReset: (identifier: string) => checkRateLimit(identifier, 3, 60 * 60 * 1000),
+
+  /**
+   * Booking creation: 10 bookings per hour per user
+   */
+  booking: (identifier: string) => checkRateLimit(identifier, 10, 60 * 60 * 1000),
+
+  /**
+   * Profile updates: 20 updates per hour
+   */
+  profileUpdate: (identifier: string) => checkRateLimit(identifier, 20, 60 * 60 * 1000),
+
+  /**
+   * Service creation: 10 services per hour
+   */
+  serviceCreate: (identifier: string) => checkRateLimit(identifier, 10, 60 * 60 * 1000),
 }

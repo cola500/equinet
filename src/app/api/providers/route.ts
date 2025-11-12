@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { sanitizeSearchQuery } from "@/lib/sanitize"
 
 // GET all active providers with their services
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const city = searchParams.get("city")
-    const search = searchParams.get("search")
+    const cityParam = searchParams.get("city")
+    const searchParam = searchParams.get("search")
+
+    // Sanitize search inputs to prevent SQL injection and XSS
+    const city = cityParam ? sanitizeSearchQuery(cityParam) : null
+    const search = searchParam ? sanitizeSearchQuery(searchParam) : null
 
     let where: any = {
       isActive: true,

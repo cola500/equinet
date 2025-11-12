@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt"
 import { rateLimiters } from "@/lib/rate-limit"
 import { registerSchema } from "@/lib/validations/auth"
+import { sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/sanitize"
 import { z } from "zod"
 
 export async function POST(request: NextRequest) {
@@ -24,10 +25,23 @@ export async function POST(request: NextRequest) {
     // Validera input
     const validatedData = registerSchema.parse(body)
 
+    // Sanitize all user inputs
+    const sanitizedEmail = sanitizeEmail(validatedData.email)
+    const sanitizedFirstName = sanitizeString(validatedData.firstName)
+    const sanitizedLastName = sanitizeString(validatedData.lastName)
+    const sanitizedPhone = validatedData.phone ? sanitizePhone(validatedData.phone) : undefined
+    const sanitizedBusinessName = validatedData.businessName
+      ? sanitizeString(validatedData.businessName)
+      : undefined
+    const sanitizedDescription = validatedData.description
+      ? sanitizeString(validatedData.description)
+      : undefined
+    const sanitizedCity = validatedData.city ? sanitizeString(validatedData.city) : undefined
+
     // Kolla om användaren redan finns
     const existingUser = await prisma.user.findUnique({
       where: {
-        email: validatedData.email
+        email: sanitizedEmail
       }
     })
 
@@ -38,29 +52,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hasha lösenord
+    // Hasha lösenord (already validated by Zod)
     const passwordHash = await bcrypt.hash(validatedData.password, 10)
 
     // Skapa användare
     const user = await prisma.user.create({
       data: {
-        email: validatedData.email,
+        email: sanitizedEmail,
         passwordHash,
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
-        phone: validatedData.phone,
+        firstName: sanitizedFirstName,
+        lastName: sanitizedLastName,
+        phone: sanitizedPhone,
         userType: validatedData.userType,
       }
     })
 
     // Om användaren är en leverantör, skapa även leverantörsprofil
-    if (validatedData.userType === "provider" && validatedData.businessName) {
+    if (validatedData.userType === "provider" && sanitizedBusinessName) {
       await prisma.provider.create({
         data: {
           userId: user.id,
-          businessName: validatedData.businessName,
-          description: validatedData.description,
-          city: validatedData.city,
+          businessName: sanitizedBusinessName,
+          description: sanitizedDescription,
+          city: sanitizedCity,
         }
       })
     }

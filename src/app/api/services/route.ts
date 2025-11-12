@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { rateLimiters } from "@/lib/rate-limit"
 import { z } from "zod"
 
 const serviceSchema = z.object({
@@ -50,6 +51,18 @@ export async function POST(request: NextRequest) {
 
     if (!session || !session.user || session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate limiting - 10 service creations per hour per provider
+    const rateLimitKey = `service-create:${session.user.id}`
+    if (!rateLimiters.serviceCreate(rateLimitKey)) {
+      return NextResponse.json(
+        {
+          error: "För många tjänster skapade",
+          details: "Du kan skapa max 10 tjänster per timme. Försök igen senare.",
+        },
+        { status: 429 }
+      )
     }
 
     const provider = await prisma.provider.findUnique({

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { rateLimiters } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 import { z } from "zod"
 
 const bookingSchema = z.object({
@@ -72,7 +74,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(bookings)
   } catch (error) {
-    console.error("Error fetching bookings:", error)
+    logger.error("Failed to fetch bookings", error as Error, {
+      userId: session?.user?.id,
+    })
     return NextResponse.json(
       { error: "Failed to fetch bookings" },
       { status: 500 }
@@ -87,6 +91,22 @@ export async function POST(request: NextRequest) {
 
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate limiting - 10 bookings per hour per user
+    const rateLimitKey = `booking:${session.user.id}`
+    if (!rateLimiters.booking(rateLimitKey)) {
+      logger.security("Rate limit exceeded for booking creation", "medium", {
+        userId: session.user.id,
+        endpoint: "/api/bookings",
+      })
+      return NextResponse.json(
+        {
+          error: "För många bokningar",
+          details: "Du kan göra max 10 bokningar per timme. Försök igen senare.",
+        },
+        { status: 429 }
+      )
     }
 
     const body = await request.json()
@@ -173,16 +193,28 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    logger.info("Booking created successfully", {
+      bookingId: booking.id,
+      customerId: session.user.id,
+      providerId: validatedData.providerId,
+    })
+
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
+      logger.warn("Booking validation failed", {
+        userId: session?.user?.id,
+        errors: error.issues,
+      })
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }
 
-    console.error("Error creating booking:", error)
+    logger.error("Failed to create booking", error as Error, {
+      userId: session?.user?.id,
+    })
     return NextResponse.json(
       { error: "Failed to create booking" },
       { status: 500 }
