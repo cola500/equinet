@@ -4,13 +4,13 @@ test.describe('Booking Flow (Customer)', () => {
   test.beforeEach(async ({ page }) => {
     // Logga in som kund först
     // OBS: Detta förutsätter att test@example.com finns i databasen
-    await page.goto('/auth/login');
-    await page.getByLabel(/e-post/i).fill('test@example.com');
+    await page.goto('/login');
+    await page.getByLabel(/email/i).fill('test@example.com');
     await page.getByLabel(/lösenord/i).fill('TestPassword123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Vänta på dashboard
-    await expect(page).toHaveURL(/\/customer\/dashboard/, { timeout: 10000 });
+    // Vänta på providers page (kunder redirectas dit direkt)
+    await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
   });
 
   test('should search and filter providers', async ({ page }) => {

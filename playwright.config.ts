@@ -22,6 +22,9 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
 
+  /* Test timeout (60s per test) */
+  timeout: 60000,
+
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -32,6 +35,12 @@ export default defineConfig({
 
     /* Screenshot on failure */
     screenshot: 'only-on-failure',
+
+    /* Action timeout (default 10s -> 15s) */
+    actionTimeout: 15000,
+
+    /* Navigation timeout (default 30s -> 30s) */
+    navigationTimeout: 30000,
   },
 
   /* Configure projects for major browsers */
@@ -47,6 +56,6 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    timeout: 300000, // 5 minutes (first Turbopack build can be slow)
   },
 });

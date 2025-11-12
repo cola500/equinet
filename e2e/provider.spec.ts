@@ -4,13 +4,13 @@ test.describe('Provider Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Logga in som leverantör
     // OBS: Detta förutsätter att provider@example.com finns i databasen
-    await page.goto('/auth/login');
-    await page.getByLabel(/e-post/i).fill('provider@example.com');
+    await page.goto('/login');
+    await page.getByLabel(/email/i).fill('provider@example.com');
     await page.getByLabel(/lösenord/i).fill('ProviderPass123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
     // Vänta på provider dashboard
-    await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
   });
 
   test('should display provider dashboard with stats', async ({ page }) => {

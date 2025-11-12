@@ -137,18 +137,52 @@ E2E-testerna kompletterar våra unit/integration tests:
 
 ## 🔧 Felsökning
 
+### "Timed out waiting from config.webServer"
+**Problem**: Dev-servern tar för lång tid att starta (särskilt första gången Turbopack kompilerar)
+
+**Lösning**:
+- Timeout är nu 5 minuter i `playwright.config.ts`
+- Första kompileringen kan ta 4-5 minuter
+- Efterföljande körningar är mycket snabbare (30-60 sekunder)
+
+**Rekommendation**: Starta dev-servern manuellt först:
+```bash
+# Terminal 1
+npm run dev  # Vänta tills "Ready in X.Xs"
+
+# Terminal 2
+npm run test:e2e
+```
+
+### "Test timeout of 30000ms exceeded"
+**Problem**: Tester tar för lång tid att köra
+
+**Lösning**:
+- Test timeout är nu 60 sekunder i `playwright.config.ts`
+- Action timeout är 15 sekunder
+- Navigation timeout är 30 sekunder
+
+Om enskilda tester behöver längre tid, öka timeout i testet:
+```typescript
+test('slow test', async ({ page }) => {
+  test.setTimeout(120000); // 2 minuter
+  // ...
+});
+```
+
 ### "webServer did not start"
-- Kolla att port 3000 inte redan används
+- Kolla att port 3000 inte redan används: `lsof -i :3000`
+- Döda befintliga processer: `pkill -f "next dev"`
 - Kör `npm run dev` manuellt först för att se om det startar
 
 ### "element not found"
 - Använd `--headed` mode för att se vad som händer
 - Kolla att testet väntar på rätt element
-- Öka timeout om nödvändigt: `{ timeout: 10000 }`
+- Öka element timeout: `await page.waitForSelector('[data-testid="foo"]', { timeout: 10000 })`
 
 ### "database not seeded"
-- Skapa testanvändare manuellt
-- Eller lägg till `beforeAll()` setup i testerna
+- Kör seed-scriptet: `npx tsx prisma/seed-test-users.ts`
+- Verifiera i Prisma Studio: `npm run db:studio`
 
 ## 📚 Resurser
 
