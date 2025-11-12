@@ -57,7 +57,7 @@ Ctrl + C
 ## 🛠️ Teknisk Stack
 
 - **Framework**: Next.js 16 (App Router)
-- **Språk**: TypeScript
+- **Språk**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
 - **UI Komponenter**: shadcn/ui + Radix UI
 - **Databas**: SQLite (via Prisma ORM)
@@ -65,7 +65,12 @@ Ctrl + C
 - **Form Validering**: Zod + React Hook Form
 - **Datum**: date-fns med svensk locale
 - **Notifikationer**: Sonner (toast)
-- **Lösenord**: bcrypt
+- **Säkerhet**:
+  - bcrypt (password hashing)
+  - In-memory rate limiting
+  - Input sanitization
+  - Structured logging
+  - Environment validation
 
 ## 📁 Projektstruktur
 
@@ -108,6 +113,10 @@ equinet/
 │   │   ├── auth.ts           # NextAuth konfiguration
 │   │   ├── prisma.ts         # Prisma client singleton
 │   │   ├── utils.ts          # Utility funktioner (cn, etc)
+│   │   ├── rate-limit.ts     # Rate limiting utilities
+│   │   ├── sanitize.ts       # Input sanitization
+│   │   ├── logger.ts         # Structured logging
+│   │   ├── env.ts            # Environment validation
 │   │   └── validations/
 │   │       └── auth.ts       # Delade Zod-schemas för auth
 │   └── types/
@@ -531,25 +540,76 @@ cp prisma/dev.db.backup prisma/dev.db
 
 ### Implementerade Säkerhetsåtgärder
 
-- ✅ **Lösenordshantering**: bcrypt med salt rounds
+#### Grundläggande Säkerhet
+- ✅ **Lösenordshantering**: bcrypt med 10 salt rounds
 - ✅ **Session Security**: HTTP-only cookies via NextAuth
 - ✅ **CSRF Protection**: Inbyggt i NextAuth
 - ✅ **SQL Injection**: Skyddad genom Prisma's prepared statements
-- ✅ **Input Validation**: Zod schema på både client & server
-- ✅ **XSS Protection**: React's automatiska escaping
+- ✅ **XSS Protection**: React's automatiska escaping + input sanitization
 - ✅ **Auth Middleware**: Route protection baserat på userType
 - ✅ **API Authorization**: Kontrollerar att användare äger resursen
 
+#### Avancerad Säkerhet (Nyligen tillagd)
+
+##### 1. Rate Limiting
+- ✅ **Login**: 5 försök per 15 minuter
+- ✅ **Registrering**: 3 försök per timme
+- ✅ **Bokningar**: 10 bokningar per timme per användare
+- ✅ **Tjänsteskapande**: 10 tjänster per timme
+- ✅ **Profiluppdateringar**: 20 uppdateringar per timme
+- In-memory implementation (SQLite-friendly)
+- Förberedd för Redis i produktion
+
+##### 2. Input Sanitization
+- ✅ **Email sanitization**: Normalisering och validering
+- ✅ **String sanitization**: Tar bort null bytes och farliga tecken
+- ✅ **Search query sanitization**: SQL injection-skydd
+- ✅ **Phone number sanitization**: Format-validering
+- ✅ **XSS stripping**: Aggressiv rensning av HTML/JavaScript
+- Applicerad på alla user inputs i API endpoints
+
+##### 3. Lösenordsstyrka
+- ✅ **Minst 8 tecken** (max 72 för bcrypt)
+- ✅ **Kräver**: stor bokstav, liten bokstav, siffra, specialtecken
+- ✅ **Blockerar vanliga lösenord**: password123, qwerty123, etc
+- ✅ **Förhindrar upprepningar**: aaaaaa inte tillåtet
+- ✅ **Detekterar sekvenser**: 123456, abcdef blockeras
+- Real-time visuell feedback i registreringsformulär
+
+##### 4. Strukturerad Logging
+- ✅ **Log-nivåer**: DEBUG, INFO, WARN, ERROR, FATAL
+- ✅ **Context-tracking**: userId, requestId, endpoint
+- ✅ **Security events**: Rate limit överträdelser, failed logins
+- ✅ **JSON-format i produktion**: Lätt att parse och analysera
+- ✅ **Färgkodade logs i development**: Bättre läsbarhet
+- Implementerad i kritiska endpoints
+
+##### 5. Environment Validation
+- ✅ **Fail-fast**: Applikationen startar inte med felaktig config
+- ✅ **Zod-validering**: Type-safe environment variables
+- ✅ **Production warnings**:
+  - Varnar om HTTP istället för HTTPS
+  - Varnar om för kort SECRET (<64 chars)
+  - Varnar om SQLite i produktion
+- Se `.env.example` för required variables
+
 ### Säkerhetsrekommendationer för Produktion
 
-- [ ] Använd stark `NEXTAUTH_SECRET` (minst 32 bytes)
-- [ ] Aktivera HTTPS i produktion
-- [ ] Implementera rate limiting
-- [ ] Lägg till CORS-policy
-- [ ] Använd PostgreSQL istället för SQLite
-- [ ] Implementera password strength requirements
-- [ ] Lägg till 2FA (tvåfaktorsautentisering)
-- [ ] Logga security events
+#### Obligatoriska för Produktion
+- [x] ~~Implementera rate limiting~~ ✅ (In-memory, fungerar för mindre load)
+- [x] ~~Implementera password strength requirements~~ ✅
+- [x] ~~Logga security events~~ ✅ (Strukturerad logging implementerad)
+- [ ] **Använd stark `NEXTAUTH_SECRET`** (minst 64 bytes för produktion)
+- [ ] **Aktivera HTTPS** i produktion (via reverse proxy/load balancer)
+- [ ] **Använd PostgreSQL** istället för SQLite
+
+#### Rekommenderat för Större Produktion
+- [ ] **Redis-baserad rate limiting** (för multi-server setup)
+- [ ] **External logging service** (Sentry, Datadog, CloudWatch)
+- [ ] **Password breach checking** (Have I Been Pwned API)
+- [ ] **2FA** (tvåfaktorsautentisering)
+- [ ] **CORS-policy** (om frontend är på annan domän)
+- [ ] **WAF** (Web Application Firewall)
 
 ## 🚀 Deploy till Produktion
 
