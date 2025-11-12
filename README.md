@@ -22,10 +22,24 @@ npm run dev
 Öppna [http://localhost:3000](http://localhost:3000) i din webbläsare.
 
 ### Stoppa servern
-Tryck **`Ctrl + C`** i terminalen där servern körs.
+```bash
+# I terminalen där servern körs
+Ctrl + C
+
+# Eller använd stop-scriptet
+./scripts/stop.sh
+```
 
 ## 📋 Tillgängliga Scripts
 
+### Development Scripts
+```bash
+./scripts/start.sh     # Starta development server
+./scripts/stop.sh      # Stoppa development server
+./scripts/restart.sh   # Starta om development server
+```
+
+### NPM Scripts
 | Kommando | Beskrivning |
 |----------|-------------|
 | `npm run dev` | Startar utvecklingsservern på port 3000 |
@@ -35,6 +49,10 @@ Tryck **`Ctrl + C`** i terminalen där servern körs.
 | `npm run db:reset` | Återställer databasen ⚠️ (raderar all data!) |
 | `npm run db:studio` | Öppnar Prisma Studio för att inspektera databasen |
 | `npm run lint` | Kör ESLint för kodkvalitetskontroll |
+| `npm test` | Kör tester i watch mode |
+| `npm run test:ui` | Öppnar Vitest UI |
+| `npm run test:run` | Kör tester en gång (CI) |
+| `npm run test:coverage` | Kör tester med coverage report |
 
 ## 🛠️ Teknisk Stack
 
