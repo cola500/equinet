@@ -3,31 +3,41 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { registerSchema, type RegisterInput, checkPasswordRequirements } from "@/lib/validations/auth"
+import { PasswordRequirements } from "@/components/ui/password-requirements"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [userType, setUserType] = useState<"customer" | "provider">("customer")
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    businessName: "",
-    description: "",
-    city: "",
-  })
-  const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+  const form = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      phone: "",
+      userType: "customer",
+      businessName: "",
+      description: "",
+      city: "",
+    },
+  })
+
+  const password = form.watch("password")
+  const passwordRequirements = checkPasswordRequirements(password || "")
+
+  const onSubmit = async (data: RegisterInput) => {
     setIsLoading(true)
 
     try {
@@ -37,34 +47,28 @@ export default function RegisterPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
+          ...data,
           userType,
         }),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Något gick fel")
+        throw new Error(result.error || "Något gick fel")
       }
+
+      // Show success message
+      toast.success("Kontot har skapats! Du kan nu logga in.")
 
       // Redirect to login page
       router.push("/login?registered=true")
     } catch (error: any) {
-      setError(error.message)
+      toast.error(error.message || "Något gick fel vid registrering")
       console.error("Registration error:", error)
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
   }
 
   return (
@@ -79,14 +83,17 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* User Type Selection */}
             <div className="space-y-2">
               <Label>Jag är en</Label>
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
-                  onClick={() => setUserType("customer")}
+                  onClick={() => {
+                    setUserType("customer")
+                    form.setValue("userType", "customer")
+                  }}
                   className={`p-4 border-2 rounded-lg transition-all ${
                     userType === "customer"
                       ? "border-blue-600 bg-blue-50"
@@ -101,7 +108,10 @@ export default function RegisterPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setUserType("provider")}
+                  onClick={() => {
+                    setUserType("provider")
+                    form.setValue("userType", "provider")
+                  }}
                   className={`p-4 border-2 rounded-lg transition-all ${
                     userType === "provider"
                       ? "border-blue-600 bg-blue-50"
@@ -123,24 +133,30 @@ export default function RegisterPage() {
                 <Label htmlFor="firstName">Förnamn *</Label>
                 <Input
                   id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
+                  type="text"
+                  {...form.register("firstName")}
                   disabled={isLoading}
                 />
+                {form.formState.errors.firstName && (
+                  <p className="text-sm text-red-600">
+                    {form.formState.errors.firstName.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="lastName">Efternamn *</Label>
                 <Input
                   id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
+                  type="text"
+                  {...form.register("lastName")}
                   disabled={isLoading}
                 />
+                {form.formState.errors.lastName && (
+                  <p className="text-sm text-red-600">
+                    {form.formState.errors.lastName.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -148,26 +164,33 @@ export default function RegisterPage() {
               <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
+                {...form.register("email")}
                 disabled={isLoading}
               />
+              {form.formState.errors.email && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Lösenord * (minst 6 tecken)</Label>
+              <Label htmlFor="password">Lösenord *</Label>
               <Input
                 id="password"
-                name="password"
                 type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                minLength={6}
+                {...form.register("password")}
                 disabled={isLoading}
+              />
+              {form.formState.errors.password && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.password.message}
+                </p>
+              )}
+              <PasswordRequirements
+                password={password}
+                requirements={passwordRequirements}
               />
             </div>
 
@@ -175,64 +198,54 @@ export default function RegisterPage() {
               <Label htmlFor="phone">Telefon</Label>
               <Input
                 id="phone"
-                name="phone"
                 type="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
+                {...form.register("phone")}
                 disabled={isLoading}
               />
             </div>
 
             {/* Provider-specific fields */}
             {userType === "provider" && (
-              <>
-                <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-4">Företagsinformation</h3>
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-4">Företagsinformation</h3>
 
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="businessName">Företagsnamn *</Label>
-                      <Input
-                        id="businessName"
-                        name="businessName"
-                        value={formData.businessName}
-                        onChange={handleInputChange}
-                        required={userType === "provider"}
-                        disabled={isLoading}
-                      />
-                    </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="businessName">Företagsnamn *</Label>
+                    <Input
+                      id="businessName"
+                      type="text"
+                      {...form.register("businessName")}
+                      disabled={isLoading}
+                    />
+                    {form.formState.errors.businessName && (
+                      <p className="text-sm text-red-600">
+                        {form.formState.errors.businessName.message}
+                      </p>
+                    )}
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Beskrivning</Label>
-                      <Textarea
-                        id="description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        placeholder="Berätta om dina tjänster och erfarenhet..."
-                        rows={3}
-                        disabled={isLoading}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Beskrivning</Label>
+                    <Textarea
+                      id="description"
+                      {...form.register("description")}
+                      placeholder="Berätta om dina tjänster och erfarenhet..."
+                      rows={3}
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="city">Stad</Label>
-                      <Input
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Stad</Label>
+                    <Input
+                      id="city"
+                      type="text"
+                      {...form.register("city")}
+                      disabled={isLoading}
+                    />
                   </div>
                 </div>
-              </>
-            )}
-
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
               </div>
             )}
 

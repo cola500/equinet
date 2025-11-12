@@ -81,26 +81,35 @@ equinet/
 │   │   │   ├── auth/         # NextAuth endpoints & registrering
 │   │   │   ├── bookings/     # Boknings-API (GET, POST, PUT, DELETE)
 │   │   │   ├── providers/    # Leverantörs-API (GET lista & detalj)
+│   │   │   │   └── [id]/
+│   │   │   │       └── availability/  # Tillgänglighetskontroll API
 │   │   │   └── services/     # Tjänste-API (CRUD)
 │   │   ├── customer/         # Kundsidor
 │   │   │   ├── dashboard/    # Översikt med senaste bokningar
-│   │   │   └── bookings/     # Lista alla bokningar
+│   │   │   ├── bookings/     # Lista alla bokningar (med avbokning)
+│   │   │   └── profile/      # Kundprofilsida
 │   │   ├── provider/         # Leverantörssidor
-│   │   │   ├── dashboard/    # Dashboard med stats & översikt
+│   │   │   ├── dashboard/    # Dashboard med stats & onboarding
 │   │   │   ├── services/     # CRUD för tjänster
-│   │   │   └── bookings/     # Hantera kundbokningar
+│   │   │   ├── bookings/     # Hantera kundbokningar
+│   │   │   └── profile/      # Leverantörsprofilsida med progress
 │   │   ├── providers/        # Publika leverantörssidor
-│   │   │   ├── page.tsx      # Lista alla leverantörer
+│   │   │   ├── page.tsx      # Lista alla leverantörer (med sökning)
 │   │   │   └── [id]/         # Leverantörsdetalj & bokning
 │   │   └── dashboard/        # Redirect till rätt dashboard
 │   ├── components/
 │   │   └── ui/               # shadcn/ui komponenter
+│   │       ├── password-requirements.tsx  # Lösenordsstyrkeindikator
+│   │       ├── alert-dialog.tsx  # Bekräftelsedialoger
+│   │       └── ...           # Andra UI-komponenter
 │   ├── hooks/
 │   │   └── useAuth.ts        # Custom auth hook
 │   ├── lib/
 │   │   ├── auth.ts           # NextAuth konfiguration
 │   │   ├── prisma.ts         # Prisma client singleton
-│   │   └── utils.ts          # Utility funktioner (cn, etc)
+│   │   ├── utils.ts          # Utility funktioner (cn, etc)
+│   │   └── validations/
+│   │       └── auth.ts       # Delade Zod-schemas för auth
 │   └── types/
 │       └── next-auth.d.ts    # TypeScript types för NextAuth
 ├── .env.local                # Environment variables
@@ -212,15 +221,21 @@ User (Customer) ──┐
 
 ### ✅ Autentisering & Användare
 - [x] Användarregistrering med rollval (kund/leverantör)
+- [x] **Frontend validering med real-time feedback (React Hook Form + Zod)**
+- [x] **Visuell lösenordsstyrkeindikator med krav-checklist**
 - [x] Säker inloggning med bcrypt-hashade lösenord
 - [x] Session-baserad autentisering via NextAuth
 - [x] Rollbaserad access control (middleware)
 - [x] Custom useAuth hook för enkel auth-state
+- [x] **Toast-notifikation efter lyckad registrering**
 - [x] Logout-funktionalitet
 
 ### ✅ Leverantörsfunktioner
 - [x] Provider dashboard med real-time statistik
+- [x] **Onboarding-checklista för nya leverantörer (3-stegs guide)**
+- [x] **Felhantering med "Försök igen"-knappar**
 - [x] Tjänstehantering (CRUD)
+- [x] **Förbättrade empty states med ikoner och konkreta förslag**
 - [x] Aktivera/inaktivera tjänster
 - [x] Bokningshantering med filter
 - [x] Acceptera/avvisa bokningar
@@ -228,6 +243,7 @@ User (Customer) ──┐
 - [x] Automatisk tab-växling efter statusändringar
 - [x] Detaljerad kundinfo vid bokning
 - [x] Leverantörsprofilsida för företagsinformation
+- [x] **Profilkompletteringsindikator med visuell progress bar**
 
 ### ✅ Kundfunktioner
 - [x] Förenklat kundflöde - leverantörsgalleriet som huvudsida
@@ -235,12 +251,17 @@ User (Customer) ──┐
 - [x] Publikt leverantörsgalleri med avancerad sökning
 - [x] Sök och filtrera leverantörer efter namn/beskrivning och ort
 - [x] Automatisk sökning med debounce (500ms)
+- [x] **Visuell laddningsindikator under sökning (spinner + "Söker...")**
 - [x] Visuella filter-badges med möjlighet att ta bort enskilda filter
+- [x] **Felhantering med "Försök igen"-knappar**
+- [x] **Kontextuella empty states beroende på aktiva filter**
 - [x] Leverantörsdetaljsida med tjänster
 - [x] Bokningsdialog med kalenderpicker
+- [x] **Tillgänglighetskontroll - visar bokade tidsluckor**
+- [x] **Server-side validering förhindrar dubbelbokningar**
 - [x] Hästinformation och kundommentarer
 - [x] Lista alla egna bokningar
-- [x] Avboka bokningar
+- [x] **Avboka bokningar med bekräftelsedialog**
 - [x] Kundprofilsida för att redigera personlig information
 
 ### ✅ UI/UX
@@ -248,8 +269,12 @@ User (Customer) ──┐
 - [x] Toast-notifikationer för använderfeedback
 - [x] Svensk lokalisering (datum, språk)
 - [x] Konsekvent färgschema (grön-vit tema)
-- [x] Loading states
-- [x] Error handling
+- [x] **Omfattande loading states (spinners, skeletons, progressbars)**
+- [x] **Robust error handling med retry-funktionalitet**
+- [x] **Onboarding-flöden för nya användare**
+- [x] **Kontextuella empty states med actionable CTAs**
+- [x] **Real-time validering med visuell feedback**
+- [x] **Bekräftelsedialoger för kritiska operationer**
 - [x] Dropdown-menyer för användare (renare navigation)
 - [x] Visuella filter-badges för sökning
 - [x] Automatisk sökning med debounce
@@ -265,14 +290,17 @@ User (Customer) ──┐
 ## 🔮 Framtida Förbättringar
 
 ### Prioritet 1 (Quick Wins)
+- [x] ~~Blockera dubbelbokningar~~ (✅ Implementerat!)
+  - Server-side validering för överlappande bokningar
+  - Visuell indikation av bokade tider
 - [ ] Implementera availability-schemat i UI
   - Låt leverantörer sätta öppettider per veckodag
-  - Visa tillgängliga tider vid bokning
-  - Blockera dubbelbokningar
-- [ ] Förbättra Dashboard
-  - Diagram/charts för statistik
-  - Senaste aktivitet
-  - Kommande bokningar
+  - Visa tillgängliga tider baserat på schema
+- [x] ~~Förbättra Dashboard~~ (✅ Delvis implementerat!)
+  - Real-time statistik istället för hårdkodad data
+  - Onboarding-guide för nya leverantörer
+  - [ ] Diagram/charts för statistik (återstår)
+  - [ ] Senaste aktivitet (återstår)
 
 ### Prioritet 2 (Större Features)
 - [ ] Email-notifikationer
@@ -573,4 +601,4 @@ Privat projekt - Ingen licens specificerad.
 
 **Skapad**: November 2025
 **Senast uppdaterad**: 2025-11-12
-**Version**: 1.0.0 MVP
+**Version**: 1.1.0 MVP - UX-förbättringar

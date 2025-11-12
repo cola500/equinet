@@ -51,6 +51,10 @@ export default function ProviderDetailPage() {
     horseInfo: "",
     customerNotes: "",
   })
+  const [bookedSlots, setBookedSlots] = useState<
+    Array<{ startTime: string; endTime: string; serviceName: string }>
+  >([])
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -76,6 +80,32 @@ export default function ProviderDetailPage() {
       setIsLoading(false)
     }
   }
+
+  const fetchAvailability = async (date: string) => {
+    if (!params.id) return
+
+    try {
+      setIsLoadingAvailability(true)
+      const response = await fetch(
+        `/api/providers/${params.id}/availability?date=${date}`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        setBookedSlots(data.bookedSlots || [])
+      }
+    } catch (error) {
+      console.error("Error fetching availability:", error)
+    } finally {
+      setIsLoadingAvailability(false)
+    }
+  }
+
+  // Fetch availability when date changes
+  useEffect(() => {
+    if (isBookingDialogOpen && bookingForm.bookingDate) {
+      fetchAvailability(bookingForm.bookingDate)
+    }
+  }, [bookingForm.bookingDate, isBookingDialogOpen])
 
   const handleBookService = (service: Service) => {
     if (!isAuthenticated) {
@@ -129,16 +159,23 @@ export default function ProviderDetailPage() {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to create booking")
+        // Handle specific conflict error (time slot not available)
+        if (response.status === 409) {
+          toast.error(data.error || "Tiden är inte tillgänglig")
+          return // Don't close dialog so user can pick another time
+        }
+        throw new Error(data.error || "Failed to create booking")
       }
 
       toast.success("Bokningsförfrågan skickad!")
       setIsBookingDialogOpen(false)
       router.push("/customer/bookings")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating booking:", error)
-      toast.error("Kunde inte skapa bokning")
+      toast.error(error.message || "Kunde inte skapa bokning")
     }
   }
 
@@ -288,6 +325,33 @@ export default function ProviderDetailPage() {
               <p className="text-xs text-gray-600">
                 Varaktighet: {selectedService?.durationMinutes} min
               </p>
+
+              {/* Show booked slots */}
+              {isLoadingAvailability && (
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-500"></div>
+                  Kollar tillgänglighet...
+                </div>
+              )}
+              {!isLoadingAvailability && bookedSlots.length > 0 && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-xs font-medium text-amber-800 mb-2">
+                    Redan bokade tider detta datum:
+                  </p>
+                  <div className="space-y-1">
+                    {bookedSlots.map((slot, i) => (
+                      <div key={i} className="text-xs text-amber-700">
+                        • {slot.startTime} - {slot.endTime} ({slot.serviceName})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!isLoadingAvailability && bookedSlots.length === 0 && (
+                <p className="text-xs text-green-600">
+                  ✓ Inga bokningar detta datum ännu
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -104,6 +104,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check for overlapping bookings (availability validation)
+    const bookingDate = new Date(validatedData.bookingDate)
+    const overlappingBookings = await prisma.booking.findMany({
+      where: {
+        providerId: validatedData.providerId,
+        bookingDate: bookingDate,
+        status: {
+          in: ["pending", "confirmed"], // Don't check cancelled/rejected
+        },
+        // Check for time overlap using OR conditions
+        OR: [
+          // New booking starts during an existing booking
+          {
+            AND: [
+              { startTime: { lte: validatedData.startTime } },
+              { endTime: { gt: validatedData.startTime } },
+            ],
+          },
+          // New booking ends during an existing booking
+          {
+            AND: [
+              { startTime: { lt: validatedData.endTime } },
+              { endTime: { gte: validatedData.endTime } },
+            ],
+          },
+          // New booking completely contains an existing booking
+          {
+            AND: [
+              { startTime: { gte: validatedData.startTime } },
+              { endTime: { lte: validatedData.endTime } },
+            ],
+          },
+        ],
+      },
+    })
+
+    if (overlappingBookings.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Leverantören är redan bokad under den valda tiden",
+          details: "Vänligen välj en annan tid eller datum",
+        },
+        { status: 409 } // 409 Conflict
+      )
+    }
+
     const booking = await prisma.booking.create({
       data: {
         customerId: session.user.id,

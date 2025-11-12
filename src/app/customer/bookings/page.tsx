@@ -17,6 +17,16 @@ import {
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Booking {
   id: string
@@ -45,6 +55,10 @@ export default function CustomerBookingsPage() {
   const { user, isLoading, isCustomer } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("upcoming")
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true)
 
   useEffect(() => {
     if (!isLoading && !isCustomer) {
@@ -60,19 +74,53 @@ export default function CustomerBookingsPage() {
 
   const fetchBookings = async () => {
     try {
+      setIsLoadingBookings(true)
+      setError(null)
       const response = await fetch("/api/bookings")
       if (response.ok) {
         const data = await response.json()
         setBookings(data)
+      } else {
+        setError("Kunde inte hämta bokningar")
       }
     } catch (error) {
       console.error("Error fetching bookings:", error)
-      toast.error("Kunde inte hämta bokningar")
+      setError("Något gick fel. Kontrollera din internetanslutning.")
+    } finally {
+      setIsLoadingBookings(false)
     }
   }
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" })
+  }
+
+  const handleCancelBooking = async () => {
+    if (!bookingToCancel) return
+
+    setIsCancelling(true)
+    try {
+      const response = await fetch(`/api/bookings/${bookingToCancel}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "cancelled" }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel booking")
+      }
+
+      toast.success("Bokningen har avbokats")
+      setBookingToCancel(null)
+      fetchBookings() // Refresh the list
+    } catch (error) {
+      console.error("Error cancelling booking:", error)
+      toast.error("Kunde inte avboka bokningen")
+    } finally {
+      setIsCancelling(false)
+    }
   }
 
   if (isLoading || !isCustomer) {
@@ -217,15 +265,89 @@ export default function CustomerBookingsPage() {
         </div>
 
         {/* Bookings List */}
-        {filteredBookings.length === 0 ? (
+        {error ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-gray-600 mb-4">
-                Inga bokningar att visa för detta filter.
+              <div className="mb-4">
+                <svg
+                  className="mx-auto h-12 w-12 text-red-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Något gick fel
+              </h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={fetchBookings}>Försök igen</Button>
+            </CardContent>
+          </Card>
+        ) : isLoadingBookings ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Laddar bokningar...</p>
+          </div>
+        ) : filteredBookings.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="mb-4">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {filter === "upcoming" && "Inga kommande bokningar"}
+                {filter === "past" && "Inga tidigare bokningar"}
+                {filter === "all" && "Inga bokningar ännu"}
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                {bookings.length === 0 ? (
+                  <>
+                    Börja med att hitta en tjänsteleverantör och gör din första bokning.
+                    Utforska vårt utbud av hovslagare, veterinärer och andra hästtjänster.
+                  </>
+                ) : (
+                  "Byt filter för att se andra bokningar."
+                )}
               </p>
-              <Link href="/providers">
-                <Button>Hitta tjänster</Button>
-              </Link>
+              {bookings.length === 0 && (
+                <Link href="/providers">
+                  <Button size="lg">
+                    <svg
+                      className="mr-2 h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    Hitta tjänster
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -294,12 +416,49 @@ export default function CustomerBookingsPage() {
                       </p>
                     </div>
                   )}
+
+                  {/* Cancel button - only show for pending/confirmed bookings */}
+                  {(booking.status === "pending" || booking.status === "confirmed") && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setBookingToCancel(booking.id)}
+                      >
+                        Avboka denna bokning
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </main>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={!!bookingToCancel} onOpenChange={() => setBookingToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Avboka bokning?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill avboka denna bokning? Leverantören kommer att meddelas om avbokningen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>
+              Nej, behåll bokningen
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelBooking}
+              disabled={isCancelling}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isCancelling ? "Avbokar..." : "Ja, avboka"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

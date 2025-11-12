@@ -38,6 +38,8 @@ export default function ProvidersPage() {
   const [search, setSearch] = useState("")
   const [city, setCity] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [isSearching, setIsSearching] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchProviders()
@@ -45,16 +47,26 @@ export default function ProvidersPage() {
 
   // Debounce search - sök automatiskt efter 500ms av inaktivitet
   useEffect(() => {
+    // Show searching indicator immediately
+    if (search || city) {
+      setIsSearching(true)
+    }
+
     const timer = setTimeout(() => {
       fetchProviders(search, city)
+      setIsSearching(false)
     }, 500)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      setIsSearching(false)
+    }
   }, [search, city])
 
   const fetchProviders = async (searchQuery?: string, cityQuery?: string) => {
     try {
       setIsLoading(true)
+      setError(null)
       const params = new URLSearchParams()
 
       if (searchQuery) {
@@ -72,9 +84,12 @@ export default function ProvidersPage() {
       if (response.ok) {
         const data = await response.json()
         setProviders(data)
+      } else {
+        setError("Kunde inte hämta leverantörer")
       }
     } catch (error) {
       console.error("Error fetching providers:", error)
+      setError("Något gick fel. Kontrollera din internetanslutning.")
     } finally {
       setIsLoading(false)
     }
@@ -165,12 +180,19 @@ export default function ProvidersPage() {
           <div className="mb-8">
             <div className="flex flex-col gap-4">
               <div className="flex gap-4">
-                <Input
-                  placeholder="Sök efter företagsnamn eller beskrivning..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1"
-                />
+                <div className="flex-1 relative">
+                  <Input
+                    placeholder="Sök efter företagsnamn eller beskrivning..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full"
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-green-600"></div>
+                    </div>
+                  )}
+                </div>
                 <Input
                   placeholder="Filtrera på ort..."
                   value={city}
@@ -187,7 +209,13 @@ export default function ProvidersPage() {
                   </Button>
                 )}
               </div>
-              {(search || city) && (
+              {isSearching && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-green-600"></div>
+                  <span>Söker...</span>
+                </div>
+              )}
+              {!isSearching && (search || city) && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <span>Aktiva filter:</span>
                   {search && (
@@ -226,7 +254,34 @@ export default function ProvidersPage() {
           </div>
 
           {/* Providers List */}
-          {isLoading ? (
+          {error ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <div className="mb-4">
+                  <svg
+                    className="mx-auto h-12 w-12 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Något gick fel
+                </h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <Button onClick={() => fetchProviders(search, city)}>
+                  Försök igen
+                </Button>
+              </CardContent>
+            </Card>
+          ) : isLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
               <p className="mt-4 text-gray-600">Laddar leverantörer...</p>
@@ -234,9 +289,44 @@ export default function ProvidersPage() {
           ) : providers.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <p className="text-gray-600">
-                  Inga leverantörer hittades. Prova en annan sökning.
+                <div className="mb-4">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Inga leverantörer hittades
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {search || city ? (
+                    <>
+                      Prova att ändra dina sökfilter eller{" "}
+                      <button
+                        onClick={handleClearFilters}
+                        className="text-green-600 hover:text-green-700 font-medium"
+                      >
+                        rensa alla filter
+                      </button>
+                    </>
+                  ) : (
+                    "Det finns inga leverantörer tillgängliga just nu. Kom tillbaka senare!"
+                  )}
                 </p>
+                {user && user.userType === "provider" && !search && !city && (
+                  <p className="text-sm text-gray-500">
+                    Tips: Se till att din profil är komplett och att du har skapat minst en tjänst för att synas här.
+                  </p>
+                )}
               </CardContent>
             </Card>
           ) : (

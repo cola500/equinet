@@ -178,6 +178,24 @@ export default function ProviderProfilePage() {
     await signOut({ callbackUrl: "/" })
   }
 
+  // Calculate profile completion
+  const calculateProfileCompletion = () => {
+    if (!profile) return 0
+    const fields = [
+      profile.user.firstName,
+      profile.user.lastName,
+      profile.user.phone,
+      profile.businessName,
+      profile.description,
+      profile.address,
+      profile.city,
+      profile.postalCode,
+      profile.serviceArea,
+    ]
+    const filledFields = fields.filter(field => field && field.length > 0).length
+    return Math.round((filledFields / fields.length) * 100)
+  }
+
   if (isLoading || !isProvider || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -242,6 +260,46 @@ export default function ProviderProfilePage() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Min profil</h1>
+
+          {/* Profile Completion Indicator */}
+          {calculateProfileCompletion() < 100 && (
+            <Card className="mb-6 border-amber-200 bg-amber-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-6 w-6 text-amber-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-900 mb-1">
+                      Profil {calculateProfileCompletion()}% komplett
+                    </h3>
+                    <p className="text-sm text-amber-800 mb-3">
+                      En komplett profil gör att kunder lättare hittar och litar på dig.
+                      Fyll i alla fält nedan för att synas bättre i sökresultaten.
+                    </p>
+                    <div className="w-full bg-amber-200 rounded-full h-2">
+                      <div
+                        className="bg-amber-600 h-2 rounded-full transition-all"
+                        style={{ width: `${calculateProfileCompletion()}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Personal Information Card */}
           <Card className="mb-6">
