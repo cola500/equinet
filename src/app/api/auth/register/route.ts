@@ -2,25 +2,44 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt"
 import { z } from "zod"
+import { rateLimiters } from "@/lib/rate-limit"
 
 const registerSchema = z.object({
   email: z.string().email("Ogiltig email"),
-  password: z.string().min(6, "Lösenordet måste vara minst 6 tecken"),
+  password: z.string()
+    .min(8, "Lösenordet måste vara minst 8 tecken")
+    .max(72, "Lösenordet är för långt")
+    .regex(/[A-Z]/, "Lösenordet måste innehålla minst en stor bokstav")
+    .regex(/[a-z]/, "Lösenordet måste innehålla minst en liten bokstav")
+    .regex(/[0-9]/, "Lösenordet måste innehålla minst en siffra")
+    .regex(/[^A-Za-z0-9]/, "Lösenordet måste innehålla minst ett specialtecken"),
   firstName: z.string().min(1, "Förnamn krävs"),
   lastName: z.string().min(1, "Efternamn krävs"),
   phone: z.string().optional(),
   userType: z.enum(["customer", "provider"], {
-    errorMap: () => ({ message: "Användartyp måste vara 'customer' eller 'provider'" })
+    message: "Användartyp måste vara 'customer' eller 'provider'"
   }),
   // Provider-specifika fält (endast om userType är 'provider')
   businessName: z.string().optional(),
   description: z.string().optional(),
   city: z.string().optional(),
-})
+}).strict()
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    // Rate limiting - Check IP address
+    const identifier = request.headers.get('x-forwarded-for') ||
+                      request.headers.get('x-real-ip') ||
+                      'unknown'
+
+    if (!rateLimiters.registration(identifier)) {
+      return NextResponse.json(
+        { error: "För många registreringsförsök. Försök igen om en timme." },
+        { status: 429 }
+      )
+    }
 
     // Validera input
     const validatedData = registerSchema.parse(body)
@@ -83,7 +102,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Valideringsfel", details: error.errors },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }

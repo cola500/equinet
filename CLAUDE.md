@@ -6,9 +6,9 @@ Detta dokument innehåller viktig information om Equinet-projektet för framtida
 
 **Projektnamn**: Equinet
 **Typ**: Bokningsplattform för hästtjänster (MVP)
-**Status**: ✅ Fungerande MVP
+**Status**: ✅ Fungerande MVP med förbättrad UX
 **Skapad**: November 2025
-**Senast uppdaterad**: 2025-11-11
+**Senast uppdaterad**: 2025-11-12
 
 ### Projektbeskrivning
 En fullstack webbapplikation som kopplar samman hästägare med tjänsteleverantörer (hovslagare, veterinärer, etc.). Plattformen har två separata användarflöden med olika funktionalitet för kunder och leverantörer.
@@ -34,13 +34,18 @@ En fullstack webbapplikation som kopplar samman hästägare med tjänsteleverant
 - [x] Zod validation på alla API endpoints
 
 #### Kundfunktioner
-- [x] Customer dashboard med bokningsöversikt
-- [x] Publikt leverantörsgalleri (`/providers`)
+- [x] Förenklat kundflöde - leverantörsgalleriet som huvudsida
+- [x] Användarmeny med dropdown (bokningar, profil, logga ut)
+- [x] Publikt leverantörsgalleri (`/providers`) med avancerad sökning
+- [x] Sök och filtrera leverantörer efter namn/beskrivning och ort
+- [x] Automatisk sökning med debounce (500ms)
+- [x] Visuella filter-badges med möjlighet att ta bort enskilda filter
 - [x] Leverantörsdetaljsida med tjänster (`/providers/[id]`)
 - [x] Bokningsdialog med kalenderpicker
 - [x] Hästinformation och kommentarer vid bokning
 - [x] Lista alla egna bokningar (`/customer/bookings`)
 - [x] Avboka bokningar
+- [x] Kundprofilsida för att redigera personlig information (`/customer/profile`)
 
 #### Leverantörsfunktioner
 - [x] Provider dashboard med statistik (`/provider/dashboard`)
@@ -50,14 +55,18 @@ En fullstack webbapplikation som kopplar samman hästägare med tjänsteleverant
 - [x] Acceptera/avvisa/genomför bokningar
 - [x] Automatisk tab-växling efter statusändringar
 - [x] Detaljerad kundinfo vid bokning
+- [x] Leverantörsprofilsida för företagsinformation (`/provider/profile`)
 
 #### UI/UX
-- [x] shadcn/ui komponenter
+- [x] shadcn/ui komponenter (button, card, input, dropdown-menu, etc)
 - [x] Responsiv design (Tailwind CSS v4)
 - [x] Toast notifications (Sonner)
 - [x] Svensk lokalisering (date-fns sv locale)
 - [x] Loading states
 - [x] Error handling
+- [x] Dropdown-menyer för användare (renare navigation)
+- [x] Visuella filter-badges för sökning
+- [x] Automatisk sökning med debounce
 
 ## 🐛 Kända Problem & Fixar
 
@@ -82,6 +91,11 @@ En fullstack webbapplikation som kopplar samman hästägare med tjänsteleverant
    - Problem: Bekräftade bokningar "försvann" eftersom filtret var kvar på "pending"
    - Fix: Automatisk tab-växling efter statusändringar
    - Fil: `src/app/provider/bookings/page.tsx:66-93`
+
+5. **TypeScript Zod Validation Errors** (LÖST)
+   - Problem: `error.errors` finns inte i Zod, och felaktig enum errorMap syntax
+   - Fix: Ändrade alla `error.errors` till `error.issues` och fixade enum syntax
+   - Påverkade: Alla API routes med Zod validation
 
 ### Kända Begränsningar (By Design)
 
@@ -188,6 +202,322 @@ npx prisma generate
 # TypeScript check
 npx tsc --noEmit
 ```
+
+### Testning
+```bash
+npm test              # Kör tester i watch mode
+npm run test:ui       # Öppna Vitest UI (rekommenderas!)
+npm run test:run      # Kör tester en gång (CI)
+npm run test:coverage # Kör tester med coverage report
+```
+
+## 🧪 Test-Driven Development (TDD)
+
+### ⚠️ VIKTIGT: Detta projekt följer TDD-principer
+
+**Alla nya features och bugfixar ska utvecklas med TDD-approach.**
+
+### TDD-cykeln (Red-Green-Refactor)
+
+```
+1. 🔴 RED: Skriv ett test som failar
+   - Skriv testet INNAN du skriver koden
+   - Testet ska beskriva önskat beteende
+   - Kör testet och verifiera att det failar
+
+2. 🟢 GREEN: Skriv minsta möjliga kod för att få testet att passa
+   - Fokusera på att få testet grönt, inte perfekt kod
+   - Håll det enkelt
+
+3. 🔵 REFACTOR: Förbättra koden
+   - Nu när testet är grönt, förbättra implementationen
+   - Optimera, rensa, förbättra läsbarhet
+   - Testet ska fortfarande vara grönt
+
+4. ♻️ UPPREPA: Gå tillbaka till steg 1 för nästa feature
+```
+
+### Vad Ska Testas?
+
+#### ✅ Testa ALLTID (High Priority)
+
+**1. API Routes** - Mest kritiskt!
+```typescript
+// Exempel: src/app/api/auth/register/route.test.ts
+- ✅ Happy path (successful request)
+- ✅ Validation errors (invalid input)
+- ✅ Edge cases (user already exists, etc)
+- ✅ Error handling (database errors, etc)
+```
+
+**2. Utility Functions** - Enkelt att testa!
+```typescript
+// Exempel: src/lib/utils/booking.test.ts
+- ✅ Pure functions (input → output)
+- ✅ Business logic
+- ✅ Data transformations
+- ✅ Edge cases
+```
+
+**3. Custom Hooks** - Viktiga att testa
+```typescript
+// Exempel: src/hooks/useAuth.test.ts
+- ✅ Hook return values
+- ✅ State changes
+- ✅ Different scenarios
+```
+
+**4. Complex Business Logic**
+- Bokningslogik (overlap-checking, availability)
+- Validering (utöver Zod schemas)
+- Beräkningar (priser, tider, etc)
+
+#### 🤔 Testa IBLAND (Medium Priority)
+
+**React Components**
+- Endast kritiska komponenter med komplex logik
+- Formulär med avancerad validering
+- Komponenter med mycket conditional rendering
+- **INTE**: Enkla presentationskomponenter
+
+**Integration Tests**
+- Viktiga user flows
+- API → Database → Response
+- Endast för kritiska features
+
+#### ❌ Testa INTE (Low Value)
+
+- Enkla presentationskomponenter utan logik
+- Tredjepartsbibliotek (de har sina egna tester)
+- Next.js internals
+- shadcn/ui komponenter (redan testade)
+- CSS/styling
+
+### Teststruktur
+
+```
+equinet/
+├── src/
+│   ├── app/
+│   │   └── api/
+│   │       └── auth/
+│   │           └── register/
+│   │               ├── route.ts
+│   │               └── route.test.ts        ← Test bredvid implementation
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   └── useAuth.test.ts                  ← Test bredvid hook
+│   └── lib/
+│       └── utils/
+│           ├── booking.ts
+│           └── booking.test.ts              ← Test bredvid utility
+└── tests/
+    └── setup.ts                             ← Global test setup
+```
+
+### Test-naming Conventions
+
+```typescript
+describe('functionName / ComponentName / API endpoint', () => {
+  it('should [expected behavior] when [condition]', () => {
+    // Test implementation
+  })
+})
+```
+
+**Exempel:**
+```typescript
+describe('POST /api/bookings', () => {
+  it('should create booking when valid data is provided', () => {})
+  it('should return 400 when date is in the past', () => {})
+  it('should return 401 when user is not authenticated', () => {})
+})
+
+describe('calculateBookingEndTime', () => {
+  it('should add duration to start time correctly', () => {})
+  it('should handle overnight bookings', () => {})
+})
+```
+
+### Arrange-Act-Assert Pattern
+
+**Följ AAA-pattern i alla tester:**
+
+```typescript
+it('should create a new user', async () => {
+  // Arrange - Setup test data and mocks
+  const mockUser = { id: '123', email: 'test@example.com' }
+  vi.mocked(prisma.user.create).mockResolvedValue(mockUser)
+
+  // Act - Execute the function being tested
+  const result = await createUser({ email: 'test@example.com' })
+
+  // Assert - Verify the outcome
+  expect(result).toEqual(mockUser)
+  expect(prisma.user.create).toHaveBeenCalledWith({
+    data: { email: 'test@example.com' }
+  })
+})
+```
+
+### Mocking Guidelines
+
+**1. Mock External Dependencies**
+```typescript
+// Mock Prisma
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: { create: vi.fn() }
+  }
+}))
+
+// Mock NextAuth
+vi.mock('next-auth/react', () => ({
+  useSession: vi.fn()
+}))
+```
+
+**2. Mock Environment Variables**
+```typescript
+// In tests/setup.ts
+process.env.NEXTAUTH_SECRET = 'test-secret'
+```
+
+**3. Mock Dates/Times**
+```typescript
+import { vi, beforeEach } from 'vitest'
+
+beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2025-11-15T12:00:00Z'))
+})
+```
+
+### TDD Workflow för Nya Features
+
+**Exempel: Lägga till ny API endpoint**
+
+```bash
+# 1. Skapa test-filen FÖRST
+touch src/app/api/new-feature/route.test.ts
+
+# 2. Skriv tester för önskat beteende
+# 3. Kör testerna - de ska faila (RED)
+npm test
+
+# 4. Skapa implementation-filen
+touch src/app/api/new-feature/route.ts
+
+# 5. Implementera minsta möjliga kod för att få testerna gröna (GREEN)
+# 6. Kör testerna igen
+npm test
+
+# 7. Refaktorera koden (REFACTOR)
+# 8. Kör testerna igen för att säkerställa de fortfarande är gröna
+npm test
+```
+
+### Viktiga Testverktyg
+
+**Vitest**
+- Test runner (som Jest men snabbare)
+- `describe()`, `it()`, `expect()`, `beforeEach()`, etc
+
+**React Testing Library**
+- Testa React components och hooks
+- `renderHook()`, `render()`, `screen`, `fireEvent`
+
+**Vitest UI**
+- Grafiskt interface för att köra och debugga tester
+- `npm run test:ui` - öppna i browser
+
+### Code Coverage
+
+**Målsättning:**
+- API Routes: **≥ 80% coverage**
+- Utilities: **≥ 90% coverage**
+- Hooks: **≥ 80% coverage**
+- Overall: **≥ 70% coverage**
+
+```bash
+# Generera coverage report
+npm run test:coverage
+
+# Öppna HTML report
+open coverage/index.html
+```
+
+### Continuous Testing
+
+**Kör tester kontinuerligt under utveckling:**
+
+```bash
+# Watch mode - kör tester automatiskt vid filändringar
+npm test
+
+# Eller använd Vitest UI för bättre overview
+npm run test:ui
+```
+
+### CI/CD Integration
+
+**Tester ska köras automatiskt i CI/CD:**
+
+```yaml
+# Exempel för GitHub Actions (framtida)
+- name: Run tests
+  run: npm run test:run
+
+- name: Check coverage
+  run: npm run test:coverage
+```
+
+### Tips & Best Practices
+
+#### ✅ DO
+
+- **Skriv tester innan kod** (TDD!)
+- **Testa beteende, inte implementation** - testa vad koden gör, inte hur
+- **Ett test per beteende** - håll testerna små och fokuserade
+- **Använd beskrivande testnamn** - "should create booking when..." istället för "test 1"
+- **Mock externa beroenden** - databas, API-anrop, etc
+- **Testa edge cases** - null, undefined, tomma arrayer, extremvärden
+- **Kör alla tester innan du commitar**
+
+#### ❌ DON'T
+
+- **Skippa inte tester för "det är bara en liten ändring"**
+- **Testa inte implementation details** - testa inte interna funktioner som inte är exporterade
+- **Duplicera inte tester** - om två tester gör samma sak, ta bort en
+- **Lämna inte kommenterade-bort tester** - ta bort eller fixa dem
+- **Gör inte tester beroende av varandra** - varje test ska kunna köras isolerat
+- **Mocka inte allt** - använd riktiga funktioner när det går
+
+### Debugging Tester
+
+```typescript
+// Logga värden under test
+console.log('Result:', result)
+
+// Använd Vitest UI för att debugga
+// npm run test:ui
+
+// Kör endast ett specifikt test
+it.only('should test this specific case', () => {})
+
+// Skippa ett test temporärt
+it.skip('should test this later', () => {})
+
+// Debug en specifik fil
+npm test booking.test.ts
+```
+
+### Exempel på Bra Tester
+
+**Se dessa filer för exempel:**
+- `src/app/api/auth/register/route.test.ts` - API route testing
+- `src/lib/utils/booking.test.ts` - Utility function testing
+- `src/hooks/useAuth.test.ts` - React hook testing
 
 ## 🚀 Nästa Steg & Förbättringar
 
@@ -395,6 +725,31 @@ Använder shadcn/ui med Tailwind. Alla komponenter i `src/components/ui/`.
 
 ## 🔄 Senaste Ändringar (Changelog)
 
+### 2025-11-12
+- ✅ **Förbättrad UX för kunder:**
+  - Kunder hamnar nu direkt i leverantörsgalleriet vid login (istället för dashboard)
+  - Lagt till användarmeny med dropdown (bokningar, profil, logga ut)
+  - Renare navigation utan onödiga flikar
+  - Tagit bort `/customer/dashboard` - behövs inte längre
+- ✅ **Avancerad sökfunktion:**
+  - Sök och filtrera leverantörer efter namn/beskrivning
+  - Filtrera leverantörer efter ort
+  - Automatisk sökning med debounce (500ms)
+  - Visuella filter-badges som visar aktiva filter
+  - Möjlighet att ta bort enskilda filter med ×-knappen
+  - "Rensa"-knapp för att ta bort alla filter
+- ✅ **Profilsidor:**
+  - Kundprofilsida för att redigera personlig information
+  - Leverantörsprofilsida för företagsinformation
+  - API routes för profilhantering (`/api/profile`, `/api/provider/profile`)
+- ✅ **TypeScript-förbättringar:**
+  - Fixat alla Zod validation errors (`error.errors` → `error.issues`)
+  - Fixat enum errorMap syntax
+  - Fixat test-fil type errors
+- ✅ **Komponenter:**
+  - Lagt till shadcn dropdown-menu komponent
+  - Konsistent användarmeny på alla kundsidor
+
 ### 2025-11-11
 - ✅ Fixat Next.js 16 params Promise issue i alla dynamic routes
 - ✅ Fixat toggle active service validation error
@@ -415,5 +770,5 @@ Använder shadcn/ui med Tailwind. Alla komponenter i `src/components/ui/`.
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2025-11-11
+**Senast uppdaterad**: 2025-11-12
 **För frågor**: Se README.md eller projektdokumentationen

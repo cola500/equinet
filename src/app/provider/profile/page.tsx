@@ -1,0 +1,480 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
+import { signOut } from "next-auth/react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "sonner"
+
+interface ProviderProfile {
+  id: string
+  businessName: string
+  description?: string
+  address?: string
+  city?: string
+  postalCode?: string
+  serviceArea?: string
+  user: {
+    firstName: string
+    lastName: string
+    email: string
+    phone?: string
+  }
+}
+
+export default function ProviderProfilePage() {
+  const router = useRouter()
+  const { user, isLoading, isProvider } = useAuth()
+  const [profile, setProfile] = useState<ProviderProfile | null>(null)
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false)
+  const [isEditingBusiness, setIsEditingBusiness] = useState(false)
+
+  const [personalData, setPersonalData] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+  })
+
+  const [businessData, setBusinessData] = useState({
+    businessName: "",
+    description: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    serviceArea: "",
+  })
+
+  useEffect(() => {
+    if (!isLoading && !isProvider) {
+      router.push("/login")
+    }
+  }, [isProvider, isLoading, router])
+
+  useEffect(() => {
+    if (isProvider) {
+      fetchProfile()
+    }
+  }, [isProvider])
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch("/api/provider/profile")
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(data)
+        setPersonalData({
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          phone: data.user.phone || "",
+        })
+        setBusinessData({
+          businessName: data.businessName,
+          description: data.description || "",
+          address: data.address || "",
+          city: data.city || "",
+          postalCode: data.postalCode || "",
+          serviceArea: data.serviceArea || "",
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error)
+      toast.error("Kunde inte hämta profil")
+    }
+  }
+
+  const handlePersonalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: personalData.firstName,
+          lastName: personalData.lastName,
+          phone: personalData.phone || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update personal profile")
+      }
+
+      setIsEditingPersonal(false)
+      toast.success("Personlig information uppdaterad!")
+      fetchProfile()
+    } catch (error) {
+      console.error("Error updating personal profile:", error)
+      toast.error("Kunde inte uppdatera personlig information")
+    }
+  }
+
+  const handleBusinessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      const response = await fetch("/api/provider/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessName: businessData.businessName,
+          description: businessData.description || undefined,
+          address: businessData.address || undefined,
+          city: businessData.city || undefined,
+          postalCode: businessData.postalCode || undefined,
+          serviceArea: businessData.serviceArea || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update business profile")
+      }
+
+      setIsEditingBusiness(false)
+      toast.success("Företagsinformation uppdaterad!")
+      fetchProfile()
+    } catch (error) {
+      console.error("Error updating business profile:", error)
+      toast.error("Kunde inte uppdatera företagsinformation")
+    }
+  }
+
+  const handlePersonalCancel = () => {
+    if (profile) {
+      setPersonalData({
+        firstName: profile.user.firstName,
+        lastName: profile.user.lastName,
+        phone: profile.user.phone || "",
+      })
+    }
+    setIsEditingPersonal(false)
+  }
+
+  const handleBusinessCancel = () => {
+    if (profile) {
+      setBusinessData({
+        businessName: profile.businessName,
+        description: profile.description || "",
+        address: profile.address || "",
+        city: profile.city || "",
+        postalCode: profile.postalCode || "",
+        serviceArea: profile.serviceArea || "",
+      })
+    }
+    setIsEditingBusiness(false)
+  }
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" })
+  }
+
+  if (isLoading || !isProvider || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Laddar...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold text-green-800">
+            Equinet
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">{user?.name}</span>
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              Logga ut
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-6">
+            <Link
+              href="/provider/dashboard"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/provider/services"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Mina tjänster
+            </Link>
+            <Link
+              href="/provider/bookings"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Bokningar
+            </Link>
+            <Link
+              href="/provider/profile"
+              className="py-3 border-b-2 border-green-600 text-green-600 font-medium"
+            >
+              Min profil
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8">Min profil</h1>
+
+          {/* Personal Information Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Personlig information</CardTitle>
+              <CardDescription>
+                Din kontaktinformation och inloggningsuppgifter
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!isEditingPersonal ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm text-gray-600">E-post</Label>
+                    <p className="font-medium">{profile.user.email}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-600">Förnamn</Label>
+                      <p className="font-medium">{profile.user.firstName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Efternamn</Label>
+                      <p className="font-medium">{profile.user.lastName}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Telefon</Label>
+                    <p className="font-medium">{profile.user.phone || "Ej angiven"}</p>
+                  </div>
+                  <div className="pt-4">
+                    <Button onClick={() => setIsEditingPersonal(true)}>
+                      Redigera
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handlePersonalSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="email" className="text-sm text-gray-600">
+                      E-post
+                    </Label>
+                    <Input
+                      id="email"
+                      value={profile.user.email}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      E-postadressen kan inte ändras
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">Förnamn *</Label>
+                      <Input
+                        id="firstName"
+                        value={personalData.firstName}
+                        onChange={(e) =>
+                          setPersonalData({ ...personalData, firstName: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">Efternamn *</Label>
+                      <Input
+                        id="lastName"
+                        value={personalData.lastName}
+                        onChange={(e) =>
+                          setPersonalData({ ...personalData, lastName: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Telefon</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={personalData.phone}
+                      onChange={(e) =>
+                        setPersonalData({ ...personalData, phone: e.target.value })
+                      }
+                      placeholder="070-123 45 67"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button type="submit">Spara ändringar</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handlePersonalCancel}
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Business Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Företagsinformation</CardTitle>
+              <CardDescription>
+                Information om ditt företag som visas för kunder
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!isEditingBusiness ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm text-gray-600">Företagsnamn</Label>
+                    <p className="font-medium">{profile.businessName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Beskrivning</Label>
+                    <p className="font-medium">{profile.description || "Ej angiven"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Adress</Label>
+                    <p className="font-medium">{profile.address || "Ej angiven"}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-600">Stad</Label>
+                      <p className="font-medium">{profile.city || "Ej angiven"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Postnummer</Label>
+                      <p className="font-medium">{profile.postalCode || "Ej angiven"}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Serviceområde</Label>
+                    <p className="font-medium">{profile.serviceArea || "Ej angiven"}</p>
+                  </div>
+                  <div className="pt-4">
+                    <Button onClick={() => setIsEditingBusiness(true)}>
+                      Redigera
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleBusinessSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="businessName">Företagsnamn *</Label>
+                    <Input
+                      id="businessName"
+                      value={businessData.businessName}
+                      onChange={(e) =>
+                        setBusinessData({ ...businessData, businessName: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Beskrivning</Label>
+                    <Textarea
+                      id="description"
+                      value={businessData.description}
+                      onChange={(e) =>
+                        setBusinessData({ ...businessData, description: e.target.value })
+                      }
+                      rows={3}
+                      placeholder="Berätta om ditt företag och dina tjänster..."
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">Adress</Label>
+                    <Input
+                      id="address"
+                      value={businessData.address}
+                      onChange={(e) =>
+                        setBusinessData({ ...businessData, address: e.target.value })
+                      }
+                      placeholder="Exempelvis: Storgatan 1"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="city">Stad</Label>
+                      <Input
+                        id="city"
+                        value={businessData.city}
+                        onChange={(e) =>
+                          setBusinessData({ ...businessData, city: e.target.value })
+                        }
+                        placeholder="Exempelvis: Stockholm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode">Postnummer</Label>
+                      <Input
+                        id="postalCode"
+                        value={businessData.postalCode}
+                        onChange={(e) =>
+                          setBusinessData({ ...businessData, postalCode: e.target.value })
+                        }
+                        placeholder="123 45"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="serviceArea">Serviceområde</Label>
+                    <Input
+                      id="serviceArea"
+                      value={businessData.serviceArea}
+                      onChange={(e) =>
+                        setBusinessData({ ...businessData, serviceArea: e.target.value })
+                      }
+                      placeholder="Exempelvis: Stockholm och Södermanlands län"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button type="submit">Spara ändringar</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBusinessCancel}
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  )
+}

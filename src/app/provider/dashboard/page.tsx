@@ -95,6 +95,12 @@ export default function ProviderDashboard() {
             >
               Bokningar
             </Link>
+            <Link
+              href="/provider/profile"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Min profil
+            </Link>
           </div>
         </div>
       </nav>

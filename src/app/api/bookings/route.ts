@@ -13,7 +13,7 @@ const bookingSchema = z.object({
   horseName: z.string().optional(),
   horseInfo: z.string().optional(),
   customerNotes: z.string().optional(),
-})
+}).strict()
 
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }

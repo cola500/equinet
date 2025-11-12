@@ -10,7 +10,7 @@ const serviceSchema = z.object({
   price: z.number().positive("Pris måste vara positivt"),
   durationMinutes: z.number().int().positive("Varaktighet måste vara positiv"),
   isActive: z.boolean().optional(),
-})
+}).strict()
 
 // PUT - Update service
 export async function PUT(
@@ -56,9 +56,9 @@ export async function PUT(
     return NextResponse.json(service)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("Validation error:", error.errors)
+      console.error("Validation error:", error.issues)
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }

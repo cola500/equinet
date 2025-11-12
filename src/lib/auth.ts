@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
 import bcrypt from "bcrypt"
+import { rateLimiters, resetRateLimit } from "./rate-limit"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,6 +15,12 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Ogiltig email eller lösenord")
+        }
+
+        // Rate limiting - 5 attempts per 15 minutes per email
+        const identifier = credentials.email.toLowerCase()
+        if (!rateLimiters.login(identifier)) {
+          throw new Error("För många inloggningsförsök. Försök igen om 15 minuter.")
         }
 
         const user = await prisma.user.findUnique({
@@ -37,6 +44,9 @@ export const authOptions: NextAuthOptions = {
         if (!isPasswordValid) {
           throw new Error("Ogiltig email eller lösenord")
         }
+
+        // Reset rate limit on successful login
+        resetRateLimit(identifier)
 
         return {
           id: user.id,
@@ -71,6 +81,19 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60, // Update session every 24 hours if active
+  },
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 }

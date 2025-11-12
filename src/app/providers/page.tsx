@@ -2,9 +2,17 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/useAuth"
 
 interface Provider {
@@ -28,17 +36,36 @@ export default function ProvidersPage() {
   const { user } = useAuth()
   const [providers, setProviders] = useState<Provider[]>([])
   const [search, setSearch] = useState("")
+  const [city, setCity] = useState("")
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchProviders()
   }, [])
 
-  const fetchProviders = async (searchQuery?: string) => {
+  // Debounce search - sök automatiskt efter 500ms av inaktivitet
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProviders(search, city)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [search, city])
+
+  const fetchProviders = async (searchQuery?: string, cityQuery?: string) => {
     try {
       setIsLoading(true)
-      const url = searchQuery
-        ? `/api/providers?search=${encodeURIComponent(searchQuery)}`
+      const params = new URLSearchParams()
+
+      if (searchQuery) {
+        params.append("search", searchQuery)
+      }
+      if (cityQuery) {
+        params.append("city", cityQuery)
+      }
+
+      const url = params.toString()
+        ? `/api/providers?${params.toString()}`
         : "/api/providers"
 
       const response = await fetch(url)
@@ -55,7 +82,13 @@ export default function ProvidersPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchProviders(search)
+    fetchProviders(search, city)
+  }
+
+  const handleClearFilters = () => {
+    setSearch("")
+    setCity("")
+    fetchProviders()
   }
 
   return (
@@ -68,14 +101,44 @@ export default function ProvidersPage() {
           </Link>
           <div className="flex items-center gap-4">
             {user ? (
-              <>
-                <span className="text-sm text-gray-600">{user.name}</span>
-                <Link href="/dashboard">
-                  <Button variant="outline" size="sm">
-                    Dashboard
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-sm">
+                    {user.name}
+                    <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </Button>
-                </Link>
-              </>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <Link href="/customer/bookings">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Mina bokningar
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/customer/profile">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Min profil
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                  >
+                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logga ut
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Link href="/login">
@@ -99,17 +162,68 @@ export default function ProvidersPage() {
           </p>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mb-8">
-            <div className="flex gap-4">
-              <Input
-                placeholder="Sök efter företagsnamn eller tjänst..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit">Sök</Button>
+          <div className="mb-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <Input
+                  placeholder="Sök efter företagsnamn eller beskrivning..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="Filtrera på ort..."
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-64"
+                />
+                {(search || city) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClearFilters}
+                  >
+                    Rensa
+                  </Button>
+                )}
+              </div>
+              {(search || city) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>Aktiva filter:</span>
+                  {search && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                      Sökning: "{search}"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearch("")
+                          fetchProviders("", city)
+                        }}
+                        className="hover:text-green-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {city && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                      Ort: "{city}"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCity("")
+                          fetchProviders(search, "")
+                        }}
+                        className="hover:text-blue-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-          </form>
+          </div>
 
           {/* Providers List */}
           {isLoading ? (

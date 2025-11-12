@@ -15,7 +15,7 @@ export default function DashboardPage() {
       } else if (user?.userType === "provider") {
         router.push("/provider/dashboard")
       } else {
-        router.push("/customer/dashboard")
+        router.push("/providers")
       }
     }
   }, [user, isLoading, isAuthenticated, router])

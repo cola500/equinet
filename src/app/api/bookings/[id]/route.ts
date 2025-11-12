@@ -6,7 +6,7 @@ import { z } from "zod"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
-})
+}).strict()
 
 // PUT - Update booking status
 export async function PUT(
@@ -74,7 +74,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }

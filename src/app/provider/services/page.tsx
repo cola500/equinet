@@ -70,18 +70,25 @@ export default function ProviderServicesPage() {
 
       const method = editingService ? "PUT" : "POST"
 
+      // Build payload - only include isActive when updating
+      const payload: any = {
+        name: formData.name,
+        description: formData.description || undefined,
+        price: parseFloat(formData.price),
+        durationMinutes: parseInt(formData.durationMinutes),
+      }
+
+      // Only include isActive when editing (PUT), not when creating (POST)
+      if (editingService) {
+        payload.isActive = editingService.isActive
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description || undefined,
-          price: parseFloat(formData.price),
-          durationMinutes: parseInt(formData.durationMinutes),
-          isActive: editingService?.isActive ?? true,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
@@ -237,6 +244,12 @@ export default function ProviderServicesPage() {
               className="py-3 text-gray-600 hover:text-gray-900"
             >
               Bokningar
+            </Link>
+            <Link
+              href="/provider/profile"
+              className="py-3 text-gray-600 hover:text-gray-900"
+            >
+              Min profil
             </Link>
           </div>
         </div>
