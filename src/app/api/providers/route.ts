@@ -14,31 +14,34 @@ export async function GET(request: NextRequest) {
     const search = searchParam ? sanitizeSearchQuery(searchParam) : null
 
     let where: any = {
-      isActive: true,
+      AND: [
+        { isActive: true }
+      ]
     }
 
     if (city) {
-      where.city = {
-        contains: city,
-        mode: "insensitive",
-      }
+      where.AND.push({
+        city: {
+          contains: city,
+        }
+      })
     }
 
     if (search) {
-      where.OR = [
-        {
-          businessName: {
-            contains: search,
-            mode: "insensitive",
+      where.AND.push({
+        OR: [
+          {
+            businessName: {
+              contains: search,
+            },
           },
-        },
-        {
-          description: {
-            contains: search,
-            mode: "insensitive",
+          {
+            description: {
+              contains: search,
+            },
           },
-        },
-      ]
+        ]
+      })
     }
 
     const providers = await prisma.provider.findMany({

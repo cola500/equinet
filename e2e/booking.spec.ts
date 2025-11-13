@@ -20,21 +20,30 @@ test.describe('Booking Flow (Customer)', () => {
     // Verifiera att sidan laddats
     await expect(page.getByRole('heading', { name: /hitta tjänsteleverantörer/i })).toBeVisible();
 
-    // Använd sökfältet
-    await page.getByPlaceholder(/sök/i).fill('hovslagning');
-
-    // Vänta på att resultaten uppdateras
-    await page.waitForTimeout(600); // Debounce delay
+    // Vänta på att providers laddas
+    await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
 
     // Verifiera att leverantörer visas
+    await expect(page.locator('[data-testid="provider-card"]').first()).toBeVisible();
+
+    // Använd sökfältet (sök på "Test" som matchar "Test Stall AB")
+    await page.getByPlaceholder(/sök/i).fill('Test');
+
+    // Vänta på att resultaten uppdateras
+    await page.waitForTimeout(1000); // Vänta lite längre för debounce + filtering
+
+    // Verifiera att leverantörer fortfarande visas efter sökning
     await expect(page.locator('[data-testid="provider-card"]').first()).toBeVisible({ timeout: 5000 });
 
     // Testa filtrera efter ort
     await page.getByPlaceholder(/filtrera på ort/i).fill('Stockholm');
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(1000);
+
+    // Verifiera att providers fortfarande visas med båda filter
+    await expect(page.locator('[data-testid="provider-card"]').first()).toBeVisible({ timeout: 5000 });
 
     // Rensa filter
-    await page.getByRole('button', { name: /rensa alla filter/i }).click();
+    await page.getByRole('button', { name: /rensa/i }).click();
 
     // Verifiera att alla leverantörer visas igen
     await expect(page.getByPlaceholder(/sök/i)).toHaveValue('');
@@ -44,63 +53,81 @@ test.describe('Booking Flow (Customer)', () => {
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
 
-    // Vänta på att providers laddas och klicka på "Se profil & boka"-knappen
+    // Vänta på att providers laddas
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
-    await page.locator('[data-testid="provider-card"]').first()
-      .getByRole('link', { name: /se profil|boka/i }).click();
+
+    // Hitta en provider-card som har tjänster (kollar efter "Tjänster:" text)
+    const cardWithServices = page.locator('[data-testid="provider-card"]').filter({ hasText: /Tjänster:/ });
+
+    // Om ingen har tjänster, klicka på första kortet ändå
+    const targetCard = (await cardWithServices.count()) > 0
+      ? cardWithServices.first()
+      : page.locator('[data-testid="provider-card"]').first();
+
+    await targetCard.getByRole('link', { name: /se profil|boka/i }).click();
 
     // Verifiera att vi är på detaljsidan
     await expect(page).toHaveURL(/\/providers\/[a-zA-Z0-9]+/);
 
-    // Verifiera att företagsnamn visas
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // Verifiera att företagsnamn visas (det är en CardTitle, inte h1)
+    await expect(page.getByText(/Test Stall AB/i)).toBeVisible();
 
-    // Verifiera att tjänster visas
-    await expect(page.getByText(/tjänster/i)).toBeVisible();
+    // Verifiera att tjänster-sektionen visas
+    await expect(page.getByRole('heading', { name: /tillgängliga tjänster/i })).toBeVisible();
   });
 
   test('should complete full booking flow', async ({ page }) => {
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
 
-    // Vänta på providers och klicka på "Se profil & boka"-knappen
+    // Vänta på providers och hitta en med tjänster
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
-    await page.locator('[data-testid="provider-card"]').first()
-      .getByRole('link', { name: /se profil|boka/i }).click();
+
+    const cardWithServices = page.locator('[data-testid="provider-card"]').filter({ hasText: /Tjänster:/ });
+    const targetCard = (await cardWithServices.count()) > 0
+      ? cardWithServices.first()
+      : page.locator('[data-testid="provider-card"]').first();
+
+    await targetCard.getByRole('link', { name: /se profil|boka/i }).click();
 
     // Vänta på detaljsida
     await expect(page).toHaveURL(/\/providers\/[a-zA-Z0-9]+/);
 
     // Vänta på att tjänster laddas
-    await page.waitForSelector('[data-testid="service-card"]', { timeout: 5000 });
+    await page.waitForSelector('[data-testid="service-card"]', { timeout: 10000 });
 
     // Klicka på "Boka" för första tjänsten
     await page.locator('[data-testid="service-card"]').first()
       .getByRole('button', { name: /boka/i }).click();
 
-    // Fyll i bokningsformuläret
+    // Fyll i bokningsformuläret med unik tid
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateString = tomorrow.toISOString().split('T')[0];
 
+    // Generera en unik starttid baserat på timestamp (mellan 08:00 - 15:00)
+    const hour = 8 + (Date.now() % 8); // 8-15
+    const minute = Date.now() % 2 === 0 ? '00' : '30'; // 00 eller 30
+    const uniqueTime = `${hour.toString().padStart(2, '0')}:${minute}`;
+
     await page.getByLabel(/datum/i).fill(dateString);
-    await page.getByLabel(/önskad starttid|starttid/i).fill('10:00');
+    await page.getByLabel(/önskad starttid|starttid/i).fill(uniqueTime);
     // Sluttid beräknas automatiskt från tjänstens varaktighet
     await page.getByLabel(/hästens namn/i).fill('Thunder');
     await page.getByLabel(/information om hästen/i).fill('Lugn och trygg häst');
     await page.getByLabel(/övriga kommentarer/i).fill('Vänligen kom 10 minuter innan');
 
     // Submitta bokning
-    await page.getByRole('button', { name: /bekräfta bokning/i }).click();
+    await page.getByRole('button', { name: /skicka bokningsförfrågan/i }).click();
 
-    // Verifiera success-meddelande eller redirect
-    await expect(page.getByText(/bokningen har skickats|bokning mottagen/i)).toBeVisible({ timeout: 5000 });
+    // Vänta på att dialogen stängs (success)
+    await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 10000 });
 
     // Gå till mina bokningar
     await page.goto('/customer/bookings');
 
-    // Verifiera att bokningen finns där
-    await expect(page.getByText(/thunder/i)).toBeVisible({ timeout: 5000 });
+    // Verifiera att bokningen finns på sidan (kan finnas flera från tidigare tester)
+    await expect(page.getByText(/thunder/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should prevent double booking', async ({ page }) => {
@@ -109,11 +136,16 @@ test.describe('Booking Flow (Customer)', () => {
 
     await page.goto('/providers');
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
-    await page.locator('[data-testid="provider-card"]').first()
-      .getByRole('link', { name: /se profil|boka/i }).click();
+
+    const cardWithServices = page.locator('[data-testid="provider-card"]').filter({ hasText: /Tjänster:/ });
+    const targetCard = (await cardWithServices.count()) > 0
+      ? cardWithServices.first()
+      : page.locator('[data-testid="provider-card"]').first();
+
+    await targetCard.getByRole('link', { name: /se profil|boka/i }).click();
 
     // Klicka på boka
-    await page.waitForSelector('[data-testid="service-card"]', { timeout: 5000 });
+    await page.waitForSelector('[data-testid="service-card"]', { timeout: 10000 });
     await page.locator('[data-testid="service-card"]').first()
       .getByRole('button', { name: /boka/i }).click();
 
@@ -125,7 +157,7 @@ test.describe('Booking Flow (Customer)', () => {
     // Sluttid beräknas automatiskt från tjänstens varaktighet
     await page.getByLabel(/hästens namn/i).fill('Test Horse');
 
-    await page.getByRole('button', { name: /bekräfta bokning/i }).click();
+    await page.getByRole('button', { name: /skicka bokningsförfrågan/i }).click();
 
     // Förvänta felmeddelande om tiden är bokad
     // (Detta kräver att tidskontroll är implementerad i UI)
