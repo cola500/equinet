@@ -84,8 +84,8 @@ test.describe('Booking Flow (Customer)', () => {
     const dateString = tomorrow.toISOString().split('T')[0];
 
     await page.getByLabel(/datum/i).fill(dateString);
-    await page.getByLabel(/starttid/i).fill('10:00');
-    await page.getByLabel(/sluttid/i).fill('11:00');
+    await page.getByLabel(/önskad starttid|starttid/i).fill('10:00');
+    // Sluttid beräknas automatiskt från tjänstens varaktighet
     await page.getByLabel(/hästens namn/i).fill('Thunder');
     await page.getByLabel(/information om hästen/i).fill('Lugn och trygg häst');
     await page.getByLabel(/övriga kommentarer/i).fill('Vänligen kom 10 minuter innan');
@@ -121,8 +121,8 @@ test.describe('Booking Flow (Customer)', () => {
     const today = new Date().toISOString().split('T')[0];
 
     await page.getByLabel(/datum/i).fill(today);
-    await page.getByLabel(/starttid/i).fill('10:00');
-    await page.getByLabel(/sluttid/i).fill('11:00');
+    await page.getByLabel(/önskad starttid|starttid/i).fill('10:00');
+    // Sluttid beräknas automatiskt från tjänstens varaktighet
     await page.getByLabel(/hästens namn/i).fill('Test Horse');
 
     await page.getByRole('button', { name: /bekräfta bokning/i }).click();
