@@ -262,7 +262,23 @@ workers: 1  // Kör tester seriellt för delad databas
 // När det finns flera "Redigera"-knappar
 ```
 
-4. **UNDVIK: CSS classes och komplex DOM traversal**
+4. **Strict Mode Violations - Var specifik!**
+```typescript
+// ❌ Fel: getByText() kan matcha flera element
+await page.getByText(/inga.*bokningar/i)
+// Error: strict mode violation: resolved to 2 elements
+
+// ✅ Rätt: Använd mer specifik selector
+await page.getByRole('heading', { name: /inga.*bokningar/i })
+// Matchar endast <h1>, <h2>, <h3>, etc.
+
+// Lärdomar:
+// - getByText() matchar HELA text-noder, även osynlig text i divs
+// - getByRole() är mer specifikt och följer semantisk HTML
+// - Vid strict mode violations: använd mer specifik selector eller nth()
+```
+
+5. **UNDVIK: CSS classes och komplex DOM traversal**
 ```typescript
 ❌ page.locator('.button.primary')  // Kan ändras
 ❌ page.locator('div > div > button')  // Sköra
@@ -409,6 +425,39 @@ test('should accept booking if available', async ({ page }) => {
 })
 ```
 
+**4. Conditional Rendering Tests (olika UI beroende på state)**
+```typescript
+test('should handle empty state with conditional content', async ({ page }) => {
+  await page.goto('/bookings')
+
+  const bookingCount = await page.locator('[data-testid="booking-item"]').count()
+
+  if (bookingCount === 0) {
+    // Empty state ska visas
+    await expect(page.getByRole('heading', { name: /inga.*bokningar/i })).toBeVisible()
+
+    // Men content kan variera beroende på annan state
+    // Kolla om texten säger "Byt filter" (betyder att det finns bokningar i andra filter)
+    const hasFilterText = await page.getByText(/byt filter/i).isVisible().catch(() => false)
+
+    if (!hasFilterText) {
+      // Helt tomt - länken ska visas
+      await expect(page.getByRole('link', { name: /hitta tjänster/i })).toBeVisible()
+    }
+    // Om hasFilterText är true: skippa länkkontrollen (länken visas bara vid helt tomt)
+  } else {
+    // Bokningar finns - verifiera listan
+    await expect(page.locator('[data-testid="booking-item"]').first()).toBeVisible()
+  }
+})
+```
+
+**Lärdomar:**
+- UI kan rendera olika innehåll beroende på **flera** state-variabler (inte bara en)
+- Exempel: `bookings.length === 0` OCH filter-status
+- Tester måste hantera alla kombinationer av conditional rendering
+- Använd nested conditionals för att testa rätt sak i rätt scenario
+
 ### 📊 Iterativa Förbättringar
 
 **Lessons Learned från Equinet E2E-implementation:**
@@ -429,6 +478,18 @@ test('should accept booking if available', async ({ page }) => {
 - ✅ Alla data-testid på plats
 - 📈 Pass rate: **100% (22/22) - STABILT**
 - ⏱️ Körning: ~31s
+
+**Iteration 4: Availability feature + Empty state fix (2025-11-13)**
+- ✅ Implementerade availability schema (öppettider per veckodag)
+- ✅ Playwright setup project för automatisk testdata-seeding
+- ❌ Problem: Empty state test failade på två olika sätt:
+  1. `getByText()` matchade flera element (strict mode violation)
+  2. Conditional rendering av länk vs text beroende på `bookings.length`
+- ✅ Lösning:
+  - Använd `getByRole('heading')` för specifik selector
+  - Conditional check för "Byt filter"-text innan länkkontroll
+- 📈 Pass rate: **100% (23/23) - STABILT**
+- ⏱️ Körning: ~41s
 
 **Lärdom:** För MVP, prioritera **stabilitet > hastighet**. Kod-först approach minskar iterationer dramatiskt!
 

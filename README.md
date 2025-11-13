@@ -96,7 +96,8 @@ equinet/
 │   │   │   ├── bookings/     # Boknings-API (GET, POST, PUT, DELETE)
 │   │   │   ├── providers/    # Leverantörs-API (GET lista & detalj)
 │   │   │   │   └── [id]/
-│   │   │   │       └── availability/  # Tillgänglighetskontroll API
+│   │   │   │       ├── availability/  # Tillgänglighetskontroll API (GET tider för bokning)
+│   │   │   │       └── availability-schedule/  # Öppettider-API (GET/PUT veckoschema)
 │   │   │   └── services/     # Tjänste-API (CRUD)
 │   │   ├── customer/         # Kundsidor
 │   │   │   ├── dashboard/    # Översikt med senaste bokningar
@@ -183,6 +184,11 @@ Equinet har två olika användarroller med separata gränssnitt:
   - Redigera namn, beskrivning, pris, varaktighet
   - Aktivera/inaktivera tjänster
   - Ta bort tjänster
+- Öppettider & Tillgänglighet:
+  - Sätta öppettider per veckodag (måndag-söndag)
+  - Markera vissa dagar som "stängt"
+  - Redigera schema i realtid med visuell feedback
+  - Schema visas automatiskt i bokningsflödet för kunder
 - Bokningshantering:
   - Se inkommande bokningar (filtrerat efter status)
   - Automatiska flikar: "Väntar på svar", "Bekräftade", "Alla"
@@ -212,7 +218,8 @@ Equinet har två olika användarroller med separata gränssnitt:
 
 #### Availability
 - Leverantörers tillgänglighet (veckoschema)
-- Fält: dayOfWeek, startTime, endTime, isActive
+- Fält: dayOfWeek (0-6, 0=Måndag), startTime, endTime, isClosed, isActive
+- En rad per veckodag och leverantör (unique constraint)
 
 #### Booking
 - Bokningar mellan kunder och leverantörer
@@ -255,6 +262,11 @@ User (Customer) ──┐
 - [x] Tjänstehantering (CRUD)
 - [x] **Förbättrade empty states med ikoner och konkreta förslag**
 - [x] Aktivera/inaktivera tjänster
+- [x] **Öppettider & Tillgänglighet**
+  - Sätta öppettider per veckodag (måndag-söndag)
+  - Markera vissa dagar som "stängt"
+  - Redigera schema i realtid med visuell feedback
+  - Schema visas automatiskt i bokningsflödet för kunder
 - [x] Bokningshantering med filter
 - [x] Acceptera/avvisa bokningar
 - [x] Markera bokningar som genomförda
@@ -276,6 +288,8 @@ User (Customer) ──┐
 - [x] Leverantörsdetaljsida med tjänster
 - [x] Bokningsdialog med kalenderpicker
 - [x] **Tillgänglighetskontroll - visar bokade tidsluckor**
+- [x] **Visar leverantörens öppettider för vald dag**
+- [x] **Varningstexter när leverantören är stängd**
 - [x] **Server-side validering förhindrar dubbelbokningar**
 - [x] Hästinformation och kundommentarer
 - [x] Lista alla egna bokningar
@@ -311,9 +325,11 @@ User (Customer) ──┐
 - [x] ~~Blockera dubbelbokningar~~ (✅ Implementerat!)
   - Server-side validering för överlappande bokningar
   - Visuell indikation av bokade tider
-- [ ] Implementera availability-schemat i UI
+- [x] ~~Implementera availability-schemat i UI~~ (✅ Implementerat!)
   - Låt leverantörer sätta öppettider per veckodag
   - Visa tillgängliga tider baserat på schema
+  - Markera stängda dagar
+  - Integration med bokningsflödet
 - [x] ~~Förbättra Dashboard~~ (✅ Delvis implementerat!)
   - Real-time statistik istället för hårdkodad data
   - Onboarding-guide för nya leverantörer
