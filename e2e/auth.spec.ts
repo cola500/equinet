@@ -43,20 +43,19 @@ test.describe('Authentication Flow', () => {
     // Klicka på "Kom igång"
     await page.getByRole('link', { name: /kom igång/i }).click();
 
-    // Välj "Tjänsteleverantör" (provider) - detta gör att provider-fält visas
-    await page.click('[data-testid="user-type-provider"]');
-
-    // Vänta på att businessName-fältet blir synligt (hidden-class tas bort från parent)
-    await page.waitForSelector('#businessName:not([class*="hidden"])', { state: 'attached', timeout: 5000 });
-    await page.waitForTimeout(200); // Extra säkerhetsmarginal för rendering
-
-    // Fyll i grundläggande info
+    // Fyll i grundläggande info FÖRST (innan vi väljer provider-typ)
     await page.getByLabel(/förnamn/i).fill('Leverantör');
     await page.getByLabel(/efternamn/i).fill('Testsson');
     await page.getByLabel(/email/i).fill(`provider${Date.now()}@example.com`);
     await page.getByLabel(/telefon/i).fill('0709876543');
 
-    // Fyll i provider-specifika fält (nu borde de vara synliga)
+    // Välj "Tjänsteleverantör" (provider) - detta gör att provider-fält visas
+    await page.click('[data-testid="user-type-provider"]');
+
+    // Vänta på att businessName-fältet blir SYNLIGT (inte bara attached)
+    await page.waitForSelector('#businessName', { state: 'visible', timeout: 5000 });
+
+    // Fyll i provider-specifika fält (nu är de synliga)
     await page.getByLabel(/företagsnamn/i).fill('Test Stall AB');
     await page.getByLabel(/beskrivning/i).fill('Vi erbjuder professionell hovslagning');
     await page.getByLabel(/stad/i).fill('Stockholm');
