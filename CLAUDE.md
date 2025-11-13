@@ -234,7 +234,20 @@ workers: 1  // Kör tester seriellt för delad databas
 1. **data-testid** (bäst, aldrig ändras)
 ```typescript
 ✅ page.locator('[data-testid="booking-item"]')
+✅ page.locator('[data-testid="service-card"]')
+✅ page.locator('[data-testid="service-item"]')
+✅ page.locator('[data-testid="provider-card"]')
 ```
+
+**Implementerade data-testid i Equinet:**
+- `[data-testid="user-type-customer"]` - Kund-knapp i registrering
+- `[data-testid="user-type-provider"]` - Leverantör-knapp i registrering
+- `[data-testid="provider-card"]` - Provider-kort i galleri (/providers)
+- `[data-testid="service-card"]` - Tjänstekort på provider-detaljsida (för booking)
+- `[data-testid="service-item"]` - Tjänsteobjekt i provider's tjänste-lista
+- `[data-testid="booking-item"]` - Bokningsobjekt (både customer och provider sidor)
+
+**Regel:** Vid skapande av nya list-items, kort eller interaktiva element - lägg ALLTID till data-testid!
 
 2. **Semantic Roles** (bra, tillgängligt)
 ```typescript
@@ -313,6 +326,38 @@ const newBadge = page.locator('[data-testid="status"]')  // Ny query
 const newText = await newBadge.textContent()  // ✅ Aktuell data
 ```
 
+### 🎭 Conditional/Hidden Fields Pattern
+
+**Problem:** Formulärfält som visas/döljs baserat på användarval (t.ex. conditional rendering med `hidden` CSS-class).
+
+**Lösning: Fyll i fält i rätt ordning och vänta på synlighet**
+
+```typescript
+// ❌ FEL ordning - försöker fylla fält som ännu inte är synliga
+await page.click('[data-testid="user-type-provider"]');
+await page.getByLabel(/företagsnamn/i).fill('Test AB')  // Failar! Fältet är dolt
+
+// ✅ RÄTT ordning - fyll synliga fält först, sedan trigga conditional
+// 1. Fyll i alltid-synliga fält först
+await page.getByLabel(/förnamn/i).fill('Test');
+await page.getByLabel(/efternamn/i).fill('Testsson');
+await page.getByLabel(/email/i).fill('test@example.com');
+
+// 2. Trigga conditional rendering (klick på knapp/radio som visar fälten)
+await page.click('[data-testid="user-type-provider"]');
+
+// 3. Vänta på att fältet blir SYNLIGT (inte bara 'attached')
+await page.waitForSelector('#businessName', { state: 'visible', timeout: 5000 });
+
+// 4. NU kan vi fylla i de conditional fälten
+await page.getByLabel(/företagsnamn/i).fill('Test AB');
+```
+
+**Viktigt:**
+- Använd `state: 'visible'` (INTE `state: 'attached'`)
+- Parent-element med `hidden` CSS-class gör barn-element dolda
+- Fyll alltid i synliga fält innan du triggar conditional logic
+
 ### 🏗️ Test Structure Patterns
 
 **1. Empty State Tests**
@@ -378,7 +423,14 @@ test('should accept booking if available', async ({ page }) => {
 - ✅ Stabilt: Alla tester passerar
 - 📈 Pass rate: 100% (22/22)
 
-**Lärdom:** För MVP, prioritera **stabilitet > hastighet**
+**Iteration 3: Conditional fields fix (2025-11-13)**
+- ✅ Fixade provider-registrering med conditional fields
+- ✅ Använd kod-först approach konsekvent
+- ✅ Alla data-testid på plats
+- 📈 Pass rate: **100% (22/22) - STABILT**
+- ⏱️ Körning: ~31s
+
+**Lärdom:** För MVP, prioritera **stabilitet > hastighet**. Kod-först approach minskar iterationer dramatiskt!
 
 **Framtida optimeringar:**
 ```typescript

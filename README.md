@@ -547,14 +547,14 @@ cp prisma/dev.db.backup prisma/dev.db
 
 ## 🧪 Testning
 
-Equinet har en komplett testsvit med **~150 tester** och **70% code coverage**.
+Equinet har en komplett testsvit med **~149 tester** (22 E2E + 127 unit/integration) och **70% code coverage**.
 
 ### Testpyramiden
 
 Projektet följer testpyramiden för optimal testning:
 
 ```
-         E2E: 23 tests (Playwright)
+         E2E: 22 tests (Playwright) ✅ 100% pass rate
        (Hela användarflöden i browser)
                    ↑
       Integration: 75 tests (Vitest)
@@ -563,6 +563,14 @@ Projektet följer testpyramiden för optimal testning:
            Unit: 52 tests (Vitest)
        (Utilities & hooks)
 ```
+
+**E2E Test Coverage:**
+- ✅ Authentication (registrering, login, logout)
+- ✅ Booking flow (sök, boka, avboka)
+- ✅ Provider services (CRUD operations)
+- ✅ Provider bookings (acceptera, avböj)
+- ✅ Profile management
+- ✅ Empty states och error handling
 
 ### Snabbstart - Kör Tester
 
