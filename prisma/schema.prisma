@@ -64,10 +64,15 @@ model Availability {
   id          String   @id @default(uuid())
   providerId  String
   provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  dayOfWeek   Int      // 0-6 (måndag-söndag)
+  dayOfWeek   Int      // 0-6 (0=Måndag, 6=Söndag)
   startTime   String   // Format: "09:00"
   endTime     String   // Format: "17:00"
-  isActive    Boolean  @default(true)
+  isClosed    Boolean  @default(false) // true = Stängt hela dagen
+  isActive    Boolean  @default(true)  // false = Raderad/inaktiv
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([providerId, dayOfWeek])
 }
 
 model Booking {

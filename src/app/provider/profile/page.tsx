@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
 
 interface ProviderProfile {
   id: string
@@ -531,6 +532,9 @@ export default function ProviderProfilePage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Availability Schedule Card */}
+          {profile && <AvailabilitySchedule providerId={profile.id} />}
         </div>
       </main>
     </div>
