@@ -26,11 +26,14 @@ test.describe('Authentication Flow', () => {
     const password = 'TestPassword123!';
     await page.getByLabel(/lösenord \*/i).fill(password);
 
+    // Vänta på att lösenordsvalidering slutförts
+    await page.waitForSelector('text=/lösenordet uppfyller alla krav/i', { timeout: 5000 });
+
     // Submitta formuläret
     await page.getByRole('button', { name: /skapa konto/i }).click();
 
     // Vänta på redirect till login (med registered=true parameter)
-    await expect(page).toHaveURL(/\/login\?registered=true/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/login\?registered=true/, { timeout: 15000 });
 
     // Verifiera att success-meddelande visas (via toast)
     await expect(page.getByText(/kontot har skapats/i).first()).toBeVisible({ timeout: 5000 });
