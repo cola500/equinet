@@ -90,6 +90,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
+                  data-testid="user-type-customer"
                   onClick={() => {
                     setUserType("customer")
                     form.setValue("userType", "customer")
@@ -108,6 +109,7 @@ export default function RegisterPage() {
                 </button>
                 <button
                   type="button"
+                  data-testid="user-type-provider"
                   onClick={() => {
                     setUserType("provider")
                     form.setValue("userType", "provider")
@@ -205,9 +207,8 @@ export default function RegisterPage() {
             </div>
 
             {/* Provider-specific fields */}
-            {userType === "provider" && (
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-4">Företagsinformation</h3>
+            <div className={`border-t pt-4 ${userType === "provider" ? "" : "hidden"}`}>
+              <h3 className="font-semibold mb-4">Företagsinformation</h3>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -246,8 +247,7 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Skapar konto..." : "Skapa konto"}
