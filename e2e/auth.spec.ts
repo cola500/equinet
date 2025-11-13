@@ -11,7 +11,10 @@ test.describe('Authentication Flow', () => {
     await page.getByRole('link', { name: /kom igång/i }).click();
 
     // Välj "Hästägare" (customer)
-    await page.getByRole('button', { name: /hästägare/i }).click();
+    await page.click('[data-testid="user-type-customer"]');
+
+    // Vänta lite för att säkerställa att state uppdateras
+    await page.waitForTimeout(300);
 
     // Fyll i registreringsformuläret
     await page.getByLabel(/förnamn/i).fill('Test');
