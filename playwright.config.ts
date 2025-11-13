@@ -16,8 +16,13 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
 
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Run tests serially to avoid race conditions with shared database
+   * NOTE: This is a temporary workaround for MVP. Future improvements:
+   * - Isolate test data per worker (different users/providers)
+   * - Use database transactions with rollback
+   * - Separate test databases per worker
+   */
+  workers: 1,
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
