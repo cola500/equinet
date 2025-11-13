@@ -170,9 +170,10 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
       user: { id: mockUserId, userType: 'provider', providerId: 'different-provider' },
     }
     vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    // Mock that the provider is owned by a DIFFERENT user
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
-      id: 'different-provider',
-      userId: mockUserId,
+      id: mockProviderId,
+      userId: 'different-user-id',  // Different user owns this provider
     } as any)
 
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`, {

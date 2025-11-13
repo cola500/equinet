@@ -70,7 +70,9 @@ describe('GET /api/providers', () => {
     expect(data[0].businessName).toBe('Test Hovslagare')
     expect(data[0].services).toHaveLength(1)
     expect(prisma.provider.findMany).toHaveBeenCalledWith({
-      where: { isActive: true },
+      where: {
+        AND: [{ isActive: true }],
+      },
       include: {
         services: {
           where: {
@@ -120,11 +122,14 @@ describe('GET /api/providers', () => {
     expect(response.status).toBe(200)
     expect(prisma.provider.findMany).toHaveBeenCalledWith({
       where: {
-        isActive: true,
-        city: {
-          contains: 'Stockholm',
-          mode: 'insensitive',
-        },
+        AND: [
+          { isActive: true },
+          {
+            city: {
+              contains: 'Stockholm',
+            },
+          },
+        ],
       },
       include: expect.any(Object),
       orderBy: expect.any(Object),
@@ -160,19 +165,21 @@ describe('GET /api/providers', () => {
     expect(response.status).toBe(200)
     expect(prisma.provider.findMany).toHaveBeenCalledWith({
       where: {
-        isActive: true,
-        OR: [
+        AND: [
+          { isActive: true },
           {
-            businessName: {
-              contains: 'Hovslagare',
-              mode: 'insensitive',
-            },
-          },
-          {
-            description: {
-              contains: 'Hovslagare',
-              mode: 'insensitive',
-            },
+            OR: [
+              {
+                businessName: {
+                  contains: 'Hovslagare',
+                },
+              },
+              {
+                description: {
+                  contains: 'Hovslagare',
+                },
+              },
+            ],
           },
         ],
       },
@@ -200,23 +207,26 @@ describe('GET /api/providers', () => {
     expect(data).toHaveLength(0)
     expect(prisma.provider.findMany).toHaveBeenCalledWith({
       where: {
-        isActive: true,
-        city: {
-          contains: 'Stockholm',
-          mode: 'insensitive',
-        },
-        OR: [
+        AND: [
+          { isActive: true },
           {
-            businessName: {
-              contains: 'Hovslagare',
-              mode: 'insensitive',
+            city: {
+              contains: 'Stockholm',
             },
           },
           {
-            description: {
-              contains: 'Hovslagare',
-              mode: 'insensitive',
-            },
+            OR: [
+              {
+                businessName: {
+                  contains: 'Hovslagare',
+                },
+              },
+              {
+                description: {
+                  contains: 'Hovslagare',
+                },
+              },
+            ],
           },
         ],
       },

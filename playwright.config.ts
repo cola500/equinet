@@ -50,9 +50,16 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // Setup project that runs before all tests
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    // Main test project with dependency on setup
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'], // Run setup project before these tests
     },
   ],
 
