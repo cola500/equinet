@@ -192,8 +192,16 @@ test.describe('Booking Flow (Customer)', () => {
 
     if (bookingCount === 0) {
       // Empty state ska visas
-      await expect(page.getByText(/inga bokningar|du har inte gjort några bokningar/i)).toBeVisible({ timeout: 5000 });
-      await expect(page.getByRole('link', { name: /bläddra bland leverantörer|hitta leverantörer/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: /inga.*bokningar/i })).toBeVisible({ timeout: 5000 });
+
+      // Länken visas bara om det är helt tomt (inte bara fel filter)
+      // Kolla om texten säger "Byt filter" (betyder att det finns bokningar i andra filter)
+      const hasFilterText = await page.getByText(/byt filter/i).isVisible().catch(() => false);
+
+      if (!hasFilterText) {
+        // Helt tomt - länken ska visas
+        await expect(page.getByRole('link', { name: /hitta tjänster/i })).toBeVisible();
+      }
     } else {
       // Om det finns bokningar, verifiera att minst en visas
       await expect(page.locator('[data-testid="booking-item"]').first()).toBeVisible();
