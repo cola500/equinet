@@ -14,42 +14,39 @@ test.describe('Provider Flow', () => {
   });
 
   test('should display provider dashboard with stats', async ({ page }) => {
-    // Verifiera att dashboard visas
-    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
+    // Verifiera att dashboard visas med rätt rubrik
+    await expect(page.getByRole('heading', { name: /välkommen tillbaka/i })).toBeVisible();
 
-    // Verifiera statistik-cards
-    await expect(page.getByText(/totala bokningar|pending|bekräftade/i)).toBeVisible();
+    // Verifiera statistik-cards (exakta texter från koden)
+    await expect(page.getByText(/aktiva tjänster/i)).toBeVisible();
+    await expect(page.getByText(/kommande bokningar/i)).toBeVisible();
+    await expect(page.getByText(/nya förfrågningar/i)).toBeVisible();
 
-    // Verifiera att onboarding-checklista visas för nya leverantörer
-    // (om leverantören inte har slutfört allt)
-    const onboardingExists = await page.getByText(/kom igång|onboarding/i).isVisible().catch(() => false);
-
-    if (onboardingExists) {
-      await expect(page.getByText(/skapa din första tjänst/i)).toBeVisible();
-    }
+    // Verifiera snabblänkar
+    await expect(page.getByText(/snabblänkar/i)).toBeVisible();
   });
 
   test('should create a new service', async ({ page }) => {
     // Gå till tjänster-sidan
     await page.goto('/provider/services');
 
-    // Klicka på "Skapa tjänst"
-    await page.getByRole('button', { name: /skapa tjänst|lägg till tjänst/i }).click();
+    // Klicka på "Lägg till tjänst"
+    await page.getByRole('button', { name: /lägg till tjänst/i }).click();
 
-    // Fyll i tjänsteformuläret
-    await page.getByLabel(/tjänstens namn/i).fill('Hovslagning Standard');
-    await page.getByLabel(/beskrivning/i).fill('Professionell hovslagning för alla hästar');
-    await page.getByLabel(/pris/i).fill('800');
-    await page.getByLabel(/varaktighet \(minuter\)/i).fill('60');
+    // Vänta på att dialog öppnas
+    await expect(page.getByRole('heading', { name: /lägg till ny tjänst/i })).toBeVisible();
 
-    // Submitta
-    await page.getByRole('button', { name: /spara|skapa/i }).click();
+    // Fyll i tjänsteformuläret (exakta labels från koden)
+    await page.getByLabel(/tjänstens namn \*/i).fill('E2E Test Service');
+    await page.getByLabel(/beskrivning/i).fill('Test beskrivning');
+    await page.getByLabel(/pris \(kr\) \*/i).fill('500');
+    await page.getByLabel(/varaktighet \(min\) \*/i).fill('45');
 
-    // Verifiera success-meddelande
-    await expect(page.getByText(/tjänsten har skapats|tjänst tillagd/i)).toBeVisible({ timeout: 5000 });
+    // Submitta (knappen heter "Skapa" när man skapar ny)
+    await page.getByRole('button', { name: /^skapa$/i }).click();
 
-    // Verifiera att tjänsten visas i listan
-    await expect(page.getByText(/hovslagning standard/i)).toBeVisible();
+    // Vänta på att dialog stängs och tjänsten visas
+    await expect(page.locator('[data-testid="service-item"]').filter({ hasText: 'E2E Test Service' })).toBeVisible({ timeout: 5000 });
   });
 
   test('should edit an existing service', async ({ page }) => {
@@ -60,20 +57,20 @@ test.describe('Provider Flow', () => {
 
     // Klicka på "Redigera" för första tjänsten
     await page.locator('[data-testid="service-item"]').first()
-      .getByRole('button', { name: /redigera|edit/i }).click();
+      .getByRole('button', { name: /redigera/i }).click();
 
-    // Uppdatera priset
-    await page.getByLabel(/pris/i).clear();
-    await page.getByLabel(/pris/i).fill('900');
+    // Vänta på att dialog öppnas med "Redigera tjänst" rubrik
+    await expect(page.getByRole('heading', { name: /redigera tjänst/i })).toBeVisible();
 
-    // Spara ändringar
-    await page.getByRole('button', { name: /spara|uppdatera/i }).click();
+    // Uppdatera priset (exakt label från koden)
+    await page.getByLabel(/pris \(kr\) \*/i).clear();
+    await page.getByLabel(/pris \(kr\) \*/i).fill('999');
 
-    // Verifiera success-meddelande
-    await expect(page.getByText(/tjänsten har uppdaterats|ändringar sparade/i)).toBeVisible({ timeout: 5000 });
+    // Spara ändringar (knappen heter "Uppdatera" när man redigerar)
+    await page.getByRole('button', { name: /^uppdatera$/i }).click();
 
-    // Verifiera att nya priset visas
-    await expect(page.getByText(/900 kr/i)).toBeVisible();
+    // Vänta på att dialog stängs och tjänsten uppdateras
+    await expect(page.locator('[data-testid="service-item"]').filter({ hasText: '999 kr' })).toBeVisible({ timeout: 5000 });
   });
 
   test('should toggle service active status', async ({ page }) => {
@@ -81,15 +78,27 @@ test.describe('Provider Flow', () => {
 
     await page.waitForSelector('[data-testid="service-item"]', { timeout: 10000 });
 
-    // Hitta toggle-knappen (kan vara en switch eller checkbox)
-    const toggleButton = page.locator('[data-testid="service-item"]').first()
-      .getByRole('switch').or(page.getByRole('checkbox', { name: /aktiv/i }));
+    // Status badge är en clickable button med text "Aktiv" eller "Inaktiv"
+    const firstService = page.locator('[data-testid="service-item"]').first();
+    const statusBadge = firstService.locator('button').filter({ hasText: /^aktiv$|^inaktiv$/i });
 
-    // Klicka på toggle
-    await toggleButton.click();
+    // Kolla nuvarande status
+    const initialStatus = (await statusBadge.textContent())?.trim();
 
-    // Verifiera status-ändring
-    await expect(page.getByText(/status uppdaterad|tjänst (in)?aktiverad/i)).toBeVisible({ timeout: 5000 });
+    // Klicka på status badge för att toggla
+    await statusBadge.click();
+
+    // Vänta på att toast visas (indikerar att API-anrop lyckats)
+    await page.waitForTimeout(1500);
+
+    // Sidan refreshar automatiskt, så vi måste hitta badge igen
+    const newStatusBadge = page.locator('[data-testid="service-item"]').first()
+      .locator('button').filter({ hasText: /^aktiv$|^inaktiv$/i });
+
+    const newStatus = (await newStatusBadge.textContent())?.trim();
+
+    // Verifiera att status har ändrats
+    expect(newStatus).not.toBe(initialStatus);
   });
 
   test('should delete a service', async ({ page }) => {
@@ -97,38 +106,49 @@ test.describe('Provider Flow', () => {
 
     await page.waitForSelector('[data-testid="service-item"]', { timeout: 10000 });
 
+    // Räkna antal tjänster innan borttagning
+    const initialCount = await page.locator('[data-testid="service-item"]').count();
+
+    // Setup dialog handler
+    page.once('dialog', dialog => {
+      expect(dialog.message()).toContain('säker');
+      dialog.accept();
+    });
+
     // Klicka på "Ta bort" för första tjänsten
     await page.locator('[data-testid="service-item"]').first()
-      .getByRole('button', { name: /ta bort|delete/i }).click();
+      .getByRole('button', { name: /ta bort/i }).click();
 
-    // Bekräfta i dialogen
-    await page.getByRole('button', { name: /ja|bekräfta|ta bort/i }).click();
+    // Vänta på att tjänsten försvinner
+    await page.waitForTimeout(1500);
 
-    // Verifiera success-meddelande
-    await expect(page.getByText(/tjänsten har tagits bort|tjänst raderad/i)).toBeVisible({ timeout: 5000 });
+    // Verifiera att antalet tjänster har minskat
+    const newCount = await page.locator('[data-testid="service-item"]').count();
+    expect(newCount).toBe(initialCount - 1);
   });
 
   test('should view and manage bookings', async ({ page }) => {
     await page.goto('/provider/bookings');
 
-    // Verifiera att bokningssidan visas
-    await expect(page.getByRole('heading', { name: /bokningar/i })).toBeVisible();
+    // Verifiera att bokningssidan visas (exakt rubrik från koden)
+    await expect(page.getByRole('heading', { name: /^bokningar$/i })).toBeVisible();
 
-    // Verifiera tabs för olika bokningsstatus
-    await expect(page.getByRole('tab', { name: /väntande|pending/i })).toBeVisible();
-    await expect(page.getByRole('tab', { name: /bekräftad/i })).toBeVisible();
+    // Verifiera filter-tabs (buttons, inte tabs - från koden)
+    await expect(page.getByRole('button', { name: /väntar på svar/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /bekräftade/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /alla/i })).toBeVisible();
 
-    // Klicka på pending-tab
-    await page.getByRole('tab', { name: /väntande|pending/i }).click();
+    // Klicka på "Väntar på svar" tab
+    await page.getByRole('button', { name: /väntar på svar/i }).click();
 
     // Om det finns väntande bokningar, visa hanteringsalternativ
     const hasPendingBookings = await page.locator('[data-testid="booking-item"]')
       .isVisible().catch(() => false);
 
     if (hasPendingBookings) {
-      // Verifiera att "Acceptera" och "Avvisa" knappar visas
+      // Verifiera att "Acceptera" och "Avböj" knappar visas (från koden)
       await expect(page.getByRole('button', { name: /acceptera/i }).first()).toBeVisible();
-      await expect(page.getByRole('button', { name: /avvisa/i }).first()).toBeVisible();
+      await expect(page.getByRole('button', { name: /avböj/i }).first()).toBeVisible();
     }
   });
 
