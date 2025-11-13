@@ -236,7 +236,7 @@ export default function ProviderBookingsPage() {
         ) : (
           <div className="space-y-4">
             {filteredBookings.map((booking) => (
-              <Card key={booking.id}>
+              <Card key={booking.id} data-testid="booking-item">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>

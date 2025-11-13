@@ -44,11 +44,10 @@ test.describe('Booking Flow (Customer)', () => {
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
 
-    // Vänta på att providers laddas
+    // Vänta på att providers laddas och klicka på "Se profil & boka"-knappen
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
-
-    // Klicka på första leverantören
-    await page.locator('[data-testid="provider-card"]').first().click();
+    await page.locator('[data-testid="provider-card"]').first()
+      .getByRole('link', { name: /se profil|boka/i }).click();
 
     // Verifiera att vi är på detaljsidan
     await expect(page).toHaveURL(/\/providers\/[a-zA-Z0-9]+/);
@@ -64,9 +63,10 @@ test.describe('Booking Flow (Customer)', () => {
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
 
-    // Vänta och klicka på första leverantören
+    // Vänta på providers och klicka på "Se profil & boka"-knappen
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
-    await page.locator('[data-testid="provider-card"]').first().click();
+    await page.locator('[data-testid="provider-card"]').first()
+      .getByRole('link', { name: /se profil|boka/i }).click();
 
     // Vänta på detaljsida
     await expect(page).toHaveURL(/\/providers\/[a-zA-Z0-9]+/);
@@ -109,7 +109,8 @@ test.describe('Booking Flow (Customer)', () => {
 
     await page.goto('/providers');
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
-    await page.locator('[data-testid="provider-card"]').first().click();
+    await page.locator('[data-testid="provider-card"]').first()
+      .getByRole('link', { name: /se profil|boka/i }).click();
 
     // Klicka på boka
     await page.waitForSelector('[data-testid="service-card"]', { timeout: 5000 });

@@ -37,18 +37,16 @@ test.describe('Authentication Flow', () => {
     // Klicka på "Kom igång"
     await page.getByRole('link', { name: /kom igång/i }).click();
 
-    // Välj "Tjänsteleverantör" (provider)
+    // Välj "Tjänsteleverantör" (provider) - detta gör att provider-fält renderas
     await page.getByRole('button', { name: /tjänsteleverantör/i }).click();
 
-    // Fyll i registreringsformuläret
+    // Fyll i grundläggande info först
     await page.getByLabel(/förnamn/i).fill('Leverantör');
     await page.getByLabel(/efternamn/i).fill('Testsson');
     await page.getByLabel(/email/i).fill(`provider${Date.now()}@example.com`);
     await page.getByLabel(/telefon/i).fill('0709876543');
 
-    // Vänta på att leverantör-fälten visas efter att ha valt tjänsteleverantör
-    await page.waitForSelector('input[id="businessName"]', { state: 'visible', timeout: 5000 });
-
+    // Nu fyller vi i provider-specifika fält (de borde redan vara synliga)
     await page.getByLabel(/företagsnamn/i).fill('Test Stall AB');
     await page.getByLabel(/beskrivning/i).fill('Vi erbjuder professionell hovslagning');
     await page.getByLabel(/stad/i).fill('Stockholm');

@@ -253,7 +253,7 @@ export default function ProviderDetailPage() {
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {provider.services.map((service) => (
-                <Card key={service.id}>
+                <Card key={service.id} data-testid="service-card">
                   <CardHeader>
                     <CardTitle>{service.name}</CardTitle>
                     {service.description && (

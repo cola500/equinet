@@ -409,7 +409,7 @@ export default function ProviderServicesPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((service) => (
-              <Card key={service.id}>
+              <Card key={service.id} data-testid="service-item">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle>{service.name}</CardTitle>
