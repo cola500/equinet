@@ -159,6 +159,268 @@ npm run test:coverage # Coverage report
 - Hooks: ≥80%
 - Overall: ≥70%
 
+## 🎓 E2E-Testning: Lärdomar & Best Practices
+
+> **💡 VIKTIGT: Stanna upp och lär från varje uppgift!**
+> Efter varje större implementation eller bugfix - reflektera över:
+> - Vad fungerade bra?
+> - Vad tog onödigt många iterationer?
+> - Vilka patterns kan vi återanvända?
+> - Hur kan vi jobba smartare nästa gång?
+
+### 🔍 Kod-Först Approach (The Golden Rule)
+
+**Problem:** När vi skrev E2E-tester genom att gissa fältnamn, knappar och labels tog det 5-10 iterationer per test.
+
+**Lösning:** Alltid kolla koden INNAN du skriver tester!
+
+```bash
+# 1. Utforska koden först
+Task agent (Explore, medium) -> "Dokumentera alla labels, knappar och data-testid i [component]"
+
+# 2. Kolla screenshots från misslyckade tester
+Read test-results/*/test-failed-1.png
+Read test-results/*/error-context.md
+
+# 3. Använd Playwright Codegen för komplexa interaktioner
+npx playwright codegen http://localhost:3000
+
+# 4. SKA TESTEN
+# Nu vet vi exakt vad som finns i UI:t
+```
+
+**Resultat:** Från 5-10 iterationer → 1-2 iterationer per test ✅
+
+### 📋 Test Data Management
+
+**Problem:** Parallella tester delade samma databas och kolliderade med varandra.
+
+**Lösningar:**
+
+1. **Unika Identifiers**
+```typescript
+// ✅ Använd timestamps för unika emails
+await page.fill('email', `test${Date.now()}@example.com`)
+
+// ✅ Använd millisekunder för unika bokningstider
+const uniqueMinute = new Date().getMilliseconds() % 60
+const time = `09:${uniqueMinute.toString().padStart(2, '0')}`
+```
+
+2. **Framtida Datum för Bokningar**
+```typescript
+// ✅ Boka långt i framtiden för att undvika konflikter
+const futureDate = new Date()
+futureDate.setDate(futureDate.getDate() + 14) // 2 veckor
+```
+
+3. **Seriell Körning (MVP Workaround)**
+```typescript
+// playwright.config.ts
+workers: 1  // Kör tester seriellt för delad databas
+```
+
+**Framtida förbättringar:**
+- Isolera testdata per worker (olika users/providers)
+- Database transactions med rollback
+- Separata test-databaser per worker
+
+### 🎯 Selector Best Practices
+
+**Problem:** Selectors bröts när DOM-struktur ändrades.
+
+**Prioriterad ordning (bäst → sämst):**
+
+1. **data-testid** (bäst, aldrig ändras)
+```typescript
+✅ page.locator('[data-testid="booking-item"]')
+```
+
+2. **Semantic Roles** (bra, tillgängligt)
+```typescript
+✅ page.getByRole('button', { name: /skapa konto/i })
+✅ page.getByRole('heading', { name: /min profil/i })
+✅ page.getByLabel(/email/i)
+```
+
+3. **nth() för Multiple Matches**
+```typescript
+✅ page.getByRole('button', { name: /redigera/i }).nth(1)
+// När det finns flera "Redigera"-knappar
+```
+
+4. **UNDVIK: CSS classes och komplex DOM traversal**
+```typescript
+❌ page.locator('.button.primary')  // Kan ändras
+❌ page.locator('div > div > button')  // Sköra
+```
+
+### ⏱️ Timing & Waits
+
+**Problem:** Tester failade pga timing-issues.
+
+**Lösningar:**
+
+1. **Vänta på Specifika Conditions**
+```typescript
+// ✅ Vänta på element
+await page.waitForSelector('[data-testid="item"]', { timeout: 10000 })
+
+// ✅ Vänta på URL-ändring
+await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+
+// ✅ Vänta på synlig element
+await expect(page.getByText(/success/i)).toBeVisible({ timeout: 5000 })
+
+// ❌ UNDVIK arbiträra timeouts
+await page.waitForTimeout(1500)  // Endast när inget annat fungerar
+```
+
+2. **Vänta på State Changes**
+```typescript
+// ✅ Vänta på att NY status visas efter toggle
+const expectedStatus = currentStatus === 'Aktiv' ? 'Inaktiv' : 'Aktiv'
+await expect(
+  page.locator('[data-testid="status"]')
+    .filter({ hasText: new RegExp(`^${expectedStatus}$`, 'i') })
+).toBeVisible({ timeout: 5000 })
+```
+
+3. **Vänta på Validation**
+```typescript
+// ✅ Vänta på att form validation slutförts
+await page.fill('password', 'Test123!')
+await page.waitForSelector('text=/lösenordet uppfyller alla krav/i')
+// NU är det säkert att submitta
+await page.click('button[type="submit"]')
+```
+
+### 🔄 Handling Dynamic Content
+
+**Problem:** Element försvann/ändrades efter API-anrop och page refresh.
+
+**Lösning: Re-query efter changes**
+```typescript
+// ❌ Gammal referens blir stale efter refresh
+const badge = page.locator('[data-testid="status"]')
+await badge.click()  // Trigger refresh
+const newText = await badge.textContent()  // ❌ Kan vara stale!
+
+// ✅ Query igen efter refresh
+await badge.click()
+await page.waitForTimeout(1000)  // Vänta på refresh
+const newBadge = page.locator('[data-testid="status"]')  // Ny query
+const newText = await newBadge.textContent()  // ✅ Aktuell data
+```
+
+### 🏗️ Test Structure Patterns
+
+**1. Empty State Tests**
+```typescript
+test('should handle empty state', async ({ page }) => {
+  await page.goto('/page')
+  await page.waitForTimeout(1000)  // Låt sidan ladda
+
+  const itemCount = await page.locator('[data-testid="item"]').count()
+
+  if (itemCount === 0) {
+    // Verifiera empty state
+    await expect(page.getByText(/inga items/i)).toBeVisible()
+  } else {
+    // Verifiera items visas
+    await expect(page.locator('[data-testid="item"]').first()).toBeVisible()
+  }
+})
+```
+
+**2. Dialog Handling**
+```typescript
+test('should handle confirmation dialog', async ({ page }) => {
+  // Setup listener INNAN action som triggar dialog
+  page.once('dialog', dialog => {
+    expect(dialog.message()).toContain('säker')
+    dialog.accept()
+  })
+
+  // NU klicka på knappen som öppnar dialogen
+  await page.click('button[name="delete"]')
+})
+```
+
+**3. Conditional Tests (när testdata varierar)**
+```typescript
+test('should accept booking if available', async ({ page }) => {
+  await page.goto('/bookings')
+
+  const hasPending = await page.locator('[data-testid="pending"]')
+    .isVisible().catch(() => false)
+
+  if (!hasPending) {
+    console.log('No pending bookings, skipping test')
+    return  // Skippa gracefully
+  }
+
+  // Fortsätt med test...
+})
+```
+
+### 📊 Iterativa Förbättringar
+
+**Lessons Learned från Equinet E2E-implementation:**
+
+**Iteration 1: Parallella tester (4 workers)**
+- ⚡ Snabbt: ~17s
+- ❌ Problem: 2 tester failade (race conditions)
+- 📈 Pass rate: 91% (20/22)
+
+**Iteration 2: Seriella tester (1 worker)**
+- 🐌 Långsammare: ~40s
+- ✅ Stabilt: Alla tester passerar
+- 📈 Pass rate: 100% (22/22)
+
+**Lärdom:** För MVP, prioritera **stabilitet > hastighet**
+
+**Framtida optimeringar:**
+```typescript
+// TODO: Worker-isolerad testdata
+const testUser = {
+  email: `worker${workerId}_test@example.com`,
+  providerId: `provider_${workerId}`
+}
+
+// TODO: Database transactions
+beforeEach(async () => {
+  await db.transaction.begin()
+})
+afterEach(async () => {
+  await db.transaction.rollback()
+})
+```
+
+### 🧠 Meta-Lärdom: Reflektera Aktivt
+
+**Efter varje uppgift, fråga dig själv:**
+
+1. **Vad tog för lång tid?**
+   - Exempel: "Gissade fältnamn istället för att kolla koden först"
+   - Åtgärd: Lägg till "Kod-först approach" som standard
+
+2. **Vilka problem upprepades?**
+   - Exempel: "Timing issues i 5 olika tester"
+   - Åtgärd: Skapa pattern för "Vänta på state change"
+
+3. **Vad kan bli ett pattern?**
+   - Exempel: "Empty state handling fungerade bra"
+   - Åtgärd: Dokumentera som återanvändbart pattern
+
+4. **Hur minskar vi iterationer nästa gång?**
+   - Exempel: "Screenshots + Codegen sparade 3-4 iterationer"
+   - Åtgärd: Lägg till i standard workflow
+
+**Gör detta till en vana! Det är skillnaden mellan att upprepa misstag och att kontinuerligt förbättras.** 🚀
+
+---
+
 ## 🔑 Kritiska Filer & Patterns
 
 ### Konfiguration
@@ -497,6 +759,18 @@ Cmd+Shift+P → "TypeScript: Restart TS Server"
 5. Rensa cache (`.next`, `node_modules/.cache`)
 
 ## 🔄 Senaste Ändringar i Arbetsflödet
+
+### 2025-11-13
+- **Lade till E2E-testning sektion med lärdomar från implementation**
+  - Kod-först approach: Minskar iterationer från 5-10 till 1-2
+  - Test data management patterns för parallella tester
+  - Selector best practices (data-testid > roles > nth())
+  - Timing & waits patterns
+  - Meta-lärdom: Vikten av att reflektera aktivt efter varje uppgift
+- **Dokumenterade att aktivt lärande ska bli en vana**
+  - Efter varje större uppgift: stanna upp och reflektera
+  - Identifiera patterns som kan återanvändas
+  - Förbättra processen kontinuerligt
 
 ### 2025-11-12
 - Separerade CLAUDE.md (hur vi jobbar) från README.md (vad vi byggt)
