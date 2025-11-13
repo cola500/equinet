@@ -54,6 +54,11 @@ export default function ProviderDetailPage() {
   const [bookedSlots, setBookedSlots] = useState<
     Array<{ startTime: string; endTime: string; serviceName: string }>
   >([])
+  const [dayAvailability, setDayAvailability] = useState<{
+    isClosed: boolean
+    openingTime: string | null
+    closingTime: string | null
+  } | null>(null)
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
 
   useEffect(() => {
@@ -92,6 +97,11 @@ export default function ProviderDetailPage() {
       if (response.ok) {
         const data = await response.json()
         setBookedSlots(data.bookedSlots || [])
+        setDayAvailability({
+          isClosed: data.isClosed,
+          openingTime: data.openingTime,
+          closingTime: data.closingTime,
+        })
       }
     } catch (error) {
       console.error("Error fetching availability:", error)
@@ -326,14 +336,40 @@ export default function ProviderDetailPage() {
                 Varaktighet: {selectedService?.durationMinutes} min
               </p>
 
-              {/* Show booked slots */}
+              {/* Show availability status */}
               {isLoadingAvailability && (
                 <div className="text-xs text-gray-500 flex items-center gap-1">
                   <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-500"></div>
                   Kollar tillgänglighet...
                 </div>
               )}
-              {!isLoadingAvailability && bookedSlots.length > 0 && (
+
+              {/* Show if closed */}
+              {!isLoadingAvailability && dayAvailability?.isClosed && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-xs font-medium text-red-800">
+                    ⚠️ Leverantören är stängd denna dag
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    Vänligen välj ett annat datum.
+                  </p>
+                </div>
+              )}
+
+              {/* Show opening hours */}
+              {!isLoadingAvailability && !dayAvailability?.isClosed && dayAvailability?.openingTime && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-xs font-medium text-blue-800">
+                    🕒 Öppettider: {dayAvailability.openingTime} - {dayAvailability.closingTime}
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Bokning måste vara inom öppettiderna.
+                  </p>
+                </div>
+              )}
+
+              {/* Show booked slots */}
+              {!isLoadingAvailability && !dayAvailability?.isClosed && bookedSlots.length > 0 && (
                 <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
                   <p className="text-xs font-medium text-amber-800 mb-2">
                     Redan bokade tider detta datum:
@@ -347,7 +383,7 @@ export default function ProviderDetailPage() {
                   </div>
                 </div>
               )}
-              {!isLoadingAvailability && bookedSlots.length === 0 && (
+              {!isLoadingAvailability && !dayAvailability?.isClosed && bookedSlots.length === 0 && (
                 <p className="text-xs text-green-600">
                   ✓ Inga bokningar detta datum ännu
                 </p>
@@ -401,7 +437,12 @@ export default function ProviderDetailPage() {
               >
                 Avbryt
               </Button>
-              <Button type="submit">Skicka bokningsförfrågan</Button>
+              <Button
+                type="submit"
+                disabled={dayAvailability?.isClosed}
+              >
+                {dayAvailability?.isClosed ? "Stängt denna dag" : "Skicka bokningsförfrågan"}
+              </Button>
             </div>
           </form>
         </DialogContent>

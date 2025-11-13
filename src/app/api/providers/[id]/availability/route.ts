@@ -29,8 +29,32 @@ export async function GET(
       )
     }
 
-    // Get all confirmed/pending bookings for the provider on that date
+    // Get day of week for the date (0 = Monday, 6 = Sunday)
     const bookingDate = new Date(date)
+    const dayOfWeek = (bookingDate.getDay() + 6) % 7 // Convert JS day (0=Sunday) to our format (0=Monday)
+
+    // Get availability schedule for this day of week
+    const availability = await prisma.availability.findFirst({
+      where: {
+        providerId,
+        dayOfWeek,
+        isActive: true,
+      },
+    })
+
+    // If provider is closed this day, return that info
+    if (!availability || availability.isClosed) {
+      return NextResponse.json({
+        date,
+        dayOfWeek,
+        isClosed: true,
+        openingTime: null,
+        closingTime: null,
+        bookedSlots: [],
+      })
+    }
+
+    // Get all confirmed/pending bookings for the provider on that date
     const bookings = await prisma.booking.findMany({
       where: {
         providerId,
@@ -55,6 +79,10 @@ export async function GET(
 
     return NextResponse.json({
       date,
+      dayOfWeek,
+      isClosed: false,
+      openingTime: availability.startTime,
+      closingTime: availability.endTime,
       bookedSlots: bookings.map((b) => ({
         startTime: b.startTime,
         endTime: b.endTime,
