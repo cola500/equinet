@@ -54,12 +54,18 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
+      testIgnore: /.*cleanup\.setup\.ts/, // Don't run cleanup in setup phase
     },
     // Main test project with dependency on setup
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'], // Run setup project before these tests
+    },
+    // Cleanup project that runs after all tests
+    {
+      name: 'cleanup',
+      testMatch: /.*cleanup\.setup\.ts/,
     },
   ],
 
