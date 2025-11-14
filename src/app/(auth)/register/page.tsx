@@ -58,10 +58,7 @@ export default function RegisterPage() {
         throw new Error(result.error || "Något gick fel")
       }
 
-      // Show success message
-      toast.success("Kontot har skapats! Du kan nu logga in.")
-
-      // Redirect to login page
+      // Redirect to login page (toast will be shown there)
       router.push("/login?registered=true")
     } catch (error: any) {
       toast.error(error.message || "Något gick fel vid registrering")
