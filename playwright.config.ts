@@ -61,6 +61,7 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'], // Run setup project before these tests
+      teardown: 'cleanup', // Run cleanup after all chromium tests
     },
     // Cleanup project that runs after all tests
     {
