@@ -259,8 +259,7 @@ export default function ProviderProfilePage() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Min profil</h1>
+        <h1 className="text-3xl font-bold mb-8">Min profil</h1>
 
           {/* Profile Completion Indicator */}
           {calculateProfileCompletion() < 100 && (
@@ -533,9 +532,8 @@ export default function ProviderProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Availability Schedule Card */}
-          {profile && <AvailabilitySchedule providerId={profile.id} />}
-        </div>
+        {/* Availability Schedule Card */}
+        {profile && <AvailabilitySchedule providerId={profile.id} />}
       </main>
     </div>
   )
