@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { signOut } from "next-auth/react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
+import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
 interface ProviderProfile {
   id: string
@@ -31,7 +30,7 @@ interface ProviderProfile {
 
 export default function ProviderProfilePage() {
   const router = useRouter()
-  const { user, isLoading, isProvider } = useAuth()
+  const { isLoading, isProvider } = useAuth()
   const [profile, setProfile] = useState<ProviderProfile | null>(null)
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
   const [isEditingBusiness, setIsEditingBusiness] = useState(false)
@@ -175,10 +174,6 @@ export default function ProviderProfilePage() {
     setIsEditingBusiness(false)
   }
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" })
-  }
-
   // Calculate profile completion
   const calculateProfileCompletion = () => {
     if (!profile) return 0
@@ -209,57 +204,8 @@ export default function ProviderProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-green-800">
-            Equinet
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.name}</span>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              Logga ut
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-6">
-            <Link
-              href="/provider/dashboard"
-              className="py-3 text-gray-600 hover:text-gray-900"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/provider/services"
-              className="py-3 text-gray-600 hover:text-gray-900"
-            >
-              Mina tjänster
-            </Link>
-            <Link
-              href="/provider/bookings"
-              className="py-3 text-gray-600 hover:text-gray-900"
-            >
-              Bokningar
-            </Link>
-            <Link
-              href="/provider/profile"
-              className="py-3 border-b-2 border-green-600 text-green-600 font-medium"
-            >
-              Min profil
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Min profil</h1>
+    <ProviderLayout>
+      <h1 className="text-3xl font-bold mb-8">Min profil</h1>
 
           {/* Profile Completion Indicator */}
           {calculateProfileCompletion() < 100 && (
@@ -532,9 +478,8 @@ export default function ProviderProfilePage() {
             </CardContent>
           </Card>
 
-        {/* Availability Schedule Card */}
-        {profile && <AvailabilitySchedule providerId={profile.id} />}
-      </main>
-    </div>
+      {/* Availability Schedule Card */}
+      {profile && <AvailabilitySchedule providerId={profile.id} />}
+    </ProviderLayout>
   )
 }

@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
 export default function ProviderDashboard() {
   const router = useRouter()
-  const { user, isLoading, isProvider } = useAuth()
+  const { isLoading, isProvider } = useAuth()
   const [services, setServices] = useState([])
   const [bookings, setBookings] = useState([])
   const [error, setError] = useState<string | null>(null)
@@ -61,10 +61,6 @@ export default function ProviderDashboard() {
     }
   }
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" })
-  }
-
   if (isLoading || !isProvider) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -77,59 +73,8 @@ export default function ProviderDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-green-800">
-            Equinet
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">
-              {user?.name}
-            </span>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              Logga ut
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-6">
-            <Link
-              href="/provider/dashboard"
-              className="py-3 border-b-2 border-green-600 text-green-600 font-medium"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/provider/services"
-              className="py-3 text-gray-600 hover:text-gray-900"
-            >
-              Mina tjänster
-            </Link>
-            <Link
-              href="/provider/bookings"
-              className="py-3 text-gray-600 hover:text-gray-900"
-            >
-              Bokningar
-            </Link>
-            <Link
-              href="/provider/profile"
-              className="py-3 text-gray-600 hover:text-gray-900"
-            >
-              Min profil
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Välkommen tillbaka!</h1>
+    <ProviderLayout>
+      <h1 className="text-3xl font-bold mb-8">Välkommen tillbaka!</h1>
 
         {error ? (
           <Card>
@@ -367,7 +312,6 @@ export default function ProviderDashboard() {
         )}
           </>
         )}
-      </main>
-    </div>
+    </ProviderLayout>
   )
 }

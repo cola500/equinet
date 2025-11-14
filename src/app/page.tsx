@@ -1,21 +1,13 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Header } from "@/components/layout/Header"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <div className="text-2xl font-bold text-green-800">Equinet</div>
-        <div className="space-x-4">
-          <Link href="/login">
-            <Button variant="ghost">Logga in</Button>
-          </Link>
-          <Link href="/register">
-            <Button>Kom igång</Button>
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-20">
