@@ -840,6 +840,106 @@ Cmd+Shift+P → "TypeScript: Restart TS Server"
 - **CLAUDE.md** - Detta dokument (arbetsprocesser)
 - **prisma/schema.prisma** - Databasschema
 
+## ✅ Definition of Done (DoD)
+
+> **Filosofi**: "Koden gör vad den ska och förstör inget annat i processen."
+
+**DoD är vår quality checklist** - en uppgift är inte klar förrän ALLA punkter är avcheckade.
+
+### 🎯 Version 1.0 (Lean Start - Vi bygger ut över tid!)
+
+En feature/uppgift är **DONE** när:
+
+#### 1. Funktionalitet
+- [ ] **Fungerar som förväntat** - Manuellt testad i browser
+- [ ] **Inga TypeScript-fel** - `npx tsc --noEmit` passerar
+- [ ] **Inga console errors** - Browser console är ren
+- [ ] **Responsiv** - Fungerar på desktop (mobile nice-to-have)
+
+#### 2. Kod-kvalitet
+- [ ] **Följer projektkonventioner** - Samma stil som befintlig kod
+- [ ] **Säker kod** - Ingen XSS, SQL injection, eller andra OWASP-risker
+- [ ] **Error handling** - Använder try-catch, loggar fel tydligt
+- [ ] **Validering** - Zod-validering på både client OCH server
+
+#### 3. Dokumentation
+- [ ] **README.md uppdaterad** - Om ny feature, komponent eller struktur
+- [ ] **Kommentarer vid behov** - Komplex logik är förklarad
+- [ ] **Komponent-README** - Nya komponenter har egen dokumentation (ex: `components/layout/README.md`)
+
+#### 4. Git
+- [ ] **Committed** - Med beskrivande commit message
+- [ ] **Pushad** - Till remote repository
+
+#### 5. Testning (växer över tid)
+**Nuvarande krav (MVP):**
+- [ ] **Manuell testning** - Hela user flow testad
+
+**Framtida krav (när vi växer):**
+- [ ] Unit/integration tester för API routes
+- [ ] E2E-tester uppdaterade vid UI-ändringar
+- [ ] Alla tester passerar (`npm test && npm run test:e2e`)
+
+---
+
+### 📝 DoD Checklist i Praktiken
+
+**Exempel: "Lägg till layout-komponent system"**
+
+- [x] ✅ Funktionalitet
+  - [x] Header visas konsekvent på alla sidor
+  - [x] Navigation fungerar korrekt
+  - [x] Ingen TypeScript-fel
+  - [x] Inga console errors
+  - [x] Responsiv design
+
+- [x] ✅ Kod-kvalitet
+  - [x] Följer projektets komponentstruktur
+  - [x] Auth-kontroller på plats
+  - [x] Error boundaries (där relevant)
+
+- [x] ✅ Dokumentation
+  - [x] README.md uppdaterad med layout-struktur
+  - [x] `components/layout/README.md` skapad med exempel
+
+- [x] ✅ Git
+  - [x] Committed med beskrivande meddelande
+  - [x] Pushad till main
+
+- [x] ✅ Testning
+  - [x] Manuellt testad på alla sidor
+
+**Resultat:** Feature är DONE! ✨
+
+---
+
+### 🔄 Evolverande DoD
+
+**DoD ska uppdateras regelbundet!** Efter varje större milstolpe eller retrospective:
+
+**När lägga till mer?**
+- När vi hittat återkommande buggar → Lägg till check för det
+- När vi byggt ut testsuite → Höj testkrav
+- När vi närmar oss produktion → Lägg till säkerhet/performance-checks
+
+**Nuvarande TODO för framtida versioner:**
+- [ ] Performance budgets (när vi optimerar)
+- [ ] Accessibility checks (WCAG compliance)
+- [ ] Security scans (när vi går mot prod)
+- [ ] Cross-browser testing (Safari, Firefox, Chrome)
+
+---
+
+### 💡 Varför DoD?
+
+✅ **Konsekvent kvalitet** - Varje feature håller samma standard
+✅ **Mindre teknisk skuld** - Vi skippar inga steg
+✅ **Färre buggar** - Fångar problem innan de blir större
+✅ **Bättre dokumentation** - Framtida utvecklare (och vi själva!) förstår koden
+✅ **Trygghet** - Vi vet att koden är produktionsklar
+
+---
+
 ## 💡 Best Practices Checklista
 
 ### Innan du börjar koda
@@ -858,6 +958,7 @@ Cmd+Shift+P → "TypeScript: Restart TS Server"
 - [ ] Använd engelska i kod & kommentarer
 
 ### Innan du commitar
+- [ ] **Kolla DoD-checklistan ovan!** ⬆️
 - [ ] Kör alla tester (`npm test`)
 - [ ] Kör TypeScript check (`npx tsc --noEmit`)
 - [ ] Testa manuellt i browser

@@ -113,6 +113,15 @@ equinet/
 │   │   │   └── [id]/         # Leverantörsdetalj & bokning
 │   │   └── dashboard/        # Redirect till rätt dashboard
 │   ├── components/
+│   │   ├── layout/           # Layout-komponenter för konsekvent design
+│   │   │   ├── Header.tsx           # Gemensam header med auth-aware navigation
+│   │   │   ├── ProviderNav.tsx      # Navigation tabs för provider-sidor
+│   │   │   ├── ProviderLayout.tsx   # Layout wrapper för provider-sidor
+│   │   │   ├── CustomerNav.tsx      # Navigation tabs för kund-sidor
+│   │   │   ├── CustomerLayout.tsx   # Layout wrapper för kund-sidor
+│   │   │   └── README.md            # Användningsdokumentation
+│   │   ├── provider/         # Provider-specifika komponenter
+│   │   │   └── AvailabilitySchedule.tsx  # Veckoschema för öppettider
 │   │   └── ui/               # shadcn/ui komponenter
 │   │       ├── password-requirements.tsx  # Lösenordsstyrkeindikator
 │   │       ├── alert-dialog.tsx  # Bekräftelsedialoger
