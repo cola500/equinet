@@ -88,8 +88,13 @@ test.describe('Authentication Flow', () => {
     // Submitta
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Verifiera redirect - kunder går till /providers
-    await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
+    // Verifiera redirect - kunder går först till /dashboard som redirectar till /providers
+    await expect(page).toHaveURL(/\/(dashboard|providers)/, { timeout: 10000 });
+
+    // Om vi är på /dashboard, vänta på redirect till /providers
+    if (page.url().includes('/dashboard')) {
+      await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
+    }
   });
 
   test('should show error on invalid login', async ({ page }) => {
