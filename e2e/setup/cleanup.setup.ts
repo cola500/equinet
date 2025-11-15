@@ -8,25 +8,103 @@ teardown('cleanup test data after all tests', async () => {
 
   try {
     // Rätt ordning för att undvika foreign key constraints:
-    // 1. Bokningar (har foreign keys till customer och service)
-    // 2. Availability (har foreign key till provider)
-    // 3. Services (har foreign key till provider)
-    // 4. Providers (har foreign key till user)
-    // 5. Users (root)
+    // 1. RouteStops (har foreign keys till Route och RouteOrder)
+    // 2. Routes (har foreign key till provider)
+    // 3. RouteOrders (har foreign key till customer)
+    // 4. Bokningar (har foreign keys till customer och service)
+    // 5. Availability (har foreign key till provider)
+    // 6. Services (har foreign key till provider)
+    // 7. Providers (har foreign key till user)
+    // 8. Users (root)
 
-    // 1. Ta bort ALLA bokningar relaterade till test-users/providers
+    // VIKTIGT: Behåll test@example.com och provider@example.com (används i beforeEach)
+    const keepEmails = ['test@example.com', 'provider@example.com']
+
+    // 1. Ta bort RouteStops från dynamiskt skapade test-data
+    const deletedRouteStops = await prisma.routeStop.deleteMany({
+      where: {
+        OR: [
+          // RouteStops från routes med dynamiskt skapade providers
+          {
+            route: {
+              provider: {
+                user: {
+                  AND: [
+                    { email: { contains: '@example.com' } },
+                    { email: { notIn: keepEmails } }
+                  ]
+                }
+              }
+            }
+          },
+          // RouteStops från dynamiskt skapade RouteOrders
+          {
+            routeOrder: {
+              customer: {
+                AND: [
+                  { email: { contains: '@example.com' } },
+                  { email: { notIn: keepEmails } }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    })
+    console.log(`  ✓ Deleted ${deletedRouteStops.count} test route stops`)
+
+    // 2. Ta bort Routes från dynamiskt skapade test-providers
+    const deletedRoutes = await prisma.route.deleteMany({
+      where: {
+        provider: {
+          user: {
+            AND: [
+              { email: { contains: '@example.com' } },
+              { email: { notIn: keepEmails } }
+            ]
+          }
+        }
+      }
+    })
+    console.log(`  ✓ Deleted ${deletedRoutes.count} test routes`)
+
+    // 3. Ta bort RouteOrders från dynamiskt skapade test-customers
+    const deletedRouteOrders = await prisma.routeOrder.deleteMany({
+      where: {
+        customer: {
+          AND: [
+            { email: { contains: '@example.com' } },
+            { email: { notIn: keepEmails } }
+          ]
+        }
+      }
+    })
+    console.log(`  ✓ Deleted ${deletedRouteOrders.count} test route orders`)
+
+    // 4. Ta bort ALLA bokningar relaterade till dynamiskt skapade test-users
+    // Men INTE bokningar för test@example.com och provider@example.com
     const deletedBookings = await prisma.booking.deleteMany({
       where: {
         OR: [
-          // Bokningar från test-customers
-          { customer: { email: { contains: '@example.com' } } },
-          { customer: { email: { contains: 'test' } } },
-          { customer: { email: { contains: 'provider' } } },
-          // Bokningar för tjänster från test-providers
+          // Bokningar från dynamiskt skapade test-customers (innehåller timestamp i emailen)
+          {
+            customer: {
+              AND: [
+                { email: { contains: '@example.com' } },
+                { email: { notIn: keepEmails } }
+              ]
+            }
+          },
+          // Bokningar för tjänster från dynamiskt skapade test-providers
           {
             service: {
               provider: {
-                user: { email: { contains: '@example.com' } }
+                user: {
+                  AND: [
+                    { email: { contains: '@example.com' } },
+                    { email: { notIn: keepEmails } }
+                  ]
+                }
               }
             }
           }
@@ -35,57 +113,61 @@ teardown('cleanup test data after all tests', async () => {
     })
     console.log(`  ✓ Deleted ${deletedBookings.count} test bookings`)
 
-    // 2. Ta bort availability från test-providers
+    // 5. Ta bort availability från dynamiskt skapade test-providers
+    // BEHÅLL availability för provider@example.com
     const deletedAvailability = await prisma.availability.deleteMany({
       where: {
         provider: {
           user: {
-            email: { contains: '@example.com' }
+            AND: [
+              { email: { contains: '@example.com' } },
+              { email: { notIn: keepEmails } }
+            ]
           }
         }
       }
     })
     console.log(`  ✓ Deleted ${deletedAvailability.count} test availability entries`)
 
-    // 3. Ta bort tjänster från test-providers
+    // 6. Ta bort tjänster från dynamiskt skapade test-providers
+    // BEHÅLL services för provider@example.com
     const deletedServices = await prisma.service.deleteMany({
       where: {
         provider: {
           user: {
-            email: { contains: '@example.com' }
+            AND: [
+              { email: { contains: '@example.com' } },
+              { email: { notIn: keepEmails } }
+            ]
           }
         }
       }
     })
     console.log(`  ✓ Deleted ${deletedServices.count} test services`)
 
-    // 4. Ta bort test providers
+    // 7. Ta bort dynamiskt skapade test providers
+    // BEHÅLL provider för provider@example.com
     const deletedProviders = await prisma.provider.deleteMany({
       where: {
         user: {
-          email: { contains: '@example.com' }
+          AND: [
+            { email: { contains: '@example.com' } },
+            { email: { notIn: keepEmails } }
+          ]
         }
       }
     })
     console.log(`  ✓ Deleted ${deletedProviders.count} test providers`)
 
-    // 5. Ta bort testanvändare (skapade under testkörningen)
-    // BEHÅLL dock test@example.com och provider@example.com som används i beforeEach
+    // 8. Ta bort dynamiskt skapade testanvändare
+    // BEHÅLL test@example.com och provider@example.com som används i beforeEach
+    // Dynamiskt skapade users har timestamp i emailen (t.ex. test1731592746123@example.com)
     const deletedUsers = await prisma.user.deleteMany({
       where: {
-        AND: [
-          {
-            OR: [
-              { email: { contains: '@example.com' } },
-              { email: { contains: 'test' } },
-            ]
-          },
-          {
-            email: {
-              notIn: ['test@example.com', 'provider@example.com']
-            }
-          }
-        ]
+        email: {
+          contains: '@example.com',
+          notIn: keepEmails
+        }
       }
     })
     console.log(`  ✓ Deleted ${deletedUsers.count} test users`)

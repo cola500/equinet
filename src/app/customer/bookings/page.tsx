@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { Badge } from "@/components/ui/badge"
 
 interface Booking {
   id: string
@@ -41,12 +42,43 @@ interface Booking {
       lastName: string
     }
   }
+  type: "fixed"
 }
+
+interface RouteOrder {
+  id: string
+  serviceType: string
+  address: string
+  numberOfHorses: number
+  dateFrom: string
+  dateTo: string
+  priority: string
+  specialInstructions?: string
+  status: string
+  createdAt: string
+  routeStops?: Array<{
+    route: {
+      routeName: string
+      routeDate: string
+      provider: {
+        businessName: string
+        user: {
+          firstName: string
+          lastName: string
+        }
+      }
+    }
+    estimatedArrival?: string
+  }>
+  type: "flexible"
+}
+
+type CombinedBooking = Booking | RouteOrder
 
 export default function CustomerBookingsPage() {
   const router = useRouter()
   const { isLoading, isCustomer } = useAuth()
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const [bookings, setBookings] = useState<CombinedBooking[]>([])
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("upcoming")
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
@@ -69,13 +101,28 @@ export default function CustomerBookingsPage() {
     try {
       setIsLoadingBookings(true)
       setError(null)
-      const response = await fetch("/api/bookings")
-      if (response.ok) {
-        const data = await response.json()
-        setBookings(data)
-      } else {
+
+      // Fetch both regular bookings and route orders
+      const [bookingsRes, routeOrdersRes] = await Promise.all([
+        fetch("/api/bookings"),
+        fetch("/api/route-orders/my-orders")
+      ])
+
+      if (!bookingsRes.ok && !routeOrdersRes.ok) {
         setError("Kunde inte hämta bokningar")
+        return
       }
+
+      const regularBookings: Booking[] = bookingsRes.ok ? await bookingsRes.json() : []
+      const routeOrders: RouteOrder[] = routeOrdersRes.ok ? await routeOrdersRes.json() : []
+
+      // Add type field to distinguish between booking types
+      const combinedBookings: CombinedBooking[] = [
+        ...regularBookings.map(b => ({ ...b, type: "fixed" as const })),
+        ...routeOrders.map(r => ({ ...r, type: "flexible" as const }))
+      ]
+
+      setBookings(combinedBookings)
     } catch (error) {
       console.error("Error fetching bookings:", error)
       setError("Något gick fel. Kontrollera din internetanslutning.")
@@ -125,33 +172,45 @@ export default function CustomerBookingsPage() {
 
   const now = new Date()
   const filteredBookings = bookings.filter((booking) => {
-    const bookingDate = new Date(booking.bookingDate)
-    if (filter === "upcoming") {
-      return bookingDate >= now && (booking.status === "pending" || booking.status === "confirmed")
-    } else if (filter === "past") {
-      return bookingDate < now || booking.status === "completed" || booking.status === "cancelled"
+    if (booking.type === "fixed") {
+      const bookingDate = new Date(booking.bookingDate)
+      if (filter === "upcoming") {
+        return bookingDate >= now && (booking.status === "pending" || booking.status === "confirmed")
+      } else if (filter === "past") {
+        return bookingDate < now || booking.status === "completed" || booking.status === "cancelled"
+      }
+    } else {
+      // Flexible booking (RouteOrder)
+      const dateTo = new Date(booking.dateTo)
+      if (filter === "upcoming") {
+        return dateTo >= now && (booking.status === "pending" || booking.status === "in_route")
+      } else if (filter === "past") {
+        return dateTo < now || booking.status === "completed" || booking.status === "cancelled"
+      }
     }
     return true
   })
 
   const getStatusBadge = (status: string) => {
-    const styles = {
+    const styles: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800",
       confirmed: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
       completed: "bg-blue-100 text-blue-800",
+      in_route: "bg-purple-100 text-purple-800",
     }
 
-    const labels = {
+    const labels: Record<string, string> = {
       pending: "Väntar på svar",
       confirmed: "Bekräftad",
       cancelled: "Avbokad",
       completed: "Genomförd",
+      in_route: "Inplanerad i rutt",
     }
 
     return (
-      <span className={`text-xs px-2 py-1 rounded ${styles[status as keyof typeof styles]}`}>
-        {labels[status as keyof typeof labels] || status}
+      <span className={`text-xs px-2 py-1 rounded ${styles[status] || "bg-gray-100 text-gray-800"}`}>
+        {labels[status] || status}
       </span>
     )
   }
@@ -294,65 +353,141 @@ export default function CustomerBookingsPage() {
               <Card key={booking.id} data-testid="booking-item">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle>{booking.service.name}</CardTitle>
-                      <CardDescription>
-                        {booking.provider.businessName}
-                      </CardDescription>
+                    <div className="flex items-center gap-2">
+                      {booking.type === "fixed" ? (
+                        <div>
+                          <CardTitle>{booking.service.name}</CardTitle>
+                          <CardDescription>
+                            {booking.provider.businessName}
+                          </CardDescription>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <CardTitle>{booking.serviceType}</CardTitle>
+                            <Badge variant="outline" data-testid="booking-type-badge">Flexibel tid</Badge>
+                          </div>
+                          {booking.routeStops && booking.routeStops.length > 0 ? (
+                            <CardDescription>
+                              {booking.routeStops[0].route.provider.businessName}
+                            </CardDescription>
+                          ) : (
+                            <CardDescription>
+                              Väntar på ruttplanering
+                            </CardDescription>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {getStatusBadge(booking.status)}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="text-gray-600">Datum:</span>{" "}
-                        <span className="font-medium">
-                          {format(new Date(booking.bookingDate), "d MMMM yyyy", {
-                            locale: sv,
-                          })}
-                        </span>
+                  {booking.type === "fixed" ? (
+                    // Fixed time booking display
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <span className="text-gray-600">Datum:</span>{" "}
+                            <span className="font-medium">
+                              {format(new Date(booking.bookingDate), "d MMMM yyyy", {
+                                locale: sv,
+                              })}
+                            </span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-gray-600">Tid:</span>{" "}
+                            <span className="font-medium">
+                              {booking.startTime} - {booking.endTime}
+                            </span>
+                          </div>
+                          {booking.horseName && (
+                            <div className="text-sm">
+                              <span className="text-gray-600">Häst:</span>{" "}
+                              <span className="font-medium">{booking.horseName}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <span className="text-gray-600">Pris:</span>{" "}
+                            <span className="font-medium">{booking.service.price} kr</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-gray-600">Varaktighet:</span>{" "}
+                            <span className="font-medium">
+                              {booking.service.durationMinutes} min
+                            </span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-gray-600">Kontakt:</span>{" "}
+                            <span className="font-medium">
+                              {booking.provider.user.firstName}{" "}
+                              {booking.provider.user.lastName}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-gray-600">Tid:</span>{" "}
-                        <span className="font-medium">
-                          {booking.startTime} - {booking.endTime}
-                        </span>
-                      </div>
-                      {booking.horseName && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Häst:</span>{" "}
-                          <span className="font-medium">{booking.horseName}</span>
+                      {booking.customerNotes && (
+                        <div className="mt-4 p-3 bg-gray-50 rounded">
+                          <p className="text-sm text-gray-600">
+                            <strong>Dina kommentarer:</strong> {booking.customerNotes}
+                          </p>
                         </div>
                       )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="text-gray-600">Pris:</span>{" "}
-                        <span className="font-medium">{booking.service.price} kr</span>
+                    </>
+                  ) : (
+                    // Flexible booking display
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="text-sm" data-testid="booking-period">
+                            <span className="text-gray-600">Period:</span>{" "}
+                            <span className="font-medium">
+                              {format(new Date(booking.dateFrom), "d MMM", { locale: sv })} - {format(new Date(booking.dateTo), "d MMM yyyy", { locale: sv })}
+                            </span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-gray-600">Prioritet:</span>{" "}
+                            <Badge variant={booking.priority === "urgent" ? "destructive" : "secondary"}>
+                              {booking.priority === "urgent" ? "Akut" : "Normal"}
+                            </Badge>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-gray-600">Antal hästar:</span>{" "}
+                            <span className="font-medium">{booking.numberOfHorses}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <span className="text-gray-600">Adress:</span>{" "}
+                            <span className="font-medium">{booking.address}</span>
+                          </div>
+                          {booking.routeStops && booking.routeStops.length > 0 && booking.routeStops[0].estimatedArrival && (
+                            <div className="text-sm">
+                              <span className="text-gray-600">Beräknad ankomst:</span>{" "}
+                              <span className="font-medium">
+                                {format(new Date(booking.routeStops[0].estimatedArrival), "d MMM HH:mm", { locale: sv })}
+                              </span>
+                            </div>
+                          )}
+                          {booking.routeStops && booking.routeStops.length > 0 && (
+                            <div className="text-sm">
+                              <span className="text-gray-600">Rutt:</span>{" "}
+                              <span className="font-medium">{booking.routeStops[0].route.routeName}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-gray-600">Varaktighet:</span>{" "}
-                        <span className="font-medium">
-                          {booking.service.durationMinutes} min
-                        </span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-gray-600">Kontakt:</span>{" "}
-                        <span className="font-medium">
-                          {booking.provider.user.firstName}{" "}
-                          {booking.provider.user.lastName}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {booking.customerNotes && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded">
-                      <p className="text-sm text-gray-600">
-                        <strong>Dina kommentarer:</strong> {booking.customerNotes}
-                      </p>
-                    </div>
+                      {booking.specialInstructions && (
+                        <div className="mt-4 p-3 bg-gray-50 rounded">
+                          <p className="text-sm text-gray-600">
+                            <strong>Instruktioner:</strong> {booking.specialInstructions}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Cancel button - only show for pending/confirmed bookings */}

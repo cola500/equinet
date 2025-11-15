@@ -13,6 +13,8 @@ export default function ProviderDashboard() {
   const { isLoading, isProvider } = useAuth()
   const [services, setServices] = useState([])
   const [bookings, setBookings] = useState([])
+  const [routes, setRoutes] = useState([])
+  const [availableRouteOrders, setAvailableRouteOrders] = useState([])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
 
@@ -32,7 +34,12 @@ export default function ProviderDashboard() {
     setIsLoadingData(true)
     setError(null)
     try {
-      await Promise.all([fetchServices(), fetchBookings()])
+      await Promise.all([
+        fetchServices(),
+        fetchBookings(),
+        fetchRoutes(),
+        fetchAvailableRouteOrders()
+      ])
     } catch (error) {
       console.error("Error fetching data:", error)
       setError("Kunde inte hämta data. Kontrollera din internetanslutning.")
@@ -59,6 +66,24 @@ export default function ProviderDashboard() {
     } else {
       throw new Error("Failed to fetch bookings")
     }
+  }
+
+  const fetchRoutes = async () => {
+    const response = await fetch("/api/routes/my-routes")
+    if (response.ok) {
+      const data = await response.json()
+      setRoutes(data)
+    }
+    // Ignore errors for routes - not critical
+  }
+
+  const fetchAvailableRouteOrders = async () => {
+    const response = await fetch("/api/route-orders/available")
+    if (response.ok) {
+      const data = await response.json()
+      setAvailableRouteOrders(data)
+    }
+    // Ignore errors - not critical
   }
 
   if (isLoading || !isProvider) {
@@ -184,7 +209,7 @@ export default function ProviderDashboard() {
               </Card>
             )}
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Stats Cards */}
           <Card>
             <CardHeader>
@@ -227,7 +252,81 @@ export default function ProviderDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Tillgängliga ruttbeställningar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {availableRouteOrders.length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Routes Section */}
+        {routes.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Aktiva rutter</CardTitle>
+                  <CardDescription>Dina planerade och pågående rutter</CardDescription>
+                </div>
+                <Link href="/provider/routes">
+                  <Button variant="outline" size="sm">
+                    Se alla rutter →
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {routes.slice(0, 3).map((route: any) => {
+                  const completedCount = route.stops?.filter((s: any) => s.status === "completed").length || 0
+                  const totalStops = route.stops?.length || 0
+                  const progressPercent = totalStops > 0 ? (completedCount / totalStops) * 100 : 0
+
+                  return (
+                    <Link key={route.id} href={`/provider/routes/${route.id}`}>
+                      <div className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-semibold">{route.routeName}</h4>
+                            <p className="text-sm text-gray-600">
+                              {route.routeDate && new Date(route.routeDate).toLocaleDateString('sv-SE')} • Starttid: {route.startTime}
+                            </p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            route.status === "completed" ? "bg-blue-100 text-blue-800" :
+                            route.status === "active" ? "bg-green-100 text-green-800" :
+                            "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {route.status === "completed" ? "Klar" : route.status === "active" ? "Aktiv" : "Planerad"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all"
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-600">
+                            {completedCount}/{totalStops} stopp
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <Card className="mb-8">
@@ -236,7 +335,7 @@ export default function ProviderDashboard() {
             <CardDescription>Vanliga åtgärder</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <Link href="/provider/services">
                 <Button className="w-full" variant="outline">
                   Hantera tjänster
@@ -245,6 +344,11 @@ export default function ProviderDashboard() {
               <Link href="/provider/bookings">
                 <Button className="w-full" variant="outline">
                   Se bokningar
+                </Button>
+              </Link>
+              <Link href="/provider/route-planning">
+                <Button className="w-full" variant="outline">
+                  Planera rutter
                 </Button>
               </Link>
             </div>

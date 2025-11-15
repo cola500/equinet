@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
 import { format, addDays } from "date-fns"
 import { sv } from "date-fns/locale"
@@ -44,12 +46,20 @@ export default function ProviderDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
+  const [isFlexibleBooking, setIsFlexibleBooking] = useState(false)
   const [bookingForm, setBookingForm] = useState({
     bookingDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
     startTime: "09:00",
     horseName: "",
     horseInfo: "",
     customerNotes: "",
+  })
+  const [flexibleForm, setFlexibleForm] = useState({
+    dateFrom: format(addDays(new Date(), 1), "yyyy-MM-dd"),
+    dateTo: format(addDays(new Date(), 7), "yyyy-MM-dd"),
+    priority: "normal",
+    numberOfHorses: 1,
+    specialInstructions: "",
   })
   const [bookedSlots, setBookedSlots] = useState<
     Array<{ startTime: string; endTime: string; serviceName: string }>
@@ -110,12 +120,12 @@ export default function ProviderDetailPage() {
     }
   }
 
-  // Fetch availability when date changes
+  // Fetch availability when date changes (only for fixed time bookings)
   useEffect(() => {
-    if (isBookingDialogOpen && bookingForm.bookingDate) {
+    if (isBookingDialogOpen && !isFlexibleBooking && bookingForm.bookingDate) {
       fetchAvailability(bookingForm.bookingDate)
     }
-  }, [bookingForm.bookingDate, isBookingDialogOpen])
+  }, [bookingForm.bookingDate, isBookingDialogOpen, isFlexibleBooking])
 
   const handleBookService = (service: Service) => {
     if (!isAuthenticated) {
@@ -147,42 +157,75 @@ export default function ProviderDetailPage() {
     if (!selectedService || !provider) return
 
     try {
-      const endTime = calculateEndTime(
-        bookingForm.startTime,
-        selectedService.durationMinutes
-      )
+      if (isFlexibleBooking) {
+        // Create RouteOrder for flexible booking
+        const response = await fetch("/api/route-orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            serviceType: selectedService.name,
+            address: provider.address || `${provider.businessName}, ${provider.city}`,
+            latitude: 57.7089, // Default Göteborg coordinates - would be from provider in real app
+            longitude: 11.9746,
+            numberOfHorses: flexibleForm.numberOfHorses,
+            dateFrom: flexibleForm.dateFrom,
+            dateTo: flexibleForm.dateTo,
+            priority: flexibleForm.priority,
+            specialInstructions: flexibleForm.specialInstructions,
+            contactPhone: "0700000000", // Placeholder - should get from user profile in real app
+          }),
+        })
 
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          providerId: provider.id,
-          serviceId: selectedService.id,
-          bookingDate: bookingForm.bookingDate,
-          startTime: bookingForm.startTime,
-          endTime,
-          horseName: bookingForm.horseName,
-          horseInfo: bookingForm.horseInfo,
-          customerNotes: bookingForm.customerNotes,
-        }),
-      })
+        const data = await response.json()
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        // Handle specific conflict error (time slot not available)
-        if (response.status === 409) {
-          toast.error(data.error || "Tiden är inte tillgänglig")
-          return // Don't close dialog so user can pick another time
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create route order")
         }
-        throw new Error(data.error || "Failed to create booking")
-      }
 
-      toast.success("Bokningsförfrågan skickad!")
-      setIsBookingDialogOpen(false)
-      router.push("/customer/bookings")
+        toast.success("Flexibel bokning skapad! Leverantören planerar in dig i sin rutt.")
+        setIsBookingDialogOpen(false)
+        router.push("/customer/bookings")
+      } else {
+        // Create regular Booking for fixed time
+        const endTime = calculateEndTime(
+          bookingForm.startTime,
+          selectedService.durationMinutes
+        )
+
+        const response = await fetch("/api/bookings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            providerId: provider.id,
+            serviceId: selectedService.id,
+            bookingDate: bookingForm.bookingDate,
+            startTime: bookingForm.startTime,
+            endTime,
+            horseName: bookingForm.horseName,
+            horseInfo: bookingForm.horseInfo,
+            customerNotes: bookingForm.customerNotes,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          // Handle specific conflict error (time slot not available)
+          if (response.status === 409) {
+            toast.error(data.error || "Tiden är inte tillgänglig")
+            return // Don't close dialog so user can pick another time
+          }
+          throw new Error(data.error || "Failed to create booking")
+        }
+
+        toast.success("Bokningsförfrågan skickad!")
+        setIsBookingDialogOpen(false)
+        router.push("/customer/bookings")
+      }
     } catch (error: any) {
       console.error("Error creating booking:", error)
       toast.error(error.message || "Kunde inte skapa bokning")
@@ -299,7 +342,7 @@ export default function ProviderDetailPage() {
 
       {/* Booking Dialog */}
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Boka {selectedService?.name}</DialogTitle>
             <DialogDescription>
@@ -307,34 +350,92 @@ export default function ProviderDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitBooking} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="bookingDate">Datum *</Label>
-              <Input
-                id="bookingDate"
-                type="date"
-                value={bookingForm.bookingDate}
-                onChange={(e) =>
-                  setBookingForm({ ...bookingForm, bookingDate: e.target.value })
+            {/* Booking Type Toggle */}
+            <div className="p-4 rounded-lg border-2 border-blue-300 bg-gray-50 transition-all duration-300" data-testid="booking-type-section">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="booking-type" className="text-base font-medium cursor-pointer">
+                    {isFlexibleBooking ? "🔄 Flexibel tid" : "📅 Fast tid"}
+                  </Label>
+                  <div className="group relative">
+                    <button
+                      type="button"
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="Information om bokningstyper"
+                    >
+                      ℹ️
+                    </button>
+                    <div className="invisible group-hover:visible absolute left-0 top-6 z-10 w-64 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-xs">
+                      <div className="mb-2">
+                        <p className="font-semibold text-blue-700">📅 Fast tid:</p>
+                        <ul className="list-disc list-inside text-gray-600 mt-1 space-y-1">
+                          <li>Du väljer exakt datum och tid</li>
+                          <li>Direkt bekräftelse om tillgänglig</li>
+                          <li>Passar när du har tight schema</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-purple-700">🔄 Flexibel tid:</p>
+                        <ul className="list-disc list-inside text-gray-600 mt-1 space-y-1">
+                          <li>Välj period (flera dagar)</li>
+                          <li>Leverantören planerar optimal tid</li>
+                          <li>Passar när du är flexibel</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Switch
+                  id="booking-type"
+                  data-testid="booking-type-toggle"
+                  checked={isFlexibleBooking}
+                  onCheckedChange={setIsFlexibleBooking}
+                  className={`${
+                    isFlexibleBooking
+                      ? 'data-[state=checked]:bg-purple-700 shadow-md'
+                      : 'data-[state=unchecked]:bg-blue-600 shadow-md'
+                  }`}
+                />
+              </div>
+              <p className="text-sm text-gray-700">
+                {isFlexibleBooking
+                  ? "Välj ett datumspann (t.ex. '1-5 januari') så planerar leverantören in dig i sin rutt"
+                  : "Du väljer exakt datum och tid (t.ex. 'Fredag 15 nov kl 14:00')"
                 }
-                min={format(new Date(), "yyyy-MM-dd")}
-                required
-              />
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="startTime">Önskad starttid *</Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={bookingForm.startTime}
-                onChange={(e) =>
-                  setBookingForm({ ...bookingForm, startTime: e.target.value })
-                }
-                required
-              />
-              <p className="text-xs text-gray-600">
-                Varaktighet: {selectedService?.durationMinutes} min
-              </p>
+            {/* Fixed Time Booking Fields */}
+            {!isFlexibleBooking && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingDate">Datum *</Label>
+                  <Input
+                    id="bookingDate"
+                    type="date"
+                    value={bookingForm.bookingDate}
+                    onChange={(e) =>
+                      setBookingForm({ ...bookingForm, bookingDate: e.target.value })
+                    }
+                    min={format(new Date(), "yyyy-MM-dd")}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="startTime">Önskad starttid *</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={bookingForm.startTime}
+                    onChange={(e) =>
+                      setBookingForm({ ...bookingForm, startTime: e.target.value })
+                    }
+                    required
+                  />
+                  <p className="text-xs text-gray-600">
+                    Varaktighet: {selectedService?.durationMinutes} min
+                  </p>
 
               {/* Show availability status */}
               {isLoadingAvailability && (
@@ -377,7 +478,7 @@ export default function ProviderDetailPage() {
                   <div className="space-y-1">
                     {bookedSlots.map((slot, i) => (
                       <div key={i} className="text-xs text-amber-700">
-                        • {slot.startTime} - {slot.endTime} ({slot.serviceName})
+                        • {slot.startTime} - {slot.endTime}
                       </div>
                     ))}
                   </div>
@@ -390,44 +491,132 @@ export default function ProviderDetailPage() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="horseName">Hästens namn</Label>
-              <Input
-                id="horseName"
-                value={bookingForm.horseName}
-                onChange={(e) =>
-                  setBookingForm({ ...bookingForm, horseName: e.target.value })
-                }
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="horseName">Hästens namn</Label>
+                  <Input
+                    id="horseName"
+                    value={bookingForm.horseName}
+                    onChange={(e) =>
+                      setBookingForm({ ...bookingForm, horseName: e.target.value })
+                    }
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="horseInfo">Information om hästen</Label>
-              <Textarea
-                id="horseInfo"
-                value={bookingForm.horseInfo}
-                onChange={(e) =>
-                  setBookingForm({ ...bookingForm, horseInfo: e.target.value })
-                }
-                rows={2}
-                placeholder="T.ex. ålder, ras, särskilda behov..."
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="horseInfo">Information om hästen</Label>
+                  <Textarea
+                    id="horseInfo"
+                    value={bookingForm.horseInfo}
+                    onChange={(e) =>
+                      setBookingForm({ ...bookingForm, horseInfo: e.target.value })
+                    }
+                    rows={2}
+                    placeholder="T.ex. ålder, ras, särskilda behov..."
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customerNotes">Övriga kommentarer</Label>
-              <Textarea
-                id="customerNotes"
-                value={bookingForm.customerNotes}
-                onChange={(e) =>
-                  setBookingForm({
-                    ...bookingForm,
-                    customerNotes: e.target.value,
-                  })
-                }
-                rows={2}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customerNotes">Övriga kommentarer</Label>
+                  <Textarea
+                    id="customerNotes"
+                    value={bookingForm.customerNotes}
+                    onChange={(e) =>
+                      setBookingForm({
+                        ...bookingForm,
+                        customerNotes: e.target.value,
+                      })
+                    }
+                    rows={2}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Flexible Booking Fields */}
+            {isFlexibleBooking && (
+              <div data-testid="flexible-booking-section">
+                <div className="space-y-2">
+                  <Label htmlFor="dateFrom">Från datum *</Label>
+                  <Input
+                    id="dateFrom"
+                    type="date"
+                    value={flexibleForm.dateFrom}
+                    onChange={(e) =>
+                      setFlexibleForm({ ...flexibleForm, dateFrom: e.target.value })
+                    }
+                    min={format(new Date(), "yyyy-MM-dd")}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dateTo">Till datum *</Label>
+                  <Input
+                    id="dateTo"
+                    type="date"
+                    value={flexibleForm.dateTo}
+                    onChange={(e) =>
+                      setFlexibleForm({ ...flexibleForm, dateTo: e.target.value })
+                    }
+                    min={flexibleForm.dateFrom}
+                    required
+                  />
+                  <p className="text-xs text-gray-600">
+                    Leverantören kan besöka dig när som helst under denna period
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Prioritet *</Label>
+                  <RadioGroup
+                    value={flexibleForm.priority}
+                    onValueChange={(value) =>
+                      setFlexibleForm({ ...flexibleForm, priority: value })
+                    }
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="normal" id="priority-normal" data-testid="priority-normal" />
+                      <Label htmlFor="priority-normal" className="font-normal cursor-pointer">
+                        Normal - Inom den valda perioden
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="urgent" id="priority-urgent" data-testid="priority-urgent" />
+                      <Label htmlFor="priority-urgent" className="font-normal cursor-pointer">
+                        Akut - Inom 48 timmar
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="numberOfHorses">Antal hästar *</Label>
+                  <Input
+                    id="numberOfHorses"
+                    type="number"
+                    min="1"
+                    value={flexibleForm.numberOfHorses}
+                    onChange={(e) =>
+                      setFlexibleForm({ ...flexibleForm, numberOfHorses: parseInt(e.target.value) || 1 })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="specialInstructions">Särskilda instruktioner</Label>
+                  <Textarea
+                    id="specialInstructions"
+                    value={flexibleForm.specialInstructions}
+                    onChange={(e) =>
+                      setFlexibleForm({ ...flexibleForm, specialInstructions: e.target.value })
+                    }
+                    rows={2}
+                    placeholder="T.ex. portkod, parkering, hästens behov..."
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 const providerProfileSchema = z.object({
@@ -52,26 +53,22 @@ export async function GET(request: NextRequest) {
 
 // PUT - Update current provider profile
 export async function PUT(request: NextRequest) {
+  let session: any = null
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
 
     if (!session || !session.user || session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-    })
-
-    if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
-    }
-
     const body = await request.json()
     const validatedData = providerProfileSchema.parse(body)
 
+    // Single query pattern: update directly using userId
+    // This eliminates race condition between findUnique and update
+    // If provider doesn't exist for this userId, Prisma will throw P2025 error
     const updatedProvider = await prisma.provider.update({
-      where: { id: provider.id },
+      where: { userId: session.user.id },
       data: validatedData,
       include: {
         user: {
@@ -87,6 +84,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(updatedProvider)
   } catch (error) {
+    // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
@@ -94,7 +92,53 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.error("Error updating provider profile:", error)
+    // Handle Prisma-specific errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // P2025: Record not found (provider doesn't exist for this userId)
+      if (error.code === "P2025") {
+        console.error("Provider not found for userId:", session?.user?.id)
+        return NextResponse.json(
+          { error: "Provider profile not found" },
+          { status: 404 }
+        )
+      }
+
+      // P2002: Unique constraint violation (e.g., duplicate businessName if there was such a constraint)
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          { error: "Ett företag med detta namn finns redan" },
+          { status: 409 }
+        )
+      }
+
+      // Other Prisma errors
+      console.error("Prisma error during profile update:", error.code, error.message)
+      return NextResponse.json(
+        { error: "Databasfel uppstod" },
+        { status: 500 }
+      )
+    }
+
+    // Handle Prisma initialization errors (database connection issues)
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      console.error("Database connection failed during profile update:", error.message)
+      return NextResponse.json(
+        { error: "Databasen är inte tillgänglig" },
+        { status: 503 }
+      )
+    }
+
+    // Handle query timeout errors
+    if (error instanceof Error && error.message.includes("Query timeout")) {
+      console.error("Query timeout during profile update:", error.message)
+      return NextResponse.json(
+        { error: "Förfrågan tog för lång tid", details: "Försök igen" },
+        { status: 504 }
+      )
+    }
+
+    // Generic error fallback
+    console.error("Unexpected error updating provider profile:", error)
     return NextResponse.json(
       { error: "Failed to update provider profile" },
       { status: 500 }

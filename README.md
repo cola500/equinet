@@ -98,16 +98,33 @@ equinet/
 │   │   │   │   └── [id]/
 │   │   │   │       ├── availability/  # Tillgänglighetskontroll API (GET tider för bokning)
 │   │   │   │       └── availability-schedule/  # Öppettider-API (GET/PUT veckoschema)
-│   │   │   └── services/     # Tjänste-API (CRUD)
+│   │   │   ├── services/     # Tjänste-API (CRUD)
+│   │   │   ├── route-orders/ # 🆕 Rutt-beställningar API
+│   │   │   │   ├── route.ts          # POST (skapa), GET (lista)
+│   │   │   │   ├── my-orders/        # GET (kundens beställningar)
+│   │   │   │   └── available/        # GET (tillgängliga för leverantör)
+│   │   │   └── routes/       # 🆕 Rutt-planering API
+│   │   │       ├── route.ts          # POST (skapa rutt)
+│   │   │       ├── my-routes/        # GET (leverantörens rutter)
+│   │   │       └── [id]/
+│   │   │           ├── route.ts      # GET (hämta rutt)
+│   │   │           └── stops/[stopId]/  # PATCH (uppdatera stopp-status)
 │   │   ├── customer/         # Kundsidor
 │   │   │   ├── dashboard/    # Översikt med senaste bokningar
 │   │   │   ├── bookings/     # Lista alla bokningar (med avbokning)
-│   │   │   └── profile/      # Kundprofilsida
+│   │   │   ├── profile/      # Kundprofilsida
+│   │   │   └── route-orders/ # 🆕 Rutt-beställningar
+│   │   │       ├── page.tsx          # Lista kundens beställningar
+│   │   │       └── new/              # Skapa ny rutt-beställning
 │   │   ├── provider/         # Leverantörssidor
 │   │   │   ├── dashboard/    # Dashboard med stats & onboarding
 │   │   │   ├── services/     # CRUD för tjänster
 │   │   │   ├── bookings/     # Hantera kundbokningar
-│   │   │   └── profile/      # Leverantörsprofilsida med progress
+│   │   │   ├── profile/      # Leverantörsprofilsida med progress
+│   │   │   ├── route-planning/ # 🆕 Rutt-planering (välj beställningar, skapa rutt)
+│   │   │   └── routes/       # 🆕 Ruthantering
+│   │   │       ├── page.tsx          # Lista alla rutter
+│   │   │       └── [id]/             # Kör rutt (markera stopp klara)
 │   │   ├── providers/        # Publika leverantörssidor
 │   │   │   ├── page.tsx      # Lista alla leverantörer (med sökning)
 │   │   │   └── [id]/         # Leverantörsdetalj & bokning
@@ -136,6 +153,7 @@ equinet/
 │   │   ├── sanitize.ts       # Input sanitization
 │   │   ├── logger.ts         # Structured logging
 │   │   ├── env.ts            # Environment validation
+│   │   ├── distance.ts       # 🆕 Haversine formula för avst åndsberäkning
 │   │   └── validations/
 │   │       └── auth.ts       # Delade Zod-schemas för auth
 │   └── types/
@@ -180,6 +198,12 @@ Equinet har två olika användarroller med separata gränssnitt:
 - Boka tjänster med datum, tid och hästinformation
 - Se alla sina bokningar på dashboard
 - Avboka bokningar
+- **🆕 Rutt-baserad Levering (MVP):**
+  - Skapa flexibla rutt-beställningar utan exakt tid
+  - Ange datum-spann för när tjänsten ska utföras
+  - Markera beställningar som akuta (inom 48h)
+  - Se när beställning lagts till i leverantörens rutt
+  - Få information om beräknad ankomsttid
 
 ### 🔨 Tjänsteleverantörer (Hovslagare, Veterinärer, etc.)
 - Registrera med företagsinformation
@@ -205,6 +229,15 @@ Equinet har två olika användarroller med separata gränssnitt:
   - Markera bokningar som genomförda
   - Se kundinformation och hästdetaljer
   - Automatisk tab-växling efter statusändringar
+- **🆕 Rutt-planering (MVP):**
+  - Se tillgängliga rutt-beställningar i området
+  - Filtrera efter tjänstetyp och prioritet
+  - Välja flera beställningar för en optimerad rutt
+  - Skapa rutt med namn, datum och starttid
+  - Se total sträcka och beräknad tid
+  - Köra rutt stopp för stopp
+  - Markera stopp som påbörjade eller klara
+  - Automatisk beräkning av ETA för varje stopp
 
 ## 🗄️ Databasschema
 
@@ -227,6 +260,21 @@ Equinet har två olika användarroller med separata gränssnitt:
 
 #### Availability
 - Leverantörers tillgänglighet (veckoschema)
+
+#### RouteOrder (🆕 Rutt-baserad Levering)
+- Kunders flexibla tjänstebeställningar
+- Fält: serviceType, address, coordinates (lat/lon), numberOfHorses, dateFrom, dateTo, priority, status
+- Relationer: kund, rutt-stopp
+
+#### Route (🆕 Rutt-planering)
+- Leverantörers planerade rutter
+- Fält: routeName, routeDate, startTime, status, totalDistance, totalDuration
+- Relationer: leverantör, rutt-stopp
+
+#### RouteStop (🆕 Rutt-stopp)
+- Enskilda stopp i en rutt
+- Fält: stopOrder, estimatedArrival, actualArrival/Departure, status
+- Länkar RouteOrder till Route
 - Fält: dayOfWeek (0-6, 0=Måndag), startTime, endTime, isClosed, isActive
 - En rad per veckodag och leverantör (unique constraint)
 

@@ -24,6 +24,7 @@ model User {
   provider      Provider?
   bookings      Booking[]
   notifications Notification[]
+  routeOrders   RouteOrder[]
 }
 
 model Provider {
@@ -44,6 +45,7 @@ model Provider {
   services        Service[]
   availability    Availability[]
   bookings        Booking[]
+  routes          Route[]
 }
 
 model Service {
@@ -102,4 +104,59 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// Route-based delivery models
+model RouteOrder {
+  id                   String      @id @default(uuid())
+  customerId           String
+  customer             User        @relation(fields: [customerId], references: [id])
+  serviceType          String      // t.ex. 'hovslagning', 'massage'
+  address              String
+  latitude             Float
+  longitude            Float
+  numberOfHorses       Int         @default(1)
+  dateFrom             DateTime
+  dateTo               DateTime
+  priority             String      @default("normal") // 'normal' eller 'urgent'
+  specialInstructions  String?
+  contactPhone         String
+  status               String      @default("pending") // 'pending', 'in_route', 'completed', 'cancelled'
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  routeStops           RouteStop[]
+}
+
+model Route {
+  id                   String      @id @default(uuid())
+  providerId           String
+  provider             Provider    @relation(fields: [providerId], references: [id])
+  routeName            String
+  routeDate            DateTime
+  startTime            String      // Format: "08:00"
+  status               String      @default("planned") // 'planned', 'active', 'completed', 'cancelled'
+  totalDistanceKm      Float?
+  totalDurationMinutes Int?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  stops                RouteStop[]
+}
+
+model RouteStop {
+  id                     String      @id @default(uuid())
+  routeId                String
+  route                  Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  routeOrderId           String
+  routeOrder             RouteOrder  @relation(fields: [routeOrderId], references: [id])
+  stopOrder              Int         // 1, 2, 3... ordning i rutten
+  estimatedArrival       DateTime?
+  estimatedDurationMin   Int         @default(60) // Beräknad tid på plats
+  actualArrival          DateTime?
+  actualDeparture        DateTime?
+  status                 String      @default("pending") // 'pending', 'in_progress', 'completed', 'problem'
+  problemNote            String?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
 }
