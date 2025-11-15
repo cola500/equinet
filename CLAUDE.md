@@ -884,7 +884,7 @@ En feature/uppgift är **DONE** när:
 - [ ] **Validering** - Zod-validering på både client OCH server
 
 #### 3. Dokumentation
-- [ ] **README.md uppdaterad** - Om ny feature, komponent eller struktur
+- [ ] **README.md uppdaterad INNAN commit** - Om ny feature, lägg till under version-highlights (gör det i SAMMA commit som koden för atomär change)
 - [ ] **Kommentarer vid behov** - Komplex logik är förklarad
 - [ ] **Komponent-README** - Nya komponenter har egen dokumentation (ex: `components/layout/README.md`)
 
