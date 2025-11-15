@@ -393,7 +393,7 @@ User (Customer) ──┐
 - [x] Zod schema-validering på både client & server
 - [x] API routes skyddade med auth-checks
 - [x] Prisma ORM med type-safety
-- [x] Next.js 16 App Router
+- [x] Next.js 15.5 App Router
 - [x] Server & Client Components korrekt separerade
 
 ## 🔮 Framtida Förbättringar
@@ -986,7 +986,7 @@ Privat projekt - Ingen licens specificerad.
 
 ## 👨‍💻 Utvecklad med
 
-- ☕ Next.js 16 & TypeScript
+- ☕ Next.js 15.5 & TypeScript
 - 🎨 Tailwind CSS & shadcn/ui
 - 🤖 Claude Code
 - 💚 Kärlek till hästar
