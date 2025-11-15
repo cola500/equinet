@@ -1004,3 +1004,61 @@ Privat projekt - Ingen licens specificerad.
 - **Stopp-för-stopp navigation** - Kör rutt med real-time statusuppdateringar
 - **Next.js 15.5.0 upgrade** - Stabilare och snabbare (fixade manifest-bug)
 - **35 E2E-tester** - 100% pass rate, inklusive route planning flow
+
+### 📍 MVP-Status: Rutt-baserad Levering
+
+**Detta är en MVP (Minimum Viable Product)** av rutt-funktionen enligt [`feature-rutt-baserad-levering.md`](./feature-rutt-baserad-levering.md). Vi har implementerat grundfunktionaliteten, men flera features från den fullständiga specen återstår.
+
+#### ✅ Implementerat i v1.2.0 (Fas 1.5)
+- Databasschema: `FlexibleBooking`, `Route`, `RouteStop`
+- Kunder kan skapa flexibla beställningar utan fast tid
+- Leverantörer ser tillgängliga beställningar sorterade efter avstånd
+- Filtrera beställningar efter tjänstetyp och prioritet
+- Skapa rutter med manuellt valda beställningar
+- Automatisk ruttoptimering med Haversine + Nearest Neighbor-algoritm
+- Beräknad total sträcka och tid
+- Stopp-för-stopp navigation för leverantörer
+- Statusuppdateringar (Pending → In Progress → Completed)
+- ETA-beräkning per stopp baserat på starttid och restider
+- Fullständig E2E-testning (100% pass rate)
+
+#### 🚧 Nästa Steg (enligt feature-spec)
+
+**Fas 2: Förbättrad Ruttoptimering (v1.3)**
+- [ ] **Kartvy** - Visa beställningar och rutter på interaktiv karta
+- [ ] **Drag-and-drop** - Manuell justering av stopp-ordning
+- [ ] **Visuella rutter** - Numrerade stopp på karta med rutt-linjer
+- [ ] **Estimerad tid**: 2-3 veckor
+
+**Fas 3: Realtidsspårning & Notifikationer (v1.4)**
+- [ ] **Realtidsposition** - Leverantör delar sin position under rutt-dagen
+- [ ] **Kund-spårning** - Kunder kan se leverantörens position på karta
+- [ ] **Push-notifikationer**:
+  - "Din leverantör är 30 min bort"
+  - "Leverantören har anlänt"
+  - "Besöket är klart"
+- [ ] **Email-notifikationer** - Bekräftelse när rutt skapas
+- [ ] **SMS-notifikationer** (valfritt) - ETA-uppdateringar
+- [ ] **Automatisk ETA-uppdatering** - Vid förseningar
+- [ ] **Estimerad tid**: 3-4 veckor
+
+**Fas 4: Problemhantering & Edge Cases (v1.5)**
+- [ ] **Rapportera problem** - "Kund ej hemma", "Behöver mer tid", etc.
+- [ ] **Hantera avbokningar** - Räkna om rutt vid avbokning
+- [ ] **Kontakta kund direkt** - Klickbar telefon-länk i appen
+- [ ] **Omberäkning av ETA** - Vid problem eller förseningar
+- [ ] **Estimerad tid**: 2 veckor
+
+**Fas 5: Analys & Förbättringar (v2.0)**
+- [ ] **Rutthistorik** - Se tidigare körda rutter
+- [ ] **Statistik för leverantörer**:
+  - Genomsnittligt antal stopp per rutt
+  - Totala körsträcka vs arbetstid
+  - Inkomst per körd kilometer
+- [ ] **Intelligent förslag** - Föreslå beställningar baserat på tidigare rutter
+- [ ] **Återkommande rutter** - "Varje tisdag i Uppsala"
+- [ ] **Export till kalender** - Google Calendar integration
+- [ ] **Estimerad tid**: 2-3 veckor
+
+#### 🎯 Fullständig Feature-spec
+Se [`feature-rutt-baserad-levering.md`](./feature-rutt-baserad-levering.md) för detaljerad beskrivning av alla planerade funktioner, UI/UX-design, teknisk implementation och success metrics.
