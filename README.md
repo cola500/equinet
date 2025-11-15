@@ -60,7 +60,7 @@ Ctrl + C
 
 ## 🛠️ Teknisk Stack
 
-- **Framework**: Next.js 16 (App Router)
+- **Framework**: Next.js 15.5.0 (App Router)
 - **Språk**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
 - **UI Komponenter**: shadcn/ui + Radix UI
@@ -79,7 +79,7 @@ Ctrl + C
   - Vitest (unit & integration tests)
   - Playwright (E2E tests)
   - 70% code coverage
-  - ~150 tester totalt
+  - 35 E2E-tester + 127 unit/integration tester
 
 ## 📁 Projektstruktur
 
@@ -331,6 +331,19 @@ User (Customer) ──┐
 - [x] Detaljerad kundinfo vid bokning
 - [x] Leverantörsprofilsida för företagsinformation
 - [x] **Profilkompletteringsindikator med visuell progress bar**
+- [x] **🆕 Rutt-planering & Optimering (MVP)**
+  - Visa tillgängliga flexibla beställningar (route-orders)
+  - Filtrera beställningar efter tjänstetyp och prioritet
+  - Visualisera beställningar sorterade efter avstånd
+  - Välj flera beställningar samtidigt för en rutt
+  - Skapa planerade rutter med namn, datum och starttid
+  - Beräkna total sträcka med Haversine-formeln
+  - Beräkna beräknad total tid baserat på antal hästar
+  - Lista alla skapade rutter med status
+  - Visa rutt-detaljer med alla stopp
+  - Köra rutt stopp-för-stopp med statusuppdateringar
+  - Markera stopp som "Påbörjad" eller "Klar"
+  - Automatisk ETA-beräkning per stopp
 
 ### ✅ Kundfunktioner
 - [x] Förenklat kundflöde - leverantörsgalleriet som huvudsida
@@ -352,6 +365,13 @@ User (Customer) ──┐
 - [x] Lista alla egna bokningar
 - [x] **Avboka bokningar med bekräftelsedialog**
 - [x] Kundprofilsida för att redigera personlig information
+- [x] **🆕 Flexibla Rutt-beställningar**
+  - Skapa flexibla beställningar utan fast tid
+  - Ange önskat datum-spann (dateFrom - dateTo)
+  - Markera beställning som akut (prioritet: urgent)
+  - Automatisk filtrering på bokningssidan (fixed vs flexible)
+  - Se när beställning lagts till i leverantörens rutt
+  - Få information om beräknad ankomsttid från rutten
 
 ### ✅ UI/UX
 - [x] Responsiv design (desktop, tablet, mobil)
@@ -620,14 +640,14 @@ cp prisma/dev.db.backup prisma/dev.db
 
 ## 🧪 Testning
 
-Equinet har en komplett testsvit med **~149 tester** (22 E2E + 127 unit/integration) och **70% code coverage**.
+Equinet har en komplett testsvit med **162+ tester** (35 E2E + 127 unit/integration) och **70% code coverage**.
 
 ### Testpyramiden
 
 Projektet följer testpyramiden för optimal testning:
 
 ```
-         E2E: 22 tests (Playwright) ✅ 100% pass rate
+         E2E: 35 tests (Playwright) ✅ 100% pass rate
        (Hela användarflöden i browser)
                    ↑
       Integration: 75 tests (Vitest)
@@ -640,8 +660,10 @@ Projektet följer testpyramiden för optimal testning:
 **E2E Test Coverage:**
 - ✅ Authentication (registrering, login, logout)
 - ✅ Booking flow (sök, boka, avboka)
+- ✅ Flexible bookings (flexibla rutt-beställningar)
 - ✅ Provider services (CRUD operations)
 - ✅ Provider bookings (acceptera, avböj)
+- ✅ **🆕 Route Planning** (välja beställningar, skapa rutter, köra rutter)
 - ✅ Profile management
 - ✅ Empty states och error handling
 
@@ -737,7 +759,7 @@ npm run test:e2e:debug
   - Sök och filtrera
 - ✅ Övriga API routes (19 tests)
 
-#### E2E Tests (23 st)
+#### E2E Tests (35 st)
 - ✅ **Authentication** (7 tests):
   - Registrera kund & leverantör
   - Inloggning & logout
@@ -749,12 +771,23 @@ npm run test:e2e:debug
   - Dubbelbokningsskydd
   - Avboka bokning
   - Empty states
+- ✅ **Flexible Booking Flow** (5 tests):
+  - Växla mellan fixed och flexible bokningar
+  - Skapa flexibla beställningar (normal + urgent)
+  - Filtrering av flexibla bokningar
+  - Visa route info när beställning är planerad
 - ✅ **Provider Flow** (10 tests):
   - Dashboard med statistik
   - CRUD tjänster
   - Hantera bokningar
   - Acceptera/avvisa bokningar
   - Uppdatera profil
+- ✅ **🆕 Route Planning Flow** (7 tests):
+  - Visa tillgängliga route-orders
+  - Välja flera beställningar och skapa rutt
+  - Lista skapade rutter
+  - Öppna och visa rutt-detaljer
+  - Markera stopp som klara
 
 ### Test Coverage
 
@@ -961,5 +994,13 @@ Privat projekt - Ingen licens specificerad.
 ---
 
 **Skapad**: November 2025
-**Senast uppdaterad**: 2025-11-12
-**Version**: 1.1.0 MVP - UX-förbättringar
+**Senast uppdaterad**: 2025-11-15
+**Version**: 1.2.0 MVP - Rutt-planering & Next.js 15.5.0
+
+### 🆕 Version 1.2.0 Highlights (2025-11-15)
+- **Rutt-planering för leverantörer** - Skapa optimerade rutter från flexibla beställningar
+- **Flexibla beställningar för kunder** - Boka utan fast tid, ange datum-spann
+- **Haversine-baserad avståndsberäkning** - Geografisk sortering av beställningar
+- **Stopp-för-stopp navigation** - Kör rutt med real-time statusuppdateringar
+- **Next.js 15.5.0 upgrade** - Stabilare och snabbare (fixade manifest-bug)
+- **35 E2E-tester** - 100% pass rate, inklusive route planning flow
