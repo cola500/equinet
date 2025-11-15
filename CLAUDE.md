@@ -888,8 +888,11 @@ En feature/uppgift är **DONE** när:
 - [ ] **Kommentarer vid behov** - Komplex logik är förklarad
 - [ ] **Komponent-README** - Nya komponenter har egen dokumentation (ex: `components/layout/README.md`)
 
-#### 4. Git
+#### 4. Git (Feature Branch Workflow)
+- [ ] **Feature branch skapad** - `git checkout -b feature/feature-name` (t.ex. `feature/f-3.3-retry-buttons`)
 - [ ] **Committed** - Med beskrivande commit message
+- [ ] **Alla tester passerar** - Unit (`npm run test:run`) + E2E (`npm run test:e2e`) INNAN merge
+- [ ] **Mergad till main** - Efter alla tester är gröna (`git checkout main && git merge feature/feature-name`)
 - [ ] **Pushad** - Till remote repository
 
 #### 5. Testning (TDD - Test-Driven Development)
