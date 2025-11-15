@@ -94,6 +94,10 @@ model Booking {
   horseInfo     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([providerId, bookingDate, status])
+  @@index([customerId, bookingDate])
+  @@index([serviceId])
 }
 
 model Notification {
@@ -126,6 +130,11 @@ model RouteOrder {
   updatedAt            DateTime    @updatedAt
 
   routeStops           RouteStop[]
+
+  @@index([status, serviceType])
+  @@index([status, priority])
+  @@index([customerId, status])
+  @@index([dateFrom, dateTo, status])
 }
 
 model Route {
@@ -142,6 +151,9 @@ model Route {
   updatedAt            DateTime    @updatedAt
 
   stops                RouteStop[]
+
+  @@index([providerId, routeDate, status])
+  @@index([status])
 }
 
 model RouteStop {
@@ -159,4 +171,8 @@ model RouteStop {
   problemNote            String?
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
+
+  @@index([routeId, stopOrder])
+  @@index([routeOrderId])
+  @@index([status])
 }
