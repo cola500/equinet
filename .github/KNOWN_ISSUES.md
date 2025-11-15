@@ -1,10 +1,11 @@
 # Known Issues
 
-## Next.js 15.0.3 - E2E Test Execution Problem
+## ~~Next.js 15.0.3 - E2E Test Execution Problem~~ ✅ LÖST!
 
-**Status:** 🔴 Blockerande för automatiska E2E-tester
+**Status:** ✅ FIXAT i Next.js 15.5.0
 **Discovered:** 2025-11-15
-**Affects:** Playwright E2E test execution
+**Resolved:** 2025-11-15
+**Affects:** Playwright E2E test execution (Next.js 15.0.3 only)
 
 ### Problem Description
 
@@ -38,17 +39,19 @@ Error: Cannot find module '.next/server/pages-manifest.json'
 - Testkod är skriven och committed (kan köras när Next.js är fixat)
 - Se `e2e/` för alla test specs
 
-### Solution Plan
+### ✅ Solution Implemented
 
-**Kort sikt:** (nuvarande approach)
-- Skippa automatiska E2E-tester
-- Fortsätt med manuell testning
-- Alla features är verifierade att fungera
+**2025-11-15: Uppgradera till Next.js 15.5.0**
+1. ✅ Uppgraderade till Next.js 15.5.0
+2. ✅ Fixade 2 selector-problem i route-planning E2E-tester
+3. ✅ Alla 7 route-planning E2E-tester passerar nu!
+4. ✅ Manifest-filer genereras korrekt
+5. ✅ Dev-server startar snabbt (1.5s) utan fel
 
-**Lång sikt:** (när Next.js fixar buggen)
-1. Uppgradera till Next.js 15.1+ när tillgänglig
-2. Kör alla E2E-tester för att verifiera
-3. Integrera E2E-tester i CI/CD-pipeline
+**Resultat:**
+- E2E-tester kan nu köras automatiskt ✅
+- Playwright startar dev-server utan problem ✅
+- Redo för CI/CD-integration ✅
 
 ### Related Issues
 
