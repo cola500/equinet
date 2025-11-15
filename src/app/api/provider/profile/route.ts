@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
@@ -17,9 +16,10 @@ const providerProfileSchema = z.object({
 // GET - Fetch current provider profile
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    // Auth handled by middleware
+    const session = await auth()
 
-    if (!session || !session.user || session.user.userType !== "provider") {
+    if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(provider)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error fetching provider profile:", error)
     return NextResponse.json(
       { error: "Failed to fetch provider profile" },
@@ -53,11 +58,11 @@ export async function GET(request: NextRequest) {
 
 // PUT - Update current provider profile
 export async function PUT(request: NextRequest) {
-  let session: any = null
   try {
-    session = await getServerSession(authOptions)
+    // Auth handled by middleware
+    const session = await auth()
 
-    if (!session || !session.user || session.user.userType !== "provider") {
+    if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -84,6 +89,11 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(updatedProvider)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -96,7 +106,7 @@ export async function PUT(request: NextRequest) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // P2025: Record not found (provider doesn't exist for this userId)
       if (error.code === "P2025") {
-        console.error("Provider not found for userId:", session?.user?.id)
+        console.error("Provider not found for userId")
         return NextResponse.json(
           { error: "Provider profile not found" },
           { status: 404 }
@@ -132,7 +142,7 @@ export async function PUT(request: NextRequest) {
     if (error instanceof Error && error.message.includes("Query timeout")) {
       console.error("Query timeout during profile update:", error.message)
       return NextResponse.json(
-        { error: "Förfrågan tog för lång tid", details: "Försök igen" },
+        { error: "Förfrågan tok för lång tid", details: "Försök igen" },
         { status: 504 }
       )
     }

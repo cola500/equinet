@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { calculateDistance } from "@/lib/distance"
 
 // GET /api/route-orders/available - Get available route orders for providers
 export async function GET(request: Request) {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     // Only providers can view available route orders
     if (session.user.userType !== "provider" || !session.user.providerId) {
@@ -21,7 +17,7 @@ export async function GET(request: Request) {
       )
     }
 
-    // 2. Get provider location (use their address)
+    // Get provider location (use their address)
     const provider = await prisma.provider.findUnique({
       where: { id: session.user.providerId }
     })
@@ -92,6 +88,11 @@ export async function GET(request: Request) {
     return NextResponse.json(ordersWithDistance)
 
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error fetching available route orders:", error)
     return new Response("Internt serverfel", { status: 500 })
   }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -54,20 +53,17 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
-    // 2. Provider check
+    // Provider check
     if (session.user.userType !== "provider") {
       return new Response("Only providers can update availability", { status: 403 })
     }
 
     const { id: providerId } = await params
 
-    // 3. Authorization check - verify the provider owns this profile
+    // Authorization check - verify the provider owns this profile
     const provider = await prisma.provider.findUnique({
       where: { id: providerId },
       select: { userId: true },
@@ -77,11 +73,11 @@ export async function PUT(
       return new Response("Forbidden - not your provider profile", { status: 403 })
     }
 
-    // 4. Parse & validate
+    // Parse & validate
     const body = await request.json()
     const validated = scheduleSchema.parse(body)
 
-    // 5. Update availability schedule
+    // Update availability schedule
     // Delete existing availability
     await prisma.availability.deleteMany({
       where: { providerId },
@@ -115,7 +111,7 @@ export async function PUT(
 
     await Promise.all(createPromises)
 
-    // 6. Fetch and return updated schedule
+    // Fetch and return updated schedule
     const updatedAvailability = await prisma.availability.findMany({
       where: {
         providerId,
@@ -128,6 +124,11 @@ export async function PUT(
 
     return NextResponse.json(updatedAvailability)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Validation error", details: error.issues },

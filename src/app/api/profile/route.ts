@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -13,11 +12,8 @@ const profileSchema = z.object({
 // GET - Fetch current user profile
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -37,6 +33,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(user)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error fetching profile:", error)
     return NextResponse.json(
       { error: "Failed to fetch profile" },
@@ -48,11 +49,8 @@ export async function GET(request: NextRequest) {
 // PUT - Update current user profile
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     const body = await request.json()
     const validatedData = profileSchema.parse(body)
@@ -72,6 +70,11 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(updatedUser)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Validation error", details: error.issues },

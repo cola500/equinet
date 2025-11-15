@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -18,11 +17,8 @@ export async function PATCH(
   try {
     const { id: routeId, stopId } = await params
 
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     // Only providers can update stops
     if (session.user.userType !== "provider" || !session.user.providerId) {
@@ -107,6 +103,11 @@ export async function PATCH(
     return NextResponse.json(updatedStop)
 
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Valideringsfel", details: error.issues },

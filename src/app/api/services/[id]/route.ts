@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -19,9 +18,10 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
+    // Auth handled by middleware
+    const session = await auth()
 
-    if (!session || !session.user || session.user.userType !== "provider") {
+    if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -55,6 +55,11 @@ export async function PUT(
 
     return NextResponse.json(service)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     if (error instanceof z.ZodError) {
       console.error("Validation error:", error.issues)
       return NextResponse.json(
@@ -78,9 +83,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
+    // Auth handled by middleware
+    const session = await auth()
 
-    if (!session || !session.user || session.user.userType !== "provider") {
+    if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -107,6 +113,11 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Service deleted" })
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error deleting service:", error)
     return NextResponse.json(
       { error: "Failed to delete service" },

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -21,11 +20,8 @@ const createRouteOrderSchema = z.object({
 // POST /api/route-orders - Create new route order
 export async function POST(request: Request) {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     // Only customers can create route orders
     if (session.user.userType !== "customer") {
@@ -108,6 +104,11 @@ export async function POST(request: Request) {
     return NextResponse.json(routeOrder, { status: 201 })
 
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Valideringsfel", details: error.issues },

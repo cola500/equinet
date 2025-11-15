@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { rateLimiters } from "@/lib/rate-limit"
@@ -20,13 +19,9 @@ const bookingSchema = z.object({
 
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
-  let session: any = null
   try {
-    session = await getServerSession(authOptions)
-
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     let bookings
 
@@ -76,9 +71,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(bookings)
   } catch (error) {
-    logger.error("Failed to fetch bookings", error as Error, {
-      userId: session?.user?.id,
-    })
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
+    logger.error("Failed to fetch bookings", error as Error, {})
     return NextResponse.json(
       { error: "Failed to fetch bookings" },
       { status: 500 }
@@ -88,13 +86,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new booking
 export async function POST(request: NextRequest) {
-  let session: any = null
   try {
-    session = await getServerSession(authOptions)
-
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     // Rate limiting - 10 bookings per hour per user (wrapped in try-catch to prevent crashes)
     const rateLimitKey = `booking:${session.user.id}`
@@ -227,11 +221,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     // Handle validation errors
     if (error instanceof z.ZodError) {
       try {
         logger.warn("Booking validation failed", {
-          userId: session?.user?.id,
           errors: error.issues,
         })
       } catch (logError) {
@@ -247,7 +245,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === "BOOKING_CONFLICT") {
       try {
         logger.warn("Booking conflict detected", {
-          userId: session?.user?.id,
         })
       } catch (logError) {
         console.error("Logger failed:", logError)
@@ -267,7 +264,6 @@ export async function POST(request: NextRequest) {
       if (error.code === "P2002") {
         try {
           logger.warn("Duplicate booking attempt", {
-            userId: session?.user?.id,
             code: error.code,
           })
         } catch (logError) {
@@ -283,7 +279,6 @@ export async function POST(request: NextRequest) {
       if (error.code === "P2025") {
         try {
           logger.warn("Record not found during booking", {
-            userId: session?.user?.id,
             code: error.code,
           })
         } catch (logError) {
@@ -307,9 +302,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Prisma.PrismaClientInitializationError) {
       console.error("Database connection failed:", error.message)
       try {
-        logger.fatal("Database unavailable during booking", {
-          userId: session?.user?.id,
-        })
+        logger.fatal("Database unavailable during booking", {})
       } catch (logError) {
         console.error("Logger failed:", logError)
       }
@@ -323,14 +316,12 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message.includes("Query timeout")) {
       console.error("Query timeout:", error.message)
       try {
-        logger.error("Booking query timeout", error, {
-          userId: session?.user?.id,
-        })
+        logger.error("Booking query timeout", error, {})
       } catch (logError) {
         console.error("Logger failed:", logError)
       }
       return NextResponse.json(
-        { error: "Förfrågan tog för lång tid", details: "Försök igen" },
+        { error: "Förfrågan tok för lång tid", details: "Försök igen" },
         { status: 504 }
       )
     }
@@ -338,9 +329,7 @@ export async function POST(request: NextRequest) {
     // Generic error fallback
     console.error("Unexpected error during booking:", error)
     try {
-      logger.error("Failed to create booking", error as Error, {
-        userId: session?.user?.id,
-      })
+      logger.error("Failed to create booking", error as Error, {})
     } catch (logError) {
       console.error("Logger failed:", logError)
     }

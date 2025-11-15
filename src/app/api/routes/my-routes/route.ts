@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 
 // GET /api/routes/my-routes - Get provider's routes
 export async function GET() {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     // Only providers can view their routes
     if (session.user.userType !== "provider" || !session.user.providerId) {
@@ -53,6 +49,11 @@ export async function GET() {
     return NextResponse.json(routes)
 
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error fetching routes:", error)
     return new Response("Internt serverfel", { status: 500 })
   }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { calculateDistance } from "@/lib/distance"
@@ -16,21 +15,10 @@ const createRouteSchema = z.object({
 // POST /api/routes - Create new route
 export async function POST(request: Request) {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware - get session
+    const session = await auth()
 
-    // Only providers can create routes
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Endast leverantörer kan skapa rutter" },
-        { status: 403 }
-      )
-    }
-
-    // 2. Parse and validate
+    // Parse and validate
     const body = await request.json()
     const validated = createRouteSchema.parse(body)
 

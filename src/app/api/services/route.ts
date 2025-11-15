@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
 import { z } from "zod"
@@ -15,9 +14,10 @@ const serviceSchema = z.object({
 // GET all services for logged-in provider
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    // Auth handled by middleware
+    const session = await auth()
 
-    if (!session || !session.user || session.user.userType !== "provider") {
+    if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -36,6 +36,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(services)
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error fetching services:", error)
     return NextResponse.json(
       { error: "Failed to fetch services" },
@@ -47,9 +52,10 @@ export async function GET(request: NextRequest) {
 // POST - Create new service
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    // Auth handled by middleware
+    const session = await auth()
 
-    if (!session || !session.user || session.user.userType !== "provider") {
+    if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -85,6 +91,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(service, { status: 201 })
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Validation error", details: error.issues },

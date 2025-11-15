@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 
 // GET /api/route-orders/my-orders - Get customer's own route orders
 export async function GET() {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
-    }
+    // Auth handled by middleware
+    const session = await auth()
 
     // Only customers can view their route orders
     if (session.user.userType !== "customer") {
@@ -20,7 +16,7 @@ export async function GET() {
       )
     }
 
-    // 2. Fetch route orders
+    // Fetch route orders
     const routeOrders = await prisma.routeOrder.findMany({
       where: {
         customerId: session.user.id,
@@ -54,6 +50,11 @@ export async function GET() {
     return NextResponse.json(routeOrders)
 
   } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
     console.error("Error fetching route orders:", error)
     return new Response("Internt serverfel", { status: 500 })
   }
