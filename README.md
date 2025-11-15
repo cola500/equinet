@@ -1016,6 +1016,7 @@ Privat projekt - Ingen licens specificerad.
 - **Flexibla beställningar för kunder** - Boka utan fast tid, ange datum-spann
 - **Haversine-baserad avståndsberäkning** - Geografisk sortering av beställningar
 - **Stopp-för-stopp navigation** - Kör rutt med real-time statusuppdateringar
+- **Retry-mekanik** - Intelligent omförsöksfunktion vid nätverksfel med ErrorState-komponent
 - **Next.js 15.5.0 upgrade** - Stabilare och snabbare (fixade manifest-bug)
 - **35 E2E-tester** - 100% pass rate, inklusive route planning flow
 

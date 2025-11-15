@@ -7,6 +7,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { ErrorState } from "@/components/ui/error-state"
+import { useRetry } from "@/hooks/useRetry"
+import { toast } from "sonner"
 
 export default function ProviderDashboard() {
   const router = useRouter()
@@ -17,6 +20,12 @@ export default function ProviderDashboard() {
   const [availableRouteOrders, setAvailableRouteOrders] = useState([])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const { retry, retryCount, isRetrying, canRetry } = useRetry({
+    maxRetries: 3,
+    onMaxRetriesReached: () => {
+      toast.error('Kunde inte hämta data efter flera försök. Kontakta support om problemet kvarstår.')
+    },
+  })
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -102,30 +111,15 @@ export default function ProviderDashboard() {
       <h1 className="text-3xl font-bold mb-8">Välkommen tillbaka!</h1>
 
         {error ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <div className="mb-4">
-                <svg
-                  className="mx-auto h-12 w-12 text-red-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Något gick fel
-              </h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={fetchData}>Försök igen</Button>
-            </CardContent>
-          </Card>
+          <ErrorState
+            title="Kunde inte hämta data"
+            description={error}
+            onRetry={() => retry(fetchData)}
+            isRetrying={isRetrying}
+            retryCount={retryCount}
+            canRetry={canRetry}
+            showContactSupport={retryCount >= 3}
+          />
         ) : isLoadingData ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>

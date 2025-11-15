@@ -13,11 +13,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth"
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator"
 import { toast } from "sonner"
+import { ErrorState } from "@/components/ui/error-state"
+import { useRetry } from "@/hooks/useRetry"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [userType, setUserType] = useState<"customer" | "provider">("customer")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { retry, retryCount, isRetrying, canRetry } = useRetry({
+    maxRetries: 3,
+    onMaxRetriesReached: () => {
+      toast.error('Kunde inte registrera efter flera försök. Kontakta support om problemet kvarstår.')
+    },
+  })
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -38,6 +47,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterInput) => {
     setIsLoading(true)
+    setError(null)
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -60,7 +70,8 @@ export default function RegisterPage() {
       // Redirect to login page (toast will be shown there)
       router.push("/login?registered=true")
     } catch (error: any) {
-      toast.error(error.message || "Något gick fel vid registrering")
+      const errorMessage = error.message || "Något gick fel vid registrering. Kontrollera din internetanslutning."
+      setError(errorMessage)
       console.error("Registration error:", error)
     } finally {
       setIsLoading(false)
@@ -79,6 +90,17 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error ? (
+            <ErrorState
+              title="Kunde inte skapa konto"
+              description={error}
+              onRetry={() => retry(() => form.handleSubmit(onSubmit)())}
+              isRetrying={isRetrying}
+              retryCount={retryCount}
+              canRetry={canRetry}
+              showContactSupport={retryCount >= 3}
+            />
+          ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* User Type Selection */}
             <div className="space-y-2">
@@ -256,6 +278,7 @@ export default function RegisterPage() {
               </Link>
             </div>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>

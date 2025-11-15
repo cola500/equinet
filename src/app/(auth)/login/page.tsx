@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
+import { ErrorState } from "@/components/ui/error-state"
+import { useRetry } from "@/hooks/useRetry"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,6 +19,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const { retry, retryCount, isRetrying, canRetry } = useRetry({
+    maxRetries: 3,
+    onMaxRetriesReached: () => {
+      toast.error('Kunde inte logga in efter flera försök. Kontakta support om problemet kvarstår.')
+    },
+  })
 
   // Show success toast if user just registered
   useEffect(() => {
@@ -65,6 +73,28 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && retryCount > 0 ? (
+            <ErrorState
+              title="Kunde inte logga in"
+              description={error}
+              onRetry={() => retry(async () => {
+                const result = await signIn("credentials", {
+                  email,
+                  password,
+                  redirect: false,
+                })
+                if (result?.error) {
+                  throw new Error("Ogiltig email eller lösenord")
+                }
+                router.push("/dashboard")
+                router.refresh()
+              })}
+              isRetrying={isRetrying}
+              retryCount={retryCount}
+              canRetry={canRetry}
+              showContactSupport={retryCount >= 3}
+            />
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -92,12 +122,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
-              </div>
-            )}
-
             <Button
               type="submit"
               className="w-full"
@@ -116,6 +140,7 @@ export default function LoginPage() {
               </Link>
             </div>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>

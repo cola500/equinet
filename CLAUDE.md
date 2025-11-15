@@ -914,30 +914,55 @@ En feature/uppgift är **DONE** när:
 
 ### 📝 DoD Checklist i Praktiken
 
-**Exempel: "Lägg till layout-komponent system"**
+**Exempel: "F-3.3: Försök igen-Knappar (Retry Buttons)"**
 
 - [x] ✅ Funktionalitet
-  - [x] Header visas konsekvent på alla sidor
-  - [x] Navigation fungerar korrekt
-  - [x] Ingen TypeScript-fel
+  - [x] useRetry hook fungerar som förväntat
+  - [x] ErrorState komponent renderar korrekt
+  - [x] Integrerad i provider dashboard, register, login
+  - [x] Ingen TypeScript-fel (`npx tsc --noEmit`)
   - [x] Inga console errors
   - [x] Responsiv design
 
 - [x] ✅ Kod-kvalitet
   - [x] Följer projektets komponentstruktur
-  - [x] Auth-kontroller på plats
-  - [x] Error boundaries (där relevant)
+  - [x] Error handling på plats (try-catch, tydliga meddelanden)
+  - [x] Input validering (där relevant)
+  - [x] Säker kod (ingen XSS eller injections)
 
 - [x] ✅ Dokumentation
-  - [x] README.md uppdaterad med layout-struktur
-  - [x] `components/layout/README.md` skapad med exempel
+  - [x] README.md uppdaterad med retry-feature (samma commit som koden)
+  - [x] Kommentarer för komplex logik (retry-mekanismen)
 
-- [x] ✅ Git
+- [x] ✅ Git (Feature Branch Workflow)
+  - [x] Feature branch skapad (`git checkout -b feature/f-3.3-retry-buttons`)
   - [x] Committed med beskrivande meddelande
-  - [x] Pushad till main
+  - [x] **Alla tester passerar INNAN merge:**
+    - [x] Unit tests: `npm run test:run` (useRetry: 8 tester, ErrorState: 11 tester)
+    - [x] E2E tests: `npm run test:e2e` (retry flow testad)
+  - [x] Mergad till main (`git checkout main && git merge feature/f-3.3-retry-buttons`)
+  - [x] Pushad till remote
 
-- [x] ✅ Testning
-  - [x] Manuellt testad på alla sidor
+- [x] ✅ Testning (TDD)
+  - [x] Unit tests skrivna FÖRST (useRetry hook + ErrorState komponent)
+  - [x] E2E tests uppdaterade (retry flow i provider dashboard)
+  - [x] Coverage ≥70%
+  - [x] Manuell testning utförd
+
+**Resultat:** Feature är DONE! ✨
+
+---
+
+**Exempel 2: "Lägg till layout-komponent system"**
+
+- [x] ✅ Git (Feature Branch Workflow)
+  - [x] Feature branch skapad (`git checkout -b feature/layout-components`)
+  - [x] Committed med beskrivande meddelande
+  - [x] Alla tester passerar (`npm test && npm run test:e2e`)
+  - [x] Mergad till main efter gröna tester
+  - [x] Pushad till remote
+
+*(Resten av checklistorna som tidigare...)*
 
 **Resultat:** Feature är DONE! ✨
 
