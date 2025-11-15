@@ -995,7 +995,21 @@ Privat projekt - Ingen licens specificerad.
 
 **Skapad**: November 2025
 **Senast uppdaterad**: 2025-11-15
-**Version**: 1.2.0 MVP - Rutt-planering & Next.js 15.5.0
+**Version**: 1.3.0 MVP - UX Quick Wins (Sprint 1 pågår)
+
+### 🆕 Version 1.3.0 - UX Quick Wins (Sprint 1) (2025-11-15)
+
+**Sprint 1 Status: 1/4 features klara**
+
+- ✅ **Förbättrad lösenordsvalidering** (F-3.1)
+  - Grupperad layout (Längd + Innehåll)
+  - Neutral state när fältet är tomt
+  - Real-time visuell feedback medan användaren skriver
+  - ARIA-support för screen readers
+  - Success message med animation när alla krav uppfylls
+
+- 🚧 **Pågående**: Försök igen-knappar (F-3.3)
+- ⏳ **Nästa**: Avboka-funktion (F-3.2), Onboarding Checklist (F-3.4)
 
 ### 🆕 Version 1.2.0 Highlights (2025-11-15)
 - **Rutt-planering för leverantörer** - Skapa optimerade rutter från flexibla beställningar
