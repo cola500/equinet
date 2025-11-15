@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { registerSchema, type RegisterInput, checkPasswordRequirements } from "@/lib/validations/auth"
-import { PasswordRequirements } from "@/components/ui/password-requirements"
+import { registerSchema, type RegisterInput } from "@/lib/validations/auth"
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator"
 import { toast } from "sonner"
 
 export default function RegisterPage() {
@@ -35,7 +35,6 @@ export default function RegisterPage() {
   })
 
   const password = form.watch("password")
-  const passwordRequirements = checkPasswordRequirements(password || "")
 
   const onSubmit = async (data: RegisterInput) => {
     setIsLoading(true)
@@ -187,10 +186,7 @@ export default function RegisterPage() {
                   {form.formState.errors.password.message}
                 </p>
               )}
-              <PasswordRequirements
-                password={password}
-                requirements={passwordRequirements}
-              />
+              <PasswordStrengthIndicator password={password || ""} />
             </div>
 
             <div className="space-y-2">

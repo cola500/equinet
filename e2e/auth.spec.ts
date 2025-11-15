@@ -138,10 +138,33 @@ test.describe('Authentication Flow', () => {
     // Fyll i ett svagt lösenord
     await page.getByLabel(/lösenord \*/i).fill('weak');
 
-    // Verifiera att krav-indikatorn visar fel
+    // Verifiera att krav-indikatorn visar fel (new grouped layout)
     await expect(page.getByText(/minst 8 tecken/i)).toBeVisible();
-    await expect(page.getByText(/stor bokstav/i)).toBeVisible();
-    await expect(page.getByText(/siffra/i)).toBeVisible();
+    await expect(page.getByText(/stor \+ liten bokstav/i)).toBeVisible();
+    await expect(page.getByText(/siffra \(0-9\)/i)).toBeVisible();
     await expect(page.getByText(/specialtecken/i)).toBeVisible();
+  });
+
+  test('should show real-time password requirement validation with neutral state', async ({ page }) => {
+    await page.goto('/register');
+
+    const passwordInput = page.getByLabel(/lösenord \*/i);
+
+    // Tomt - neutral state (all requirements should be visible but neutral)
+    await expect(page.getByTestId('password-strength-indicator')).toBeVisible();
+
+    // Grupperad layout ska visas
+    await expect(page.getByText('Längd')).toBeVisible();
+    await expect(page.getByText('Innehåll')).toBeVisible();
+
+    // Partiellt lösenord - några krav uppfyllda, andra inte
+    await passwordInput.fill('test');
+    await expect(page.getByTestId('requirement-minLength')).toBeVisible();
+
+    // Fullt giltigt lösenord
+    await passwordInput.fill('Test1234!');
+
+    // Success message ska visas
+    await expect(page.getByText(/lösenordet uppfyller alla krav/i)).toBeVisible({ timeout: 2000 });
   });
 });
