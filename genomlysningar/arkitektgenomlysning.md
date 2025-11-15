@@ -25,16 +25,19 @@
 
 ---
 
+  **4. ✅ Security Headers** (Fixat 2025-11-15)
+
+  - Förbättrad Content-Security-Policy (separerad dev/prod)
+  - Tillagt: HSTS, Cross-Origin policies, utökad Permissions-Policy
+  - Skydd mot: XSS, clickjacking, Spectre-attacker
+  - E2E-tester: 9 tester för header-validering
+  - Commit: "Förbättra security headers för produktion"
+
+---
+
 ## ⚠️ **Kvarvarande Problem (Prioriterad ordning)**
 
-  **1. Security Headers Saknas** 🔴 HÖG PRIORITET
-
-  - Ingen CSP, CORS, X-Frame-Options
-  - Sårbar för XSS, clickjacking
-  - **Lösning:** Lägg till security headers i `next.config.ts`
-  - **Tid:** 2 timmar
-
-  **2. Lat/Long som Float = För Låg Precision** 🟡 MEDIUM PRIORITET
+  **1. Lat/Long som Float = För Låg Precision** 🟡 MEDIUM PRIORITET
 
   - Kan vara 10+ meter fel!
   - **Lösning:** Byt till Decimal(10, 8) i Prisma schema
