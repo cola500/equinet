@@ -892,14 +892,20 @@ En feature/uppgift är **DONE** när:
 - [ ] **Committed** - Med beskrivande commit message
 - [ ] **Pushad** - Till remote repository
 
-#### 5. Testning (växer över tid)
-**Nuvarande krav (MVP):**
-- [ ] **Manuell testning** - Hela user flow testad
+#### 5. Testning (TDD - Test-Driven Development)
+**Vi följer TDD-principen: Red → Green → Refactor**
 
-**Framtida krav (när vi växer):**
-- [ ] Unit/integration tester för API routes
-- [ ] E2E-tester uppdaterade vid UI-ändringar
-- [ ] Alla tester passerar (`npm test && npm run test:e2e`)
+- [ ] **Unit tests SKRIVNA FÖRST** - För nya komponenter, hooks, utils och API routes
+- [ ] **E2E tests uppdaterade/nya** - För användarflöden som påverkas
+- [ ] **Alla tester passerar** - `npm run test:run` (unit) + `npm run test:e2e` (E2E)
+- [ ] **Coverage ≥70%** - För ny kod (kör `npm run test:coverage` för att verifiera)
+- [ ] **Manuell testning** - Slutlig verifiering av user flow i browser
+
+**TDD-cykel:**
+1. 🔴 **Red**: Skriv test som failar (beskriv önskat beteende)
+2. 🟢 **Green**: Skriv minsta kod för att få testet grönt
+3. 🔵 **Refactor**: Förbättra koden, testen ska vara gröna
+4. ♻️ **Upprepa**: Nästa feature/beteende
 
 ---
 
