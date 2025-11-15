@@ -491,6 +491,27 @@ test('should handle empty state with conditional content', async ({ page }) => {
 - 📈 Pass rate: **100% (23/23) - STABILT**
 - ⏱️ Körning: ~41s
 
+**Iteration 5: Next.js 15.5.0 Upgrade & Manifest Bug Fix (2025-11-15)**
+- ❌ Problem: Next.js 15.0.3 manifest bug blockerade ALL E2E-testning
+  - Playwright kunde inte starta dev server (MODULE_NOT_FOUND errors)
+  - Saknade manifest-filer: middleware-manifest.json, routes-manifest.json
+- 🔍 Investigation: Identifierade att problemet var Next.js-specifikt, inte Playwright
+- ✅ Lösning: Uppgradera Next.js 15.0.3 → 15.5.0
+  1. Testade upgrade på separat branch (test/nextjs-15.5-upgrade)
+  2. Manifest-filer genereras nu korrekt
+  3. Dev server startar på 1.5s (snabbare än 15.0.3!)
+  4. Fixade 2 selector-problem i route-planning tests:
+     - Strict mode violation: `getByText()` → `getByRole('heading').first()`
+     - Empty state: Generisk heading-check istället för specifik text
+- 📈 Pass rate: **100% (35/35 tester) - STABILT** ✨
+- ⏱️ Körning: ~1.9 minuter (med all setup/cleanup)
+
+**Viktiga Lärdomar:**
+1. **Framework-buggar kan blockera hela arbetsflödet** - undersök om upgrade löser problemet
+2. **Test på separat branch** innan merge till main - säkrare än workarounds
+3. **Kod-först approach fungerar!** - Fixade selectors på 1-2 iterationer (inte 5-10)
+4. **All E2E-testning är nu redo för CI/CD** - inga blocking issues kvar
+
 **Lärdom:** För MVP, prioritera **stabilitet > hastighet**. Kod-först approach minskar iterationer dramatiskt!
 
 **Framtida optimeringar:**
@@ -973,6 +994,20 @@ En feature/uppgift är **DONE** när:
 5. Rensa cache (`.next`, `node_modules/.cache`)
 
 ## 🔄 Senaste Ändringar i Arbetsflödet
+
+### 2025-11-15
+- **Next.js 15.5.0 Upgrade - Löste E2E-blockerande bug**
+  - Identifierade att Next.js 15.0.3 manifest bug blockerade ALL E2E-testning
+  - Uppgraderade till 15.5.0 som fixade problemet helt
+  - Dev server startar nu snabbare (1.5s vs långsammare i 15.0.3)
+  - Alla 35 E2E-tester passerar nu stabilt (100% pass rate)
+- **Dokumenterade Iteration 5 i E2E-sektionen**
+  - Framework-buggar kan blockera hela arbetsflödet - undersök upgrades först
+  - Test på separat branch före merge = säkrare än workarounds
+  - Kod-först approach fortsätter fungera utmärkt (1-2 iterationer)
+- **Background Process Hygiene**
+  - Lärdomar om att döda gamla processer innan nya startas
+  - Förhindrar port-konflikter och resursproblem
 
 ### 2025-11-13
 - **Lade till E2E-testning sektion med lärdomar från implementation**
