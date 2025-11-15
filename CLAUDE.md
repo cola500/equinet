@@ -993,6 +993,475 @@ En feature/uppgift är **DONE** när:
 4. Kolla "Vanliga Gotchas" i detta dokument
 5. Rensa cache (`.next`, `node_modules/.cache`)
 
+## 🛡️ JSON Parsing Pattern (Kritiskt för API Routes!)
+
+### Problem
+När en API route tar emot en POST/PUT request och försöker parsa JSON med `await request.json()`, kan det gå fel på flera sätt:
+- Tom request body
+- Korrupt JSON
+- Fel Content-Type
+- Network-avbrott under upload
+
+**Om detta inte hanteras korrekt:**
+1. `request.json()` kastar error
+2. API:t crashar utan att returnera något svar
+3. Klienten får ingen response
+4. Klientens `response.json()` kastar också error
+5. Användaren ser ingen feedback (t.ex. dialog som aldrig stängs)
+
+### Lösning: ALLTID Wrappa request.json() i Try-Catch
+
+**Pattern som ska användas i ALLA POST/PUT routes:**
+
+```typescript
+export async function POST(request: Request) {
+  try {
+    // 1. Auth check först
+    const session = await auth()
+
+    // 2. VIKTIGT: Parse JSON med error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error("Invalid JSON in request body:", jsonError)
+      return NextResponse.json(
+        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { status: 400 }
+      )
+    }
+
+    // 3. Nu är det säkert att validera med Zod
+    const validated = schema.parse(body)
+
+    // 4. Business logic...
+    const result = await prisma.model.create({ data: validated })
+
+    return NextResponse.json(result)
+  } catch (error) {
+    // 5. Övrig error handling (auth, Zod, Prisma, etc.)
+    if (error instanceof Response) return error
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation error", details: error.issues },
+        { status: 400 }
+      )
+    }
+    console.error("Error:", error)
+    return new Response("Internal error", { status: 500 })
+  }
+}
+```
+
+### Varför detta är viktigt
+
+**Utan try-catch:**
+```typescript
+// ❌ FEL - kan krascha utan svar
+const body = await request.json()  // Kastar Error vid invalid JSON
+const validated = schema.parse(body)  // Denna rad körs aldrig
+```
+
+**Med try-catch:**
+```typescript
+// ✅ RÄTT - returnerar alltid ett svar
+let body
+try {
+  body = await request.json()
+} catch (jsonError) {
+  return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+}
+// Nu är body garanterat parsad, eller så har vi returnerat error
+```
+
+### Checkpointa: Har du lagt till JSON parsing protection?
+
+Kolla varje POST/PUT route:
+- [ ] Finns `try { body = await request.json() } catch {}`?
+- [ ] Returneras en 400 response vid parse-error?
+- [ ] Loggas felet med `console.error()`?
+- [ ] Används `body` variabeln efter try-catch blocket?
+
+**Exempel på routes som MÅSTE ha detta:**
+- `/api/bookings` (POST)
+- `/api/bookings/[id]` (PUT)
+- `/api/services` (POST)
+- `/api/services/[id]` (PUT)
+- `/api/profile` (PUT)
+- `/api/provider/profile` (PUT)
+- `/api/route-orders` (POST)
+- `/api/providers/[id]/availability-schedule` (PUT)
+- `/api/routes/[id]/stops/[stopId]` (PATCH)
+
+---
+
+## 🔍 Systematisk Debugging Guide
+
+### Filosofi: Debugga från UI till Databas
+
+När något går fel, följ denna **systematiska process** istället för att gissa:
+
+```
+🎨 UI Layer (vad ser användaren?)
+   ↓
+📱 Client Layer (vad skickas till servern?)
+   ↓
+🔌 API Layer (tar servern emot det? vad svarar den?)
+   ↓
+💾 Database Layer (sparas data korrekt?)
+```
+
+### Steg-för-Steg Debugging Process
+
+#### 1. UI Layer - Vad ser användaren?
+
+**Verktyg:**
+- Browser DevTools Console
+- React DevTools (Components & Profiler)
+- Network tab (är requesten skickad?)
+
+**Frågor att ställa:**
+- Visas rätt felmeddelande?
+- Är formulär-fälten ifyllda korrekt?
+- Händer något när användaren klickar? (loading state?)
+- Finns det console errors?
+
+**Exempel:**
+```typescript
+// Lägg till debug-logging i client-komponent
+const handleSubmit = async (data) => {
+  console.log("📤 Skickar data:", data)  // Vad skickas?
+
+  try {
+    const response = await fetch('/api/endpoint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+
+    console.log("📥 Response status:", response.status)  // Vad kom tillbaka?
+
+    const result = await response.json()
+    console.log("📥 Response data:", result)
+  } catch (error) {
+    console.error("❌ Client error:", error)  // Vad gick fel?
+  }
+}
+```
+
+#### 2. Client Layer - Network Inspection
+
+**Verktyg:**
+- Browser Network tab
+- Preserve log (viktigt vid redirects!)
+
+**Kolla:**
+1. **Request Headers** - Är Content-Type korrekt?
+2. **Request Payload** - Är JSON välformaterad?
+3. **Response Status** - 200 OK, 400 Bad Request, 401 Unauthorized, 500 Internal?
+4. **Response Body** - Vad svarade servern?
+
+**Vanliga problem:**
+- ❌ Payload är tom (glömt `JSON.stringify()`?)
+- ❌ Content-Type är inte `application/json`
+- ❌ Response är tom (API:t crashade utan att svara)
+
+#### 3. API Layer - Server-Side Debugging
+
+**Verktyg:**
+- Server console logs (`console.log` i API routes)
+- Terminal där `npm run dev` körs
+
+**Debug-pattern för API routes:**
+
+```typescript
+export async function POST(request: Request) {
+  console.log("🔵 API POST /api/endpoint - Start")
+
+  try {
+    // Auth
+    const session = await auth()
+    console.log("🔵 Session:", { userId: session.user.id, userType: session.user.userType })
+
+    // Parse JSON
+    let body
+    try {
+      body = await request.json()
+      console.log("🔵 Request body:", body)
+    } catch (jsonError) {
+      console.error("❌ JSON parsing failed:", jsonError)
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+    }
+
+    // Validate
+    const validated = schema.parse(body)
+    console.log("🔵 Validated data:", validated)
+
+    // Database
+    const result = await prisma.model.create({ data: validated })
+    console.log("✅ Created:", result)
+
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error("❌ API Error:", error)
+
+    if (error instanceof Response) return error
+    if (error instanceof z.ZodError) {
+      console.error("❌ Validation errors:", error.issues)
+      return NextResponse.json({ error: "Validation error", details: error.issues }, { status: 400 })
+    }
+
+    return new Response("Internal error", { status: 500 })
+  }
+}
+```
+
+**Vad ska du se i terminal?**
+- `🔵 API POST /api/endpoint - Start` - Requesten nådde servern
+- `🔵 Session: { userId: '...', userType: 'customer' }` - Auth funkar
+- `🔵 Request body: { ... }` - JSON parsades OK
+- `🔵 Validated data: { ... }` - Zod-validering passerade
+- `✅ Created: { id: '...', ... }` - Databasen skapade objektet
+
+**Om något saknas** - där är problemet!
+
+#### 4. Database Layer - Prisma Studio & Logs
+
+**Verktyg:**
+- `npm run db:studio` (Prisma Studio på localhost:5555)
+- Prisma query logs
+
+**Kolla:**
+1. Skapades objektet i databasen?
+2. Har det rätt data?
+3. Finns relaterade objekt (foreign keys)?
+
+**Aktivera Prisma query logging:**
+```typescript
+// src/lib/prisma.ts
+export const prisma = new PrismaClient({
+  log: ['query', 'error', 'warn'],  // Logga alla queries
+})
+```
+
+**Vanliga databasproblem:**
+- ❌ Foreign key constraint failure (relaterat objekt finns inte)
+- ❌ Unique constraint violation (duplicerad data)
+- ❌ NULL constraint violation (required field saknas)
+
+### Exempel: Dialog som inte stängs (verkligt fall från Equinet)
+
+**Symptom:** Bokningsdialog stannar öppen i 30s efter submit.
+
+**Debug-process:**
+
+1. **UI Layer:**
+   - ✅ Console visar "Skickar bokning..."
+   - ❌ Ingen success/error message
+   - ❌ Dialog stängs inte
+
+2. **Client Layer (Network tab):**
+   - ✅ Request skickas till `/api/bookings`
+   - ❌ Response body är **TOM** (inte ens error JSON!)
+   - ❌ Response status: 200 (men ingen data??)
+
+3. **API Layer (Server console):**
+   - ✅ "API POST /api/bookings - Start"
+   - ❌ **Ingenting mer** (crashade på rad 2!)
+   - **Hittade problemet:** `await request.json()` kastade error pga tom body
+
+4. **Lösning:**
+   - Lade till try-catch runt `request.json()`
+   - Nu returneras alltid en response (antingen data eller error)
+   - Klienten får svar → kan stänga dialog
+
+**Lärdom:** Jobba systematiskt från UI → DB istället för att gissa. Varje lager ger ledtrådar till nästa!
+
+### Quick Reference: Debugging Checklist
+
+När något inte fungerar:
+
+1. [ ] Kolla browser console - finns errors?
+2. [ ] Kolla Network tab - skickades requesten? vad svarade servern?
+3. [ ] Kolla server terminal - loggas något? var slutar loggarna?
+4. [ ] Lägg till debug-logging där loggarna slutar
+5. [ ] Kolla Prisma Studio - finns datan i databasen?
+6. [ ] Fixa problemet i det lagret där det upptäcktes
+7. [ ] Testa igen från början
+
+**Förvänta dig INTE att gissa rätt direkt - debugga systematiskt!**
+
+---
+
+## 💾 Disk Space Management & Git Best Practices
+
+### Problem: Git Push Kan Faila vid Lågt Diskutrymme
+
+**Symptom:**
+```bash
+error: pack-objects died of signal 10 (SIGBUS)
+fatal: the remote end hung up unexpectedly
+```
+
+**Root Cause:**
+- Disken är >90% full
+- Git försöker komprimera objekt i minnet
+- Inte tillräckligt med plats för temporary files
+- Signal 10 (SIGBUS) = memory/IO error
+
+### Lösning 1: Disable Compression (Snabbfix)
+
+```bash
+# Tillfälligt disable compression för push
+git config core.compression 0
+
+# Pusha
+git push
+
+# (Optional) Återställ compression efter push
+git config --unset core.compression
+```
+
+**Varför det funkar:**
+- Skippar minnes-intensiv komprimering
+- Snabbare push (men större datamängd skickas)
+- Använd bara när disken är nästan full!
+
+### Lösning 2: Frigör Diskutrymme (Långsiktig lösning)
+
+#### Checka diskutrymme först
+
+```bash
+# Mac/Linux
+df -h .
+
+# Exempel output:
+# Filesystem      Size   Used  Avail Capacity
+# /dev/disk3s1   228Gi  193Gi   12Gi    94%    ← PROBLEM! <15GB fritt
+```
+
+**Varningsgränser:**
+- 🟢 >20GB fritt: Allt OK
+- 🟡 10-20GB fritt: Håll utkik
+- 🔴 <10GB fritt: Cleanup ASAP!
+- 🚨 <5GB fritt: Risk för git/build failures!
+
+#### Cleanup-kommandon (kör i denna ordning)
+
+```bash
+# 1. NPM cache (kan spara 1-2GB)
+npm cache clean --force
+
+# 2. Next.js build cache (kan spara 500MB-2GB)
+rm -rf .next
+
+# 3. Node modules cache (om du har många projekt)
+rm -rf node_modules/.cache
+
+# 4. Playwright browsers (kan spara 1-3GB om inte används)
+npx playwright uninstall --all
+
+# 5. (Försiktig!) Gamla Git objects
+git gc --prune=now --aggressive  # OBS: Kan också faila vid lågt diskutrymme!
+
+# 6. Checka igen
+df -h .
+```
+
+#### Hitta stora filer/mappar
+
+```bash
+# Hitta top 10 största mappar i current directory
+du -sh * | sort -hr | head -10
+
+# Hitta stora filer (>100MB)
+find . -type f -size +100M -exec ls -lh {} \; 2>/dev/null
+
+# Vanliga stora mappar i Node.js-projekt:
+# - node_modules/ (kan vara 500MB-2GB)
+# - .next/ (100MB-500MB)
+# - test-results/ (E2E screenshots kan vara stora)
+# - coverage/ (test coverage reports)
+```
+
+### Best Practice: Pre-Push Disk Check
+
+**Lägg till i ditt workflow:**
+
+```bash
+# Innan git push - kolla alltid diskutrymme
+alias git-push-safe='df -h . && read -p "Fortsätt med push? (y/n) " -n 1 -r && echo && [[ $REPLY =~ ^[Yy]$ ]] && git push'
+
+# Använd:
+git-push-safe
+```
+
+**Eller skapa pre-push hook:**
+
+```bash
+# .git/hooks/pre-push
+#!/bin/bash
+
+available=$(df -k . | tail -1 | awk '{print $4}')
+available_gb=$((available / 1024 / 1024))
+
+if [ $available_gb -lt 10 ]; then
+  echo "⚠️  WARNING: Only ${available_gb}GB free disk space!"
+  echo "Consider running cleanup before push:"
+  echo "  npm cache clean --force"
+  echo "  rm -rf .next"
+  read -p "Continue anyway? (y/n) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+  fi
+fi
+
+exit 0
+```
+
+### Lärdomar från Equinet (2025-11-15)
+
+**Problem:**
+- Disk 94% full (12GB fritt)
+- `git push` failade med signal 10
+- `git gc` failade också (behöver diskutrymme för temporary files!)
+
+**Lösning:**
+1. `git config core.compression 0` - lyckad push!
+2. Cleanup efter push (npm cache, .next, playwright)
+3. Frigjorde 3GB → 15GB tillgängligt
+
+**Lärdomar:**
+- ✅ Checka diskutrymme INNAN stora operationer (git push, npm install, build)
+- ✅ Håll >15GB fritt för säker utveckling
+- ✅ `git gc` är INTE en lösning vid lågt diskutrymme (behöver plats själv!)
+- ✅ Disable compression är en safe workaround för akuta lägen
+- ✅ Cleanup regelbundet (npm cache, .next) - inte bara när det är för sent
+
+### Quick Reference: Disk Space Troubleshooting
+
+```bash
+# 1. Checka status
+df -h .
+
+# 2. Om <15GB fritt - kör cleanup
+npm cache clean --force && rm -rf .next
+
+# 3. Om git push failar med signal 10
+git config core.compression 0
+git push
+git config --unset core.compression
+
+# 4. Hitta stora filer
+du -sh * | sort -hr | head -10
+
+# 5. Efter cleanup - verifiera
+df -h .
+```
+
+---
+
 ## 🔄 Senaste Ändringar i Arbetsflödet
 
 ### 2025-11-15
