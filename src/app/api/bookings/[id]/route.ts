@@ -17,7 +17,18 @@ export async function PUT(
     // Auth handled by middleware
     const session = await auth()
 
-    const body = await request.json()
+    // Parse request body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error("Invalid JSON in request body:", jsonError)
+      return NextResponse.json(
+        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { status: 400 }
+      )
+    }
+
     const validatedData = updateBookingSchema.parse(body)
 
     const booking = await prisma.booking.findUnique({

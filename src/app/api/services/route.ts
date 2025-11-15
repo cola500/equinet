@@ -79,7 +79,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
-    const body = await request.json()
+    // Parse request body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error("Invalid JSON in request body:", jsonError)
+      return NextResponse.json(
+        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { status: 400 }
+      )
+    }
+
     const validatedData = serviceSchema.parse(body)
 
     const service = await prisma.service.create({

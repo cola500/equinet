@@ -73,8 +73,19 @@ export async function PUT(
       return new Response("Forbidden - not your provider profile", { status: 403 })
     }
 
+    // Parse request body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error("Invalid JSON in request body:", jsonError)
+      return NextResponse.json(
+        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { status: 400 }
+      )
+    }
+
     // Parse & validate
-    const body = await request.json()
     const validated = scheduleSchema.parse(body)
 
     // Update availability schedule

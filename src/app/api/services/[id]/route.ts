@@ -42,7 +42,18 @@ export async function PUT(
       return NextResponse.json({ error: "Service not found" }, { status: 404 })
     }
 
-    const body = await request.json()
+    // Parse request body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error("Invalid JSON in request body:", jsonError)
+      return NextResponse.json(
+        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { status: 400 }
+      )
+    }
+
     console.log("Received update request for service:", id)
     console.log("Request body:", body)
 

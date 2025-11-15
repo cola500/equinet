@@ -31,8 +31,19 @@ export async function POST(request: Request) {
       )
     }
 
-    // 2. Parse and validate
-    const body = await request.json()
+    // Parse request body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error("Invalid JSON in request body:", jsonError)
+      return NextResponse.json(
+        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { status: 400 }
+      )
+    }
+
+    // Parse and validate
     const validated = createRouteOrderSchema.parse(body)
 
     // 3. Validate date range
