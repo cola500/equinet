@@ -4,960 +4,235 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
 
 ## 🚀 Snabbstart
 
-### 1. Installera beroenden
 ```bash
-npm install
+npm install              # Installera beroenden
+npm run setup            # Sätt upp databas
+npm run dev              # Starta på http://localhost:3000
 ```
 
-### 2. Sätt upp databasen
-```bash
-npm run setup
-```
+**Stoppa:** `Ctrl + C` eller `./scripts/stop.sh`
 
-### 3. Starta utvecklingsservern
-```bash
-npm run dev
-```
+## 📋 Viktiga Kommandon
 
-Öppna [http://localhost:3000](http://localhost:3000) i din webbläsare.
+Se `package.json` för alla tillgängliga scripts. De vanligaste:
 
-### Stoppa servern
-```bash
-# I terminalen där servern körs
-Ctrl + C
-
-# Eller använd stop-scriptet
-./scripts/stop.sh
-```
-
-## 📋 Tillgängliga Scripts
-
-### Development Scripts
-```bash
-./scripts/start.sh     # Starta development server
-./scripts/stop.sh      # Stoppa development server
-./scripts/restart.sh   # Starta om development server
-```
-
-### NPM Scripts
 | Kommando | Beskrivning |
 |----------|-------------|
-| `npm run dev` | Startar utvecklingsservern på port 3000 |
-| `npm run build` | Bygger produktionsversionen av appen |
-| `npm start` | Startar produktionsservern (kräver build först) |
-| `npm run setup` | Sätter upp Prisma och pushar schema till databasen |
-| `npm run db:reset` | Återställer databasen ⚠️ (raderar all data!) |
-| `npm run db:studio` | Öppnar Prisma Studio för att inspektera databasen |
-| `npm run lint` | Kör ESLint för kodkvalitetskontroll |
-| `npm test` | Kör unit/integration tester i watch mode |
-| `npm run test:ui` | Öppnar Vitest UI för interaktiv testning |
-| `npm run test:run` | Kör unit/integration tester en gång (CI) |
-| `npm run test:coverage` | Kör tester med coverage report |
-| `npm run test:e2e` | Kör E2E-tester med Playwright (headless) |
-| `npm run test:e2e:ui` | Öppnar Playwright UI för visuell testning |
-| `npm run test:e2e:headed` | Kör E2E-tester med synlig browser |
-| `npm run test:e2e:debug` | Debug mode för E2E-tester |
+| `npm run dev` | Utvecklingsserver (port 3000) |
+| `npm run db:studio` | Prisma Studio för databasinspektering |
+| `npm run db:reset` | Återställ databas ⚠️ Raderar all data! |
+| `npm test` | Unit/integration tester (watch mode) |
+| `npm run test:e2e` | E2E-tester med Playwright |
+| `npm run test:coverage` | Coverage report |
 
 ## 🛠️ Teknisk Stack
 
 - **Framework**: Next.js 15.5.0 (App Router)
 - **Språk**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
-- **UI Komponenter**: shadcn/ui + Radix UI
-- **Databas**: SQLite (via Prisma ORM)
+- **UI**: shadcn/ui + Radix UI
+- **Databas**: SQLite (dev) via Prisma ORM
 - **Autentisering**: NextAuth.js v4
-- **Form Validering**: Zod + React Hook Form
-- **Datum**: date-fns med svensk locale
-- **Notifikationer**: Sonner (toast)
-- **Säkerhet**:
-  - bcrypt (password hashing)
-  - In-memory rate limiting
-  - Input sanitization
-  - Structured logging
-  - Environment validation
-- **Testning**:
-  - Vitest (unit & integration tests)
-  - Playwright (E2E tests)
-  - 70% code coverage
-  - 35 E2E-tester + 127 unit/integration tester
+- **Validering**: Zod + React Hook Form
+- **Testning**: Vitest (162 unit/integration) + Playwright (35 E2E) = 70% coverage
+- **Säkerhet**: bcrypt, rate limiting, input sanitization, structured logging
 
 ## 📁 Projektstruktur
 
 ```
 equinet/
 ├── prisma/
-│   ├── schema.prisma          # Databasschema
-│   └── dev.db                 # SQLite databas (genereras automatiskt)
+│   ├── schema.prisma          # Databasschema (source of truth)
+│   └── dev.db                 # SQLite databas
 ├── src/
 │   ├── app/                   # Next.js App Router
-│   │   ├── (auth)/           # Autentiseringssidor (login, register)
+│   │   ├── (auth)/           # Login, registrering
 │   │   ├── api/              # API routes
-│   │   │   ├── auth/         # NextAuth endpoints & registrering
-│   │   │   ├── bookings/     # Boknings-API (GET, POST, PUT, DELETE)
-│   │   │   ├── providers/    # Leverantörs-API (GET lista & detalj)
-│   │   │   │   └── [id]/
-│   │   │   │       ├── availability/  # Tillgänglighetskontroll API (GET tider för bokning)
-│   │   │   │       └── availability-schedule/  # Öppettider-API (GET/PUT veckoschema)
-│   │   │   ├── services/     # Tjänste-API (CRUD)
-│   │   │   ├── route-orders/ # 🆕 Rutt-beställningar API
-│   │   │   │   ├── route.ts          # POST (skapa), GET (lista)
-│   │   │   │   ├── my-orders/        # GET (kundens beställningar)
-│   │   │   │   └── available/        # GET (tillgängliga för leverantör)
-│   │   │   └── routes/       # 🆕 Rutt-planering API
-│   │   │       ├── route.ts          # POST (skapa rutt)
-│   │   │       ├── my-routes/        # GET (leverantörens rutter)
-│   │   │       └── [id]/
-│   │   │           ├── route.ts      # GET (hämta rutt)
-│   │   │           └── stops/[stopId]/  # PATCH (uppdatera stopp-status)
-│   │   ├── customer/         # Kundsidor
-│   │   │   ├── dashboard/    # Översikt med senaste bokningar
-│   │   │   ├── bookings/     # Lista alla bokningar (med avbokning)
-│   │   │   ├── profile/      # Kundprofilsida
-│   │   │   └── route-orders/ # 🆕 Rutt-beställningar
-│   │   │       ├── page.tsx          # Lista kundens beställningar
-│   │   │       └── new/              # Skapa ny rutt-beställning
-│   │   ├── provider/         # Leverantörssidor
-│   │   │   ├── dashboard/    # Dashboard med stats & onboarding
-│   │   │   ├── services/     # CRUD för tjänster
-│   │   │   ├── bookings/     # Hantera kundbokningar
-│   │   │   ├── profile/      # Leverantörsprofilsida med progress
-│   │   │   ├── route-planning/ # 🆕 Rutt-planering (välj beställningar, skapa rutt)
-│   │   │   └── routes/       # 🆕 Ruthantering
-│   │   │       ├── page.tsx          # Lista alla rutter
-│   │   │       └── [id]/             # Kör rutt (markera stopp klara)
-│   │   ├── providers/        # Publika leverantörssidor
-│   │   │   ├── page.tsx      # Lista alla leverantörer (med sökning)
-│   │   │   └── [id]/         # Leverantörsdetalj & bokning
-│   │   └── dashboard/        # Redirect till rätt dashboard
+│   │   │   ├── auth/         # NextAuth & registrering
+│   │   │   ├── bookings/     # Boknings-API
+│   │   │   ├── providers/    # Leverantörs-API
+│   │   │   │   └── [id]/availability/  # Tillgänglighetskontroll
+│   │   │   ├── services/     # Tjänste-API
+│   │   │   ├── route-orders/ # Rutt-beställningar API
+│   │   │   └── routes/       # Rutt-planering API
+│   │   ├── customer/         # Kundsidor (dashboard, bookings, profile)
+│   │   ├── provider/         # Leverantörssidor (dashboard, services, bookings, routes)
+│   │   └── providers/        # Publika leverantörssidor
 │   ├── components/
-│   │   ├── layout/           # Layout-komponenter för konsekvent design
-│   │   │   ├── Header.tsx           # Gemensam header med auth-aware navigation
-│   │   │   ├── ProviderNav.tsx      # Navigation tabs för provider-sidor
-│   │   │   ├── ProviderLayout.tsx   # Layout wrapper för provider-sidor
-│   │   │   ├── CustomerNav.tsx      # Navigation tabs för kund-sidor
-│   │   │   ├── CustomerLayout.tsx   # Layout wrapper för kund-sidor
-│   │   │   └── README.md            # Användningsdokumentation
+│   │   ├── layout/           # Header, navigation, layouts
 │   │   ├── provider/         # Provider-specifika komponenter
-│   │   │   └── AvailabilitySchedule.tsx  # Veckoschema för öppettider
 │   │   └── ui/               # shadcn/ui komponenter
-│   │       ├── password-requirements.tsx  # Lösenordsstyrkeindikator
-│   │       ├── alert-dialog.tsx  # Bekräftelsedialoger
-│   │       └── ...           # Andra UI-komponenter
 │   ├── hooks/
 │   │   └── useAuth.ts        # Custom auth hook
 │   ├── lib/
 │   │   ├── auth.ts           # NextAuth konfiguration
 │   │   ├── prisma.ts         # Prisma client singleton
-│   │   ├── utils.ts          # Utility funktioner (cn, etc)
-│   │   ├── rate-limit.ts     # Rate limiting utilities
+│   │   ├── rate-limit.ts     # Rate limiting
 │   │   ├── sanitize.ts       # Input sanitization
-│   │   ├── logger.ts         # Structured logging
-│   │   ├── env.ts            # Environment validation
-│   │   ├── distance.ts       # 🆕 Haversine formula för avst åndsberäkning
-│   │   └── validations/
-│   │       └── auth.ts       # Delade Zod-schemas för auth
+│   │   └── validations/      # Delade Zod-schemas
 │   └── types/
-│       └── next-auth.d.ts    # TypeScript types för NextAuth
-├── .env.local                # Environment variables
-├── .gitignore
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-└── README.md
+└── .env.local                # Environment variables
 ```
 
 ## 🔑 Konfiguration
 
-### Environment Variables
-
-Filen `.env.local` ska finnas i projektets rot med följande innehåll:
+Skapa `.env.local` i projektets rot:
 
 ```env
-# Database
 DATABASE_URL="file:./dev.db"
-
-# NextAuth
-NEXTAUTH_SECRET="din-säkra-hemliga-nyckel-här"
+NEXTAUTH_SECRET="[openssl rand -base64 32]"
 NEXTAUTH_URL="http://localhost:3000"
-```
-
-**Generera en säker NEXTAUTH_SECRET:**
-```bash
-openssl rand -base64 32
 ```
 
 ## 👥 Användarroller
 
-Equinet har två olika användarroller med separata gränssnitt:
-
 ### 🐴 Kunder (Hästägare)
-- Registrera och logga in
-- Bläddra bland tjänsteleverantörer
-- Filtrera leverantörer efter tjänstetyp
-- Se leverantörsprofiler med tjänster och priser
+- Bläddra och filtrera leverantörer
 - Boka tjänster med datum, tid och hästinformation
-- Se alla sina bokningar på dashboard
-- Avboka bokningar
-- **🆕 Rutt-baserad Levering (MVP):**
-  - Skapa flexibla rutt-beställningar utan exakt tid
-  - Ange datum-spann för när tjänsten ska utföras
-  - Markera beställningar som akuta (inom 48h)
-  - Se när beställning lagts till i leverantörens rutt
-  - Få information om beräknad ankomsttid
+- Hantera bokningar (visa, avboka)
+- **Flexibla rutt-beställningar**: Boka utan fast tid, ange datum-spann, markera som akut
 
-### 🔨 Tjänsteleverantörer (Hovslagare, Veterinärer, etc.)
-- Registrera med företagsinformation
-- Dashboard med statistik:
-  - Antal tjänster
-  - Totala bokningar
-  - Väntande bokningar
-  - Genomförda bokningar
-- Hantera tjänster (CRUD):
-  - Skapa nya tjänster
-  - Redigera namn, beskrivning, pris, varaktighet
-  - Aktivera/inaktivera tjänster
-  - Ta bort tjänster
-- Öppettider & Tillgänglighet:
-  - Sätta öppettider per veckodag (måndag-söndag)
-  - Markera vissa dagar som "stängt"
-  - Redigera schema i realtid med visuell feedback
-  - Schema visas automatiskt i bokningsflödet för kunder
-- Bokningshantering:
-  - Se inkommande bokningar (filtrerat efter status)
-  - Automatiska flikar: "Väntar på svar", "Bekräftade", "Alla"
-  - Acceptera eller avvisa bokningar
-  - Markera bokningar som genomförda
-  - Se kundinformation och hästdetaljer
-  - Automatisk tab-växling efter statusändringar
-- **🆕 Rutt-planering (MVP):**
-  - Se tillgängliga rutt-beställningar i området
-  - Filtrera efter tjänstetyp och prioritet
-  - Välja flera beställningar för en optimerad rutt
-  - Skapa rutt med namn, datum och starttid
-  - Se total sträcka och beräknad tid
-  - Köra rutt stopp för stopp
-  - Markera stopp som påbörjade eller klara
-  - Automatisk beräkning av ETA för varje stopp
+### 🔨 Tjänsteleverantörer
+- Dashboard med statistik och onboarding
+- Hantera tjänster (CRUD, aktivera/inaktivera)
+- Öppettider per veckodag
+- Bokningshantering (acceptera, avvisa, markera klara)
+- **Rutt-planering**: Skapa optimerade rutter från flexibla beställningar, köra stopp-för-stopp
 
 ## 🗄️ Databasschema
 
-### Huvudsakliga Modeller
-
-#### User
-- Användarkonton (både kunder och leverantörer)
-- Fält: email, password (hashed), firstName, lastName, phone, userType
-- Relationer: kunde-bokningar, leverantörsprofil
-
-#### Provider
-- Utökad profil för tjänsteleverantörer
-- Fält: companyName, description, address, municipality, location, isActive
-- Relationer: användare, tjänster, tillgänglighet, bokningar
-
-#### Service
-- Tjänster som leverantörer erbjuder
-- Fält: name, description, price, durationMinutes, isActive
-- Kan aktiveras/inaktiveras utan att raderas
-
-#### Availability
-- Leverantörers tillgänglighet (veckoschema)
-
-#### RouteOrder (🆕 Rutt-baserad Levering)
-- Kunders flexibla tjänstebeställningar
-- Fält: serviceType, address, coordinates (lat/lon), numberOfHorses, dateFrom, dateTo, priority, status
-- Relationer: kund, rutt-stopp
-
-#### Route (🆕 Rutt-planering)
-- Leverantörers planerade rutter
-- Fält: routeName, routeDate, startTime, status, totalDistance, totalDuration
-- Relationer: leverantör, rutt-stopp
-
-#### RouteStop (🆕 Rutt-stopp)
-- Enskilda stopp i en rutt
-- Fält: stopOrder, estimatedArrival, actualArrival/Departure, status
-- Länkar RouteOrder till Route
-- Fält: dayOfWeek (0-6, 0=Måndag), startTime, endTime, isClosed, isActive
-- En rad per veckodag och leverantör (unique constraint)
-
-#### Booking
-- Bokningar mellan kunder och leverantörer
-- Fält: bookingDate, startTime, endTime, status, horseName, horseInfo, customerNotes
-- Statusar: pending, confirmed, cancelled, completed
-
-#### Notification
-- Notifikationer (förberedd för framtida implementation)
-
-### ER-Diagram
-
-```
-User (Customer) ──┐
-                  ├──< Booking >──┐
-                  │                │
-                  └──> Provider <──┘
-                         │
-                         ├──< Service
-                         ├──< Availability
-                         └──< Notification
-```
-
-## 🎨 Implementerade Funktioner
-
-### ✅ Autentisering & Användare
-- [x] Användarregistrering med rollval (kund/leverantör)
-- [x] **Frontend validering med real-time feedback (React Hook Form + Zod)**
-- [x] **Visuell lösenordsstyrkeindikator med krav-checklist**
-- [x] Säker inloggning med bcrypt-hashade lösenord
-- [x] Session-baserad autentisering via NextAuth
-- [x] Rollbaserad access control (middleware)
-- [x] Custom useAuth hook för enkel auth-state
-- [x] **Toast-notifikation efter lyckad registrering**
-- [x] Logout-funktionalitet
-
-### ✅ Leverantörsfunktioner
-- [x] Provider dashboard med real-time statistik
-- [x] **Onboarding-checklista för nya leverantörer (3-stegs guide)**
-- [x] **Felhantering med "Försök igen"-knappar**
-- [x] Tjänstehantering (CRUD)
-- [x] **Förbättrade empty states med ikoner och konkreta förslag**
-- [x] Aktivera/inaktivera tjänster
-- [x] **Öppettider & Tillgänglighet**
-  - Sätta öppettider per veckodag (måndag-söndag)
-  - Markera vissa dagar som "stängt"
-  - Redigera schema i realtid med visuell feedback
-  - Schema visas automatiskt i bokningsflödet för kunder
-- [x] Bokningshantering med filter
-- [x] Acceptera/avvisa bokningar
-- [x] Markera bokningar som genomförda
-- [x] Automatisk tab-växling efter statusändringar
-- [x] Detaljerad kundinfo vid bokning
-- [x] Leverantörsprofilsida för företagsinformation
-- [x] **Profilkompletteringsindikator med visuell progress bar**
-- [x] **🆕 Rutt-planering & Optimering (MVP)**
-  - Visa tillgängliga flexibla beställningar (route-orders)
-  - Filtrera beställningar efter tjänstetyp och prioritet
-  - Visualisera beställningar sorterade efter avstånd
-  - Välj flera beställningar samtidigt för en rutt
-  - Skapa planerade rutter med namn, datum och starttid
-  - Beräkna total sträcka med Haversine-formeln
-  - Beräkna beräknad total tid baserat på antal hästar
-  - Lista alla skapade rutter med status
-  - Visa rutt-detaljer med alla stopp
-  - Köra rutt stopp-för-stopp med statusuppdateringar
-  - Markera stopp som "Påbörjad" eller "Klar"
-  - Automatisk ETA-beräkning per stopp
-
-### ✅ Kundfunktioner
-- [x] Förenklat kundflöde - leverantörsgalleriet som huvudsida
-- [x] Användarmeny med dropdown (bokningar, profil, logga ut)
-- [x] Publikt leverantörsgalleri med avancerad sökning
-- [x] Sök och filtrera leverantörer efter namn/beskrivning och ort
-- [x] Automatisk sökning med debounce (500ms)
-- [x] **Visuell laddningsindikator under sökning (spinner + "Söker...")**
-- [x] Visuella filter-badges med möjlighet att ta bort enskilda filter
-- [x] **Felhantering med "Försök igen"-knappar**
-- [x] **Kontextuella empty states beroende på aktiva filter**
-- [x] Leverantörsdetaljsida med tjänster
-- [x] Bokningsdialog med kalenderpicker
-- [x] **Tillgänglighetskontroll - visar bokade tidsluckor**
-- [x] **Visar leverantörens öppettider för vald dag**
-- [x] **Varningstexter när leverantören är stängd**
-- [x] **Server-side validering förhindrar dubbelbokningar**
-- [x] Hästinformation och kundommentarer
-- [x] Lista alla egna bokningar
-- [x] **Avboka bokningar med bekräftelsedialog**
-- [x] Kundprofilsida för att redigera personlig information
-- [x] **🆕 Flexibla Rutt-beställningar**
-  - Skapa flexibla beställningar utan fast tid
-  - Ange önskat datum-spann (dateFrom - dateTo)
-  - Markera beställning som akut (prioritet: urgent)
-  - Automatisk filtrering på bokningssidan (fixed vs flexible)
-  - Se när beställning lagts till i leverantörens rutt
-  - Få information om beräknad ankomsttid från rutten
-
-### ✅ UI/UX
-- [x] Responsiv design (desktop, tablet, mobil)
-- [x] Toast-notifikationer för använderfeedback
-- [x] Svensk lokalisering (datum, språk)
-- [x] Konsekvent färgschema (grön-vit tema)
-- [x] **Omfattande loading states (spinners, skeletons, progressbars)**
-- [x] **Robust error handling med retry-funktionalitet**
-- [x] **Onboarding-flöden för nya användare**
-- [x] **Kontextuella empty states med actionable CTAs**
-- [x] **Real-time validering med visuell feedback**
-- [x] **Bekräftelsedialoger för kritiska operationer**
-- [x] Dropdown-menyer för användare (renare navigation)
-- [x] Visuella filter-badges för sökning
-- [x] Automatisk sökning med debounce
-
-### ✅ Tekniskt
-- [x] TypeScript genom hela projektet
-- [x] Zod schema-validering på både client & server
-- [x] API routes skyddade med auth-checks
-- [x] Prisma ORM med type-safety
-- [x] Next.js 15.5 App Router
-- [x] Server & Client Components korrekt separerade
-
-## 🔮 Framtida Förbättringar
-
-### Prioritet 1 (Quick Wins)
-- [x] ~~Blockera dubbelbokningar~~ (✅ Implementerat!)
-  - Server-side validering för överlappande bokningar
-  - Visuell indikation av bokade tider
-- [x] ~~Implementera availability-schemat i UI~~ (✅ Implementerat!)
-  - Låt leverantörer sätta öppettider per veckodag
-  - Visa tillgängliga tider baserat på schema
-  - Markera stängda dagar
-  - Integration med bokningsflödet
-- [x] ~~Förbättra Dashboard~~ (✅ Delvis implementerat!)
-  - Real-time statistik istället för hårdkodad data
-  - Onboarding-guide för nya leverantörer
-  - [ ] Diagram/charts för statistik (återstår)
-  - [ ] Senaste aktivitet (återstår)
-
-### Prioritet 2 (Större Features)
-- [ ] Email-notifikationer
-  - Vid ny bokning
-  - Vid statusändringar
-  - Påminnelser
-- [ ] Bilduppladdning
-  - Profilbilder för användare
-  - Företagsloggor för leverantörer
-  - Bilder för tjänster
-- [ ] Betalningsintegration (Stripe/Klarna)
-- [ ] Recensioner & Betyg
-  - Kunder kan betygsätta leverantörer
-  - Visa genomsnittligt betyg
-  - Skrivna recensioner
-
-### Prioritet 3 (Avancerat)
-- [ ] Realtidsnotifikationer (WebSockets/Pusher)
-- [ ] SMS-påminnelser (Twilio)
-- [ ] Google Calendar-synk
-- [ ] Exportera bokningar (PDF/CSV)
-- [ ] Mobilapp (React Native/Expo)
-- [ ] Admin-panel för plattformsadministration
-- [ ] Subscription-modell för leverantörer
-- [ ] Geolocation-baserad sökning
-
-## 🧪 Testa Appen - Komplett Guide
-
-### Steg 1: Skapa en leverantör
-
-1. Gå till [http://localhost:3000/register](http://localhost:3000/register)
-2. Välj **"Tjänsteleverantör"**
-3. Fyll i:
-   - För- och efternamn: t.ex. "Anna Andersson"
-   - Email: `anna@hovslagare.se`
-   - Telefon: `070-1234567`
-   - Lösenord: Välj ett säkert lösenord
-   - Företagsnamn: "Annas Hovslageri"
-   - Beskrivning: "Professionell hovslagare med 15 års erfarenhet"
-   - Adress, kommun: t.ex. "Stockholm"
-4. Klicka **"Registrera"**
-
-### Steg 2: Lägg till tjänster
-
-1. Du kommer automatiskt till provider dashboard
-2. Klicka på **"Mina tjänster"** i navigationen
-3. Klicka **"Lägg till tjänst"**
-4. Skapa några tjänster:
-   - **Tjänst 1**:
-     - Namn: "Hovslagning"
-     - Beskrivning: "Standard hovslagning med skoning"
-     - Pris: 800 kr
-     - Varaktighet: 60 min
-   - **Tjänst 2**:
-     - Namn: "Akut hovslagning"
-     - Beskrivning: "Akutbesök vid behov"
-     - Pris: 1500 kr
-     - Varaktighet: 45 min
-5. Testa att:
-   - Redigera en tjänst
-   - Inaktivera/aktivera en tjänst
-   - Se att endast aktiva tjänster visas för kunder
-
-### Steg 3: Skapa en kund
-
-1. Logga ut (knappen uppe till höger)
-2. Gå till [http://localhost:3000/register](http://localhost:3000/register)
-3. Välj **"Hästägare"**
-4. Fyll i:
-   - För- och efternamn: "Kalle Karlsson"
-   - Email: `kalle@example.com`
-   - Telefon: `070-9876543`
-   - Lösenord: Välj ett lösenord
-5. Registrera dig
-
-### Steg 4: Gör en bokning
-
-1. Du kommer till customer dashboard
-2. Klicka på **"Hitta tjänster"** eller gå till `/providers`
-3. Se listan med leverantörer (Anna Andersson bör synas)
-4. Klicka **"Se detaljer"** på Annas kort
-5. På leverantörssidan, välj en tjänst (t.ex. "Hovslagning")
-6. Fyll i bokningsformuläret:
-   - Datum: Välj ett framtida datum
-   - Tid: t.ex. "10:00"
-   - Hästens namn: "Thunder"
-   - Hästinformation: "4-årig hingst, nervös för främmande"
-   - Kommentarer: "Behöver extra tid"
-7. Klicka **"Boka tjänst"**
-8. Du ser toast-notifikationen "Bokning skapad!"
-9. Gå till **"Mina bokningar"** och se din bokning (status: "Väntar på svar")
-
-### Steg 5: Hantera bokningen som leverantör
-
-1. Logga ut och logga in igen som leverantör (`anna@hovslagare.se`)
-2. Gå till **"Bokningar"** i navigationen
-3. Se den nya bokningen under fliken **"Väntar på svar"**
-4. Inspektera bokningsdetaljerna:
-   - Tjänst, datum, tid
-   - Kundinformation (namn, email, telefon)
-   - Hästinformation
-   - Kundkommentarer
-5. Klicka **"Acceptera"**
-6. Sidan växlar automatiskt till **"Bekräftade"**-fliken
-7. Se den bekräftade bokningen
-8. Testa att:
-   - Klicka **"Markera som genomförd"**
-   - Se att bokningen flyttas till "Alla"-fliken med status "Genomförd"
-
-### Steg 6: Verifiera som kund
-
-1. Logga ut och logga in som kund (`kalle@example.com`)
-2. Gå till customer dashboard eller "Mina bokningar"
-3. Se att bokningens status har uppdaterats till "Bekräftad" eller "Genomförd"
-
-## 🐛 Felsökning
-
-### Problem: Servern startar inte
-
-**Symptom**: `Port 3000 is already in use`
-
-**Lösning**:
-```bash
-# macOS/Linux
-lsof -ti:3000 | xargs kill -9
-
-# Windows (PowerShell)
-Get-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess | Stop-Process -Force
-```
-
-Eller starta på annan port:
-```bash
-npm run dev -- -p 3001
-```
-
-### Problem: Databasfel
-
-**Symptom**: "Table does not exist", "Prisma client not found"
-
-**Lösning**:
-```bash
-npm run db:reset
-npm run setup
-```
-
-### Problem: NextAuth session-fel
-
-**Symptom**: "Invalid secret", redirect loops
-
-**Lösning**:
-1. Kontrollera att `.env.local` finns och har `NEXTAUTH_SECRET`
-2. Generera ny secret: `openssl rand -base64 32`
-3. Starta om servern
-
-### Problem: shadcn/ui komponenter saknas
-
-**Symptom**: `Module not found: Can't resolve '@/components/ui/button'`
-
-**Lösning**:
-```bash
-npx shadcn@latest add button input card dialog select calendar form label textarea --yes
-```
-
-Rensa cache och starta om:
-```bash
-rm -rf .next
-npm run dev
-```
-
-### Problem: TypeScript-fel
-
-**Symptom**: Type errors i editorn
-
-**Lösning**:
-```bash
-# Generera Prisma client
-npx prisma generate
-
-# Starta om TypeScript server i VS Code
-Cmd+Shift+P → "TypeScript: Restart TS Server"
-```
-
-### Problem: Stale data eller caching
-
-**Lösning**: Hård refresh i webbläsaren
-- **Windows/Linux**: `Ctrl + Shift + R`
-- **macOS**: `Cmd + Shift + R`
-
-## 📊 Databas Management
-
-### Prisma Studio - Visuellt gränssnitt
-
-Öppna ett webbaserat GUI för att inspektera och redigera data:
-
-```bash
-npm run db:studio
-```
-
-Öppnas på [http://localhost:5555](http://localhost:5555)
-
-Här kan du:
-- Se alla tabeller och data
-- Söka och filtrera poster
-- Manuellt skapa/redigera/ta bort data
-- Se relationer mellan tabeller
-
-### Återställ databasen
-
-**⚠️ VARNING: Detta raderar ALL data!**
-
-```bash
-npm run db:reset
-```
-
-### Backup av databasen
-
-Kopiera filen manuellt:
-```bash
-cp prisma/dev.db prisma/dev.db.backup
-```
-
-Återställ från backup:
-```bash
-cp prisma/dev.db.backup prisma/dev.db
-```
+**Huvudmodeller:**
+- **User** - Användarkonton (kunder + leverantörer)
+- **Provider** - Leverantörsprofiler med företagsinformation
+- **Service** - Tjänster som leverantörer erbjuder
+- **Availability** - Öppettider per veckodag
+- **Booking** - Traditionella bokningar med fast tid
+- **RouteOrder** - Flexibla beställningar utan fast tid
+- **Route** - Leverantörers planerade rutter
+- **RouteStop** - Enskilda stopp i en rutt
+
+Se `prisma/schema.prisma` för fullständig definition.
+
+## ✨ Implementerade Funktioner
+
+### Autentisering
+- Registrering med rollval (kund/leverantör)
+- Lösenordsstyrkeindikator med real-time feedback
+- Session-baserad autentisering
+- Rollbaserad access control
+
+### Leverantörsfunktioner
+- Dashboard med statistik och onboarding-checklista
+- Tjänstehantering (CRUD)
+- Öppettider & tillgänglighetskontroll
+- Bokningshantering med filter och automatisk tab-växling
+- Profilkompletteringsindikator
+- **Rutt-planering**:
+  - Visa tillgängliga flexibla beställningar sorterade efter avstånd
+  - Skapa optimerade rutter (Haversine + Nearest Neighbor)
+  - Köra rutter stopp-för-stopp med statusuppdateringar
+  - Automatisk ETA-beräkning
+
+### Kundfunktioner
+- Leverantörsgalleri med sökning och filtrera
+- Traditionella bokningar med tillgänglighetskontroll
+- Flexibla rutt-beställningar (datum-spann, prioritet)
+- Avboka bokningar
+- Kundprofil
+
+### UI/UX
+- Responsiv design
+- Svenska lokaliseringen (datum, språk)
+- Toast-notifikationer
+- Loading states, error handling med retry-funktionalitet
+- Onboarding-flöden och kontextuella empty states
+- Bekräftelsedialoger för kritiska operationer
+
+### Säkerhet
+- bcrypt password hashing
+- HTTP-only cookies, CSRF protection
+- SQL injection-skydd (Prisma)
+- XSS protection (React + input sanitization)
+- Rate limiting (login, registrering, bokningar, etc.)
+- Strukturerad logging med security events
+- Environment validation
 
 ## 🧪 Testning
 
-Equinet har en komplett testsvit med **162+ tester** (35 E2E + 127 unit/integration) och **70% code coverage**.
+**162+ tester** (35 E2E + 127 unit/integration) med **70% coverage**.
 
-### Testpyramiden
-
-Projektet följer testpyramiden för optimal testning:
-
-```
-         E2E: 35 tests (Playwright) ✅ 100% pass rate
-       (Hela användarflöden i browser)
-                   ↑
-      Integration: 75 tests (Vitest)
-       (API routes + databas)
-                   ↑
-           Unit: 52 tests (Vitest)
-       (Utilities & hooks)
-```
-
-**E2E Test Coverage:**
-- ✅ Authentication (registrering, login, logout)
-- ✅ Booking flow (sök, boka, avboka)
-- ✅ Flexible bookings (flexibla rutt-beställningar)
-- ✅ Provider services (CRUD operations)
-- ✅ Provider bookings (acceptera, avböj)
-- ✅ **🆕 Route Planning** (välja beställningar, skapa rutter, köra rutter)
-- ✅ Profile management
-- ✅ Empty states och error handling
-
-### Snabbstart - Kör Tester
-
-#### Unit & Integration Tests (Vitest)
+### Kör Tester
 
 ```bash
-# Watch mode - bäst under utveckling
-npm test
+# Unit/Integration (Vitest)
+npm test                  # Watch mode
+npm run test:ui           # Visuellt interface
+npm run test:coverage     # Med coverage
 
-# Visuellt interface (rekommenderas!)
-npm run test:ui
-
-# Kör en gång
-npm run test:run
-
-# Med coverage report
-npm run test:coverage
+# E2E (Playwright)
+npx tsx prisma/seed-test-users.ts  # Skapa testanvändare först
+npm run test:e2e          # Kör E2E-tester
+npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 ```
 
-#### E2E Tests (Playwright)
-
-**Viktigt:** E2E-testerna kräver att testanvändare finns i databasen.
-
-**Steg 1: Skapa testanvändare**
-```bash
-npx tsx prisma/seed-test-users.ts
-```
-
-Detta skapar:
-- 📧 **Kund**: `test@example.com` / `TestPassword123!`
-- 📧 **Leverantör**: `provider@example.com` / `ProviderPass123!`
-- 2 test-tjänster
-- 1 test-bokning
-
-**Steg 2: Kör E2E-tester**
-
-```bash
-# Alternativ 1: Auto-start (kan ta lång tid att starta)
-npm run test:e2e
-
-# Alternativ 2: Manuell start (rekommenderas)
-# Terminal 1:
-npm run dev
-
-# Terminal 2 (när servern är startad):
-npx playwright test
-
-# Med visuell browser
-npx playwright test --headed
-
-# Specifikt test-suite
-npx playwright test auth.spec.ts
-npx playwright test booking.spec.ts
-npx playwright test provider.spec.ts
-```
-
-**Playwright UI (bäst för utveckling)**
-```bash
-npm run test:e2e:ui
-```
-
-**Debug-läge (steg-för-steg)**
-```bash
-npm run test:e2e:debug
-```
-
-### Vad Testas?
-
-#### Unit Tests (52 st)
-- ✅ **sanitize.ts** (52 tests):
-  - Email, phone, string sanitization
-  - SQL injection-skydd för sökfrågor
-  - XSS-skydd (script tags, event handlers)
-  - URL-validering (blockerar farliga protokoll)
-- ✅ **booking.ts** - Datumhantering och validering
-- ✅ **useAuth.ts** - Auth hook-funktionalitet
-
-#### Integration Tests (75 st)
-- ✅ **Auth API** (6 tests):
-  - Registrering (kund & leverantör)
-  - Validering av input
-- ✅ **Bookings API** (22 tests):
-  - CRUD-operationer
-  - Dubbelbokningsskydd
-  - Authorization checks
-- ✅ **Services API** (18 tests):
-  - CRUD för tjänster
-  - Provider ownership
-- ✅ **Providers API** (10 tests):
-  - Lista leverantörer
-  - Sök och filtrera
-- ✅ Övriga API routes (19 tests)
-
-#### E2E Tests (35 st)
-- ✅ **Authentication** (7 tests):
-  - Registrera kund & leverantör
-  - Inloggning & logout
-  - Felhantering
-  - Lösenordskrav-validering
-- ✅ **Booking Flow** (6 tests):
-  - Sök och filtrera leverantörer
-  - Komplett bokningsflöde
-  - Dubbelbokningsskydd
-  - Avboka bokning
-  - Empty states
-- ✅ **Flexible Booking Flow** (5 tests):
-  - Växla mellan fixed och flexible bokningar
-  - Skapa flexibla beställningar (normal + urgent)
-  - Filtrering av flexibla bokningar
-  - Visa route info när beställning är planerad
-- ✅ **Provider Flow** (10 tests):
-  - Dashboard med statistik
-  - CRUD tjänster
-  - Hantera bokningar
-  - Acceptera/avvisa bokningar
-  - Uppdatera profil
-- ✅ **🆕 Route Planning Flow** (7 tests):
-  - Visa tillgängliga route-orders
-  - Välja flera beställningar och skapa rutt
-  - Lista skapade rutter
-  - Öppna och visa rutt-detaljer
-  - Markera stopp som klara
+**Testanvändare:**
+- Kund: `test@example.com` / `TestPassword123!`
+- Leverantör: `provider@example.com` / `ProviderPass123!`
 
 ### Test Coverage
 
-```
-Total Coverage: 70%
+- **Unit Tests (52)**: sanitize, booking utils, hooks
+- **Integration Tests (75)**: API routes (auth, bookings, services, providers, routes)
+- **E2E Tests (35)**: Authentication, booking flow, provider flow, route planning
 
-API Routes:      80-90% ⭐⭐
-Utilities:       100%   ⭐⭐⭐
-Hooks:           100%   ⭐⭐⭐
-Components:      Varierar
-```
+Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 
-**Högsta prioritet för testning:**
-1. ✅ API routes (säkerhet & business logic)
-2. ✅ Utilities (sanitization, validation)
-3. ✅ Critical user flows (E2E)
-4. ⏭️ React components (kan läggas till senare)
+## 🧭 Testa Appen Manuellt
 
-### Testdokumentation
+**Snabb guide:**
 
-För mer detaljerad information:
-- **Unit/Integration tests**: Se individuella `.test.ts` filer
-- **E2E tests**: Se `e2e/README.md`
+1. **Registrera leverantör** → Lägg till tjänster → Sätt öppettider
+2. **Registrera kund** → Bläddra leverantörer → Gör bokning
+3. **Logga in som leverantör** → Acceptera bokning → Markera som klar
+4. **Verifiera som kund** → Se uppdaterad status
 
-### Playwright Codegen
+Se längre guide i [CLAUDE.md](./CLAUDE.md) för steg-för-steg instruktioner.
 
-Generera E2E-tester automatiskt genom att klicka runt i appen:
+## 🐛 Felsökning
 
+### Port upptagen
 ```bash
-npx playwright codegen http://localhost:3000
+lsof -ti:3000 | xargs kill -9
+# eller
+npm run dev -- -p 3001
 ```
 
-Playwright spelar in dina klick och genererar testkod!
-
-### Continuous Integration
-
-För CI/CD-pipelines:
-
+### Databasfel
 ```bash
-# Unit & Integration (snabbt)
-npm run test:run
-
-# E2E (långsamt, kräver browser)
-npm run test:e2e
+npm run db:reset && npm run setup
 ```
 
-**Tips för CI:**
-- Kör unit/integration tests på varje commit
-- Kör E2E tests endast på main/staging
-- Använd Playwright i Docker för CI
+### TypeScript-fel
+```bash
+npx prisma generate
+# Starta om TS server i VS Code: Cmd+Shift+P → "TypeScript: Restart TS Server"
+```
 
-### Felsökning
-
-**"Test failed" - vad gör jag?**
-
-1. **Kör testet igen** (kan vara flaky)
-   ```bash
-   npx vitest run --reporter=verbose
-   ```
-
-2. **Kolla loggarna**
-   ```bash
-   npm test -- --reporter=verbose
-   ```
-
-3. **Debug i UI**
-   ```bash
-   npm run test:ui  # För Vitest
-   npm run test:e2e:debug  # För Playwright
-   ```
-
-4. **Kolla database state**
-   ```bash
-   npm run db:studio
-   ```
-
-**"E2E tests timeout"**
-
-- Öka timeout i `playwright.config.ts`
-- Starta dev-server manuellt först
-- Kolla att port 3000 inte används av annat
-
-## 🔐 Säkerhet
-
-### Implementerade Säkerhetsåtgärder
-
-#### Grundläggande Säkerhet
-- ✅ **Lösenordshantering**: bcrypt med 10 salt rounds
-- ✅ **Session Security**: HTTP-only cookies via NextAuth
-- ✅ **CSRF Protection**: Inbyggt i NextAuth
-- ✅ **SQL Injection**: Skyddad genom Prisma's prepared statements
-- ✅ **XSS Protection**: React's automatiska escaping + input sanitization
-- ✅ **Auth Middleware**: Route protection baserat på userType
-- ✅ **API Authorization**: Kontrollerar att användare äger resursen
-
-#### Avancerad Säkerhet (Nyligen tillagd)
-
-##### 1. Rate Limiting
-- ✅ **Login**: 5 försök per 15 minuter
-- ✅ **Registrering**: 3 försök per timme
-- ✅ **Bokningar**: 10 bokningar per timme per användare
-- ✅ **Tjänsteskapande**: 10 tjänster per timme
-- ✅ **Profiluppdateringar**: 20 uppdateringar per timme
-- In-memory implementation (SQLite-friendly)
-- Förberedd för Redis i produktion
-
-##### 2. Input Sanitization
-- ✅ **Email sanitization**: Normalisering och validering
-- ✅ **String sanitization**: Tar bort null bytes och farliga tecken
-- ✅ **Search query sanitization**: SQL injection-skydd
-- ✅ **Phone number sanitization**: Format-validering
-- ✅ **XSS stripping**: Aggressiv rensning av HTML/JavaScript
-- Applicerad på alla user inputs i API endpoints
-
-##### 3. Lösenordsstyrka
-- ✅ **Minst 8 tecken** (max 72 för bcrypt)
-- ✅ **Kräver**: stor bokstav, liten bokstav, siffra, specialtecken
-- ✅ **Blockerar vanliga lösenord**: password123, qwerty123, etc
-- ✅ **Förhindrar upprepningar**: aaaaaa inte tillåtet
-- ✅ **Detekterar sekvenser**: 123456, abcdef blockeras
-- Real-time visuell feedback i registreringsformulär
-
-##### 4. Strukturerad Logging
-- ✅ **Log-nivåer**: DEBUG, INFO, WARN, ERROR, FATAL
-- ✅ **Context-tracking**: userId, requestId, endpoint
-- ✅ **Security events**: Rate limit överträdelser, failed logins
-- ✅ **JSON-format i produktion**: Lätt att parse och analysera
-- ✅ **Färgkodade logs i development**: Bättre läsbarhet
-- Implementerad i kritiska endpoints
-
-##### 5. Environment Validation
-- ✅ **Fail-fast**: Applikationen startar inte med felaktig config
-- ✅ **Zod-validering**: Type-safe environment variables
-- ✅ **Production warnings**:
-  - Varnar om HTTP istället för HTTPS
-  - Varnar om för kort SECRET (<64 chars)
-  - Varnar om SQLite i produktion
-- Se `.env.example` för required variables
-
-### Säkerhetsrekommendationer för Produktion
-
-#### Obligatoriska för Produktion
-- [x] ~~Implementera rate limiting~~ ✅ (In-memory, fungerar för mindre load)
-- [x] ~~Implementera password strength requirements~~ ✅
-- [x] ~~Logga security events~~ ✅ (Strukturerad logging implementerad)
-- [ ] **Använd stark `NEXTAUTH_SECRET`** (minst 64 bytes för produktion)
-- [ ] **Aktivera HTTPS** i produktion (via reverse proxy/load balancer)
-- [ ] **Använd PostgreSQL** istället för SQLite
-
-#### Rekommenderat för Större Produktion
-- [ ] **Redis-baserad rate limiting** (för multi-server setup)
-- [ ] **External logging service** (Sentry, Datadog, CloudWatch)
-- [ ] **Password breach checking** (Have I Been Pwned API)
-- [ ] **2FA** (tvåfaktorsautentisering)
-- [ ] **CORS-policy** (om frontend är på annan domän)
-- [ ] **WAF** (Web Application Firewall)
+### Stale cache
+```bash
+rm -rf .next && npm run dev
+```
 
 ## 🚀 Deploy till Produktion
 
 ### Förberedelser
 
-1. **Byt databas**: Migrera från SQLite till PostgreSQL
+1. **Byt till PostgreSQL**:
    ```env
    DATABASE_URL="postgresql://user:password@host:5432/dbname"
    ```
 
-2. **Environment Variables**: Sätt upp på hosting-plattform
-   - `DATABASE_URL`
-   - `NEXTAUTH_SECRET`
-   - `NEXTAUTH_URL` (din production URL)
+2. **Sätt environment variables** på hosting-plattform
 
 3. **Kör migrations**:
    ```bash
@@ -965,115 +240,54 @@ npm run test:e2e
    ```
 
 ### Rekommenderade Plattformar
-
-- **Vercel** (enkelt för Next.js)
+- **Vercel** (enklast för Next.js)
 - **Railway** (inkl. PostgreSQL)
-- **Heroku** (traditionell hosting)
-- **DigitalOcean App Platform**
+- **Heroku**, **DigitalOcean App Platform**
 
-## 🤝 Bidra
+### Säkerhetskrav för Produktion
+- [ ] Stark `NEXTAUTH_SECRET` (≥64 bytes)
+- [ ] HTTPS aktiverat
+- [ ] PostgreSQL (inte SQLite)
+- [ ] Redis-baserad rate limiting (för multi-server)
+- [ ] External logging service (Sentry, Datadog)
 
-Detta är ett MVP-projekt skapat som demonstration.
+Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 
-För bugrapporter eller förbättringsförslag:
-1. Dokumentera problemet tydligt
-2. Inkludera steg för att reproducera
-3. Ange din miljö (OS, Node version, etc.)
+## 📚 Dokumentation
 
-## 📄 Licens
+- **README.md** (denna fil) - Vad som är byggt, setup, testning
+- **[CLAUDE.md](./CLAUDE.md)** - Utvecklingsguide, arbetsprocesser, patterns
+- **[NFR.md](./NFR.md)** - Non-Functional Requirements (säkerhet, performance, etc.)
+- **[SPRINT-1.md](./SPRINT-1.md)** - Sprint planning och progress
+- **[feature-rutt-baserad-levering.md](./feature-rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
 
-Privat projekt - Ingen licens specificerad.
+## 🔮 Roadmap
 
-## 👨‍💻 Utvecklad med
+### ✅ v1.3.0 - UX Quick Wins (Sprint 1 pågår)
+- ✅ Förbättrad lösenordsvalidering (F-3.1)
+- ✅ Försök igen-knappar (F-3.3)
+- ✅ Performance-optimering provider loading (F-3.4)
+- 🚧 Onboarding Checklist (F-3.4) - återstår
 
-- ☕ Next.js 15.5 & TypeScript
-- 🎨 Tailwind CSS & shadcn/ui
-- 🤖 Claude Code
-- 💚 Kärlek till hästar
+### 🚧 Nästa (Fas 2-5)
+- **Kartvy** - Visa beställningar och rutter på karta
+- **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
+- **Notifikationer** - Push/Email/SMS för kunder
+- **Problemhantering** - Rapportera problem, omberäkna rutter
+- **Rutthistorik & Analytics** - Statistik och intelligent förslag
+
+Se `feature-rutt-baserad-levering.md` för detaljerad roadmap.
+
+### Framtida Features (Prioritet 2-3)
+- Email-notifikationer vid bokningar
+- Bilduppladdning (profiler, tjänster)
+- Betalningsintegration (Stripe/Klarna)
+- Recensioner & betyg
+- Google Calendar-synk
+- Mobilapp (React Native)
 
 ---
 
 **Skapad**: November 2025
-**Senast uppdaterad**: 2025-11-15
-**Version**: 1.3.0 MVP - UX Quick Wins (Sprint 1 pågår)
-
-### 🆕 Version 1.3.0 - UX Quick Wins (Sprint 1) (2025-11-15)
-
-**Sprint 1 Status: 1/4 features klara**
-
-- ✅ **Förbättrad lösenordsvalidering** (F-3.1)
-  - Grupperad layout (Längd + Innehåll)
-  - Neutral state när fältet är tomt
-  - Real-time visuell feedback medan användaren skriver
-  - ARIA-support för screen readers
-  - Success message med animation när alla krav uppfylls
-
-- 🚧 **Pågående**: Försök igen-knappar (F-3.3)
-- ⏳ **Nästa**: Avboka-funktion (F-3.2), Onboarding Checklist (F-3.4)
-
-### 🆕 Version 1.2.0 Highlights (2025-11-15)
-- **Rutt-planering för leverantörer** - Skapa optimerade rutter från flexibla beställningar
-- **Flexibla beställningar för kunder** - Boka utan fast tid, ange datum-spann
-- **Haversine-baserad avståndsberäkning** - Geografisk sortering av beställningar
-- **Stopp-för-stopp navigation** - Kör rutt med real-time statusuppdateringar
-- **Retry-mekanik** - Intelligent omförsöksfunktion vid nätverksfel med ErrorState-komponent
-- **Next.js 15.5.0 upgrade** - Stabilare och snabbare (fixade manifest-bug)
-- **35 E2E-tester** - 100% pass rate, inklusive route planning flow
-
-### 📍 MVP-Status: Rutt-baserad Levering
-
-**Detta är en MVP (Minimum Viable Product)** av rutt-funktionen enligt [`feature-rutt-baserad-levering.md`](./feature-rutt-baserad-levering.md). Vi har implementerat grundfunktionaliteten, men flera features från den fullständiga specen återstår.
-
-#### ✅ Implementerat i v1.2.0 (Fas 1.5)
-- Databasschema: `FlexibleBooking`, `Route`, `RouteStop`
-- Kunder kan skapa flexibla beställningar utan fast tid
-- Leverantörer ser tillgängliga beställningar sorterade efter avstånd
-- Filtrera beställningar efter tjänstetyp och prioritet
-- Skapa rutter med manuellt valda beställningar
-- Automatisk ruttoptimering med Haversine + Nearest Neighbor-algoritm
-- Beräknad total sträcka och tid
-- Stopp-för-stopp navigation för leverantörer
-- Statusuppdateringar (Pending → In Progress → Completed)
-- ETA-beräkning per stopp baserat på starttid och restider
-- Fullständig E2E-testning (100% pass rate)
-
-#### 🚧 Nästa Steg (enligt feature-spec)
-
-**Fas 2: Förbättrad Ruttoptimering (v1.3)**
-- [ ] **Kartvy** - Visa beställningar och rutter på interaktiv karta
-- [ ] **Drag-and-drop** - Manuell justering av stopp-ordning
-- [ ] **Visuella rutter** - Numrerade stopp på karta med rutt-linjer
-- [ ] **Estimerad tid**: 2-3 veckor
-
-**Fas 3: Realtidsspårning & Notifikationer (v1.4)**
-- [ ] **Realtidsposition** - Leverantör delar sin position under rutt-dagen
-- [ ] **Kund-spårning** - Kunder kan se leverantörens position på karta
-- [ ] **Push-notifikationer**:
-  - "Din leverantör är 30 min bort"
-  - "Leverantören har anlänt"
-  - "Besöket är klart"
-- [ ] **Email-notifikationer** - Bekräftelse när rutt skapas
-- [ ] **SMS-notifikationer** (valfritt) - ETA-uppdateringar
-- [ ] **Automatisk ETA-uppdatering** - Vid förseningar
-- [ ] **Estimerad tid**: 3-4 veckor
-
-**Fas 4: Problemhantering & Edge Cases (v1.5)**
-- [ ] **Rapportera problem** - "Kund ej hemma", "Behöver mer tid", etc.
-- [ ] **Hantera avbokningar** - Räkna om rutt vid avbokning
-- [ ] **Kontakta kund direkt** - Klickbar telefon-länk i appen
-- [ ] **Omberäkning av ETA** - Vid problem eller förseningar
-- [ ] **Estimerad tid**: 2 veckor
-
-**Fas 5: Analys & Förbättringar (v2.0)**
-- [ ] **Rutthistorik** - Se tidigare körda rutter
-- [ ] **Statistik för leverantörer**:
-  - Genomsnittligt antal stopp per rutt
-  - Totala körsträcka vs arbetstid
-  - Inkomst per körd kilometer
-- [ ] **Intelligent förslag** - Föreslå beställningar baserat på tidigare rutter
-- [ ] **Återkommande rutter** - "Varje tisdag i Uppsala"
-- [ ] **Export till kalender** - Google Calendar integration
-- [ ] **Estimerad tid**: 2-3 veckor
-
-#### 🎯 Fullständig Feature-spec
-Se [`feature-rutt-baserad-levering.md`](./feature-rutt-baserad-levering.md) för detaljerad beskrivning av alla planerade funktioner, UI/UX-design, teknisk implementation och success metrics.
+**Version**: 1.3.0 MVP - Performance & UX
+**Utvecklad med**: Next.js 15.5, TypeScript, Tailwind CSS, Claude Code 💚
