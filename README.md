@@ -259,7 +259,7 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - **[CLAUDE.md](./CLAUDE.md)** - Utvecklingsguide, arbetsprocesser, patterns
 - **[NFR.md](./NFR.md)** - Non-Functional Requirements (säkerhet, performance, etc.)
 - **[SPRINT-1.md](./SPRINT-1.md)** - Sprint planning och progress
-- **[feature-rutt-baserad-levering.md](./feature-rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
+- **[features/rutt-baserad-levering.md](./features/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
 
 ## 🔮 Roadmap
 
@@ -276,7 +276,7 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - **Problemhantering** - Rapportera problem, omberäkna rutter
 - **Rutthistorik & Analytics** - Statistik och intelligent förslag
 
-Se `feature-rutt-baserad-levering.md` för detaljerad roadmap.
+Se `features/rutt-baserad-levering.md` för detaljerad roadmap.
 
 ### Framtida Features (Prioritet 2-3)
 - Email-notifikationer vid bokningar
