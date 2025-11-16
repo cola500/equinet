@@ -96,6 +96,12 @@ export default function LoginPage() {
             />
           ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && retryCount === 0 && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
