@@ -192,6 +192,70 @@ const { data: session, update } = useSession()
 await update()  // Efter profile changes
 ```
 
+### 5. Prisma Over-Fetching (Learning: 2025-11-16)
+```typescript
+// ❌ FEL - include hämtar ALLT (over-fetching + exponerar känslig data)
+const providers = await prisma.provider.findMany({
+  include: {
+    services: true,
+    user: true,  // Ger oss email, phone, passwordHash 😱
+  }
+})
+
+// ✅ RÄTT - select endast vad som behövs
+const providers = await prisma.provider.findMany({
+  select: {
+    id: true,
+    businessName: true,
+    city: true,
+    services: {
+      select: {
+        id: true,
+        name: true,
+        price: true,
+      }
+    },
+    user: {
+      select: {
+        firstName: true,
+        lastName: true,
+        // email/phone ALDRIG i publikt API!
+      }
+    }
+  }
+})
+```
+
+**Impact:** 40-50% mindre payload + GDPR-compliant! (F-3.4)
+
+### 6. Saknade Database Indexes (Learning: 2025-11-16)
+```prisma
+model Provider {
+  // ... fields ...
+
+  // ❌ SAKNAS - queries blir 10-30x långsammare vid skalning
+
+  // ✅ LÄGG TILL dessa från dag 1:
+  @@index([isActive, createdAt])  // För filter + sort
+  @@index([city])                  // För search/filter
+  @@index([businessName])          // För search
+}
+
+model Service {
+  // ... fields ...
+
+  @@index([providerId, isActive])  // Foreign key + filter
+}
+```
+
+**Pattern - Lägg alltid till index på:**
+- Fält du filtrerar på (`where: { isActive: true }`)
+- Fält du sorterar på (`orderBy: { createdAt: 'desc' }`)
+- Fält du söker på (`contains`, `startsWith`)
+- Foreign keys + vanliga filter-kombinationer
+
+**Impact:** 10-30x snabbare queries vid 1,000+ rows! (F-3.4)
+
 ## ✅ Definition of Done
 
 En feature är **DONE** när:
@@ -296,6 +360,94 @@ npx playwright uninstall --all  # Om inte används
 - [Prisma Docs](https://www.prisma.io/docs)
 - [shadcn/ui Docs](https://ui.shadcn.com)
 
+## 🤖 Agent Decision Tree (Learning: 2025-11-16)
+
+### När Använda Vilken Agent
+
+**tech-architect** - Strategiska beslut & performance
+- ✅ "Är provider-listan långsam?" → Analys av skalbarhet
+- ✅ "Ska vi implementera caching nu eller senare?" → Data-driven beslut
+- ✅ "Vilken arkitektur för pagination?" → Jämför alternativ
+- ✅ Performance-problem som påverkar skalning
+- ❌ Inte för: Enkel buggfix, UI-tweaks
+
+**Explore** - Kod-sök & förstå kodbasen
+- ✅ "Var hanteras bokningar?" → Hitta relevanta filer
+- ✅ "Hur fungerar auth?" → Förstå flow
+- ❌ Inte för: Needle query (använd Read direkt)
+
+**security-reviewer** - Säkerhetsgranskning
+- ✅ Efter implementerat ny auth-logik
+- ✅ Före deploy till produktion
+- ✅ När API exponerar user data
+
+**cx-ux-reviewer** - Användarupplevelse
+- ✅ Efter implementerat bokningsformulär
+- ✅ När UX-feedback behövs
+
+### Quick Reference
+```
+Performance issue? → tech-architect
+Hitta kod? → Explore (eller Read om du vet fil)
+Säkerhetsaudit? → security-reviewer
+UX-feedback? → cx-ux-reviewer
+```
+
+## 🚀 Performance & Skalbarhet (Learning: 2025-11-16)
+
+### Mindset: Bygg för Skalning från Dag 1
+
+**Anti-pattern:**
+> "2 providers = 97ms, det är snabbt! Vi fixar skalning sen."
+
+**Rätt approach:**
+> "2 providers = 97ms NU. Men 1,000 providers = 1-3s utan indexes. Lägg till indexes NU (20 min arbete)."
+
+**Learning från F-3.4:**
+- ✅ Database indexes är **framtidssäkring** (20 min → 10-30x snabbare)
+- ✅ Prisma `select` vs `include` är **både** performance + säkerhet
+- ✅ Mät baseline → Förväntat vid skalning → Verifiera efter fix
+
+### Performance Checklist vid Ny Feature
+
+När du skapar en ny feature (t.ex. `/api/providers`):
+
+1. **Database Access Pattern**
+   - [ ] Använder `select` (inte `include`)
+   - [ ] Har indexes på alla `where`/`orderBy` fält
+   - [ ] Foreign key relations har composite indexes
+
+2. **Payload Size**
+   - [ ] Returnerar endast data som UI:t behöver
+   - [ ] Exponerar INTE känslig data (email, phone, passwords)
+   - [ ] Överväg pagination vid >100 items
+
+3. **Metrics**
+   - [ ] Mät response time (baseline)
+   - [ ] Dokumentera förväntat vid 100/1,000/10,000 rows
+   - [ ] Använd Network tab för payload size
+
+4. **Dokumentation**
+   - [ ] Anteckna "Framtida förbättringar" (pagination, caching)
+   - [ ] Uppdatera NFR.md med ny learning
+
+### Metrics Template
+
+```markdown
+## Performance Metrics
+
+**Baseline (X items):**
+- Response time: Yms
+- Payload size: Z KB
+
+**Förväntad vid skalning:**
+| Antal Items | Utan Optimering | Med Optimering | Förbättring |
+|-------------|----------------|----------------|-------------|
+| 100         | ~Xms           | ~Yms           | Zx          |
+| 1,000       | ~Xms           | ~Yms           | Zx          |
+| 10,000      | ~Xms ❌        | ~Yms           | Zx          |
+```
+
 ## 🔄 Key Learnings
 
 ### E2E Testing
@@ -310,7 +462,21 @@ npx playwright uninstall --all  # Om inte används
 - **Feature branches** → atomära merges
 - **JSON parsing** i API routes MÅSTE ha try-catch
 
+### Performance & Skalbarhet (2025-11-16)
+- **Proaktiv analys** lönar sig → Tech-architect avslöjade 3 kritiska problem
+- **Säkerhet + Performance** går hand-i-hand → `select` vs `include`
+- **Database indexes** är framtidssäkring → 20 min → 10-30x snabbare
+- **Mät metrics** → Baseline + Förväntad skalning + Efter fix
+- **Dokumentera learnings** medan du arbetar → NFR.md som living document
+- **"Framtida förbättringar"** ska dokumenteras tydligt med trigger & estimat
+
+### Meta-Learnings
+- **Använd agenter strategiskt** → tech-architect för stora beslut, Explore för kod-sök
+- **Reflektera efter varje uppgift** → "Vad tog för lång tid? Hur kan vi jobba bättre?"
+- **Skriv ner patterns** → Återanvändbar kunskap är guld
+
 ---
 
 **Skapad av**: Claude Code
 **För projektöversikt**: Se README.md
+**För kvalitetsmål**: Se NFR.md
