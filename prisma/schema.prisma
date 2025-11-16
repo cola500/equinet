@@ -11,15 +11,15 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  userType      String    // 'provider' eller 'customer'
-  firstName     String
-  lastName      String
-  phone         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  userType     String // 'provider' eller 'customer'
+  firstName    String
+  lastName     String
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   provider      Provider?
   bookings      Booking[]
@@ -28,24 +28,28 @@ model User {
 }
 
 model Provider {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessName    String
   description     String?
   address         String?
   city            String?
   postalCode      String?
-  serviceArea     String?   // JSON array av områden
+  serviceArea     String? // JSON array av områden
   profileImageUrl String?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  services        Service[]
-  availability    Availability[]
-  bookings        Booking[]
-  routes          Route[]
+  services     Service[]
+  availability Availability[]
+  bookings     Booking[]
+  routes       Route[]
+
+  @@index([isActive, createdAt])
+  @@index([city])
+  @@index([businessName])
 }
 
 model Service {
@@ -59,20 +63,22 @@ model Service {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  bookings        Booking[]
+  bookings Booking[]
+
+  @@index([providerId, isActive])
 }
 
 model Availability {
-  id          String   @id @default(uuid())
-  providerId  String
-  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  dayOfWeek   Int      // 0-6 (0=Måndag, 6=Söndag)
-  startTime   String   // Format: "09:00"
-  endTime     String   // Format: "17:00"
-  isClosed    Boolean  @default(false) // true = Stängt hela dagen
-  isActive    Boolean  @default(true)  // false = Raderad/inaktiv
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int // 0-6 (0=Måndag, 6=Söndag)
+  startTime  String // Format: "09:00"
+  endTime    String // Format: "17:00"
+  isClosed   Boolean  @default(false) // true = Stängt hela dagen
+  isActive   Boolean  @default(true) // false = Raderad/inaktiv
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([providerId, dayOfWeek])
 }
@@ -112,24 +118,24 @@ model Notification {
 
 // Route-based delivery models
 model RouteOrder {
-  id                   String      @id @default(uuid())
-  customerId           String
-  customer             User        @relation(fields: [customerId], references: [id])
-  serviceType          String      // t.ex. 'hovslagning', 'massage'
-  address              String
-  latitude             Float
-  longitude            Float
-  numberOfHorses       Int         @default(1)
-  dateFrom             DateTime
-  dateTo               DateTime
-  priority             String      @default("normal") // 'normal' eller 'urgent'
-  specialInstructions  String?
-  contactPhone         String
-  status               String      @default("pending") // 'pending', 'in_route', 'completed', 'cancelled'
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
+  id                  String   @id @default(uuid())
+  customerId          String
+  customer            User     @relation(fields: [customerId], references: [id])
+  serviceType         String // t.ex. 'hovslagning', 'massage'
+  address             String
+  latitude            Float
+  longitude           Float
+  numberOfHorses      Int      @default(1)
+  dateFrom            DateTime
+  dateTo              DateTime
+  priority            String   @default("normal") // 'normal' eller 'urgent'
+  specialInstructions String?
+  contactPhone        String
+  status              String   @default("pending") // 'pending', 'in_route', 'completed', 'cancelled'
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  routeStops           RouteStop[]
+  routeStops RouteStop[]
 
   @@index([status, serviceType])
   @@index([status, priority])
@@ -138,39 +144,39 @@ model RouteOrder {
 }
 
 model Route {
-  id                   String      @id @default(uuid())
+  id                   String   @id @default(uuid())
   providerId           String
-  provider             Provider    @relation(fields: [providerId], references: [id])
+  provider             Provider @relation(fields: [providerId], references: [id])
   routeName            String
   routeDate            DateTime
-  startTime            String      // Format: "08:00"
-  status               String      @default("planned") // 'planned', 'active', 'completed', 'cancelled'
+  startTime            String // Format: "08:00"
+  status               String   @default("planned") // 'planned', 'active', 'completed', 'cancelled'
   totalDistanceKm      Float?
   totalDurationMinutes Int?
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  stops                RouteStop[]
+  stops RouteStop[]
 
   @@index([providerId, routeDate, status])
   @@index([status])
 }
 
 model RouteStop {
-  id                     String      @id @default(uuid())
-  routeId                String
-  route                  Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  routeOrderId           String
-  routeOrder             RouteOrder  @relation(fields: [routeOrderId], references: [id])
-  stopOrder              Int         // 1, 2, 3... ordning i rutten
-  estimatedArrival       DateTime?
-  estimatedDurationMin   Int         @default(60) // Beräknad tid på plats
-  actualArrival          DateTime?
-  actualDeparture        DateTime?
-  status                 String      @default("pending") // 'pending', 'in_progress', 'completed', 'problem'
-  problemNote            String?
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
+  id                   String     @id @default(uuid())
+  routeId              String
+  route                Route      @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  routeOrderId         String
+  routeOrder           RouteOrder @relation(fields: [routeOrderId], references: [id])
+  stopOrder            Int // 1, 2, 3... ordning i rutten
+  estimatedArrival     DateTime?
+  estimatedDurationMin Int        @default(60) // Beräknad tid på plats
+  actualArrival        DateTime?
+  actualDeparture      DateTime?
+  status               String     @default("pending") // 'pending', 'in_progress', 'completed', 'problem'
+  problemNote          String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   @@index([routeId, stopOrder])
   @@index([routeOrderId])

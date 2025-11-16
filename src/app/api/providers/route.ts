@@ -46,18 +46,25 @@ export async function GET(request: NextRequest) {
 
     const providers = await prisma.provider.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        businessName: true,
+        description: true,
+        city: true,
         services: {
           where: {
             isActive: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            price: true,
           },
         },
         user: {
           select: {
             firstName: true,
             lastName: true,
-            email: true,
-            phone: true,
           },
         },
       },

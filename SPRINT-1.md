@@ -853,6 +853,138 @@ test('should retry failed API call', async ({ page }) => {
 
 ---
 
+## F-3.4: Performance-Optimering Provider Loading
+
+### 📖 Problem
+Användaren rapporterade att det tar lång tid att ladda leverantörer (`/providers` page). Tech-arkitekten identifierade 3 kritiska problem:
+
+1. **SÄKERHETSRISK**: Email och telefonnummer exponeras publikt i API:t (GDPR-problem)
+2. **Over-fetching**: API:t hämtar 40-50% mer data än nödvändigt
+3. **Saknade indexes**: Vid 1,000+ providers blir queries 10-30x långsammare
+
+**Business Impact:** Nuvarande prestanda är OK med 2 providers (97ms), men koden skalar INTE. Vid 1,000 providers: 1-3s response time, vid 10,000: systemet kan krascha.
+
+---
+
+### 💻 Implementation
+
+#### Ändringar Gjorda
+
+**1. Fixa Säkerhetsbug & Reduce Over-Fetching** (`src/app/api/providers/route.ts`)
+
+```typescript
+// INNAN: include hämtar ALLT + exponerar känslig data
+include: {
+  services: { where: { isActive: true } },
+  user: {
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,      // ❌ SÄKERHETSRISK
+      phone: true,      // ❌ SÄKERHETSRISK
+    }
+  }
+}
+
+// EFTER: select endast nödvändiga fält
+select: {
+  id: true,
+  businessName: true,
+  description: true,
+  city: true,
+  services: {
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+    }
+  },
+  user: {
+    select: {
+      firstName: true,
+      lastName: true,
+      // email/phone BORTTAGET ✅
+    }
+  }
+}
+```
+
+**Impact:**
+- ✅ GDPR-compliant (ingen exponering av personuppgifter)
+- ✅ 40-50% mindre payload
+- ✅ Snabbare JSON serialization/parsing
+
+**2. Database Indexes** (`prisma/schema.prisma`)
+
+```prisma
+model Provider {
+  // ... existing fields ...
+
+  @@index([isActive, createdAt])  // För list queries med filter + sort
+  @@index([city])                  // För city-search
+  @@index([businessName])          // För name-search
+}
+
+model Service {
+  // ... existing fields ...
+
+  @@index([providerId, isActive])  // För provider's services lookup
+}
+```
+
+**Impact:**
+- ✅ 10-30x snabbare queries vid 1,000+ providers
+- ✅ Konstant query performance vid skalning
+- ✅ Möjliggör framtida features (autocomplete, faceted search)
+
+---
+
+### ✅ Definition of Done
+
+- [x] Ta bort `email` och `phone` från `/api/providers` response
+- [x] Ändra `include` → `select` med endast nödvändiga fält
+- [x] Lägg till 3 indexes på Provider-modellen
+- [x] Lägg till 1 index på Service-modellen
+- [x] Kör `npx prisma db push` för att applicera indexes
+- [x] Kör `npx prisma generate` för att regenerera Prisma Client
+- [x] Dokumentera i SPRINT-1.md
+- [ ] Manuellt testa API:t (före/efter metrics)
+- [ ] Committed med meddelande om performance-optimering
+
+### 📊 Performance Metrics
+
+**Nuvarande (2 providers):**
+- Response time: ~97ms (snabbt!)
+- Payload size: ~X KB (före optimering)
+
+**Efter optimering (2 providers):**
+- Response time: ~X ms
+- Payload size: ~X KB (estimat: 40-50% mindre)
+
+**Förväntad impact vid skalning:**
+| Antal Providers | Utan Indexes | Med Indexes | Förbättring |
+|----------------|--------------|-------------|-------------|
+| 100            | ~200-500ms   | ~100-150ms  | 2-3x snabbare |
+| 1,000          | ~1-3s        | ~100-200ms  | **10-15x snabbare** |
+| 10,000         | ~5-15s ❌    | ~200-400ms  | **25-50x snabbare** |
+
+---
+
+### 🔮 Framtida Förbättringar (ej i denna sprint)
+
+**Pagination (när vi når 100+ providers):**
+- Implementera cursor-based pagination
+- Default: 20-50 items per page
+- Total estimat: 1-2 timmar
+
+**Caching (när traffic ökar):**
+- Server-side: ISR med 60s revalidation
+- Client-side: SWR med stale-while-revalidate
+- Total estimat: 2-3 timmar
+
+---
+
 ## F-3.2: Avboka-Funktion
 
 ### 📖 User Story
