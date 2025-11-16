@@ -59,3 +59,4 @@ prisma/dev.db
 
 # chatloggar
 /chatloggar/
+*.txt
