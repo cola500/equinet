@@ -8,6 +8,8 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     provider: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+      count: vi.fn(),
     },
   },
 }))
