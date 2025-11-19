@@ -1,192 +1,401 @@
-name: Quality Gates
+      name: Quality Gates
 
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+      on:
+        pull_request:
+          branches: [main]
+        push:
+          branches: [main]
 
-jobs:
-  # Unit tests with coverage enforcement
-  unit-tests:
-    name: Unit Tests & Coverage
-    runs-on: ubuntu-latest
+      jobs:
+        # Unit tests with coverage enforcement
+        unit-tests:
+          name: Unit Tests & Coverage
+          runs-on: ubuntu-latest
+          env:
+            DATABASE_URL: file:./dev.db
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+          steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+            - name: Generate Prisma Client
+              run: npx prisma generate
 
-      - name: Run unit tests with coverage
-        run: npm run test:coverage
+            - name: Run unit tests with coverage
+              run: npm run test:coverage
 
-      - name: Check coverage thresholds
-        run: npx vitest run --coverage --coverage.thresholds.autoUpdate=false
+            - name: Check coverage thresholds
+              run: npx vitest run --coverage
+      --coverage.thresholds.autoUpdate=false
 
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+            - name: Upload coverage reports to Codecov
+              uses: codecov/codecov-action@v4
+              if: always()
+              with:
+                files: ./coverage/lcov.info
+                flags: unittests
+                name: codecov-umbrella
+                fail_ci_if_error: false
+              env:
+                CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+            - name: Upload coverage artifacts
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                name: coverage-report
+                path: coverage/
+
+        # E2E tests
+        e2e-tests:
+          name: E2E Tests
+          runs-on: ubuntu-latest
+          env:
+            DATABASE_URL: file:./dev.db
+
+          steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Generate Prisma Client
+              run: npx prisma generate
+
+            - name: Push database schema
+              run: npx prisma db push
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps
+
+            - name: Run E2E tests
+              run: npm run test:e2e
+
+            - name: Upload Playwright report
+              uses: actions/upload-artifact@v4
+              if: failure()
+              with:
+                name: playwright-report
+                path: playwright-report/
+                retention-days: 7
+
+        # TypeScript type checking
+        type-check:
+          name: TypeScript Check
+          runs-on: ubuntu-latest
+          env:
+            DATABASE_URL: file:./dev.db
+
+          steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Generate Prisma Client
+              run: npx prisma generate
+
+            - name: Run TypeScript compiler
+              run: npx tsc --noEmit
+
+        # Linting (if ESLint is configured)
+        lint:
+          name: Lint
+          runs-on: ubuntu-latest
+
+          steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run linter
+              run: npm run lint
+              continue-on-error: true # Don't fail build on lint warnings for
+      now
+
+        # Build verification
+        build:
+          name: Build Check
+          runs-on: ubuntu-latest
+          env:
+            DATABASE_URL: file:./dev.db
+            NEXT_TELEMETRY_DISABLED: 1
+
+          steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Generate Prisma Client
+              run: npx prisma generate
+
+            - name: Build application
+              run: npm run build
+
+        # Final status check
+        quality-gate-passed:
+          name: Quality Gate Passed
+          runs-on: ubuntu-latest
+          needs: [unit-tests, e2e-tests, type-check, build]
+          if: always()
+
+          steps:
+            - name: Check job results
+              run: |
+                if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
+                  echo "❌ Unit tests failed"
+                  exit 1
+                fi
+                if [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+                  echo "❌ E2E tests failed"
+                  exit 1
+                fi
+                if [[ "${{ needs.type-check.result }}" != "success" ]]; then
+                  echo "❌ TypeScript check failed"
+                  exit 1
+                fi
+                if [[ "${{ needs.build.result }}" != "success" ]]; then
+                  echo "❌ Build failed"
+                  exit 1
+                fi
+                echo "✅ All quality gates passed!"
+      EOF)
+  ⎿ name: Quality Gates                                                    
+
+    on:
+      pull_request:
+        branches: [main]
+      push:
+        branches: [main]
+
+    jobs:
+      # Unit tests with coverage enforcement
+      unit-tests:
+        name: Unit Tests & Coverage
+        runs-on: ubuntu-latest
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          DATABASE_URL: file:./dev.db
 
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
 
-  # E2E tests
-  e2e-tests:
-    name: E2E Tests
-    runs-on: ubuntu-latest
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              cache: 'npm'
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+          - name: Install dependencies
+            run: npm ci
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+          - name: Generate Prisma Client
+            run: npx prisma generate
 
-      - name: Install dependencies
-        run: npm ci
+          - name: Run unit tests with coverage
+            run: npm run test:coverage
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+          - name: Check coverage thresholds
+            run: npx vitest run --coverage
+    --coverage.thresholds.autoUpdate=false
 
-      - name: Push database schema
-        run: npx prisma db push
+          - name: Upload coverage reports to Codecov
+            uses: codecov/codecov-action@v4
+            if: always()
+            with:
+              files: ./coverage/lcov.info
+              flags: unittests
+              name: codecov-umbrella
+              fail_ci_if_error: false
+            env:
+              CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+          - name: Upload coverage artifacts
+            uses: actions/upload-artifact@v4
+            if: always()
+            with:
+              name: coverage-report
+              path: coverage/
 
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
-  # TypeScript type checking
-  type-check:
-    name: TypeScript Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Run TypeScript compiler
-        run: npx tsc --noEmit
-
-  # Linting (if ESLint is configured)
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run linter
-        run: npm run lint
-        continue-on-error: true # Don't fail build on lint warnings for now
-
-  # Build verification
-  build:
-    name: Build Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Build application
-        run: npm run build
+      # E2E tests
+      e2e-tests:
+        name: E2E Tests
+        runs-on: ubuntu-latest
         env:
-          # Skip telemetry during build
+          DATABASE_URL: file:./dev.db
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              cache: 'npm'
+
+          - name: Install dependencies
+            run: npm ci
+
+          - name: Generate Prisma Client
+            run: npx prisma generate
+
+          - name: Push database schema
+            run: npx prisma db push
+
+          - name: Install Playwright browsers
+            run: npx playwright install --with-deps
+
+          - name: Run E2E tests
+            run: npm run test:e2e
+
+          - name: Upload Playwright report
+            uses: actions/upload-artifact@v4
+            if: failure()
+            with:
+              name: playwright-report
+              path: playwright-report/
+              retention-days: 7
+
+      # TypeScript type checking
+      type-check:
+        name: TypeScript Check
+        runs-on: ubuntu-latest
+        env:
+          DATABASE_URL: file:./dev.db
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              cache: 'npm'
+
+          - name: Install dependencies
+            run: npm ci
+
+          - name: Generate Prisma Client
+            run: npx prisma generate
+
+          - name: Run TypeScript compiler
+            run: npx tsc --noEmit
+
+      # Linting (if ESLint is configured)
+      lint:
+        name: Lint
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              cache: 'npm'
+
+          - name: Install dependencies
+            run: npm ci
+
+          - name: Run linter
+            run: npm run lint
+            continue-on-error: true # Don't fail build on lint warnings for
+     now
+
+      # Build verification
+      build:
+        name: Build Check
+        runs-on: ubuntu-latest
+        env:
+          DATABASE_URL: file:./dev.db
           NEXT_TELEMETRY_DISABLED: 1
 
-  # Final status check
-  quality-gate-passed:
-    name: Quality Gate Passed
-    runs-on: ubuntu-latest
-    needs: [unit-tests, e2e-tests, type-check, build]
-    if: always()
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
 
-    steps:
-      - name: Check job results
-        run: |
-          if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
-            echo "❌ Unit tests failed"
-            exit 1
-          fi
-          if [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
-            echo "❌ E2E tests failed"
-            exit 1
-          fi
-          if [[ "${{ needs.type-check.result }}" != "success" ]]; then
-            echo "❌ TypeScript check failed"
-            exit 1
-          fi
-          if [[ "${{ needs.build.result }}" != "success" ]]; then
-            echo "❌ Build failed"
-            exit 1
-          fi
-          echo "✅ All quality gates passed!"
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              cache: 'npm'
+
+          - name: Install dependencies
+            run: npm ci
+
+          - name: Generate Prisma Client
+            run: npx prisma generate
+
+          - name: Build application
+            run: npm run build
+
+      # Final status check
+      quality-gate-passed:
+        name: Quality Gate Passed
+        runs-on: ubuntu-latest
+        needs: [unit-tests, e2e-tests, type-check, build]
+        if: always()
+
+        steps:
+          - name: Check job results
+            run: |
+              if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
+                echo "❌ Unit tests failed"
+                exit 1
+              fi
+              if [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+                echo "❌ E2E tests failed"
+                exit 1
+              fi
+              if [[ "${{ needs.type-check.result }}" != "success" ]]; then
+                echo "❌ TypeScript check failed"
+                exit 1
+              fi
+              if [[ "${{ needs.build.result }}" != "success" ]]; then
+                echo "❌ Build failed"
+                exit 1
+              fi
+              echo "✅ All quality gates passed!"
