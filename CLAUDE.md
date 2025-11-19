@@ -601,6 +601,140 @@ När du skapar en ny feature (t.ex. `/api/providers`):
 - **Använd agenter strategiskt** → tech-architect för stora beslut, Explore för kod-sök
 - **Reflektera efter varje uppgift** → "Vad tog för lång tid? Hur kan vi jobba bättre?"
 - **Skriv ner patterns** → Återanvändbar kunskap är guld
+- **Kör alltid retro med agenterna** → Efter varje sprint är committed och klar
+
+## 🔄 Sprint Planning & Retrospectives
+
+### Sprint Workflow
+1. **Planera sprint** med tech-architect baserat på föregående retro
+2. **Implementera features** med TDD och feature branches
+3. **Commit och merge** till main efter alla tester gröna
+4. **Kör retrospective** med relevanta agenter (tech-architect, test-lead, quality-gate)
+5. **Uppdatera CLAUDE.md** med learnings och nästa sprint-plan
+
+### Retrospective Template
+**Agenter att inkludera:**
+- tech-architect (arkitektur, patterns, tekniska beslut)
+- test-lead (TDD workflow, test quality, coverage)
+- quality-gate (DoD compliance, process)
+- security-reviewer (vid säkerhetskritiska features)
+- data-architect (vid schema-ändringar)
+
+**Frågor att ställa:**
+1. Vad gick bra?
+2. Vad kunde vi göra bättre?
+3. Konkreta rekommendationer för nästa sprint?
+
+---
+
+## 📋 Sprint 1: Quality Foundation & Repository Pattern
+
+**Theme:** Stabilisera testsvit + Repository Pattern foundation
+**Duration:** 2 veckor
+**Complexity:** 2L + 3M + regression fixes
+
+### 🚨 PRE-SPRINT (Regression Fix)
+
+**R-1: Fix API Test Suite (Size: M)**
+- Fix 6 failande tester (providers/bookings) - `select` vs `include` mismatch
+- Pre-merge gate kör FULL suite (`npm run test:run && npm run test:e2e && npx tsc --noEmit`)
+- GitHub protected branch med required checks
+- Dokumentera "Test Update Pattern" när schema ändras
+- **Timeline:** 2-3 dagar, BLOCKERAR Sprint 1 start
+
+### 🎯 Sprint 1 Features
+
+**F1-1: ProviderRepository Implementation (Size: L)**
+- Implementera komplett repository pattern för Provider aggregate
+- Refactor `/api/providers/*` att använda repository (ej direkt Prisma)
+- Aggregate Root validation (business rules i Provider model)
+- TDD: Unit tests FÖRST (100% coverage)
+- E2E-tester passerar oförändrade (API-kontrakt bibehålls)
+
+**F1-2: Behavior-Based API Testing (Size: M)**
+- Migrera API-tester från implementation-based → behavior-based
+- Tester bryter EJ vid interna refactorings (som select/include ändringar)
+- Security assertions bibehålls (känslig data exponeras EJ)
+- Dokumentera pattern i CLAUDE.md
+
+**F1-3: E2E Tests in CI Gate (Size: M)**
+- `.github/workflows/quality-gates.yml` kör `npm run test:e2e`
+- E2E-tester körs EFTER unit tests (fail fast strategy)
+- Protected branch kräver E2E-pass för merge
+- E2E timeout: 5 min max
+
+**F1-4: ServiceRepository Foundation (Size: M)**
+- ServiceRepository med samma interface-pattern som ProviderRepository
+- Refactor `/api/services/*` att använda repository
+- Unit tests 100%, E2E bibehålls
+- Aggregate Root validation för Service
+
+### 📦 Long-Term Backlog (Sprint 2+)
+
+**BookingRepository + Aggregate Root Enforcement (Sprint 2)**
+- Booking är mest komplex aggregate (4 relations)
+- Behöver learnings från Provider + Service repositories först
+
+**Domain Events for Booking Lifecycle (Sprint 3-4)**
+- Kräver stabil repository foundation + event infrastructure
+- Trigger: När vi ser behov av async workflows
+
+**Mutation Testing (Sprint 5+)**
+- Nice-to-have för quality assurance
+- Trigger: När coverage når 90%+
+
+### ✅ Sprint 1 Success Criteria
+
+- [ ] Alla API-tester gröna (100% pass rate)
+- [ ] Pre-merge gate kör full suite (unit + E2E + TypeScript + build)
+- [ ] Provider + Service använder repository pattern
+- [ ] E2E-tester i CI (protected branch)
+- [ ] Zero flaky tests
+
+---
+
+## 🎓 Sprint 0 Retrospective Learnings (2025-11-19)
+
+### 💚 Vad Gick Bra
+- **Solid DDD foundation** - 150 tests, 100% coverage, rätt patterns (Entity, ValueObject, Result, Guard)
+- **TDD fungerade** - Design blev bättre, tests först är rätt väg
+- **Feature branch workflow** - Atomära commits, clean git history
+- **Repository abstraction** - Separerar domain från Prisma korrekt
+
+### 🔴 Vad Kunde Varit Bättre
+- **6 test regressions** - Pre-merge gate för svag (körde bara nya filer, inte full suite)
+- **API-test antipattern** - Testade implementation (Prisma syntax) istället för beteende (API contract)
+- **Repository pattern ofullständig** - Bara BookingRepository, inte Provider/Service
+- **E2E tests skippades** - Hade fångat regressionerna
+
+### 📋 Konkreta Förbättringar Implementerade
+
+**Test Strategy:**
+```typescript
+// ❌ DÅLIGT (implementation-based)
+expect(prisma.provider.findMany).toHaveBeenCalledWith(
+  expect.objectContaining({ include: {...} })
+)
+
+// ✅ BÄTTRE (behavior-based)
+expect(response.status).toBe(200)
+expect(data).toMatchObject({ id: expect.any(String), businessName: expect.any(String) })
+expect(data.passwordHash).toBeUndefined() // Security assertion
+```
+
+**Pre-merge Checklist (OBLIGATORISK):**
+```bash
+npm run test:run      # Alla unit-tester
+npm run test:e2e      # E2E-suite
+npx tsc --noEmit      # TypeScript
+npm run build         # Build
+```
+
+**Test Update Pattern (vid schema-ändringar):**
+1. Uppdatera Prisma schema
+2. Uppdatera motsvarande repositories
+3. Uppdatera API-tester SAMMA commit
+4. Kör full test suite innan commit
 
 ---
 

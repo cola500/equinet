@@ -25,6 +25,28 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
+vi.mock('@prisma/client', () => ({
+  Prisma: {
+    PrismaClientKnownRequestError: class PrismaClientKnownRequestError extends Error {
+      code: string
+      constructor(message: string, code: string) {
+        super(message)
+        this.code = code
+        this.name = 'PrismaClientKnownRequestError'
+      }
+    },
+    PrismaClientInitializationError: class PrismaClientInitializationError extends Error {
+      constructor(message: string) {
+        super(message)
+        this.name = 'PrismaClientInitializationError'
+      }
+    },
+    TransactionIsolationLevel: {
+      Serializable: 'Serializable',
+    },
+  },
+}))
+
 vi.mock('@/lib/auth', () => ({
   authOptions: {},
 }))
