@@ -51,6 +51,42 @@ describe('POST /api/bookings', () => {
 })
 ```
 
+### Behavior-Based Testing (API Routes)
+
+**Pattern (från Sprint 1 F1-2):**
+Testa **vad** API:et gör, inte **hur** det gör det.
+
+```typescript
+// ❌ DÅLIGT: Implementation-based (testar Prisma-anrop)
+expect(prisma.provider.findMany).toHaveBeenCalledWith(
+  expect.objectContaining({
+    include: { services: true, user: true }
+  })
+)
+
+// ✅ BRA: Behavior-based (testar API-kontrakt)
+expect(response.status).toBe(200)
+expect(data[0]).toMatchObject({
+  id: expect.any(String),
+  businessName: 'Test Provider',
+})
+
+// ✅ Security assertions (ALLTID!)
+expect(data[0].user.email).toBeUndefined()
+expect(data[0].user.passwordHash).toBeUndefined()
+```
+
+**Varför behavior-based?**
+- ✅ Tester överlever refactorings (t.ex. `include` → `select`)
+- ✅ Testar faktiskt användarupplevelse (API-kontrakt)
+- ✅ Fångar säkerhetsproblem (data leaks)
+- ✅ Gör kod mer maintainable
+
+**När använda implementation checks?**
+- Vid regression tests för specifika buggar
+- När du testar mock/spy behavior i unit tests
+- ALDRIG i API integration tests (testa behavior istället)
+
 ## 🎓 E2E Testing Best Practices
 
 ### Kod-Först Approach (The Golden Rule)
