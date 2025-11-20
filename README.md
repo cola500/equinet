@@ -34,7 +34,8 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 - **Databas**: SQLite (dev) via Prisma ORM
 - **Autentisering**: NextAuth.js v4
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (162 unit/integration) + Playwright (35 E2E) = 70% coverage
+- **Testning**: Vitest (326 unit/integration) + Playwright (62 E2E) = 70% coverage
+- **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Säkerhet**: bcrypt, rate limiting, input sanitization, structured logging
 
 ## 📁 Projektstruktur
