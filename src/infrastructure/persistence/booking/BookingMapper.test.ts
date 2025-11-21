@@ -16,7 +16,8 @@ describe('BookingMapper', () => {
     endTime: '11:00',
     status: 'pending',
     horseName: 'Thunder',
-    notes: 'Test booking',
+    horseInfo: null,
+    customerNotes: 'Test booking',
     createdAt: new Date('2025-01-01T12:00:00Z'),
     updatedAt: new Date('2025-01-02T12:00:00Z'),
   }
@@ -52,7 +53,7 @@ describe('BookingMapper', () => {
     })
 
     it('should handle null notes', () => {
-      const prisma = { ...prismaBooking, notes: null }
+      const prisma = { ...prismaBooking, customerNotes: null }
 
       const result = mapper.toDomain(prisma)
 
@@ -96,7 +97,7 @@ describe('BookingMapper', () => {
 
       const result = mapper.toPersistence(domain)
 
-      expect(result.notes).toBeNull()
+      expect(result.customerNotes).toBeNull()
     })
   })
 

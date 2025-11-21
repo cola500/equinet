@@ -102,10 +102,11 @@ describe('Result', () => {
 
     it('should propagate failure from inner result', () => {
       const result = Result.ok(42)
-      const chained = result.flatMap(() => Result.fail<number, string>('Inner error'))
+      const chained = result.flatMap(() => Result.fail<number, Error>(new Error('Inner error')))
 
       expect(chained.isFailure).toBe(true)
-      expect(chained.error).toBe('Inner error')
+      expect(chained.error).toBeInstanceOf(Error)
+      expect(chained.error.message).toBe('Inner error')
     })
 
     it('should not execute function if initial result is failed', () => {
@@ -154,25 +155,27 @@ describe('Result', () => {
     it('should fail if any result fails', () => {
       const results = [
         Result.ok(1),
-        Result.fail<number, string>('Error in second'),
+        Result.fail<number, Error>(new Error('Error in second')),
         Result.ok(3),
       ]
       const combined = Result.combine(results)
 
       expect(combined.isFailure).toBe(true)
-      expect(combined.error).toBe('Error in second')
+      expect(combined.error).toBeInstanceOf(Error)
+      expect(combined.error.message).toBe('Error in second')
     })
 
     it('should return first error if multiple failures', () => {
       const results = [
         Result.ok(1),
-        Result.fail<number, string>('First error'),
-        Result.fail<number, string>('Second error'),
+        Result.fail<number, Error>(new Error('First error')),
+        Result.fail<number, Error>(new Error('Second error')),
       ]
       const combined = Result.combine(results)
 
       expect(combined.isFailure).toBe(true)
-      expect(combined.error).toBe('First error')
+      expect(combined.error).toBeInstanceOf(Error)
+      expect(combined.error.message).toBe('First error')
     })
 
     it('should handle empty array', () => {

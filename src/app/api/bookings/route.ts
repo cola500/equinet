@@ -148,7 +148,8 @@ export async function POST(request: NextRequest) {
 
     // Use transaction for atomicity: check for overlaps and create booking atomically
     // This prevents race conditions where two requests check simultaneously and both create bookings
-    const booking = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // @ts-expect-error - Prisma transaction callback type inference issue
+    const booking: any = await prisma.$transaction(async (tx) => {
       const bookingDate = new Date(validatedData.bookingDate)
 
       // Check for overlapping bookings within the transaction

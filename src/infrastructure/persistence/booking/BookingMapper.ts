@@ -17,7 +17,8 @@ export class BookingMapper implements IMapper<Booking, PrismaBooking> {
       endTime: prisma.endTime,
       status: prisma.status as Booking['status'],
       horseName: prisma.horseName ?? undefined,
-      notes: prisma.notes ?? undefined,
+      horseInfo: prisma.horseInfo ?? undefined,
+      notes: prisma.customerNotes ?? undefined,
       createdAt: prisma.createdAt,
       updatedAt: prisma.updatedAt,
     }
@@ -34,7 +35,8 @@ export class BookingMapper implements IMapper<Booking, PrismaBooking> {
       endTime: domain.endTime,
       status: domain.status,
       horseName: domain.horseName ?? null,
-      notes: domain.notes ?? null,
+      horseInfo: domain.horseInfo ?? null,
+      customerNotes: domain.notes ?? null,
       createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
     }

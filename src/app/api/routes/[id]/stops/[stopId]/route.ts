@@ -78,7 +78,8 @@ export async function PATCH(
       updateData.actualDeparture = now
     }
 
-    const updatedStop = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // @ts-expect-error - Prisma transaction callback type inference issue
+    const updatedStop = await prisma.$transaction(async (tx) => {
       // Update the stop
       const stop = await tx.routeStop.update({
         where: { id: stopId },

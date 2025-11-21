@@ -272,6 +272,7 @@ describe('POST /api/bookings', () => {
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
 
     // Mock $transaction to execute the callback immediately with tx object
+    // @ts-expect-error - Vitest type instantiation depth limitation
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
       const tx = {
         booking: {

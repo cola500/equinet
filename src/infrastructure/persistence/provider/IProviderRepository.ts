@@ -13,7 +13,7 @@ export interface Provider {
   userId: string
   businessName: string
   description: string | null
-  city: string
+  city: string | null
   isActive: boolean
   createdAt: Date
   updatedAt: Date

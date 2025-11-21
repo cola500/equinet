@@ -8,7 +8,16 @@ interface PasswordStrengthIndicatorProps {
   password: string
 }
 
-const requirementGroups = [
+type PasswordRequirement = {
+  key: 'minLength' | 'hasUppercase' | 'hasLowercase' | 'hasNumber' | 'hasSpecialChar'
+  label: string
+  check?: (pwd: string) => boolean
+}
+
+const requirementGroups: Array<{
+  title: string
+  requirements: PasswordRequirement[]
+}> = [
   {
     title: 'Längd',
     requirements: [
@@ -18,13 +27,8 @@ const requirementGroups = [
   {
     title: 'Innehåll',
     requirements: [
-      {
-        key: 'hasCase' as const,
-        label: 'Stor + liten bokstav (A-z)',
-        check: (pwd: string) =>
-          validatePasswordRequirement(pwd, 'hasUppercase') &&
-          validatePasswordRequirement(pwd, 'hasLowercase')
-      },
+      { key: 'hasUppercase' as const, label: 'Stor bokstav (A-Z)' },
+      { key: 'hasLowercase' as const, label: 'Liten bokstav (a-z)' },
       { key: 'hasNumber' as const, label: 'Siffra (0-9)' },
       { key: 'hasSpecialChar' as const, label: 'Specialtecken (!@#$%&*)' }
     ]
@@ -34,7 +38,7 @@ const requirementGroups = [
 export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps) {
   const hasStartedTyping = password.length > 0
 
-  const getRequirementState = (req: any) => {
+  const getRequirementState = (req: PasswordRequirement) => {
     if (!hasStartedTyping) return 'neutral'
 
     const isValid = req.check

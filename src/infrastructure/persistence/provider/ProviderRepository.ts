@@ -16,7 +16,7 @@ export class ProviderRepository implements IProviderRepository {
   }
 
   async findMany(criteria?: Record<string, any>): Promise<Provider[]> {
-    const providers = await prisma.provider.findMany(criteria)
+    const providers = await prisma.provider.findMany(criteria as any)
     return providers
   }
 

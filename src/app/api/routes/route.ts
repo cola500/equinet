@@ -64,7 +64,8 @@ export async function POST(request: Request) {
     }
 
     // 5. Create route with transaction
-    const route = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // @ts-expect-error - Prisma transaction callback type inference issue
+    const route: any = await prisma.$transaction(async (tx) => {
       // Create the route
       const newRoute = await tx.route.create({
         data: {

@@ -18,6 +18,7 @@ export interface Booking {
   endTime: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
   horseName?: string
+  horseInfo?: string
   notes?: string
   createdAt: Date
   updatedAt: Date
