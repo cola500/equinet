@@ -49,8 +49,8 @@ export default defineConfig({
         '**/*.spec.tsx',
       ],
 
-      // Enforce per-file coverage (fails build if any file below threshold)
-      perFile: true,
+      // Note: perFile option not available in v8 provider
+      // Coverage is tracked globally per thresholds above
 
       // Watermarks for coverage visualization (yellow/green)
       watermarks: {

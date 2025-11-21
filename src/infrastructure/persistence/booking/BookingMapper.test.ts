@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { BookingMapper } from './BookingMapper'
 import { Booking } from './IBookingRepository'
-import { Booking as PrismaBooking } from '@prisma/client'
+import type { Booking as PrismaBooking } from '@prisma/client'
 
 describe('BookingMapper', () => {
   const mapper = new BookingMapper()

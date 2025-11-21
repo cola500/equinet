@@ -16,7 +16,7 @@ export class ServiceRepository implements IServiceRepository {
   }
 
   async findMany(criteria?: Record<string, any>): Promise<Service[]> {
-    const services = await prisma.service.findMany(criteria)
+    const services = await prisma.service.findMany(criteria as any)
     return services
   }
 

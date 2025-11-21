@@ -3,7 +3,7 @@
  */
 import { IMapper } from '../BaseRepository'
 import { Booking } from './IBookingRepository'
-import { Booking as PrismaBooking } from '@prisma/client'
+import type { Booking as PrismaBooking } from '@prisma/client'
 
 export class BookingMapper implements IMapper<Booking, PrismaBooking> {
   toDomain(prisma: PrismaBooking): Booking {

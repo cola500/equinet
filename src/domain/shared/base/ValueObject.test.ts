@@ -249,7 +249,7 @@ describe('ValueObject', () => {
         city: 'Stockholm',
         zipCode: '12345',
       })
-      expect(json).not.toBe(address.props) // Should be a copy
+      expect(json).not.toBe((address as any).props) // Should be a copy
     })
 
     it('should handle nested objects in serialization', () => {

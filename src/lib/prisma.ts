@@ -46,4 +46,4 @@ const prismaWithExtensions = basePrisma.$extends({
 
 export const prisma = globalForPrisma.prisma ?? prismaWithExtensions
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma as any

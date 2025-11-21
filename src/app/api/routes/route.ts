@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { calculateDistance } from "@/lib/distance"
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     }
 
     // 5. Create route with transaction
-    const route = await prisma.$transaction(async (tx) => {
+    const route = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create the route
       const newRoute = await tx.route.create({
         data: {

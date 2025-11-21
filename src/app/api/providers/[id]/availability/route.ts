@@ -83,7 +83,7 @@ export async function GET(
       isClosed: false,
       openingTime: availability.startTime,
       closingTime: availability.endTime,
-      bookedSlots: bookings.map((b) => ({
+      bookedSlots: bookings.map((b: { startTime: string; endTime: string; service: { name: string } }) => ({
         startTime: b.startTime,
         endTime: b.endTime,
         serviceName: b.service.name,

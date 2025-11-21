@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(provider)
-  } catch (error) {
+  } catch (err: unknown) {
+    const error = err as Error
+
     // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
@@ -99,7 +101,9 @@ export async function PUT(request: NextRequest) {
     })
 
     return NextResponse.json(updatedProvider)
-  } catch (error) {
+  } catch (err: unknown) {
+    const error = err as Error
+
     // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error

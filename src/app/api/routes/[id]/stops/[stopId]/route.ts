@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 // Validation schema for updating stop
@@ -77,7 +78,7 @@ export async function PATCH(
       updateData.actualDeparture = now
     }
 
-    const updatedStop = await prisma.$transaction(async (tx) => {
+    const updatedStop = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update the stop
       const stop = await tx.routeStop.update({
         where: { id: stopId },
@@ -100,7 +101,7 @@ export async function PATCH(
         where: { routeId }
       })
 
-      const allCompleted = allStops.every(s => s.status === "completed")
+      const allCompleted = allStops.every((s: { status: string }) => s.status === "completed")
       if (allCompleted) {
         await tx.route.update({
           where: { id: routeId },

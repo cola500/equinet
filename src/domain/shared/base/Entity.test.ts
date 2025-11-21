@@ -147,7 +147,6 @@ describe('Entity', () => {
         value: 42,
       })
 
-      // @ts-expect-error - Testing null handling
       expect(entity.equals(null as any)).toBe(false)
     })
 

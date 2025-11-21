@@ -89,7 +89,7 @@ export class PrismaBookingRepository
 
     // Filter for time overlap in application layer
     // (More complex time comparison logic can be added here)
-    const overlapping = bookings.filter((booking) => {
+    const overlapping = bookings.filter((booking: { startTime: string; endTime: string }) => {
       const bookingStart = this.parseTime(booking.startTime)
       const bookingEnd = this.parseTime(booking.endTime)
       const requestStart = this.parseTime(startTime)

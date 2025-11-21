@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     const providerLat = 57.7089 // Göteborg centrum
     const providerLon = 11.9746
 
-    const ordersWithDistance = routeOrders.map(order => {
+    const ordersWithDistance = routeOrders.map((order: { latitude: number; longitude: number; [key: string]: any }) => {
       const distance = calculateDistance(
         providerLat,
         providerLon,
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     })
 
     // 5. Sort by distance
-    ordersWithDistance.sort((a, b) => a.distanceKm - b.distanceKm)
+    ordersWithDistance.sort((a: { distanceKm: number }, b: { distanceKm: number }) => a.distanceKm - b.distanceKm)
 
     return NextResponse.json(ordersWithDistance)
 
