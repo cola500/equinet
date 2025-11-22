@@ -61,6 +61,9 @@ jobs:
       - name: Push database schema
         run: npx prisma db push
 
+      - name: Seed test users
+        run: npx tsx prisma/seed-test-users.ts
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
