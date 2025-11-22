@@ -109,7 +109,7 @@ jobs:
         run: npx prisma generate
 
       - name: Run TypeScript compiler
-        run: NODE_OPTIONS="--max-old-space-size=4096" npx tsc --noEmit
+        run: NODE_OPTIONS="--max-old-space-size=8192" npx tsc --noEmit
 
   # Linting (if ESLint is configured)
   lint:
@@ -160,7 +160,7 @@ jobs:
         run: npx prisma generate
 
       - name: Build application
-        run: NODE_OPTIONS="--max-old-space-size=4096" npm run build
+        run: NODE_OPTIONS="--max-old-space-size=8192" npm run build
 
   # Final status check
   quality-gate-passed:

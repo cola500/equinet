@@ -148,8 +148,8 @@ test.describe('Route Planning Flow (Provider)', () => {
     await page.getByLabel(/lösenord/i).fill('ProviderPass123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Vänta på dashboard
-    await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 10000 });
+    // Vänta på dashboard (15s för CI med Turbopack recompiles)
+    await page.waitForURL(/\/provider\/dashboard/, { timeout: 15000 });
   });
 
   test('should display available flexible bookings (route-orders)', async ({ page }) => {
