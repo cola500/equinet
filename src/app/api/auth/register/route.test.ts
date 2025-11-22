@@ -49,7 +49,6 @@ describe('POST /api/auth/register', () => {
 
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
     vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password' as never)
-    // @ts-expect-error - Vitest type instantiation depth limitation
     vi.mocked(prisma.user.create).mockResolvedValue(mockUser as any)
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
