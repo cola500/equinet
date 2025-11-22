@@ -1,7 +1,147 @@
 import { test, expect } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
 
 test.describe('Route Planning Flow (Provider)', () => {
   test.beforeEach(async ({ page }) => {
+    // Sprint 2 F2-5: Clean up dynamically created data from auth tests
+    const prisma = new PrismaClient();
+
+    try {
+      const keepEmails = ['test@example.com', 'provider@example.com'];
+
+      // Delete route stops
+      await prisma.routeStop.deleteMany({
+        where: {
+          OR: [
+            {
+              route: {
+                provider: {
+                  user: {
+                    AND: [
+                      { email: { contains: '@example.com' } },
+                      { email: { notIn: keepEmails } }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              routeOrder: {
+                customer: {
+                  AND: [
+                    { email: { contains: '@example.com' } },
+                    { email: { notIn: keepEmails } }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      });
+
+      // Delete routes
+      await prisma.route.deleteMany({
+        where: {
+          provider: {
+            user: {
+              AND: [
+                { email: { contains: '@example.com' } },
+                { email: { notIn: keepEmails } }
+              ]
+            }
+          }
+        }
+      });
+
+      // Delete route orders
+      await prisma.routeOrder.deleteMany({
+        where: {
+          customer: {
+            AND: [
+              { email: { contains: '@example.com' } },
+              { email: { notIn: keepEmails } }
+            ]
+          }
+        }
+      });
+
+      // Delete bookings, services, providers, users (same as booking.spec.ts)
+      await prisma.booking.deleteMany({
+        where: {
+          OR: [
+            {
+              customer: {
+                AND: [
+                  { email: { contains: '@example.com' } },
+                  { email: { notIn: keepEmails } }
+                ]
+              }
+            },
+            {
+              service: {
+                provider: {
+                  user: {
+                    AND: [
+                      { email: { contains: '@example.com' } },
+                      { email: { notIn: keepEmails } }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      });
+
+      await prisma.service.deleteMany({
+        where: {
+          provider: {
+            user: {
+              AND: [
+                { email: { contains: '@example.com' } },
+                { email: { notIn: keepEmails } }
+              ]
+            }
+          }
+        }
+      });
+
+      await prisma.availability.deleteMany({
+        where: {
+          provider: {
+            user: {
+              AND: [
+                { email: { contains: '@example.com' } },
+                { email: { notIn: keepEmails } }
+              ]
+            }
+          }
+        }
+      });
+
+      await prisma.provider.deleteMany({
+        where: {
+          user: {
+            AND: [
+              { email: { contains: '@example.com' } },
+              { email: { notIn: keepEmails } }
+            ]
+          }
+        }
+      });
+
+      await prisma.user.deleteMany({
+        where: {
+          email: {
+            contains: '@example.com',
+            notIn: keepEmails
+          }
+        }
+      });
+    } finally {
+      await prisma.$disconnect();
+    }
+
     // Logga in som provider
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('provider@example.com');

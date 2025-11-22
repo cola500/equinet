@@ -11,7 +11,8 @@ describe('PasswordStrengthIndicator', () => {
 
     // All requirements should be neutral (gray)
     expect(screen.getByTestId('requirement-minLength')).toHaveClass('text-gray-400')
-    expect(screen.getByTestId('requirement-hasCase')).toHaveClass('text-gray-400')
+    expect(screen.getByTestId('requirement-hasUppercase')).toHaveClass('text-gray-400')
+    expect(screen.getByTestId('requirement-hasLowercase')).toHaveClass('text-gray-400')
     expect(screen.getByTestId('requirement-hasNumber')).toHaveClass('text-gray-400')
     expect(screen.getByTestId('requirement-hasSpecialChar')).toHaveClass('text-gray-400')
   })
@@ -27,15 +28,26 @@ describe('PasswordStrengthIndicator', () => {
     expect(screen.getByTestId('requirement-minLength')).toHaveClass('text-green-600')
   })
 
-  it('should validate hasCase requirement (uppercase + lowercase)', () => {
+  it('should validate hasUppercase requirement', () => {
     const { rerender } = render(<PasswordStrengthIndicator password="test1234!" />)
 
     // No uppercase - unmet
-    expect(screen.getByTestId('requirement-hasCase')).toHaveClass('text-gray-500')
+    expect(screen.getByTestId('requirement-hasUppercase')).toHaveClass('text-gray-500')
 
-    // Has both - met
+    // Has uppercase - met
     rerender(<PasswordStrengthIndicator password="Test1234!" />)
-    expect(screen.getByTestId('requirement-hasCase')).toHaveClass('text-green-600')
+    expect(screen.getByTestId('requirement-hasUppercase')).toHaveClass('text-green-600')
+  })
+
+  it('should validate hasLowercase requirement', () => {
+    const { rerender } = render(<PasswordStrengthIndicator password="TEST1234!" />)
+
+    // No lowercase - unmet
+    expect(screen.getByTestId('requirement-hasLowercase')).toHaveClass('text-gray-500')
+
+    // Has lowercase - met
+    rerender(<PasswordStrengthIndicator password="Test1234!" />)
+    expect(screen.getByTestId('requirement-hasLowercase')).toHaveClass('text-green-600')
   })
 
   it('should validate hasNumber requirement', () => {

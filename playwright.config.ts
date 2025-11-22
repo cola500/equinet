@@ -7,8 +7,15 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
 
-  /* Run tests in files in parallel */
-  fullyParallel: true,
+  /* Run tests SERIALLY (not parallel) to ensure test isolation
+   * CRITICAL: fullyParallel:false + workers:1 ensures:
+   * - No race conditions with shared database
+   * - Deterministic test execution order
+   * - Clean UI state between tests (browser context resets)
+   *
+   * Sprint 2 F2-5: Test isolation strategy enforces serial execution
+   */
+  fullyParallel: false,
 
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
@@ -16,11 +23,8 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
 
-  /* Run tests serially to avoid race conditions with shared database
-   * NOTE: This is a temporary workaround for MVP. Future improvements:
-   * - Isolate test data per worker (different users/providers)
-   * - Use database transactions with rollback
-   * - Separate test databases per worker
+  /* Single worker ensures serial execution
+   * Combined with fullyParallel:false for maximum isolation
    */
   workers: 1,
 
@@ -46,6 +50,12 @@ export default defineConfig({
 
     /* Navigation timeout (default 30s -> 30s) */
     navigationTimeout: 30000,
+
+    /* Test isolation: Fresh browser context for each test
+     * Sprint 2 F2-5: Playwright automatically creates a new BrowserContext
+     * for each test, ensuring clean UI state (cookies, localStorage, sessionStorage).
+     * Combined with serial execution (fullyParallel:false), this prevents state leakage.
+     */
   },
 
   /* Configure projects for major browsers */

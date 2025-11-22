@@ -140,7 +140,8 @@ test.describe('Authentication Flow', () => {
 
     // Verifiera att krav-indikatorn visar fel (new grouped layout)
     await expect(page.getByText(/minst 8 tecken/i)).toBeVisible();
-    await expect(page.getByText(/stor \+ liten bokstav/i)).toBeVisible();
+    await expect(page.getByText(/stor bokstav/i)).toBeVisible();
+    await expect(page.getByText(/liten bokstav/i)).toBeVisible();
     await expect(page.getByText(/siffra \(0-9\)/i)).toBeVisible();
     await expect(page.getByText(/specialtecken/i)).toBeVisible();
   });

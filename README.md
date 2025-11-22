@@ -2,15 +2,79 @@
 
 Equinet är en modern bokningsplattform som kopplar samman hästägare med tjänsteleverantörer som hovslagare, veterinärer och andra hästspecialister.
 
-## 🚀 Snabbstart
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js**: v18.17 eller senare
+- **npm**: v9 eller senare
+- **Git**: För version control
+
+### Initial Setup
+
+1. **Klona projektet**
+   ```bash
+   git clone <repository-url>
+   cd equinet
+   ```
+
+2. **Installera beroenden**
+   ```bash
+   npm install
+   ```
+
+3. **Sätt upp environment variables**
+   ```bash
+   # Kopiera example-fil till .env
+   cp .env.example .env
+
+   # Generera NEXTAUTH_SECRET
+   openssl rand -base64 32
+
+   # Öppna .env och ersätt your-secret-here-min-32-chars med genererat värde
+   ```
+
+   **Viktiga environment variables:**
+   - `DATABASE_URL`: SQLite databas-sökväg (default: `file:./prisma/dev.db`)
+   - `NEXTAUTH_SECRET`: Secret för NextAuth (generera med kommandot ovan)
+   - `NEXTAUTH_URL`: App URL (default: `http://localhost:3000`)
+
+4. **Skapa och seeda databasen**
+   ```bash
+   # Skapa databas från schema
+   npx prisma db push
+
+   # Seeda med testdata (valfritt för utveckling)
+   npx tsx prisma/seed-test-users.ts
+   ```
+
+5. **Starta utvecklingsservern**
+   ```bash
+   npm run dev
+   ```
+
+   Öppna [http://localhost:3000](http://localhost:3000) i din browser.
+
+6. **Verifiera installation**
+   ```bash
+   # Kör tester för att säkerställa allt fungerar
+   npm run test:run        # Unit tests
+   npm run test:e2e        # E2E tests (kräver seedat data)
+   npx tsc --noEmit        # TypeScript check
+   ```
+
+### Snabbstart (om du redan har setup)
 
 ```bash
-npm install              # Installera beroenden
-npm run setup            # Sätt upp databas
-npm run dev              # Starta på http://localhost:3000
+npm run dev              # Starta utvecklingsserver
 ```
 
-**Stoppa:** `Ctrl + C` eller `./scripts/stop.sh`
+**Stoppa server:** `Ctrl + C`
+
+### Testanvändare (efter seeding)
+
+- **Kund**: test@example.com / TestPassword123!
+- **Provider**: provider@example.com / ProviderPass123!
 
 ## 📋 Viktiga Kommandon
 
@@ -72,17 +136,7 @@ equinet/
 │   │   ├── sanitize.ts       # Input sanitization
 │   │   └── validations/      # Delade Zod-schemas
 │   └── types/
-└── .env.local                # Environment variables
-```
-
-## 🔑 Konfiguration
-
-Skapa `.env.local` i projektets rot:
-
-```env
-DATABASE_URL="file:./dev.db"
-NEXTAUTH_SECRET="[openssl rand -base64 32]"
-NEXTAUTH_URL="http://localhost:3000"
+└── .env                      # Environment variables (NOT committed)
 ```
 
 ## 👥 Användarroller

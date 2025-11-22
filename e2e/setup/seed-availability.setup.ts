@@ -1,3 +1,4 @@
+import 'dotenv/config' // Load .env file before anything else
 import { test as setup } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 
