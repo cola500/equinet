@@ -158,6 +158,7 @@ describe('GET /api/bookings', () => {
     ]
 
     vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    // @ts-ignore - CI-specific type instantiation depth issue
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
 
