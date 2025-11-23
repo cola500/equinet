@@ -89,6 +89,26 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | `npm run test:e2e` | E2E-tester med Playwright |
 | `npm run test:coverage` | Coverage report |
 
+## 🔒 Branch Protection & Quality Gates
+
+Main-branchen är skyddad med automatiserade quality gates för att säkerställa kodkvalitet:
+
+**Required Checks (måste passa innan merge):**
+- ✅ Unit Tests & Coverage
+- ✅ E2E Tests
+- ✅ TypeScript Check
+- ✅ Build Check
+
+**Workflow:**
+1. Skapa feature branch från main
+2. Gör dina ändringar och commits
+3. Push till remote och skapa Pull Request
+4. CI kör alla checks automatiskt
+5. Merge är blockerad tills alla checks är gröna
+6. När checks passar → merge till main
+
+Detta säkerställer att broken code aldrig når main-branchen! 🎯
+
 ## 🛠️ Teknisk Stack
 
 - **Framework**: Next.js 15.5.0 (App Router)
