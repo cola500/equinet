@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔒 Running pre-push quality checks..."
+echo ""
+
+# Run unit tests
+echo "📊 Running unit tests..."
+npm run test:run || {
+  echo "❌ Unit tests failed! Fix tests before pushing."
+  exit 1
+}
+
+echo ""
+
+# Run TypeScript check
+echo "🔍 Running TypeScript check..."
+npx tsc --noEmit || {
+  echo "❌ TypeScript errors found! Fix type errors before pushing."
+  exit 1
+}
+
+echo ""
+echo "✅ All local checks passed! Pushing to remote..."

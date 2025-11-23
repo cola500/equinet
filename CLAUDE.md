@@ -760,13 +760,33 @@ expect(data).toMatchObject({ id: expect.any(String), businessName: expect.any(St
 expect(data.passwordHash).toBeUndefined() // Security assertion
 ```
 
-**Pre-merge Checklist (OBLIGATORISK):**
+## 🔒 Automated Quality Gates
+
+**Lokal Gate (Husky pre-push hook):**
+- ✅ Unit tests (`npm run test:run`)
+- ✅ TypeScript check (`npx tsc --noEmit`)
+
+**CI Gate (GitHub Actions - `.github/workflows/quality-gates.yml`):**
+- ✅ Unit tests + coverage
+- ✅ E2E tests
+- ✅ TypeScript check
+- ✅ Build verification
+- ✅ Lint (non-blocking)
+
+**Branch Protection:**
+Main branch kräver att alla CI checks är gröna innan merge.
+
+**Om du behöver skippa lokala checks (EJ rekommenderat):**
 ```bash
-npm run test:run      # Alla unit-tester
-npm run test:e2e      # E2E-suite
-npx tsc --noEmit      # TypeScript
-npm run build         # Build
+git push --no-verify
 ```
+
+**Alternativt, kör checks manuellt:**
+```bash
+npm run pre-push  # Kör samma checks som Husky
+```
+
+---
 
 **Test Update Pattern (vid schema-ändringar):**
 1. Uppdatera Prisma schema
