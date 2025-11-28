@@ -3,7 +3,11 @@
  */
 import { prisma } from '@/lib/prisma'
 import { BaseRepository } from '../BaseRepository'
-import { IBookingRepository, Booking } from './IBookingRepository'
+import {
+  IBookingRepository,
+  Booking,
+  BookingWithRelations,
+} from './IBookingRepository'
 import { BookingMapper } from './BookingMapper'
 
 export class PrismaBookingRepository
@@ -129,5 +133,118 @@ export class PrismaBookingRepository
   private parseTime(time: string): number {
     const [hours, minutes] = time.split(':').map(Number)
     return hours * 60 + minutes
+  }
+
+  // ==========================================
+  // QUERY METHODS (CQRS Query Side)
+  // ==========================================
+
+  /**
+   * Find bookings for a provider with customer + service details
+   *
+   * Provider view - includes customer contact info (email, phone)
+   * Uses `select` (not `include`) for security and performance
+   */
+  async findByProviderIdWithDetails(
+    providerId: string
+  ): Promise<BookingWithRelations[]> {
+    const bookings = await prisma.booking.findMany({
+      where: { providerId },
+      select: {
+        // Core booking fields
+        id: true,
+        customerId: true,
+        providerId: true,
+        serviceId: true,
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        horseName: true,
+        horseInfo: true,
+        customerNotes: true,
+        createdAt: true,
+        updatedAt: true,
+
+        // Relations - minimal data needed for provider view
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true, // Provider CAN see customer contact
+            phone: true, // Provider needs to contact customer
+            // ❌ NEVER: passwordHash, role, userType
+          },
+        },
+        service: {
+          select: {
+            name: true,
+            price: true,
+            durationMinutes: true,
+            // ❌ NOT: isActive, createdAt, updatedAt (not needed for booking list)
+          },
+        },
+        // ❌ NO provider relation (provider already knows their own data)
+      },
+      orderBy: { bookingDate: 'desc' },
+    })
+
+    return bookings as BookingWithRelations[]
+  }
+
+  /**
+   * Find bookings for a customer with provider + service details
+   *
+   * Customer view - excludes provider contact info (email, phone)
+   * Uses `select` (not `include`) for security and performance
+   */
+  async findByCustomerIdWithDetails(
+    customerId: string
+  ): Promise<BookingWithRelations[]> {
+    const bookings = await prisma.booking.findMany({
+      where: { customerId },
+      select: {
+        // Core booking fields
+        id: true,
+        customerId: true,
+        providerId: true,
+        serviceId: true,
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        horseName: true,
+        horseInfo: true,
+        customerNotes: true,
+        createdAt: true,
+        updatedAt: true,
+
+        // Relations - minimal data needed for customer view
+        provider: {
+          select: {
+            businessName: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                // ❌ NEVER: email, phone (prevents spam/unsolicited contact)
+              },
+            },
+          },
+        },
+        service: {
+          select: {
+            name: true,
+            price: true,
+            durationMinutes: true,
+            // ❌ NOT: isActive, createdAt, updatedAt
+          },
+        },
+        // ❌ NO customer relation (customer already knows their own data)
+      },
+      orderBy: { bookingDate: 'desc' },
+    })
+
+    return bookings as BookingWithRelations[]
   }
 }

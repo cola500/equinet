@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { optimizeRoute, type Location } from "@/lib/route-optimizer"
 
 interface RouteOrder {
   id: string
@@ -43,6 +44,15 @@ export default function RoutePlanningPage() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [isCreatingRoute, setIsCreatingRoute] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Route optimization state
+  const [isOptimizing, setIsOptimizing] = useState(false)
+  const [optimizationResult, setOptimizationResult] = useState<{
+    optimizedOrderIds: string[]
+    improvement: number
+    totalDistance: number
+    baselineDistance: number
+  } | null>(null)
 
   // Filter states
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
@@ -114,6 +124,55 @@ export default function RoutePlanningPage() {
     setSelectedOrders(new Set())
   }
 
+  const handleOptimizeRoute = async () => {
+    if (selectedOrders.size < 2) {
+      toast.error("Välj minst 2 beställningar för att optimera")
+      return
+    }
+
+    setIsOptimizing(true)
+    setOptimizationResult(null)
+
+    try {
+      // Hämta valda orders
+      const selected = orders.filter(o => selectedOrders.has(o.id))
+
+      // Konvertera till Location format
+      const locations: Location[] = selected.map(order => ({
+        id: parseInt(order.id),
+        lat: order.latitude,
+        lon: order.longitude,
+        customer: `${order.customer.firstName} ${order.customer.lastName}`,
+        address: order.address,
+        service: order.serviceType,
+      }))
+
+      // Start location (Göteborg centrum för nu)
+      const startLocation: Location = {
+        lat: 57.7089,
+        lon: 11.9746,
+      }
+
+      // Anropa Modal API
+      const result = await optimizeRoute(startLocation, locations)
+
+      // Spara resultat
+      setOptimizationResult({
+        optimizedOrderIds: result.route.map(id => id.toString()),
+        improvement: result.improvement_percent,
+        totalDistance: result.total_distance_km,
+        baselineDistance: result.baseline_distance_km,
+      })
+
+      toast.success(`Rutt optimerad! ${result.improvement_percent}% kortare`)
+    } catch (error: any) {
+      console.error("Optimization error:", error)
+      toast.error("Kunde inte optimera rutt: " + error.message)
+    } finally {
+      setIsOptimizing(false)
+    }
+  }
+
   const handleCreateRoute = async () => {
     if (selectedOrders.size === 0) {
       toast.error("Välj minst en beställning")
@@ -128,11 +187,16 @@ export default function RoutePlanningPage() {
     setIsCreatingRoute(true)
 
     try {
+      // Använd optimerad ordning om den finns, annars original
+      const orderIds = optimizationResult
+        ? optimizationResult.optimizedOrderIds
+        : Array.from(selectedOrders)
+
       const payload = {
         routeName: routeName.trim(),
         routeDate: new Date(routeDate).toISOString(),
         startTime,
-        orderIds: Array.from(selectedOrders),
+        orderIds,
       }
 
       const response = await fetch("/api/routes", {
@@ -350,6 +414,42 @@ export default function RoutePlanningPage() {
                   </div>
                 )}
 
+                {/* Optimization section */}
+                {selectedOrders.size >= 2 && (
+                  <div className="border-t pt-4">
+                    <Button
+                      variant="outline"
+                      className="w-full mb-3"
+                      onClick={handleOptimizeRoute}
+                      disabled={isOptimizing}
+                    >
+                      {isOptimizing ? "Optimerar..." : "🚀 Optimera rutt"}
+                    </Button>
+
+                    {optimizationResult && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2 text-sm">
+                        <p className="font-semibold text-green-900">
+                          ✅ Rutt optimerad!
+                        </p>
+                        <div className="space-y-1 text-green-800">
+                          <div className="flex justify-between">
+                            <span>Förbättring:</span>
+                            <span className="font-bold">{optimizationResult.improvement.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Ny sträcka:</span>
+                            <span className="font-medium">{optimizationResult.totalDistance.toFixed(1)} km</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span>Tidigare:</span>
+                            <span>{optimizationResult.baselineDistance.toFixed(1)} km</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="routeName">Ruttnamn</Label>
                   <Input
@@ -388,9 +488,15 @@ export default function RoutePlanningPage() {
                   {isCreatingRoute ? "Skapar rutt..." : "Skapa rutt"}
                 </Button>
 
-                <p className="text-xs text-gray-500 text-center">
-                  OBS: I MVP-version skapas rutter i den ordning du valde beställningarna. Ruttoptimering kommer i senare version.
-                </p>
+                {optimizationResult ? (
+                  <p className="text-xs text-green-600 text-center font-medium">
+                    ✨ Rutten kommer skapas i optimerad ordning
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 text-center">
+                    💡 Välj minst 2 beställningar för att optimera rutten
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>

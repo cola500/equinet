@@ -4,7 +4,11 @@
  * Useful for unit tests where we don't want database dependencies.
  */
 import { BaseRepository } from '../BaseRepository'
-import { IBookingRepository, Booking } from './IBookingRepository'
+import {
+  IBookingRepository,
+  Booking,
+  BookingWithRelations,
+} from './IBookingRepository'
 
 export class MockBookingRepository
   extends BaseRepository<Booking>
@@ -126,5 +130,73 @@ export class MockBookingRepository
   private parseTime(time: string): number {
     const [hours, minutes] = time.split(':').map(Number)
     return hours * 60 + minutes
+  }
+
+  // ==========================================
+  // QUERY METHODS (CQRS Query Side)
+  // ==========================================
+
+  /**
+   * Find bookings for a provider with mock relations data
+   *
+   * Note: Mock implementation returns minimal mock data for relations.
+   * For realistic testing, use test fixtures with proper relations setup.
+   */
+  async findByProviderIdWithDetails(
+    providerId: string
+  ): Promise<BookingWithRelations[]> {
+    const bookings = await this.findByProviderId(providerId)
+
+    // Transform to BookingWithRelations with mock relations data
+    return bookings.map((booking) => ({
+      ...booking,
+      // Mock customer data (provider view includes contact info)
+      customer: {
+        firstName: 'Mock',
+        lastName: 'Customer',
+        email: `customer-${booking.customerId}@example.com`,
+        phone: '+46701234567',
+      },
+      // Mock service data
+      service: {
+        name: 'Mock Service',
+        price: 500,
+        durationMinutes: 60,
+      },
+      // No provider relation (provider already knows their own data)
+    }))
+  }
+
+  /**
+   * Find bookings for a customer with mock relations data
+   *
+   * Note: Mock implementation returns minimal mock data for relations.
+   * For realistic testing, use test fixtures with proper relations setup.
+   */
+  async findByCustomerIdWithDetails(
+    customerId: string
+  ): Promise<BookingWithRelations[]> {
+    const bookings = await this.findByCustomerId(customerId)
+
+    // Transform to BookingWithRelations with mock relations data
+    return bookings.map((booking) => ({
+      ...booking,
+      // No customer relation (customer already knows their own data)
+      // Mock provider data (customer view excludes contact info)
+      provider: {
+        businessName: 'Mock Provider AB',
+        user: {
+          firstName: 'Mock',
+          lastName: 'Provider',
+          // NO email/phone in customer view
+        },
+      },
+      // Mock service data
+      service: {
+        name: 'Mock Service',
+        price: 500,
+        durationMinutes: 60,
+      },
+    }))
   }
 }
