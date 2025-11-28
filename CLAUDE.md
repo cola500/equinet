@@ -774,7 +774,9 @@ expect(data.passwordHash).toBeUndefined() // Security assertion
 - ✅ Lint (non-blocking)
 
 **Branch Protection:**
-Main branch kräver att alla CI checks är gröna innan merge.
+⚠️ **INAKTIVERAT FÖR MVP** - GitHub branch protection är avstängt för snabbare iteration.
+- Återaktivera när: projektet når v1.0 eller går i produktion
+- Kräver då: alla CI checks gröna innan merge till main
 
 **Om du behöver skippa lokala checks (EJ rekommenderat):**
 ```bash
