@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +16,12 @@ import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
+
+// Dynamic import to avoid SSR issues with Leaflet
+const RouteMapVisualization = dynamic(
+  () => import('@/components/RouteMapVisualization'),
+  { ssr: false, loading: () => <div className="h-[500px] bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-gray-500">Laddar karta...</div> }
+)
 
 interface RouteOrder {
   id: string
@@ -137,9 +144,9 @@ export default function RoutePlanningPage() {
       // Hämta valda orders
       const selected = orders.filter(o => selectedOrders.has(o.id))
 
-      // Konvertera till Location format
-      const locations: Location[] = selected.map(order => ({
-        id: parseInt(order.id),
+      // Konvertera till Location format med index som ID för Modal API
+      const locations: Location[] = selected.map((order, index) => ({
+        id: index, // Använd array-index som ID för Modal API
         lat: order.latitude,
         lon: order.longitude,
         customer: `${order.customer.firstName} ${order.customer.lastName}`,
@@ -156,9 +163,12 @@ export default function RoutePlanningPage() {
       // Anropa Modal API
       const result = await optimizeRoute(startLocation, locations)
 
+      // Mappa tillbaka från array-index till riktiga order IDs
+      const optimizedOrderIds = result.route.map(index => selected[index].id)
+
       // Spara resultat
       setOptimizationResult({
-        optimizedOrderIds: result.route.map(id => id.toString()),
+        optimizedOrderIds,
         improvement: result.improvement_percent,
         totalDistance: result.total_distance_km,
         baselineDistance: result.baseline_distance_km,
@@ -295,6 +305,28 @@ export default function RoutePlanningPage() {
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="pt-6">
               <p className="text-red-600">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Map Visualization */}
+        {selectedOrders.size > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Kartvy</CardTitle>
+              <CardDescription>
+                {optimizationResult
+                  ? `Visar optimerad rutt (${optimizationResult.improvement.toFixed(1)}% kortare)`
+                  : `Visar ${selectedOrders.size} valda beställningar`
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RouteMapVisualization
+                orders={orders}
+                selectedOrderIds={Array.from(selectedOrders)}
+                optimizedOrderIds={optimizationResult?.optimizedOrderIds}
+              />
             </CardContent>
           </Card>
         )}

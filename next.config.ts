@@ -9,6 +9,38 @@ const nextConfig: NextConfig = {
     const isDev = process.env.NODE_ENV === 'development'
 
     return [
+      // Relaxed headers for map tiles and routing (route-planning page)
+      {
+        source: '/provider/route-planning',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              isDev
+                ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
+                : "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://router.project-osrm.org", // Allow OSRM API
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "object-src 'none'",
+              isDev ? "" : "upgrade-insecure-requests",
+            ].filter(Boolean).join('; '),
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'unsafe-none', // Disable COEP for map tiles
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin', // Allow cross-origin resources
+          },
+        ],
+      },
       {
         source: '/:path*',
         headers: [

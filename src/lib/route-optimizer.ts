@@ -22,17 +22,18 @@ export interface OptimizeResponse {
   improvement_percent: number;
 }
 
-const MODAL_API_URL = 'https://johan-26538--route-optimizer-fastapi-app.modal.run';
+// Använd Next.js API route som proxy för att undvika CSP-problem
+const API_URL = '/api';
 
 /**
- * Optimera rutt via Modal API
+ * Optimera rutt via Modal API (genom Next.js proxy)
  */
 export async function optimizeRoute(
   startLocation: Location,
   orders: Location[]
 ): Promise<OptimizeResponse> {
   try {
-    const response = await fetch(`${MODAL_API_URL}/optimize-route`, {
+    const response = await fetch(`${API_URL}/optimize-route`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
