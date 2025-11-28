@@ -59,6 +59,7 @@ export default function ProviderDetailPage() {
     dateTo: format(addDays(new Date(), 7), "yyyy-MM-dd"),
     priority: "normal",
     numberOfHorses: 1,
+    contactPhone: "",
     specialInstructions: "",
   })
   const [bookedSlots, setBookedSlots] = useState<
@@ -174,7 +175,7 @@ export default function ProviderDetailPage() {
             dateTo: flexibleForm.dateTo,
             priority: flexibleForm.priority,
             specialInstructions: flexibleForm.specialInstructions,
-            contactPhone: "0700000000", // Placeholder - should get from user profile in real app
+            contactPhone: flexibleForm.contactPhone,
           }),
         })
 
@@ -601,6 +602,23 @@ export default function ProviderDetailPage() {
                     }
                     required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Kontakttelefon *</Label>
+                  <Input
+                    id="contactPhone"
+                    type="tel"
+                    value={flexibleForm.contactPhone}
+                    onChange={(e) =>
+                      setFlexibleForm({ ...flexibleForm, contactPhone: e.target.value })
+                    }
+                    placeholder="070-123 45 67"
+                    required
+                  />
+                  <p className="text-xs text-gray-600">
+                    Leverantören kontaktar dig på detta nummer för att bekräfta tid
+                  </p>
                 </div>
 
                 <div className="space-y-2">
