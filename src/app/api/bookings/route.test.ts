@@ -432,4 +432,193 @@ describe('POST /api/bookings', () => {
     expect(response.status).toBe(400)
     expect(data.error).toBe('Validation error')
   })
+
+  describe('RouteOrder Linking (Experiment 003)', () => {
+    it('should link booking to routeOrderId when provided', async () => {
+      // Arrange
+      const mockSession = {
+        user: {
+          id: 'customer123',
+          userType: 'customer',
+        },
+      }
+
+      const mockService = {
+        id: 'service1',
+        name: 'Hovslagning',
+        providerId: 'provider123',
+      }
+
+      const mockBooking = {
+        id: 'booking1',
+        customerId: 'customer123',
+        providerId: 'provider123',
+        serviceId: 'service1',
+        routeOrderId: 'announcement123', // LINKED!
+        bookingDate: new Date('2025-12-15'),
+        startTime: '10:00',
+        endTime: '11:00',
+        status: 'pending',
+        service: mockService,
+        provider: {
+          user: {
+            firstName: 'John',
+            lastName: 'Doe',
+          },
+        },
+      }
+
+      vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+      // @ts-expect-error - Vitest type instantiation depth limitation
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const tx = {
+          booking: {
+            findMany: vi.fn().mockResolvedValue([]),
+            create: vi.fn().mockResolvedValue(mockBooking),
+          },
+        }
+        return await callback(tx)
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId: 'provider123',
+          serviceId: 'service1',
+          bookingDate: '2025-12-15',
+          startTime: '10:00',
+          endTime: '11:00',
+          routeOrderId: 'announcement123', // NEW FIELD
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(201)
+      expect(data.routeOrderId).toBe('announcement123')
+    })
+
+    it('should accept bookings without routeOrderId (backward compatibility)', async () => {
+      // Arrange
+      const mockSession = {
+        user: {
+          id: 'customer123',
+          userType: 'customer',
+        },
+      }
+
+      const mockService = {
+        id: 'service1',
+        name: 'Hovslagning',
+        providerId: 'provider123',
+      }
+
+      const mockBooking = {
+        id: 'booking1',
+        customerId: 'customer123',
+        providerId: 'provider123',
+        serviceId: 'service1',
+        routeOrderId: null, // NOT LINKED
+        bookingDate: new Date('2025-12-15'),
+        startTime: '10:00',
+        endTime: '11:00',
+        status: 'pending',
+        service: mockService,
+        provider: {
+          user: {
+            firstName: 'John',
+            lastName: 'Doe',
+          },
+        },
+      }
+
+      vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+      // @ts-expect-error - Vitest type instantiation depth limitation
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const tx = {
+          booking: {
+            findMany: vi.fn().mockResolvedValue([]),
+            create: vi.fn().mockResolvedValue(mockBooking),
+          },
+        }
+        return await callback(tx)
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId: 'provider123',
+          serviceId: 'service1',
+          bookingDate: '2025-12-15',
+          startTime: '10:00',
+          endTime: '11:00',
+          // NO routeOrderId - should still work
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(201)
+      expect(data.routeOrderId).toBeNull()
+    })
+
+    it('should return 404 when routeOrderId does not exist', async () => {
+      // Arrange
+      const mockSession = {
+        user: {
+          id: 'customer123',
+          userType: 'customer',
+        },
+      }
+
+      const mockService = {
+        id: 'service1',
+        name: 'Hovslagning',
+        providerId: 'provider123',
+      }
+
+      vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+      // Mock $transaction to simulate Prisma foreign key constraint error
+      // @ts-expect-error - Vitest type instantiation depth limitation
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const { Prisma } = await import('@prisma/client')
+        throw new Prisma.PrismaClientKnownRequestError(
+          'Foreign key constraint failed',
+          'P2003'
+        )
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId: 'provider123',
+          serviceId: 'service1',
+          bookingDate: '2025-12-15',
+          startTime: '10:00',
+          endTime: '11:00',
+          routeOrderId: 'nonexistent123',
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('RouteOrder hittades inte')
+    })
+  })
 })

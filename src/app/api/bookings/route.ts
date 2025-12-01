@@ -15,6 +15,7 @@ const bookingSchema = z.object({
   horseName: z.string().optional(),
   horseInfo: z.string().optional(),
   customerNotes: z.string().optional(),
+  routeOrderId: z.string().optional(), // NEW: Link to provider announcement
 }).strict()
 
 // GET bookings for logged-in user
@@ -198,6 +199,7 @@ export async function POST(request: NextRequest) {
           customerId: session.user.id,
           providerId: validatedData.providerId,
           serviceId: validatedData.serviceId,
+          routeOrderId: validatedData.routeOrderId, // NEW: Link to announcement
           bookingDate: bookingDate,
           startTime: validatedData.startTime,
           endTime: validatedData.endTime,
@@ -286,6 +288,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "Bokningen finns redan" },
           { status: 409 }
+        )
+      }
+
+      // P2003: Foreign key constraint failed (routeOrderId invalid)
+      if (error.code === "P2003") {
+        try {
+          logger.warn("Invalid foreign key during booking", {
+            code: error.code,
+          })
+        } catch (logError) {
+          console.error("Logger failed:", logError)
+        }
+        return NextResponse.json(
+          { error: "RouteOrder hittades inte" },
+          { status: 400 }
         )
       }
 

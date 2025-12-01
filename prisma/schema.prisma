@@ -92,26 +92,29 @@ model Availability {
 }
 
 model Booking {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   customerId    String
-  customer      User     @relation(fields: [customerId], references: [id])
+  customer      User        @relation(fields: [customerId], references: [id])
   providerId    String
-  provider      Provider @relation(fields: [providerId], references: [id])
+  provider      Provider    @relation(fields: [providerId], references: [id])
   serviceId     String
-  service       Service  @relation(fields: [serviceId], references: [id])
+  service       Service     @relation(fields: [serviceId], references: [id])
+  routeOrderId  String?
+  routeOrder    RouteOrder? @relation(fields: [routeOrderId], references: [id])
   bookingDate   DateTime
   startTime     String
   endTime       String
-  status        String   @default("pending") // pending, confirmed, cancelled, completed
+  status        String      @default("pending") // pending, confirmed, cancelled, completed
   customerNotes String?
   horseName     String?
   horseInfo     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@index([providerId, bookingDate, status])
   @@index([customerId, bookingDate])
   @@index([serviceId])
+  @@index([routeOrderId])
 }
 
 model Notification {
@@ -153,6 +156,7 @@ model RouteOrder {
   updatedAt           DateTime @updatedAt
 
   routeStops RouteStop[]
+  bookings   Booking[]
 
   @@index([status, serviceType])
   @@index([status, priority])
