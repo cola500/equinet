@@ -36,7 +36,13 @@ model Provider {
   address         String?
   city            String?
   postalCode      String?
-  serviceArea     String? // JSON array av områden
+
+  // NEW: Geographic coordinates (geocoded from address)
+  latitude        Float?
+  longitude       Float?
+  serviceAreaKm   Float?   @default(50) // Max service radius in km
+
+  serviceArea     String? // DEPRECATED: JSON array av områden (keep for backward compatibility)
   profileImageUrl String?
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
@@ -46,10 +52,12 @@ model Provider {
   availability Availability[]
   bookings     Booking[]
   routes       Route[]
+  routeOrders  RouteOrder[] // NEW: Provider-announced route orders
 
   @@index([isActive, createdAt])
   @@index([city])
   @@index([businessName])
+  @@index([latitude, longitude]) // NEW: For geo-queries
 }
 
 model Service {
@@ -119,8 +127,17 @@ model Notification {
 // Route-based delivery models
 model RouteOrder {
   id                  String   @id @default(uuid())
-  customerId          String
-  customer            User     @relation(fields: [customerId], references: [id])
+
+  // Customer-initiated fields (nullable when provider-announced)
+  customerId          String?
+  customer            User?    @relation(fields: [customerId], references: [id])
+
+  // NEW: Provider-announced fields
+  providerId          String?
+  provider            Provider? @relation(fields: [providerId], references: [id])
+  announcementType    String   @default("customer_initiated") // 'customer_initiated' | 'provider_announced'
+
+  // Shared fields (used by both flows)
   serviceType         String // t.ex. 'hovslagning', 'massage'
   address             String
   latitude            Float
@@ -141,6 +158,8 @@ model RouteOrder {
   @@index([status, priority])
   @@index([customerId, status])
   @@index([dateFrom, dateTo, status])
+  @@index([providerId, announcementType, status]) // NEW: Provider announcements
+  @@index([latitude, longitude, announcementType]) // NEW: Geo-search
 }
 
 model Route {
@@ -169,6 +188,7 @@ model RouteStop {
   routeOrderId         String
   routeOrder           RouteOrder @relation(fields: [routeOrderId], references: [id])
   stopOrder            Int // 1, 2, 3... ordning i rutten
+  locationName         String?    // NEW: "Alingsås centrum", "Sollebrunn" (för provider announcements)
   estimatedArrival     DateTime?
   estimatedDurationMin Int        @default(60) // Beräknad tid på plats
   actualArrival        DateTime?

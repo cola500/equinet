@@ -4,6 +4,8 @@
  * Integrerar med Modal.com API från Experiment 001 för att optimera hovslagarrutter.
  */
 
+const MODAL_API_URL = process.env.MODAL_API_URL || 'https://johanlin--route-optimizer-fastapi-app.modal.run'
+
 export interface Location {
   lat: number;
   lon: number;

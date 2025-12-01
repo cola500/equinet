@@ -83,32 +83,65 @@ export default function RouteMapVisualization({
   }, [optimizedOrderIds, orders, startLocation])
 
   // Fetch actual routes when paths change
-  // Only route the optimized path to reduce API calls and improve performance
+  // Fetch BOTH original AND optimized paths for fair comparison
   useEffect(() => {
     let cancelled = false
 
-    if (optimizedPath && optimizedPath.length > 1) {
-      console.log('Fetching route for', optimizedPath.length, 'points')
+    // Fetch original path (in selection order)
+    if (originalPath && originalPath.length > 1 && !routedOriginalPath) {
+      console.log('Fetching ORIGINAL route for', originalPath.length, 'points')
+      setIsLoadingRoutes(true)
+
+      getRouteWithFallback(originalPath)
+        .then(routed => {
+          if (cancelled) return
+          console.log('Original route received:', routed.length, 'points')
+          setRoutedOriginalPath(routed)
+        })
+        .catch(err => {
+          if (cancelled) return
+          console.error('Original route failed:', err)
+          // Fallback to straight line
+          setRoutedOriginalPath(originalPath)
+        })
+        .finally(() => {
+          if (cancelled) return
+          setIsLoadingRoutes(false)
+        })
+    } else if (!originalPath) {
+      setRoutedOriginalPath(null)
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [originalPath])
+
+  // Fetch optimized path when optimization is done
+  useEffect(() => {
+    let cancelled = false
+
+    if (optimizedPath && optimizedPath.length > 1 && !routedOptimizedPath) {
+      console.log('Fetching OPTIMIZED route for', optimizedPath.length, 'points')
       setIsLoadingRoutes(true)
 
       getRouteWithFallback(optimizedPath)
         .then(routed => {
           if (cancelled) return
-          console.log('Route received:', routed.length, 'points')
+          console.log('Optimized route received:', routed.length, 'points')
           setRoutedOptimizedPath(routed)
         })
         .catch(err => {
           if (cancelled) return
-          console.error('Route failed:', err)
+          console.error('Optimized route failed:', err)
           // Fallback to straight line
           setRoutedOptimizedPath(optimizedPath)
         })
         .finally(() => {
           if (cancelled) return
-          console.log('Route loading finished')
           setIsLoadingRoutes(false)
         })
-    } else {
+    } else if (!optimizedPath) {
       setRoutedOptimizedPath(null)
       setIsLoadingRoutes(false)
     }
@@ -116,7 +149,7 @@ export default function RouteMapVisualization({
     return () => {
       cancelled = true
     }
-  }, [optimizedOrderIds])
+  }, [optimizedPath])
 
   // Initialize map
   useEffect(() => {
@@ -180,10 +213,10 @@ export default function RouteMapVisualization({
       .addTo(map)
     markersRef.current.push(startMarker)
 
-    // Show straight line before optimization
-    if (originalPath && !routedOptimizedPath) {
-      const line = L.polyline(originalPath, {
-        color: 'red',
+    // Show actual routed original path before optimization
+    if (routedOriginalPath && !routedOptimizedPath) {
+      const line = L.polyline(routedOriginalPath, {
+        color: '#ef4444',
         weight: 3,
         opacity: 0.7,
         dashArray: '10, 10'
@@ -191,14 +224,14 @@ export default function RouteMapVisualization({
       linesRef.current.push(line)
     }
 
-    // Show optimized routed path when available
+    // Show BOTH routed paths when optimization is done
     if (routedOptimizedPath) {
-      // Show original as straight line for comparison
-      if (originalPath) {
-        const originalLine = L.polyline(originalPath, {
+      // Show original as routed path (not straight line!)
+      if (routedOriginalPath) {
+        const originalLine = L.polyline(routedOriginalPath, {
           color: '#ef4444',
-          weight: 2,
-          opacity: 0.3,
+          weight: 3,
+          opacity: 0.5,
           dashArray: '10, 10'
         }).addTo(map)
         linesRef.current.push(originalLine)
@@ -251,7 +284,7 @@ export default function RouteMapVisualization({
       console.warn('Error fitting bounds:', e)
     }
 
-  }, [selectedOrders, originalPath, routedOptimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes])
+  }, [selectedOrders, routedOriginalPath, routedOptimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes])
 
   if (selectedOrders.length === 0) {
     return (

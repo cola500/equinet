@@ -16,6 +16,7 @@ import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
+import { getRoute } from "@/lib/routing"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const RouteMapVisualization = dynamic(
@@ -144,6 +145,12 @@ export default function RoutePlanningPage() {
       // Hämta valda orders
       const selected = orders.filter(o => selectedOrders.has(o.id))
 
+      // DEBUG: Logga original ordning
+      console.log('🔵 ORIGINAL ORDNING (selection order):')
+      selected.forEach((order, index) => {
+        console.log(`  ${index + 1}. ${order.address} (${order.serviceType})`)
+      })
+
       // Konvertera till Location format med index som ID för Modal API
       const locations: Location[] = selected.map((order, index) => ({
         id: index, // Använd array-index som ID för Modal API
@@ -161,20 +168,91 @@ export default function RoutePlanningPage() {
       }
 
       // Anropa Modal API
+      console.log('📡 Anropar Modal API för optimering...')
       const result = await optimizeRoute(startLocation, locations)
+
+      // DEBUG: Logga optimerad ordning
+      console.log('🟢 OPTIMERAD ORDNING (från Modal API):')
+      console.log('  Route array:', result.route)
+      result.route.forEach((index, position) => {
+        const order = selected[index]
+        console.log(`  ${position + 1}. ${order.address} (${order.serviceType})`)
+      })
 
       // Mappa tillbaka från array-index till riktiga order IDs
       const optimizedOrderIds = result.route.map(index => selected[index].id)
 
-      // Spara resultat
-      setOptimizationResult({
-        optimizedOrderIds,
-        improvement: result.improvement_percent,
-        totalDistance: result.total_distance_km,
-        baselineDistance: result.baseline_distance_km,
-      })
+      // DEBUG: Jämför ordningar
+      const originalOrder = selected.map((_, i) => i)
+      const hasChanged = !result.route.every((val, idx) => val === originalOrder[idx])
+      console.log(`🔄 Ordningen har ${hasChanged ? 'ÄNDRATS' : 'INTE ändrats'}`)
+      if (hasChanged) {
+        console.log('  Original:', originalOrder)
+        console.log('  Optimerad:', result.route)
+      }
 
-      toast.success(`Rutt optimerad! ${result.improvement_percent}% kortare`)
+      // Beräkna FAKTISK baseline distance med OSRM (istället för Modal API:s fågelväg)
+      console.log('📏 Beräknar faktiska avstånd med OSRM...')
+      let actualBaselineDistanceKm = result.baseline_distance_km // Fallback
+      let actualOptimizedDistanceKm = result.total_distance_km // Fallback
+
+      try {
+        // Skapa path för original ordning
+        const originalPath: [number, number][] = [[startLocation.lat, startLocation.lon]]
+        selected.forEach(order => {
+          originalPath.push([order.latitude, order.longitude])
+        })
+        originalPath.push([startLocation.lat, startLocation.lon])
+
+        // Skapa path för optimerad ordning
+        const optimizedPath: [number, number][] = [[startLocation.lat, startLocation.lon]]
+        result.route.forEach(index => {
+          const order = selected[index]
+          optimizedPath.push([order.latitude, order.longitude])
+        })
+        optimizedPath.push([startLocation.lat, startLocation.lon])
+
+        // Hämta faktiska rutter parallellt
+        const [originalRoute, optimizedRoute] = await Promise.all([
+          getRoute(originalPath),
+          getRoute(optimizedPath)
+        ])
+
+        actualBaselineDistanceKm = originalRoute.distance / 1000 // meter -> km
+        actualOptimizedDistanceKm = optimizedRoute.distance / 1000
+
+        console.log('📊 DISTANSER:')
+        console.log(`  Modal API baseline (fågelväg): ${result.baseline_distance_km.toFixed(2)} km`)
+        console.log(`  OSRM baseline (faktisk väg): ${actualBaselineDistanceKm.toFixed(2)} km`)
+        console.log(`  Modal API optimized: ${result.total_distance_km.toFixed(2)} km`)
+        console.log(`  OSRM optimized (faktisk väg): ${actualOptimizedDistanceKm.toFixed(2)} km`)
+
+        // Beräkna VERKLIG förbättring
+        const actualImprovement = ((actualBaselineDistanceKm - actualOptimizedDistanceKm) / actualBaselineDistanceKm) * 100
+        console.log(`  Modal API förbättring: ${result.improvement_percent.toFixed(1)}%`)
+        console.log(`  VERKLIG förbättring (OSRM): ${actualImprovement.toFixed(1)}%`)
+
+        // Spara resultat med FAKTISKA avstånd
+        setOptimizationResult({
+          optimizedOrderIds,
+          improvement: actualImprovement,
+          totalDistance: actualOptimizedDistanceKm,
+          baselineDistance: actualBaselineDistanceKm,
+        })
+
+        toast.success(`Rutt optimerad! ${actualImprovement.toFixed(1)}% kortare (${actualBaselineDistanceKm.toFixed(1)} km → ${actualOptimizedDistanceKm.toFixed(1)} km)`)
+      } catch (error) {
+        console.error('OSRM distance calculation failed, using Modal API distances:', error)
+        // Fallback till Modal API:s resultat
+        setOptimizationResult({
+          optimizedOrderIds,
+          improvement: result.improvement_percent,
+          totalDistance: result.total_distance_km,
+          baselineDistance: result.baseline_distance_km,
+        })
+
+        toast.success(`Rutt optimerad! ${result.improvement_percent.toFixed(1)}% kortare`)
+      }
     } catch (error: any) {
       console.error("Optimization error:", error)
       toast.error("Kunde inte optimera rutt: " + error.message)

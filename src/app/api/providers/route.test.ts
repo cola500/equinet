@@ -220,4 +220,210 @@ describe('GET /api/providers', () => {
       price: 500,
     })
   })
+
+  describe('Geo-search functionality', () => {
+    it('should filter providers by location (within radius)', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Nearby Provider',
+          city: 'Alingsås',
+          latitude: 57.930,
+          longitude: 12.532,
+          serviceAreaKm: 50,
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+        {
+          id: 'provider2',
+          businessName: 'Far Provider',
+          city: 'Stockholm',
+          latitude: 59.329,
+          longitude: 18.068,
+          serviceAreaKm: 30,
+          services: [],
+          user: { firstName: 'Jane', lastName: 'Smith' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      // Search near Alingsås with 50km radius
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=57.930&longitude=12.532&radiusKm=50'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(data).toHaveLength(1)
+      expect(data[0].id).toBe('provider1')
+      expect(data[0].businessName).toBe('Nearby Provider')
+    })
+
+    it('should return providers within their service area', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Wide Service Area',
+          latitude: 57.930,
+          longitude: 12.532,
+          serviceAreaKm: 100,
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      // Search from Sollebrunn (about 15km from Alingsås)
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=58.043&longitude=12.555&radiusKm=200'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(data).toHaveLength(1)
+    })
+
+    it('should exclude providers outside search radius', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Far Provider',
+          latitude: 59.329,
+          longitude: 18.068,
+          serviceAreaKm: 50,
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      // Search near Alingsås with small radius
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=57.930&longitude=12.532&radiusKm=10'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(data).toHaveLength(0)
+    })
+
+    it('should combine geo-filter with city filter', async () => {
+      // Arrange - Only return Alingsås provider (DB filters by city first)
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Alingsås Provider',
+          city: 'Alingsås',
+          latitude: 57.930,
+          longitude: 12.532,
+          serviceAreaKm: 50,
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      // Search near Alingsås + city filter
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=57.930&longitude=12.532&radiusKm=50&city=Alingsås'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(data).toHaveLength(1)
+      expect(data[0].city).toBe('Alingsås')
+    })
+
+    it('should return 400 when geo-filter is incomplete', async () => {
+      // Arrange
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=57.930&radiusKm=50'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(400)
+      expect(data.error).toContain('latitude, longitude, and radiusKm')
+    })
+
+    it('should return 400 when radiusKm is invalid', async () => {
+      // Arrange
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=57.930&longitude=12.532&radiusKm=-10'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(400)
+      expect(data.error).toContain('radiusKm must be positive')
+    })
+
+    it('should skip providers without coordinates when geo-filtering', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Provider with coords',
+          latitude: 57.930,
+          longitude: 12.532,
+          serviceAreaKm: 50,
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+        {
+          id: 'provider2',
+          businessName: 'Provider without coords',
+          latitude: null,
+          longitude: null,
+          serviceAreaKm: 50,
+          services: [],
+          user: { firstName: 'Jane', lastName: 'Smith' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?latitude=57.930&longitude=12.532&radiusKm=50'
+      )
+
+      // Act
+      const response = await GET(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(data).toHaveLength(1)
+      expect(data[0].id).toBe('provider1')
+    })
+  })
 })
