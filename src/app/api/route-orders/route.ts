@@ -78,7 +78,10 @@ export async function POST(request: Request) {
       )
     }
     console.error("Error creating route order:", error)
-    return new Response("Internt serverfel", { status: 500 })
+    return NextResponse.json(
+      { error: "Internt serverfel", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    )
   }
 }
 
@@ -234,7 +237,7 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
       dateTo,
       specialInstructions: validated.specialInstructions,
       announcementType: "provider_announced",
-      status: "open",
+      status: "pending",
     },
     include: {
       provider: {
