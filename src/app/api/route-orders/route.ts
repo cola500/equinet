@@ -279,3 +279,78 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
 
   return NextResponse.json(announcement, { status: 201 })
 }
+
+// GET /api/route-orders - Fetch route orders (provider announcements or customer orders)
+export async function GET(request: Request) {
+  try {
+    // Auth handled by middleware
+    const session = await auth()
+
+    // Parse query params
+    const { searchParams } = new URL(request.url)
+    const announcementType = searchParams.get("announcementType")
+
+    // Provider announcements list (for provider's own view)
+    if (announcementType === "provider_announced" && session.user.userType === "provider") {
+      // Find provider profile
+      const provider = await prisma.provider.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true }
+      })
+
+      if (!provider) {
+        return NextResponse.json(
+          { error: "Provider profile not found" },
+          { status: 404 }
+        )
+      }
+
+      // Fetch provider's own announcements (all statuses)
+      const announcements = await prisma.routeOrder.findMany({
+        where: {
+          providerId: provider.id,
+          announcementType: "provider_announced"
+        },
+        include: {
+          routeStops: {
+            orderBy: { stopOrder: "asc" }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      })
+
+      return NextResponse.json(announcements)
+    }
+
+    // Customer orders list (for customer's own view)
+    if (announcementType === "customer_initiated" && session.user.userType === "customer") {
+      const orders = await prisma.routeOrder.findMany({
+        where: {
+          customerId: session.user.id,
+          announcementType: "customer_initiated"
+        },
+        orderBy: { createdAt: "desc" }
+      })
+
+      return NextResponse.json(orders)
+    }
+
+    // Invalid request
+    return NextResponse.json(
+      { error: "Invalid request parameters" },
+      { status: 400 }
+    )
+
+  } catch (error) {
+    // If error is a Response (from auth()), return it
+    if (error instanceof Response) {
+      return error
+    }
+
+    console.error("Error fetching route orders:", error)
+    return NextResponse.json(
+      { error: "Internt serverfel", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    )
+  }
+}

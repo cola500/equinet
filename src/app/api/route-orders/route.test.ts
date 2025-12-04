@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { POST } from './route'
+import { POST, GET } from './route'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth-server'
 import { NextRequest } from 'next/server'
@@ -9,6 +9,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     routeOrder: {
       create: vi.fn(),
+      findMany: vi.fn(),
     },
     routeStop: {
       create: vi.fn(),
@@ -423,5 +424,88 @@ describe('POST /api/route-orders', () => {
       expect(data.longitude).toBeNull()
       expect(data.address).toBe('Storgatan 1, Alingsås')
     })
+  })
+})
+
+describe('GET /api/route-orders', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return provider announcements for authenticated provider', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+      id: 'provider123',
+      userId: 'user123',
+    } as any)
+
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
+      {
+        id: 'announcement1',
+        providerId: 'provider123',
+        serviceType: 'Hovslagning',
+        announcementType: 'provider_announced',
+        routeStops: [
+          { id: 'stop1', locationName: 'Alingsås', stopOrder: 1 }
+        ]
+      }
+    ] as any)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/route-orders?announcementType=provider_announced'
+    )
+
+    // Act
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(1)
+    expect(data[0].id).toBe('announcement1')
+  })
+
+  it('should return 404 when provider profile not found', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/route-orders?announcementType=provider_announced'
+    )
+
+    // Act
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(404)
+    expect(data.error).toContain('Provider')
+  })
+
+  it('should return 400 for invalid query parameters', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/route-orders' // No params
+    )
+
+    // Act
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(400)
+    expect(data.error).toContain('Invalid')
   })
 })
