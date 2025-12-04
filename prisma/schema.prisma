@@ -150,7 +150,7 @@ model RouteOrder {
   dateTo              DateTime
   priority            String   @default("normal") // 'normal' eller 'urgent'
   specialInstructions String?
-  contactPhone        String
+  contactPhone        String?  // Optional - not needed for provider announcements
   status              String   @default("pending") // 'pending', 'in_route', 'completed', 'cancelled'
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
