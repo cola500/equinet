@@ -1,6 +1,18 @@
 /**
  * Geocoding utilities using Google Maps Geocoding API
  * Converts addresses to geographic coordinates (latitude/longitude)
+ *
+ * FUTURE ENHANCEMENT: Currently unused (coordinates are optional in MVP)
+ *
+ * This module is not required for MVP functionality. Announcements can be created
+ * and discovered without coordinates using text-based search.
+ *
+ * To re-enable geocoding:
+ * 1. Set GOOGLE_MAPS_API_KEY in .env
+ * 2. Update provider announcement form to call /api/geocode before submission
+ * 3. Consider making coordinates required again in Zod schemas (optional for now)
+ *
+ * See git history before 2025-12-04 for geocoding flow implementation.
  */
 
 export interface GeocodingResult {

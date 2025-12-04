@@ -7,8 +7,8 @@ import { z } from "zod"
 const routeStopSchema = z.object({
   locationName: z.string().min(1, "Platsnamn krävs"),
   address: z.string().min(1, "Adress krävs"),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 })
 
 // Validation schema for customer-initiated route order
@@ -16,8 +16,8 @@ const createRouteOrderSchema = z.object({
   announcementType: z.literal('customer_initiated').optional().default('customer_initiated'),
   serviceType: z.string().min(1, "Tjänstetyp krävs"),
   address: z.string().min(1, "Adress krävs"),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   numberOfHorses: z.number().int().min(1).max(10).default(1),
   dateFrom: z.string().min(1, "Från-datum krävs"), // Accept date string from input
   dateTo: z.string().min(1, "Till-datum krävs"),   // Accept date string from input
@@ -228,8 +228,8 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
       providerId: provider.id,
       serviceType: validated.serviceType,
       address: firstStop.address,
-      latitude: firstStop.latitude,
-      longitude: firstStop.longitude,
+      latitude: firstStop.latitude ?? null,
+      longitude: firstStop.longitude ?? null,
       dateFrom,
       dateTo,
       specialInstructions: validated.specialInstructions,
@@ -253,8 +253,8 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
         routeOrderId: announcement.id,
         locationName: stop.locationName,
         address: stop.address,
-        latitude: stop.latitude,
-        longitude: stop.longitude,
+        latitude: stop.latitude ?? null,
+        longitude: stop.longitude ?? null,
         stopOrder: index + 1,
       })),
     })
@@ -265,8 +265,8 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
         routeOrderId: announcement.id,
         locationName: firstStop.locationName,
         address: firstStop.address,
-        latitude: firstStop.latitude,
-        longitude: firstStop.longitude,
+        latitude: firstStop.latitude ?? null,
+        longitude: firstStop.longitude ?? null,
         stopOrder: 1,
       },
     })

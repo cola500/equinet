@@ -613,6 +613,14 @@ När du skapar en ny feature (t.ex. `/api/providers`):
 
 ## 🔄 Key Learnings
 
+### Geocoding Made Optional (2025-12-04)
+**Decision:** Removed Google Maps API dependency for MVP by making coordinates optional.
+- **Why:** Simplifies onboarding (no API key needed), reduces costs, text-search sufficient for early users
+- **Implementation:** Made `latitude`/`longitude` optional in Prisma schema, Zod schemas, and TypeScript interfaces
+- **Impact:** Providers can create announcements instantly without geocoding delays or errors
+- **Future:** Can re-enable by setting `GOOGLE_MAPS_API_KEY` + updating frontend form
+- **Critical Bug Fixed:** Added missing `address`, `latitude`, `longitude` fields to `RouteStop` model
+
 ### E2E Testing
 - **Kod-först approach** → 80% färre iterationer
 - **data-testid** på alla interaktiva element

@@ -17,8 +17,8 @@ if (typeof window !== 'undefined') {
 interface RouteOrder {
   id: string
   address: string
-  latitude: number
-  longitude: number
+  latitude?: number
+  longitude?: number
   serviceType: string
   customer: {
     firstName: string
@@ -49,9 +49,15 @@ export default function RouteMapVisualization({
   const [routedOptimizedPath, setRoutedOptimizedPath] = useState<[number, number][] | null>(null)
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false)
 
-  // Filter selected orders
+  // Filter selected orders (only those with coordinates)
   const selectedOrders = useMemo(() =>
-    orders.filter(o => selectedOrderIds.includes(o.id)),
+    orders.filter(o =>
+      selectedOrderIds.includes(o.id) &&
+      o.latitude !== undefined &&
+      o.latitude !== null &&
+      o.longitude !== undefined &&
+      o.longitude !== null
+    ),
     [orders, selectedOrderIds]
   )
 
@@ -287,9 +293,14 @@ export default function RouteMapVisualization({
   }, [selectedOrders, routedOriginalPath, routedOptimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes])
 
   if (selectedOrders.length === 0) {
+    const allSelected = orders.filter(o => selectedOrderIds.includes(o.id))
+    const missingCoords = allSelected.filter(o => !o.latitude || !o.longitude)
+
     return (
       <div className="h-[500px] bg-gray-50 rounded-lg flex items-center justify-center text-gray-500">
-        Välj beställningar för att visa karta
+        {missingCoords.length > 0
+          ? `${missingCoords.length} valda beställningar saknar koordinater för kartvisning`
+          : 'Välj beställningar för att visa karta'}
       </div>
     )
   }

@@ -14,8 +14,6 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 interface RouteStop {
   locationName: string
   address: string
-  latitude: number | null
-  longitude: number | null
 }
 
 export default function NewAnnouncementPage() {
@@ -23,7 +21,7 @@ export default function NewAnnouncementPage() {
   const { isLoading, isProvider } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [stops, setStops] = useState<RouteStop[]>([
-    { locationName: "", address: "", latitude: null, longitude: null }
+    { locationName: "", address: "" }
   ])
   const [formData, setFormData] = useState({
     serviceType: "",
@@ -60,39 +58,13 @@ export default function NewAnnouncementPage() {
         return
       }
 
-      // Geocode each stop
-      const geocodedStops = await Promise.all(
-        validStops.map(async (stop) => {
-          try {
-            const geocodeResponse = await fetch(
-              `/api/geocode?address=${encodeURIComponent(stop.address)}`
-            )
-
-            if (geocodeResponse.ok) {
-              const geocodeData = await geocodeResponse.json()
-              return {
-                ...stop,
-                latitude: geocodeData.latitude,
-                longitude: geocodeData.longitude,
-              }
-            }
-
-            // If geocoding fails, still allow the stop but without coordinates
-            return stop
-          } catch (error) {
-            console.error("Geocoding error for stop:", error)
-            return stop
-          }
-        })
-      )
-
       const payload = {
         announcementType: "provider_announced",
         serviceType: formData.serviceType,
         dateFrom: formData.dateFrom,
         dateTo: formData.dateTo,
         specialInstructions: formData.specialInstructions || undefined,
-        stops: geocodedStops,
+        stops: validStops,
       }
 
       const response = await fetch("/api/route-orders", {
@@ -120,7 +92,7 @@ export default function NewAnnouncementPage() {
 
   const addStop = () => {
     if (stops.length < 3) {
-      setStops([...stops, { locationName: "", address: "", latitude: null, longitude: null }])
+      setStops([...stops, { locationName: "", address: "" }])
     }
   }
 

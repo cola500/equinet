@@ -53,6 +53,16 @@ export function ProviderNav() {
             Ruttplanering
           </Link>
           <Link
+            href="/provider/announcements"
+            className={`py-3 ${
+              pathname?.startsWith("/provider/announcements")
+                ? "border-b-2 border-green-600 text-green-600 font-medium"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Rutt-annonser
+          </Link>
+          <Link
             href="/provider/profile"
             className={`py-3 ${
               isActive("/provider/profile")

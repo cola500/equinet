@@ -143,8 +143,8 @@ model RouteOrder {
   // Shared fields (used by both flows)
   serviceType         String // t.ex. 'hovslagning', 'massage'
   address             String
-  latitude            Float
-  longitude           Float
+  latitude            Float?   // Optional - geocoding not required for MVP
+  longitude           Float?   // Optional - geocoding not required for MVP
   numberOfHorses      Int      @default(1)
   dateFrom            DateTime
   dateTo              DateTime
@@ -193,6 +193,9 @@ model RouteStop {
   routeOrder           RouteOrder @relation(fields: [routeOrderId], references: [id])
   stopOrder            Int // 1, 2, 3... ordning i rutten
   locationName         String?    // NEW: "Alingsås centrum", "Sollebrunn" (för provider announcements)
+  address              String     // NEW: Full address for the stop
+  latitude             Float?     // NEW: Optional - geocoding not required for MVP
+  longitude            Float?     // NEW: Optional - geocoding not required for MVP
   estimatedArrival     DateTime?
   estimatedDurationMin Int        @default(60) // Beräknad tid på plats
   actualArrival        DateTime?

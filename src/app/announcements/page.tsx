@@ -11,8 +11,8 @@ interface RouteStop {
   id: string
   locationName: string
   address: string
-  latitude: number
-  longitude: number
+  latitude?: number
+  longitude?: number
   stopOrder: number
 }
 
@@ -20,8 +20,8 @@ interface Announcement {
   id: string
   serviceType: string
   address: string
-  latitude: number
-  longitude: number
+  latitude?: number
+  longitude?: number
   dateFrom: string
   dateTo: string
   status: string

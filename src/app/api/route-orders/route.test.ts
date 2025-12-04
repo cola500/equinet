@@ -373,5 +373,55 @@ describe('POST /api/route-orders', () => {
       expect(response.status).toBe(404)
       expect(data.error).toContain('Provider')
     })
+
+    it('should create announcement without coordinates (MVP feature)', async () => {
+      // Arrange
+      vi.mocked(auth).mockResolvedValue({
+        user: { id: 'provider1', userType: 'provider' },
+      } as any)
+
+      // Mock provider exists
+      ;(prisma.provider.findUnique as any).mockResolvedValue({
+        id: 'provider123',
+      })
+
+      // Mock announcement creation
+      ;(prisma.routeOrder.create as any).mockResolvedValue({
+        id: 'announcement1',
+        serviceType: 'hovslagning',
+        address: 'Storgatan 1, Alingsås',
+        latitude: null,
+        longitude: null,
+        dateFrom: new Date('2025-12-15'),
+        dateTo: new Date('2025-12-20'),
+        status: 'open',
+        announcementType: 'provider_announced',
+        provider: { id: 'provider123', businessName: 'Test Provider' },
+      })
+
+      const request = new Request('http://localhost:3000/api/route-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          announcementType: 'provider_announced',
+          serviceType: 'hovslagning',
+          dateFrom: '2025-12-15',
+          dateTo: '2025-12-20',
+          stops: [
+            { locationName: 'Alingsås centrum', address: 'Storgatan 1, Alingsås' },
+          ],
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(201)
+      expect(data.latitude).toBeNull()
+      expect(data.longitude).toBeNull()
+      expect(data.address).toBe('Storgatan 1, Alingsås')
+    })
   })
 })
