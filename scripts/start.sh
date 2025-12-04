@@ -28,5 +28,4 @@ if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null ; then
     echo "✅ Servern startad på http://localhost:3000 (PID: $DEV_PID)"
 else
     echo "❌ Servern kunde inte startas. Kolla 'npm run dev' manuellt."
-    exit 1
-fi
+  

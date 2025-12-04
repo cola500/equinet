@@ -187,8 +187,8 @@ model Route {
 
 model RouteStop {
   id                   String     @id @default(uuid())
-  routeId              String
-  route                Route      @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  routeId              String?    // Optional - announcements don't have Route
+  route                Route?     @relation(fields: [routeId], references: [id], onDelete: Cascade)
   routeOrderId         String
   routeOrder           RouteOrder @relation(fields: [routeOrderId], references: [id])
   stopOrder            Int // 1, 2, 3... ordning i rutten
