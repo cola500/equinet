@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   // Disable source maps in production for security
   productionBrowserSourceMaps: false,
 
+  // ESLint runs separately in CI, skip during build to avoid config issues
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Security headers
   async headers() {
     const isDev = process.env.NODE_ENV === 'development'
