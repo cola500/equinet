@@ -4,6 +4,20 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth-server'
 import { NextRequest } from 'next/server'
 
+// Helper to generate future dates (avoids hardcoded dates becoming invalid)
+function getFutureDates(daysFromNow: number = 5, spanDays: number = 5) {
+  const dateFrom = new Date()
+  dateFrom.setDate(dateFrom.getDate() + daysFromNow)
+  const dateTo = new Date(dateFrom)
+  dateTo.setDate(dateTo.getDate() + spanDays)
+  return {
+    dateFrom: dateFrom.toISOString().split('T')[0],
+    dateTo: dateTo.toISOString().split('T')[0],
+    dateFromObj: dateFrom,
+    dateToObj: dateTo,
+  }
+}
+
 // Mock dependencies
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -33,6 +47,8 @@ describe('POST /api/route-orders', () => {
   describe('Customer-initiated orders (existing functionality)', () => {
     it('should create customer route order with valid data', async () => {
       // Arrange
+      const { dateFrom, dateTo, dateFromObj, dateToObj } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'customer123', userType: 'customer' },
       } as any)
@@ -45,8 +61,8 @@ describe('POST /api/route-orders', () => {
         latitude: 57.930,
         longitude: 12.532,
         numberOfHorses: 2,
-        dateFrom: new Date('2025-12-15'),
-        dateTo: new Date('2025-12-20'),
+        dateFrom: dateFromObj,
+        dateTo: dateToObj,
         priority: 'normal',
         status: 'pending',
         announcementType: 'customer_initiated',
@@ -62,8 +78,8 @@ describe('POST /api/route-orders', () => {
           latitude: 57.930,
           longitude: 12.532,
           numberOfHorses: 2,
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           priority: 'normal',
           contactPhone: '0701234567',
         }),
@@ -81,6 +97,8 @@ describe('POST /api/route-orders', () => {
 
     it('should return 403 when provider tries to create customer order', async () => {
       // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'provider123', userType: 'provider' },
       } as any)
@@ -92,8 +110,8 @@ describe('POST /api/route-orders', () => {
           address: 'Storgatan 1',
           latitude: 57.930,
           longitude: 12.532,
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           priority: 'normal',
           contactPhone: '0701234567',
         }),
@@ -112,6 +130,8 @@ describe('POST /api/route-orders', () => {
   describe('Provider-announced orders (new functionality)', () => {
     it('should create provider announcement with single stop', async () => {
       // Arrange
+      const { dateFrom, dateTo, dateFromObj, dateToObj } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
       } as any)
@@ -128,8 +148,8 @@ describe('POST /api/route-orders', () => {
         address: 'Alingsås',
         latitude: 57.930,
         longitude: 12.532,
-        dateFrom: new Date('2025-12-15'),
-        dateTo: new Date('2025-12-20'),
+        dateFrom: dateFromObj,
+        dateTo: dateToObj,
         announcementType: 'provider_announced',
         status: 'open',
       }
@@ -147,8 +167,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'Hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [
             {
               locationName: 'Alingsås centrum',
@@ -173,6 +193,8 @@ describe('POST /api/route-orders', () => {
 
     it('should create provider announcement with multiple stops (1-3)', async () => {
       // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
       } as any)
@@ -196,8 +218,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'Hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [
             {
               locationName: 'Alingsås',
@@ -248,6 +270,8 @@ describe('POST /api/route-orders', () => {
 
     it('should return 400 when provider announcement has no stops', async () => {
       // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
       } as any)
@@ -262,8 +286,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'Hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [],
         }),
       })
@@ -281,6 +305,8 @@ describe('POST /api/route-orders', () => {
 
     it('should return 400 when provider announcement has too many stops (>3)', async () => {
       // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
       } as any)
@@ -295,8 +321,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'Hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [
             { locationName: 'Stop 1', address: 'Address 1', latitude: 57.0, longitude: 12.0 },
             { locationName: 'Stop 2', address: 'Address 2', latitude: 57.1, longitude: 12.1 },
@@ -319,6 +345,8 @@ describe('POST /api/route-orders', () => {
 
     it('should return 403 when customer tries to create provider announcement', async () => {
       // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'customer123', userType: 'customer' },
       } as any)
@@ -328,8 +356,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'Hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [
             { locationName: 'Alingsås', address: 'Storgatan 1', latitude: 57.930, longitude: 12.532 },
           ],
@@ -347,6 +375,8 @@ describe('POST /api/route-orders', () => {
 
     it('should return 404 when provider profile not found', async () => {
       // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
       } as any)
@@ -358,8 +388,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'Hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [
             { locationName: 'Alingsås', address: 'Storgatan 1', latitude: 57.930, longitude: 12.532 },
           ],
@@ -377,6 +407,8 @@ describe('POST /api/route-orders', () => {
 
     it('should create announcement without coordinates (MVP feature)', async () => {
       // Arrange
+      const { dateFrom, dateTo, dateFromObj, dateToObj } = getFutureDates()
+
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'provider1', userType: 'provider' },
       } as any)
@@ -393,8 +425,8 @@ describe('POST /api/route-orders', () => {
         address: 'Storgatan 1, Alingsås',
         latitude: null,
         longitude: null,
-        dateFrom: new Date('2025-12-15'),
-        dateTo: new Date('2025-12-20'),
+        dateFrom: dateFromObj,
+        dateTo: dateToObj,
         status: 'open',
         announcementType: 'provider_announced',
         provider: { id: 'provider123', businessName: 'Test Provider' },
@@ -406,8 +438,8 @@ describe('POST /api/route-orders', () => {
         body: JSON.stringify({
           announcementType: 'provider_announced',
           serviceType: 'hovslagning',
-          dateFrom: '2025-12-15',
-          dateTo: '2025-12-20',
+          dateFrom,
+          dateTo,
           stops: [
             { locationName: 'Alingsås centrum', address: 'Storgatan 1, Alingsås' },
           ],
