@@ -4,7 +4,7 @@
  * Provides a fast, predictable repository for unit tests.
  * No database required.
  */
-import type { IProviderRepository, Provider, ProviderFilters } from './IProviderRepository'
+import type { IProviderRepository, Provider, ProviderFilters, ProviderWithDetails } from './IProviderRepository'
 
 export class MockProviderRepository implements IProviderRepository {
   private providers: Map<string, Provider> = new Map()
@@ -55,6 +55,23 @@ export class MockProviderRepository implements IProviderRepository {
       }
     }
     return null
+  }
+
+  async findAllWithDetails(filters?: ProviderFilters): Promise<ProviderWithDetails[]> {
+    // For mock, return basic providers with empty services/user arrays
+    // Real implementation in PrismaProviderRepository includes actual relations
+    const providers = await this.findAll(filters)
+    return providers.map(p => ({
+      ...p,
+      latitude: null,
+      longitude: null,
+      serviceAreaKm: null,
+      services: [],
+      user: {
+        firstName: 'Mock',
+        lastName: 'User',
+      },
+    }))
   }
 
   async save(entity: Provider): Promise<Provider> {

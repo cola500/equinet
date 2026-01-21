@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       const longitude = parseFloat(longitudeParam)
       const radiusKm = parseFloat(radiusKmParam)
 
-      const filteredAnnouncements = announcements.filter((announcement) => {
+      const filteredAnnouncements = announcements.filter((announcement: typeof announcements[number]) => {
         // Calculate distance to primary location
         if (announcement.latitude && announcement.longitude) {
           const distance = calculateDistance(
@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
 
         // Also check route stops
         if (announcement.routeStops && announcement.routeStops.length > 0) {
-          return announcement.routeStops.some((stop) => {
+          return announcement.routeStops.some((stop: typeof announcement.routeStops[number]) => {
             if (stop.latitude && stop.longitude) {
               const distance = calculateDistance(
                 latitude,

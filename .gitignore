@@ -61,3 +61,7 @@ prisma/dev.db
 # chatloggar
 /chatloggar/
 *.txt
+
+# Sentry
+.sentryclirc
+sentry.properties

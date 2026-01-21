@@ -16,7 +16,12 @@ const basePrisma = new PrismaClient({
 const prismaWithExtensions = basePrisma.$extends({
   query: {
     $allModels: {
-      async $allOperations({ model, operation, args, query }) {
+      async $allOperations({ model, operation, args, query }: {
+        model: string
+        operation: string
+        args: any
+        query: (args: any) => Promise<any>
+      }) {
         const timeout = 10000 // 10 seconds timeout for all queries
 
         const timeoutPromise = new Promise<never>((_, reject) => {
