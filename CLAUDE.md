@@ -22,7 +22,32 @@
 | `DATABASE_URL` | PostgreSQL connection string | Supabase Dashboard → Project Settings → Database → Session Pooler (IPv4) |
 | `NEXTAUTH_SECRET` | Session encryption key | Generera med `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | App URL | `http://localhost:3000` (dev) eller Vercel URL (prod) |
+| `UPSTASH_REDIS_REST_URL` | Rate limiting (Production REQUIRED) | Upstash Dashboard → Create Database → REST URL |
+| `UPSTASH_REDIS_REST_TOKEN` | Rate limiting auth token | Upstash Dashboard → Database → REST Token |
+| `NEXT_PUBLIC_SENTRY_DSN` | Error tracking (Production recommended) | Sentry Dashboard → Project Settings → DSN |
+| `SENTRY_ORG` | Sentry organization (optional) | Sentry Dashboard |
+| `SENTRY_PROJECT` | Sentry project name (optional) | Sentry Dashboard |
 | `GOOGLE_MAPS_API_KEY` | Geocoding (valfritt) | Google Cloud Console |
+
+**⚠️ Production REQUIRED:**
+- `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` - Rate limiting fungerar INTE utan dessa i serverless (Vercel)
+- `NEXT_PUBLIC_SENTRY_DSN` - Starkt rekommenderat för error tracking och monitoring
+
+### 🔍 Recent Security & Architecture Reviews
+
+**Latest Review:** [2026-01-21 Security & Architecture Review](docs/SECURITY-REVIEW-2026-01-21.md)
+- ✅ 10 kritiska säkerhetsfixar implementerade
+- ✅ Sentry monitoring setup
+- ✅ Repository pattern enforced i alla API routes
+- ✅ Production Readiness: 6/10 → 8/10
+
+**Key Learnings:**
+- Rate limiting MÅSTE använda Redis i serverless (in-memory fungerar EJ)
+- IDOR fixas genom atomic authorization checks (i WHERE clause)
+- Repository pattern var "dead code" tills vi refactorerade API routes
+- Monitoring är mandatory för production (ej "nice-to-have")
+
+**Full Retrospektiv:** [docs/retrospectives/2026-01-21-security-architecture-review.md](docs/retrospectives/2026-01-21-security-architecture-review.md)
 
 ### Supabase Setup (Lokal Utveckling)
 
@@ -262,7 +287,47 @@ const { data: session, update } = useSession()
 await update()  // Efter profile changes
 ```
 
-### 5. Prisma Over-Fetching (Learning: 2025-11-16)
+### 5. Rate Limiting i Serverless (Learning: 2026-01-21) ⚠️ KRITISKT
+```typescript
+// ❌ FEL - In-memory Map fungerar INTE i serverless
+const attempts = new Map<string, RateLimitRecord>()
+// Problem: Varje Vercel-instans har egen Map → rate limits är ineffektiva
+
+// ✅ RÄTT - Upstash Redis (serverless-kompatibel)
+import { Ratelimit } from "@upstash/ratelimit"
+import { Redis } from "@upstash/redis"
+
+export const rateLimiters = {
+  booking: new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+  })
+}
+
+// VIKTIGT: Rate limiters returnerar Promises, måste awaitas
+const isAllowed = await rateLimiters.booking(userId)
+if (!isAllowed) return 429
+```
+
+**Impact:** Production blocker! Rate limiting fungerar INTE utan Redis i serverless.
+
+### 6. IDOR med Race Condition (Learning: 2026-01-21) ⚠️ SÄKERHET
+```typescript
+// ❌ FEL - Authorization check FÖRE update (TOCTOU race condition)
+const booking = await prisma.booking.findUnique({ where: { id } })
+if (booking.customerId !== userId) return 403
+await prisma.booking.update({ where: { id }, data: {...} })
+
+// ✅ RÄTT - Authorization i WHERE clause (atomärt)
+await prisma.booking.update({
+  where: { id, customerId: userId },  // Auth + operation i SAMMA query
+  data: {...}
+})
+```
+
+**Impact:** Eliminerar IDOR + race conditions!
+
+### 7. Prisma Over-Fetching (Learning: 2025-11-16)
 ```typescript
 // ❌ FEL - include hämtar ALLT (over-fetching + exponerar känslig data)
 const providers = await prisma.provider.findMany({
@@ -298,7 +363,7 @@ const providers = await prisma.provider.findMany({
 
 **Impact:** 40-50% mindre payload + GDPR-compliant! (F-3.4)
 
-### 6. Saknade Database Indexes (Learning: 2025-11-16)
+### 8. Saknade Database Indexes (Learning: 2025-11-16)
 ```prisma
 model Provider {
   // ... fields ...
@@ -358,6 +423,73 @@ En feature är **DONE** när:
 - [ ] E2E tests uppdaterade
 - [ ] Coverage ≥70%
 - [ ] Manuell testning
+
+## ✅ Production Readiness Checklist
+
+**Kör detta INNAN production deployment!**
+
+### Security (MANDATORY)
+- [ ] Rate limiting använder Redis (INTE in-memory) → fungerar i serverless
+- [ ] Authorization checks är atomära (i WHERE clause, ej före queries)
+- [ ] Cookies är `sameSite: strict` + `secure: true` i production
+- [ ] Ingen PII/känslig data exponeras i publika API endpoints
+- [ ] All user input är validerad (Zod client + server)
+- [ ] Error messages exponerar INTE interna detaljer
+
+### Monitoring (HIGHLY RECOMMENDED)
+- [ ] Sentry DSN konfigurerad (`NEXT_PUBLIC_SENTRY_DSN`)
+- [ ] Error tracking fungerar (testa genom att kasta error)
+- [ ] Performance monitoring aktivt (trace sampling)
+- [ ] Logs går till external service (ej bara console)
+
+### Architecture (MANDATORY)
+- [ ] API routes använder repositories (INTE direkt Prisma)
+- [ ] TypeScript errors = 0 (`npx tsc --noEmit`)
+- [ ] No `ignoreBuildErrors: true` i next.config.ts
+- [ ] Database indexes på alla filter/sort fält
+
+### Environment Variables (MANDATORY)
+```bash
+# Required i Vercel:
+DATABASE_URL="postgresql://..."
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="https://..."
+UPSTASH_REDIS_REST_URL="https://..."
+UPSTASH_REDIS_REST_TOKEN="..."
+
+# Recommended:
+NEXT_PUBLIC_SENTRY_DSN="https://..."
+SENTRY_ORG="..."
+SENTRY_PROJECT="..."
+```
+
+### Performance
+- [ ] Response times <200ms för vanliga endpoints
+- [ ] Payload sizes <100KB för listor
+- [ ] Database queries använder indexes (kolla med EXPLAIN)
+- [ ] Pagination implementerad för listor >100 items
+
+### Pre-Deployment Smoke Test
+```bash
+# 1. Verifiera build fungerar
+npm run build
+
+# 2. Kör full test suite
+npm run test:run && npm run test:e2e
+
+# 3. TypeScript check
+npx tsc --noEmit
+
+# 4. Manuella smoke tests i production-like miljö
+# - Login/logout
+# - Create booking
+# - Provider search
+# - Error states
+```
+
+**Production Readiness Score Target: 8/10 minimum**
+
+Se [docs/SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) för senaste security audit.
 
 ## 🚨 Debugging (UI → DB)
 
