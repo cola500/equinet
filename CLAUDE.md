@@ -8,6 +8,40 @@
 - **Språk**: Svenska (UI/docs), Engelska (kod)
 - **Approach**: Databas-först, TDD, Feature branches
 
+## 🏗️ Infrastruktur
+
+### Produktion
+- **Hosting**: Vercel (Next.js)
+- **Databas**: Supabase (PostgreSQL)
+- **URL**: Konfigureras via `NEXTAUTH_URL`
+
+### Environment Variables
+
+| Variabel | Beskrivning | Källa |
+|----------|-------------|-------|
+| `DATABASE_URL` | PostgreSQL connection string | Supabase Dashboard → Project Settings → Database → Session Pooler (IPv4) |
+| `NEXTAUTH_SECRET` | Session encryption key | Generera med `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | App URL | `http://localhost:3000` (dev) eller Vercel URL (prod) |
+| `GOOGLE_MAPS_API_KEY` | Geocoding (valfritt) | Google Cloud Console |
+
+### Supabase Setup (Lokal Utveckling)
+
+1. Skapa projekt på [supabase.com](https://supabase.com)
+2. Hämta connection string:
+   - Project Settings → Database → Connection string
+   - **Välj Session Pooler (IPv4)** - fungerar med serverless och lokal utveckling
+3. Kopiera till `.env`:
+   ```bash
+   cp .env.example .env
+   # Redigera DATABASE_URL med din Supabase connection string
+   ```
+
+### Viktigt om Connection Strings
+
+- **Session Pooler (IPv4)**: Använd för Vercel/serverless + lokal utveckling
+- **Direct Connection**: Endast för persistent connections (ej serverless)
+- **Transaction Pooler**: För korta queries med pooling
+
 ## 🎯 Workflow
 
 ### Dagliga Kommandon
@@ -612,6 +646,14 @@ När du skapar en ny feature (t.ex. `/api/providers`):
 ```
 
 ## 🔄 Key Learnings
+
+### SQLite → PostgreSQL Migration (2026-01-21)
+**Decision:** Migrerade från SQLite till PostgreSQL (Supabase) för Vercel deployment.
+- **Why:** SQLite fungerar inte i serverless miljöer (Vercel), behövde hosted databas
+- **Implementation:** Ändrade `provider = "sqlite"` → `provider = "postgresql"` i schema.prisma
+- **Connection String:** Använd Session Pooler (IPv4) för serverless kompatibilitet
+- **Impact:** Projektet kan nu deployas till Vercel utan databasproblem
+- **Dokumentation uppdaterad:** README.md, CONTRIBUTING.md, CLAUDE.md, `.env.example` skapad
 
 ### Geocoding Made Optional (2025-12-04)
 **Decision:** Removed Google Maps API dependency for MVP by making coordinates optional.

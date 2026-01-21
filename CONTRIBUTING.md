@@ -42,9 +42,17 @@ Tack för att du vill bidra till Equinet! Detta dokument beskriver hur du sätte
 
    # Generera NEXTAUTH_SECRET
    openssl rand -base64 32
-
-   # Öppna .env och ersätt your-secret-here-min-32-chars med värdet
    ```
+
+   **Konfigurera DATABASE_URL (Supabase):**
+   - Skapa ett gratis projekt på [supabase.com](https://supabase.com)
+   - Gå till: Project Settings → Database → Connection string
+   - Välj **Session Pooler (IPv4)** (viktigt för lokal utveckling)
+   - Kopiera connection string och ersätt i `.env`
+
+   **Öppna `.env` och fyll i:**
+   - `DATABASE_URL` - Connection string från Supabase
+   - `NEXTAUTH_SECRET` - Det genererade värdet ovan
 
 3. **Skapa databas och seeda testdata**
    ```bash

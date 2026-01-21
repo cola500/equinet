@@ -35,9 +35,12 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
    ```
 
    **Viktiga environment variables:**
-   - `DATABASE_URL`: SQLite databas-sökväg (default: `file:./prisma/dev.db`)
+   - `DATABASE_URL`: PostgreSQL connection string (Supabase)
    - `NEXTAUTH_SECRET`: Secret för NextAuth (generera med kommandot ovan)
    - `NEXTAUTH_URL`: App URL (default: `http://localhost:3000`)
+
+   > **Supabase Setup:** Skapa ett gratis projekt på [supabase.com](https://supabase.com),
+   > gå till Project Settings → Database → Connection string → Session Pooler (IPv4).
 
 4. **Skapa och seeda databasen**
    ```bash
@@ -115,7 +118,7 @@ Detta säkerställer att broken code aldrig når main-branchen! 🎯
 - **Språk**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
 - **UI**: shadcn/ui + Radix UI
-- **Databas**: SQLite (dev) via Prisma ORM
+- **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v4
 - **Validering**: Zod + React Hook Form
 - **Testning**: Vitest (326 unit/integration) + Playwright (62 E2E) = 70% coverage
@@ -128,7 +131,7 @@ Detta säkerställer att broken code aldrig når main-branchen! 🎯
 equinet/
 ├── prisma/
 │   ├── schema.prisma          # Databasschema (source of truth)
-│   └── dev.db                 # SQLite databas
+│   └── seed-test-users.ts     # Testdata seeding script
 ├── src/
 │   ├── app/                   # Next.js App Router
 │   │   ├── (auth)/           # Login, registrering
@@ -298,32 +301,44 @@ npx prisma generate
 rm -rf .next && npm run dev
 ```
 
-## 🚀 Deploy till Produktion
+## 🚀 Deploy till Produktion (Vercel + Supabase)
 
-### Förberedelser
+### Aktuell Infrastruktur
 
-1. **Byt till PostgreSQL**:
-   ```env
-   DATABASE_URL="postgresql://user:password@host:5432/dbname"
-   ```
+Equinet är konfigurerat för deployment med:
+- **Hosting**: Vercel (Next.js)
+- **Databas**: Supabase (PostgreSQL)
 
-2. **Sätt environment variables** på hosting-plattform
+### Steg-för-steg Deployment
 
-3. **Kör migrations**:
-   ```bash
-   npx prisma migrate deploy
-   ```
+1. **Skapa Supabase-projekt**
+   - Gå till [supabase.com](https://supabase.com) och skapa ett nytt projekt
+   - Kopiera connection string: Project Settings → Database → Connection string → Session Pooler (IPv4)
 
-### Rekommenderade Plattformar
-- **Vercel** (enklast för Next.js)
-- **Railway** (inkl. PostgreSQL)
-- **Heroku**, **DigitalOcean App Platform**
+2. **Anslut till Vercel**
+   - Importera repo på [vercel.com](https://vercel.com)
+   - Lägg till environment variables:
+     ```
+     DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-[REGION].pooler.supabase.com:5432/postgres
+     NEXTAUTH_SECRET=[generera med: openssl rand -base64 32]
+     NEXTAUTH_URL=https://din-app.vercel.app
+     ```
+
+3. **Deploya**
+   - Vercel kör automatiskt `prisma generate` och `next build`
+   - Databas-schemat pushas automatiskt vid första deployment
+
+### Viktigt om Connection String
+
+Använd **Session Pooler (IPv4)** från Supabase, inte Direct Connection:
+- Session Pooler fungerar med serverless (Vercel)
+- Direct Connection kräver IPv6 eller Vercel-integration
 
 ### Säkerhetskrav för Produktion
-- [ ] Stark `NEXTAUTH_SECRET` (≥64 bytes)
-- [ ] HTTPS aktiverat
-- [ ] PostgreSQL (inte SQLite)
-- [ ] Redis-baserad rate limiting (för multi-server)
+- [ ] Stark `NEXTAUTH_SECRET` (≥32 bytes, generera med `openssl rand -base64 32`)
+- [ ] HTTPS aktiverat (automatiskt på Vercel)
+- [ ] Supabase Row Level Security (RLS) konfigurerad
+- [ ] Redis-baserad rate limiting (för multi-server, framtida)
 - [ ] External logging service (Sentry, Datadog)
 
 Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
