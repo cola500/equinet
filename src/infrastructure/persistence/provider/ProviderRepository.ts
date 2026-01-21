@@ -4,7 +4,7 @@
  * Handles data persistence for Provider aggregate using Prisma ORM.
  */
 import { prisma } from '@/lib/prisma'
-import type { IProviderRepository, Provider, ProviderFilters } from './IProviderRepository'
+import type { IProviderRepository, Provider, ProviderFilters, ProviderWithDetails } from './IProviderRepository'
 
 export class ProviderRepository implements IProviderRepository {
   async findById(id: string): Promise<Provider | null> {
@@ -53,6 +53,62 @@ export class ProviderRepository implements IProviderRepository {
     })
 
     return provider
+  }
+
+  async findAllWithDetails(filters?: ProviderFilters): Promise<ProviderWithDetails[]> {
+    const where: any = {}
+
+    // Build where clause based on filters
+    if (filters?.isActive !== undefined) {
+      where.isActive = filters.isActive
+    }
+
+    if (filters?.city) {
+      where.city = filters.city
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { businessName: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ]
+    }
+
+    const providers = await prisma.provider.findMany({
+      where,
+      select: {
+        id: true,
+        userId: true,
+        businessName: true,
+        description: true,
+        city: true,
+        latitude: true,
+        longitude: true,
+        serviceAreaKm: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        services: {
+          where: {
+            isActive: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return providers as ProviderWithDetails[]
   }
 
   async save(entity: Provider): Promise<Provider> {

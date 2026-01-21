@@ -25,11 +25,32 @@ export interface ProviderFilters {
   search?: string // Search in businessName or description
 }
 
+// Provider with services and user details (for public API)
+export interface ProviderWithDetails extends Provider {
+  latitude?: number | null
+  longitude?: number | null
+  serviceAreaKm?: number | null
+  services: Array<{
+    id: string
+    name: string
+    price: number
+  }>
+  user: {
+    firstName: string
+    lastName: string
+  }
+}
+
 export interface IProviderRepository extends IRepository<Provider> {
   /**
    * Find all providers with optional filters
    */
   findAll(filters?: ProviderFilters): Promise<Provider[]>
+
+  /**
+   * Find all providers with services and user details (for public API)
+   */
+  findAllWithDetails(filters?: ProviderFilters): Promise<ProviderWithDetails[]>
 
   /**
    * Find provider by user ID

@@ -19,7 +19,8 @@ export const authOptions: NextAuthOptions = {
 
         // Rate limiting - 5 attempts per 15 minutes per email
         const identifier = credentials.email.toLowerCase()
-        if (!rateLimiters.login(identifier)) {
+        const isAllowed = await rateLimiters.login(identifier)
+        if (!isAllowed) {
           throw new Error("För många inloggningsförsök. Försök igen om 15 minuter.")
         }
 
@@ -81,15 +82,15 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-    updateAge: 24 * 60 * 60, // Update session every 24 hours if active
+    maxAge: 24 * 60 * 60, // 24 hours (reduced from 7 days for better security)
+    updateAge: 12 * 60 * 60, // Update session every 12 hours if active
   },
   cookies: {
     sessionToken: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'strict', // Changed from 'lax' to 'strict' for better CSRF protection
         path: '/',
         secure: process.env.NODE_ENV === 'production',
       },

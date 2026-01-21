@@ -31,29 +31,28 @@ export async function PUT(
 
     const validatedData = updateBookingSchema.parse(body)
 
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-    })
+    // Build authorization filter based on user type
+    let whereClause: { id: string; customerId?: string; providerId?: string } = { id }
 
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 })
-    }
-
-    // Check authorization
     if (session.user.userType === "provider") {
       const provider = await prisma.provider.findUnique({
         where: { userId: session.user.id },
       })
 
-      if (!provider || booking.providerId !== provider.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+      if (!provider) {
+        return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
-    } else if (booking.customerId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+
+      // Provider can only update their own bookings
+      whereClause.providerId = provider.id
+    } else {
+      // Customer can only update their own bookings
+      whereClause.customerId = session.user.id
     }
 
+    // Update with authorization check in WHERE clause (prevents IDOR + race conditions)
     const updatedBooking = await prisma.booking.update({
-      where: { id },
+      where: whereClause,
       data: { status: validatedData.status },
       include: {
         service: true,
@@ -91,6 +90,14 @@ export async function PUT(
       )
     }
 
+    // Handle Prisma P2025: Record not found (booking doesn't exist or user doesn't own it)
+    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: "Booking not found or you don't have permission to update it" },
+        { status: 404 }
+      )
+    }
+
     console.error("Error updating booking:", error)
     return NextResponse.json(
       { error: "Failed to update booking" },
@@ -109,29 +116,28 @@ export async function DELETE(
     // Auth handled by middleware
     const session = await auth()
 
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-    })
+    // Build authorization filter based on user type
+    let whereClause: { id: string; customerId?: string; providerId?: string } = { id }
 
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 })
-    }
-
-    // Check authorization
     if (session.user.userType === "provider") {
       const provider = await prisma.provider.findUnique({
         where: { userId: session.user.id },
       })
 
-      if (!provider || booking.providerId !== provider.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+      if (!provider) {
+        return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
-    } else if (booking.customerId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+
+      // Provider can only delete their own bookings
+      whereClause.providerId = provider.id
+    } else {
+      // Customer can only delete their own bookings
+      whereClause.customerId = session.user.id
     }
 
+    // Delete with authorization check in WHERE clause (prevents IDOR + race conditions)
     await prisma.booking.delete({
-      where: { id },
+      where: whereClause,
     })
 
     return NextResponse.json({ message: "Booking deleted" })
@@ -139,6 +145,14 @@ export async function DELETE(
     // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
+    }
+
+    // Handle Prisma P2025: Record not found (booking doesn't exist or user doesn't own it)
+    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: "Booking not found or you don't have permission to delete it" },
+        { status: 404 }
+      )
     }
 
     console.error("Error deleting booking:", error)

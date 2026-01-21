@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
+import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
 import { z } from "zod"
 
@@ -21,18 +23,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-    })
+    // Use repository to find provider
+    const providerRepo = new ProviderRepository()
+    const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
-    const services = await prisma.service.findMany({
-      where: { providerId: provider.id },
-      orderBy: { createdAt: "desc" },
-    })
+    // Use repository to get services
+    const serviceRepo = new ServiceRepository()
+    const services = await serviceRepo.findByProviderId(provider.id)
 
     return NextResponse.json(services)
   } catch (error) {
@@ -61,7 +62,8 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting - 10 service creations per hour per provider
     const rateLimitKey = `service-create:${session.user.id}`
-    if (!rateLimiters.serviceCreate(rateLimitKey)) {
+    const isAllowed = await rateLimiters.serviceCreate(rateLimitKey)
+    if (!isAllowed) {
       return NextResponse.json(
         {
           error: "För många tjänster skapade",
@@ -71,9 +73,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-    })
+    // Use repository to find provider
+    const providerRepo = new ProviderRepository()
+    const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
@@ -93,11 +95,17 @@ export async function POST(request: NextRequest) {
 
     const validatedData = serviceSchema.parse(body)
 
-    const service = await prisma.service.create({
-      data: {
-        ...validatedData,
-        providerId: provider.id,
-      },
+    // Use repository to create service
+    const serviceRepo = new ServiceRepository()
+    const service = await serviceRepo.save({
+      id: crypto.randomUUID(), // Generate new ID for creation
+      providerId: provider.id,
+      name: validatedData.name,
+      description: validatedData.description || null,
+      price: validatedData.price,
+      durationMinutes: validatedData.durationMinutes,
+      isActive: true,
+      createdAt: new Date(),
     })
 
     return NextResponse.json(service, { status: 201 })

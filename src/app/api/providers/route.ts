@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { sanitizeSearchQuery } from "@/lib/sanitize"
 
 /**
@@ -63,52 +63,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build where clause
-    const where: any = {
+    // Use repository instead of direct Prisma access
+    const providerRepo = new ProviderRepository()
+    const providers = await providerRepo.findAllWithDetails({
       isActive: true,
-    }
-
-    if (city) {
-      where.city = city
-    }
-
-    if (search) {
-      where.OR = [
-        { businessName: { contains: search } },
-        { description: { contains: search } },
-      ]
-    }
-
-    const providers = await prisma.provider.findMany({
-      where,
-      select: {
-        id: true,
-        businessName: true,
-        description: true,
-        city: true,
-        latitude: true,
-        longitude: true,
-        serviceAreaKm: true,
-        services: {
-          where: {
-            isActive: true,
-          },
-          select: {
-            id: true,
-            name: true,
-            price: true,
-          },
-        },
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      city: city || undefined,
+      search: search || undefined,
     })
 
     // Apply geo-filtering if coordinates provided

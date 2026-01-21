@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
                       request.headers.get('x-real-ip') ||
                       'unknown'
 
-    if (!rateLimiters.registration(identifier)) {
+    const isAllowed = await rateLimiters.registration(identifier)
+    if (!isAllowed) {
       return NextResponse.json(
         { error: "För många registreringsförsök. Försök igen om en timme." },
         { status: 429 }

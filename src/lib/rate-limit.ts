@@ -1,37 +1,129 @@
 /**
- * Simple in-memory rate limiter
+ * Production-ready rate limiter using Upstash Redis
  *
- * NOTE: This is suitable for development and small-scale production.
- * For larger production deployments, use Redis-based rate limiting
- * like @upstash/ratelimit or similar.
+ * Uses Upstash Redis for serverless-compatible rate limiting.
+ * Falls back to in-memory if Upstash credentials are not configured.
+ *
+ * IMPORTANT: For production deployment on Vercel, configure UPSTASH_REDIS_REST_URL
+ * and UPSTASH_REDIS_REST_TOKEN in environment variables.
  */
 
+import { Ratelimit } from "@upstash/ratelimit"
+import { Redis } from "@upstash/redis"
+
+/**
+ * In-memory fallback for development (DO NOT USE IN PRODUCTION)
+ */
 interface RateLimitRecord {
   count: number
   resetAt: number
 }
 
-const attempts = new Map<string, RateLimitRecord>()
+const inMemoryAttempts = new Map<string, RateLimitRecord>()
 
 /**
- * Check if a request should be rate limited
- *
- * @param identifier - Unique identifier (email, IP, etc)
- * @param maxAttempts - Maximum number of attempts allowed
- * @param windowMs - Time window in milliseconds
- * @returns true if request is allowed, false if rate limited
+ * Check if Upstash is configured
  */
-export function checkRateLimit(
+const isUpstashConfigured = () => {
+  return !!(
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  )
+}
+
+/**
+ * Initialize Upstash Redis client (lazy initialization)
+ */
+let redis: Redis | null = null
+let upstashRateLimiters: Record<string, Ratelimit> | null = null
+
+function getRedis(): Redis {
+  if (!redis && isUpstashConfigured()) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    })
+  }
+  if (!redis) {
+    throw new Error("Upstash Redis not configured")
+  }
+  return redis
+}
+
+/**
+ * Get or create Upstash rate limiters (lazy initialization)
+ */
+function getUpstashRateLimiters(): Record<string, Ratelimit> {
+  if (!upstashRateLimiters && isUpstashConfigured()) {
+    const redisClient = getRedis()
+
+    upstashRateLimiters = {
+      login: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(5, "15 m"),
+        analytics: true,
+        prefix: "ratelimit:login",
+      }),
+      registration: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(3, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:registration",
+      }),
+      api: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(100, "1 m"),
+        analytics: true,
+        prefix: "ratelimit:api",
+      }),
+      passwordReset: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(3, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:password-reset",
+      }),
+      booking: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(10, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:booking",
+      }),
+      profileUpdate: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(20, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:profile-update",
+      }),
+      serviceCreate: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(10, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:service-create",
+      }),
+    }
+  }
+
+  if (!upstashRateLimiters) {
+    throw new Error("Upstash rate limiters not initialized")
+  }
+
+  return upstashRateLimiters
+}
+
+/**
+ * In-memory rate limiter (fallback for development)
+ */
+function checkRateLimitInMemory(
   identifier: string,
   maxAttempts: number,
   windowMs: number
 ): boolean {
   const now = Date.now()
-  const record = attempts.get(identifier)
+  const record = inMemoryAttempts.get(identifier)
 
   // No record or window expired - allow and create new record
   if (!record || now > record.resetAt) {
-    attempts.set(identifier, { count: 1, resetAt: now + windowMs })
+    inMemoryAttempts.set(identifier, { count: 1, resetAt: now + windowMs })
     return true
   }
 
@@ -49,76 +141,122 @@ export function checkRateLimit(
  * Reset rate limit for an identifier (e.g., after successful login)
  */
 export function resetRateLimit(identifier: string): void {
-  attempts.delete(identifier)
+  // For in-memory fallback
+  inMemoryAttempts.delete(identifier)
+
+  // For Upstash, we don't need to manually reset as it's time-based
+  // The rate limit will automatically reset after the time window
 }
 
 /**
- * Get remaining attempts for an identifier
- */
-export function getRemainingAttempts(
-  identifier: string,
-  maxAttempts: number
-): number {
-  const record = attempts.get(identifier)
-  if (!record || Date.now() > record.resetAt) {
-    return maxAttempts
-  }
-  return Math.max(0, maxAttempts - record.count)
-}
-
-/**
- * Cleanup expired entries (run periodically)
+ * Cleanup expired entries for in-memory storage (run periodically)
  */
 function cleanupExpiredEntries(): void {
   const now = Date.now()
-  for (const [key, value] of attempts.entries()) {
+  for (const [key, value] of inMemoryAttempts.entries()) {
     if (now > value.resetAt) {
-      attempts.delete(key)
+      inMemoryAttempts.delete(key)
     }
   }
 }
 
-// Cleanup every 5 minutes
-if (typeof setInterval !== 'undefined') {
+// Cleanup every 5 minutes (only for in-memory fallback)
+if (typeof setInterval !== 'undefined' && !isUpstashConfigured()) {
   setInterval(cleanupExpiredEntries, 5 * 60 * 1000)
 }
 
 /**
+ * Check rate limit using Upstash or in-memory fallback
+ *
+ * @param limiterType - Type of rate limiter to use
+ * @param identifier - Unique identifier (email, IP, user ID, etc)
+ * @returns true if request is allowed, false if rate limited
+ */
+async function checkRateLimit(
+  limiterType: keyof typeof rateLimiters,
+  identifier: string
+): Promise<boolean> {
+  // Use Upstash if configured
+  if (isUpstashConfigured()) {
+    try {
+      const limiters = getUpstashRateLimiters()
+      const limiter = limiters[limiterType]
+
+      if (!limiter) {
+        console.error(`Rate limiter type "${limiterType}" not found`)
+        return true // Fail open
+      }
+
+      const { success } = await limiter.limit(identifier)
+      return success
+    } catch (error) {
+      console.error("Upstash rate limiter error:", error)
+      // Fail open for availability (log but allow request)
+      return true
+    }
+  }
+
+  // Fallback to in-memory for development
+  console.warn("⚠️  Using in-memory rate limiting (NOT suitable for production)")
+
+  // Map limiter types to their configurations
+  const configs: Record<string, { max: number; window: number }> = {
+    login: { max: 5, window: 15 * 60 * 1000 },
+    registration: { max: 3, window: 60 * 60 * 1000 },
+    api: { max: 100, window: 60 * 1000 },
+    passwordReset: { max: 3, window: 60 * 60 * 1000 },
+    booking: { max: 10, window: 60 * 60 * 1000 },
+    profileUpdate: { max: 20, window: 60 * 60 * 1000 },
+    serviceCreate: { max: 10, window: 60 * 60 * 1000 },
+  }
+
+  const config = configs[limiterType]
+  if (!config) {
+    console.error(`Rate limiter type "${limiterType}" not found in fallback`)
+    return true // Fail open
+  }
+
+  return checkRateLimitInMemory(identifier, config.max, config.window)
+}
+
+/**
  * Predefined rate limiters for common use cases
+ *
+ * IMPORTANT: These now return Promises and must be awaited
  */
 export const rateLimiters = {
   /**
    * Login attempts: 5 attempts per 15 minutes
    */
-  login: (identifier: string) => checkRateLimit(identifier, 5, 15 * 60 * 1000),
+  login: async (identifier: string) => checkRateLimit('login', identifier),
 
   /**
    * Registration: 3 attempts per hour
    */
-  registration: (identifier: string) => checkRateLimit(identifier, 3, 60 * 60 * 1000),
+  registration: async (identifier: string) => checkRateLimit('registration', identifier),
 
   /**
    * API requests: 100 requests per minute
    */
-  api: (identifier: string) => checkRateLimit(identifier, 100, 60 * 1000),
+  api: async (identifier: string) => checkRateLimit('api', identifier),
 
   /**
    * Password reset: 3 attempts per hour
    */
-  passwordReset: (identifier: string) => checkRateLimit(identifier, 3, 60 * 60 * 1000),
+  passwordReset: async (identifier: string) => checkRateLimit('passwordReset', identifier),
 
   /**
    * Booking creation: 10 bookings per hour per user
    */
-  booking: (identifier: string) => checkRateLimit(identifier, 10, 60 * 60 * 1000),
+  booking: async (identifier: string) => checkRateLimit('booking', identifier),
 
   /**
    * Profile updates: 20 updates per hour
    */
-  profileUpdate: (identifier: string) => checkRateLimit(identifier, 20, 60 * 60 * 1000),
+  profileUpdate: async (identifier: string) => checkRateLimit('profileUpdate', identifier),
 
   /**
    * Service creation: 10 services per hour
    */
-  serviceCreate: (identifier: string) => checkRateLimit(identifier, 10, 60 * 60 * 1000),
+  serviceCreate: async (identifier: string) => checkRateLimit('serviceCreate', identifier),
 }

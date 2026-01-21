@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
+import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
+import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
@@ -24,50 +26,24 @@ export async function GET(request: NextRequest) {
     // Auth handled by middleware
     const session = await auth()
 
+    // Use repository instead of direct Prisma access
+    const bookingRepo = new PrismaBookingRepository()
     let bookings
 
     if (session.user.userType === "provider") {
-      const provider = await prisma.provider.findUnique({
-        where: { userId: session.user.id },
-      })
+      // Use repository to find provider
+      const providerRepo = new ProviderRepository()
+      const provider = await providerRepo.findByUserId(session.user.id)
 
       if (!provider) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
 
-      bookings = await prisma.booking.findMany({
-        where: { providerId: provider.id },
-        include: {
-          customer: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-            },
-          },
-          service: true,
-        },
-        orderBy: { bookingDate: "desc" },
-      })
+      // Get bookings with customer contact info (provider view)
+      bookings = await bookingRepo.findByProviderIdWithDetails(provider.id)
     } else {
-      bookings = await prisma.booking.findMany({
-        where: { customerId: session.user.id },
-        include: {
-          provider: {
-            include: {
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-          service: true,
-        },
-        orderBy: { bookingDate: "desc" },
-      })
+      // Get bookings without provider contact info (customer view)
+      bookings = await bookingRepo.findByCustomerIdWithDetails(session.user.id)
     }
 
     return NextResponse.json(bookings)
@@ -94,7 +70,8 @@ export async function POST(request: NextRequest) {
     // Rate limiting - 10 bookings per hour per user (wrapped in try-catch to prevent crashes)
     const rateLimitKey = `booking:${session.user.id}`
     try {
-      if (!rateLimiters.booking(rateLimitKey)) {
+      const isAllowed = await rateLimiters.booking(rateLimitKey)
+      if (!isAllowed) {
         logger.security("Rate limit exceeded for booking creation", "medium", {
           userId: session.user.id,
           endpoint: "/api/bookings",
