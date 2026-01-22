@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth'
+import * as authModule from '@/lib/auth'
 import * as geocoding from '@/lib/geocoding'
 
 // Mock dependencies
@@ -15,8 +15,8 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(),
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
 }))
 
 vi.mock('@/lib/geocoding', () => ({
@@ -235,7 +235,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should update provider with automatic geocoding when address changes', async () => {
     // Arrange - Mock session (provider owns this profile)
-    vi.mocked(getServerSession).mockResolvedValue({
+    vi.mocked(authModule.auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
@@ -312,7 +312,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should NOT geocode if address unchanged', async () => {
     // Arrange
-    vi.mocked(getServerSession).mockResolvedValue({
+    vi.mocked(authModule.auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
@@ -366,7 +366,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should return 400 if geocoding fails', async () => {
     // Arrange
-    vi.mocked(getServerSession).mockResolvedValue({
+    vi.mocked(authModule.auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
@@ -400,7 +400,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should return 401 if not authenticated', async () => {
     // Arrange - No session
-    vi.mocked(getServerSession).mockResolvedValue(null)
+    vi.mocked(authModule.auth).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
       method: 'PUT',
@@ -420,7 +420,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should return 403 if user does not own provider profile', async () => {
     // Arrange - Different user
-    vi.mocked(getServerSession).mockResolvedValue({
+    vi.mocked(authModule.auth).mockResolvedValue({
       user: { id: 'otherUser', userType: 'provider' },
     } as any)
 
@@ -447,7 +447,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should return 404 if provider not found', async () => {
     // Arrange
-    vi.mocked(getServerSession).mockResolvedValue({
+    vi.mocked(authModule.auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 

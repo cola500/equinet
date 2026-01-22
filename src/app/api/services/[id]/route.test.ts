@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { getServerSession } from 'next-auth'
+import * as authServer from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 // Mock dependencies
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(),
+vi.mock('@/lib/auth-server', () => ({
+  auth: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -20,10 +20,6 @@ vi.mock('@/lib/prisma', () => ({
       delete: vi.fn(),
     },
   },
-}))
-
-vi.mock('@/lib/auth', () => ({
-  authOptions: {},
 }))
 
 describe('PUT /api/services/[id]', () => {
@@ -63,7 +59,7 @@ describe('PUT /api/services/[id]', () => {
       providerId: 'provider123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockExistingService as any)
     vi.mocked(prisma.service.update).mockResolvedValue(mockUpdatedService as any)
@@ -102,8 +98,10 @@ describe('PUT /api/services/[id]', () => {
   })
 
   it('should return 401 when user is not authenticated', async () => {
-    // Arrange
-    vi.mocked(getServerSession).mockResolvedValue(null)
+    // Arrange - auth() throws Response when not authenticated
+    vi.mocked(authServer.auth).mockRejectedValue(
+      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -135,7 +133,7 @@ describe('PUT /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(null)
 
@@ -175,7 +173,7 @@ describe('PUT /api/services/[id]', () => {
       providerId: 'different-provider', // Different provider!
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockExistingService as any)
 
@@ -214,7 +212,7 @@ describe('PUT /api/services/[id]', () => {
       providerId: 'provider123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockExistingService as any)
 
@@ -260,7 +258,7 @@ describe('DELETE /api/services/[id]', () => {
       providerId: 'provider123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockExistingService as any)
     vi.mocked(prisma.service.delete).mockResolvedValue(mockExistingService as any)
@@ -284,8 +282,10 @@ describe('DELETE /api/services/[id]', () => {
   })
 
   it('should return 401 when user is not authenticated', async () => {
-    // Arrange
-    vi.mocked(getServerSession).mockResolvedValue(null)
+    // Arrange - auth() throws Response when not authenticated
+    vi.mocked(authServer.auth).mockRejectedValue(
+      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'DELETE',
@@ -316,7 +316,7 @@ describe('DELETE /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(null)
 
@@ -355,7 +355,7 @@ describe('DELETE /api/services/[id]', () => {
       providerId: 'different-provider',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockExistingService as any)
 

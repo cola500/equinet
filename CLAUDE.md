@@ -391,6 +391,76 @@ model Service {
 
 **Impact:** 10-30x snabbare queries vid 1,000+ rows! (F-3.4)
 
+### 9. NextAuth v5 Migration (Learning: 2026-01-22)
+```typescript
+// ❌ GAMMAL (NextAuth v4)
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+const session = await getServerSession(authOptions)
+
+// ✅ NY (NextAuth v5)
+import { auth } from "@/lib/auth"
+const session = await auth()
+
+// API Route handler
+// ❌ GAMMAL (v4)
+import NextAuth from "next-auth"
+export default NextAuth(authOptions)
+
+// ✅ NY (v5)
+import { handlers } from "@/lib/auth"
+export const { GET, POST } = handlers
+
+// Middleware
+// ❌ GAMMAL (v4)
+import { withAuth } from "next-auth/middleware"
+export default withAuth(...)
+
+// ✅ NY (v5)
+import { auth } from "@/lib/auth"
+export default auth((req) => { ... })
+```
+
+**Test Mocks - Viktigt!**
+```typescript
+// ❌ GAMMAL mock
+vi.mock('next-auth', () => ({ getServerSession: vi.fn() }))
+vi.mocked(getServerSession).mockResolvedValue(session)
+
+// ✅ NY mock
+vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
+vi.mocked(auth).mockResolvedValue(session)
+
+// För auth-server.ts som kastar vid 401:
+vi.mocked(auth).mockRejectedValue(
+  NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+)
+```
+
+**Impact:** Enklare API, bättre Edge-kompatibilitet, mer naturlig middleware-integration.
+
+### 10. TypeScript Memory Issues (Learning: 2026-01-22)
+```bash
+# Problem: tsc --noEmit kraschar med "JavaScript heap out of memory"
+# Orsak: Projekt med >150 TypeScript-filer + Next.js 16 type complexity
+
+# Workaround 1: Öka heap (quick fix)
+NODE_OPTIONS="--max-old-space-size=8192" npx tsc --noEmit
+
+# Workaround 2: Använd next build istället (kör egen type check)
+npm run build
+
+# Workaround 3: Incremental builds (tsconfig.json)
+{
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  }
+}
+```
+
+**Impact:** `next build` fungerar alltid, men standalone `tsc --noEmit` kan kräva mer minne.
+
 ## ✅ Definition of Done
 
 En feature är **DONE** när:
@@ -778,6 +848,18 @@ När du skapar en ny feature (t.ex. `/api/providers`):
 ```
 
 ## 🔄 Key Learnings
+
+### Next.js 16 + React 19 + NextAuth v5 Upgrade (2026-01-22)
+**Decision:** Uppgraderade från Next.js 15 + React 18 + NextAuth v4.
+- **Why:** Säkerhetsvarningar (CVE-2025-55184, CVE-2025-55183), framtidssäkring
+- **Versions:** next 15.5→16.1, react 18.3→19.2, next-auth 4.24→5.0-beta.30
+- **Impact:** 13 filer ändrade, ~150 rader logik, 410/410 tester passerar
+- **Key Changes:**
+  - `params` är nu `Promise` i dynamic routes (måste awaitas)
+  - NextAuth: `auth()` ersätter `getServerSession(authOptions)`
+  - Middleware: `auth((req) => ...)` ersätter `withAuth(...)`
+  - Test mocks måste uppdateras från `next-auth` → `@/lib/auth`
+- **Learning:** Repository pattern + behavior-based tests minimerade uppgraderings-impact
 
 ### SQLite → PostgreSQL Migration (2026-01-21)
 **Decision:** Migrerade från SQLite till PostgreSQL (Supabase) för Vercel deployment.

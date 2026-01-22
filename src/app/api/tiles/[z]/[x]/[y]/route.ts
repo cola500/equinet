@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { z: string; x: string; y: string } }
+  { params }: { params: Promise<{ z: string; x: string; y: string }> }
 ) {
-  const { z, x, y } = params
+  const { z, x, y } = await params
 
   try {
     // Fetch tile from OpenStreetMap
