@@ -1,13 +1,17 @@
-// Auth middleware using NextAuth v5
-// This centralizes all authentication and authorization logic
-import { auth } from "@/lib/auth"
+// Auth middleware using NextAuth v5 (Edge-compatible)
+// IMPORTANT: Only import from auth.config.ts, NOT auth.ts (which has Prisma/bcrypt)
+import NextAuth from "next-auth"
+import { authConfig } from "@/lib/auth.config"
 import { NextResponse } from "next/server"
+
+// Create Edge-compatible auth instance with minimal config
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { auth: session, nextUrl } = req
   const path = nextUrl.pathname
 
-  // If not authenticated, the auth callback in auth.ts handles redirect
+  // If not authenticated, the auth callback in auth.config.ts handles redirect
   if (!session?.user) {
     // For API routes, return 401 JSON
     if (path.startsWith('/api/')) {
