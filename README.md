@@ -123,7 +123,7 @@ Detta säkerställer att broken code aldrig når main-branchen! 🎯
 - **Validering**: Zod + React Hook Form
 - **Testning**: Vitest (326 unit/integration) + Playwright (62 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
-- **Säkerhet**: bcrypt, rate limiting, input sanitization, structured logging
+- **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
 
 ## 📁 Projektstruktur
 
@@ -335,11 +335,11 @@ Använd **Session Pooler (IPv4)** från Supabase, inte Direct Connection:
 - Direct Connection kräver IPv6 eller Vercel-integration
 
 ### Säkerhetskrav för Produktion
-- [ ] Stark `NEXTAUTH_SECRET` (≥32 bytes, generera med `openssl rand -base64 32`)
-- [ ] HTTPS aktiverat (automatiskt på Vercel)
-- [ ] Supabase Row Level Security (RLS) konfigurerad
-- [ ] Redis-baserad rate limiting (för multi-server, framtida)
-- [ ] External logging service (Sentry, Datadog)
+- [x] Stark `NEXTAUTH_SECRET` (≥32 bytes, generera med `openssl rand -base64 32`)
+- [x] HTTPS aktiverat (automatiskt på Vercel)
+- [x] Redis-baserad rate limiting (Upstash) - **implementerad**
+- [x] Error monitoring (Sentry) - **implementerad**
+- [ ] Supabase Row Level Security (RLS) - valfritt extra skydd
 
 Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 
@@ -347,8 +347,9 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 
 - **README.md** (denna fil) - Vad som är byggt, setup, testning
 - **[CLAUDE.md](./CLAUDE.md)** - Utvecklingsguide, arbetsprocesser, patterns
+- **[docs/PRODUCTION-DEPLOYMENT.md](./docs/PRODUCTION-DEPLOYMENT.md)** - Komplett deployment-guide för Vercel + Supabase
+- **[docs/SECURITY-REVIEW-2026-01-21.md](./docs/SECURITY-REVIEW-2026-01-21.md)** - Senaste säkerhetsgranskning
 - **[NFR.md](./NFR.md)** - Non-Functional Requirements (säkerhet, performance, etc.)
-- **[SPRINT-1.md](./SPRINT-1.md)** - Sprint planning och progress
 - **[features/rutt-baserad-levering.md](./features/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
 
 ## 🔮 Roadmap
