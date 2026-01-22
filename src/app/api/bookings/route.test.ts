@@ -272,6 +272,12 @@ describe('POST /api/bookings', () => {
       id: TEST_UUIDS.service,
       name: 'Hovslagning',
       providerId: TEST_UUIDS.provider,
+      isActive: true,
+      provider: {
+        id: TEST_UUIDS.provider,
+        userId: TEST_UUIDS.providerUser,
+        isActive: true,
+      },
     }
 
     const mockBooking = {
@@ -306,6 +312,7 @@ describe('POST /api/bookings', () => {
           findMany: vi.fn().mockResolvedValue([]), // No overlapping bookings
           create: vi.fn().mockResolvedValue(mockBooking),
         },
+        $executeRaw: vi.fn().mockResolvedValue(1), // Mock FOR UPDATE lock
       }
       return await callback(tx)
     })
@@ -475,6 +482,12 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
       }
 
       const mockBooking = {
@@ -506,6 +519,7 @@ describe('POST /api/bookings', () => {
             findMany: vi.fn().mockResolvedValue([]),
             create: vi.fn().mockResolvedValue(mockBooking),
           },
+          $executeRaw: vi.fn().mockResolvedValue(1), // Mock FOR UPDATE lock
         }
         return await callback(tx)
       })
@@ -544,6 +558,12 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
       }
 
       const mockBooking = {
@@ -575,6 +595,7 @@ describe('POST /api/bookings', () => {
             findMany: vi.fn().mockResolvedValue([]),
             create: vi.fn().mockResolvedValue(mockBooking),
           },
+          $executeRaw: vi.fn().mockResolvedValue(1), // Mock FOR UPDATE lock
         }
         return await callback(tx)
       })
@@ -613,6 +634,12 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
       }
 
       mockAuth.mockResolvedValue(mockSession as any)
@@ -942,16 +969,16 @@ describe('POST /api/bookings', () => {
           id: TEST_UUIDS.service,
           name: 'Hovslagning',
           providerId: TEST_UUIDS.provider,
-        }
-
-        const mockProvider = {
-          id: TEST_UUIDS.provider,
-          userId: TEST_UUIDS.providerUser, // Same userId as session
+          isActive: true,
+          provider: {
+            id: TEST_UUIDS.provider,
+            userId: TEST_UUIDS.providerUser, // Same userId as session
+            isActive: true,
+          },
         }
 
         mockAuth.mockResolvedValue(mockSession as any)
         vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-        vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
 
         const request = new NextRequest('http://localhost:3000/api/bookings', {
           method: 'POST',
@@ -986,11 +1013,12 @@ describe('POST /api/bookings', () => {
           id: TEST_UUIDS.service,
           name: 'Hovslagning',
           providerId: TEST_UUIDS.provider,
-        }
-
-        const mockProvider = {
-          id: TEST_UUIDS.provider,
-          userId: '77777777-7777-4777-8777-777777777777', // Different provider user
+          isActive: true,
+          provider: {
+            id: TEST_UUIDS.provider,
+            userId: '77777777-7777-4777-8777-777777777777', // Different provider user
+            isActive: true,
+          },
         }
 
         const mockBooking = {
@@ -1013,7 +1041,6 @@ describe('POST /api/bookings', () => {
 
         mockAuth.mockResolvedValue(mockSession as any)
         vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-        vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
 
         // @ts-expect-error - Vitest type instantiation depth limitation
         vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
@@ -1022,6 +1049,7 @@ describe('POST /api/bookings', () => {
               findMany: vi.fn().mockResolvedValue([]),
               create: vi.fn().mockResolvedValue(mockBooking),
             },
+            $executeRaw: vi.fn().mockResolvedValue(1), // Mock FOR UPDATE lock
           }
           return await callback(tx)
         })
@@ -1246,6 +1274,281 @@ describe('POST /api/bookings', () => {
         // Assert
         expect(response.status).toBe(201)
         expect(data.id).toBe(TEST_UUIDS.booking)
+      })
+
+      it('should reject booking outside business hours (BUG-10)', async () => {
+        // Arrange
+        const mockSession = {
+          user: {
+            id: TEST_UUIDS.customer,
+            userType: 'customer',
+          },
+        }
+
+        mockAuth.mockResolvedValue(mockSession as any)
+
+        const request = new NextRequest('http://localhost:3000/api/bookings', {
+          method: 'POST',
+          body: JSON.stringify({
+            providerId: TEST_UUIDS.provider,
+            serviceId: TEST_UUIDS.service,
+            bookingDate: '2026-01-23T00:00:00Z',
+            startTime: '06:00', // Before 8am
+            endTime: '09:00',
+          }),
+        })
+
+        // Act
+        const response = await POST(request)
+        const data = await response.json()
+
+        // Assert
+        expect(response.status).toBe(400)
+        expect(data.error).toBe('Validation error')
+        expect(data.details).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              message: 'Booking must be within business hours (08:00-18:00)',
+            }),
+          ])
+        )
+      })
+
+      it('should accept booking at 8am (business hours boundary)', async () => {
+        // Arrange
+        const mockSession = {
+          user: {
+            id: TEST_UUIDS.customer,
+            userType: 'customer',
+          },
+        }
+
+        const mockService = {
+          id: TEST_UUIDS.service,
+          name: 'Hovslagning',
+          providerId: TEST_UUIDS.provider,
+          isActive: true,
+          provider: {
+            id: TEST_UUIDS.provider,
+            userId: TEST_UUIDS.providerUser,
+            isActive: true,
+          },
+        }
+
+        const mockBooking = {
+          id: TEST_UUIDS.booking,
+          customerId: TEST_UUIDS.customer,
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: new Date('2026-01-23'),
+          startTime: '08:00', // Exactly at start of business hours
+          endTime: '10:00',
+          status: 'pending',
+          service: mockService,
+          provider: {
+            user: {
+              firstName: 'John',
+              lastName: 'Doe',
+            },
+          },
+        }
+
+        mockAuth.mockResolvedValue(mockSession as any)
+        vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+        // @ts-expect-error - Vitest type instantiation depth limitation
+        vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+          const tx = {
+            booking: {
+              findMany: vi.fn().mockResolvedValue([]),
+              create: vi.fn().mockResolvedValue(mockBooking),
+            },
+            $executeRaw: vi.fn().mockResolvedValue(1), // Mock the FOR UPDATE lock
+          }
+          return await callback(tx)
+        })
+
+        const request = new NextRequest('http://localhost:3000/api/bookings', {
+          method: 'POST',
+          body: JSON.stringify({
+            providerId: TEST_UUIDS.provider,
+            serviceId: TEST_UUIDS.service,
+            bookingDate: '2026-01-23T00:00:00Z',
+            startTime: '08:00',
+            endTime: '10:00',
+          }),
+        })
+
+        // Act
+        const response = await POST(request)
+        const data = await response.json()
+
+        // Assert
+        expect(response.status).toBe(201)
+        expect(data.id).toBe(TEST_UUIDS.booking)
+      })
+
+      it('should store timezone with booking (BUG-6)', async () => {
+        // Arrange
+        const mockSession = {
+          user: {
+            id: TEST_UUIDS.customer,
+            userType: 'customer',
+          },
+        }
+
+        const mockService = {
+          id: TEST_UUIDS.service,
+          name: 'Hovslagning',
+          providerId: TEST_UUIDS.provider,
+          isActive: true,
+          provider: {
+            id: TEST_UUIDS.provider,
+            userId: TEST_UUIDS.providerUser,
+            isActive: true,
+          },
+        }
+
+        const mockBooking = {
+          id: TEST_UUIDS.booking,
+          customerId: TEST_UUIDS.customer,
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: new Date('2026-01-23'),
+          startTime: '10:00',
+          endTime: '11:00',
+          timezone: 'Europe/Stockholm',
+          status: 'pending',
+          service: mockService,
+          provider: {
+            user: {
+              firstName: 'John',
+              lastName: 'Doe',
+            },
+          },
+        }
+
+        mockAuth.mockResolvedValue(mockSession as any)
+        vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+        let capturedBookingData: any
+
+        // @ts-expect-error - Vitest type instantiation depth limitation
+        vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+          const tx = {
+            booking: {
+              findMany: vi.fn().mockResolvedValue([]),
+              create: vi.fn().mockImplementation((args: any) => {
+                capturedBookingData = args.data
+                return Promise.resolve(mockBooking)
+              }),
+            },
+            $executeRaw: vi.fn().mockResolvedValue(1), // Mock the FOR UPDATE lock
+          }
+          return await callback(tx)
+        })
+
+        const request = new NextRequest('http://localhost:3000/api/bookings', {
+          method: 'POST',
+          body: JSON.stringify({
+            providerId: TEST_UUIDS.provider,
+            serviceId: TEST_UUIDS.service,
+            bookingDate: '2026-01-23T00:00:00Z',
+            startTime: '10:00',
+            endTime: '11:00',
+            timezone: 'Europe/Stockholm',
+          }),
+        })
+
+        // Act
+        const response = await POST(request)
+        const data = await response.json()
+
+        // Assert
+        expect(response.status).toBe(201)
+        expect(capturedBookingData.timezone).toBe('Europe/Stockholm')
+        expect(data.timezone).toBe('Europe/Stockholm')
+      })
+
+      it('should use default timezone when not provided (BUG-6)', async () => {
+        // Arrange
+        const mockSession = {
+          user: {
+            id: TEST_UUIDS.customer,
+            userType: 'customer',
+          },
+        }
+
+        const mockService = {
+          id: TEST_UUIDS.service,
+          name: 'Hovslagning',
+          providerId: TEST_UUIDS.provider,
+          isActive: true,
+          provider: {
+            id: TEST_UUIDS.provider,
+            userId: TEST_UUIDS.providerUser,
+            isActive: true,
+          },
+        }
+
+        const mockBooking = {
+          id: TEST_UUIDS.booking,
+          customerId: TEST_UUIDS.customer,
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: new Date('2026-01-23'),
+          startTime: '10:00',
+          endTime: '11:00',
+          timezone: 'Europe/Stockholm', // Default
+          status: 'pending',
+          service: mockService,
+          provider: {
+            user: {
+              firstName: 'John',
+              lastName: 'Doe',
+            },
+          },
+        }
+
+        mockAuth.mockResolvedValue(mockSession as any)
+        vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+        let capturedBookingData: any
+
+        // @ts-expect-error - Vitest type instantiation depth limitation
+        vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+          const tx = {
+            booking: {
+              findMany: vi.fn().mockResolvedValue([]),
+              create: vi.fn().mockImplementation((args: any) => {
+                capturedBookingData = args.data
+                return Promise.resolve(mockBooking)
+              }),
+            },
+            $executeRaw: vi.fn().mockResolvedValue(1), // Mock the FOR UPDATE lock
+          }
+          return await callback(tx)
+        })
+
+        const request = new NextRequest('http://localhost:3000/api/bookings', {
+          method: 'POST',
+          body: JSON.stringify({
+            providerId: TEST_UUIDS.provider,
+            serviceId: TEST_UUIDS.service,
+            bookingDate: '2026-01-23T00:00:00Z',
+            startTime: '10:00',
+            endTime: '11:00',
+            // No timezone provided - should use default
+          }),
+        })
+
+        // Act
+        const response = await POST(request)
+        const data = await response.json()
+
+        // Assert
+        expect(response.status).toBe(201)
+        expect(capturedBookingData.timezone).toBe('Europe/Stockholm')
       })
     })
   })

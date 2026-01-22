@@ -32,6 +32,7 @@ const bookingSchema = z.object({
   horseInfo: z.string().max(500, "Horse info too long (max 500 characters)").optional(),
   customerNotes: z.string().max(1000, "Notes too long (max 1000 characters)").optional(),
   routeOrderId: z.string().uuid("Invalid route order ID format").optional(),
+  timezone: z.string().default("Europe/Stockholm").optional(), // BUG-6 fix: IANA timezone
 }).strict().refine(
   (data) => {
     // Validate endTime is after startTime
@@ -68,6 +69,18 @@ const bookingSchema = z.object({
   {
     message: "Booking cannot exceed 8 hours",
     path: ["endTime"]
+  }
+).refine(
+  (data) => {
+    // Validate business hours (8am-6pm default)
+    // TODO: Enhance with provider-specific availability from Availability model
+    const [startH] = data.startTime.split(':').map(Number)
+    const [endH] = data.endTime.split(':').map(Number)
+    return startH >= 8 && endH <= 18
+  },
+  {
+    message: "Booking must be within business hours (08:00-18:00)",
+    path: ["startTime"]
   }
 )
 
@@ -219,6 +232,12 @@ export async function POST(request: NextRequest) {
         throw new Error("INVALID_DATE")
       }
 
+      // BUG-5 FIX: Acquire exclusive lock on provider to prevent race conditions
+      // This ensures only one transaction can check/create bookings for this provider at a time
+      await tx.$executeRaw`
+        SELECT id FROM "Provider" WHERE id = ${validatedData.providerId}::uuid FOR UPDATE
+      `
+
       // Check for overlapping bookings within the transaction
       const overlappingBookings = await tx.booking.findMany({
         where: {
@@ -269,6 +288,7 @@ export async function POST(request: NextRequest) {
           bookingDate: bookingDate,
           startTime: validatedData.startTime,
           endTime: validatedData.endTime,
+          timezone: validatedData.timezone || "Europe/Stockholm", // BUG-6 fix: Store timezone
           horseName: validatedData.horseName,
           horseInfo: validatedData.horseInfo,
           customerNotes: validatedData.customerNotes,

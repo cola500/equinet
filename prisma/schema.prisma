@@ -104,6 +104,7 @@ model Booking {
   bookingDate   DateTime
   startTime     String
   endTime       String
+  timezone      String      @default("Europe/Stockholm") // IANA timezone (BUG-6 fix)
   status        String      @default("pending") // pending, confirmed, cancelled, completed
   customerNotes String?
   horseName     String?
