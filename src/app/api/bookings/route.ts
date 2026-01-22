@@ -9,16 +9,55 @@ import { logger } from "@/lib/logger"
 import { z } from "zod"
 
 const bookingSchema = z.object({
-  providerId: z.string(),
-  serviceId: z.string(),
-  bookingDate: z.string(),
-  startTime: z.string(),
-  endTime: z.string(),
-  horseName: z.string().optional(),
-  horseInfo: z.string().optional(),
-  customerNotes: z.string().optional(),
-  routeOrderId: z.string().optional(), // NEW: Link to provider announcement
-}).strict()
+  providerId: z.string().uuid("Invalid provider ID format"),
+  serviceId: z.string().uuid("Invalid service ID format"),
+  bookingDate: z.string().datetime("Invalid date format").refine(
+    (dateStr) => {
+      const bookingDate = new Date(dateStr)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Start of today
+      return bookingDate >= today
+    },
+    { message: "Cannot book in the past" }
+  ),
+  startTime: z.string().regex(
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/,
+    "Invalid time format. Must be HH:MM (00:00-23:59)"
+  ),
+  endTime: z.string().regex(
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/,
+    "Invalid time format. Must be HH:MM (00:00-23:59)"
+  ),
+  horseName: z.string().max(100, "Horse name too long (max 100 characters)").optional(),
+  horseInfo: z.string().max(500, "Horse info too long (max 500 characters)").optional(),
+  customerNotes: z.string().max(1000, "Notes too long (max 1000 characters)").optional(),
+  routeOrderId: z.string().uuid("Invalid route order ID format").optional(),
+}).strict().refine(
+  (data) => {
+    // Validate endTime is after startTime
+    const [startH, startM] = data.startTime.split(':').map(Number)
+    const [endH, endM] = data.endTime.split(':').map(Number)
+    const startMinutes = startH * 60 + startM
+    const endMinutes = endH * 60 + endM
+    return endMinutes > startMinutes
+  },
+  {
+    message: "End time must be after start time",
+    path: ["endTime"]
+  }
+).refine(
+  (data) => {
+    // Validate minimum booking duration (15 minutes)
+    const [startH, startM] = data.startTime.split(':').map(Number)
+    const [endH, endM] = data.endTime.split(':').map(Number)
+    const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM)
+    return durationMinutes >= 15
+  },
+  {
+    message: "Booking must be at least 15 minutes long",
+    path: ["endTime"]
+  }
+)
 
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
@@ -124,11 +163,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Prevent self-booking: customer cannot book their own service
+    const provider = await prisma.provider.findUnique({
+      where: { id: validatedData.providerId },
+      select: { userId: true }
+    })
+
+    if (provider?.userId === session.user.id) {
+      return NextResponse.json(
+        { error: "Cannot book your own service" },
+        { status: 400 }
+      )
+    }
+
     // Use transaction for atomicity: check for overlaps and create booking atomically
     // This prevents race conditions where two requests check simultaneously and both create bookings
     // @ts-expect-error - Prisma transaction callback type inference issue
     const booking: any = await prisma.$transaction(async (tx) => {
       const bookingDate = new Date(validatedData.bookingDate)
+
+      // Double-check Date parsing succeeded (should be caught by Zod, but extra safety)
+      if (isNaN(bookingDate.getTime())) {
+        throw new Error("INVALID_DATE")
+      }
 
       // Check for overlapping bookings within the transaction
       const overlappingBookings = await tx.booking.findMany({
@@ -248,6 +305,14 @@ export async function POST(request: NextRequest) {
           details: "Vänligen välj en annan tid eller datum",
         },
         { status: 409 }
+      )
+    }
+
+    // Handle invalid date from transaction
+    if (error instanceof Error && error.message === "INVALID_DATE") {
+      return NextResponse.json(
+        { error: "Invalid booking date" },
+        { status: 400 }
       )
     }
 
