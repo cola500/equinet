@@ -13,7 +13,12 @@
 ### Produktion
 - **Hosting**: Vercel (Next.js)
 - **Databas**: Supabase (PostgreSQL)
+- **Rate Limiting**: Upstash Redis (serverless-kompatibel)
+- **Error Tracking**: Sentry
+- **Uptime Monitoring**: UptimeRobot
 - **URL**: Konfigureras via `NEXTAUTH_URL`
+
+> **Status (2026-01-22):** UptimeRobot, Sentry och Upstash Redis är uppsatta men ej fullständigt verifierade i produktion. Verifiera efter första riktiga deploy.
 
 ### Environment Variables
 
@@ -534,7 +539,7 @@ En feature är **DONE** när:
 **Kör detta INNAN production deployment!**
 
 ### Security (MANDATORY)
-- [ ] Rate limiting använder Redis (INTE in-memory) → fungerar i serverless
+- [x] Rate limiting använder Redis (INTE in-memory) → fungerar i serverless - **Upstash uppsatt 2026-01-22, ej verifierat**
 - [ ] Authorization checks är atomära (i WHERE clause, ej före queries)
 - [ ] Cookies är `sameSite: strict` + `secure: true` i production
 - [ ] Ingen PII/känslig data exponeras i publika API endpoints
@@ -542,10 +547,12 @@ En feature är **DONE** när:
 - [ ] Error messages exponerar INTE interna detaljer
 
 ### Monitoring (HIGHLY RECOMMENDED)
-- [ ] Sentry DSN konfigurerad (`NEXT_PUBLIC_SENTRY_DSN`)
-- [ ] Error tracking fungerar (testa genom att kasta error)
+- [x] Sentry DSN konfigurerad (`NEXT_PUBLIC_SENTRY_DSN`) - **Uppsatt 2026-01-22**
+- [ ] Error tracking fungerar (testa genom att kasta error) - **Ej verifierat**
 - [ ] Performance monitoring aktivt (trace sampling)
 - [ ] Logs går till external service (ej bara console)
+- [x] UptimeRobot konfigurerad för uptime monitoring - **Uppsatt 2026-01-22**
+- [ ] UptimeRobot alerts verifierade - **Ej verifierat**
 
 ### Architecture (MANDATORY)
 - [ ] API routes använder repositories (INTE direkt Prisma)
