@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
-import { getServerSession } from 'next-auth'
+import * as authServer from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 
 // Mock dependencies
-vi.mock('next-auth')
+vi.mock('@/lib/auth-server', () => ({
+  auth: vi.fn(),
+}))
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     provider: {
@@ -104,7 +107,7 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'provider', providerId: mockProviderId },
     }
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
@@ -133,7 +136,10 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
   })
 
   it('should return 401 if not authenticated', async () => {
-    vi.mocked(getServerSession).mockResolvedValue(null)
+    // auth() throws Response when not authenticated
+    vi.mocked(authServer.auth).mockRejectedValue(
+      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    )
 
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`, {
       method: 'PUT',
@@ -151,7 +157,7 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'customer' },
     }
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
 
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`, {
       method: 'PUT',
@@ -169,7 +175,7 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'provider', providerId: 'different-provider' },
     }
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     // Mock that the provider is owned by a DIFFERENT user
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
@@ -192,7 +198,7 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'provider', providerId: mockProviderId },
     }
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,

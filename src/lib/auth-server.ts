@@ -1,21 +1,20 @@
 // Server-side auth utilities
-// Helper functions for getting session in API routes
-import { getServerSession } from "next-auth"
+// Re-export auth from the main auth module for backward compatibility
+import { auth as nextAuth } from "./auth"
 import { NextResponse } from "next/server"
-import { authOptions } from "./auth"
 
 /**
  * Get authenticated session in API routes.
  *
- * This is a convenience wrapper around getServerSession.
+ * This is a convenience wrapper around NextAuth's auth().
  * Middleware ensures session exists for protected routes,
  * so this should never return null in API routes.
  *
- * @throws {Error} If session is not found (should never happen with middleware)
+ * @throws {NextResponse} 401 response if session is not found
  * @returns {Promise<Session>} The authenticated session
  */
 export async function auth() {
-  const session = await getServerSession(authOptions)
+  const session = await nextAuth()
 
   if (!session?.user) {
     // Return 401 JSON response instead of throwing
@@ -36,5 +35,5 @@ export async function auth() {
  * @returns {Promise<Session | null>} The session or null
  */
 export async function getSession() {
-  return await getServerSession(authOptions)
+  return await nextAuth()
 }

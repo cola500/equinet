@@ -5,11 +5,6 @@ const nextConfig: NextConfig = {
   // Disable source maps in production for security
   productionBrowserSourceMaps: false,
 
-  // ESLint runs separately in CI, skip during build to avoid config issues
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   // TypeScript errors handled separately, skip during build to avoid timeout
   typescript: {
     ignoreBuildErrors: true,
