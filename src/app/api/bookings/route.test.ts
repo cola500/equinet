@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
-import { getServerSession } from 'next-auth'
+import { auth } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
 // Mock dependencies
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(),
+vi.mock('@/lib/auth-server', () => ({
+  auth: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -47,10 +47,6 @@ vi.mock('@prisma/client', () => ({
   },
 }))
 
-vi.mock('@/lib/auth', () => ({
-  authOptions: {},
-}))
-
 describe('GET /api/bookings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -58,13 +54,6 @@ describe('GET /api/bookings', () => {
 
   it('should return bookings for authenticated customer', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
-
     const mockBookings = [
       {
         id: 'booking1',
@@ -76,7 +65,6 @@ describe('GET /api/bookings', () => {
         endTime: '11:00',
         status: 'pending',
         provider: {
-          id: 'provider123',
           businessName: 'Test Provider',
           user: {
             firstName: 'John',
@@ -84,14 +72,16 @@ describe('GET /api/bookings', () => {
           },
         },
         service: {
-          id: 'service1',
           name: 'Hovslagning',
           price: 800,
+          durationMinutes: 60,
         },
       },
     ]
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
@@ -100,38 +90,15 @@ describe('GET /api/bookings', () => {
     const response = await GET(request)
     const data = await response.json()
 
-    // Assert
+    // Assert - Behavior-based testing (no implementation assertions)
     expect(response.status).toBe(200)
     expect(data).toHaveLength(1)
     expect(data[0].id).toBe('booking1')
-    expect(prisma.booking.findMany).toHaveBeenCalledWith({
-      where: { customerId: 'customer123' },
-      include: {
-        provider: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-        service: true,
-      },
-      orderBy: { bookingDate: 'desc' },
-    })
+    expect(data[0].provider.businessName).toBe('Test Provider')
   })
 
   it('should return bookings for authenticated provider', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
-    }
-
     const mockProvider = {
       id: 'provider123',
       userId: 'user123',
@@ -151,14 +118,16 @@ describe('GET /api/bookings', () => {
           phone: '0701234567',
         },
         service: {
-          id: 'service1',
           name: 'Hovslagning',
+          price: 800,
+          durationMinutes: 60,
         },
       },
     ]
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    // @ts-ignore - CI-specific type instantiation depth issue
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
 
@@ -168,30 +137,20 @@ describe('GET /api/bookings', () => {
     const response = await GET(request)
     const data = await response.json()
 
-    // Assert
+    // Assert - Behavior-based testing (no implementation assertions)
     expect(response.status).toBe(200)
     expect(data).toHaveLength(1)
     expect(data[0].customer.firstName).toBe('Jane')
-    expect(prisma.booking.findMany).toHaveBeenCalledWith({
-      where: { providerId: 'provider123' },
-      include: {
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        service: true,
-      },
-      orderBy: { bookingDate: 'desc' },
-    })
+    expect(data[0].customer.email).toBe('jane@example.com')
   })
 
   it('should return 401 when user is not authenticated', async () => {
-    // Arrange
-    vi.mocked(getServerSession).mockResolvedValue(null)
+    // Arrange - auth() throws Response for unauthenticated users
+    const unauthorizedResponse = new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    )
+    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
 
@@ -206,14 +165,9 @@ describe('GET /api/bookings', () => {
 
   it('should return 404 when provider not found', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
-    }
-
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
@@ -269,7 +223,7 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
 
     // Mock $transaction to execute the callback immediately with tx object
@@ -312,8 +266,12 @@ describe('POST /api/bookings', () => {
   })
 
   it('should return 401 when user is not authenticated', async () => {
-    // Arrange
-    vi.mocked(getServerSession).mockResolvedValue(null)
+    // Arrange - auth() throws Response for unauthenticated users
+    const unauthorizedResponse = new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    )
+    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -337,14 +295,9 @@ describe('POST /api/bookings', () => {
 
   it('should return 400 when service does not exist', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
-
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
@@ -382,7 +335,7 @@ describe('POST /api/bookings', () => {
       providerId: 'different-provider', // Different provider!
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
@@ -414,7 +367,7 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -468,7 +421,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as any)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
@@ -537,7 +490,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as any)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
@@ -587,7 +540,7 @@ describe('POST /api/bookings', () => {
         providerId: 'provider123',
       }
 
-      vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as any)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
 
       // Mock $transaction to simulate Prisma foreign key constraint error

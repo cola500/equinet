@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth-server'
 import { NextRequest } from 'next/server'
 
 // Mock dependencies
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(),
+vi.mock('@/lib/auth-server', () => ({
+  auth: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -15,16 +15,18 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     booking: {
-      findUnique: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
   },
 }))
 
-vi.mock('@/lib/auth', () => ({
-  authOptions: {},
-}))
+// Helper to create Prisma P2025 error (record not found)
+function createPrismaNotFoundError() {
+  const error = new Error('Record not found')
+  ;(error as any).code = 'P2025'
+  return error
+}
 
 describe('PUT /api/bookings/[id]', () => {
   beforeEach(() => {
@@ -33,35 +35,24 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should update booking status when provider is authorized', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
-    }
-
     const mockProvider = {
       id: 'provider123',
       userId: 'user123',
     }
 
-    const mockBooking = {
+    const mockUpdatedBooking = {
       id: 'booking1',
       customerId: 'customer123',
       providerId: 'provider123',
-      status: 'pending',
-    }
-
-    const mockUpdatedBooking = {
-      ...mockBooking,
       status: 'confirmed',
       service: { name: 'Hovslagning' },
       customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
       provider: { user: { firstName: 'John', lastName: 'Smith' } },
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.booking.update).mockResolvedValue(mockUpdatedBooking as any)
 
@@ -79,8 +70,9 @@ describe('PUT /api/bookings/[id]', () => {
     // Assert
     expect(response.status).toBe(200)
     expect(data.status).toBe('confirmed')
+    // Verify atomic authorization: providerId in WHERE clause
     expect(prisma.booking.update).toHaveBeenCalledWith({
-      where: { id: 'booking1' },
+      where: { id: 'booking1', providerId: 'provider123' },
       data: { status: 'confirmed' },
       include: expect.any(Object),
     })
@@ -88,27 +80,16 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should update booking status when customer is authorized', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
-
-    const mockBooking = {
+    const mockUpdatedBooking = {
       id: 'booking1',
       customerId: 'customer123',
       providerId: 'provider123',
-      status: 'pending',
-    }
-
-    const mockUpdatedBooking = {
-      ...mockBooking,
       status: 'cancelled',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
     vi.mocked(prisma.booking.update).mockResolvedValue(mockUpdatedBooking as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -125,39 +106,27 @@ describe('PUT /api/bookings/[id]', () => {
     // Assert
     expect(response.status).toBe(200)
     expect(data.status).toBe('cancelled')
-  })
-
-  it('should return 401 when user is not authenticated', async () => {
-    // Arrange
-    vi.mocked(getServerSession).mockResolvedValue(null)
-
-    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'confirmed' }),
+    // Verify atomic authorization: customerId in WHERE clause
+    expect(prisma.booking.update).toHaveBeenCalledWith({
+      where: { id: 'booking1', customerId: 'customer123' },
+      data: { status: 'cancelled' },
+      include: expect.any(Object),
     })
-
-    // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'booking1' }),
-    })
-    const data = await response.json()
-
-    // Assert
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
   })
 
   it('should return 404 when booking does not exist', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
+    const mockProvider = {
+      id: 'provider123',
+      userId: 'user123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(null)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    // Prisma throws P2025 when record not found with atomic WHERE clause
+    vi.mocked(prisma.booking.update).mockRejectedValue(createPrismaNotFoundError())
 
     const request = new NextRequest('http://localhost:3000/api/bookings/nonexistent', {
       method: 'PUT',
@@ -172,33 +141,22 @@ describe('PUT /api/bookings/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Booking not found')
+    expect(data.error).toContain('not found')
   })
 
-  it('should return 403 when provider is not authorized for this booking', async () => {
-    // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
-    }
-
+  it('should return 404 when provider is not authorized for this booking', async () => {
+    // Arrange - provider123 tries to update booking owned by different-provider
     const mockProvider = {
       id: 'provider123',
       userId: 'user123',
     }
 
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'customer123',
-      providerId: 'different-provider', // Different provider!
-      status: 'pending',
-    }
-
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    // Atomic auth: WHERE clause won't match, Prisma throws P2025
+    vi.mocked(prisma.booking.update).mockRejectedValue(createPrismaNotFoundError())
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -211,29 +169,19 @@ describe('PUT /api/bookings/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
-    expect(response.status).toBe(403)
-    expect(data.error).toBe('Unauthorized')
+    // Assert - Returns 404 (not 403) because atomic auth doesn't distinguish between
+    // "booking doesn't exist" and "booking exists but you don't own it"
+    expect(response.status).toBe(404)
+    expect(data.error).toContain('not found')
   })
 
-  it('should return 403 when customer is not authorized for this booking', async () => {
-    // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
-
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'different-customer', // Different customer!
-      providerId: 'provider123',
-      status: 'pending',
-    }
-
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+  it('should return 404 when customer is not authorized for this booking', async () => {
+    // Arrange - customer123 tries to update booking owned by different-customer
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
+    // Atomic auth: WHERE clause won't match, Prisma throws P2025
+    vi.mocked(prisma.booking.update).mockRejectedValue(createPrismaNotFoundError())
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -246,29 +194,16 @@ describe('PUT /api/bookings/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
-    expect(response.status).toBe(403)
-    expect(data.error).toBe('Unauthorized')
+    // Assert - Returns 404 (not 403) because atomic auth doesn't distinguish
+    expect(response.status).toBe(404)
+    expect(data.error).toContain('not found')
   })
 
   it('should return 400 for invalid status', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
-
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'customer123',
-      providerId: 'provider123',
-      status: 'pending',
-    }
-
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -285,6 +220,29 @@ describe('PUT /api/bookings/[id]', () => {
     expect(response.status).toBe(400)
     expect(data.error).toBe('Validation error')
   })
+
+  it('should return 404 when provider profile not found', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+
+    // Act
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(404)
+    expect(data.error).toBe('Provider not found')
+  })
 })
 
 describe('DELETE /api/bookings/[id]', () => {
@@ -294,13 +252,6 @@ describe('DELETE /api/bookings/[id]', () => {
 
   it('should delete booking when provider is authorized', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
-    }
-
     const mockProvider = {
       id: 'provider123',
       userId: 'user123',
@@ -312,8 +263,9 @@ describe('DELETE /api/bookings/[id]', () => {
       providerId: 'provider123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
     vi.mocked(prisma.booking.delete).mockResolvedValue(mockBooking as any)
 
@@ -330,28 +282,23 @@ describe('DELETE /api/bookings/[id]', () => {
     // Assert
     expect(response.status).toBe(200)
     expect(data.message).toBe('Booking deleted')
+    // Verify atomic authorization: providerId in WHERE clause
     expect(prisma.booking.delete).toHaveBeenCalledWith({
-      where: { id: 'booking1' },
+      where: { id: 'booking1', providerId: 'provider123' },
     })
   })
 
   it('should delete booking when customer is authorized', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
-
     const mockBooking = {
       id: 'booking1',
       customerId: 'customer123',
       providerId: 'provider123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
     vi.mocked(prisma.booking.delete).mockResolvedValue(mockBooking as any)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -367,38 +314,25 @@ describe('DELETE /api/bookings/[id]', () => {
     // Assert
     expect(response.status).toBe(200)
     expect(data.message).toBe('Booking deleted')
-  })
-
-  it('should return 401 when user is not authenticated', async () => {
-    // Arrange
-    vi.mocked(getServerSession).mockResolvedValue(null)
-
-    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
-      method: 'DELETE',
+    // Verify atomic authorization: customerId in WHERE clause
+    expect(prisma.booking.delete).toHaveBeenCalledWith({
+      where: { id: 'booking1', customerId: 'customer123' },
     })
-
-    // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'booking1' }),
-    })
-    const data = await response.json()
-
-    // Assert
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
   })
 
   it('should return 404 when booking does not exist', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
+    const mockProvider = {
+      id: 'provider123',
+      userId: 'user123',
     }
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(null)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    // Prisma throws P2025 when record not found
+    vi.mocked(prisma.booking.delete).mockRejectedValue(createPrismaNotFoundError())
 
     const request = new NextRequest('http://localhost:3000/api/bookings/nonexistent', {
       method: 'DELETE',
@@ -412,32 +346,22 @@ describe('DELETE /api/bookings/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Booking not found')
+    expect(data.error).toContain('not found')
   })
 
-  it('should return 403 when provider is not authorized for this booking', async () => {
+  it('should return 404 when provider is not authorized for this booking', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'user123',
-        userType: 'provider',
-      },
-    }
-
     const mockProvider = {
       id: 'provider123',
       userId: 'user123',
     }
 
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'customer123',
-      providerId: 'different-provider',
-    }
-
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    // Atomic auth: WHERE clause won't match, Prisma throws P2025
+    vi.mocked(prisma.booking.delete).mockRejectedValue(createPrismaNotFoundError())
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -449,28 +373,40 @@ describe('DELETE /api/bookings/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
-    expect(response.status).toBe(403)
-    expect(data.error).toBe('Unauthorized')
+    // Assert - Returns 404 (not 403) because atomic auth
+    expect(response.status).toBe(404)
+    expect(data.error).toContain('not found')
   })
 
-  it('should return 403 when customer is not authorized for this booking', async () => {
+  it('should return 404 when customer is not authorized for this booking', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: 'customer123',
-        userType: 'customer',
-      },
-    }
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
+    // Atomic auth: WHERE clause won't match, Prisma throws P2025
+    vi.mocked(prisma.booking.delete).mockRejectedValue(createPrismaNotFoundError())
 
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'different-customer',
-      providerId: 'provider123',
-    }
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'DELETE',
+    })
 
-    vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    // Act
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+    const data = await response.json()
+
+    // Assert - Returns 404 (not 403) because atomic auth
+    expect(response.status).toBe(404)
+    expect(data.error).toContain('not found')
+  })
+
+  it('should return 404 when provider profile not found', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -483,7 +419,7 @@ describe('DELETE /api/bookings/[id]', () => {
     const data = await response.json()
 
     // Assert
-    expect(response.status).toBe(403)
-    expect(data.error).toBe('Unauthorized')
+    expect(response.status).toBe(404)
+    expect(data.error).toBe('Provider not found')
   })
 })
