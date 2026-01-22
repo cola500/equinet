@@ -860,6 +860,26 @@ När du skapar en ny feature (t.ex. `/api/providers`):
   - Middleware: `auth((req) => ...)` ersätter `withAuth(...)`
   - Test mocks måste uppdateras från `next-auth` → `@/lib/auth`
 - **Learning:** Repository pattern + behavior-based tests minimerade uppgraderings-impact
+- **Retro-learnings (problem vi stötte på):**
+  - `.npmrc` med `legacy-peer-deps=true` behövdes för Vercel (react-leaflet peer dep)
+  - Edge Function size limit (1MB) → Separera `auth.config.ts` för middleware
+  - Playwright browsers måste uppdateras efter major upgrades
+
+**Pre-Merge Checklist för Major Upgrades:**
+```bash
+# 1. Simulera clean install (som Vercel/CI gör)
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+
+# 2. Kör alla tester
+npm run test:run          # Unit tests
+npx playwright install    # Uppdatera browsers
+npm run test:e2e          # E2E tests
+
+# 3. Verifiera manuellt
+npm run dev               # Starta och testa kritiska flöden
+```
 
 ### SQLite → PostgreSQL Migration (2026-01-21)
 **Decision:** Migrerade från SQLite till PostgreSQL (Supabase) för Vercel deployment.
