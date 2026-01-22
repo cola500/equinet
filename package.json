@@ -1,6 +1,6 @@
 {
   "name": "equinet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -21,7 +21,11 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:cleanup": "playwright test --project=cleanup",
     "prepare": "husky",
-    "pre-push": "npm run test:run && npx tsc --noEmit"
+    "pre-push": "npm run test:run && npx tsc --noEmit",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:first": "standard-version --first-release"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -78,6 +82,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.1.0",
     "prisma": "^6.19.0",
+    "standard-version": "^9.5.0",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "tw-animate-css": "^1.4.0",
