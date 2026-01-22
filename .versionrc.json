@@ -1,0 +1,14 @@
+{
+  "types": [
+    {"type": "feat", "section": "Features"},
+    {"type": "fix", "section": "Bug Fixes"},
+    {"type": "perf", "section": "Performance"},
+    {"type": "docs", "section": "Documentation", "hidden": true},
+    {"type": "style", "hidden": true},
+    {"type": "refactor", "section": "Code Refactoring", "hidden": true},
+    {"type": "test", "hidden": true},
+    {"type": "chore", "hidden": true}
+  ],
+  "commitUrlFormat": "https://github.com/cola500/equinet/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/cola500/equinet/compare/{{previousTag}}...{{currentTag}}"
+}

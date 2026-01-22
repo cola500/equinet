@@ -83,6 +83,35 @@ npx tsc --noEmit         # TypeScript check
 rm -rf .next && npm run dev  # Rensa cache
 ```
 
+### Release & Versionshantering
+
+Projektet använder [standard-version](https://github.com/conventional-changelog/standard-version) för automatisk versionering baserat på conventional commits.
+
+**Release-kommandon:**
+```bash
+npm run release              # Auto-detect (patch/minor/major)
+npm run release:minor        # Force minor bump (0.2.0 → 0.3.0)
+npm run release:major        # Force major bump (0.2.0 → 1.0.0)
+```
+
+**Vad händer vid release:**
+1. Version i `package.json` uppdateras
+2. `CHANGELOG.md` genereras/uppdateras automatiskt
+3. Git tag skapas (t.ex. `v0.2.0`)
+4. Release commit skapas
+
+**Publicera release:**
+```bash
+git push --follow-tags origin main
+```
+
+**Commit-typer som påverkar version:**
+- `feat:` → Minor version bump (nya features)
+- `fix:` → Patch version bump (buggfixar)
+- `BREAKING CHANGE:` → Major version bump
+
+**Konfiguration:** `.versionrc.json`
+
 ### Feature Implementation (Databas-först + TDD)
 
 1. **Planering**: Schema → API → UI
@@ -493,6 +522,12 @@ En feature är **DONE** när:
 - [ ] E2E tests uppdaterade
 - [ ] Coverage ≥70%
 - [ ] Manuell testning
+
+### 6. Release (vid milstolpe/sprint-slut)
+- [ ] `npm run release` för att skapa ny version
+- [ ] CHANGELOG.md genererad och korrekt
+- [ ] Git tag skapad
+- [ ] `git push --follow-tags origin main`
 
 ## ✅ Production Readiness Checklist
 
