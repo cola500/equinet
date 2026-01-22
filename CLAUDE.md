@@ -200,6 +200,68 @@ await expect(page.getByText(/success/i)).toBeVisible({ timeout: 5000 })
 await page.waitForTimeout(1000)  // Endast sista utväg
 ```
 
+## 🔍 Exploratory Testing
+
+**Purpose:** Find edge cases and bugs not covered by automated tests.
+
+### Process (VIKTIGT!)
+
+**Golden Rule:** DOKUMENTERA FÖRST, fixa sen!
+
+```bash
+# 1. Kör exploratory testing session
+# Testa manuellt med invalid inputs, edge cases, etc.
+
+# 2. Spara rapport OMEDELBART till docs/testing/
+# Format: docs/testing/exploratory-session-N-YYYY-MM-DD.md
+
+# 3. Prioritera bugs (CRITICAL → HIGH → MEDIUM → LOW)
+
+# 4. Fixa bugs i prioritetsordning
+
+# 5. Lägg till regression tests för varje fix
+```
+
+### Naming Convention
+```
+docs/testing/exploratory-session-1-2026-01-22.md
+docs/testing/exploratory-session-2-2026-02-10.md
+```
+
+### Report Template
+```markdown
+# Exploratory Testing Session N - [Endpoint/Feature]
+
+**Date:** YYYY-MM-DD
+**Tester:** [Name]
+**Focus:** [Area of testing]
+**Duration:** [Time spent]
+
+## Bugs Found
+- CRITICAL: [List]
+- HIGH: [List]
+- MEDIUM: [List]
+- LOW: [List]
+
+## Test Coverage Gaps
+[Areas not covered by automated tests]
+
+## Recommendations
+[Suggested improvements]
+```
+
+### Why This Process Matters
+
+**Problem från 2026-01-22:**
+- Körde exploratory testing, hittade 13 bugs
+- Dokumenterade INTE rapporten → information försvann i conversation history
+- Kunde inte fortsätta fixa resterande bugs nästa session
+
+**Lösning:**
+- ALLTID spara rapport till docs/testing/ INNAN du börjar fixa
+- Rapporten är source of truth för bug tracking
+- Möjliggör progressiv bug-fixing över flera sessioner
+
 ## 🔑 Kritiska Patterns
 
 ### API Route Pattern

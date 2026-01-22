@@ -57,6 +57,18 @@ const bookingSchema = z.object({
     message: "Booking must be at least 15 minutes long",
     path: ["endTime"]
   }
+).refine(
+  (data) => {
+    // Validate maximum booking duration (8 hours)
+    const [startH, startM] = data.startTime.split(':').map(Number)
+    const [endH, endM] = data.endTime.split(':').map(Number)
+    const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM)
+    return durationMinutes <= 480
+  },
+  {
+    message: "Booking cannot exceed 8 hours",
+    path: ["endTime"]
+  }
 )
 
 // GET bookings for logged-in user
@@ -154,6 +166,15 @@ export async function POST(request: NextRequest) {
     // Verify service exists and belongs to provider
     const service = await prisma.service.findUnique({
       where: { id: validatedData.serviceId },
+      include: {
+        provider: {
+          select: {
+            id: true,
+            userId: true,
+            isActive: true
+          }
+        }
+      }
     })
 
     if (!service || service.providerId !== validatedData.providerId) {
@@ -163,13 +184,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Prevent self-booking: customer cannot book their own service
-    const provider = await prisma.provider.findUnique({
-      where: { id: validatedData.providerId },
-      select: { userId: true }
-    })
+    // Check if service is active (BUG-9 fix)
+    if (!service.isActive) {
+      return NextResponse.json(
+        { error: "Service is no longer available" },
+        { status: 400 }
+      )
+    }
 
-    if (provider?.userId === session.user.id) {
+    // Check if provider is active (BUG-8 fix)
+    if (!service.provider.isActive) {
+      return NextResponse.json(
+        { error: "Provider is currently unavailable" },
+        { status: 400 }
+      )
+    }
+
+    // Prevent self-booking: customer cannot book their own service
+    if (service.provider.userId === session.user.id) {
       return NextResponse.json(
         { error: "Cannot book your own service" },
         { status: 400 }
