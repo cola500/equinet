@@ -114,12 +114,12 @@ Detta säkerställer att broken code aldrig når main-branchen! 🎯
 
 ## 🛠️ Teknisk Stack
 
-- **Framework**: Next.js 15.5.0 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Språk**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
 - **UI**: shadcn/ui + Radix UI
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
-- **Autentisering**: NextAuth.js v4
+- **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
 - **Testning**: Vitest (326 unit/integration) + Playwright (62 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
@@ -345,11 +345,22 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 
 ## 📚 Dokumentation
 
+### Huvuddokument
 - **README.md** (denna fil) - Vad som är byggt, setup, testning
 - **[CLAUDE.md](./CLAUDE.md)** - Utvecklingsguide, arbetsprocesser, patterns
-- **[docs/PRODUCTION-DEPLOYMENT.md](./docs/PRODUCTION-DEPLOYMENT.md)** - Komplett deployment-guide för Vercel + Supabase
-- **[docs/SECURITY-REVIEW-2026-01-21.md](./docs/SECURITY-REVIEW-2026-01-21.md)** - Senaste säkerhetsgranskning
 - **[NFR.md](./NFR.md)** - Non-Functional Requirements (säkerhet, performance, etc.)
+
+### Guider & Referens
+- **[docs/GOTCHAS.md](./docs/GOTCHAS.md)** - Vanliga problem och lösningar
+- **[docs/AGENTS.md](./docs/AGENTS.md)** - Agent-team guide för Claude Code
+- **[docs/PRODUCTION-DEPLOYMENT.md](./docs/PRODUCTION-DEPLOYMENT.md)** - Komplett deployment-guide
+
+### Säkerhet & Retrospectives
+- **[docs/SECURITY-REVIEW-2026-01-21.md](./docs/SECURITY-REVIEW-2026-01-21.md)** - Senaste säkerhetsgranskning
+- **[docs/retrospectives/](./docs/retrospectives/)** - Sprint retrospectives
+- **[docs/sprints/](./docs/sprints/)** - Sprint-planer och historik
+
+### Features
 - **[features/rutt-baserad-levering.md](./features/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
 
 ## 🔮 Roadmap

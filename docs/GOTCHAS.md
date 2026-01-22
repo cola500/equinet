@@ -1,0 +1,376 @@
+# Vanliga Gotchas
+
+> Samling av vanliga problem och deras lösningar. Uppdateras löpande med nya learnings.
+
+## Innehåll
+
+1. [Next.js 16 Dynamic Params](#1-nextjs-16-dynamic-params)
+2. [Zod Error Handling](#2-zod-error-handling)
+3. [Turbopack Cache](#3-turbopack-cache)
+4. [NextAuth Session Update](#4-nextauth-session-update)
+5. [Rate Limiting i Serverless](#5-rate-limiting-i-serverless)
+6. [IDOR med Race Condition](#6-idor-med-race-condition)
+7. [Prisma Over-Fetching](#7-prisma-over-fetching)
+8. [Saknade Database Indexes](#8-saknade-database-indexes)
+9. [NextAuth v5 Migration](#9-nextauth-v5-migration)
+10. [TypeScript Memory Issues](#10-typescript-memory-issues)
+
+---
+
+## 1. Next.js 16 Dynamic Params
+
+**Problem:** Dynamic route params är en Promise i Next.js 16+.
+
+```typescript
+// ❌ FEL - params är INTE direkt tillgängliga
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const id = params.id  // Fungerar EJ!
+}
+
+// ✅ RÄTT - params är en Promise
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params  // Måste awaita!
+}
+```
+
+**Impact:** Runtime error om du inte awaitar params.
+
+---
+
+## 2. Zod Error Handling
+
+**Problem:** Zod använder `issues`, inte `errors`.
+
+```typescript
+// ❌ FEL - error.errors finns inte
+if (error instanceof z.ZodError) {
+  return { error: error.errors }  // undefined!
+}
+
+// ✅ RÄTT - använd error.issues
+if (error instanceof z.ZodError) {
+  return { error: error.issues }
+}
+```
+
+**Impact:** Returnerar `undefined` istället för valideringsfel.
+
+---
+
+## 3. Turbopack Cache
+
+**Problem:** Turbopack/Next.js cache kan bli korrupt och orsaka konstiga fel.
+
+**Symptom:**
+- Hot reload fungerar inte
+- Ändringar reflekteras inte
+- Konstiga importfel
+
+**Lösning:**
+```bash
+# Stoppa dev server
+pkill -f "next dev"
+
+# Rensa cache
+rm -rf .next node_modules/.cache
+
+# Starta om
+npm run dev
+```
+
+---
+
+## 4. NextAuth Session Update
+
+**Problem:** Session uppdateras inte automatiskt efter profile changes.
+
+```typescript
+// ❌ FEL - session är stale efter update
+const { data: session } = useSession()
+await updateProfile(newData)
+// session har fortfarande gamla värden!
+
+// ✅ RÄTT - trigga session refresh
+const { data: session, update } = useSession()
+await updateProfile(newData)
+await update()  // Hämta ny session från server
+```
+
+**Impact:** UI visar gamla profildata tills användaren laddar om sidan.
+
+---
+
+## 5. Rate Limiting i Serverless
+
+> **Learning: 2026-01-21** | **Severity: KRITISKT**
+
+**Problem:** In-memory rate limiting fungerar INTE i serverless (Vercel).
+
+```typescript
+// ❌ FEL - In-memory Map fungerar INTE i serverless
+const attempts = new Map<string, RateLimitRecord>()
+// Problem: Varje Vercel-instans har egen Map → rate limits är ineffektiva
+
+// ✅ RÄTT - Upstash Redis (serverless-kompatibel)
+import { Ratelimit } from "@upstash/ratelimit"
+import { Redis } from "@upstash/redis"
+
+export const rateLimiters = {
+  booking: new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+  })
+}
+
+// VIKTIGT: Rate limiters returnerar Promises, måste awaitas
+const { success } = await rateLimiters.booking.limit(userId)
+if (!success) return new Response("Too many requests", { status: 429 })
+```
+
+**Varför?**
+- Varje serverless-instans har sitt eget minne
+- In-memory Map delas INTE mellan instanser
+- Angripare kan kringgå rate limits genom att träffa olika instanser
+
+**Impact:** Production blocker! Rate limiting fungerar INTE utan Redis i serverless.
+
+**Required Environment Variables:**
+```bash
+UPSTASH_REDIS_REST_URL="https://..."
+UPSTASH_REDIS_REST_TOKEN="..."
+```
+
+---
+
+## 6. IDOR med Race Condition
+
+> **Learning: 2026-01-21** | **Severity: SÄKERHET**
+
+**Problem:** Authorization check FÖRE update skapar TOCTOU race condition.
+
+```typescript
+// ❌ FEL - Authorization check FÖRE update (TOCTOU race condition)
+const booking = await prisma.booking.findUnique({ where: { id } })
+if (booking.customerId !== userId) return 403
+// ⚠️ RACE CONDITION: booking kan ändras mellan check och update!
+await prisma.booking.update({ where: { id }, data: {...} })
+
+// ✅ RÄTT - Authorization i WHERE clause (atomärt)
+const result = await prisma.booking.update({
+  where: {
+    id,
+    customerId: userId  // Auth + operation i SAMMA query
+  },
+  data: {...}
+})
+
+if (!result) {
+  // Antingen finns inte booking, eller användaren äger den inte
+  return new Response("Not found or unauthorized", { status: 404 })
+}
+```
+
+**Varför?**
+- TOCTOU = Time-of-check to time-of-use
+- Mellan `findUnique` och `update` kan en annan request ändra datan
+- Atomär WHERE clause garanterar att check och operation sker i samma transaktion
+
+**Impact:** Eliminerar IDOR + race conditions!
+
+---
+
+## 7. Prisma Over-Fetching
+
+> **Learning: 2025-11-16** | **Severity: SÄKERHET + PERFORMANCE**
+
+**Problem:** `include` hämtar ALLT, inklusive känslig data.
+
+```typescript
+// ❌ FEL - include hämtar ALLT (over-fetching + exponerar känslig data)
+const providers = await prisma.provider.findMany({
+  include: {
+    services: true,
+    user: true,  // Ger oss email, phone, passwordHash!
+  }
+})
+
+// ✅ RÄTT - select endast vad som behövs
+const providers = await prisma.provider.findMany({
+  select: {
+    id: true,
+    businessName: true,
+    city: true,
+    services: {
+      select: {
+        id: true,
+        name: true,
+        price: true,
+      }
+    },
+    user: {
+      select: {
+        firstName: true,
+        lastName: true,
+        // email/phone ALDRIG i publikt API!
+      }
+    }
+  }
+})
+```
+
+**Impact:**
+- 40-50% mindre payload
+- GDPR-compliant (exponerar inte PII)
+- Bättre performance (mindre data över nätverket)
+
+---
+
+## 8. Saknade Database Indexes
+
+> **Learning: 2025-11-16** | **Severity: PERFORMANCE**
+
+**Problem:** Queries blir 10-30x långsammare utan indexes vid skalning.
+
+```prisma
+model Provider {
+  // ... fields ...
+
+  // ❌ SAKNAS - queries blir 10-30x långsammare vid skalning
+
+  // ✅ LÄGG TILL dessa från dag 1:
+  @@index([isActive, createdAt])  // För filter + sort
+  @@index([city])                  // För search/filter
+  @@index([businessName])          // För search
+}
+
+model Service {
+  // ... fields ...
+
+  @@index([providerId, isActive])  // Foreign key + filter
+}
+```
+
+**Pattern - Lägg alltid till index på:**
+- Fält du filtrerar på (`where: { isActive: true }`)
+- Fält du sorterar på (`orderBy: { createdAt: 'desc' }`)
+- Fält du söker på (`contains`, `startsWith`)
+- Foreign keys + vanliga filter-kombinationer
+
+**Impact:** 10-30x snabbare queries vid 1,000+ rows!
+
+**Verifiera med:**
+```sql
+EXPLAIN ANALYZE SELECT * FROM "Provider" WHERE city = 'Stockholm';
+```
+
+---
+
+## 9. NextAuth v5 Migration
+
+> **Learning: 2026-01-22** | **Severity: MEDIUM**
+
+**Problem:** NextAuth v5 har nytt API - gammal kod fungerar inte.
+
+### Auth i Server Components/API Routes
+
+```typescript
+// ❌ GAMMAL (NextAuth v4)
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+const session = await getServerSession(authOptions)
+
+// ✅ NY (NextAuth v5)
+import { auth } from "@/lib/auth"
+const session = await auth()
+```
+
+### API Route Handler
+
+```typescript
+// ❌ GAMMAL (v4)
+import NextAuth from "next-auth"
+export default NextAuth(authOptions)
+
+// ✅ NY (v5)
+import { handlers } from "@/lib/auth"
+export const { GET, POST } = handlers
+```
+
+### Middleware
+
+```typescript
+// ❌ GAMMAL (v4)
+import { withAuth } from "next-auth/middleware"
+export default withAuth(...)
+
+// ✅ NY (v5)
+import { auth } from "@/lib/auth"
+export default auth((req) => { ... })
+```
+
+### Test Mocks
+
+```typescript
+// ❌ GAMMAL mock
+vi.mock('next-auth', () => ({ getServerSession: vi.fn() }))
+vi.mocked(getServerSession).mockResolvedValue(session)
+
+// ✅ NY mock
+vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
+vi.mocked(auth).mockResolvedValue(session)
+
+// För auth-server.ts som kastar vid 401:
+vi.mocked(auth).mockRejectedValue(
+  NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+)
+```
+
+**Impact:** Enklare API, bättre Edge-kompatibilitet, mer naturlig middleware-integration.
+
+---
+
+## 10. TypeScript Memory Issues
+
+> **Learning: 2026-01-22** | **Severity: LOW**
+
+**Problem:** `tsc --noEmit` kraschar med "JavaScript heap out of memory".
+
+**Orsak:** Projekt med >150 TypeScript-filer + Next.js 16 type complexity.
+
+### Workaround 1: Öka heap (quick fix)
+```bash
+NODE_OPTIONS="--max-old-space-size=8192" npx tsc --noEmit
+```
+
+### Workaround 2: Använd next build istället
+```bash
+# next build kör egen type check
+npm run build
+```
+
+### Workaround 3: Incremental builds
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  }
+}
+```
+
+**Impact:** `next build` fungerar alltid, men standalone `tsc --noEmit` kan kräva mer minne.
+
+---
+
+## Relaterade Dokument
+
+- [CLAUDE.md](../CLAUDE.md) - Utvecklingsguide
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Bidragsguide
+- [Security Review](SECURITY-REVIEW-2026-01-21.md) - Senaste säkerhetsaudit
