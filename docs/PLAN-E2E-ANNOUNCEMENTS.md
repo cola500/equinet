@@ -106,12 +106,27 @@ npx playwright test
 
 ---
 
-## Efter E2E-testerna
+## Status
 
-1. Commita alla ändringar:
-   - Implementeringsfiler (fas 1-4)
-   - E2E-tester
-2. Pusha till remote
+**KLAR** - E2E-testerna är implementerade i `e2e/announcements.spec.ts`.
+
+### Implementerade tester:
+1. Public Announcements Page
+   - should display announcements page with search functionality
+   - should filter announcements by service type
+   - should clear filters
+
+2. Provider Announcements Management
+   - should display provider announcements page
+   - should create new announcement
+   - should navigate to announcement details
+   - should show booking details on announcement
+   - should confirm pending booking
+   - should cancel announcement
+
+3. Customer Booking on Announcement
+   - should show booking button for logged in customer
+   - should navigate to booking page from announcement
 
 ---
 
