@@ -104,6 +104,7 @@ model Booking {
   bookingDate   DateTime
   startTime     String
   endTime       String
+  timezone      String      @default("Europe/Stockholm") // Timezone för korrekt DST-hantering
   status        String      @default("pending") // pending, confirmed, cancelled, completed
   customerNotes String?
   horseName     String?
@@ -111,6 +112,7 @@ model Booking {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
   @@index([providerId, bookingDate, status])
   @@index([customerId, bookingDate])
   @@index([serviceId])
