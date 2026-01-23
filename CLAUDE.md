@@ -152,7 +152,7 @@ En feature är **DONE** när:
 
 ### 1. Funktionalitet
 - [ ] Fungerar som förväntat (manuellt testad)
-- [ ] Inga TypeScript-fel (`npx tsc --noEmit`)
+- [ ] Inga TypeScript-fel (`npm run typecheck`)
 - [ ] Inga console errors
 - [ ] Responsiv (desktop)
 
@@ -285,13 +285,19 @@ Före merge?          -> quality-gate
 - Databas-först -> typsäkerhet hela vägen
 - JSON parsing i API routes MÅSTE ha try-catch
 
+### TypeScript Memory Issues (2026-01-23)
+- `npx tsc --noEmit` kraschar med "heap out of memory" på stora projekt
+- Lösning: `tsconfig.typecheck.json` som exkluderar testfiler och använder incremental builds
+- Använd alltid `npm run typecheck` istället för `npx tsc --noEmit`
+- Pre-push hooken är redan konfigurerad korrekt
+
 ---
 
 ## Automated Quality Gates
 
 **Lokal Gate (Husky pre-push hook):**
 - Unit tests (`npm run test:run`)
-- TypeScript check (`npx tsc --noEmit`)
+- TypeScript check (`npm run typecheck`)
 
 **CI Gate (GitHub Actions):**
 - Unit tests + coverage
@@ -379,4 +385,4 @@ Före merge?          -> quality-gate
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-01-22
+**Senast uppdaterad**: 2026-01-23
