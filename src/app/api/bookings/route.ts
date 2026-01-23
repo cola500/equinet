@@ -174,6 +174,34 @@ export async function POST(request: NextRequest) {
 
     const validatedData = bookingSchema.parse(body)
 
+    // Validate routeOrderId if provided
+    if (validatedData.routeOrderId) {
+      const routeOrder = await prisma.routeOrder.findUnique({
+        where: { id: validatedData.routeOrderId },
+        select: { dateFrom: true, dateTo: true, status: true, providerId: true }
+      })
+
+      if (!routeOrder) {
+        return NextResponse.json({ error: "RouteOrder hittades inte" }, { status: 404 })
+      }
+
+      if (routeOrder.status !== "open") {
+        return NextResponse.json({ error: "Rutten är inte längre öppen för bokningar" }, { status: 400 })
+      }
+
+      const bookingDate = new Date(validatedData.bookingDate)
+      if (bookingDate < routeOrder.dateFrom || bookingDate > routeOrder.dateTo) {
+        return NextResponse.json(
+          { error: "Bokningsdatum måste vara inom ruttens datum-spann" },
+          { status: 400 }
+        )
+      }
+
+      if (validatedData.providerId !== routeOrder.providerId) {
+        return NextResponse.json({ error: "Provider matchar inte rutt-annonsen" }, { status: 400 })
+      }
+    }
+
     // Verify service exists and belongs to provider (include provider info for checks)
     const service = await prisma.service.findUnique({
       where: { id: validatedData.serviceId },

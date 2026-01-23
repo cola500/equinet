@@ -40,14 +40,24 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [serviceType, setServiceType] = useState("")
-  const [location, setLocation] = useState("")
   const [error, setError] = useState<string | null>(null)
+
+  // Geo-filtering state
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [radiusKm, setRadiusKm] = useState(50)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchAnnouncements()
   }, [])
 
-  const fetchAnnouncements = async (filters?: { serviceType?: string; location?: string }) => {
+  const fetchAnnouncements = async (filters?: {
+    serviceType?: string
+    latitude?: number
+    longitude?: number
+    radiusKm?: number
+  }) => {
     try {
       setIsLoading(true)
       setError(null)
@@ -57,8 +67,12 @@ export default function AnnouncementsPage() {
         params.append("serviceType", filters.serviceType)
       }
 
-      // Note: For MVP, we're not implementing geo-search yet
-      // This would require user's location or manual address input
+      // Add geo-filtering params
+      if (filters?.latitude && filters?.longitude && filters?.radiusKm) {
+        params.append("latitude", filters.latitude.toString())
+        params.append("longitude", filters.longitude.toString())
+        params.append("radiusKm", filters.radiusKm.toString())
+      }
 
       const url = params.toString()
         ? `/api/route-orders/announcements?${params.toString()}`
@@ -80,13 +94,89 @@ export default function AnnouncementsPage() {
   }
 
   const handleSearch = () => {
-    fetchAnnouncements({ serviceType, location })
+    fetchAnnouncements({
+      serviceType: serviceType || undefined,
+      latitude: userLocation?.lat,
+      longitude: userLocation?.lng,
+      radiusKm: userLocation ? radiusKm : undefined,
+    })
   }
 
   const handleClearFilters = () => {
     setServiceType("")
-    setLocation("")
+    setUserLocation(null)
+    setRadiusKm(50)
+    setLocationError(null)
     fetchAnnouncements()
+  }
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Din webbläsare stöder inte platsdelning")
+      return
+    }
+
+    setLocationLoading(true)
+    setLocationError(null)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+        setLocationLoading(false)
+        // Auto-search when location is obtained
+        fetchAnnouncements({
+          serviceType: serviceType || undefined,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          radiusKm,
+        })
+      },
+      (err) => {
+        console.error("Geolocation error:", err)
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setLocationError("Du nekade platsåtkomst. Tillåt platsdelning i webbläsarens inställningar.")
+            break
+          case err.POSITION_UNAVAILABLE:
+            setLocationError("Din plats kunde inte fastställas")
+            break
+          case err.TIMEOUT:
+            setLocationError("Det tog för lång tid att hämta din plats")
+            break
+          default:
+            setLocationError("Kunde inte hämta din plats")
+        }
+        setLocationLoading(false)
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000, // Cache for 5 minutes
+      }
+    )
+  }
+
+  const clearLocation = () => {
+    setUserLocation(null)
+    setLocationError(null)
+    fetchAnnouncements({
+      serviceType: serviceType || undefined,
+    })
+  }
+
+  const handleRadiusChange = (newRadius: number) => {
+    setRadiusKm(newRadius)
+    if (userLocation) {
+      fetchAnnouncements({
+        serviceType: serviceType || undefined,
+        latitude: userLocation.lat,
+        longitude: userLocation.lng,
+        radiusKm: newRadius,
+      })
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -96,6 +186,8 @@ export default function AnnouncementsPage() {
       day: "numeric",
     })
   }
+
+  const hasActiveFilters = serviceType || userLocation
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -138,43 +230,147 @@ export default function AnnouncementsPage() {
           {/* Search/Filter Section */}
           <div className="mb-8">
             <div className="flex flex-col gap-4">
-              <div className="flex gap-4">
+              {/* Filter Row */}
+              <div className="flex flex-wrap gap-4 items-start">
                 <Input
                   placeholder="Filtrera på tjänstetyp (t.ex. Hovslagning)..."
                   value={serviceType}
                   onChange={(e) => setServiceType(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 min-w-[200px]"
                 />
-                <Input
-                  placeholder="Plats (kommer snart)..."
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-64"
-                  disabled
-                />
+
+                {/* Location Controls */}
+                <div className="flex gap-2 items-center">
+                  {userLocation ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md">
+                        Position aktiv
+                      </span>
+                      <select
+                        value={radiusKm}
+                        onChange={(e) => handleRadiusChange(Number(e.target.value))}
+                        className="border rounded-md px-3 py-2 text-sm bg-white"
+                      >
+                        <option value={25}>25 km</option>
+                        <option value={50}>50 km</option>
+                        <option value={100}>100 km</option>
+                        <option value={200}>200 km</option>
+                      </select>
+                      <Button
+                        onClick={clearLocation}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-500"
+                      >
+                        X
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={requestLocation}
+                      variant="outline"
+                      disabled={locationLoading}
+                    >
+                      {locationLoading ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          Hämtar position...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="mr-2 h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          Använd min position
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
                 <Button onClick={handleSearch}>Sök</Button>
-                {(serviceType || location) && (
+                {hasActiveFilters && (
                   <Button variant="outline" onClick={handleClearFilters}>
                     Rensa
                   </Button>
                 )}
               </div>
-              {serviceType && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+
+              {/* Location Error */}
+              {locationError && (
+                <p className="text-sm text-red-600">{locationError}</p>
+              )}
+
+              {/* Active Filters Display */}
+              {hasActiveFilters && (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                   <span>Aktiva filter:</span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
-                    Tjänst: "{serviceType}"
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setServiceType("")
-                        fetchAnnouncements()
-                      }}
-                      className="hover:text-green-900"
-                    >
-                      ×
-                    </button>
-                  </span>
+                  {serviceType && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                      Tjänst: "{serviceType}"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setServiceType("")
+                          fetchAnnouncements({
+                            latitude: userLocation?.lat,
+                            longitude: userLocation?.lng,
+                            radiusKm: userLocation ? radiusKm : undefined,
+                          })
+                        }}
+                        className="hover:text-green-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {userLocation && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                      Inom {radiusKm} km
+                      <button
+                        type="button"
+                        onClick={clearLocation}
+                        className="hover:text-blue-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -217,20 +413,32 @@ export default function AnnouncementsPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Inga planerade rutter just nu
+                  {hasActiveFilters
+                    ? "Inga rutter matchar dina filter"
+                    : "Inga planerade rutter just nu"}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {serviceType
-                    ? "Inga rutter matchar dina sökfilter. Prova att ändra filtren."
+                  {hasActiveFilters
+                    ? "Prova att utöka sökradien eller ändra filtren."
                     : "Det finns inga planerade rutter tillgängliga just nu. Kom tillbaka senare!"}
                 </p>
-                <Link href="/providers">
-                  <Button>Sök bland alla leverantörer istället</Button>
-                </Link>
+                {hasActiveFilters ? (
+                  <Button onClick={handleClearFilters}>Rensa filter</Button>
+                ) : (
+                  <Link href="/providers">
+                    <Button>Sök bland alla leverantörer istället</Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-6">
+              {/* Results count */}
+              <p className="text-sm text-gray-600">
+                {announcements.length} {announcements.length === 1 ? "rutt hittad" : "rutter hittade"}
+                {userLocation && ` inom ${radiusKm} km`}
+              </p>
+
               {announcements.map((announcement) => (
                 <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>

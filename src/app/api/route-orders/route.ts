@@ -239,7 +239,7 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
       priority: "normal",
       specialInstructions: validated.specialInstructions,
       announcementType: "provider_announced",
-      status: "pending",
+      status: "open",
     },
     include: {
       provider: {
@@ -314,6 +314,9 @@ export async function GET(request: Request) {
         include: {
           routeStops: {
             orderBy: { stopOrder: "asc" }
+          },
+          _count: {
+            select: { bookings: true }
           }
         },
         orderBy: { createdAt: "desc" }
