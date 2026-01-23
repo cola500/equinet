@@ -4,6 +4,23 @@ import { auth } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
+// Valid UUIDs for testing (version 4, variant 8/9/a/b)
+const TEST_UUIDS = {
+  customer: '11111111-1111-4111-8111-111111111111',
+  provider: '22222222-2222-4222-8222-222222222222',
+  providerUser: '33333333-3333-4333-8333-333333333333',
+  service: '44444444-4444-4444-8444-444444444444',
+  booking: '55555555-5555-4555-8555-555555555555',
+  routeOrder: '66666666-6666-4666-8666-666666666666',
+  differentProvider: '77777777-7777-4777-8777-777777777777',
+}
+
+// Future date for booking tests (to pass "cannot book in the past" validation)
+const FUTURE_DATE = new Date()
+FUTURE_DATE.setDate(FUTURE_DATE.getDate() + 7)
+const FUTURE_DATE_ISO = FUTURE_DATE.toISOString()
+const FUTURE_DATE_STR = FUTURE_DATE.toISOString().split('T')[0]
+
 // Mock dependencies
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
@@ -191,23 +208,29 @@ describe('POST /api/bookings', () => {
     // Arrange
     const mockSession = {
       user: {
-        id: 'customer123',
+        id: TEST_UUIDS.customer,
         userType: 'customer',
       },
     }
 
     const mockService = {
-      id: 'service1',
+      id: TEST_UUIDS.service,
       name: 'Hovslagning',
-      providerId: 'provider123',
+      providerId: TEST_UUIDS.provider,
+      isActive: true,
+      provider: {
+        id: TEST_UUIDS.provider,
+        userId: TEST_UUIDS.providerUser, // Different from customer
+        isActive: true,
+      },
     }
 
     const mockBooking = {
-      id: 'booking1',
-      customerId: 'customer123',
-      providerId: 'provider123',
-      serviceId: 'service1',
-      bookingDate: new Date('2025-11-20'),
+      id: TEST_UUIDS.booking,
+      customerId: TEST_UUIDS.customer,
+      providerId: TEST_UUIDS.provider,
+      serviceId: TEST_UUIDS.service,
+      bookingDate: FUTURE_DATE,
       startTime: '10:00',
       endTime: '11:00',
       horseName: 'Thunder',
@@ -241,9 +264,9 @@ describe('POST /api/bookings', () => {
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
       body: JSON.stringify({
-        providerId: 'provider123',
-        serviceId: 'service1',
-        bookingDate: '2025-11-20',
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_ISO,
         startTime: '10:00',
         endTime: '11:00',
         horseName: 'Thunder',
@@ -258,7 +281,7 @@ describe('POST /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(201)
-    expect(data.id).toBe('booking1')
+    expect(data.id).toBe(TEST_UUIDS.booking)
     expect(data.horseName).toBe('Thunder')
     expect(data.customerNotes).toBe('Please be gentle')
     // Verify transaction was called
@@ -276,9 +299,9 @@ describe('POST /api/bookings', () => {
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
       body: JSON.stringify({
-        providerId: 'provider123',
-        serviceId: 'service1',
-        bookingDate: '2025-11-20',
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_ISO,
         startTime: '10:00',
         endTime: '11:00',
       }),
@@ -296,16 +319,16 @@ describe('POST /api/bookings', () => {
   it('should return 400 when service does not exist', async () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
+      user: { id: TEST_UUIDS.customer, userType: 'customer' },
     } as any)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
       body: JSON.stringify({
-        providerId: 'provider123',
-        serviceId: 'nonexistent',
-        bookingDate: '2025-11-20',
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_ISO,
         startTime: '10:00',
         endTime: '11:00',
       }),
@@ -317,22 +340,28 @@ describe('POST /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid service')
+    expect(data.error).toBe('Ogiltig tjänst')
   })
 
   it('should return 400 when service does not belong to provider', async () => {
     // Arrange
     const mockSession = {
       user: {
-        id: 'customer123',
+        id: TEST_UUIDS.customer,
         userType: 'customer',
       },
     }
 
     const mockService = {
-      id: 'service1',
+      id: TEST_UUIDS.service,
       name: 'Hovslagning',
-      providerId: 'different-provider', // Different provider!
+      providerId: TEST_UUIDS.differentProvider, // Different provider!
+      isActive: true,
+      provider: {
+        id: TEST_UUIDS.differentProvider,
+        userId: TEST_UUIDS.providerUser,
+        isActive: true,
+      },
     }
 
     vi.mocked(auth).mockResolvedValue(mockSession as any)
@@ -341,9 +370,9 @@ describe('POST /api/bookings', () => {
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
       body: JSON.stringify({
-        providerId: 'provider123',
-        serviceId: 'service1',
-        bookingDate: '2025-11-20',
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_ISO,
         startTime: '10:00',
         endTime: '11:00',
       }),
@@ -355,14 +384,14 @@ describe('POST /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid service')
+    expect(data.error).toBe('Ogiltig tjänst')
   })
 
   it('should return 400 for invalid data - missing required fields', async () => {
     // Arrange
     const mockSession = {
       user: {
-        id: 'customer123',
+        id: TEST_UUIDS.customer,
         userType: 'customer',
       },
     }
@@ -372,7 +401,7 @@ describe('POST /api/bookings', () => {
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
       body: JSON.stringify({
-        providerId: 'provider123',
+        providerId: TEST_UUIDS.provider,
         // Missing serviceId, bookingDate, etc
       }),
     })
@@ -391,24 +420,30 @@ describe('POST /api/bookings', () => {
       // Arrange
       const mockSession = {
         user: {
-          id: 'customer123',
+          id: TEST_UUIDS.customer,
           userType: 'customer',
         },
       }
 
       const mockService = {
-        id: 'service1',
+        id: TEST_UUIDS.service,
         name: 'Hovslagning',
-        providerId: 'provider123',
+        providerId: TEST_UUIDS.provider,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
       }
 
       const mockBooking = {
-        id: 'booking1',
-        customerId: 'customer123',
-        providerId: 'provider123',
-        serviceId: 'service1',
-        routeOrderId: 'announcement123', // LINKED!
-        bookingDate: new Date('2025-12-15'),
+        id: TEST_UUIDS.booking,
+        customerId: TEST_UUIDS.customer,
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        routeOrderId: TEST_UUIDS.routeOrder, // LINKED!
+        bookingDate: FUTURE_DATE,
         startTime: '10:00',
         endTime: '11:00',
         status: 'pending',
@@ -438,12 +473,12 @@ describe('POST /api/bookings', () => {
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
         body: JSON.stringify({
-          providerId: 'provider123',
-          serviceId: 'service1',
-          bookingDate: '2025-12-15',
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: FUTURE_DATE_ISO,
           startTime: '10:00',
           endTime: '11:00',
-          routeOrderId: 'announcement123', // NEW FIELD
+          routeOrderId: TEST_UUIDS.routeOrder, // NEW FIELD
         }),
       })
 
@@ -453,31 +488,37 @@ describe('POST /api/bookings', () => {
 
       // Assert
       expect(response.status).toBe(201)
-      expect(data.routeOrderId).toBe('announcement123')
+      expect(data.routeOrderId).toBe(TEST_UUIDS.routeOrder)
     })
 
     it('should accept bookings without routeOrderId (backward compatibility)', async () => {
       // Arrange
       const mockSession = {
         user: {
-          id: 'customer123',
+          id: TEST_UUIDS.customer,
           userType: 'customer',
         },
       }
 
       const mockService = {
-        id: 'service1',
+        id: TEST_UUIDS.service,
         name: 'Hovslagning',
-        providerId: 'provider123',
+        providerId: TEST_UUIDS.provider,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
       }
 
       const mockBooking = {
-        id: 'booking1',
-        customerId: 'customer123',
-        providerId: 'provider123',
-        serviceId: 'service1',
+        id: TEST_UUIDS.booking,
+        customerId: TEST_UUIDS.customer,
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
         routeOrderId: null, // NOT LINKED
-        bookingDate: new Date('2025-12-15'),
+        bookingDate: FUTURE_DATE,
         startTime: '10:00',
         endTime: '11:00',
         status: 'pending',
@@ -507,9 +548,9 @@ describe('POST /api/bookings', () => {
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
         body: JSON.stringify({
-          providerId: 'provider123',
-          serviceId: 'service1',
-          bookingDate: '2025-12-15',
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: FUTURE_DATE_ISO,
           startTime: '10:00',
           endTime: '11:00',
           // NO routeOrderId - should still work
@@ -525,19 +566,25 @@ describe('POST /api/bookings', () => {
       expect(data.routeOrderId).toBeNull()
     })
 
-    it('should return 404 when routeOrderId does not exist', async () => {
+    it('should return 400 when routeOrderId does not exist', async () => {
       // Arrange
       const mockSession = {
         user: {
-          id: 'customer123',
+          id: TEST_UUIDS.customer,
           userType: 'customer',
         },
       }
 
       const mockService = {
-        id: 'service1',
+        id: TEST_UUIDS.service,
         name: 'Hovslagning',
-        providerId: 'provider123',
+        providerId: TEST_UUIDS.provider,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
       }
 
       vi.mocked(auth).mockResolvedValue(mockSession as any)
@@ -556,12 +603,12 @@ describe('POST /api/bookings', () => {
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
         body: JSON.stringify({
-          providerId: 'provider123',
-          serviceId: 'service1',
-          bookingDate: '2025-12-15',
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: FUTURE_DATE_ISO,
           startTime: '10:00',
           endTime: '11:00',
-          routeOrderId: 'nonexistent123',
+          routeOrderId: TEST_UUIDS.routeOrder, // Will fail due to FK constraint mock
         }),
       })
 

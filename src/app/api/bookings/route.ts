@@ -9,16 +9,78 @@ import { logger } from "@/lib/logger"
 import { z } from "zod"
 
 const bookingSchema = z.object({
-  providerId: z.string(),
-  serviceId: z.string(),
-  bookingDate: z.string(),
-  startTime: z.string(),
-  endTime: z.string(),
-  horseName: z.string().optional(),
-  horseInfo: z.string().optional(),
-  customerNotes: z.string().optional(),
-  routeOrderId: z.string().optional(), // NEW: Link to provider announcement
-}).strict()
+  providerId: z.string().uuid("Ogiltigt provider-ID format"),
+  serviceId: z.string().uuid("Ogiltigt tjänst-ID format"),
+  bookingDate: z.string().datetime("Ogiltigt datumformat").refine(
+    (dateStr) => {
+      const bookingDate = new Date(dateStr)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return bookingDate >= today
+    },
+    { message: "Kan inte boka i det förflutna" }
+  ),
+  startTime: z.string().regex(
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/,
+    "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
+  ),
+  endTime: z.string().regex(
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/,
+    "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
+  ),
+  horseName: z.string().max(100, "Hästnamn för långt (max 100 tecken)").optional(),
+  horseInfo: z.string().max(500, "Hästinfo för lång (max 500 tecken)").optional(),
+  customerNotes: z.string().max(1000, "Anteckningar för långa (max 1000 tecken)").optional(),
+  routeOrderId: z.string().uuid("Ogiltigt ruttorder-ID format").optional(),
+}).strict().refine(
+  (data) => {
+    // Validera att endTime är efter startTime
+    const [startH, startM] = data.startTime.split(':').map(Number)
+    const [endH, endM] = data.endTime.split(':').map(Number)
+    const startMinutes = startH * 60 + startM
+    const endMinutes = endH * 60 + endM
+    return endMinutes > startMinutes
+  },
+  {
+    message: "Sluttid måste vara efter starttid",
+    path: ["endTime"]
+  }
+).refine(
+  (data) => {
+    // Validera minsta bokningstid (15 minuter)
+    const [startH, startM] = data.startTime.split(':').map(Number)
+    const [endH, endM] = data.endTime.split(':').map(Number)
+    const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM)
+    return durationMinutes >= 15
+  },
+  {
+    message: "Bokning måste vara minst 15 minuter",
+    path: ["endTime"]
+  }
+).refine(
+  (data) => {
+    // Validera maximal bokningstid (8 timmar)
+    const [startH, startM] = data.startTime.split(':').map(Number)
+    const [endH, endM] = data.endTime.split(':').map(Number)
+    const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM)
+    return durationMinutes <= 480
+  },
+  {
+    message: "Bokning kan inte överstiga 8 timmar",
+    path: ["endTime"]
+  }
+).refine(
+  (data) => {
+    // Validera öppettider (08:00-18:00)
+    const [startH] = data.startTime.split(':').map(Number)
+    const [endH] = data.endTime.split(':').map(Number)
+    return startH >= 8 && endH <= 18
+  },
+  {
+    message: "Bokning måste vara inom öppettider (08:00-18:00)",
+    path: ["startTime"]
+  }
+)
 
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
@@ -112,14 +174,47 @@ export async function POST(request: NextRequest) {
 
     const validatedData = bookingSchema.parse(body)
 
-    // Verify service exists and belongs to provider
+    // Verify service exists and belongs to provider (include provider info for checks)
     const service = await prisma.service.findUnique({
       where: { id: validatedData.serviceId },
+      include: {
+        provider: {
+          select: {
+            id: true,
+            userId: true,
+            isActive: true,
+          },
+        },
+      },
     })
 
     if (!service || service.providerId !== validatedData.providerId) {
       return NextResponse.json(
-        { error: "Invalid service" },
+        { error: "Ogiltig tjänst" },
+        { status: 400 }
+      )
+    }
+
+    // Check if service is active
+    if (!service.isActive) {
+      return NextResponse.json(
+        { error: "Tjänsten är inte längre tillgänglig" },
+        { status: 400 }
+      )
+    }
+
+    // Check if provider is active
+    if (!service.provider.isActive) {
+      return NextResponse.json(
+        { error: "Leverantören är för närvarande inte tillgänglig" },
+        { status: 400 }
+      )
+    }
+
+    // Prevent self-booking: customer cannot book their own service
+    if (service.provider.userId === session.user.id) {
+      return NextResponse.json(
+        { error: "Du kan inte boka din egen tjänst" },
         { status: 400 }
       )
     }
