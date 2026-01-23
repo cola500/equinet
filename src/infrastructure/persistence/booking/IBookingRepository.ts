@@ -13,9 +13,11 @@ export interface Booking {
   customerId: string
   providerId: string
   serviceId: string
+  routeOrderId?: string
   bookingDate: Date
   startTime: string
   endTime: string
+  timezone: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
   horseName?: string
   horseInfo?: string

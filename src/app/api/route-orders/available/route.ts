@@ -68,22 +68,24 @@ export async function GET(request: Request) {
     const providerLat = 57.7089 // Göteborg centrum
     const providerLon = 11.9746
 
-    const ordersWithDistance = routeOrders.map((order: { latitude: number; longitude: number; [key: string]: any }) => {
-      const distance = calculateDistance(
-        providerLat,
-        providerLon,
-        order.latitude,
-        order.longitude
-      )
+    const ordersWithDistance = routeOrders.map((order) => {
+      // Only calculate distance if coordinates exist
+      const distance = (order.latitude != null && order.longitude != null)
+        ? calculateDistance(providerLat, providerLon, order.latitude, order.longitude)
+        : Infinity // Orders without coordinates sorted last
 
       return {
         ...order,
-        distanceKm: Math.round(distance * 10) / 10 // Round to 1 decimal
+        distanceKm: distance === Infinity ? null : Math.round(distance * 10) / 10
       }
     })
 
-    // 5. Sort by distance
-    ordersWithDistance.sort((a: { distanceKm: number }, b: { distanceKm: number }) => a.distanceKm - b.distanceKm)
+    // 5. Sort by distance (null distances sorted last)
+    ordersWithDistance.sort((a, b) => {
+      if (a.distanceKm == null) return 1
+      if (b.distanceKm == null) return -1
+      return a.distanceKm - b.distanceKm
+    })
 
     return NextResponse.json(ordersWithDistance)
 

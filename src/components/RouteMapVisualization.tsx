@@ -66,7 +66,9 @@ export default function RouteMapVisualization({
     if (selectedOrders.length < 2) return null
     const path: [number, number][] = [[startLocation.lat, startLocation.lon]]
     selectedOrders.forEach(order => {
-      path.push([order.latitude, order.longitude])
+      if (order.latitude != null && order.longitude != null) {
+        path.push([order.latitude, order.longitude])
+      }
     })
     // Return to start
     path.push([startLocation.lat, startLocation.lon])
@@ -79,7 +81,7 @@ export default function RouteMapVisualization({
     const path: [number, number][] = [[startLocation.lat, startLocation.lon]]
     optimizedOrderIds.forEach(id => {
       const order = orders.find(o => o.id === id)
-      if (order) {
+      if (order && order.latitude != null && order.longitude != null) {
         path.push([order.latitude, order.longitude])
       }
     })
@@ -252,8 +254,10 @@ export default function RouteMapVisualization({
       linesRef.current.push(optimizedLine)
     }
 
-    // Add order markers
+    // Add order markers (only for orders with coordinates)
     selectedOrders.forEach((order, index) => {
+      if (order.latitude == null || order.longitude == null) return
+
       const optimizedIndex = optimizedOrderIds?.indexOf(order.id)
       const displayNumber = optimizedIndex !== undefined && optimizedIndex >= 0
         ? optimizedIndex + 1
@@ -280,10 +284,12 @@ export default function RouteMapVisualization({
       markersRef.current.push(marker)
     })
 
-    // Fit bounds to show all markers
+    // Fit bounds to show all markers (only orders with coordinates)
     try {
+      const ordersWithCoords = selectedOrders.filter(o => o.latitude != null && o.longitude != null)
+      if (ordersWithCoords.length === 0) return
       const bounds = L.latLngBounds(
-        selectedOrders.map(o => [o.latitude, o.longitude] as [number, number])
+        ordersWithCoords.map(o => [o.latitude!, o.longitude!] as [number, number])
       )
       map.fitBounds(bounds, { padding: [50, 50] })
     } catch (e) {

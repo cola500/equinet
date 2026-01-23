@@ -48,18 +48,21 @@ export async function POST(request: Request) {
       // Add estimated duration for this stop (1 hour per horse by default)
       totalDuration += order.numberOfHorses * 60
 
-      // Add travel time if not first stop
+      // Add travel time if not first stop (only if both have coordinates)
       if (i > 0) {
         const prevOrder = orders[i - 1]
-        const distance = calculateDistance(
-          prevOrder.latitude,
-          prevOrder.longitude,
-          order.latitude,
-          order.longitude
-        )
-        totalDistance += distance
-        // Assume 50 km/h average speed, add travel time
-        totalDuration += (distance / 50) * 60
+        if (prevOrder.latitude != null && prevOrder.longitude != null &&
+            order.latitude != null && order.longitude != null) {
+          const distance = calculateDistance(
+            prevOrder.latitude,
+            prevOrder.longitude,
+            order.latitude,
+            order.longitude
+          )
+          totalDistance += distance
+          // Assume 50 km/h average speed, add travel time
+          totalDuration += (distance / 50) * 60
+        }
       }
     }
 
@@ -111,14 +114,17 @@ export async function POST(request: Request) {
 
         if (i < orders.length - 1) {
           const nextOrder = orders[i + 1]
-          const distance = calculateDistance(
-            order.latitude,
-            order.longitude,
-            nextOrder.latitude,
-            nextOrder.longitude
-          )
-          const travelTimeMinutes = (distance / 50) * 60
-          currentTime = new Date(currentTime.getTime() + travelTimeMinutes * 60000)
+          if (order.latitude != null && order.longitude != null &&
+              nextOrder.latitude != null && nextOrder.longitude != null) {
+            const distance = calculateDistance(
+              order.latitude,
+              order.longitude,
+              nextOrder.latitude,
+              nextOrder.longitude
+            )
+            const travelTimeMinutes = (distance / 50) * 60
+            currentTime = new Date(currentTime.getTime() + travelTimeMinutes * 60000)
+          }
         }
       }
 
