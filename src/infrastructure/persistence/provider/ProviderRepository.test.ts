@@ -108,7 +108,7 @@ describe('ProviderRepository', () => {
       expect(result[0]).toEqual(stockholm)
     })
 
-    it('should filter by city case-insensitively', async () => {
+    it('should filter by city with partial match (prefix)', async () => {
       // Arrange
       const uppsala: Provider = {
         id: 'provider-1',
@@ -122,18 +122,18 @@ describe('ProviderRepository', () => {
       }
       await repository.save(uppsala)
 
-      // Act - search with different cases
-      const lowercaseResult = await repository.findAll({ city: 'uppsala' })
-      const uppercaseResult = await repository.findAll({ city: 'UPPSALA' })
-      const mixedCaseResult = await repository.findAll({ city: 'UpPsAlA' })
+      // Act - search with prefix (different cases)
+      const prefixResult = await repository.findAll({ city: 'upp' })
+      const uppercasePrefixResult = await repository.findAll({ city: 'UPP' })
+      const fullMatchResult = await repository.findAll({ city: 'Uppsala' })
 
-      // Assert - all should find the same provider
-      expect(lowercaseResult).toHaveLength(1)
-      expect(lowercaseResult[0]).toEqual(uppsala)
-      expect(uppercaseResult).toHaveLength(1)
-      expect(uppercaseResult[0]).toEqual(uppsala)
-      expect(mixedCaseResult).toHaveLength(1)
-      expect(mixedCaseResult[0]).toEqual(uppsala)
+      // Assert - all should find the provider
+      expect(prefixResult).toHaveLength(1)
+      expect(prefixResult[0]).toEqual(uppsala)
+      expect(uppercasePrefixResult).toHaveLength(1)
+      expect(uppercasePrefixResult[0]).toEqual(uppsala)
+      expect(fullMatchResult).toHaveLength(1)
+      expect(fullMatchResult[0]).toEqual(uppsala)
     })
 
     it('should filter by active status', async () => {

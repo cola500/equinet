@@ -30,7 +30,7 @@ export class ProviderRepository implements IProviderRepository {
 
     if (filters?.city) {
       where.city = {
-        equals: filters.city,
+        startsWith: filters.city,
         mode: 'insensitive',
       }
     }
@@ -68,7 +68,7 @@ export class ProviderRepository implements IProviderRepository {
 
     if (filters?.city) {
       where.city = {
-        equals: filters.city,
+        startsWith: filters.city,
         mode: 'insensitive',
       }
     }
