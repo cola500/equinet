@@ -25,9 +25,10 @@ export class MockProviderRepository implements IProviderRepository {
       return results
     }
 
-    // Filter by city
+    // Filter by city (case-insensitive)
     if (filters.city) {
-      results = results.filter((p) => p.city === filters.city)
+      const cityLower = filters.city.toLowerCase()
+      results = results.filter((p) => p.city?.toLowerCase() === cityLower)
     }
 
     // Filter by active status

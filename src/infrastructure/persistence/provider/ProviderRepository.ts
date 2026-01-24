@@ -29,7 +29,10 @@ export class ProviderRepository implements IProviderRepository {
     }
 
     if (filters?.city) {
-      where.city = filters.city
+      where.city = {
+        equals: filters.city,
+        mode: 'insensitive',
+      }
     }
 
     if (filters?.search) {
@@ -64,7 +67,10 @@ export class ProviderRepository implements IProviderRepository {
     }
 
     if (filters?.city) {
-      where.city = filters.city
+      where.city = {
+        equals: filters.city,
+        mode: 'insensitive',
+      }
     }
 
     if (filters?.search) {

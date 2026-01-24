@@ -108,6 +108,34 @@ describe('ProviderRepository', () => {
       expect(result[0]).toEqual(stockholm)
     })
 
+    it('should filter by city case-insensitively', async () => {
+      // Arrange
+      const uppsala: Provider = {
+        id: 'provider-1',
+        userId: 'user-1',
+        businessName: 'Uppsala Hovslagare',
+        description: 'Professional farrier in Uppsala',
+        city: 'Uppsala',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      await repository.save(uppsala)
+
+      // Act - search with different cases
+      const lowercaseResult = await repository.findAll({ city: 'uppsala' })
+      const uppercaseResult = await repository.findAll({ city: 'UPPSALA' })
+      const mixedCaseResult = await repository.findAll({ city: 'UpPsAlA' })
+
+      // Assert - all should find the same provider
+      expect(lowercaseResult).toHaveLength(1)
+      expect(lowercaseResult[0]).toEqual(uppsala)
+      expect(uppercaseResult).toHaveLength(1)
+      expect(uppercaseResult[0]).toEqual(uppsala)
+      expect(mixedCaseResult).toHaveLength(1)
+      expect(mixedCaseResult[0]).toEqual(uppsala)
+    })
+
     it('should filter by active status', async () => {
       // Arrange
       const active: Provider = {
