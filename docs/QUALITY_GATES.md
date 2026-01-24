@@ -16,7 +16,7 @@ Quality Gates är automatiserade kontroller som körs vid varje PR och push till
 2. ✅ **E2E Tests** - User flows fungerar
 3. ✅ **TypeScript Check** - Inga type errors
 4. ✅ **Build Check** - Applikationen bygger utan fel
-5. ✅ **Lint Check** - Kod följer standards (warning för nu)
+5. ✅ **Lint Check** - Kod följer standards (errors blockerar, warnings tillåtna)
 
 ---
 
@@ -104,7 +104,7 @@ Coverage  82.5% (✅ Pass threshold 70%)
 
 ### Gate 3: TypeScript Check
 
-**Kör**: `npx tsc --noEmit`
+**Kör**: `npx tsc --project tsconfig.typecheck.json`
 
 **Vad kontrolleras**:
 - Inga type errors
@@ -150,9 +150,9 @@ const booking: Booking = { id: '123' }
 - ESLint rules
 - Code style consistency
 
-**Status**: `continue-on-error: true` (warnings tillåtna för nu)
+**Status**: Strict (errors blockerar merge, warnings tillåtna)
 
-**Future**: Gör strict när codebase är clean
+**ESLint Flat Config**: Använder ny ESLint 9 flat config med `@next/eslint-plugin-next`
 
 ---
 
@@ -279,8 +279,12 @@ npx playwright test --debug e2e/booking.spec.ts
 
 **Debug**:
 ```bash
-npx tsc --noEmit
+npm run typecheck
+# eller
+npx tsc --project tsconfig.typecheck.json
 ```
+
+**Note**: Använd `tsconfig.typecheck.json` som exkluderar testfiler för att undvika memory issues.
 
 **Common Causes**:
 - Missing type definitions
@@ -321,28 +325,38 @@ npm test
 npm run test:coverage
 
 # 3. TypeScript
-npx tsc --noEmit
+npm run typecheck
 
-# 4. E2E (optional, takes time)
+# 4. Lint
+npm run lint
+
+# 5. E2E (optional, takes time)
 npm run test:e2e
 
-# 5. Build
+# 6. Build
 npm run build
 ```
 
-### Pre-Push Hook (Optional)
+### Pre-Push Hook (Husky)
 
-Create `.git/hooks/pre-push`:
+Automatisk pre-push hook körs via Husky (`.husky/pre-push`):
 
 ```bash
-#!/bin/bash
-echo "Running quality gates..."
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
 
-npm test || exit 1
-npm run test:coverage || exit 1
-npx tsc --noEmit || exit 1
+echo "🔒 Running pre-push quality checks..."
 
-echo "✅ Quality gates passed!"
+# Run unit tests
+npm run test:run || exit 1
+
+# Run TypeScript check
+npx tsc --project tsconfig.typecheck.json || exit 1
+
+# Run lint check
+npm run lint || exit 1
+
+echo "✅ All local checks passed!"
 ```
 
 ---
@@ -358,9 +372,7 @@ En PR är **klar för merge** när:
 - [ ] ✅ All E2E tests pass
 - [ ] ✅ No TypeScript errors
 - [ ] ✅ Build successful
-
-### Should Pass (Warnings OK)
-- [ ] ⚠️ Lint checks (warnings allowed)
+- [ ] ✅ No lint errors (warnings are OK)
 
 ### Manual Review
 - [ ] 👀 Code review approved
@@ -453,5 +465,5 @@ Sprint 8: 80% (Mature)
 ---
 
 **Maintained by**: Quality-Gate Agent
-**Last Updated**: 2025-11-19
-**Next Review**: After Sprint 1
+**Last Updated**: 2026-01-24
+**Next Review**: After Sprint 2

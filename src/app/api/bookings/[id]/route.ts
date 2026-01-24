@@ -32,7 +32,7 @@ export async function PUT(
     const validatedData = updateBookingSchema.parse(body)
 
     // Build authorization filter based on user type
-    let whereClause: { id: string; customerId?: string; providerId?: string } = { id }
+    const whereClause: { id: string; customerId?: string; providerId?: string } = { id }
 
     if (session.user.userType === "provider") {
       const provider = await prisma.provider.findUnique({
@@ -117,7 +117,7 @@ export async function DELETE(
     const session = await auth()
 
     // Build authorization filter based on user type
-    let whereClause: { id: string; customerId?: string; providerId?: string } = { id }
+    const whereClause: { id: string; customerId?: string; providerId?: string } = { id }
 
     if (session.user.userType === "provider") {
       const provider = await prisma.provider.findUnique({

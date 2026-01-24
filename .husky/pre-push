@@ -21,4 +21,13 @@ npx tsc --project tsconfig.typecheck.json || {
 }
 
 echo ""
+
+# Run lint check
+echo "🔍 Running lint check..."
+npm run lint || {
+  echo "❌ Lint errors found! Fix lint errors before pushing."
+  exit 1
+}
+
+echo ""
 echo "✅ All local checks passed! Pushing to remote..."
