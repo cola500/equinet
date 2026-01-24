@@ -291,6 +291,15 @@ Före merge?          -> quality-gate
 - Använd alltid `npm run typecheck` istället för `npx tsc --noEmit`
 - Pre-push hooken är redan konfigurerad korrekt
 
+### ESLint + Next.js 16 (2026-01-24)
+- FlatCompat skapar circular structure med react-hooks plugin
+- Lösning: Använd direkta plugin-importer i `eslint.config.mjs`
+- `prefer-const` gäller även objekt som muteras (variabeln reassignas aldrig)
+
+### GitHub Workflow Permissions (2026-01-24)
+- Ändring av `.github/workflows/` kräver `workflow` scope
+- Fix: `gh auth login --scopes workflow`
+
 ---
 
 ## Automated Quality Gates
