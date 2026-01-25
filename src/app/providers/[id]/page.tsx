@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
 import { format, addDays } from "date-fns"
 import { sv } from "date-fns/locale"
+import { Header } from "@/components/layout/Header"
 
 interface Service {
   id: string
@@ -250,30 +251,21 @@ export default function ProviderDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-green-800">
-            Equinet
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/providers">
-              <Button variant="ghost">Tillbaka till leverantörer</Button>
-            </Link>
-            {user && (
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  Dashboard
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          {/* Back Link */}
+          <Link
+            href="/providers"
+            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
+          >
+            <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Tillbaka till leverantörer
+          </Link>
           {/* Provider Info */}
           <Card className="mb-8">
             <CardHeader>

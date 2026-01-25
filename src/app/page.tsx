@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/Header"
+import { AnnouncementPreview } from "@/components/AnnouncementPreview"
 
 export default function Home() {
   return (
@@ -102,6 +103,9 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        {/* Announcements Preview Section */}
+        <AnnouncementPreview />
 
         {/* CTA Section for Providers */}
         <div className="mt-32 bg-green-800 text-white rounded-2xl p-12 text-center">

@@ -6,7 +6,15 @@ import { usePathname } from "next/navigation"
 export function CustomerNav() {
   const pathname = usePathname()
 
-  const isActive = (path: string) => pathname === path
+  const isActive = (path: string) => {
+    if (path === "/announcements") {
+      return pathname.startsWith("/announcements")
+    }
+    if (path === "/providers") {
+      return pathname.startsWith("/providers")
+    }
+    return pathname === path
+  }
 
   return (
     <nav className="bg-white border-b">
@@ -21,6 +29,17 @@ export function CustomerNav() {
             }`}
           >
             Hitta tjänster
+          </Link>
+          <Link
+            href="/announcements"
+            aria-current={isActive("/announcements") ? "page" : undefined}
+            className={`py-3 ${
+              isActive("/announcements")
+                ? "border-b-2 border-green-600 text-green-600 font-medium"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Planerade rutter
           </Link>
           <Link
             href="/customer/bookings"

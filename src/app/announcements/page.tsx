@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/useAuth"
+import { Header } from "@/components/layout/Header"
 
 interface RouteStop {
   id: string
@@ -191,33 +192,7 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-green-800">
-            Equinet
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/providers">
-              <Button variant="ghost">Sök leverantörer</Button>
-            </Link>
-            {user ? (
-              <Link href={user.userType === "provider" ? "/provider/dashboard" : "/customer/bookings"}>
-                <Button>Min sida</Button>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost">Logga in</Button>
-                </Link>
-                <Link href="/register">
-                  <Button>Registrera</Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

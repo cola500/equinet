@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { CustomerNav } from "./CustomerNav"
 
 export function Header() {
   const { user, isAuthenticated, isProvider, isCustomer } = useAuth()
@@ -20,6 +21,7 @@ export function Header() {
   }
 
   return (
+    <>
     <header className="bg-white border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-green-800">
@@ -84,5 +86,7 @@ export function Header() {
         </div>
       </div>
     </header>
+    {isAuthenticated && isCustomer && <CustomerNav />}
+    </>
   )
 }
