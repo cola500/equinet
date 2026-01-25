@@ -131,11 +131,11 @@ export async function PUT(
       const postalCodeToGeocode = validated.postalCode ?? existingProvider.postalCode
 
       if (addressToGeocode) {
-        const geocoded = await geocodeAddress(
-          addressToGeocode,
-          cityToGeocode ?? undefined,
-          postalCodeToGeocode ?? undefined
-        )
+        // Build full address string
+        const fullAddress = [addressToGeocode, cityToGeocode, postalCodeToGeocode]
+          .filter(Boolean)
+          .join(', ')
+        const geocoded = await geocodeAddress(fullAddress)
 
         if (geocoded) {
           latitude = geocoded.latitude

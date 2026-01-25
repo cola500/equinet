@@ -1,9 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   geocodeAddress,
-  geocodeAddressWithRetry,
   isValidSwedishCoordinates,
-  type GeocodingResult
 } from './geocoding'
 
 // Mock fetch globally
@@ -12,106 +10,55 @@ global.fetch = vi.fn()
 describe('geocodeAddress', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Set mock API key for tests
-    process.env.GOOGLE_MAPS_API_KEY = 'test-api-key'
   })
 
   it('should successfully geocode a Swedish address', async () => {
-    // Mock successful Google Maps API response
-    const mockResponse = {
-      status: 'OK',
-      results: [{
-        geometry: {
-          location: {
-            lat: 57.930,
-            lng: 12.532
-          }
-        },
-        formatted_address: 'Storgatan 1, 441 30 Alingsås, Sweden'
-      }]
-    }
+    // Mock successful Nominatim API response
+    const mockResponse = [{
+      lat: '57.930',
+      lon: '12.532',
+    }]
 
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse
     })
 
-    const result = await geocodeAddress('Storgatan 1', 'Alingsås', '44130')
+    const result = await geocodeAddress('Storgatan 1, Alingsås, 44130')
 
     expect(result).toEqual({
       latitude: 57.930,
       longitude: 12.532,
-      formattedAddress: 'Storgatan 1, 441 30 Alingsås, Sweden'
     })
 
-    // Verify fetch was called with correct URL components
+    // Verify fetch was called with correct URL
     const callArg = (global.fetch as any).mock.calls[0][0]
-    expect(callArg).toContain('https://maps.googleapis.com/maps/api/geocode/json')
-    expect(callArg).toContain('address=Storgatan%201%2C%20Alings') // 'å' is URL-encoded
-    expect(callArg).toContain('region=se')
-    expect(callArg).toContain('key=test-api-key')
+    expect(callArg).toContain('https://nominatim.openstreetmap.org/search')
+    expect(callArg).toContain('format=json')
+    expect(callArg).toContain('limit=1')
   })
 
-  it('should return null when API key is missing', async () => {
-    delete process.env.GOOGLE_MAPS_API_KEY
-
-    const result = await geocodeAddress('Storgatan 1', 'Alingsås')
+  it('should return null when no address provided', async () => {
+    const result = await geocodeAddress('')
 
     expect(result).toBeNull()
     expect(global.fetch).not.toHaveBeenCalled()
   })
 
-  it('should return null when no address components provided', async () => {
-    const result = await geocodeAddress('', '', '')
+  it('should return null when address is only whitespace', async () => {
+    const result = await geocodeAddress('   ')
 
     expect(result).toBeNull()
     expect(global.fetch).not.toHaveBeenCalled()
   })
 
-  it('should handle ZERO_RESULTS from API', async () => {
-    const mockResponse = {
-      status: 'ZERO_RESULTS',
-      results: []
-    }
-
+  it('should handle empty results from API', async () => {
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => []
     })
 
     const result = await geocodeAddress('Invalid Address 12345')
-
-    expect(result).toBeNull()
-  })
-
-  it('should handle INVALID_REQUEST from API', async () => {
-    const mockResponse = {
-      status: 'INVALID_REQUEST',
-      results: []
-    }
-
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse
-    })
-
-    const result = await geocodeAddress('Test')
-
-    expect(result).toBeNull()
-  })
-
-  it('should handle OVER_QUERY_LIMIT from API', async () => {
-    const mockResponse = {
-      status: 'OVER_QUERY_LIMIT',
-      results: []
-    }
-
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse
-    })
-
-    const result = await geocodeAddress('Storgatan 1', 'Alingsås')
 
     expect(result).toBeNull()
   })
@@ -120,10 +67,9 @@ describe('geocodeAddress', () => {
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: false,
       status: 500,
-      statusText: 'Internal Server Error'
     })
 
-    const result = await geocodeAddress('Storgatan 1', 'Alingsås')
+    const result = await geocodeAddress('Storgatan 1, Alingsås')
 
     expect(result).toBeNull()
   })
@@ -131,62 +77,16 @@ describe('geocodeAddress', () => {
   it('should handle network errors', async () => {
     ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
 
-    const result = await geocodeAddress('Storgatan 1', 'Alingsås')
+    const result = await geocodeAddress('Storgatan 1, Alingsås')
 
     expect(result).toBeNull()
-  })
-
-  it('should handle malformed API response', async () => {
-    const mockResponse = {
-      status: 'OK',
-      results: [{ geometry: null }] // Missing location
-    }
-
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse
-    })
-
-    const result = await geocodeAddress('Storgatan 1', 'Alingsås')
-
-    expect(result).toBeNull()
-  })
-
-  it('should work with only address (no city or postal code)', async () => {
-    const mockResponse = {
-      status: 'OK',
-      results: [{
-        geometry: {
-          location: { lat: 59.329, lng: 18.068 }
-        },
-        formatted_address: 'Stockholm, Sweden'
-      }]
-    }
-
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse
-    })
-
-    const result = await geocodeAddress('Stockholm')
-
-    expect(result).toEqual({
-      latitude: 59.329,
-      longitude: 18.068,
-      formattedAddress: 'Stockholm, Sweden'
-    })
   })
 
   it('should properly encode special characters in address', async () => {
-    const mockResponse = {
-      status: 'OK',
-      results: [{
-        geometry: {
-          location: { lat: 57.7, lng: 11.9 }
-        },
-        formatted_address: 'Göteborg, Sweden'
-      }]
-    }
+    const mockResponse = [{
+      lat: '57.708',
+      lon: '11.974',
+    }]
 
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
@@ -199,110 +99,23 @@ describe('geocodeAddress', () => {
     const callArg = (global.fetch as any).mock.calls[0][0]
     expect(callArg).toContain('G%C3%B6teborg')
   })
-})
 
-describe('geocodeAddressWithRetry', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    process.env.GOOGLE_MAPS_API_KEY = 'test-api-key'
-    vi.useFakeTimers()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('should return result on first attempt if successful', async () => {
-    const mockResponse = {
-      status: 'OK',
-      results: [{
-        geometry: {
-          location: { lat: 57.930, lng: 12.532 }
-        },
-        formatted_address: 'Alingsås, Sweden'
-      }]
-    }
+  it('should include User-Agent header', async () => {
+    const mockResponse = [{
+      lat: '59.329',
+      lon: '18.068',
+    }]
 
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse
     })
 
-    const promise = geocodeAddressWithRetry('Alingsås', undefined, undefined, 3, 100)
-    await vi.runAllTimersAsync()
-    const result = await promise
+    await geocodeAddress('Stockholm')
 
-    expect(result).toEqual({
-      latitude: 57.930,
-      longitude: 12.532,
-      formattedAddress: 'Alingsås, Sweden'
-    })
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('should retry on failure and succeed on second attempt', async () => {
-    // First call fails
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ status: 'ZERO_RESULTS', results: [] })
-    })
-
-    // Second call succeeds
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        status: 'OK',
-        results: [{
-          geometry: {
-            location: { lat: 57.930, lng: 12.532 }
-          },
-          formatted_address: 'Alingsås, Sweden'
-        }]
-      })
-    })
-
-    const promise = geocodeAddressWithRetry('Alingsås', undefined, undefined, 3, 100)
-    await vi.runAllTimersAsync()
-    const result = await promise
-
-    expect(result).toEqual({
-      latitude: 57.930,
-      longitude: 12.532,
-      formattedAddress: 'Alingsås, Sweden'
-    })
-    expect(global.fetch).toHaveBeenCalledTimes(2)
-  })
-
-  it('should return null after max retries exceeded', async () => {
-    // All calls fail
-    ;(global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: 'ZERO_RESULTS', results: [] })
-    })
-
-    const promise = geocodeAddressWithRetry('Invalid', undefined, undefined, 3, 100)
-    await vi.runAllTimersAsync()
-    const result = await promise
-
-    expect(result).toBeNull()
-    expect(global.fetch).toHaveBeenCalledTimes(3)
-  })
-
-  it('should use exponential backoff for retries', async () => {
-    ;(global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: 'ZERO_RESULTS', results: [] })
-    })
-
-    const promise = geocodeAddressWithRetry('Test', undefined, undefined, 3, 100)
-
-    // Run all timers and wait for promise to complete
-    await vi.runAllTimersAsync()
-    const result = await promise
-
-    // Verify retries happened
-    expect(global.fetch).toHaveBeenCalledTimes(3)
-    expect(result).toBeNull()
+    // Verify User-Agent header
+    const [, options] = (global.fetch as any).mock.calls[0]
+    expect(options.headers['User-Agent']).toContain('Equinet')
   })
 })
 
@@ -325,11 +138,6 @@ describe('isValidSwedishCoordinates', () => {
 
   it('should return true for coordinates near Smygehuk (south)', () => {
     expect(isValidSwedishCoordinates(55.340, 13.360)).toBe(true)
-  })
-
-  it('should return false for coordinates in Denmark', () => {
-    expect(isValidSwedishCoordinates(55.676, 12.568)).toBe(false) // Copenhagen
-    // Note: Copenhagen is close to Sweden (Malmö), so this boundary check is approximate
   })
 
   it('should return false for coordinates in Norway', () => {

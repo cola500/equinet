@@ -62,11 +62,11 @@ async function main() {
       console.log(`   Processing: ${provider.businessName}`)
       console.log(`   Address: ${provider.address}, ${provider.city || ''}, ${provider.postalCode || ''}`)
 
-      const geocoded = await geocodeAddress(
-        provider.address!,
-        provider.city || undefined,
-        provider.postalCode || undefined
-      )
+      // Build full address string
+      const fullAddress = [provider.address, provider.city, provider.postalCode]
+        .filter(Boolean)
+        .join(', ')
+      const geocoded = await geocodeAddress(fullAddress)
 
       if (geocoded) {
         // Update provider with coordinates
@@ -78,8 +78,7 @@ async function main() {
           },
         })
 
-        console.log(`   ✅ Success: (${geocoded.latitude}, ${geocoded.longitude})`)
-        console.log(`   Formatted: ${geocoded.formattedAddress}\n`)
+        console.log(`   ✅ Success: (${geocoded.latitude}, ${geocoded.longitude})\n`)
         successCount++
       } else {
         console.log(`   ⚠️  Failed: Could not geocode address\n`)

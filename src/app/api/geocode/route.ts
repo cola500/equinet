@@ -4,19 +4,19 @@ import { geocodeAddress } from "@/lib/geocoding"
 /**
  * GET /api/geocode
  *
- * Geocode an address to coordinates using Google Maps API
+ * Geocode an address to coordinates using Nominatim (OpenStreetMap)
  *
  * Query parameters:
  * - address: The address to geocode (required)
- * - city: Optional city name
- * - postalCode: Optional postal code
+ * - city: Optional city name (will be appended to address)
+ * - postalCode: Optional postal code (will be appended to address)
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const address = searchParams.get("address")
-    const city = searchParams.get("city") || undefined
-    const postalCode = searchParams.get("postalCode") || undefined
+    const city = searchParams.get("city")
+    const postalCode = searchParams.get("postalCode")
 
     if (!address) {
       return NextResponse.json(
@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const result = await geocodeAddress(address, city, postalCode)
+    // Build full address string
+    const fullAddress = [address, city, postalCode].filter(Boolean).join(', ')
+    const result = await geocodeAddress(fullAddress)
 
     if (!result) {
       return NextResponse.json(

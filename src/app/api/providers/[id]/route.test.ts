@@ -255,7 +255,6 @@ describe('PUT /api/providers/[id]', () => {
     vi.mocked(geocoding.geocodeAddress).mockResolvedValue({
       latitude: 57.930,
       longitude: 12.532,
-      formattedAddress: 'Storgatan 1, 441 30 Alingsås, Sweden',
     })
 
     // Mock successful update
@@ -285,11 +284,9 @@ describe('PUT /api/providers/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert - Geocoding was called
+    // Assert - Geocoding was called with full address string
     expect(geocoding.geocodeAddress).toHaveBeenCalledWith(
-      'Storgatan 1',
-      'Alingsås',
-      '44130'
+      'Storgatan 1, Alingsås, 44130'
     )
 
     // Assert - Provider updated with coordinates
