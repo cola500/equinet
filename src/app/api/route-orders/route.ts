@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { geocodeAddress } from "@/lib/geocoding"
 
 // Validation schema for route stop
 const routeStopSchema = z.object({
@@ -222,10 +223,37 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
     )
   }
 
-  // 3. Use first stop as primary location
-  const firstStop = validated.stops[0]
+  // 3. Geocode each stop's address - FAIL if any address cannot be geocoded
+  const stopsWithCoordinates = []
+  for (const stop of validated.stops) {
+    // Only geocode if coordinates not already provided
+    if (stop.latitude && stop.longitude) {
+      stopsWithCoordinates.push(stop)
+      continue
+    }
 
-  // 4. Create announcement
+    const coords = await geocodeAddress(stop.address)
+    if (!coords) {
+      return NextResponse.json(
+        {
+          error: "Kunde inte hitta adressen",
+          details: `Adressen "${stop.address}" kunde inte geocodas. Kontrollera stavningen och försök igen.`
+        },
+        { status: 400 }
+      )
+    }
+
+    stopsWithCoordinates.push({
+      ...stop,
+      latitude: coords.latitude,
+      longitude: coords.longitude
+    })
+  }
+
+  // 4. Use first stop as primary location
+  const firstStop = stopsWithCoordinates[0]
+
+  // 5. Create announcement
   const announcement = await prisma.routeOrder.create({
     data: {
       providerId: provider.id,
@@ -251,10 +279,10 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
     }
   })
 
-  // 5. Create route stops if multiple stops
-  if (validated.stops.length > 1) {
+  // 6. Create route stops (using geocoded coordinates)
+  if (stopsWithCoordinates.length > 1) {
     await prisma.routeStop.createMany({
-      data: validated.stops.map((stop, index) => ({
+      data: stopsWithCoordinates.map((stop, index) => ({
         routeOrderId: announcement.id,
         locationName: stop.locationName,
         address: stop.address,

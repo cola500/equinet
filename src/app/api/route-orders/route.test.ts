@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST, GET } from './route'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth-server'
+import { geocodeAddress } from '@/lib/geocoding'
 import { NextRequest } from 'next/server'
 
 // Helper to generate future dates (avoids hardcoded dates becoming invalid)
@@ -37,6 +38,10 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
+}))
+
+vi.mock('@/lib/geocoding', () => ({
+  geocodeAddress: vi.fn(),
 }))
 
 describe('POST /api/route-orders', () => {
@@ -405,32 +410,21 @@ describe('POST /api/route-orders', () => {
       expect(data.error).toContain('Provider')
     })
 
-    it('should create announcement without coordinates (MVP feature)', async () => {
+    it('should return 400 when geocoding fails for an address', async () => {
       // Arrange
-      const { dateFrom, dateTo, dateFromObj, dateToObj } = getFutureDates()
+      const { dateFrom, dateTo } = getFutureDates()
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'provider1', userType: 'provider' },
       } as any)
 
       // Mock provider exists
-      ;(prisma.provider.findUnique as any).mockResolvedValue({
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
-      })
+      } as any)
 
-      // Mock announcement creation
-      ;(prisma.routeOrder.create as any).mockResolvedValue({
-        id: 'announcement1',
-        serviceType: 'hovslagning',
-        address: 'Storgatan 1, Alingsås',
-        latitude: null,
-        longitude: null,
-        dateFrom: dateFromObj,
-        dateTo: dateToObj,
-        status: 'open',
-        announcementType: 'provider_announced',
-        provider: { id: 'provider123', businessName: 'Test Provider' },
-      })
+      // Mock geocoding failure (address not found)
+      vi.mocked(geocodeAddress).mockResolvedValue(null)
 
       const request = new Request('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -441,7 +435,7 @@ describe('POST /api/route-orders', () => {
           dateFrom,
           dateTo,
           stops: [
-            { locationName: 'Alingsås centrum', address: 'Storgatan 1, Alingsås' },
+            { locationName: 'Okänd plats', address: 'Xyzabc 123, Ingenstans' },
           ],
         }),
       })
@@ -451,10 +445,10 @@ describe('POST /api/route-orders', () => {
       const data = await response.json()
 
       // Assert
-      expect(response.status).toBe(201)
-      expect(data.latitude).toBeNull()
-      expect(data.longitude).toBeNull()
-      expect(data.address).toBe('Storgatan 1, Alingsås')
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Kunde inte hitta adressen')
+      expect(data.details).toContain('Xyzabc 123, Ingenstans')
+      expect(data.details).toContain('kunde inte geocodas')
     })
   })
 })

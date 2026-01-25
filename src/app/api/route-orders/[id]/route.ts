@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth-server"
+import { z } from "zod"
+
+// Validation schema for PATCH updates
+const updateStatusSchema = z.object({
+  status: z.enum(["cancelled"], { message: "Endast 'cancelled' status är tillåten" }),
+})
 
 /**
  * GET /api/route-orders/[id]
@@ -62,6 +69,111 @@ export async function GET(
     console.error("Error fetching route order:", error)
     return NextResponse.json(
       { error: "Failed to fetch route order" },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * PATCH /api/route-orders/[id]
+ *
+ * Update a route order (e.g., cancel it)
+ * Only the owning provider can cancel their own announcements
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const { id } = await params
+
+    // Parse request body
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON" },
+        { status: 400 }
+      )
+    }
+
+    // Validate input
+    const validated = updateStatusSchema.parse(body)
+
+    // Find the route order and verify ownership (atomically in WHERE clause)
+    const provider = await prisma.provider.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    })
+
+    if (!provider) {
+      return NextResponse.json(
+        { error: "Provider profile not found" },
+        { status: 404 }
+      )
+    }
+
+    // Update with ownership check in WHERE clause (IDOR protection)
+    const updated = await prisma.routeOrder.updateMany({
+      where: {
+        id,
+        providerId: provider.id,
+        announcementType: "provider_announced",
+        status: { not: "cancelled" }, // Can't cancel already cancelled
+      },
+      data: {
+        status: validated.status,
+      },
+    })
+
+    if (updated.count === 0) {
+      // Check if order exists to give appropriate error message
+      const order = await prisma.routeOrder.findUnique({
+        where: { id },
+        select: { providerId: true, status: true },
+      })
+
+      if (!order) {
+        return NextResponse.json(
+          { error: "Rutt-annons hittades inte" },
+          { status: 404 }
+        )
+      }
+
+      if (order.providerId !== provider.id) {
+        return NextResponse.json(
+          { error: "Du har inte behörighet att ändra denna rutt-annons" },
+          { status: 403 }
+        )
+      }
+
+      if (order.status === "cancelled") {
+        return NextResponse.json(
+          { error: "Rutt-annonsen är redan avbruten" },
+          { status: 400 }
+        )
+      }
+
+      return NextResponse.json(
+        { error: "Kunde inte uppdatera rutt-annons" },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({ success: true, status: validated.status })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Valideringsfel", details: error.issues },
+        { status: 400 }
+      )
+    }
+
+    console.error("Error updating route order:", error)
+    return NextResponse.json(
+      { error: "Internt serverfel" },
       { status: 500 }
     )
   }
