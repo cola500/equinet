@@ -88,7 +88,7 @@ _"Som leverantör vill jag se tillgängliga beställningar på en karta, så att
 - 🔶 **BESLUT KRÄVS:** State management library (Zustand rekommenderas)
 
 **Beroenden:**
-- ⚠️ **BLOCKER:** Provider hem-position saknas i databas (se F-1.4)
+- ✅ Provider hem-position finns i databas (F-1.4 KLAR)
 - Kart-API konto & API-nyckel
 - Eventuell budget ($8-20/mån)
 
@@ -180,47 +180,22 @@ _"Som leverantör vill jag kunna dra och släppa stopp för att manuellt justera
 
 ---
 
-#### F-1.4: Provider Hem-Position i Databas (DELVIS KLAR)
+#### F-1.4: Provider Hem-Position i Databas ✅ KLAR
 
-**Status:** 🟡 DELVIS IMPLEMENTERAT
-- ✅ Customer location support implementerat (latitude/longitude på Customer)
-- ❌ Provider hem-position saknas fortfarande
+**Status:** ✅ IMPLEMENTERAT (2026-01-26)
 
-**User Story:**
-_"Som leverantör vill jag ange min hemadress/bas-position, så att systemet kan beräkna avstånd från min position till första stopp."_
+Leverantörer kan nu ange sin hem-position via geocoding eller webbläsarens platsdelning.
 
-**Beskrivning:**
-- Lägg till `homeLatitude` och `homeLongitude` (Decimal, optional) i Provider-modellen
-- UI i `/provider/profile` för att ange hemadress
-- Geocoding-integration (konvertera adress → koordinater)
-- Använd hem-position vid avståndsberäkning till första beställning
-- Visa "Avstånd från din bas: 12 km" i UI
+**Implementerat:**
+- ✅ Provider har latitude, longitude, serviceAreaKm i Prisma schema
+- ✅ API: GET/PUT /api/provider/profile returnerar/sparar koordinater
+- ✅ UI: "Sök adress" och "Använd min position" knappar
+- ✅ Geocoding via /api/geocode (Nominatim/OpenStreetMap)
+- ✅ Location räknas mot profilkomplettering
 
-**Kvarvarande Acceptanskriterier:**
-- [ ] Prisma schema uppdaterad med homeLatitude/homeLongitude för Provider
-- [ ] Migration körd (befintliga providers får NULL)
-- [ ] Formulärfält i Provider Profile: "Hemadress/Basposition"
-- [ ] Geocoding konverterar adress → lat/long automatiskt
-- [ ] Spara koordinater i databasen
-- [ ] Avståndsberäkning använder hem-position → första stopp
+**Kvarvarande (framtida förbättringar):**
+- [ ] Avståndsberäkning hem-position → första stopp i ruttplanering
 - [ ] Validering: Koordinater inom Sverige (lat: 55-69, long: 11-24)
-
-**Tekniska Beslut:**
-- 🔶 **BESLUT KRÄVS:** Geocoding-tjänst
-  - Google Geocoding API ($5/1000 requests efter free tier)
-  - Mapbox Geocoding (gratis upp till 100k requests/mån)
-  - Nominatim (OpenStreetMap, gratis, långsammare)
-
-**Beroenden:**
-- **BLOCKERAR:** F-1.1 (Kartvy behöver hem-position för bra UX)
-- Schema migration + Prisma generate
-
-**Risker:**
-- 🟢 Låg risk - liknande Customer location functionality som redan finns
-- 🟡 Geocoding API-kostnad (om Google)
-
-**Komplexitet:** 🟢 Låg
-**Estimat:** 0.5 dag (mycket av arbetet redan gjort för Customer)
 
 ---
 
@@ -610,10 +585,10 @@ Visuell översikt av vad som måste göras i vilken ordning:
 
 ```
 FOUNDATION
-├─ F-1.4: Provider Hem-Position (DELVIS KLAR - kunder har location) ──┐
-│                                                                       │
-KARTVY (kan göras parallellt)                                          │
-├─ F-1.1: Interaktiv Kartvy ◄──────────────────────────────────────────┘
+├─ F-1.4: Provider Hem-Position ✅ KLAR
+│
+KARTVY (kan göras parallellt)
+├─ F-1.1: Interaktiv Kartvy (REDO ATT BÖRJA)
 ├─ F-1.2: Automatisk Ruttoptimering (OBEROENDE)
 └─ F-1.3: Drag-and-Drop (OBEROENDE)
 
@@ -636,7 +611,7 @@ INFRASTRUKTUR
 ```
 
 **Kritisk väg (längsta kedjan):**
-F-1.4 (resterande) → F-1.1 → F-2.1 → F-2.2 → F-2.3 = ~4 veckor
+F-1.1 → F-2.1 → F-2.2 → F-2.3 = ~3-4 veckor
 
 ---
 
@@ -647,13 +622,15 @@ Som teknisk rådgivare rekommenderar jag denna ordning (du prioriterar sedan):
 ### **Sprint 1: Quick Wins + Foundation (1 vecka)**
 Snabba vinster som ger direkt värde + förbereder för kartvy.
 
-1. **F-3.1:** Lösenordskrav-indikator (30 min)
+1. **F-3.1:** Lösenordskrav-indikator ✅ KLAR
 2. **F-3.2:** Avboka-funktion (1h)
-3. **F-3.3:** Försök igen-knappar (1h)
+3. **F-3.3:** Försök igen-knappar ✅ KLAR
 4. **F-3.4:** Onboarding Checklist (3h)
-5. **F-1.4:** Provider Hem-Position (1 dag)
+5. **F-1.4:** Provider Hem-Position ✅ KLAR
 
 **Varför:** Direkt användarnytta, låg risk, förbereder för kartvy.
+
+**Kvarvarande:** F-3.2 (Avboka) och F-3.4 (Onboarding Checklist)
 
 ---
 
@@ -707,13 +684,13 @@ Måste göras innan ni deployar till riktiga användare.
 
 | Epic | Features | Status | Kvarvarande Tid |
 |------|----------|--------|-----------------|
-| **Epic 1: Kartvy** | 4 features | 1 delvis klar | 2-3 veckor |
+| **Epic 1: Kartvy** | 4 features | 1 klar (F-1.4) | 2-3 veckor |
 | **Epic 2: Realtid** | 3 features | 0 klara | 3-4 veckor |
 | **Epic 3: UX Quick Wins** | 4 features | 2 klara | 0.5 dag |
 | **Epic 4: Infrastruktur** | 3 features | 2 klara | 0.5 dag |
 
-**Klara features:** 6 av 14 (43%)
-**Kvarvarande tid för allt:** ~6-7 veckor
+**Klara features:** 7 av 14 (50%)
+**Kvarvarande tid för allt:** ~6 veckor
 
 ---
 
@@ -750,9 +727,8 @@ Måste göras innan ni deployar till riktiga användare.
 1. **Nästa feature att implementera:**
    - F-3.2: Avboka-funktion (0.5 dag)
    - F-3.4: Onboarding Checklist (0.5 dag)
-   - F-1.4: Provider Hem-Position - resterande (0.5 dag)
    - F-4.2: Koordinat-Precision (0.5 dag)
-   - F-1.1: Kartvy (1 vecka)
+   - F-1.1: Kartvy (1 vecka) - REDO ATT BÖRJA
 
 2. **Fatta Tekniska Beslut (för Kartvy):**
    - D-1: Kart-API (Mapbox vs Google vs OSM)
@@ -762,6 +738,5 @@ Måste göras innan ni deployar till riktiga användare.
 
 **Rekommenderad ordning:**
 1. Avsluta UX Quick Wins (F-3.2, F-3.4) - snabba vinster
-2. Slutför F-1.4 Provider Hem-Position
-3. Fatta beslut om kart-API
-4. Implementera Kartvy (F-1.1)
+2. Fatta beslut om kart-API
+3. Implementera Kartvy (F-1.1)
