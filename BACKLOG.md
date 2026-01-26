@@ -36,7 +36,9 @@
 
 **UX Quick Wins (KLARA):**
 - ✅ F-3.1: Lösenordskrav-indikator vid registrering
+- ✅ F-3.2: Avboka-funktion för kunder
 - ✅ F-3.3: Försök igen-knappar (useRetry hook)
+- ✅ F-3.4: Onboarding Checklist för leverantörer
 
 **Teknisk Foundation:**
 - ✅ Next.js 16 App Router (uppgraderat från 15)
@@ -338,7 +340,7 @@ _"Som kund vill jag få notifikationer när leverantören är på väg, så att 
 
 **Strategisk Värdering:** Snabba förbättringar, direkt användarnytta
 **Teknisk Komplexitet:** 🟢 Låg
-**Status:** 2 av 4 features KLARA
+**Status:** ✅ 4 av 4 features KLARA
 
 Dessa kommer från UX-genomlysningen och löser identifierade problem snabbt.
 
@@ -352,34 +354,17 @@ Realtids-validering av lösenord med visuell feedback för alla krav (8 tecken, 
 
 ---
 
-#### F-3.2: Avboka-Funktion för Kunder
+#### F-3.2: Avboka-Funktion för Kunder ✅ KLAR
 
-**User Story:**
-_"Som kund vill jag kunna avboka en bokning, ifall mina planer ändras."_
+**Status:** ✅ IMPLEMENTERAT
 
-**Beskrivning:**
-- "Avboka"-knapp på `/customer/bookings`
-- Confirmation-dialog: "Är du säker?"
-- Uppdatera status till `cancelled`
-- Email-notifikation till leverantör (optional)
-- Visa avbokade bokningar i separat sektion (grå ut)
+Kunder kan avboka sina bokningar med confirmation-dialog.
 
-**Acceptanskriterier:**
-- [ ] "Avboka"-knapp på pending/confirmed bokningar
-- [ ] Confirmation-dialog visas
-- [ ] Status uppdateras till `cancelled` i databas
-- [ ] Bokning försvinner från "Aktiva bokningar"
-- [ ] Visas under "Avbokade bokningar" (collapsed)
-- [ ] Leverantör ser cancelled-status
-- [ ] Endast pending/confirmed bokningar kan avbokas (ej completed)
-
-**Beroenden:**
-- Prisma schema behöver `cancelled` status (finns redan?)
-
-**Risker:** 🟢 Ingen - standard CRUD
-
-**Komplexitet:** 🟢 Låg
-**Estimat:** 1 timme
+**Implementerat:**
+- ✅ "Avboka"-knapp på pending/confirmed bokningar
+- ✅ Confirmation-dialog visas innan avbokning
+- ✅ PUT `/api/bookings/[id]` med `status: "cancelled"`
+- ✅ Leverantör ser cancelled-status
 
 ---
 
@@ -394,34 +379,20 @@ Implementerat via `useRetry` hook med:
 
 ---
 
-#### F-3.4: Onboarding Checklist för Leverantörer
+#### F-3.4: Onboarding Checklist för Leverantörer ✅ KLAR
 
-**User Story:**
-_"Som ny leverantör vill jag ha en guide för vad jag behöver göra för att komma igång, så att jag inte missar viktiga steg."_
+**Status:** ✅ IMPLEMENTERAT
 
-**Beskrivning:**
-- Checklist på leverantörens dashboard:
-  - ✅ Fyll i företagsprofil
-  - ✅ Lägg till minst en tjänst
-  - ✅ Ställ in tillgänglighet (öppettider)
-  - ✅ Aktivera bokningar
-- Klickbara items som leder till rätt sida
-- Dölj checklist när allt är klart
+Leverantörer får en dynamisk onboarding-checklist på sin dashboard.
 
-**Acceptanskriterier:**
-- [ ] Checklist visas på `/provider/dashboard` för nya leverantörer
-- [ ] 4 steg visas
-- [ ] Checkboxar uppdateras automatiskt baserat på data
-- [ ] Klick på item navigerar till rätt sida
-- [ ] Checklist döljs när alla steg är klara
-- [ ] Kan manuellt dölja checklist ("Visa inte detta igen")
-
-**Beroenden:** Inga
-
-**Risker:** 🟢 Ingen - presentational komponent
-
-**Komplexitet:** 🟢 Låg
-**Estimat:** 3 timmar
+**Implementerat:**
+- ✅ GET `/api/provider/onboarding-status` - returnerar completion-status
+- ✅ `OnboardingChecklist` komponent med 4 steg
+- ✅ Dynamisk status (profileComplete, hasServices, hasAvailability, isActive)
+- ✅ Klickbara items som navigerar till rätt sida
+- ✅ Progress: "X av 4 klara"
+- ✅ "Dölj checklistan" - sparas i localStorage
+- ✅ Döljs automatiskt när alla steg är klara
 
 ---
 
@@ -598,11 +569,11 @@ REALTID (kräver kartvy)
 │                                └─ F-1.1
 └─ F-2.3: Push-Notifikationer ◄─── F-2.1
 
-UX QUICK WINS
+UX QUICK WINS ✅ ALLA KLARA
 ├─ F-3.1: Lösenordskrav ✅ KLAR
-├─ F-3.2: Avboka-funktion
+├─ F-3.2: Avboka-funktion ✅ KLAR
 ├─ F-3.3: Försök igen-knappar ✅ KLAR
-└─ F-3.4: Onboarding Checklist
+└─ F-3.4: Onboarding Checklist ✅ KLAR
 
 INFRASTRUKTUR
 ├─ F-4.1: PostgreSQL Migration ✅ KLAR
@@ -619,18 +590,16 @@ F-1.1 → F-2.1 → F-2.2 → F-2.3 = ~3-4 veckor
 
 Som teknisk rådgivare rekommenderar jag denna ordning (du prioriterar sedan):
 
-### **Sprint 1: Quick Wins + Foundation (1 vecka)**
+### **Sprint 1: Quick Wins + Foundation ✅ KLAR**
 Snabba vinster som ger direkt värde + förbereder för kartvy.
 
 1. **F-3.1:** Lösenordskrav-indikator ✅ KLAR
-2. **F-3.2:** Avboka-funktion (1h)
+2. **F-3.2:** Avboka-funktion ✅ KLAR
 3. **F-3.3:** Försök igen-knappar ✅ KLAR
-4. **F-3.4:** Onboarding Checklist (3h)
+4. **F-3.4:** Onboarding Checklist ✅ KLAR
 5. **F-1.4:** Provider Hem-Position ✅ KLAR
 
-**Varför:** Direkt användarnytta, låg risk, förbereder för kartvy.
-
-**Kvarvarande:** F-3.2 (Avboka) och F-3.4 (Onboarding Checklist)
+**Status:** ✅ ALLA FEATURES KLARA
 
 ---
 
@@ -686,11 +655,11 @@ Måste göras innan ni deployar till riktiga användare.
 |------|----------|--------|-----------------|
 | **Epic 1: Kartvy** | 4 features | 1 klar (F-1.4) | 2-3 veckor |
 | **Epic 2: Realtid** | 3 features | 0 klara | 3-4 veckor |
-| **Epic 3: UX Quick Wins** | 4 features | 2 klara | 0.5 dag |
+| **Epic 3: UX Quick Wins** | 4 features | ✅ 4 klara | 0 |
 | **Epic 4: Infrastruktur** | 3 features | 2 klara | 0.5 dag |
 
-**Klara features:** 7 av 14 (50%)
-**Kvarvarande tid för allt:** ~6 veckor
+**Klara features:** 9 av 14 (64%)
+**Kvarvarande tid för allt:** ~5.5 veckor
 
 ---
 
@@ -718,15 +687,16 @@ Måste göras innan ni deployar till riktiga användare.
 - ✅ PostgreSQL Migration (Supabase)
 - ✅ Rate Limiting (Upstash Redis)
 - ✅ Lösenordskrav-indikator
+- ✅ Avboka-funktion för kunder
 - ✅ Försök igen-knappar
+- ✅ Onboarding Checklist för leverantörer
 - ✅ Next.js 16 + NextAuth v5 upgrade
 - ✅ Announcement/Rutter-funktionalitet
+- ✅ **Sprint 1 KLAR - alla UX Quick Wins implementerade!**
 
 **Kvarvarande beslut:**
 
 1. **Nästa feature att implementera:**
-   - F-3.2: Avboka-funktion (0.5 dag)
-   - F-3.4: Onboarding Checklist (0.5 dag)
    - F-4.2: Koordinat-Precision (0.5 dag)
    - F-1.1: Kartvy (1 vecka) - REDO ATT BÖRJA
 
@@ -737,6 +707,5 @@ Måste göras innan ni deployar till riktiga användare.
 3. **Budget:** OK med $8-24/mån för Mapbox + Email?
 
 **Rekommenderad ordning:**
-1. Avsluta UX Quick Wins (F-3.2, F-3.4) - snabba vinster
-2. Fatta beslut om kart-API
-3. Implementera Kartvy (F-1.1)
+1. Fatta beslut om kart-API
+2. Implementera Kartvy (F-1.1)

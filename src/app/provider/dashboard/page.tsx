@@ -10,6 +10,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
+import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
 
 export default function ProviderDashboard() {
   const router = useRouter()
@@ -128,80 +129,9 @@ export default function ProviderDashboard() {
         ) : (
           <>
             {/* Onboarding Checklist for new providers */}
-            {services.length === 0 && bookings.length === 0 && (
-              <Card className="mb-8 border-green-200 bg-green-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <svg
-                      className="h-6 w-6 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    Välkommen till Equinet!
-                  </CardTitle>
-                  <CardDescription>
-                    Kom igång med din leverantörsprofil genom att följa dessa steg
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-sm font-semibold">
-                        1
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">Komplettera din profil</h4>
-                        <p className="text-sm text-gray-600">
-                          Lägg till information om ditt företag, kontaktuppgifter och en beskrivning.
-                        </p>
-                        <Link href="/provider/profile">
-                          <Button size="sm" variant="link" className="px-0">
-                            Gå till profil →
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-sm font-semibold">
-                        2
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">Skapa din första tjänst</h4>
-                        <p className="text-sm text-gray-600">
-                          Lägg till de tjänster du erbjuder med pris och varaktighet.
-                        </p>
-                        <Link href="/provider/services">
-                          <Button size="sm" variant="link" className="px-0">
-                            Skapa tjänst →
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg opacity-60">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm font-semibold">
-                        3
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">Vänta på bokningar</h4>
-                        <p className="text-sm text-gray-600">
-                          När kunder hittar dig kommer bokningar visas under "Bokningar".
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <div className="mb-8">
+              <OnboardingChecklist />
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Stats Cards */}
