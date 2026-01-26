@@ -20,6 +20,9 @@ interface ProviderProfile {
   city?: string
   postalCode?: string
   serviceArea?: string
+  latitude?: number | null
+  longitude?: number | null
+  serviceAreaKm?: number | null
   user: {
     firstName: string
     lastName: string
@@ -48,7 +51,11 @@ export default function ProviderProfilePage() {
     city: "",
     postalCode: "",
     serviceArea: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
+    serviceAreaKm: null as number | null,
   })
+  const [isGeocoding, setIsGeocoding] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -80,6 +87,9 @@ export default function ProviderProfilePage() {
           city: data.city || "",
           postalCode: data.postalCode || "",
           serviceArea: data.serviceArea || "",
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
+          serviceAreaKm: data.serviceAreaKm ?? null,
         })
       }
     } catch (error) {
@@ -133,6 +143,9 @@ export default function ProviderProfilePage() {
           city: businessData.city || undefined,
           postalCode: businessData.postalCode || undefined,
           serviceArea: businessData.serviceArea || undefined,
+          latitude: businessData.latitude,
+          longitude: businessData.longitude,
+          serviceAreaKm: businessData.serviceAreaKm,
         }),
       })
 
@@ -169,9 +182,65 @@ export default function ProviderProfilePage() {
         city: profile.city || "",
         postalCode: profile.postalCode || "",
         serviceArea: profile.serviceArea || "",
+        latitude: profile.latitude ?? null,
+        longitude: profile.longitude ?? null,
+        serviceAreaKm: profile.serviceAreaKm ?? null,
       })
     }
     setIsEditingBusiness(false)
+  }
+
+  const handleGeocode = async () => {
+    if (!businessData.address && !businessData.city) {
+      toast.error("Ange adress eller stad för att hitta koordinater")
+      return
+    }
+
+    setIsGeocoding(true)
+    try {
+      const params = new URLSearchParams()
+      if (businessData.address) params.append("address", businessData.address)
+      if (businessData.city) params.append("city", businessData.city)
+
+      const response = await fetch(`/api/geocode?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error("Kunde inte hitta platsen")
+      }
+
+      const { latitude, longitude } = await response.json()
+      setBusinessData(prev => ({ ...prev, latitude, longitude }))
+      toast.success("Plats hittad!")
+    } catch (error) {
+      console.error("Geocoding error:", error)
+      toast.error("Kunde inte hitta platsen. Kontrollera adressen.")
+    } finally {
+      setIsGeocoding(false)
+    }
+  }
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Din webbläsare stöder inte platsdelning")
+      return
+    }
+
+    setIsGeocoding(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setBusinessData(prev => ({
+          ...prev,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }))
+        setIsGeocoding(false)
+        toast.success("Din position har sparats!")
+      },
+      (error) => {
+        console.error("Geolocation error:", error)
+        setIsGeocoding(false)
+        toast.error("Kunde inte hämta din position. Kontrollera behörigheter.")
+      }
+    )
   }
 
   // Calculate profile completion
@@ -189,7 +258,11 @@ export default function ProviderProfilePage() {
       profile.serviceArea,
     ]
     const filledFields = fields.filter(field => field && field.length > 0).length
-    return Math.round((filledFields / fields.length) * 100)
+    // Location counts as one field (both lat/lng needed)
+    const hasLocation = profile.latitude != null && profile.longitude != null
+    const totalFields = fields.length + 1 // +1 for location
+    const filledTotal = filledFields + (hasLocation ? 1 : 0)
+    return Math.round((filledTotal / totalFields) * 100)
   }
 
   if (isLoading || !isProvider || !profile) {
@@ -386,6 +459,21 @@ export default function ProviderProfilePage() {
                     <Label className="text-sm text-gray-600">Serviceområde</Label>
                     <p className="font-medium">{profile.serviceArea || "Ej angiven"}</p>
                   </div>
+                  <div className="border-t pt-4 mt-4">
+                    <Label className="text-sm text-gray-600">Hem-position</Label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Används för ruttplanering och avståndsmatchning
+                    </p>
+                    {profile.latitude && profile.longitude ? (
+                      <p className="font-medium text-green-600">
+                        Plats sparad ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
+                      </p>
+                    ) : (
+                      <p className="font-medium text-amber-600">
+                        Ej angiven - klicka Redigera för att sätta din position
+                      </p>
+                    )}
+                  </div>
                   <div className="pt-4">
                     <Button onClick={() => setIsEditingBusiness(true)}>
                       Redigera
@@ -463,6 +551,39 @@ export default function ProviderProfilePage() {
                       placeholder="Exempelvis: Stockholm och Södermanlands län"
                     />
                   </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <Label className="text-sm font-medium">Hem-position</Label>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Ange din startposition för ruttplanering
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGeocode}
+                      disabled={isGeocoding || (!businessData.address && !businessData.city)}
+                    >
+                      {isGeocoding ? "Söker..." : "Sök adress"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleUseCurrentLocation}
+                      disabled={isGeocoding}
+                    >
+                      Använd min position
+                    </Button>
+                  </div>
+
+                  {businessData.latitude && businessData.longitude && (
+                    <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                      Plats sparad: {businessData.latitude.toFixed(4)}, {businessData.longitude.toFixed(4)}
+                    </div>
+                  )}
+
                   <div className="flex gap-2 pt-4">
                     <Button type="submit">Spara ändringar</Button>
                     <Button

@@ -11,6 +11,9 @@ const providerProfileSchema = z.object({
   city: z.string().optional(),
   postalCode: z.string().optional(),
   serviceArea: z.string().optional(),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+  serviceAreaKm: z.number().min(1).max(500).optional().nullable(),
 }).strict()
 
 // GET - Fetch current provider profile
