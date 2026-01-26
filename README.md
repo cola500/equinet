@@ -121,7 +121,7 @@ Detta säkerställer att broken code aldrig når main-branchen! 🎯
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (326 unit/integration) + Playwright (62 E2E) = 70% coverage
+- **Testning**: Vitest (417 unit/integration) + Playwright (47 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
 
@@ -237,7 +237,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**162+ tester** (35 E2E + 127 unit/integration) med **70% coverage**.
+**464 tester** (47 E2E + 417 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -259,9 +259,9 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 
 ### Test Coverage
 
-- **Unit Tests (52)**: sanitize, booking utils, hooks
-- **Integration Tests (75)**: API routes (auth, bookings, services, providers, routes)
-- **E2E Tests (35)**: Authentication, booking flow, provider flow, route planning
+- **Unit Tests**: sanitize, booking utils, hooks, validations
+- **Integration Tests**: API routes (auth, bookings, services, providers, routes, announcements)
+- **E2E Tests (47)**: Authentication, booking flow, provider flow, route planning, announcements
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 
@@ -365,31 +365,34 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 
 ## 🔮 Roadmap
 
-### ✅ v1.3.0 - UX Quick Wins (Sprint 1 pågår)
+### ✅ Implementerat (v0.2.0+)
+- ✅ PostgreSQL Migration (Supabase)
+- ✅ Rate Limiting (Upstash Redis)
 - ✅ Förbättrad lösenordsvalidering (F-3.1)
-- ✅ Försök igen-knappar (F-3.3)
-- ✅ Performance-optimering provider loading (F-3.4)
-- 🚧 Onboarding Checklist (F-3.4) - återstår
+- ✅ Försök igen-knappar med useRetry hook (F-3.3)
+- ✅ Next.js 16 + NextAuth v5 upgrade
+- ✅ Announcement/Rutter-funktionalitet (leverantörer annonserar rutter)
+- ✅ Customer location support för geo-matching
+- ✅ NearbyRoutesBanner på leverantörsprofiler
 
-### 🚧 Nästa (Fas 2-5)
-- **Kartvy** - Visa beställningar och rutter på karta
+### 🚧 Nästa
+- **F-3.2**: Avboka-funktion för kunder
+- **F-3.4**: Onboarding Checklist för leverantörer
+- **F-1.4**: Provider hem-position (delvis klar - kunder har location)
+- **F-1.1**: Kartvy - Visa beställningar och rutter på karta
+
+### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
 - **Notifikationer** - Push/Email/SMS för kunder
-- **Problemhantering** - Rapportera problem, omberäkna rutter
-- **Rutthistorik & Analytics** - Statistik och intelligent förslag
-
-Se `features/rutt-baserad-levering.md` för detaljerad roadmap.
-
-### Framtida Features (Prioritet 2-3)
 - Email-notifikationer vid bokningar
 - Bilduppladdning (profiler, tjänster)
 - Betalningsintegration (Stripe/Klarna)
 - Recensioner & betyg
-- Google Calendar-synk
-- Mobilapp (React Native)
+
+Se `BACKLOG.md` för fullständig feature-lista.
 
 ---
 
 **Skapad**: November 2025
-**Version**: 1.3.0 MVP - Performance & UX
-**Utvecklad med**: Next.js 15.5, TypeScript, Tailwind CSS, Claude Code 💚
+**Version**: v0.2.0+
+**Utvecklad med**: Next.js 16, TypeScript, Tailwind CSS, Claude Code

@@ -874,4 +874,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-01-23*
+*Senast uppdaterad: 2026-01-26*

@@ -1,19 +1,19 @@
 # 📋 Equinet - Produktbacklog
 
-**Senast uppdaterad:** 2025-11-15
-**Nuvarande version:** v1.2.0 (MVP)
+**Senast uppdaterad:** 2026-01-26
+**Nuvarande version:** v0.2.0+
 **Produktägare:** Johan Lindengård
 **Status:** Backlog för prioritering
 
 ---
 
-## 📊 Nuvarande Status (v1.2.0 - MVP KLAR!)
+## 📊 Nuvarande Status (v0.2.0+)
 
 ### ✅ Implementerat
 
 **Grundfunktionalitet:**
 - ✅ Användare kan registrera sig som kund eller leverantör
-- ✅ NextAuth autentisering med credentials provider
+- ✅ NextAuth v5 autentisering med credentials provider
 - ✅ Kunder kan boka tjänster hos leverantörer
 - ✅ Leverantörer kan hantera tjänster och bokningar
 - ✅ Profilhantering för både kunder och leverantörer
@@ -27,15 +27,28 @@
 - ✅ Stopp-för-stopp navigation med statusuppdateringar
 - ✅ ETA-beräkning per stopp (30 min service + 10 min mellan stopp)
 
+**Announcement/Rutter-funktionalitet (NY!):**
+- ✅ Leverantörer kan annonsera planerade rutter (Announcements)
+- ✅ Kunder kan söka rutter baserat på sin location
+- ✅ NearbyRoutesBanner - visar rutter på leverantörsprofil
+- ✅ Boka direkt på rutt via `/announcements/[id]/book`
+- ✅ Customer location support för geo-matching
+
+**UX Quick Wins (KLARA):**
+- ✅ F-3.1: Lösenordskrav-indikator vid registrering
+- ✅ F-3.3: Försök igen-knappar (useRetry hook)
+
 **Teknisk Foundation:**
-- ✅ Next.js 15.5.0 App Router
-- ✅ Prisma ORM med SQLite (dev)
+- ✅ Next.js 16 App Router (uppgraderat från 15)
+- ✅ NextAuth v5 (uppgraderat)
+- ✅ Prisma ORM med PostgreSQL (Supabase)
 - ✅ TypeScript strict mode
 - ✅ Security headers (CSP, HSTS, CORS)
 - ✅ Database index för performance
 - ✅ Centraliserad auth helper & middleware
 - ✅ JSON parsing error handling i alla API routes
-- ✅ 134 unit tests + 35 E2E tests (100% pass rate)
+- ✅ Rate limiting med Upstash Redis
+- ✅ 417 unit tests + 47 E2E tests
 
 ---
 
@@ -167,7 +180,11 @@ _"Som leverantör vill jag kunna dra och släppa stopp för att manuellt justera
 
 ---
 
-#### F-1.4: Provider Hem-Position i Databas
+#### F-1.4: Provider Hem-Position i Databas (DELVIS KLAR)
+
+**Status:** 🟡 DELVIS IMPLEMENTERAT
+- ✅ Customer location support implementerat (latitude/longitude på Customer)
+- ❌ Provider hem-position saknas fortfarande
 
 **User Story:**
 _"Som leverantör vill jag ange min hemadress/bas-position, så att systemet kan beräkna avstånd från min position till första stopp."_
@@ -179,13 +196,12 @@ _"Som leverantör vill jag ange min hemadress/bas-position, så att systemet kan
 - Använd hem-position vid avståndsberäkning till första beställning
 - Visa "Avstånd från din bas: 12 km" i UI
 
-**Acceptanskriterier:**
-- [ ] Prisma schema uppdaterad med homeLatitude/homeLongitude
+**Kvarvarande Acceptanskriterier:**
+- [ ] Prisma schema uppdaterad med homeLatitude/homeLongitude för Provider
 - [ ] Migration körd (befintliga providers får NULL)
 - [ ] Formulärfält i Provider Profile: "Hemadress/Basposition"
 - [ ] Geocoding konverterar adress → lat/long automatiskt
 - [ ] Spara koordinater i databasen
-- [ ] Visa hem-position på karta (om F-1.1 implementerad)
 - [ ] Avståndsberäkning använder hem-position → första stopp
 - [ ] Validering: Koordinater inom Sverige (lat: 55-69, long: 11-24)
 
@@ -200,11 +216,11 @@ _"Som leverantör vill jag ange min hemadress/bas-position, så att systemet kan
 - Schema migration + Prisma generate
 
 **Risker:**
-- 🟢 Låg risk - liknande boknings-address functionality
+- 🟢 Låg risk - liknande Customer location functionality som redan finns
 - 🟡 Geocoding API-kostnad (om Google)
 
 **Komplexitet:** 🟢 Låg
-**Estimat:** 1 dag
+**Estimat:** 0.5 dag (mycket av arbetet redan gjort för Customer)
 
 ---
 
@@ -347,39 +363,17 @@ _"Som kund vill jag få notifikationer när leverantören är på väg, så att 
 
 **Strategisk Värdering:** Snabba förbättringar, direkt användarnytta
 **Teknisk Komplexitet:** 🟢 Låg
-**Estimerad Total Tid:** 1-2 dagar (alla tillsammans)
+**Status:** 2 av 4 features KLARA
 
 Dessa kommer från UX-genomlysningen och löser identifierade problem snabbt.
 
 ---
 
-#### F-3.1: Lösenordskrav-Indikator
+#### F-3.1: Lösenordskrav-Indikator ✅ KLAR
 
-**User Story:**
-_"Som ny användare vill jag se visuell feedback på om mitt lösenord uppfyller kraven, så att jag inte får error först vid submit."_
+**Status:** ✅ IMPLEMENTERAT
 
-**Beskrivning:**
-- Realtids-validering av lösenord medan användaren skriver
-- Visa krav med checkboxes:
-  - ✅ Minst 8 tecken
-  - ✅ En versal bokstav
-  - ✅ En gemen bokstav
-  - ✅ En siffra
-- Grön checkbox när krav uppfyllt, röd/grå när inte
-
-**Acceptanskriterier:**
-- [ ] Indikator visas under lösenordsfält i registrering
-- [ ] Uppdateras i realtid när användare skriver
-- [ ] Alla 4 krav visas
-- [ ] Visuell feedback: ✅ (grön) eller ❌ (röd)
-- [ ] Submit-knapp disabled tills alla krav uppfyllda (optional)
-
-**Beroenden:** Inga
-
-**Risker:** 🟢 Ingen - vanilla React state
-
-**Komplexitet:** 🟢 Låg
-**Estimat:** 30 minuter
+Realtids-validering av lösenord med visuell feedback för alla krav (8 tecken, versal, gemen, siffra).
 
 ---
 
@@ -414,30 +408,14 @@ _"Som kund vill jag kunna avboka en bokning, ifall mina planer ändras."_
 
 ---
 
-#### F-3.3: "Försök igen"-Knappar vid Fel
+#### F-3.3: "Försök igen"-Knappar vid Fel ✅ KLAR
 
-**User Story:**
-_"Som användare vill jag kunna försöka igen när något går fel, istället för att behöva ladda om hela sidan."_
+**Status:** ✅ IMPLEMENTERAT
 
-**Beskrivning:**
-- Error states visar "Försök igen"-knapp
-- Retry samma request utan page reload
-- Visuell feedback: "Försöker igen..." spinner
-- Efter 3 misslyckade försök: "Kontakta support"
-
-**Acceptanskriterier:**
-- [ ] Alla error states har "Försök igen"-knapp
-- [ ] Klick på knapp gör om samma request
-- [ ] Visuell feedback: Loading spinner
-- [ ] Max 3 retry-försök, sedan disabled
-- [ ] Fungerar för: Bokningar, Profil-uppdateringar, Tjänste-skapande
-
-**Beroenden:** Inga
-
-**Risker:** 🟢 Ingen - state management
-
-**Komplexitet:** 🟢 Låg
-**Estimat:** 1 timme
+Implementerat via `useRetry` hook med:
+- "Försök igen"-knapp vid fel
+- Visuell feedback med spinner
+- Max 3 retry-försök
 
 ---
 
@@ -476,49 +454,18 @@ _"Som ny leverantör vill jag ha en guide för vad jag behöver göra för att k
 
 **Strategisk Värdering:** Måste göras före produktion
 **Teknisk Komplexitet:** 🟡-🔴 Medel-Hög
-**Estimerad Total Tid:** 1-2 veckor
+**Status:** 2 av 3 features KLARA
 
 ---
 
-#### F-4.1: PostgreSQL Migration
+#### F-4.1: PostgreSQL Migration ✅ KLAR
 
-**User Story:**
-_"Som utvecklare vill jag migrera från SQLite till PostgreSQL, så att applikationen kan hantera concurrency och är production-ready."_
+**Status:** ✅ IMPLEMENTERAT
 
-**Beskrivning:**
-- Sätt upp PostgreSQL databas (Supabase rekommenderas - gratis tier)
-- Uppdatera Prisma schema (`provider = "postgresql"`)
-- Migrera data från SQLite → PostgreSQL
-- Uppdatera connection string i `.env`
-- Verifiera att alla queries fungerar (särskilt Decimal-handling)
-
-**Acceptanskriterier:**
-- [ ] PostgreSQL databas uppsatt (Supabase eller lokal)
-- [ ] Prisma schema uppdaterad
-- [ ] Migration script körd
-- [ ] All befintlig data migrerad korrekt
-- [ ] Alla tester (134 unit + 35 E2E) passerar
-- [ ] Dev och prod använder PostgreSQL
-- [ ] Connection pooling konfigurerat (för Vercel)
-
-**Tekniska Beslut:**
-- 🔶 **BESLUT KRÄVS:** PostgreSQL-hosting
-  - Supabase (gratis tier: 500MB, 2 CPU)
-  - Railway ($5/mån)
-  - Neon (gratis tier: 3GB)
-  - Lokal (dev only)
-
-**Beroenden:**
-- **REKOMMENDERAS FÖRE:** Produktion
-- Kan göras när som (inga features blockerar)
-
-**Risker:**
-- 🟡 Migration-script kan faila (testa noga!)
-- 🟡 Decimal-handling skiljer sig mellan SQLite och PostgreSQL
-- 🟡 Connection pooling krävs för Vercel (serverless)
-
-**Komplexitet:** 🟡 Medel
-**Estimat:** 1 dag
+Migrerat till Supabase PostgreSQL med:
+- Session Pooler för serverless kompatibilitet
+- Connection pooling konfigurerat
+- Alla tester passerar
 
 ---
 
@@ -553,43 +500,15 @@ _"Som leverantör vill jag att avståndsberäkningar är exakta (±1 meter), int
 
 ---
 
-#### F-4.3: Rate Limiting (Produktion)
+#### F-4.3: Rate Limiting (Produktion) ✅ KLAR
 
-**User Story:**
-_"Som systemägare vill jag förhindra API-abuse och DDoS-attacker genom rate limiting."_
+**Status:** ✅ IMPLEMENTERAT
 
-**Beskrivning:**
-- Implementera rate limiting på alla API routes
-- Redis-baserad (Upstash gratis tier)
-- Olika limits per endpoint:
-  - Auth: 5 requests/min
-  - Read: 60 requests/min
-  - Write: 30 requests/min
-- Returnera 429 Too Many Requests vid överskridning
-
-**Acceptanskriterier:**
-- [ ] Redis-connection uppsatt (Upstash)
-- [ ] Middleware för rate limiting
-- [ ] Olika limits per route-typ
-- [ ] 429-response med Retry-After header
-- [ ] Logga rate limit violations
-- [ ] Whitelist för interna IP (optional)
-
-**Tekniska Beslut:**
-- 🔶 **BESLUT KRÄVS:** Rate limiting-tjänst
-  - Upstash Redis (gratis: 10k requests/dag)
-  - Vercel KV (beta, kan vara dyrt)
-  - Custom Redis (Railway, $5/mån)
-
-**Beroenden:**
-- **KRÄVER:** Produktion (skippa i dev för enkelhetens skull)
-
-**Risker:**
-- 🟡 Ny tjänst (Redis) - kräver setup
-- 🟡 Kan påverka legitima användare (för låga limits)
-
-**Komplexitet:** 🟡 Medel
-**Estimat:** 4 timmar
+Implementerat med Upstash Redis:
+- Rate limiting på alla API routes
+- Olika limits per endpoint-typ
+- 429-response vid överskridning
+- Fungerar i produktion
 
 ---
 
@@ -691,10 +610,10 @@ Visuell översikt av vad som måste göras i vilken ordning:
 
 ```
 FOUNDATION
-├─ F-1.4: Provider Hem-Position ──┐
-│                                  │
-KARTVY (kan göras parallellt)     │
-├─ F-1.1: Interaktiv Kartvy ◄─────┘
+├─ F-1.4: Provider Hem-Position (DELVIS KLAR - kunder har location) ──┐
+│                                                                       │
+KARTVY (kan göras parallellt)                                          │
+├─ F-1.1: Interaktiv Kartvy ◄──────────────────────────────────────────┘
 ├─ F-1.2: Automatisk Ruttoptimering (OBEROENDE)
 └─ F-1.3: Drag-and-Drop (OBEROENDE)
 
@@ -704,20 +623,20 @@ REALTID (kräver kartvy)
 │                                └─ F-1.1
 └─ F-2.3: Push-Notifikationer ◄─── F-2.1
 
-UX QUICK WINS (alla oberoende)
-├─ F-3.1: Lösenordskrav
+UX QUICK WINS
+├─ F-3.1: Lösenordskrav ✅ KLAR
 ├─ F-3.2: Avboka-funktion
-├─ F-3.3: Försök igen-knappar
+├─ F-3.3: Försök igen-knappar ✅ KLAR
 └─ F-3.4: Onboarding Checklist
 
-INFRASTRUKTUR (gör före produktion)
-├─ F-4.1: PostgreSQL Migration ──┐
-├─ F-4.2: Koordinat-Precision ◄───┘ (rekommenderat samtidigt)
-└─ F-4.3: Rate Limiting (prod only)
+INFRASTRUKTUR
+├─ F-4.1: PostgreSQL Migration ✅ KLAR
+├─ F-4.2: Koordinat-Precision
+└─ F-4.3: Rate Limiting ✅ KLAR
 ```
 
 **Kritisk väg (längsta kedjan):**
-F-1.4 → F-1.1 → F-2.1 → F-2.2 → F-2.3 = ~4-5 veckor
+F-1.4 (resterande) → F-1.1 → F-2.1 → F-2.2 → F-2.3 = ~4 veckor
 
 ---
 
@@ -786,61 +705,63 @@ Måste göras innan ni deployar till riktiga användare.
 
 ## 📈 Estimat Sammanfattning
 
-| Epic | Features | Total Tid | Komplexitet |
-|------|----------|-----------|-------------|
-| **Epic 1: Kartvy** | 4 features | 2-3 veckor | 🟡 Medel-Hög |
-| **Epic 2: Realtid** | 3 features | 3-4 veckor | 🔴 Hög |
-| **Epic 3: UX Quick Wins** | 4 features | 1-2 dagar | 🟢 Låg |
-| **Epic 4: Infrastruktur** | 3 features | 1-2 veckor | 🟡 Medel |
+| Epic | Features | Status | Kvarvarande Tid |
+|------|----------|--------|-----------------|
+| **Epic 1: Kartvy** | 4 features | 1 delvis klar | 2-3 veckor |
+| **Epic 2: Realtid** | 3 features | 0 klara | 3-4 veckor |
+| **Epic 3: UX Quick Wins** | 4 features | 2 klara | 0.5 dag |
+| **Epic 4: Infrastruktur** | 3 features | 2 klara | 0.5 dag |
 
-**Total tid för allt:** ~8-10 veckor (om sekventiellt)
-**Realistisk timeline (parallellt + iterativt):** 3-4 månader
+**Klara features:** 6 av 14 (43%)
+**Kvarvarande tid för allt:** ~6-7 veckor
 
 ---
 
 ## 💰 Kostnadsbedömning (Månadskostnad i Produktion)
 
-| Tjänst | Kostnad | När Behövs |
-|--------|---------|------------|
-| **Mapbox** | $8.50/mån | F-1.1 (Kartvy) |
-| **PostgreSQL (Supabase)** | Gratis (500MB) | F-4.1 (Produktion) |
-| **Upstash Redis** | Gratis (10k req/dag) | F-4.3 (Rate Limiting) |
-| **Email (Resend)** | $0-15/mån | F-2.3 (Notifikationer) |
+| Tjänst | Kostnad | Status |
+|--------|---------|--------|
+| **PostgreSQL (Supabase)** | Gratis (500MB) | ✅ Implementerat |
+| **Upstash Redis** | Gratis (10k req/dag) | ✅ Implementerat |
+| **Mapbox** | $8.50/mån | Behövs för F-1.1 (Kartvy) |
+| **Email (Resend)** | $0-15/mån | Behövs för F-2.3 (Notifikationer) |
 | **TOTAL MVP** | **$8-24/mån** | |
 | | | |
 | **WebSockets (Pusher)** | $49/mån | F-2.1 (om ni vill true realtid) |
 | **SMS (Twilio)** | Varierar ($0.01/sms) | F-2.3 (optional) |
 | **TOTAL MED REALTID** | **$57-90/mån** | |
 
-**Anteckning:** Alla tjänster har gratis tiers för utveckling/MVP!
+**Anteckning:** Supabase och Upstash Redis är redan implementerade på gratis tiers!
 
 ---
 
 ## 🎬 Nästa Steg (för Produktägare)
 
-**Dina beslut som behövs:**
+**Redan avklarat:**
+- ✅ PostgreSQL Migration (Supabase)
+- ✅ Rate Limiting (Upstash Redis)
+- ✅ Lösenordskrav-indikator
+- ✅ Försök igen-knappar
+- ✅ Next.js 16 + NextAuth v5 upgrade
+- ✅ Announcement/Rutter-funktionalitet
 
-1. **Prioritera Epics:** Vilken ordning känns rätt?
-   - Quick Wins först → Kartvy → Realtid?
-   - Kartvy direkt (skip quick wins)?
-   - Något helt annat?
+**Kvarvarande beslut:**
 
-2. **Fatta Tekniska Beslut:**
+1. **Nästa feature att implementera:**
+   - F-3.2: Avboka-funktion (0.5 dag)
+   - F-3.4: Onboarding Checklist (0.5 dag)
+   - F-1.4: Provider Hem-Position - resterande (0.5 dag)
+   - F-4.2: Koordinat-Precision (0.5 dag)
+   - F-1.1: Kartvy (1 vecka)
+
+2. **Fatta Tekniska Beslut (för Kartvy):**
    - D-1: Kart-API (Mapbox vs Google vs OSM)
-   - D-3: Realtid-strategi (Polling vs WebSockets)
-   - D-4: Notifikationer (Email vs Push vs SMS)
+   - D-2: State Management (Zustand rekommenderas)
 
 3. **Budget:** OK med $8-24/mån för Mapbox + Email?
 
-4. **Timeline:** Vill du:
-   - Sprint-baserat (1-2 veckor/sprint)?
-   - Feature-baserat (en feature i taget)?
-   - MVP-release (fixa quick wins + kartvy, sedan utvärdera)?
-
-**Jag rekommenderar:**
-1. Börja med **Sprint 1 (Quick Wins + Foundation)** - 1 vecka
-2. Ta beslut om kart-API under Sprint 1
-3. Fortsätt med **Sprint 2 (Kartvy)** - 2 veckor
-4. Utvärdera efter kartvy: Vill ni fortsätta med realtid eller andra features?
-
-**Vad säger du - var vill du börja?**
+**Rekommenderad ordning:**
+1. Avsluta UX Quick Wins (F-3.2, F-3.4) - snabba vinster
+2. Slutför F-1.4 Provider Hem-Position
+3. Fatta beslut om kart-API
+4. Implementera Kartvy (F-1.1)
