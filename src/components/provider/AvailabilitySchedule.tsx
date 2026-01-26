@@ -92,12 +92,13 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
         setIsEditing(false)
         fetchSchedule() // Refresh data
       } else {
-        const error = await response.json()
-        toast.error(error.error || "Kunde inte spara öppettider")
+        const errorData = await response.json().catch(() => ({}))
+        console.error("Error response:", response.status, errorData)
+        toast.error(errorData.details || errorData.error || "Kunde inte spara öppettider")
       }
     } catch (error) {
       console.error("Error saving schedule:", error)
-      toast.error("Kunde inte spara öppettider")
+      toast.error("Nätverksfel - kunde inte spara öppettider")
     } finally {
       setIsSaving(false)
     }

@@ -141,12 +141,17 @@ export async function PUT(
     }
 
     if (error instanceof z.ZodError) {
+      console.error("Zod validation error:", error.issues)
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }
     console.error("Error updating availability schedule:", error)
-    return new Response("Internal error", { status: 500 })
+    // Return more detailed error for debugging
+    return NextResponse.json(
+      { error: "Internal error", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    )
   }
 }
