@@ -28,13 +28,13 @@ const bookingSchema = z.object({
     { message: "Kan inte boka i det förflutna" }
   ),
   startTime: z.string().regex(
-    /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/,
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/,
     "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
-  ),
+  ).transform(t => t.substring(0, 5)), // Normalisera till HH:MM
   endTime: z.string().regex(
-    /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/,
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/,
     "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
-  ),
+  ).transform(t => t.substring(0, 5)), // Normalisera till HH:MM
   horseName: z.string().max(100, "Hästnamn för långt (max 100 tecken)").optional(),
   horseInfo: z.string().max(500, "Hästinfo för lång (max 500 tecken)").optional(),
   customerNotes: z.string().max(1000, "Anteckningar för långa (max 1000 tecken)").optional(),

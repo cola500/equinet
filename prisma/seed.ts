@@ -225,6 +225,10 @@ async function main() {
       lastName: 'Kund',
       userType: 'customer',
       phone: '070-111 22 33',
+      address: 'Stallvägen 5',
+      city: 'Göteborg',
+      latitude: 57.7089,
+      longitude: 11.9746,
     },
   })
   console.log(`Created customer: ${customer.firstName} ${customer.lastName}`)
