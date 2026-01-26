@@ -16,6 +16,7 @@
 10. [TypeScript Memory Issues](#10-typescript-memory-issues)
 11. [Frontend Data Normalisering](#11-frontend-data-normalisering)
 12. [Generiska Felmeddelanden](#12-generiska-felmeddelanden)
+13. [Connection Pool Exhaustion](#13-connection-pool-exhaustion)
 
 ---
 
@@ -454,6 +455,56 @@ toast.error(errorData.details || errorData.error || "Kunde inte spara")
 **OBS:** I produktion, överväg att dölja känsliga detaljer från användare men ALLTID logga dem server-side.
 
 **Impact:** Snabbare debugging, färre "det bara fungerar inte"-rapporter.
+
+---
+
+## 13. Connection Pool Exhaustion
+
+> **Learning: 2026-01-26** | **Severity: KRITISKT**
+
+**Problem:** Parallella databasanrop (`Promise.all`) kan överskrida Supabase Session Pooler-gränsen.
+
+**Symptom:** `FATAL: MaxClientsInSessionMode: max clients reached`
+
+```typescript
+// ❌ FEL - 7 parallella connections
+const createPromises = schedule.map((item) =>
+  prisma.availability.upsert({
+    where: { providerId_dayOfWeek: { providerId, dayOfWeek: item.dayOfWeek } },
+    update: { ...item },
+    create: { providerId, ...item },
+  })
+)
+await Promise.all(createPromises)  // 7 connections samtidigt!
+
+// ✅ RÄTT - Använd transaction (1 connection)
+const result = await prisma.$transaction(async (tx) => {
+  // Alla operationer inom transaktionen delar samma connection
+  await tx.availability.deleteMany({ where: { providerId } })
+
+  for (const item of schedule) {
+    await tx.availability.create({
+      data: { providerId, ...item },
+    })
+  }
+
+  return tx.availability.findMany({ where: { providerId } })
+})
+```
+
+**Varför?**
+- Supabase Session Pooler har begränsat antal connections (ofta 10-20)
+- `Promise.all` med N operationer = N simultana connections
+- Serverless = många instanser kan köra samtidigt → ännu fler connections
+
+**Pattern - Använd `$transaction` när:**
+- Du gör flera write-operationer som hör ihop
+- Du gör batch-operationer (skapa/uppdatera många records)
+- Operationerna ska vara atomära (allt eller inget)
+
+**Bonus:** Transaktioner ger också atomicitet - om något misslyckas rullas allt tillbaka.
+
+**Impact:** Förhindrar "max clients reached" errors i produktion.
 
 ---
 
