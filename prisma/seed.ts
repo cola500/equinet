@@ -198,6 +198,21 @@ async function main() {
       })
     }
 
+    // Create availability: Mon-Fri 09:00-17:00, Sat-Sun closed
+    for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+      const isClosed = dayOfWeek >= 5 // Saturday (5) and Sunday (6) are closed
+      await prisma.availability.create({
+        data: {
+          providerId: provider.id,
+          dayOfWeek,
+          startTime: isClosed ? '00:00' : '09:00',
+          endTime: isClosed ? '00:00' : '17:00',
+          isClosed,
+          isActive: true,
+        },
+      })
+    }
+
     console.log(`Created provider: ${data.provider.businessName} (${data.provider.city})`)
   }
 
