@@ -7,6 +7,11 @@ const profileSchema = z.object({
   firstName: z.string().min(1, "Förnamn krävs"),
   lastName: z.string().min(1, "Efternamn krävs"),
   phone: z.string().optional(),
+  // Geographic location fields
+  city: z.string().optional(),
+  address: z.string().optional(),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
 }).strict()
 
 // GET - Fetch current user profile
@@ -24,6 +29,10 @@ export async function GET(request: NextRequest) {
         lastName: true,
         phone: true,
         userType: true,
+        city: true,
+        address: true,
+        latitude: true,
+        longitude: true,
       },
     })
 
@@ -76,6 +85,10 @@ export async function PUT(request: NextRequest) {
         lastName: true,
         phone: true,
         userType: true,
+        city: true,
+        address: true,
+        latitude: true,
+        longitude: true,
       },
     })
 

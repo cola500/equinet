@@ -45,13 +45,55 @@ export default function AnnouncementsPage() {
 
   // Geo-filtering state
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [savedLocation, setSavedLocation] = useState<{ lat: number; lng: number; city?: string } | null>(null)
   const [radiusKm, setRadiusKm] = useState(50)
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
 
+  // Fetch user's saved location from profile
   useEffect(() => {
-    fetchAnnouncements()
-  }, [])
+    const fetchSavedLocation = async () => {
+      if (!user) {
+        setProfileLoading(false)
+        fetchAnnouncements()
+        return
+      }
+
+      try {
+        const response = await fetch("/api/profile")
+        if (response.ok) {
+          const profile = await response.json()
+          if (profile.latitude && profile.longitude) {
+            const saved = {
+              lat: profile.latitude,
+              lng: profile.longitude,
+              city: profile.city || undefined,
+            }
+            setSavedLocation(saved)
+            setUserLocation(saved)
+            // Auto-search with saved location
+            fetchAnnouncements({
+              latitude: saved.lat,
+              longitude: saved.lng,
+              radiusKm,
+            })
+          } else {
+            fetchAnnouncements()
+          }
+        } else {
+          fetchAnnouncements()
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error)
+        fetchAnnouncements()
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    fetchSavedLocation()
+  }, [user])
 
   const fetchAnnouncements = async (filters?: {
     serviceType?: string
@@ -219,7 +261,9 @@ export default function AnnouncementsPage() {
                   {userLocation ? (
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md">
-                        Position aktiv
+                        {savedLocation && userLocation.lat === savedLocation.lat && userLocation.lng === savedLocation.lng
+                          ? `Min plats${savedLocation.city ? ` (${savedLocation.city})` : ""}`
+                          : "Position aktiv"}
                       </span>
                       <select
                         value={radiusKm}
@@ -241,60 +285,69 @@ export default function AnnouncementsPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Button
-                      onClick={requestLocation}
-                      variant="outline"
-                      disabled={locationLoading}
-                    >
-                      {locationLoading ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-2 h-4 w-4"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                          </svg>
-                          Hämtar position...
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="mr-2 h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          Använd min position
-                        </>
+                    <div className="flex gap-2 items-center">
+                      {user && !savedLocation && !profileLoading && (
+                        <Link href="/customer/profile">
+                          <Button variant="outline" size="sm">
+                            Spara min plats i profilen
+                          </Button>
+                        </Link>
                       )}
-                    </Button>
+                      <Button
+                        onClick={requestLocation}
+                        variant="outline"
+                        disabled={locationLoading}
+                      >
+                        {locationLoading ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                            Hämtar position...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="mr-2 h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            Använd min position
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   )}
                 </div>
 

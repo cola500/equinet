@@ -17,6 +17,10 @@ interface Profile {
   lastName: string
   phone?: string
   userType: string
+  city?: string
+  address?: string
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export default function CustomerProfilePage() {
@@ -28,7 +32,12 @@ export default function CustomerProfilePage() {
     firstName: "",
     lastName: "",
     phone: "",
+    city: "",
+    address: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
   })
+  const [isGeocoding, setIsGeocoding] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isCustomer) {
@@ -52,6 +61,10 @@ export default function CustomerProfilePage() {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone || "",
+          city: data.city || "",
+          address: data.address || "",
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
         })
       }
     } catch (error) {
@@ -73,6 +86,10 @@ export default function CustomerProfilePage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone || undefined,
+          city: formData.city || undefined,
+          address: formData.address || undefined,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         }),
       })
 
@@ -96,9 +113,66 @@ export default function CustomerProfilePage() {
         firstName: profile.firstName,
         lastName: profile.lastName,
         phone: profile.phone || "",
+        city: profile.city || "",
+        address: profile.address || "",
+        latitude: profile.latitude ?? null,
+        longitude: profile.longitude ?? null,
       })
     }
     setIsEditing(false)
+  }
+
+  const handleGeocode = async () => {
+    if (!formData.address && !formData.city) {
+      toast.error("Ange adress eller ort för att hitta koordinater")
+      return
+    }
+
+    setIsGeocoding(true)
+    try {
+      const params = new URLSearchParams()
+      if (formData.address) params.append("address", formData.address)
+      if (formData.city) params.append("city", formData.city)
+
+      const response = await fetch(`/api/geocode?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error("Kunde inte hitta platsen")
+      }
+
+      const { latitude, longitude } = await response.json()
+      setFormData(prev => ({ ...prev, latitude, longitude }))
+      toast.success("Plats hittad!")
+    } catch (error) {
+      console.error("Geocoding error:", error)
+      toast.error("Kunde inte hitta platsen. Kontrollera adressen.")
+    } finally {
+      setIsGeocoding(false)
+    }
+  }
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Din webbläsare stöder inte platsdelning")
+      return
+    }
+
+    setIsGeocoding(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }))
+        setIsGeocoding(false)
+        toast.success("Din position har sparats!")
+      },
+      (error) => {
+        console.error("Geolocation error:", error)
+        setIsGeocoding(false)
+        toast.error("Kunde inte hämta din position. Kontrollera behörigheter.")
+      }
+    )
   }
 
   if (isLoading || !isCustomer || !profile) {
@@ -142,6 +216,28 @@ export default function CustomerProfilePage() {
                     <Label className="text-sm text-gray-600">Telefon</Label>
                     <p className="font-medium">{profile.phone || "Ej angiven"}</p>
                   </div>
+                  <div className="border-t pt-4 mt-4">
+                    <Label className="text-sm text-gray-600">Min plats</Label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Används för att matcha dig med leverantörer i ditt område
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Adress</Label>
+                    <p className="font-medium">{profile.address || "Ej angiven"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Ort</Label>
+                    <p className="font-medium">{profile.city || "Ej angiven"}</p>
+                  </div>
+                  {profile.latitude && profile.longitude && (
+                    <div>
+                      <Label className="text-sm text-gray-600">Koordinater</Label>
+                      <p className="font-medium text-green-600">
+                        Plats sparad ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
+                      </p>
+                    </div>
+                  )}
                   <div className="pt-4">
                     <Button onClick={() => setIsEditing(true)}>
                       Redigera profil
@@ -198,6 +294,63 @@ export default function CustomerProfilePage() {
                       placeholder="070-123 45 67"
                     />
                   </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <Label className="text-sm font-medium">Min plats</Label>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Ange din adress för att hitta leverantörer nära dig
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="address">Adress</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
+                      placeholder="Storgatan 1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="city">Ort</Label>
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
+                      placeholder="Göteborg"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGeocode}
+                      disabled={isGeocoding || (!formData.address && !formData.city)}
+                    >
+                      {isGeocoding ? "Söker..." : "Sök adress"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleUseCurrentLocation}
+                      disabled={isGeocoding}
+                    >
+                      Använd min position
+                    </Button>
+                  </div>
+
+                  {formData.latitude && formData.longitude && (
+                    <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                      Plats sparad: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                    </div>
+                  )}
+
                   <div className="flex gap-2 pt-4">
                     <Button type="submit">Spara ändringar</Button>
                     <Button
