@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
     const dateToParam = searchParams.get('dateTo')
 
     // Build Prisma where clause
-    const where: any = {
+    const where: Prisma.RouteOrderWhereInput = {
       announcementType: 'provider_announced',
       status: 'open',
     }
@@ -105,9 +106,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all announcements matching non-geo filters
+    // Using select (not include) to prevent data leakage
     const announcements = await prisma.routeOrder.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        providerId: true,
+        serviceType: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        dateFrom: true,
+        dateTo: true,
+        status: true,
+        announcementType: true,
+        specialInstructions: true,
         provider: {
           select: {
             id: true,
@@ -117,6 +130,14 @@ export async function GET(request: NextRequest) {
           },
         },
         routeStops: {
+          select: {
+            id: true,
+            locationName: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            stopOrder: true,
+          },
           orderBy: {
             stopOrder: 'asc',
           },

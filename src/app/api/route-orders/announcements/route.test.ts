@@ -237,12 +237,15 @@ describe('GET /api/route-orders/announcements', () => {
     expect(data[0].routeStops).toHaveLength(2)
     expect(data[0].routeStops[0].locationName).toBe('Alingsås')
 
-    // Verify include statement
+    // Verify select statement includes routeStops
     expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: expect.objectContaining({
+        select: expect.objectContaining({
           routeStops: expect.objectContaining({
             orderBy: { stopOrder: 'asc' },
+            select: expect.objectContaining({
+              locationName: true,
+            }),
           }),
         }),
       })
@@ -359,5 +362,68 @@ describe('GET /api/route-orders/announcements', () => {
         }),
       })
     )
+  })
+
+  describe('Security', () => {
+    it('should only select safe provider fields (no user relation)', async () => {
+      // Arrange
+      vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([])
+
+      const request = new NextRequest('http://localhost:3000/api/route-orders/announcements')
+
+      // Act
+      await GET(request)
+
+      // Assert - Verify provider select only includes safe fields
+      expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            provider: {
+              select: {
+                id: true,
+                businessName: true,
+                description: true,
+                profileImageUrl: true,
+              },
+            },
+          }),
+        })
+      )
+
+      // Verify user relation is NOT selected
+      const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as any
+      expect(callArgs.select.provider.select.user).toBeUndefined()
+      expect(callArgs.select.provider.select.email).toBeUndefined()
+    })
+
+    it('should use select (not include) to prevent data leakage', async () => {
+      // Arrange
+      vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([])
+
+      const request = new NextRequest('http://localhost:3000/api/route-orders/announcements')
+
+      // Act
+      await GET(request)
+
+      // Assert - Verify select is used instead of include
+      expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            id: true,
+            providerId: true,
+            provider: expect.objectContaining({
+              select: expect.objectContaining({
+                id: true,
+                businessName: true,
+              }),
+            }),
+          }),
+        })
+      )
+
+      // Verify include is NOT used
+      const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0]
+      expect(callArgs).not.toHaveProperty('include')
+    })
   })
 })
