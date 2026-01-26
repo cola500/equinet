@@ -11,7 +11,14 @@ import { z } from "zod"
 const bookingSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID format"),
   serviceId: z.string().uuid("Ogiltigt tjänst-ID format"),
-  bookingDate: z.string().datetime("Ogiltigt datumformat").refine(
+  bookingDate: z.string().refine(
+    (dateStr) => {
+      // Accept both YYYY-MM-DD and full ISO datetime
+      return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ||
+             /^\d{4}-\d{2}-\d{2}T/.test(dateStr)
+    },
+    { message: "Ogiltigt datumformat. Måste vara YYYY-MM-DD eller ISO datetime" }
+  ).refine(
     (dateStr) => {
       const bookingDate = new Date(dateStr)
       const today = new Date()
