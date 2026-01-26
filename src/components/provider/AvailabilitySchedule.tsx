@@ -47,25 +47,27 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
       if (response.ok) {
         const data = await response.json()
 
-        // Om det finns data, använd den
-        if (data.length > 0) {
-          setSchedule(data.map((item: any) => ({
-            dayOfWeek: item.dayOfWeek,
-            startTime: item.startTime,
-            endTime: item.endTime,
-            isClosed: item.isClosed,
-          })))
-        } else {
-          // Annars, skapa default schedule (alla dagar öppna 09:00-17:00)
-          setSchedule(
-            Array.from({ length: 7 }, (_, i) => ({
-              dayOfWeek: i,
-              startTime: "09:00",
-              endTime: "17:00",
-              isClosed: false,
-            }))
-          )
-        }
+        // Skapa ett komplett schema för alla 7 dagar
+        // Fyll i med data från DB om det finns, annars default
+        const completeSchedule = Array.from({ length: 7 }, (_, dayOfWeek) => {
+          const existing = data.find((item: any) => item.dayOfWeek === dayOfWeek)
+          if (existing) {
+            return {
+              dayOfWeek: existing.dayOfWeek,
+              startTime: existing.startTime,
+              endTime: existing.endTime,
+              isClosed: existing.isClosed,
+            }
+          }
+          // Default för dagar som saknas
+          return {
+            dayOfWeek,
+            startTime: "09:00",
+            endTime: "17:00",
+            isClosed: false,
+          }
+        })
+        setSchedule(completeSchedule)
       }
     } catch (error) {
       console.error("Error fetching schedule:", error)
