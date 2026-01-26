@@ -17,6 +17,7 @@ import { format, addDays } from "date-fns"
 import { sv } from "date-fns/locale"
 import { Header } from "@/components/layout/Header"
 import { NearbyRoutesBanner, type NearbyRoute } from "@/components/NearbyRoutesBanner"
+import { ProviderHours } from "@/components/ProviderHours"
 
 interface Service {
   id: string
@@ -26,6 +27,13 @@ interface Service {
   durationMinutes: number
 }
 
+interface Availability {
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isClosed: boolean
+}
+
 interface Provider {
   id: string
   businessName: string
@@ -33,6 +41,7 @@ interface Provider {
   city?: string
   address?: string
   services: Service[]
+  availability: Availability[]
   user: {
     firstName: string
     lastName: string
@@ -337,6 +346,13 @@ export default function ProviderDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Opening Hours */}
+          {provider.availability && provider.availability.length > 0 && (
+            <div className="mb-8">
+              <ProviderHours availability={provider.availability} />
+            </div>
+          )}
 
           {/* Nearby Routes Banner - shown to customers with saved location */}
           {isCustomer && provider && customerLocation && (
