@@ -300,6 +300,12 @@ Före merge?          -> quality-gate
 - Ändring av `.github/workflows/` kräver `workflow` scope
 - Fix: `gh auth login --scopes workflow`
 
+### Database Seeding & Sessions (2026-01-26)
+- `npm run db:seed:force` raderar ALLA användare - aktiva sessioner blir ogiltiga
+- Användare måste logga ut/in efter reseed för att få giltigt session-ID
+- Zod `z.string().datetime()` kräver fullständigt ISO-format - använd flexibel validering för datumfält
+- Prisma P2003 (foreign key) fel: logga alltid vilken constraint som failar, inte anta
+
 ---
 
 ## Automated Quality Gates
