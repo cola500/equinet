@@ -14,6 +14,8 @@
 8. [Saknade Database Indexes](#8-saknade-database-indexes)
 9. [NextAuth v5 Migration](#9-nextauth-v5-migration)
 10. [TypeScript Memory Issues](#10-typescript-memory-issues)
+11. [Frontend Data Normalisering](#11-frontend-data-normalisering)
+12. [Generiska Felmeddelanden](#12-generiska-felmeddelanden)
 
 ---
 
@@ -366,6 +368,92 @@ npm run build
 ```
 
 **Impact:** `next build` fungerar alltid, men standalone `tsc --noEmit` kan kräva mer minne.
+
+---
+
+## 11. Frontend Data Normalisering
+
+> **Learning: 2026-01-26** | **Severity: MEDIUM**
+
+**Problem:** Frontend visar bara data som kommer från backend, men backend kanske inte returnerar alla förväntade items.
+
+**Symptom:** Användare rapporterar att data "försvinner" efter sparande (t.ex. vissa veckodagar i ett schema).
+
+```typescript
+// ❌ FEL - Visar bara det som kommer från DB
+const fetchSchedule = async () => {
+  const data = await fetch('/api/schedule').then(r => r.json())
+  setSchedule(data)  // Om DB bara har 5 av 7 dagar, visas bara 5!
+}
+
+// ✅ RÄTT - Normalisera data, fyll i saknade items
+const fetchSchedule = async () => {
+  const data = await fetch('/api/schedule').then(r => r.json())
+
+  // Säkerställ att alla 7 dagar finns
+  const complete = Array.from({ length: 7 }, (_, dayOfWeek) => {
+    const existing = data.find((d: any) => d.dayOfWeek === dayOfWeek)
+    return existing || { dayOfWeek, startTime: "09:00", endTime: "17:00", isClosed: false }
+  })
+  setSchedule(complete)
+}
+```
+
+**Pattern - Normalisera alltid när:**
+- Du förväntar dig en fast struktur (7 veckodagar, 12 månader, etc.)
+- Backend kan returnera partial data
+- Ordningen på items är viktig (index-baserad rendering)
+
+**Impact:** Data "försvinner" inte längre efter CRUD-operationer.
+
+---
+
+## 12. Generiska Felmeddelanden
+
+> **Learning: 2026-01-26** | **Severity: MEDIUM**
+
+**Problem:** "Internal error" eller "Något gick fel" gör debugging omöjligt.
+
+**Symptom:** Användare rapporterar fel men du kan inte reproducera eller debugga.
+
+```typescript
+// ❌ FEL - Ingen info för debugging
+} catch (error) {
+  console.error("Error:", error)
+  return new Response("Internal error", { status: 500 })
+}
+
+// ✅ RÄTT - Returnera detaljer (i dev/staging) + logga allt
+} catch (error) {
+  console.error("Error updating schedule:", error)
+
+  // Returnera detaljer för debugging
+  return NextResponse.json(
+    {
+      error: "Internal error",
+      details: error instanceof Error ? error.message : "Unknown error"
+    },
+    { status: 500 }
+  )
+}
+```
+
+**Frontend - Visa detaljerna:**
+```typescript
+// ❌ FEL - Generiskt meddelande
+} catch (error) {
+  toast.error("Kunde inte spara")
+}
+
+// ✅ RÄTT - Visa detaljer om de finns
+const errorData = await response.json().catch(() => ({}))
+console.error("Error response:", response.status, errorData)
+toast.error(errorData.details || errorData.error || "Kunde inte spara")
+```
+
+**OBS:** I produktion, överväg att dölja känsliga detaljer från användare men ALLTID logga dem server-side.
+
+**Impact:** Snabbare debugging, färre "det bara fungerar inte"-rapporter.
 
 ---
 
