@@ -398,17 +398,20 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // P2003: Foreign key constraint failed (routeOrderId invalid)
+      // P2003: Foreign key constraint failed
       if (error.code === "P2003") {
+        const fieldName = (error.meta as any)?.field_name || "unknown"
+        console.error("Foreign key constraint failed:", fieldName, error.meta)
         try {
           logger.warn("Invalid foreign key during booking", {
             code: error.code,
+            field: fieldName,
           })
         } catch (logError) {
           console.error("Logger failed:", logError)
         }
         return NextResponse.json(
-          { error: "RouteOrder hittades inte" },
+          { error: "Ogiltig referens - kontrollera att tjänst och leverantör finns", details: fieldName },
           { status: 400 }
         )
       }
