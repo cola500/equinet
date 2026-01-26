@@ -278,4 +278,86 @@ describe('GET /api/route-orders/announcements', () => {
     expect(response.status).toBe(400)
     expect(data.error).toContain('radiusKm must be positive')
   })
+
+  it('should filter announcements by providerId', async () => {
+    // Arrange
+    const mockProviderAnnouncements = [
+      {
+        id: 'announcement1',
+        providerId: 'provider1',
+        serviceType: 'Hovslagning',
+        announcementType: 'provider_announced',
+        status: 'open',
+        provider: { id: 'provider1', businessName: 'Test Hovslagare' },
+        routeStops: [],
+      },
+    ]
+
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockProviderAnnouncements as any)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/route-orders/announcements?providerId=provider1'
+    )
+
+    // Act
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(1)
+    expect(data[0].providerId).toBe('provider1')
+
+    // Verify query includes providerId filter
+    expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          providerId: 'provider1',
+        }),
+      })
+    )
+  })
+
+  it('should combine providerId with geo-filter', async () => {
+    // Arrange - Provider's announcement near customer
+    const mockAnnouncements = [
+      {
+        id: 'announcement1',
+        providerId: 'provider1',
+        serviceType: 'Hovslagning',
+        address: 'Alingsås',
+        latitude: 57.930,
+        longitude: 12.532,
+        announcementType: 'provider_announced',
+        status: 'open',
+        provider: { id: 'provider1', businessName: 'Test Hovslagare' },
+        routeStops: [],
+      },
+    ]
+
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as any)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/route-orders/announcements?providerId=provider1&latitude=57.930&longitude=12.532&radiusKm=50'
+    )
+
+    // Act
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(1)
+
+    // Verify both filters applied
+    expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          providerId: 'provider1',
+          announcementType: 'provider_announced',
+          status: 'open',
+        }),
+      })
+    )
+  })
 })

@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { format, addDays } from "date-fns"
 import { sv } from "date-fns/locale"
 import { Header } from "@/components/layout/Header"
+import { NearbyRoutesBanner, type NearbyRoute } from "@/components/NearbyRoutesBanner"
 
 interface Service {
   id: string
@@ -72,12 +73,61 @@ export default function ProviderDetailPage() {
     closingTime: string | null
   } | null>(null)
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
+  const [customerLocation, setCustomerLocation] = useState<{
+    latitude: number
+    longitude: number
+  } | null>(null)
+  const [nearbyRoute, setNearbyRoute] = useState<NearbyRoute | null>(null)
 
   useEffect(() => {
     if (params.id) {
       fetchProvider()
     }
   }, [params.id])
+
+  // Fetch customer location and nearby routes for customers
+  useEffect(() => {
+    if (!isCustomer || !params.id) return
+
+    const fetchLocationAndRoutes = async () => {
+      try {
+        // First fetch customer location
+        const profileResponse = await fetch("/api/profile")
+        if (!profileResponse.ok) return
+
+        const profile = await profileResponse.json()
+        if (!profile.latitude || !profile.longitude) return
+
+        const location = {
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+        }
+        setCustomerLocation(location)
+
+        // Then fetch nearby routes for this provider
+        const routeParams = new URLSearchParams({
+          providerId: params.id as string,
+          latitude: location.latitude.toString(),
+          longitude: location.longitude.toString(),
+          radiusKm: "50",
+        })
+
+        const routesResponse = await fetch(
+          `/api/route-orders/announcements?${routeParams}`
+        )
+        if (routesResponse.ok) {
+          const routes = await routesResponse.json()
+          if (Array.isArray(routes) && routes.length > 0) {
+            setNearbyRoute(routes[0])
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching location/routes:", error)
+      }
+    }
+
+    fetchLocationAndRoutes()
+  }, [isCustomer, params.id])
 
   const fetchProvider = async () => {
     try {
@@ -288,6 +338,14 @@ export default function ProviderDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Nearby Routes Banner - shown to customers with saved location */}
+          {isCustomer && provider && customerLocation && (
+            <NearbyRoutesBanner
+              providerId={provider.id}
+              customerLocation={customerLocation}
+            />
+          )}
+
           {/* Services */}
           <h2 className="text-2xl font-bold mb-4">Tillgängliga tjänster</h2>
           {provider.services.length === 0 ? (
@@ -343,6 +401,45 @@ export default function ProviderDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitBooking} className="space-y-4">
+            {/* Route Booking Option - shown if provider has nearby route */}
+            {nearbyRoute && (
+              <div
+                className="p-4 rounded-lg border-2 border-green-300 bg-green-50"
+                data-testid="route-booking-option"
+              >
+                <h4 className="font-semibold text-green-800">
+                  Boka på planerad rutt
+                </h4>
+                <p className="text-sm text-green-700 mt-1">
+                  Leverantören kommer till ditt område{" "}
+                  {new Date(nearbyRoute.dateFrom).toLocaleDateString("sv-SE", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                  {nearbyRoute.dateFrom !== nearbyRoute.dateTo && (
+                    <>
+                      {" - "}
+                      {new Date(nearbyRoute.dateTo).toLocaleDateString("sv-SE", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </>
+                  )}
+                </p>
+                <Link href={`/announcements/${nearbyRoute.id}/book`}>
+                  <Button
+                    type="button"
+                    className="w-full mt-3 bg-green-600 hover:bg-green-700"
+                  >
+                    Boka på rutten
+                  </Button>
+                </Link>
+                <p className="text-xs text-center text-gray-500 mt-2">
+                  Eller välj annan tid nedan
+                </p>
+              </div>
+            )}
+
             {/* Booking Type Toggle */}
             <div className="p-4 rounded-lg border-2 border-blue-300 bg-gray-50 transition-all duration-300" data-testid="booking-type-section">
               <div className="flex items-center justify-between mb-3">

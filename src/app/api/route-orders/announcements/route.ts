@@ -36,6 +36,7 @@ function toRad(value: number): number {
  * Search for provider-announced route orders (announcements)
  *
  * Query parameters:
+ * - providerId: Filter by specific provider
  * - latitude: Customer's latitude (for geo-filtering)
  * - longitude: Customer's longitude (for geo-filtering)
  * - radiusKm: Search radius in kilometers (for geo-filtering)
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
 
     // Parse query parameters
+    const providerIdParam = searchParams.get('providerId')
     const latitudeParam = searchParams.get('latitude')
     const longitudeParam = searchParams.get('longitude')
     const radiusKmParam = searchParams.get('radiusKm')
@@ -59,6 +61,11 @@ export async function GET(request: NextRequest) {
     const where: any = {
       announcementType: 'provider_announced',
       status: 'open',
+    }
+
+    // Provider filter
+    if (providerIdParam) {
+      where.providerId = providerIdParam
     }
 
     // Geo-filtering validation
