@@ -88,49 +88,39 @@ export async function PUT(
     // Parse & validate
     const validated = scheduleSchema.parse(body)
 
-    // Update availability schedule
-    // Delete existing availability
-    await prisma.availability.deleteMany({
-      where: { providerId },
-    })
+    // Update availability schedule using transaction to avoid connection pool exhaustion
+    // This runs all operations in a single connection
+    // @ts-expect-error - Prisma transaction callback type inference issue
+    const updatedAvailability = await prisma.$transaction(async (tx: any) => {
+      // Delete existing availability
+      await tx.availability.deleteMany({
+        where: { providerId },
+      })
 
-    // Create new availability entries
-    const createPromises = validated.schedule.map((item) =>
-      prisma.availability.upsert({
-        where: {
-          providerId_dayOfWeek: {
+      // Create new availability entries sequentially within transaction
+      for (const item of validated.schedule) {
+        await tx.availability.create({
+          data: {
             providerId,
             dayOfWeek: item.dayOfWeek,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            isClosed: item.isClosed,
+            isActive: true,
           },
-        },
-        update: {
-          startTime: item.startTime,
-          endTime: item.endTime,
-          isClosed: item.isClosed,
-          isActive: true,
-        },
-        create: {
+        })
+      }
+
+      // Fetch and return updated schedule
+      return tx.availability.findMany({
+        where: {
           providerId,
-          dayOfWeek: item.dayOfWeek,
-          startTime: item.startTime,
-          endTime: item.endTime,
-          isClosed: item.isClosed,
           isActive: true,
+        },
+        orderBy: {
+          dayOfWeek: "asc",
         },
       })
-    )
-
-    await Promise.all(createPromises)
-
-    // Fetch and return updated schedule
-    const updatedAvailability = await prisma.availability.findMany({
-      where: {
-        providerId,
-        isActive: true,
-      },
-      orderBy: {
-        dayOfWeek: "asc",
-      },
     })
 
     return NextResponse.json(updatedAvailability)

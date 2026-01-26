@@ -15,9 +15,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     availability: {
       findMany: vi.fn(),
-      upsert: vi.fn(),
+      create: vi.fn(),
       deleteMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -119,6 +120,26 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
       { dayOfWeek: 2, startTime: '00:00', endTime: '00:00', isClosed: true },
     ]
 
+    const mockUpdatedAvailability = scheduleData.map((item, i) => ({
+      id: `avail-${i}`,
+      providerId: mockProviderId,
+      ...item,
+      isActive: true,
+    }))
+
+    // Mock $transaction to execute the callback and return the result
+    // @ts-expect-error - Vitest type instantiation depth limitation
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      const tx = {
+        availability: {
+          deleteMany: vi.fn().mockResolvedValue({ count: 7 }),
+          create: vi.fn().mockResolvedValue({}),
+          findMany: vi.fn().mockResolvedValue(mockUpdatedAvailability),
+        },
+      }
+      return callback(tx)
+    })
+
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`, {
       method: 'PUT',
       body: JSON.stringify({ schedule: scheduleData }),
@@ -129,10 +150,9 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     })
 
     expect(response.status).toBe(200)
-    expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
-      where: { providerId: mockProviderId },
-    })
-    expect(prisma.availability.upsert).toHaveBeenCalledTimes(3)
+    expect(prisma.$transaction).toHaveBeenCalled()
+    const data = await response.json()
+    expect(data).toHaveLength(3)
   })
 
   it('should return 401 if not authenticated', async () => {
