@@ -333,14 +333,35 @@ export async function GET(request: Request) {
         )
       }
 
-      // Fetch provider's own announcements (all statuses)
+      // Fetch provider's own announcements (all statuses) - using select for efficiency
       const announcements = await prisma.routeOrder.findMany({
         where: {
           providerId: provider.id,
           announcementType: "provider_announced"
         },
-        include: {
+        select: {
+          id: true,
+          serviceType: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          dateFrom: true,
+          dateTo: true,
+          status: true,
+          specialInstructions: true,
+          announcementType: true,
+          createdAt: true,
           routeStops: {
+            select: {
+              id: true,
+              stopOrder: true,
+              locationName: true,
+              address: true,
+              latitude: true,
+              longitude: true,
+              estimatedArrival: true,
+              status: true,
+            },
             orderBy: { stopOrder: "asc" }
           },
           _count: {

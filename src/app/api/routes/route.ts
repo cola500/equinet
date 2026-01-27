@@ -131,12 +131,23 @@ export async function POST(request: Request) {
       return newRoute
     })
 
-    // 6. Fetch complete route with stops
+    // 6. Fetch complete route with stops (using select for efficiency)
     const completeRoute = await prisma.route.findUnique({
       where: { id: route.id },
-      include: {
+      select: {
+        id: true,
+        routeName: true,
+        routeDate: true,
+        startTime: true,
+        status: true,
+        totalDistanceKm: true,
+        totalDurationMinutes: true,
+        createdAt: true,
+        updatedAt: true,
         provider: {
-          include: {
+          select: {
+            id: true,
+            businessName: true,
             user: {
               select: {
                 firstName: true,
@@ -146,9 +157,24 @@ export async function POST(request: Request) {
           }
         },
         stops: {
-          include: {
+          select: {
+            id: true,
+            stopOrder: true,
+            estimatedArrival: true,
+            estimatedDurationMin: true,
+            actualArrival: true,
+            actualDeparture: true,
+            status: true,
+            problemNote: true,
             routeOrder: {
-              include: {
+              select: {
+                id: true,
+                serviceType: true,
+                address: true,
+                numberOfHorses: true,
+                priority: true,
+                specialInstructions: true,
+                contactPhone: true,
                 customer: {
                   select: {
                     firstName: true,

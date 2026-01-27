@@ -3,6 +3,7 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { calculateBoundingBox, getMaxRadiusKm } from "@/lib/geo/bounding-box"
+import { getCachedProviders, setCachedProviders, CachedProvider } from "@/lib/cache/provider-cache"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -123,7 +124,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const providers = await providerRepo.findAllWithDetails(filters)
+    // Generate cache key from filter parameters
+    const cacheKey = JSON.stringify({
+      city: city || null,
+      search: search || null,
+      boundingBox: filters.boundingBox || null,
+    })
+
+    // Check cache first
+    const cachedProviders = await getCachedProviders(cacheKey)
+    let providers: CachedProvider[]
+
+    if (cachedProviders) {
+      providers = cachedProviders
+    } else {
+      // Fetch from database
+      providers = await providerRepo.findAllWithDetails(filters)
+
+      // Cache the result (fail-open - errors are handled in cache module)
+      await setCachedProviders(cacheKey, providers)
+    }
 
     // Apply exact distance filtering (on reduced dataset from bounding box)
     if (geoFilter) {

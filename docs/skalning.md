@@ -1,8 +1,8 @@
 # Skalningsplan: 500 användare
 
-> **Status:** FAS 1 VERIFIERAD I PRODUKTION ✅
+> **Status:** FAS 2 IMPLEMENTERAD ✅
 > **Skapad:** 2026-01-26
-> **Uppdaterad:** 2026-01-27 (Fas 1 verifierad i produktion)
+> **Uppdaterad:** 2026-01-27 (Fas 2 implementerad)
 > **Mål:** Göra Equinet robust för 500 samtidiga användare
 
 ---
@@ -23,9 +23,9 @@ Denna plan beskriver nödvändiga åtgärder för att skala Equinet från nuvara
 | 1.2 | Geocoding cache | ✅ Mergad till main | main |
 | 1.3 | Rate limiting | ✅ Mergad till main | main |
 | 1.4 | Bounding box queries | ✅ Mergad till main | main |
-| 2.1 | Provider-lista cache | ⏳ Ej påbörjad | - |
-| 2.2 | Database indexes | ⏳ Ej påbörjad | - |
-| 2.3 | Query optimization | ⏳ Ej påbörjad | - |
+| 2.1 | Provider-lista cache | ✅ Mergad till main | main |
+| 2.2 | Database indexes | ✅ Mergad till main | main |
+| 2.3 | Query optimization | ✅ Mergad till main | main |
 
 ---
 
@@ -202,81 +202,65 @@ Efter:  DB → hämta providers i box → JS filter (O(m) där m << n)
 
 ---
 
-## Fas 2: Optimering (Vecka 2)
+## Fas 2: Optimering (Vecka 2) ✅ IMPLEMENTERAD
 
-### 2.1 Provider-lista Cache
+### 2.1 Provider-lista Cache ✅
 
-**Problem:** Provider-data ändras sällan men fetchas vid varje request.
+**Status:** Implementerad i `src/lib/cache/provider-cache.ts`
 
-**Lösning:**
-```typescript
-// 5 minuters TTL för provider-listan
-const CACHE_TTL = 5 * 60
+**Vad som gjordes:**
+- Skapade `provider-cache.ts` med Upstash Redis integration
+- SHA-256 hashade cache keys (baserade på filter-parametrar)
+- 5 minuters TTL (providers uppdateras oftare än geo-data)
+- Graceful fallback om Redis är nere (fail-open)
+- `invalidateProviderCache()` för cache invalidation
 
-export async function GET(request: NextRequest) {
-  const cacheKey = `providers:${searchParams.toString()}`
-
-  // Check cache
-  const cached = await redis.get(cacheKey)
-  if (cached) return NextResponse.json(cached)
-
-  // Fetch from DB
-  const providers = await providerRepo.findAllWithDetails(...)
-
-  // Cache (saniterad data)
-  await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(providers))
-
-  return NextResponse.json(providers)
-}
-```
+**Filer:**
+- `src/lib/cache/provider-cache.ts` - cache implementation
+- `src/app/api/providers/route.ts` - integrerad cache
 
 **Uppgifter:**
-- [ ] Implementera provider cache
-- [ ] Cache invalidation vid provider-uppdatering
-- [ ] Testa cache hit rate
-
-**Ansvarig:** _________________
-**Deadline:** _________________
+- [x] Implementera provider cache
+- [x] Cache invalidation vid provider-uppdatering
+- [ ] Testa cache hit rate i produktion
 
 ---
 
-### 2.2 Database Indexes
+### 2.2 Database Indexes ✅
 
-**Problem:** Notification-tabellen saknar index.
+**Status:** Implementerad i `prisma/schema.prisma`
 
-**Lösning:**
-```prisma
-// schema.prisma
-model Notification {
-  // ... existing fields
+**Vad som gjordes:**
+- Lade till `@@index([userId, isRead])` för "olästa notifikationer"
+- Lade till `@@index([userId, createdAt])` för "senaste notifikationer"
+- Schema synkat med `prisma db push`
 
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([userId, isRead])
-}
-```
+**Filer:**
+- `prisma/schema.prisma` - indexes tillagda
 
 **Uppgifter:**
-- [ ] Uppdatera schema.prisma
-- [ ] Generera och kör migration
+- [x] Uppdatera schema.prisma
+- [x] Kör migration/db push
 - [ ] Verifiera index-användning med EXPLAIN ANALYZE
 
-**Ansvarig:** _________________
-**Deadline:** _________________
-
 ---
 
-### 2.3 Query Optimization (N+1)
+### 2.3 Query Optimization (N+1) ✅
 
-**Problem:** Nested includes i routes-endpoint.
+**Status:** Implementerad i routes och route-orders
 
-**Lösning:** Använd `select` istället för `include`.
+**Vad som gjordes:**
+- Konverterade nested `include` till `select` i `/api/routes`
+- Konverterade `include` till `select` i `/api/route-orders` (announcements)
+- Hämtar nu endast nödvändiga fält istället för hela objekt
 
-**Filer att uppdatera:**
-- [ ] `api/routes/route.ts` - Konvertera include → select
-- [ ] `api/bookings/route.ts` - Verifiera select-användning
+**Filer:**
+- `src/app/api/routes/route.ts` - select istället för include
+- `src/app/api/route-orders/route.ts` - select istället för include
 
-**Ansvarig:** _________________
-**Deadline:** _________________
+**Uppgifter:**
+- [x] `api/routes/route.ts` - Konvertera include → select
+- [x] `api/route-orders/route.ts` - Konvertera include → select
 
 ---
 
@@ -498,4 +482,4 @@ Om skalningsändringar orsakar problem:
 
 ---
 
-*Senast uppdaterad: 2026-01-27*
+*Senast uppdaterad: 2026-01-27 (Fas 2 implementerad)*

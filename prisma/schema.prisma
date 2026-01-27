@@ -137,6 +137,9 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId, isRead])    // "Olästa notifikationer för användare"
+  @@index([userId, createdAt]) // "Senaste notifikationer"
 }
 
 // Route-based delivery models
