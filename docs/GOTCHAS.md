@@ -17,6 +17,8 @@
 11. [Frontend Data Normalisering](#11-frontend-data-normalisering)
 12. [Generiska Felmeddelanden](#12-generiska-felmeddelanden)
 13. [Connection Pool Exhaustion](#13-connection-pool-exhaustion)
+14. [Prisma DATE-kolumner och Timezone](#14-prisma-date-kolumner-och-timezone)
+15. [Safari Date Parsing](#15-safari-date-parsing)
 
 ---
 
@@ -505,6 +507,85 @@ const result = await prisma.$transaction(async (tx) => {
 **Bonus:** Transaktioner ger också atomicitet - om något misslyckas rullas allt tillbaka.
 
 **Impact:** Förhindrar "max clients reached" errors i produktion.
+
+---
+
+## 14. Prisma DATE-kolumner och Timezone
+
+> **Learning: 2026-01-27** | **Severity: HIGH**
+
+**Problem:** Prisma `@db.Date` kolumner kräver UTC-datum för konsekvent lagring/hämtning.
+
+**Symptom:** DELETE/UPDATE hittar inte records som skapades med lokal tid, returnerar 404.
+
+```typescript
+// ❌ FEL - Lokal tid ger olika UTC-värden beroende på timezone
+function parseDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number)
+  return new Date(year, month - 1, day)  // Lokal tid!
+}
+// I Stockholm (UTC+1): "2026-01-27" -> 2026-01-26T23:00:00.000Z
+// Sparas som 2026-01-26 i databasen!
+
+// ✅ RÄTT - Använd alltid UTC för databasdatum
+function parseDate(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00.000Z`)  // Explicit UTC
+}
+// Överallt: "2026-01-27" -> 2026-01-27T00:00:00.000Z
+// Sparas som 2026-01-27 i databasen!
+```
+
+**Varför?**
+- PostgreSQL DATE lagrar endast datum (ingen tid)
+- Prisma konverterar Date-objekt till UTC före lagring
+- Om du skapar med lokal tid och söker med lokal tid kan det bli olika UTC-värden
+
+**Pattern - För Prisma DATE-kolumner:**
+- Använd alltid UTC när du skapar Date-objekt
+- Använd `src/lib/date-utils.ts` → `parseDate()` som är konfigurerad för UTC
+- Formatera tillbaka med `formatDateToString()` som också använder UTC
+
+**Impact:** Records hittas inte vid UPDATE/DELETE om timezone är inkonsekvent.
+
+---
+
+## 15. Safari Date Parsing
+
+> **Learning: 2026-01-27** | **Severity: MEDIUM**
+
+**Problem:** `new Date("YYYY-MM-DD")` tolkas inkonsekvent mellan webbläsare.
+
+**Symptom:** Datum visas fel i Safari/iOS - ofta en dag fel (t.ex. 26 jan istället för 27 jan).
+
+```typescript
+// ❌ FEL - Inkonsekvent mellan webbläsare
+const date = new Date("2026-01-27")
+// Chrome: 2026-01-27T00:00:00 (lokal tid)
+// Safari: 2026-01-27T00:00:00Z (UTC) → visas som 26 jan i UTC+1
+
+// ✅ RÄTT - Explicit parsing, konsekvent överallt
+function parseDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number)
+  return new Date(year, month - 1, day)  // Lokal tid, alla webbläsare
+}
+
+// ELLER för UTC (rekommenderas för databas):
+function parseDateUTC(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00.000Z`)
+}
+```
+
+**Varför?**
+- ISO 8601 date-only strings ("YYYY-MM-DD") tolkas som UTC i Safari
+- Chrome/Firefox tolkar dem som lokal tid
+- Detta ger off-by-one errors i tidszoner väster om UTC
+
+**Pattern - Använd alltid explicit parsing:**
+- Importera `parseDate` från `src/lib/date-utils.ts`
+- Undvik `new Date("YYYY-MM-DD")` direkt
+- Testa alltid datumlogik i Safari/iOS
+
+**Impact:** Datum visas fel för ~15% av användare (Safari/iOS-användare).
 
 ---
 
