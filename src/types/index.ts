@@ -87,3 +87,37 @@ export interface BookingWithDetails extends Booking {
   provider: Provider
   service: Service
 }
+
+// Calendar-related types
+export interface CalendarPayment {
+  id: string
+  status: string
+  amount: number
+  invoiceNumber: string | null
+}
+
+export interface CalendarCustomer {
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+}
+
+export interface CalendarService {
+  name: string
+  price: number
+}
+
+export interface CalendarBooking {
+  id: string
+  bookingDate: string
+  startTime: string
+  endTime: string
+  status: string
+  horseName?: string
+  horseInfo?: string
+  customerNotes?: string
+  service: CalendarService
+  customer: CalendarCustomer
+  payment?: CalendarPayment | null
+}

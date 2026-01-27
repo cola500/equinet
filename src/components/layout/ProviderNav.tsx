@@ -43,6 +43,16 @@ export function ProviderNav() {
             Bokningar
           </Link>
           <Link
+            href="/provider/calendar"
+            className={`py-3 ${
+              isActive("/provider/calendar")
+                ? "border-b-2 border-green-600 text-green-600 font-medium"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Kalender
+          </Link>
+          <Link
             href="/provider/route-planning"
             className={`py-3 ${
               pathname?.startsWith("/provider/route") || pathname === "/provider/routes"
