@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { sendBookingStatusChangeNotification } from "@/lib/email"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
@@ -75,6 +76,14 @@ export async function PUT(
         },
       },
     })
+
+    // Send status change notification email (async, don't block response)
+    // Only send for meaningful status changes (not when customer updates their own booking)
+    if (["confirmed", "cancelled", "completed"].includes(validatedData.status)) {
+      sendBookingStatusChangeNotification(id, validatedData.status).catch((err) => {
+        console.error("Failed to send status change notification:", err)
+      })
+    }
 
     return NextResponse.json(updatedBooking)
   } catch (error) {

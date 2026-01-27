@@ -22,6 +22,16 @@ import {
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { Badge } from "@/components/ui/badge"
 
+interface Payment {
+  id: string
+  status: string
+  amount: number
+  currency: string
+  paidAt: string | null
+  invoiceNumber: string | null
+  invoiceUrl: string | null
+}
+
 interface Booking {
   id: string
   bookingDate: string
@@ -42,6 +52,7 @@ interface Booking {
       lastName: string
     }
   }
+  payment?: Payment | null
   type: "fixed"
 }
 
@@ -82,6 +93,7 @@ export default function CustomerBookingsPage() {
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("upcoming")
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [payingBookingId, setPayingBookingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoadingBookings, setIsLoadingBookings] = useState(true)
 
@@ -156,6 +168,31 @@ export default function CustomerBookingsPage() {
       toast.error("Kunde inte avboka bokningen")
     } finally {
       setIsCancelling(false)
+    }
+  }
+
+  const handlePayment = async (bookingId: string) => {
+    setPayingBookingId(bookingId)
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Betalningen misslyckades")
+      }
+
+      toast.success("Betalning genomförd!")
+      fetchBookings() // Refresh the list
+    } catch (error) {
+      console.error("Error processing payment:", error)
+      toast.error(error instanceof Error ? error.message : "Kunde inte genomföra betalningen")
+    } finally {
+      setPayingBookingId(null)
     }
   }
 
@@ -490,8 +527,67 @@ export default function CustomerBookingsPage() {
                     </>
                   )}
 
-                  {/* Cancel button - only show for pending/confirmed bookings */}
-                  {(booking.status === "pending" || booking.status === "confirmed") && (
+                  {/* Payment and action buttons for fixed bookings */}
+                  {booking.type === "fixed" && (
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Payment status and actions */}
+                        {booking.payment?.status === "succeeded" ? (
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-green-100 text-green-800">
+                              Betald
+                            </Badge>
+                            {booking.payment.invoiceNumber && (
+                              <span className="text-sm text-gray-500">
+                                Kvitto: {booking.payment.invoiceNumber}
+                              </span>
+                            )}
+                            {booking.payment.invoiceUrl && (
+                              <a
+                                href={booking.payment.invoiceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline"
+                              >
+                                Ladda ner kvitto
+                              </a>
+                            )}
+                          </div>
+                        ) : (booking.status === "confirmed" || booking.status === "completed") ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handlePayment(booking.id)}
+                            disabled={payingBookingId === booking.id}
+                          >
+                            {payingBookingId === booking.id ? (
+                              <>
+                                <span className="animate-spin mr-2">...</span>
+                                Bearbetar...
+                              </>
+                            ) : (
+                              <>Betala {booking.service.price} kr</>
+                            )}
+                          </Button>
+                        ) : null}
+
+                        {/* Cancel button - only show for pending/confirmed bookings that are not paid */}
+                        {(booking.status === "pending" || booking.status === "confirmed") &&
+                          booking.payment?.status !== "succeeded" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setBookingToCancel(booking.id)}
+                          >
+                            Avboka
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cancel button for flexible bookings */}
+                  {booking.type === "flexible" && (booking.status === "pending" || booking.status === "in_route") && (
                     <div className="mt-4 pt-4 border-t">
                       <Button
                         variant="destructive"

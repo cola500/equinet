@@ -121,11 +121,40 @@ model Booking {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  payment       Payment?
+
   @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
   @@index([providerId, bookingDate, status])
   @@index([customerId, bookingDate])
   @@index([serviceId])
   @@index([routeOrderId])
+}
+
+model Payment {
+  id                String    @id @default(uuid())
+  bookingId         String    @unique
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  amount            Float     // Belopp i SEK
+  currency          String    @default("SEK")
+
+  // Payment provider (mock för demo, stripe/swish för produktion)
+  provider          String    @default("mock") // "mock" | "stripe" | "swish"
+  providerPaymentId String?   // Externt betalnings-ID
+
+  // Status tracking
+  status            String    @default("pending") // pending, succeeded, failed, refunded
+  paidAt            DateTime?
+
+  // Kvitto/Faktura
+  invoiceNumber     String?   @unique
+  invoiceUrl        String?   // URL till PDF-kvitto
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([bookingId, status])
+  @@index([status, paidAt])
 }
 
 model Notification {
