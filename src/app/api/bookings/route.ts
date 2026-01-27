@@ -6,6 +6,7 @@ import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/Pr
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { sendBookingConfirmationNotification } from "@/lib/email"
 import { z } from "zod"
 
 const bookingSchema = z.object({
@@ -339,6 +340,11 @@ export async function POST(request: NextRequest) {
     } catch (logError) {
       console.error("Logger failed after successful booking:", logError)
     }
+
+    // Send booking confirmation email (async, don't block response)
+    sendBookingConfirmationNotification(booking.id).catch((err) => {
+      console.error("Failed to send booking confirmation email:", err)
+    })
 
     return NextResponse.json(booking, { status: 201 })
   } catch (err: unknown) {

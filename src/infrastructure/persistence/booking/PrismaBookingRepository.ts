@@ -240,6 +240,19 @@ export class PrismaBookingRepository
             // ❌ NOT: isActive, createdAt, updatedAt
           },
         },
+        // Payment information for customer view
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            currency: true,
+            paidAt: true,
+            invoiceNumber: true,
+            invoiceUrl: true,
+            // ❌ NOT: provider, providerPaymentId (internal details)
+          },
+        },
         // ❌ NO customer relation (customer already knows their own data)
       },
       orderBy: { bookingDate: 'desc' },

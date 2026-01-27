@@ -72,6 +72,16 @@ export interface BookingWithRelations {
       // NEVER includes email/phone in customer view
     }
   }
+  // Payment information (for customer view)
+  payment?: {
+    id: string
+    status: string
+    amount: number
+    currency: string
+    paidAt: Date | null
+    invoiceNumber: string | null
+    invoiceUrl: string | null
+  } | null
 }
 
 export interface IBookingRepository extends IRepository<Booking> {

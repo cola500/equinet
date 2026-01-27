@@ -10,6 +10,7 @@
 | Vanliga Gotchas | [docs/GOTCHAS.md](docs/GOTCHAS.md) |
 | Agent-Team | [docs/AGENTS.md](docs/AGENTS.md) |
 | Production Deploy | [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) |
+| Bokningsflöde & Betalning | [docs/SERVICE-BOOKING-FLOW.md](docs/SERVICE-BOOKING-FLOW.md) |
 | Tidigare Retros | [docs/retrospectives/](docs/retrospectives/) |
 | Sprint-historik | [docs/sprints/](docs/sprints/) |
 | Säkerhetsaudit | [docs/SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) |
