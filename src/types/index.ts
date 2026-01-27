@@ -121,3 +121,10 @@ export interface CalendarBooking {
   customer: CalendarCustomer
   payment?: CalendarPayment | null
 }
+
+export interface AvailabilityDay {
+  dayOfWeek: number // 0-6 (0=Måndag, 6=Söndag)
+  startTime: string // HH:MM format
+  endTime: string // HH:MM format
+  isClosed: boolean
+}

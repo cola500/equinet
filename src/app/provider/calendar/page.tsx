@@ -9,7 +9,8 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CalendarHeader } from "@/components/calendar/CalendarHeader"
 import { WeekCalendar } from "@/components/calendar/WeekCalendar"
 import { BookingDetailDialog } from "@/components/calendar/BookingDetailDialog"
-import { CalendarBooking } from "@/types"
+import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDialog"
+import { CalendarBooking, AvailabilityDay } from "@/types"
 
 export default function ProviderCalendarPage() {
   const router = useRouter()
@@ -18,12 +19,63 @@ export default function ProviderCalendarPage() {
   const [bookings, setBookings] = useState<CalendarBooking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [providerId, setProviderId] = useState<string | null>(null)
+  const [availability, setAvailability] = useState<AvailabilityDay[]>([])
+  const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false)
+  const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
       router.push("/login")
     }
   }, [isProvider, isLoading, router])
+
+  // Hämta provider-profil för att få provider-ID
+  const fetchProviderProfile = useCallback(async () => {
+    try {
+      const response = await fetch("/api/provider/profile")
+      if (response.ok) {
+        const data = await response.json()
+        setProviderId(data.id)
+      }
+    } catch (error) {
+      console.error("Error fetching provider profile:", error)
+    }
+  }, [])
+
+  // Hämta öppettider
+  const fetchAvailability = useCallback(async () => {
+    if (!providerId) return
+
+    try {
+      const response = await fetch(`/api/providers/${providerId}/availability-schedule`)
+      if (response.ok) {
+        const data = await response.json()
+        // Skapa komplett schema för alla 7 dagar
+        const completeSchedule = Array.from({ length: 7 }, (_, dayOfWeek) => {
+          const existing = data.find((item: AvailabilityDay) => item.dayOfWeek === dayOfWeek)
+          if (existing) {
+            return {
+              dayOfWeek: existing.dayOfWeek,
+              startTime: existing.startTime,
+              endTime: existing.endTime,
+              isClosed: existing.isClosed,
+            }
+          }
+          // Default för dagar som saknas
+          return {
+            dayOfWeek,
+            startTime: "09:00",
+            endTime: "17:00",
+            isClosed: false,
+          }
+        })
+        setAvailability(completeSchedule)
+      }
+    } catch (error) {
+      console.error("Error fetching availability:", error)
+    }
+  }, [providerId])
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -40,9 +92,16 @@ export default function ProviderCalendarPage() {
 
   useEffect(() => {
     if (isProvider) {
+      fetchProviderProfile()
       fetchBookings()
     }
-  }, [isProvider, fetchBookings])
+  }, [isProvider, fetchProviderProfile, fetchBookings])
+
+  useEffect(() => {
+    if (providerId) {
+      fetchAvailability()
+    }
+  }, [providerId, fetchAvailability])
 
   const handlePreviousWeek = () => {
     setCurrentDate((prev) => subWeeks(prev, 1))
@@ -59,6 +118,41 @@ export default function ProviderCalendarPage() {
   const handleBookingClick = (booking: CalendarBooking) => {
     setSelectedBooking(booking)
     setDialogOpen(true)
+  }
+
+  const handleDayClick = (dayOfWeek: number) => {
+    setSelectedDayOfWeek(dayOfWeek)
+    setAvailabilityDialogOpen(true)
+  }
+
+  const handleAvailabilitySave = async (updatedDay: AvailabilityDay) => {
+    if (!providerId) return
+
+    // Uppdatera lokal state
+    const updatedAvailability = availability.map((day) =>
+      day.dayOfWeek === updatedDay.dayOfWeek ? updatedDay : day
+    )
+
+    try {
+      const response = await fetch(`/api/providers/${providerId}/availability-schedule`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ schedule: updatedAvailability }),
+      })
+
+      if (response.ok) {
+        setAvailability(updatedAvailability)
+        toast.success("Öppettider uppdaterade!")
+        setAvailabilityDialogOpen(false)
+      } else {
+        toast.error("Kunde inte spara öppettider")
+      }
+    } catch (error) {
+      console.error("Error saving availability:", error)
+      toast.error("Kunde inte spara öppettider")
+    }
   }
 
   const handleStatusUpdate = async (bookingId: string, status: string) => {
@@ -133,7 +227,18 @@ export default function ProviderCalendarPage() {
           <div className="w-4 h-4 rounded bg-emerald-500 border-l-4 border-emerald-600" />
           <span>Betald</span>
         </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
+          <span>Öppet</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300" />
+          <span>Stängt</span>
+        </div>
       </div>
+      <p className="text-xs text-gray-500 mb-4">
+        Klicka på en dags rubrik för att redigera öppettider
+      </p>
 
       <CalendarHeader
         currentDate={currentDate}
@@ -145,7 +250,9 @@ export default function ProviderCalendarPage() {
       <WeekCalendar
         currentDate={currentDate}
         bookings={weekBookings}
+        availability={availability}
         onBookingClick={handleBookingClick}
+        onDayClick={handleDayClick}
       />
 
       <BookingDetailDialog
@@ -153,6 +260,13 @@ export default function ProviderCalendarPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onStatusUpdate={handleStatusUpdate}
+      />
+
+      <AvailabilityEditDialog
+        availability={selectedDayOfWeek !== null ? availability[selectedDayOfWeek] : null}
+        open={availabilityDialogOpen}
+        onOpenChange={setAvailabilityDialogOpen}
+        onSave={handleAvailabilitySave}
       />
     </ProviderLayout>
   )
