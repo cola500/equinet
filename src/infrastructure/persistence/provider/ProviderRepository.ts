@@ -80,6 +80,19 @@ export class ProviderRepository implements IProviderRepository {
       ]
     }
 
+    // Bounding box filter - pre-filter in database before exact distance calc
+    if (filters?.boundingBox) {
+      const { minLat, maxLat, minLng, maxLng } = filters.boundingBox
+      where.latitude = {
+        gte: minLat,
+        lte: maxLat,
+      }
+      where.longitude = {
+        gte: minLng,
+        lte: maxLng,
+      }
+    }
+
     const providers = await prisma.provider.findMany({
       where,
       select: {

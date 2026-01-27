@@ -23,6 +23,12 @@ export interface ProviderFilters {
   city?: string
   isActive?: boolean
   search?: string // Search in businessName or description
+  boundingBox?: {
+    minLat: number
+    maxLat: number
+    minLng: number
+    maxLng: number
+  }
 }
 
 // Provider with services and user details (for public API)

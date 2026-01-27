@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { calculateBoundingBox, getMaxRadiusKm } from "@/lib/geo/bounding-box"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -57,6 +58,8 @@ export async function GET(request: NextRequest) {
     const search = searchParam ? sanitizeSearchQuery(searchParam) : null
 
     // Geo-filtering validation
+    let geoFilter: { latitude: number; longitude: number; radiusKm: number } | null = null
+
     if (latitudeParam || longitudeParam || radiusKmParam) {
       if (!latitudeParam || !longitudeParam || !radiusKmParam) {
         return NextResponse.json(
@@ -65,28 +68,66 @@ export async function GET(request: NextRequest) {
         )
       }
 
+      const latitude = parseFloat(latitudeParam)
+      const longitude = parseFloat(longitudeParam)
       const radiusKm = parseFloat(radiusKmParam)
-      if (radiusKm <= 0) {
+
+      // Validate coordinates
+      if (isNaN(latitude) || latitude < -90 || latitude > 90) {
+        return NextResponse.json(
+          { error: 'Invalid latitude (must be between -90 and 90)' },
+          { status: 400 }
+        )
+      }
+
+      if (isNaN(longitude) || longitude < -180 || longitude > 180) {
+        return NextResponse.json(
+          { error: 'Invalid longitude (must be between -180 and 180)' },
+          { status: 400 }
+        )
+      }
+
+      // Validate and clamp radius (security: max 100km)
+      const maxRadius = getMaxRadiusKm()
+      if (isNaN(radiusKm) || radiusKm <= 0) {
         return NextResponse.json(
           { error: 'radiusKm must be positive' },
           { status: 400 }
         )
       }
+
+      if (radiusKm > maxRadius) {
+        return NextResponse.json(
+          { error: `radiusKm cannot exceed ${maxRadius}km` },
+          { status: 400 }
+        )
+      }
+
+      geoFilter = { latitude, longitude, radiusKm }
     }
 
-    // Use repository instead of direct Prisma access
+    // Build repository filters
     const providerRepo = new ProviderRepository()
-    const providers = await providerRepo.findAllWithDetails({
+    const filters: Parameters<typeof providerRepo.findAllWithDetails>[0] = {
       isActive: true,
       city: city || undefined,
       search: search || undefined,
-    })
+    }
 
-    // Apply geo-filtering if coordinates provided
-    if (latitudeParam && longitudeParam && radiusKmParam) {
-      const latitude = parseFloat(latitudeParam)
-      const longitude = parseFloat(longitudeParam)
-      const radiusKm = parseFloat(radiusKmParam)
+    // Add bounding box to pre-filter in database (reduces dataset before JS filtering)
+    if (geoFilter) {
+      filters.boundingBox = calculateBoundingBox(
+        geoFilter.latitude,
+        geoFilter.longitude,
+        geoFilter.radiusKm
+      )
+    }
+
+    const providers = await providerRepo.findAllWithDetails(filters)
+
+    // Apply exact distance filtering (on reduced dataset from bounding box)
+    if (geoFilter) {
+      const { latitude, longitude, radiusKm } = geoFilter
 
       const filteredProviders = providers.filter((provider) => {
         // Skip providers without coordinates
@@ -94,7 +135,7 @@ export async function GET(request: NextRequest) {
           return false
         }
 
-        // Calculate distance from search location to provider
+        // Calculate exact distance from search location to provider
         const distance = calculateDistance(
           latitude,
           longitude,

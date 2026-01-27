@@ -282,8 +282,9 @@ describe('GET /api/providers', () => {
       vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
 
       // Search from Sollebrunn (about 15km from Alingsås)
+      // Note: Max radius is 100km for security (prevents data enumeration)
       const request = new NextRequest(
-        'http://localhost:3000/api/providers?latitude=58.043&longitude=12.555&radiusKm=200'
+        'http://localhost:3000/api/providers?latitude=58.043&longitude=12.555&radiusKm=50'
       )
 
       // Act
