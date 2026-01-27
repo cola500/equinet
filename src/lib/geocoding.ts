@@ -7,10 +7,20 @@
  * - Uses OpenStreetMap data
  * - Good coverage for Sweden
  *
+ * Caching:
+ * - Results cached in Redis for 30 days
+ * - SHA-256 hashed keys for security
+ * - Graceful fallback if Redis unavailable
+ *
  * Limitations:
- * - Rate limited to 1 request/second
- * - For higher volume, consider caching or paid services
+ * - Rate limited to 1 request/second (mitigated by caching)
  */
+
+import {
+  getCachedGeocode,
+  setCachedGeocode,
+  isGeocodingCacheAvailable,
+} from "./cache/geocoding-cache"
 
 export interface GeocodingResult {
   latitude: number
@@ -35,6 +45,15 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     return null
   }
 
+  // Check cache first
+  const cached = await getCachedGeocode(address)
+  if (cached) {
+    return {
+      latitude: cached.latitude,
+      longitude: cached.longitude,
+    }
+  }
+
   try {
     const encodedAddress = encodeURIComponent(address)
     const response = await fetch(
@@ -57,15 +76,26 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
       return null
     }
 
-    return {
+    const result = {
       latitude: parseFloat(data[0].lat),
       longitude: parseFloat(data[0].lon)
     }
+
+    // Cache the result for future lookups
+    await setCachedGeocode(address, result.latitude, result.longitude)
+
+    return result
   } catch (error) {
     console.error('Geocoding error:', error)
     return null
   }
 }
+
+/**
+ * Check if geocoding cache is enabled
+ * Useful for monitoring dashboards
+ */
+export { isGeocodingCacheAvailable }
 
 /**
  * Validate that coordinates are within reasonable bounds for Sweden
