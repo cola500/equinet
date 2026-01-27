@@ -63,7 +63,7 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
    # Kör tester för att säkerställa allt fungerar
    npm run test:run        # Unit tests
    npm run test:e2e        # E2E tests (kräver seedat data)
-   npx tsc --noEmit        # TypeScript check
+   npm run typecheck       # TypeScript check
    ```
 
 ### Snabbstart (om du redan har setup)
@@ -92,25 +92,29 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | `npm run test:e2e` | E2E-tester med Playwright |
 | `npm run test:coverage` | Coverage report |
 
-## 🔒 Branch Protection & Quality Gates
+## 🔒 Quality Gates
 
-Main-branchen är skyddad med automatiserade quality gates för att säkerställa kodkvalitet:
+Automatiserade quality gates säkerställer kodkvalitet:
 
-**Required Checks (måste passa innan merge):**
-- ✅ Unit Tests & Coverage
-- ✅ E2E Tests
-- ✅ TypeScript Check
-- ✅ Build Check
+**Lokal Gate (Husky pre-push hook):**
+- Unit tests (`npm run test:run`)
+- TypeScript check (`npm run typecheck`)
+
+**CI Gate (GitHub Actions):**
+- Unit Tests & Coverage
+- E2E Tests
+- TypeScript Check
+- Build Check
 
 **Workflow:**
 1. Skapa feature branch från main
 2. Gör dina ändringar och commits
-3. Push till remote och skapa Pull Request
-4. CI kör alla checks automatiskt
-5. Merge är blockerad tills alla checks är gröna
+3. Pre-push hook kör tests automatiskt
+4. Push till remote och skapa Pull Request
+5. CI kör alla checks automatiskt
 6. När checks passar → merge till main
 
-Detta säkerställer att broken code aldrig når main-branchen! 🎯
+> **Note:** Branch protection är inaktiverat under MVP-fasen. Quality gates körs fortfarande men blockerar inte merge.
 
 ## 🛠️ Teknisk Stack
 
@@ -121,7 +125,7 @@ Detta säkerställer att broken code aldrig når main-branchen! 🎯
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (417 unit/integration) + Playwright (47 E2E) = 70% coverage
+- **Testning**: Vitest (400 unit/integration) + Playwright (54 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
 
@@ -231,13 +235,19 @@ Se `prisma/schema.prisma` för fullständig definition.
 - HTTP-only cookies, CSRF protection
 - SQL injection-skydd (Prisma)
 - XSS protection (React + input sanitization)
-- Rate limiting (login, registrering, bokningar, etc.)
+- Rate limiting (login, registrering, bokningar, publika endpoints)
 - Strukturerad logging med security events
 - Environment validation
 
+### Performance & Skalning
+- Connection pooling (PgBouncer via Supabase)
+- Redis-cache för geocoding-resultat
+- Bounding box pre-filtering för geo-queries
+- Rate limiting på publika API endpoints
+
 ## 🧪 Testning
 
-**464 tester** (47 E2E + 417 unit/integration) med **70% coverage**.
+**454 tester** (54 E2E + 400 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -261,7 +271,7 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 
 - **Unit Tests**: sanitize, booking utils, hooks, validations
 - **Integration Tests**: API routes (auth, bookings, services, providers, routes, announcements)
-- **E2E Tests (47)**: Authentication, booking flow, provider flow, route planning, announcements
+- **E2E Tests (54)**: Authentication, booking flow, provider flow, route planning, announcements
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 
@@ -354,6 +364,7 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - **[docs/GOTCHAS.md](./docs/GOTCHAS.md)** - Vanliga problem och lösningar
 - **[docs/AGENTS.md](./docs/AGENTS.md)** - Agent-team guide för Claude Code
 - **[docs/PRODUCTION-DEPLOYMENT.md](./docs/PRODUCTION-DEPLOYMENT.md)** - Komplett deployment-guide
+- **[docs/skalning.md](./docs/skalning.md)** - Skalningsplan för 500 användare
 
 ### Säkerhet & Retrospectives
 - **[docs/SECURITY-REVIEW-2026-01-21.md](./docs/SECURITY-REVIEW-2026-01-21.md)** - Senaste säkerhetsgranskning
@@ -374,11 +385,13 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Announcement/Rutter-funktionalitet (leverantörer annonserar rutter)
 - ✅ Customer location support för geo-matching
 - ✅ NearbyRoutesBanner på leverantörsprofiler
+- ✅ Onboarding Checklist för leverantörer (F-3.4)
+- ✅ Provider hem-position (F-1.4)
+- ✅ Öppettider visas på leverantörsprofiler
+- ✅ Skalningsoptimering för 500 användare (connection pooling, geocoding cache)
 
 ### 🚧 Nästa
 - **F-3.2**: Avboka-funktion för kunder
-- **F-3.4**: Onboarding Checklist för leverantörer
-- **F-1.4**: Provider hem-position (delvis klar - kunder har location)
 - **F-1.1**: Kartvy - Visa beställningar och rutter på karta
 
 ### Framtida Features
