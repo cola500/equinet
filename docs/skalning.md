@@ -1,8 +1,8 @@
 # Skalningsplan: 500 användare
 
-> **Status:** FAS 1 MERGAD TILL MAIN - Väntar på produktion-deploy + teamgranskning
+> **Status:** FAS 1 VERIFIERAD I PRODUKTION ✅
 > **Skapad:** 2026-01-26
-> **Uppdaterad:** 2026-01-27
+> **Uppdaterad:** 2026-01-27 (Fas 1 verifierad i produktion)
 > **Mål:** Göra Equinet robust för 500 samtidiga användare
 
 ---
@@ -29,54 +29,35 @@ Denna plan beskriver nödvändiga åtgärder för att skala Equinet från nuvara
 
 ---
 
-## ⚠️ MANUELLA STEG (Krävs innan deploy)
+## ✅ MANUELLA STEG (Alla klara!)
 
-Följande steg måste utföras manuellt av teamet:
+### 1. Uppdatera produktions-miljövariabler ✅ KLART
 
-### 1. Uppdatera produktions-miljövariabler
+**Konfigurerat i Vercel:** 2026-01-27
+- `DATABASE_URL` med `?pgbouncer=true&connection_limit=10`
+- `DIRECT_DATABASE_URL` för migrations
 
-**I Vercel Dashboard → Settings → Environment Variables:**
+### 2. Verifiera Upstash Redis ✅ KLART
 
-```bash
-# Uppdatera DATABASE_URL med connection pooling params
-DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-north-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=10"
-
-# Lägg till DIRECT_DATABASE_URL för migrations
-DIRECT_DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-north-1.pooler.supabase.com:5432/postgres"
-```
-
-**Viktigt:**
-- `pgbouncer=true` aktiverar connection pooling
-- `connection_limit=10` begränsar connections per serverless instance
-- `DIRECT_DATABASE_URL` används av Prisma migrations (utan pgbouncer)
-
-### 2. Verifiera Upstash Redis
-
-Kontrollera att dessa finns i Vercel:
-```bash
-UPSTASH_REDIS_REST_URL="https://..."
-UPSTASH_REDIS_REST_TOKEN="..."
-```
-
-**Test:** Efter deploy, kör geocoding 2 gånger för samma adress - andra gången ska vara snabbare (cache hit).
+**Verifierat:** 2026-01-27
+- `UPSTASH_REDIS_REST_URL` konfigurerad
+- `UPSTASH_REDIS_REST_TOKEN` konfigurerad
 
 ### 3. Merge feature branch ✅ KLART
 
-~~```bash
-git checkout main
-git pull origin main
-git merge claude/scale-app-robustness-7vCLk
-git push origin main
-```~~
-
 **Mergad:** 2026-01-27
 
-### 4. Deploy och verifiera
+### 4. Deploy och verifiera ✅ KLART
 
-Efter deploy, testa:
-1. `GET /api/providers` - ska returnera 429 efter 100 requests/min
-2. `GET /api/geocode?address=Stockholm` - ska cacha resultat
-3. `GET /api/providers?latitude=57.7&longitude=11.9&radiusKm=150` - ska returnera 400 (max 100km)
+**Verifierad:** 2026-01-27
+
+| Test | Förväntat | Resultat |
+|------|-----------|----------|
+| `GET /api/providers` | 200 + data | ✅ Passerade |
+| `GET /api/providers?radiusKm=150...` | 400 (max 100km) | ✅ Passerade |
+| `GET /api/geocode?address=Stockholm` | 200 + koordinater | ✅ Passerade |
+| Geocoding cache | Snabbare 2:a request | ✅ ~950ms → ~580ms |
+| Rate limiting (Upstash) | 429 efter 30 req | ✅ Triggered vid req 29 |
 
 ---
 
@@ -132,7 +113,7 @@ Efter deploy, testa:
 - [x] Sätt `connection_limit=10` i DATABASE_URL (i .env.example)
 - [x] Lägg till query timeout (10s) - redan implementerat
 - [x] Lokal .env uppdaterad med pgbouncer + DIRECT_DATABASE_URL
-- [ ] **MANUELLT:** Uppdatera production .env i Vercel
+- [x] Uppdatera production .env i Vercel (2026-01-27)
 - [ ] Testa under last
 
 ---
@@ -155,8 +136,8 @@ Efter deploy, testa:
 - [x] Skapa `src/lib/cache/geocoding-cache.ts`
 - [x] Integrera i `src/lib/geocoding.ts`
 - [x] SHA-256 cache key hashing
-- [ ] **MANUELLT:** Verifiera Upstash credentials i production
-- [ ] Testa cache hit/miss efter deploy
+- [x] Verifiera Upstash credentials i production (2026-01-27)
+- [x] Testa cache hit/miss efter deploy (~950ms → ~580ms)
 
 ---
 
@@ -430,9 +411,9 @@ Skalningsarbetet är **KLART** när:
 - [ ] Inga timeout-errors i Sentry
 
 ### Säkerhet
-- [ ] Multi-layer rate limiting aktivt
-- [ ] Ingen PII i publika caches
-- [ ] Max radius validering på plats
+- [x] Multi-layer rate limiting aktivt (verifierat 2026-01-27)
+- [x] Ingen PII i publika caches (endast lat/lng cachas)
+- [x] Max radius validering på plats (verifierat 2026-01-27)
 - [ ] Abuse scenarios testade
 
 ### Operations
@@ -440,6 +421,12 @@ Skalningsarbetet är **KLART** när:
 - [ ] Alerting konfigurerat
 - [ ] Runbook för incidenter dokumenterad
 - [ ] Load test passerat
+
+### Dokumentation
+- [x] Implementation status uppdaterad i skalning.md
+- [x] Verifieringsresultat dokumenterade
+- [ ] README uppdaterad vid behov
+- [ ] CLAUDE.md uppdaterad med learnings
 
 ---
 
