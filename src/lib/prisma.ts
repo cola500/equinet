@@ -52,3 +52,30 @@ const prismaWithExtensions = basePrisma.$extends({
 export const prisma = globalForPrisma.prisma ?? prismaWithExtensions
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma as any
+
+/**
+ * Database health check
+ * Use this to verify database connectivity and monitor connection pool
+ * Returns response time in milliseconds
+ */
+export async function checkDatabaseHealth(): Promise<{
+  healthy: boolean
+  responseTimeMs: number
+  error?: string
+}> {
+  const start = Date.now()
+  try {
+    await basePrisma.$queryRaw`SELECT 1`
+    return {
+      healthy: true,
+      responseTimeMs: Date.now() - start,
+    }
+  } catch (error) {
+    console.error('[Database Health Check Failed]', error)
+    return {
+      healthy: false,
+      responseTimeMs: Date.now() - start,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
