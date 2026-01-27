@@ -18,6 +18,7 @@ import { sv } from "date-fns/locale"
 import { Header } from "@/components/layout/Header"
 import { NearbyRoutesBanner, type NearbyRoute } from "@/components/NearbyRoutesBanner"
 import { ProviderHours } from "@/components/ProviderHours"
+import { UpcomingVisits } from "@/components/UpcomingVisits"
 
 interface Service {
   id: string
@@ -353,6 +354,9 @@ export default function ProviderDetailPage() {
               <ProviderHours availability={provider.availability} />
             </div>
           )}
+
+          {/* Upcoming Visits - shows planned visits to different areas */}
+          <UpcomingVisits providerId={provider.id} />
 
           {/* Nearby Routes Banner - shown to customers with saved location */}
           {isCustomer && provider && customerLocation && (

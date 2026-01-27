@@ -226,6 +226,7 @@ describe('POST /api/bookings', () => {
       id: TEST_UUIDS.service,
       name: 'Hovslagning',
       providerId: TEST_UUIDS.provider,
+      durationMinutes: 60,
       isActive: true,
       provider: {
         id: TEST_UUIDS.provider,
@@ -365,6 +366,7 @@ describe('POST /api/bookings', () => {
       id: TEST_UUIDS.service,
       name: 'Hovslagning',
       providerId: TEST_UUIDS.differentProvider, // Different provider!
+      durationMinutes: 60,
       isActive: true,
       provider: {
         id: TEST_UUIDS.differentProvider,
@@ -424,6 +426,201 @@ describe('POST /api/bookings', () => {
     expect(data.error).toBe('Validation error')
   })
 
+  describe('Automatic endTime calculation (US-1)', () => {
+    it('should calculate endTime from service.durationMinutes when not provided', async () => {
+      // Arrange
+      const mockSession = {
+        user: {
+          id: TEST_UUIDS.customer,
+          userType: 'customer',
+        },
+      }
+
+      const mockService = {
+        id: TEST_UUIDS.service,
+        name: 'Hovslagning',
+        providerId: TEST_UUIDS.provider,
+        durationMinutes: 90, // 90 minute service
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
+      }
+
+      const mockBooking = {
+        id: TEST_UUIDS.booking,
+        customerId: TEST_UUIDS.customer,
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE,
+        startTime: '10:00',
+        endTime: '11:30', // Calculated: 10:00 + 90min = 11:30
+        status: 'pending',
+        service: mockService,
+        provider: {
+          user: {
+            firstName: 'John',
+            lastName: 'Doe',
+          },
+        },
+      }
+
+      vi.mocked(auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+      // @ts-expect-error - Vitest type instantiation depth limitation
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const tx = {
+          booking: {
+            findMany: vi.fn().mockResolvedValue([]),
+            create: vi.fn().mockResolvedValue(mockBooking),
+          },
+        }
+        return await callback(tx)
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: FUTURE_DATE_ISO,
+          startTime: '10:00',
+          // NO endTime - should be calculated
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(201)
+      expect(data.endTime).toBe('11:30') // 10:00 + 90min = 11:30
+    })
+
+    it('should still accept explicit endTime (backward compatibility)', async () => {
+      // Arrange
+      const mockSession = {
+        user: {
+          id: TEST_UUIDS.customer,
+          userType: 'customer',
+        },
+      }
+
+      const mockService = {
+        id: TEST_UUIDS.service,
+        name: 'Hovslagning',
+        providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
+      }
+
+      const mockBooking = {
+        id: TEST_UUIDS.booking,
+        customerId: TEST_UUIDS.customer,
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE,
+        startTime: '10:00',
+        endTime: '12:00', // Explicit 2 hours, not 60min from service
+        status: 'pending',
+        service: mockService,
+        provider: {
+          user: {
+            firstName: 'John',
+            lastName: 'Doe',
+          },
+        },
+      }
+
+      vi.mocked(auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+      // @ts-expect-error - Vitest type instantiation depth limitation
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const tx = {
+          booking: {
+            findMany: vi.fn().mockResolvedValue([]),
+            create: vi.fn().mockResolvedValue(mockBooking),
+          },
+        }
+        return await callback(tx)
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: FUTURE_DATE_ISO,
+          startTime: '10:00',
+          endTime: '12:00', // Explicit - customer wants longer booking
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(201)
+      expect(data.endTime).toBe('12:00') // Uses explicit endTime
+    })
+
+    it('should return 400 when calculated endTime exceeds business hours', async () => {
+      // Arrange
+      const mockSession = {
+        user: {
+          id: TEST_UUIDS.customer,
+          userType: 'customer',
+        },
+      }
+
+      const mockService = {
+        id: TEST_UUIDS.service,
+        name: 'Hovslagning',
+        providerId: TEST_UUIDS.provider,
+        durationMinutes: 120, // 2 hours
+        isActive: true,
+        provider: {
+          id: TEST_UUIDS.provider,
+          userId: TEST_UUIDS.providerUser,
+          isActive: true,
+        },
+      }
+
+      vi.mocked(auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+
+      const request = new NextRequest('http://localhost:3000/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service,
+          bookingDate: FUTURE_DATE_ISO,
+          startTime: '17:00', // 17:00 + 120min = 19:00, exceeds 18:00
+          // NO endTime - should be calculated to 19:00 and fail
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(400)
+      expect(data.error).toContain('öppettider')
+    })
+  })
+
   describe('RouteOrder Linking (Experiment 003)', () => {
     it('should link booking to routeOrderId when provided', async () => {
       // Arrange
@@ -438,6 +635,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,
@@ -523,6 +721,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,
@@ -598,6 +797,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,
@@ -644,6 +844,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,
@@ -698,6 +899,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,
@@ -756,6 +958,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,
@@ -810,6 +1013,7 @@ describe('POST /api/bookings', () => {
         id: TEST_UUIDS.service,
         name: 'Hovslagning',
         providerId: TEST_UUIDS.provider,
+        durationMinutes: 60,
         isActive: true,
         provider: {
           id: TEST_UUIDS.provider,

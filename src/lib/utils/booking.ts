@@ -3,6 +3,23 @@
  */
 
 /**
+ * Calculate end time in HH:MM format from start time and duration
+ * @param startTime - Start time in HH:MM format (e.g., "10:00")
+ * @param durationMinutes - Duration in minutes
+ * @returns End time in HH:MM format (e.g., "11:30")
+ */
+export function calculateEndTimeHHMM(
+  startTime: string,
+  durationMinutes: number
+): string {
+  const [hours, minutes] = startTime.split(':').map(Number)
+  const totalMinutes = hours * 60 + minutes + durationMinutes
+  const endHours = Math.floor(totalMinutes / 60)
+  const endMinutes = totalMinutes % 60
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
+}
+
+/**
  * Calculate the end time of a booking based on start time and duration
  * @param startTime - ISO string of start time
  * @param durationMinutes - Duration in minutes

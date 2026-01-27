@@ -11,12 +11,17 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       count: vi.fn(),
     },
+    availabilityException: {
+      findMany: vi.fn(),
+    },
   },
 }))
 
 describe('GET /api/providers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default: no upcoming visits
+    vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
   })
 
   it('should return all active providers with services', async () => {
@@ -436,6 +441,110 @@ describe('GET /api/providers', () => {
       expect(response.status).toBe(200)
       expect(result.data).toHaveLength(1)
       expect(result.data[0].id).toBe('provider1')
+    })
+  })
+
+  describe('Next visit enrichment', () => {
+    it('should include nextVisit for providers with upcoming location visits', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Test Provider',
+          city: 'Stockholm',
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([
+        {
+          providerId: 'provider1',
+          date: new Date('2026-02-03'),
+          location: 'Sollebrunn',
+        },
+      ] as any)
+
+      const request = new NextRequest('http://localhost:3000/api/providers')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data[0].nextVisit).toEqual({
+        date: '2026-02-03',
+        location: 'Sollebrunn',
+      })
+    })
+
+    it('should return null nextVisit for providers without upcoming visits', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Test Provider',
+          city: 'Stockholm',
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
+
+      const request = new NextRequest('http://localhost:3000/api/providers')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data[0].nextVisit).toBeNull()
+    })
+
+    it('should return earliest visit when multiple exist', async () => {
+      // Arrange
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Test Provider',
+          city: 'Stockholm',
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      // Note: Results are ordered by date ASC in the query
+      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([
+        {
+          providerId: 'provider1',
+          date: new Date('2026-02-03'),
+          location: 'Sollebrunn',
+        },
+        {
+          providerId: 'provider1',
+          date: new Date('2026-02-10'),
+          location: 'Uppsala',
+        },
+      ] as any)
+
+      const request = new NextRequest('http://localhost:3000/api/providers')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data[0].nextVisit).toEqual({
+        date: '2026-02-03',
+        location: 'Sollebrunn',
+      })
     })
   })
 

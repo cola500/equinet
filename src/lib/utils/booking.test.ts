@@ -1,10 +1,38 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   calculateBookingEndTime,
+  calculateEndTimeHHMM,
   isBookingInPast,
   doBookingsOverlap,
   formatBookingStatus,
 } from './booking'
+
+describe('calculateEndTimeHHMM', () => {
+  it('should calculate end time correctly for 60 minutes', () => {
+    expect(calculateEndTimeHHMM('10:00', 60)).toBe('11:00')
+  })
+
+  it('should calculate end time correctly for 90 minutes', () => {
+    expect(calculateEndTimeHHMM('10:00', 90)).toBe('11:30')
+  })
+
+  it('should handle crossing into next hour', () => {
+    expect(calculateEndTimeHHMM('10:45', 30)).toBe('11:15')
+  })
+
+  it('should handle crossing midnight (edge case)', () => {
+    expect(calculateEndTimeHHMM('23:00', 120)).toBe('25:00')
+  })
+
+  it('should pad single digit hours and minutes', () => {
+    expect(calculateEndTimeHHMM('08:00', 30)).toBe('08:30')
+    expect(calculateEndTimeHHMM('09:05', 5)).toBe('09:10')
+  })
+
+  it('should handle 0 duration', () => {
+    expect(calculateEndTimeHHMM('10:00', 0)).toBe('10:00')
+  })
+})
 
 describe('calculateBookingEndTime', () => {
   it('should calculate end time correctly for 60 minutes', () => {

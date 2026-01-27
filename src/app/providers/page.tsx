@@ -7,6 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/useAuth"
 import { Header } from "@/components/layout/Header"
+import { format } from "date-fns"
+import { sv } from "date-fns/locale"
+
+// Format date as "3 feb"
+function formatShortDate(dateString: string): string {
+  const date = new Date(dateString + "T00:00:00")
+  return format(date, "d MMM", { locale: sv })
+}
 
 interface Provider {
   id: string
@@ -23,13 +31,29 @@ interface Provider {
     firstName: string
     lastName: string
   }
+  nextVisit?: {
+    date: string
+    location: string
+  } | null
+}
+
+interface ProviderWithVisit {
+  provider: Provider
+  nextVisit: {
+    date: string
+    location: string
+    startTime: string | null
+    endTime: string | null
+  }
 }
 
 export default function ProvidersPage() {
   const { user } = useAuth()
   const [providers, setProviders] = useState<Provider[]>([])
+  const [visitingProviders, setVisitingProviders] = useState<ProviderWithVisit[]>([])
   const [search, setSearch] = useState("")
   const [city, setCity] = useState("")
+  const [visitingArea, setVisitingArea] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -55,6 +79,36 @@ export default function ProvidersPage() {
       setIsSearching(false)
     }
   }, [search, city])
+
+  // Fetch providers visiting a specific area
+  useEffect(() => {
+    if (visitingArea.length < 2) {
+      setVisitingProviders([])
+      return
+    }
+
+    setIsSearching(true)
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/providers/visiting-area?location=${encodeURIComponent(visitingArea)}`
+        )
+        if (response.ok) {
+          const result = await response.json()
+          setVisitingProviders(result.data)
+        }
+      } catch (error) {
+        console.error("Error fetching visiting providers:", error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 500)
+
+    return () => {
+      clearTimeout(timer)
+      setIsSearching(false)
+    }
+  }, [visitingArea])
 
   const fetchProviders = async (searchQuery?: string, cityQuery?: string) => {
     try {
@@ -97,6 +151,8 @@ export default function ProvidersPage() {
   const handleClearFilters = () => {
     setSearch("")
     setCity("")
+    setVisitingArea("")
+    setVisitingProviders([])
     fetchProviders()
   }
 
@@ -133,9 +189,15 @@ export default function ProvidersPage() {
                   placeholder="Filtrera på ort..."
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-64"
+                  className="w-48"
                 />
-                {(search || city) && (
+                <Input
+                  placeholder="Besöker område..."
+                  value={visitingArea}
+                  onChange={(e) => setVisitingArea(e.target.value)}
+                  className="w-48"
+                />
+                {(search || city || visitingArea) && (
                   <Button
                     type="button"
                     variant="outline"
@@ -151,8 +213,8 @@ export default function ProvidersPage() {
                   <span>Söker...</span>
                 </div>
               )}
-              {!isSearching && (search || city) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+              {!isSearching && (search || city || visitingArea) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
                   <span>Aktiva filter:</span>
                   {search && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
@@ -184,10 +246,114 @@ export default function ProvidersPage() {
                       </button>
                     </span>
                   )}
+                  {visitingArea && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full">
+                      Besöker: "{visitingArea}"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisitingArea("")
+                          setVisitingProviders([])
+                        }}
+                        className="hover:text-purple-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
             </div>
           </div>
+
+          {/* Visiting Providers Section */}
+          {visitingArea && visitingProviders.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 text-purple-800">
+                Leverantörer som besöker {visitingArea}
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {visitingProviders.map(({ provider, nextVisit }) => (
+                  <Card
+                    key={provider.id}
+                    className="hover:shadow-lg transition-shadow border-purple-200 bg-purple-50"
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle>{provider.businessName}</CardTitle>
+                          <CardDescription>
+                            {provider.city && `${provider.city} • `}
+                            {provider.user.firstName} {provider.user.lastName}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="mt-2 p-2 bg-purple-100 rounded-md">
+                        <p className="text-sm font-medium text-purple-800">
+                          Nästa besök i {nextVisit.location}:
+                        </p>
+                        <p className="text-sm text-purple-700">
+                          {new Date(nextVisit.date + "T00:00:00").toLocaleDateString("sv-SE", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          })}
+                          {nextVisit.startTime && nextVisit.endTime && (
+                            <span className="ml-1">
+                              kl {nextVisit.startTime} - {nextVisit.endTime}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {provider.services.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-sm font-semibold text-gray-700 mb-2">
+                            Tjänster:
+                          </p>
+                          <div className="space-y-1">
+                            {provider.services.slice(0, 2).map((service) => (
+                              <div
+                                key={service.id}
+                                className="text-sm flex justify-between"
+                              >
+                                <span>{service.name}</span>
+                                <span className="text-gray-600">
+                                  {service.price} kr
+                                </span>
+                              </div>
+                            ))}
+                            {provider.services.length > 2 && (
+                              <p className="text-xs text-gray-500">
+                                +{provider.services.length - 2} fler tjänster
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <Link href={`/providers/${provider.id}`}>
+                        <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                          Se profil & boka
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {visitingArea && visitingProviders.length === 0 && !isSearching && (
+            <Card className="mb-8 border-purple-200">
+              <CardContent className="py-6 text-center">
+                <p className="text-gray-600">
+                  Inga leverantörer har planerade besök i "{visitingArea}" just nu.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Providers List */}
           {error ? (
@@ -275,6 +441,11 @@ export default function ProvidersPage() {
                       {provider.city && `${provider.city} • `}
                       {provider.user.firstName} {provider.user.lastName}
                     </CardDescription>
+                    {provider.nextVisit && (
+                      <div className="mt-2 text-sm text-purple-600">
+                        Nästa besök: {provider.nextVisit.location} - {formatShortDate(provider.nextVisit.date)}
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent>
                     {provider.description && (

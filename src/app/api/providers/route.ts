@@ -4,6 +4,8 @@ import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { calculateBoundingBox, getMaxRadiusKm } from "@/lib/geo/bounding-box"
 import { getCachedProviders, setCachedProviders, CachedProvider } from "@/lib/cache/provider-cache"
+import { prisma } from "@/lib/prisma"
+import { format } from "date-fns"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -32,6 +34,61 @@ function calculateDistance(
 
 function toRad(value: number): number {
   return (value * Math.PI) / 180
+}
+
+// Enrich providers with their next planned visit
+async function enrichWithNextVisit<T extends { id: string }>(
+  providers: T[]
+): Promise<(T & { nextVisit: { date: string; location: string } | null })[]> {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // Batch fetch all next visits in one query using raw SQL for efficiency
+  const providerIds = providers.map((p) => p.id)
+
+  if (providerIds.length === 0) {
+    return providers.map((p) => ({ ...p, nextVisit: null }))
+  }
+
+  // Use Prisma's grouped query to get the next visit for each provider
+  const nextVisits = await prisma.availabilityException.findMany({
+    where: {
+      providerId: { in: providerIds },
+      date: { gte: today },
+      location: { not: null },
+      isClosed: false,
+    },
+    orderBy: { date: "asc" },
+    select: {
+      providerId: true,
+      date: true,
+      location: true,
+    },
+  })
+
+  // Group by provider and keep only the first (earliest) visit
+  const visitsByProvider = new Map<string, { date: Date; location: string }>()
+  for (const visit of nextVisits) {
+    if (!visitsByProvider.has(visit.providerId) && visit.location) {
+      visitsByProvider.set(visit.providerId, {
+        date: visit.date,
+        location: visit.location,
+      })
+    }
+  }
+
+  return providers.map((provider) => {
+    const visit = visitsByProvider.get(provider.id)
+    return {
+      ...provider,
+      nextVisit: visit
+        ? {
+            date: format(visit.date, "yyyy-MM-dd"),
+            location: visit.location,
+          }
+        : null,
+    }
+  })
 }
 
 // GET all active providers with their services
@@ -181,8 +238,11 @@ export async function GET(request: NextRequest) {
       const total = filteredProviders.length
       const paginatedProviders = filteredProviders.slice(offset, offset + limit)
 
+      // Enrich with next visit info
+      const enrichedProviders = await enrichWithNextVisit(paginatedProviders)
+
       return NextResponse.json({
-        data: paginatedProviders,
+        data: enrichedProviders,
         pagination: {
           total,
           limit,
@@ -196,8 +256,11 @@ export async function GET(request: NextRequest) {
     const total = providers.length
     const paginatedProviders = providers.slice(offset, offset + limit)
 
+    // Enrich with next visit info
+    const enrichedProviders = await enrichWithNextVisit(paginatedProviders)
+
     return NextResponse.json({
-      data: paginatedProviders,
+      data: enrichedProviders,
       pagination: {
         total,
         limit,

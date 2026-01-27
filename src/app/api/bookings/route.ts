@@ -7,9 +7,11 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { sendBookingConfirmationNotification } from "@/lib/email"
+import { calculateEndTimeHHMM } from "@/lib/utils/booking"
 import { z } from "zod"
 
-const bookingSchema = z.object({
+// Input schema - endTime is optional (will be calculated from service duration if missing)
+const bookingInputSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID format"),
   serviceId: z.string().uuid("Ogiltigt tjänst-ID format"),
   bookingDate: z.string().refine(
@@ -35,60 +37,46 @@ const bookingSchema = z.object({
   endTime: z.string().regex(
     /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/,
     "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
-  ).transform(t => t.substring(0, 5)), // Normalisera till HH:MM
+  ).transform(t => t.substring(0, 5)).optional(), // Now optional!
   horseName: z.string().max(100, "Hästnamn för långt (max 100 tecken)").optional(),
   horseInfo: z.string().max(500, "Hästinfo för lång (max 500 tecken)").optional(),
   customerNotes: z.string().max(1000, "Anteckningar för långa (max 1000 tecken)").optional(),
   routeOrderId: z.string().uuid("Ogiltigt ruttorder-ID format").optional(),
-}).strict().refine(
-  (data) => {
-    // Validera att endTime är efter startTime
-    const [startH, startM] = data.startTime.split(':').map(Number)
-    const [endH, endM] = data.endTime.split(':').map(Number)
-    const startMinutes = startH * 60 + startM
-    const endMinutes = endH * 60 + endM
-    return endMinutes > startMinutes
-  },
-  {
-    message: "Sluttid måste vara efter starttid",
-    path: ["endTime"]
+}).strict()
+
+/**
+ * Validates booking times (start/end) after endTime has been calculated
+ * Returns error message if invalid, null if valid
+ */
+function validateBookingTimes(startTime: string, endTime: string): string | null {
+  const [startH, startM] = startTime.split(':').map(Number)
+  const [endH, endM] = endTime.split(':').map(Number)
+  const startMinutes = startH * 60 + startM
+  const endMinutes = endH * 60 + endM
+  const durationMinutes = endMinutes - startMinutes
+
+  // Validate endTime is after startTime
+  if (endMinutes <= startMinutes) {
+    return "Sluttid måste vara efter starttid"
   }
-).refine(
-  (data) => {
-    // Validera minsta bokningstid (15 minuter)
-    const [startH, startM] = data.startTime.split(':').map(Number)
-    const [endH, endM] = data.endTime.split(':').map(Number)
-    const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM)
-    return durationMinutes >= 15
-  },
-  {
-    message: "Bokning måste vara minst 15 minuter",
-    path: ["endTime"]
+
+  // Validate minimum duration (15 minutes)
+  if (durationMinutes < 15) {
+    return "Bokning måste vara minst 15 minuter"
   }
-).refine(
-  (data) => {
-    // Validera maximal bokningstid (8 timmar)
-    const [startH, startM] = data.startTime.split(':').map(Number)
-    const [endH, endM] = data.endTime.split(':').map(Number)
-    const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM)
-    return durationMinutes <= 480
-  },
-  {
-    message: "Bokning kan inte överstiga 8 timmar",
-    path: ["endTime"]
+
+  // Validate maximum duration (8 hours)
+  if (durationMinutes > 480) {
+    return "Bokning kan inte överstiga 8 timmar"
   }
-).refine(
-  (data) => {
-    // Validera öppettider (08:00-18:00)
-    const [startH] = data.startTime.split(':').map(Number)
-    const [endH] = data.endTime.split(':').map(Number)
-    return startH >= 8 && endH <= 18
-  },
-  {
-    message: "Bokning måste vara inom öppettider (08:00-18:00)",
-    path: ["startTime"]
+
+  // Validate business hours (08:00-18:00)
+  if (startH < 8 || endH > 18) {
+    return "Bokning måste vara inom öppettider (08:00-18:00)"
   }
-)
+
+  return null
+}
 
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
@@ -180,12 +168,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const validatedData = bookingSchema.parse(body)
+    const validatedInput = bookingInputSchema.parse(body)
 
     // Validate routeOrderId if provided
-    if (validatedData.routeOrderId) {
+    if (validatedInput.routeOrderId) {
       const routeOrder = await prisma.routeOrder.findUnique({
-        where: { id: validatedData.routeOrderId },
+        where: { id: validatedInput.routeOrderId },
         select: { dateFrom: true, dateTo: true, status: true, providerId: true }
       })
 
@@ -197,7 +185,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Rutten är inte längre öppen för bokningar" }, { status: 400 })
       }
 
-      const bookingDate = new Date(validatedData.bookingDate)
+      const bookingDate = new Date(validatedInput.bookingDate)
       if (bookingDate < routeOrder.dateFrom || bookingDate > routeOrder.dateTo) {
         return NextResponse.json(
           { error: "Bokningsdatum måste vara inom ruttens datum-spann" },
@@ -205,14 +193,14 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      if (validatedData.providerId !== routeOrder.providerId) {
+      if (validatedInput.providerId !== routeOrder.providerId) {
         return NextResponse.json({ error: "Provider matchar inte rutt-annonsen" }, { status: 400 })
       }
     }
 
     // Verify service exists and belongs to provider (include provider info for checks)
     const service = await prisma.service.findUnique({
-      where: { id: validatedData.serviceId },
+      where: { id: validatedInput.serviceId },
       include: {
         provider: {
           select: {
@@ -224,7 +212,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!service || service.providerId !== validatedData.providerId) {
+    if (!service || service.providerId !== validatedInput.providerId) {
       return NextResponse.json(
         { error: "Ogiltig tjänst" },
         { status: 400 }
@@ -253,6 +241,24 @@ export async function POST(request: NextRequest) {
         { error: "Du kan inte boka din egen tjänst" },
         { status: 400 }
       )
+    }
+
+    // Calculate endTime from service duration if not provided
+    const endTime = validatedInput.endTime || calculateEndTimeHHMM(validatedInput.startTime, service.durationMinutes)
+
+    // Validate booking times (duration, business hours, etc.)
+    const timeValidationError = validateBookingTimes(validatedInput.startTime, endTime)
+    if (timeValidationError) {
+      return NextResponse.json(
+        { error: timeValidationError },
+        { status: 400 }
+      )
+    }
+
+    // Create validated data object with calculated endTime
+    const validatedData = {
+      ...validatedInput,
+      endTime,
     }
 
     // Use transaction for atomicity: check for overlaps and create booking atomically
