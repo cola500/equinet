@@ -1,6 +1,6 @@
 # Skalningsplan: 500 användare
 
-> **Status:** FAS 1 IMPLEMENTERAD - Väntar på manuell konfiguration + teamgranskning
+> **Status:** FAS 1 MERGAD TILL MAIN - Väntar på produktion-deploy + teamgranskning
 > **Skapad:** 2026-01-26
 > **Uppdaterad:** 2026-01-27
 > **Mål:** Göra Equinet robust för 500 samtidiga användare
@@ -19,10 +19,10 @@ Denna plan beskriver nödvändiga åtgärder för att skala Equinet från nuvara
 
 | Fas | Åtgärd | Status | Branch |
 |-----|--------|--------|--------|
-| 1.1 | Connection pooling | ✅ Implementerad | `claude/scale-app-robustness-7vCLk` |
-| 1.2 | Geocoding cache | ✅ Implementerad | `claude/scale-app-robustness-7vCLk` |
-| 1.3 | Rate limiting | ✅ Implementerad | `claude/scale-app-robustness-7vCLk` |
-| 1.4 | Bounding box queries | ✅ Implementerad | `claude/scale-app-robustness-7vCLk` |
+| 1.1 | Connection pooling | ✅ Mergad till main | main |
+| 1.2 | Geocoding cache | ✅ Mergad till main | main |
+| 1.3 | Rate limiting | ✅ Mergad till main | main |
+| 1.4 | Bounding box queries | ✅ Mergad till main | main |
 | 2.1 | Provider-lista cache | ⏳ Ej påbörjad | - |
 | 2.2 | Database indexes | ⏳ Ej påbörjad | - |
 | 2.3 | Query optimization | ⏳ Ej påbörjad | - |
@@ -60,14 +60,16 @@ UPSTASH_REDIS_REST_TOKEN="..."
 
 **Test:** Efter deploy, kör geocoding 2 gånger för samma adress - andra gången ska vara snabbare (cache hit).
 
-### 3. Merge feature branch
+### 3. Merge feature branch ✅ KLART
 
-```bash
+~~```bash
 git checkout main
 git pull origin main
 git merge claude/scale-app-robustness-7vCLk
 git push origin main
-```
+```~~
+
+**Mergad:** 2026-01-27
 
 ### 4. Deploy och verifiera
 
@@ -109,7 +111,7 @@ Efter deploy, testa:
 
 ---
 
-## Fas 1: Kritiska åtgärder (Vecka 1) ✅ IMPLEMENTERAD
+## Fas 1: Kritiska åtgärder (Vecka 1) ✅ MERGAD TILL MAIN
 
 ### 1.1 Connection Pooling för Prisma ✅
 
@@ -129,6 +131,7 @@ Efter deploy, testa:
 - [x] Verifiera att Supabase Session Pooler används
 - [x] Sätt `connection_limit=10` i DATABASE_URL (i .env.example)
 - [x] Lägg till query timeout (10s) - redan implementerat
+- [x] Lokal .env uppdaterad med pgbouncer + DIRECT_DATABASE_URL
 - [ ] **MANUELLT:** Uppdatera production .env i Vercel
 - [ ] Testa under last
 
