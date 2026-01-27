@@ -58,12 +58,12 @@ describe('GET /api/providers', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const result = await response.json()
 
     // Assert - Behavior-based: test API contract, not implementation
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(2)
-    expect(data[0]).toMatchObject({
+    expect(result.data).toHaveLength(2)
+    expect(result.data[0]).toMatchObject({
       id: 'provider1',
       businessName: 'Test Hovslagare',
       description: 'Professional farrier',
@@ -81,9 +81,17 @@ describe('GET /api/providers', () => {
       }),
     })
     // Security assertion: sensitive data should NOT be exposed
-    expect(data[0].user.email).toBeUndefined()
-    expect(data[0].user.phone).toBeUndefined()
-    expect(data[0].user.passwordHash).toBeUndefined()
+    expect(result.data[0].user.email).toBeUndefined()
+    expect(result.data[0].user.phone).toBeUndefined()
+    expect(result.data[0].user.passwordHash).toBeUndefined()
+
+    // Verify pagination metadata
+    expect(result.pagination).toMatchObject({
+      total: 2,
+      limit: 100,
+      offset: 0,
+      hasMore: false
+    })
   })
 
   it('should filter providers by city', async () => {
@@ -108,12 +116,12 @@ describe('GET /api/providers', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const result = await response.json()
 
     // Assert - Behavior-based: test API response, not Prisma calls
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(1)
-    expect(data[0]).toMatchObject({
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toMatchObject({
       id: 'provider1',
       businessName: 'Stockholm Hovslagare',
       city: 'Stockholm',
@@ -142,12 +150,12 @@ describe('GET /api/providers', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const result = await response.json()
 
     // Assert - Behavior-based: verify search results returned
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(1)
-    expect(data[0]).toMatchObject({
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toMatchObject({
       id: 'provider1',
       businessName: 'Hovslagare AB',
       description: 'Professional service',
@@ -166,11 +174,12 @@ describe('GET /api/providers', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const result = await response.json()
 
     // Assert - Behavior-based: verify empty results when no match
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(0)
+    expect(result.data).toHaveLength(0)
+    expect(result.pagination.total).toBe(0)
   })
 
   it('should return empty array when no providers found', async () => {
@@ -181,11 +190,12 @@ describe('GET /api/providers', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const result = await response.json()
 
     // Assert
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(0)
+    expect(result.data).toHaveLength(0)
+    expect(result.pagination.total).toBe(0)
   })
 
   it('should only return active services for providers', async () => {
@@ -209,12 +219,12 @@ describe('GET /api/providers', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const result = await response.json()
 
     // Assert - Behavior-based: verify only active services returned
     expect(response.status).toBe(200)
-    expect(data[0].services).toHaveLength(1)
-    expect(data[0].services[0]).toMatchObject({
+    expect(result.data[0].services).toHaveLength(1)
+    expect(result.data[0].services[0]).toMatchObject({
       id: 'service1',
       name: 'Active Service',
       price: 500,
@@ -256,13 +266,14 @@ describe('GET /api/providers', () => {
 
       // Act
       const response = await GET(request)
-      const data = await response.json()
+      const result = await response.json()
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(1)
-      expect(data[0].id).toBe('provider1')
-      expect(data[0].businessName).toBe('Nearby Provider')
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].id).toBe('provider1')
+      expect(result.data[0].businessName).toBe('Nearby Provider')
+      expect(result.pagination.total).toBe(1)
     })
 
     it('should return providers within their service area', async () => {
@@ -289,11 +300,11 @@ describe('GET /api/providers', () => {
 
       // Act
       const response = await GET(request)
-      const data = await response.json()
+      const result = await response.json()
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(1)
+      expect(result.data).toHaveLength(1)
     })
 
     it('should exclude providers outside search radius', async () => {
@@ -319,11 +330,11 @@ describe('GET /api/providers', () => {
 
       // Act
       const response = await GET(request)
-      const data = await response.json()
+      const result = await response.json()
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(0)
+      expect(result.data).toHaveLength(0)
     })
 
     it('should combine geo-filter with city filter', async () => {
@@ -350,12 +361,12 @@ describe('GET /api/providers', () => {
 
       // Act
       const response = await GET(request)
-      const data = await response.json()
+      const result = await response.json()
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(1)
-      expect(data[0].city).toBe('Alingsås')
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].city).toBe('Alingsås')
     })
 
     it('should return 400 when geo-filter is incomplete', async () => {
@@ -419,12 +430,155 @@ describe('GET /api/providers', () => {
 
       // Act
       const response = await GET(request)
-      const data = await response.json()
+      const result = await response.json()
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(1)
-      expect(data[0].id).toBe('provider1')
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].id).toBe('provider1')
+    })
+  })
+
+  describe('Pagination', () => {
+    it('should limit results to max 100 by default', async () => {
+      // Arrange - Create 150 mock providers
+      const mockProviders = Array.from({ length: 150 }, (_, i) => ({
+        id: `provider${i + 1}`,
+        businessName: `Provider ${i + 1}`,
+        city: 'Stockholm',
+        services: [],
+        user: { firstName: 'John', lastName: 'Doe' },
+      }))
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      const request = new NextRequest('http://localhost:3000/api/providers')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data).toHaveLength(100) // Max 100 returned
+      expect(result.pagination).toMatchObject({
+        total: 150,
+        limit: 100,
+        offset: 0,
+        hasMore: true
+      })
+    })
+
+    it('should respect custom limit parameter (clamped to 100)', async () => {
+      // Arrange
+      const mockProviders = Array.from({ length: 50 }, (_, i) => ({
+        id: `provider${i + 1}`,
+        businessName: `Provider ${i + 1}`,
+        city: 'Stockholm',
+        services: [],
+        user: { firstName: 'John', lastName: 'Doe' },
+      }))
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      // Request with limit=200 should be clamped to 100
+      const request = new NextRequest('http://localhost:3000/api/providers?limit=200')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.pagination.limit).toBe(100) // Clamped to max
+    })
+
+    it('should support smaller limit values', async () => {
+      // Arrange
+      const mockProviders = Array.from({ length: 50 }, (_, i) => ({
+        id: `provider${i + 1}`,
+        businessName: `Provider ${i + 1}`,
+        city: 'Stockholm',
+        services: [],
+        user: { firstName: 'John', lastName: 'Doe' },
+      }))
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      const request = new NextRequest('http://localhost:3000/api/providers?limit=10')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data).toHaveLength(10)
+      expect(result.pagination).toMatchObject({
+        total: 50,
+        limit: 10,
+        offset: 0,
+        hasMore: true
+      })
+    })
+
+    it('should support offset for pagination', async () => {
+      // Arrange
+      const mockProviders = Array.from({ length: 30 }, (_, i) => ({
+        id: `provider${i + 1}`,
+        businessName: `Provider ${i + 1}`,
+        city: 'Stockholm',
+        services: [],
+        user: { firstName: 'John', lastName: 'Doe' },
+      }))
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      const request = new NextRequest('http://localhost:3000/api/providers?limit=10&offset=10')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data).toHaveLength(10)
+      expect(result.data[0].id).toBe('provider11') // Starting from offset
+      expect(result.pagination).toMatchObject({
+        total: 30,
+        limit: 10,
+        offset: 10,
+        hasMore: true
+      })
+    })
+
+    it('should set hasMore to false when on last page', async () => {
+      // Arrange
+      const mockProviders = Array.from({ length: 25 }, (_, i) => ({
+        id: `provider${i + 1}`,
+        businessName: `Provider ${i + 1}`,
+        city: 'Stockholm',
+        services: [],
+        user: { firstName: 'John', lastName: 'Doe' },
+      }))
+
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+
+      const request = new NextRequest('http://localhost:3000/api/providers?limit=10&offset=20')
+
+      // Act
+      const response = await GET(request)
+      const result = await response.json()
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(result.data).toHaveLength(5) // Only 5 remaining
+      expect(result.pagination).toMatchObject({
+        total: 25,
+        limit: 10,
+        offset: 20,
+        hasMore: false
+      })
     })
   })
 })

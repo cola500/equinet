@@ -75,8 +75,9 @@ export default function ProvidersPage() {
 
       const response = await fetch(url)
       if (response.ok) {
-        const data = await response.json()
-        setProviders(data)
+        const result = await response.json()
+        // API returns { data: Provider[], pagination: {...} }
+        setProviders(result.data)
       } else {
         setError("Kunde inte hämta leverantörer")
       }

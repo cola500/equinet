@@ -53,6 +53,16 @@ export async function GET(request: NextRequest) {
     const latitudeParam = searchParams.get('latitude')
     const longitudeParam = searchParams.get('longitude')
     const radiusKmParam = searchParams.get('radiusKm')
+    const limitParam = searchParams.get('limit')
+    const offsetParam = searchParams.get('offset')
+
+    // Pagination: validate and apply defaults (max 100 results for DoS protection)
+    const MAX_LIMIT = 100
+    const limit = Math.min(
+      Math.max(1, parseInt(limitParam || '100', 10) || 100),
+      MAX_LIMIT
+    )
+    const offset = Math.max(0, parseInt(offsetParam || '0', 10) || 0)
 
     // Sanitize search inputs to prevent SQL injection and XSS
     const city = cityParam ? sanitizeSearchQuery(cityParam) : null
@@ -167,10 +177,34 @@ export async function GET(request: NextRequest) {
         return distance <= radiusKm
       })
 
-      return NextResponse.json(filteredProviders)
+      // Apply pagination
+      const total = filteredProviders.length
+      const paginatedProviders = filteredProviders.slice(offset, offset + limit)
+
+      return NextResponse.json({
+        data: paginatedProviders,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total
+        }
+      })
     }
 
-    return NextResponse.json(providers)
+    // Apply pagination
+    const total = providers.length
+    const paginatedProviders = providers.slice(offset, offset + limit)
+
+    return NextResponse.json({
+      data: paginatedProviders,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total
+      }
+    })
   } catch (error) {
     console.error("Error fetching providers:", error)
     return NextResponse.json(
