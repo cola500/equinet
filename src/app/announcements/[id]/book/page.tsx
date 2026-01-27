@@ -47,8 +47,8 @@ export default function BookAnnouncementPage() {
   const [formData, setFormData] = useState({
     serviceId: "",
     bookingDate: "",
-    startTime: "",
-    endTime: "",
+    startTime: "09:00",
+    endTime: "10:00",
     horseName: "",
     horseInfo: "",
     customerNotes: "",
