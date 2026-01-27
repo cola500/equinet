@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { sanitizeSearchQuery } from "@/lib/sanitize"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -33,6 +34,16 @@ function toRad(value: number): number {
 
 // GET all active providers with their services
 export async function GET(request: NextRequest) {
+  // Rate limiting: 100 requests per minute per IP
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "För många förfrågningar. Försök igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const cityParam = searchParams.get("city")

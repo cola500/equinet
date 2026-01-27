@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { geocodeAddress } from "@/lib/geocoding"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 /**
  * GET /api/geocode
@@ -12,6 +13,16 @@ import { geocodeAddress } from "@/lib/geocoding"
  * - postalCode: Optional postal code (will be appended to address)
  */
 export async function GET(request: NextRequest) {
+  // Rate limiting: 30 requests per minute per IP (expensive operation)
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.geocode(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "För många geocoding-förfrågningar. Försök igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const address = searchParams.get("address")

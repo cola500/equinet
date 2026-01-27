@@ -2,9 +2,20 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { calculateDistance } from "@/lib/distance"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // GET /api/route-orders/available - Get available route orders for providers
 export async function GET(request: Request) {
+  // Rate limiting: 100 requests per minute per IP
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "För många förfrågningar. Försök igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     // Auth handled by middleware
     const session = await auth()

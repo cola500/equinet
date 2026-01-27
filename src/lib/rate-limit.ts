@@ -100,6 +100,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:service-create",
       }),
+      geocode: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(30, "1 m"),
+        analytics: true,
+        prefix: "ratelimit:geocode",
+      }),
     }
   }
 
@@ -208,6 +214,7 @@ async function checkRateLimit(
     booking: { max: 10, window: 60 * 60 * 1000 },
     profileUpdate: { max: 20, window: 60 * 60 * 1000 },
     serviceCreate: { max: 10, window: 60 * 60 * 1000 },
+    geocode: { max: 30, window: 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -217,6 +224,44 @@ async function checkRateLimit(
   }
 
   return checkRateLimitInMemory(identifier, config.max, config.window)
+}
+
+/**
+ * Get client IP address safely from request headers
+ * Uses Vercel's trusted headers with validation
+ *
+ * @param request - The incoming request
+ * @returns Client IP or 'unknown' if not available
+ */
+export function getClientIP(request: Request): string {
+  // Vercel sets x-real-ip in serverless environment
+  const realIp = request.headers.get("x-real-ip")
+  if (realIp && isValidIP(realIp)) {
+    return realIp
+  }
+
+  // Fallback to x-forwarded-for (first IP in chain)
+  const forwardedFor = request.headers.get("x-forwarded-for")
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0].trim()
+    if (isValidIP(firstIp)) {
+      return firstIp
+    }
+  }
+
+  return "unknown"
+}
+
+/**
+ * Validate IP address format to prevent header injection
+ */
+function isValidIP(ip: string): boolean {
+  // IPv4 pattern
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  // IPv6 simplified pattern (covers most cases)
+  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
+
+  return ipv4Regex.test(ip) || ipv6Regex.test(ip)
 }
 
 /**
@@ -259,4 +304,9 @@ export const rateLimiters = {
    * Service creation: 10 services per hour
    */
   serviceCreate: async (identifier: string) => checkRateLimit('serviceCreate', identifier),
+
+  /**
+   * Geocoding: 30 requests per minute (expensive external API)
+   */
+  geocode: async (identifier: string) => checkRateLimit('geocode', identifier),
 }
