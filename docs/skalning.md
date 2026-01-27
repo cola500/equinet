@@ -277,7 +277,7 @@ Efter:  DB → hämta providers i box → JS filter (O(m) där m << n)
 | Multi-layer rate limiting | ✅ | Per-IP + Per-Endpoint implementerat |
 | Bounding box max radius (100km) | ✅ | Valideras i `/api/providers` |
 | IP-validering i rate limiting | ✅ | `getClientIP()` validerar format |
-| Begränsa resultat (max 100) | ⏳ | Behöver implementeras i Fas 2 |
+| Begränsa resultat (max 100) | ✅ | Implementerad i `/api/providers` med pagination |
 
 ### Potentiella sårbarheter att bevaka
 
@@ -482,4 +482,4 @@ Om skalningsändringar orsakar problem:
 
 ---
 
-*Senast uppdaterad: 2026-01-27 (Fas 2 implementerad)*
+*Senast uppdaterad: 2026-01-27 (Fas 2 + pagination implementerad)*
