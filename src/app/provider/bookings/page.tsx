@@ -10,6 +10,15 @@ import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
+interface Payment {
+  id: string
+  status: string
+  amount: number
+  currency: string
+  paidAt: string | null
+  invoiceNumber: string | null
+}
+
 interface Booking {
   id: string
   bookingDate: string
@@ -29,6 +38,7 @@ interface Booking {
     email: string
     phone?: string
   }
+  payment?: Payment | null
 }
 
 export default function ProviderBookingsPage() {
@@ -107,7 +117,18 @@ export default function ProviderBookingsPage() {
     return booking.status === filter
   })
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (booking: Booking) => {
+    const isPaid = booking.payment?.status === "succeeded"
+
+    // Om betald, visa alltid "Betald" oavsett bokningsstatus
+    if (isPaid) {
+      return (
+        <span className="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-800">
+          Betald
+        </span>
+      )
+    }
+
     const styles = {
       pending: "bg-yellow-100 text-yellow-800",
       confirmed: "bg-green-100 text-green-800",
@@ -123,8 +144,8 @@ export default function ProviderBookingsPage() {
     }
 
     return (
-      <span className={`text-xs px-2 py-1 rounded ${styles[status as keyof typeof styles]}`}>
-        {labels[status as keyof typeof labels] || status}
+      <span className={`text-xs px-2 py-1 rounded ${styles[booking.status as keyof typeof styles]}`}>
+        {labels[booking.status as keyof typeof labels] || booking.status}
       </span>
     )
   }
@@ -191,7 +212,7 @@ export default function ProviderBookingsPage() {
                         {booking.customer.firstName} {booking.customer.lastName}
                       </CardDescription>
                     </div>
-                    {getStatusBadge(booking.status)}
+                    {getStatusBadge(booking)}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -224,6 +245,12 @@ export default function ProviderBookingsPage() {
                         <span className="text-gray-600">Pris:</span>{" "}
                         <span className="font-medium">{booking.service.price} kr</span>
                       </div>
+                      {booking.payment?.status === "succeeded" && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Kvitto:</span>{" "}
+                          <span className="font-medium">{booking.payment.invoiceNumber}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

@@ -184,6 +184,18 @@ export class PrismaBookingRepository
             // ❌ NOT: isActive, createdAt, updatedAt (not needed for booking list)
           },
         },
+        // Payment information for provider view
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            currency: true,
+            paidAt: true,
+            invoiceNumber: true,
+            // ❌ NOT: invoiceUrl (provider doesn't need download link)
+          },
+        },
         // ❌ NO provider relation (provider already knows their own data)
       },
       orderBy: { bookingDate: 'desc' },
