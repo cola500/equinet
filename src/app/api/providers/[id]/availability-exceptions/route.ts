@@ -22,6 +22,14 @@ const createExceptionSchema = z.object({
     .transform(val => val?.trim() || null)
     .nullable()
     .optional(),
+  // Arbetsplats för dagen (US-2)
+  location: z.string()
+    .max(100)
+    .transform(val => val?.trim() || null)
+    .nullable()
+    .optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 })
 
 /**
@@ -170,6 +178,9 @@ export async function POST(
         startTime: validated.isClosed ? null : validated.startTime,
         endTime: validated.isClosed ? null : validated.endTime,
         reason: validated.reason,
+        location: validated.location,
+        latitude: validated.latitude,
+        longitude: validated.longitude,
       },
       create: {
         providerId,
@@ -178,6 +189,9 @@ export async function POST(
         startTime: validated.isClosed ? null : validated.startTime,
         endTime: validated.isClosed ? null : validated.endTime,
         reason: validated.reason,
+        location: validated.location,
+        latitude: validated.latitude,
+        longitude: validated.longitude,
       },
     })
 

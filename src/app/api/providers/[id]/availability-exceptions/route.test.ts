@@ -654,4 +654,297 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       })
     )
   })
+
+  describe("Location fields (US-2)", () => {
+    it("should create exception with location data", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+
+      const mockException = {
+        id: "exc-1",
+        providerId: mockProviderId,
+        date: new Date("2026-02-15"),
+        isClosed: false,
+        startTime: "09:00",
+        endTime: "15:00",
+        reason: "Besöker Sollebrunn",
+        location: "Sollebrunn",
+        latitude: 58.13,
+        longitude: 12.47,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-02-15",
+            isClosed: false,
+            startTime: "09:00",
+            endTime: "15:00",
+            reason: "Besöker Sollebrunn",
+            location: "Sollebrunn",
+            latitude: 58.13,
+            longitude: 12.47,
+          }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(201)
+      const data = await response.json()
+      expect(data.location).toBe("Sollebrunn")
+      expect(data.latitude).toBe(58.13)
+      expect(data.longitude).toBe(12.47)
+
+      expect(prisma.availabilityException.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            location: "Sollebrunn",
+            latitude: 58.13,
+            longitude: 12.47,
+          }),
+          update: expect.objectContaining({
+            location: "Sollebrunn",
+            latitude: 58.13,
+            longitude: 12.47,
+          }),
+        })
+      )
+    })
+
+    it("should accept exception without location (backward compatibility)", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+
+      const mockException = {
+        id: "exc-1",
+        providerId: mockProviderId,
+        date: new Date("2026-02-20"),
+        isClosed: true,
+        startTime: null,
+        endTime: null,
+        reason: "Semester",
+        location: null,
+        latitude: null,
+        longitude: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-02-20",
+            isClosed: true,
+            reason: "Semester",
+            // NO location fields
+          }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(201)
+      const data = await response.json()
+      expect(data.location).toBeNull()
+      expect(data.latitude).toBeNull()
+      expect(data.longitude).toBeNull()
+    })
+
+    it("should validate latitude range (-90 to 90)", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-02-25",
+            isClosed: true,
+            latitude: 91, // Invalid - outside range
+            longitude: 12.0,
+          }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(400)
+      const data = await response.json()
+      expect(data.error).toBe("Validation error")
+    })
+
+    it("should validate longitude range (-180 to 180)", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-02-26",
+            isClosed: true,
+            latitude: 58.0,
+            longitude: 181, // Invalid - outside range
+          }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(400)
+      const data = await response.json()
+      expect(data.error).toBe("Validation error")
+    })
+
+    it("should trim whitespace from location field", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+
+      const mockException = {
+        id: "exc-1",
+        providerId: mockProviderId,
+        date: new Date("2026-02-27"),
+        isClosed: true,
+        startTime: null,
+        endTime: null,
+        reason: null,
+        location: "Alingsås",
+        latitude: null,
+        longitude: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-02-27",
+            isClosed: true,
+            location: "  Alingsås  ", // Leading/trailing whitespace
+          }),
+        }
+      )
+
+      await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(prisma.availabilityException.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({
+            location: "Alingsås", // Should be trimmed
+          }),
+          create: expect.objectContaining({
+            location: "Alingsås", // Should be trimmed
+          }),
+        })
+      )
+    })
+
+    it("should convert whitespace-only location to null", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+
+      const mockException = {
+        id: "exc-1",
+        providerId: mockProviderId,
+        date: new Date("2026-02-28"),
+        isClosed: true,
+        startTime: null,
+        endTime: null,
+        reason: null,
+        location: null,
+        latitude: null,
+        longitude: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-02-28",
+            isClosed: true,
+            location: "   ", // Whitespace only
+          }),
+        }
+      )
+
+      await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(prisma.availabilityException.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({
+            location: null, // Should become null
+          }),
+          create: expect.objectContaining({
+            location: null, // Should become null
+          }),
+        })
+      )
+    })
+  })
 })

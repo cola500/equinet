@@ -128,3 +128,20 @@ export interface AvailabilityDay {
   endTime: string // HH:MM format
   isClosed: boolean
 }
+
+// Datumbaserade undantag för tillgänglighet (har prioritet över veckoschema)
+export interface AvailabilityException {
+  id: string
+  providerId: string
+  date: string // ISO date string (YYYY-MM-DD)
+  isClosed: boolean
+  startTime?: string | null // HH:MM format, null = stängt
+  endTime?: string | null // HH:MM format, null = stängt
+  reason?: string | null // Valfri anledning ("Semester", "Sjuk", etc.)
+  // Arbetsplats för dagen (US-2)
+  location?: string | null // "Sollebrunn", "Alingsås centrum"
+  latitude?: number | null
+  longitude?: number | null
+  createdAt: Date
+  updatedAt: Date
+}

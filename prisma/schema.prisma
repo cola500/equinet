@@ -58,11 +58,12 @@ model Provider {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  services     Service[]
-  availability Availability[]
-  bookings     Booking[]
-  routes       Route[]
-  routeOrders  RouteOrder[] // NEW: Provider-announced route orders
+  services               Service[]
+  availability           Availability[]
+  availabilityExceptions AvailabilityException[]
+  bookings               Booking[]
+  routes                 Route[]
+  routeOrders            RouteOrder[] // NEW: Provider-announced route orders
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -99,6 +100,29 @@ model Availability {
   updatedAt  DateTime @updatedAt
 
   @@unique([providerId, dayOfWeek])
+}
+
+// Datumbaserade undantag för tillgänglighet (har prioritet över veckoschema)
+model AvailabilityException {
+  id         String   @id @default(uuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date // Specifikt datum (endast datum, ingen tid)
+  isClosed   Boolean  @default(true) // true = stängt hela dagen
+  startTime  String? // Alternativa öppettider (null = stängt)
+  endTime    String?
+  reason     String? // Valfri anledning ("Semester", "Sjuk", etc.)
+
+  // Arbetsplats för dagen (US-2)
+  location   String?  // "Sollebrunn", "Alingsås centrum"
+  latitude   Float?
+  longitude  Float?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([providerId, date])
+  @@index([providerId, date])
 }
 
 model Booking {

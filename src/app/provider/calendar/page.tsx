@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { addWeeks, subWeeks, startOfWeek, endOfWeek } from "date-fns"
+import { addWeeks, subWeeks, startOfWeek, endOfWeek, format } from "date-fns"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -10,7 +10,8 @@ import { CalendarHeader } from "@/components/calendar/CalendarHeader"
 import { WeekCalendar } from "@/components/calendar/WeekCalendar"
 import { BookingDetailDialog } from "@/components/calendar/BookingDetailDialog"
 import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDialog"
-import { CalendarBooking, AvailabilityDay } from "@/types"
+import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
+import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
 
 export default function ProviderCalendarPage() {
   const router = useRouter()
@@ -23,6 +24,9 @@ export default function ProviderCalendarPage() {
   const [availability, setAvailability] = useState<AvailabilityDay[]>([])
   const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false)
   const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(null)
+  const [exceptions, setExceptions] = useState<AvailabilityException[]>([])
+  const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -77,6 +81,28 @@ export default function ProviderCalendarPage() {
     }
   }, [providerId])
 
+  // Hämta undantag för aktuell vecka
+  const fetchExceptions = useCallback(async () => {
+    if (!providerId) return
+
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
+
+    try {
+      const from = format(weekStart, "yyyy-MM-dd")
+      const to = format(weekEnd, "yyyy-MM-dd")
+      const response = await fetch(
+        `/api/providers/${providerId}/availability-exceptions?from=${from}&to=${to}`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        setExceptions(data)
+      }
+    } catch (error) {
+      console.error("Error fetching exceptions:", error)
+    }
+  }, [providerId, currentDate])
+
   const fetchBookings = useCallback(async () => {
     try {
       const response = await fetch("/api/bookings")
@@ -100,8 +126,9 @@ export default function ProviderCalendarPage() {
   useEffect(() => {
     if (providerId) {
       fetchAvailability()
+      fetchExceptions()
     }
-  }, [providerId, fetchAvailability])
+  }, [providerId, fetchAvailability, fetchExceptions])
 
   const handlePreviousWeek = () => {
     setCurrentDate((prev) => subWeeks(prev, 1))
@@ -123,6 +150,56 @@ export default function ProviderCalendarPage() {
   const handleDayClick = (dayOfWeek: number) => {
     setSelectedDayOfWeek(dayOfWeek)
     setAvailabilityDialogOpen(true)
+  }
+
+  const handleDateClick = (date: string) => {
+    setSelectedDate(date)
+    setExceptionDialogOpen(true)
+  }
+
+  const handleExceptionSave = async (data: {
+    date: string
+    isClosed: boolean
+    startTime?: string | null
+    endTime?: string | null
+    reason?: string | null
+    location?: string | null
+    latitude?: number | null
+    longitude?: number | null
+  }) => {
+    if (!providerId) return
+
+    const response = await fetch(`/api/providers/${providerId}/availability-exceptions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (response.ok) {
+      toast.success("Undantag sparat!")
+      fetchExceptions()
+    } else {
+      const errorData = await response.json()
+      toast.error(errorData.error || "Kunde inte spara undantag")
+      throw new Error("Failed to save exception")
+    }
+  }
+
+  const handleExceptionDelete = async (date: string) => {
+    if (!providerId) return
+
+    const response = await fetch(
+      `/api/providers/${providerId}/availability-exceptions/${date}`,
+      { method: "DELETE" }
+    )
+
+    if (response.ok) {
+      toast.success("Undantag borttaget!")
+      fetchExceptions()
+    } else {
+      toast.error("Kunde inte ta bort undantag")
+      throw new Error("Failed to delete exception")
+    }
   }
 
   const handleAvailabilitySave = async (updatedDay: AvailabilityDay) => {
@@ -233,11 +310,15 @@ export default function ProviderCalendarPage() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300" />
-          <span>Stängt</span>
+          <span>Stängt (veckoschema)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-orange-200 border border-orange-300" />
+          <span>Ledig/undantag</span>
         </div>
       </div>
       <p className="text-xs text-gray-500 mb-4">
-        Klicka på en dags rubrik för att redigera öppettider
+        Klicka på en dag för att lägga till undantag (ledighet, semester, etc.)
       </p>
 
       <CalendarHeader
@@ -251,8 +332,10 @@ export default function ProviderCalendarPage() {
         currentDate={currentDate}
         bookings={weekBookings}
         availability={availability}
+        exceptions={exceptions}
         onBookingClick={handleBookingClick}
         onDayClick={handleDayClick}
+        onDateClick={handleDateClick}
       />
 
       <BookingDetailDialog
@@ -267,6 +350,15 @@ export default function ProviderCalendarPage() {
         open={availabilityDialogOpen}
         onOpenChange={setAvailabilityDialogOpen}
         onSave={handleAvailabilitySave}
+      />
+
+      <DayExceptionDialog
+        date={selectedDate}
+        exception={exceptions.find((e) => e.date === selectedDate) || null}
+        open={exceptionDialogOpen}
+        onOpenChange={setExceptionDialogOpen}
+        onSave={handleExceptionSave}
+        onDelete={handleExceptionDelete}
       />
     </ProviderLayout>
   )
