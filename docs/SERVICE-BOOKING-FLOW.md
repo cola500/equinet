@@ -287,12 +287,70 @@ test("customer can pay for confirmed booking", async ({ page }) => {
 
 ---
 
+## Restid mellan bokningar
+
+> **Implementerat: 2026-01-28**
+
+Systemet validerar automatiskt att det finns tillräcklig restid mellan bokningar baserat på geografisk placering.
+
+### Hur det fungerar
+
+1. När en ny bokning skapas hämtas kundens plats (lat/lng från användarprofilen)
+2. Befintliga bokningar för samma provider och dag hämtas med sina kundplatser
+3. Restid beräknas med Haversine-formeln (fågelvägen × 1.2 för verklig vägsträcka)
+4. Om det inte finns tillräcklig tid returneras HTTP 409
+
+### Konfiguration
+
+| Parameter | Värde | Beskrivning |
+|-----------|-------|-------------|
+| Genomsnittshastighet | 50 km/h | För restidsberäkning |
+| Minimum buffert | 10 min | Även för samma plats (avslut/start) |
+| Marginalfaktor | 1.2 (20%) | Kompenserar för verklig väg vs fågelväg |
+| Fallback buffert | 15 min | Används när platsdata saknas |
+
+### Platshierarki (fallback)
+
+1. **Kundens sparade adress** (User.latitude/longitude)
+2. **Providers hemadress** (Provider.latitude/longitude)
+3. **Default buffert** (15 min om ingen plats finns)
+
+### API Response vid för kort tid
+
+```json
+{
+  "error": "Otillräcklig restid till föregående bokning...",
+  "details": "Krävs 70 minuter mellan bokningar, endast 30 minuter tillgängligt.",
+  "requiredMinutes": 70,
+  "actualMinutes": 30
+}
+```
+
+**HTTP Status:** `409 Conflict`
+
+### Exempel
+
+Provider har bokning 09:00-10:00 hos kund i Göteborg.
+Ny bokning begärs 10:30-11:30 hos kund i Alingsås (~40 km bort).
+
+**Beräkning:**
+- Avstånd: 40 km (fågelväg)
+- Restid: 40 km / 50 km/h × 60 = 48 min
+- Med marginal: 48 × 1.2 = 58 min
+- Plus buffert: 58 + 10 = 68 min krävs
+- Gap tillgängligt: 30 min (10:00 → 10:30)
+
+**Resultat:** ❌ Bokning nekas
+
+---
+
 ## Kända begränsningar
 
 1. **Mock payment** - Ingen riktig pengatransfer
 2. **HTML-kvitto** - Inte riktigt PDF (men printbart)
 3. **Inga refunds** - Måste implementeras för produktion
 4. **Ingen fakturering** - Endast direktbetalning
+5. **Restid använder fågelväg** - Inte verklig vägdistans (kompenseras med 20% marginal)
 
 ---
 

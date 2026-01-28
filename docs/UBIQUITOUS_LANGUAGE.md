@@ -124,6 +124,56 @@ Formula: startA < endB && startB < endA
 
 ---
 
+### Location (Plats)
+En geografisk position med koordinater.
+
+**Value Object** (immutable, definieras av sina värden)
+
+**Egenskaper**:
+- Latitude (-90 till 90)
+- Longitude (-180 till 180)
+- Address (frivilligt, läsbar adress)
+
+**Business Rules**:
+- Används för att beräkna avstånd mellan bokningar
+- Krävs för travel time-validering
+- Fallback till Provider's hemadress om kund saknar plats
+
+**Exempel**:
+```typescript
+const location = Location.create(57.7089, 11.9746, 'Göteborg')
+location.distanceTo(otherLocation) // km
+location.travelTimeTo(otherLocation) // minuter
+```
+
+---
+
+### TravelTime (Restid)
+Beräknad tid att resa mellan två platser.
+
+**Domain Service** - beräknar och validerar restid mellan bokningar
+
+**Konfiguration**:
+- AverageSpeed: 50 km/h
+- MinBuffer: 10 minuter (även för samma plats)
+- DefaultBuffer: 15 minuter (när plats saknas)
+- MarginFactor: 1.2 (20% extra för verklig vägsträcka)
+
+**Business Rules**:
+- Provider kan INTE ha bokningar som ligger för tätt i tid
+- Restid beräknas med Haversine-formeln × 1.2 (marginal)
+- Validerar både föregående och nästa bokning
+- Fallback till default buffer om platsdata saknas
+
+**Exempel**:
+```typescript
+const travelTimeService = new TravelTimeService()
+const result = travelTimeService.hasEnoughTravelTime(newBooking, existingBookings)
+// { valid: false, error: 'Otillräcklig restid...', requiredMinutes: 70, actualMinutes: 30 }
+```
+
+---
+
 ### BookingDate (Bokningsdatum)
 Datum för när tjänsten ska utföras.
 
@@ -569,6 +619,8 @@ Triggas när en Route är genomförd.
 | Booking | `Booking` class | Aggregate Root |
 | Booking Status | `BookingStatus` enum + value object | Value Object |
 | TimeSlot | `TimeSlot` class | Value Object |
+| Location | `Location` class | Value Object |
+| TravelTime | `TravelTimeService` class | Domain Service |
 | Customer | `Customer` entity | Entity |
 | Provider | `Provider` entity | Entity |
 | Service | `Service` entity | Entity |

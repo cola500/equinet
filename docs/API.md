@@ -143,8 +143,20 @@ Skapa ny bokning.
 
 **Errors:**
 - `400` - Valideringsfel, ogiltig tjänst, tjänst/provider inaktiv, självbokning
-- `409` - Tidskollision med annan bokning
+- `409` - Tidskollision med annan bokning, eller otillräcklig restid mellan bokningar
 - `429` - Rate limit (10 bokningar/timme)
+
+**409 INSUFFICIENT_TRAVEL_TIME Response:**
+```json
+{
+  "error": "Otillräcklig restid till föregående bokning...",
+  "details": "Krävs 70 minuter mellan bokningar, endast 30 minuter tillgängligt.",
+  "requiredMinutes": 70,
+  "actualMinutes": 30
+}
+```
+
+> Restid beräknas automatiskt baserat på geografisk placering (kundens adress). Se [SERVICE-BOOKING-FLOW.md](./SERVICE-BOOKING-FLOW.md#restid-mellan-bokningar) för detaljer.
 
 ---
 
