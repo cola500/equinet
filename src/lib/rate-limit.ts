@@ -206,15 +206,16 @@ async function checkRateLimit(
   console.warn("⚠️  Using in-memory rate limiting (NOT suitable for production)")
 
   // Map limiter types to their configurations
+  // Note: Higher limits in development/test to allow E2E test runs
   const configs: Record<string, { max: number; window: number }> = {
-    login: { max: 5, window: 15 * 60 * 1000 },
-    registration: { max: 3, window: 60 * 60 * 1000 },
-    api: { max: 100, window: 60 * 1000 },
-    passwordReset: { max: 3, window: 60 * 60 * 1000 },
-    booking: { max: 10, window: 60 * 60 * 1000 },
-    profileUpdate: { max: 20, window: 60 * 60 * 1000 },
-    serviceCreate: { max: 10, window: 60 * 60 * 1000 },
-    geocode: { max: 30, window: 60 * 1000 },
+    login: { max: 50, window: 15 * 60 * 1000 },
+    registration: { max: 50, window: 60 * 60 * 1000 },
+    api: { max: 1000, window: 60 * 1000 },
+    passwordReset: { max: 50, window: 60 * 60 * 1000 },
+    booking: { max: 100, window: 60 * 60 * 1000 },
+    profileUpdate: { max: 100, window: 60 * 60 * 1000 },
+    serviceCreate: { max: 100, window: 60 * 60 * 1000 },
+    geocode: { max: 100, window: 60 * 1000 },
   }
 
   const config = configs[limiterType]

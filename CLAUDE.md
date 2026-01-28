@@ -391,6 +391,13 @@ Före merge?          -> quality-gate
 - Zod `z.string().datetime()` kräver fullständigt ISO-format - använd flexibel validering för datumfält
 - Prisma P2003 (foreign key) fel: logga alltid vilken constraint som failar, inte anta
 
+### E2E Test Best Practices (2026-01-28)
+- **Timing**: Undvik `waitForTimeout()` - använd explicit waits med `Promise.race()` eller `waitFor({ state: 'visible' })`
+- **Test isolation**: Använd unika identifiers med timestamp (`Date.now()`) för dynamiskt skapad data
+- **Flexibla assertions**: Testa beteende (`toBeLessThan`) istället för exakta värden (`toBe(5)`)
+- **Fixtures**: Importera `test, expect` från `./fixtures` för automatisk afterEach cleanup
+- **Unit vs E2E**: ErrorState/useRetry testas bättre som unit tests - E2E med API-blocking är fragilt
+
 ---
 
 ## Automated Quality Gates

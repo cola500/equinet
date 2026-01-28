@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Flexible Booking Flow (Customer)', () => {
   test.beforeEach(async ({ page }) => {

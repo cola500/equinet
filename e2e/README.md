@@ -24,13 +24,38 @@ npm run test:e2e:debug
 
 ```
 e2e/
-├── auth.spec.ts       # Registrering, inloggning, logout (7 tester)
-├── booking.spec.ts    # Sök, boka, avboka (6 tester)
-├── provider.spec.ts   # Leverantörsfunktioner (10 tester)
-└── README.md          # Denna fil
+├── fixtures.ts              # Custom test med afterEach cleanup (IMPORTERA DENNA!)
+├── auth.spec.ts             # Registrering, inloggning, logout
+├── booking.spec.ts          # Sök, boka, avboka
+├── calendar.spec.ts         # Kalender och öppettider
+├── provider.spec.ts         # Leverantörsfunktioner
+├── flexible-booking.spec.ts # Flexibla bokningar
+├── route-planning.spec.ts   # Ruttplanering
+├── announcements.spec.ts    # Utannonsering av rutter
+├── security-headers.spec.ts # Säkerhetshuvuden
+└── setup/
+    ├── seed-availability.setup.ts  # Seedar availability före tester
+    └── cleanup.setup.ts            # Cleanup efter alla tester
 ```
 
-**Total: 23 E2E-tester**
+**Total: 62 E2E-tester**
+
+## Test Isolation med Fixtures
+
+**VIKTIGT:** Alla spec-filer ska importera från `./fixtures` istället för `@playwright/test`:
+
+```typescript
+// RÄTT - använder fixtures med afterEach cleanup
+import { test, expect } from './fixtures';
+
+// FEL - ingen automatisk cleanup
+import { test, expect } from '@playwright/test';
+```
+
+Fixtures.ts ger:
+- Automatisk cleanup efter varje test
+- Tar bort dynamiskt skapad data (users med timestamp i email)
+- Behåller basanvändare (test@example.com, provider@example.com)
 
 ## 🧪 Vad testas?
 
