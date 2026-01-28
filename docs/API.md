@@ -11,6 +11,24 @@ Sessionen skickas automatiskt via HTTP-only cookies.
 - `401 Unauthorized` - Ingen giltig session
 - `403 Forbidden` - Saknar behörighet för åtgärden
 
+### Säkerhet: Atomära Authorization Checks
+
+Alla modifierande endpoints använder atomära authorization checks:
+
+- Authorization sker i samma databasfråga som operationen
+- Returnerar `404 Not Found` (inte `403 Forbidden`) vid unauthorized access
+- Förhindrar IDOR (Insecure Direct Object Reference) vulnerabilities
+- Förhindrar information leakage (angripare kan ej enumera IDs)
+
+**Exempel:**
+```typescript
+// WHERE clause inkluderar både ID och owner
+await prisma.booking.update({
+  where: { id, providerId },  // Atomär auth check
+  data: { status }
+})
+```
+
 ---
 
 ## Auth
@@ -147,7 +165,9 @@ Uppdatera bokningsstatus.
 
 **Errors:**
 - `400` - Valideringsfel
-- `404` - Bokning finns inte eller saknar behörighet
+- `404` - Bokning finns inte **eller saknar behörighet** (atomär auth)
+
+> **Säkerhet:** Använder atomär authorization check - returnerar 404 även vid unauthorized access för att förhindra ID-enumeration.
 
 ---
 
@@ -163,7 +183,9 @@ Ta bort bokning.
 ```
 
 **Errors:**
-- `404` - Bokning finns inte eller saknar behörighet
+- `404` - Bokning finns inte **eller saknar behörighet** (atomär auth)
+
+> **Säkerhet:** Använder atomär authorization check - returnerar 404 även vid unauthorized access för att förhindra ID-enumeration.
 
 ---
 
@@ -257,8 +279,9 @@ Uppdatera provider-profil (med automatisk geocoding).
 
 **Errors:**
 - `400` - Valideringsfel eller kunde inte geocoda adress
-- `403` - Forbidden (inte din profil)
-- `404` - Provider finns inte
+- `404` - Provider finns inte **eller saknar behörighet** (atomär auth)
+
+> **Säkerhet:** Använder atomär authorization check - returnerar 404 även vid unauthorized access för att förhindra ID-enumeration.
 
 ---
 
@@ -686,6 +709,11 @@ Uppdatera tjänst.
 
 **Response:** `200 OK`
 
+**Errors:**
+- `404` - Tjänst finns inte **eller saknar behörighet** (atomär auth)
+
+> **Säkerhet:** Använder atomär authorization check - returnerar 404 även vid unauthorized access för att förhindra ID-enumeration.
+
 ---
 
 ### DELETE /api/services/[id]
@@ -698,6 +726,11 @@ Ta bort tjänst.
 ```json
 { "message": "Service deleted" }
 ```
+
+**Errors:**
+- `404` - Tjänst finns inte **eller saknar behörighet** (atomär auth)
+
+> **Säkerhet:** Använder atomär authorization check - returnerar 404 även vid unauthorized access för att förhindra ID-enumeration.
 
 ---
 
@@ -874,4 +907,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-01-26*
+*Senast uppdaterad: 2026-01-28*

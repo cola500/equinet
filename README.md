@@ -127,6 +127,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Validering**: Zod + React Hook Form
 - **Testning**: Vitest (400 unit/integration) + Playwright (54 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
+- **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
 
 ## 📁 Projektstruktur
@@ -139,7 +140,7 @@ equinet/
 ├── src/
 │   ├── app/                   # Next.js App Router
 │   │   ├── (auth)/           # Login, registrering
-│   │   ├── api/              # API routes
+│   │   ├── api/              # API routes (HTTP-hantering)
 │   │   │   ├── auth/         # NextAuth & registrering
 │   │   │   ├── bookings/     # Boknings-API
 │   │   │   ├── providers/    # Leverantörs-API
@@ -154,6 +155,10 @@ equinet/
 │   │   ├── layout/           # Header, navigation, layouts
 │   │   ├── provider/         # Provider-specifika komponenter
 │   │   └── ui/               # shadcn/ui komponenter
+│   ├── domain/               # Affärslogik, entiteter, value objects
+│   │   └── booking/          # Booking domain (repository, types)
+│   ├── infrastructure/       # Repositories, externa tjänster
+│   │   └── repositories/     # Prisma-implementationer
 │   ├── hooks/
 │   │   └── useAuth.ts        # Custom auth hook
 │   ├── lib/
@@ -165,6 +170,32 @@ equinet/
 │   └── types/
 └── .env                      # Environment variables (NOT committed)
 ```
+
+## 🏗️ Arkitektur
+
+Equinet använder **DDD-Light** - en pragmatisk approach till Domain-Driven Design.
+
+### Lagerstruktur
+
+```
+src/
+├── app/api/          # API Routes (HTTP-hantering)
+├── domain/           # Affärslogik, entiteter, value objects
+├── infrastructure/   # Repositories, externa tjänster
+└── lib/              # Utilities utan affärslogik
+```
+
+### Repository Pattern
+
+Kärndomäner (Booking, Provider, Service) använder repository pattern:
+
+- **IBookingRepository** - Interface för bokningsoperationer
+- **PrismaBookingRepository** - Prisma-implementation
+- **MockBookingRepository** - In-memory för tester
+
+**Säkerhet:** Alla auth-aware metoder använder atomära WHERE-klausuler för IDOR-prevention.
+
+Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 👥 Användarroller
 
