@@ -20,6 +20,7 @@ describe('BookingMapper', () => {
     horseName: 'Thunder',
     horseInfo: null,
     customerNotes: 'Test booking',
+    travelTimeMinutes: null,
     createdAt: new Date('2025-01-01T12:00:00Z'),
     updatedAt: new Date('2025-01-02T12:00:00Z'),
   }

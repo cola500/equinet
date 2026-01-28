@@ -143,6 +143,10 @@ model Booking {
   customerNotes String?
   horseName     String?
   horseInfo     String?
+
+  // Beräknad restid till denna bokning (för historik/rapportering)
+  travelTimeMinutes Int?
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

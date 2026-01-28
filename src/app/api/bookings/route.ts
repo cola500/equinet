@@ -10,6 +10,7 @@ import { sendBookingConfirmationNotification } from "@/lib/email"
 import { z } from "zod"
 import {
   BookingService,
+  TravelTimeService,
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
 } from "@/domain/booking"
@@ -145,6 +146,8 @@ export async function POST(request: NextRequest) {
             id: true,
             userId: true,
             isActive: true,
+            latitude: true,
+            longitude: true,
           },
         })
         return provider
@@ -169,6 +172,18 @@ export async function POST(request: NextRequest) {
           providerId: routeOrder.providerId,
         }
       },
+      getCustomerLocation: async (customerId) => {
+        const user = await prisma.user.findUnique({
+          where: { id: customerId },
+          select: {
+            latitude: true,
+            longitude: true,
+            address: true,
+          },
+        })
+        return user
+      },
+      travelTimeService: new TravelTimeService(),
     })
 
     // Delegate to BookingService
@@ -192,6 +207,18 @@ export async function POST(request: NextRequest) {
       if (result.error.type === 'OVERLAP') {
         return NextResponse.json(
           { error: message, details: "Vänligen välj en annan tid eller datum" },
+          { status }
+        )
+      }
+
+      if (result.error.type === 'INSUFFICIENT_TRAVEL_TIME') {
+        return NextResponse.json(
+          {
+            error: message,
+            details: `Krävs ${result.error.requiredMinutes} minuter mellan bokningar, endast ${result.error.actualMinutes} minuter tillgängligt. Vänligen välj en tid med mer marginal.`,
+            requiredMinutes: result.error.requiredMinutes,
+            actualMinutes: result.error.actualMinutes,
+          },
           { status }
         )
       }

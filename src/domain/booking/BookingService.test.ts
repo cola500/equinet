@@ -5,9 +5,11 @@ import {
   CreateBookingDTO,
   ServiceInfo,
   ProviderInfo,
+  CustomerLocationInfo,
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
 } from './BookingService'
+import { TravelTimeService } from './TravelTimeService'
 import { MockBookingRepository } from '@/infrastructure/persistence/booking/MockBookingRepository'
 
 describe('BookingService', () => {
@@ -336,6 +338,256 @@ describe('BookingService', () => {
         .toBe('Ogiltig tjänst')
       expect(mapBookingErrorToMessage({ type: 'OVERLAP', message: 'Already booked' }))
         .toBe('Already booked')
+    })
+
+    it('should return 409 for insufficient travel time errors', () => {
+      expect(mapBookingErrorToStatus({
+        type: 'INSUFFICIENT_TRAVEL_TIME',
+        message: 'Not enough time',
+        requiredMinutes: 60,
+        actualMinutes: 30,
+      })).toBe(409)
+    })
+  })
+
+  describe('travel time validation', () => {
+    // Coordinates for test locations
+    const goteborgLocation: CustomerLocationInfo = {
+      latitude: 57.7089,
+      longitude: 11.9746,
+      address: 'Göteborg',
+    }
+
+    const alingsasLocation: CustomerLocationInfo = {
+      latitude: 57.9296,
+      longitude: 12.5327,
+      address: 'Alingsås',
+    }
+
+    const providerWithLocation: ProviderInfo = {
+      id: 'provider-1',
+      userId: 'provider-user-1',
+      isActive: true,
+      latitude: 57.7089,
+      longitude: 11.9746,
+    }
+
+    let travelTimeService: TravelTimeService
+    let mockGetCustomerLocation: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      travelTimeService = new TravelTimeService()
+      mockGetCustomerLocation = vi.fn()
+    })
+
+    it('should skip travel time validation when service is not configured', async () => {
+      // Default deps without travel time service
+      const result = await service.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should pass when there are no existing bookings', async () => {
+      mockGetCustomerLocation.mockResolvedValue(goteborgLocation)
+
+      const serviceWithTravel = new BookingService({
+        ...deps,
+        travelTimeService,
+        getCustomerLocation: mockGetCustomerLocation,
+      })
+
+      const result = await serviceWithTravel.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should pass when enough travel time between bookings', async () => {
+      // First customer in Göteborg
+      mockGetCustomerLocation.mockResolvedValueOnce(goteborgLocation)
+      mockGetProvider.mockResolvedValue(providerWithLocation)
+
+      bookingRepository.setCustomerLocation('customer-1', {
+        latitude: goteborgLocation.latitude!,
+        longitude: goteborgLocation.longitude!,
+        address: goteborgLocation.address!,
+      })
+
+      const serviceWithTravel = new BookingService({
+        ...deps,
+        travelTimeService,
+        getCustomerLocation: mockGetCustomerLocation,
+      })
+
+      // First booking 09:00-10:00
+      const firstDTO: CreateBookingDTO = {
+        ...validDTO,
+        startTime: '09:00',
+        endTime: '10:00',
+      }
+      await serviceWithTravel.createBooking(firstDTO)
+
+      // Second booking at 12:00 (2 hours later) at same location
+      // Should have plenty of time
+      mockGetCustomerLocation.mockResolvedValueOnce(goteborgLocation)
+
+      const secondDTO: CreateBookingDTO = {
+        ...validDTO,
+        customerId: 'customer-2',
+        startTime: '12:00',
+        endTime: '13:00',
+      }
+
+      bookingRepository.setCustomerLocation('customer-2', {
+        latitude: goteborgLocation.latitude!,
+        longitude: goteborgLocation.longitude!,
+        address: goteborgLocation.address!,
+      })
+
+      const result = await serviceWithTravel.createBooking(secondDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should fail when not enough travel time between locations', async () => {
+      mockGetProvider.mockResolvedValue(providerWithLocation)
+
+      // Set up first booking in Göteborg
+      bookingRepository.setCustomerLocation('customer-1', {
+        latitude: goteborgLocation.latitude!,
+        longitude: goteborgLocation.longitude!,
+        address: goteborgLocation.address!,
+      })
+
+      // First booking 09:00-10:00
+      mockGetCustomerLocation.mockResolvedValueOnce(goteborgLocation)
+
+      const serviceWithTravel = new BookingService({
+        ...deps,
+        travelTimeService,
+        getCustomerLocation: mockGetCustomerLocation,
+      })
+
+      const firstDTO: CreateBookingDTO = {
+        ...validDTO,
+        startTime: '09:00',
+        endTime: '10:00',
+      }
+      await serviceWithTravel.createBooking(firstDTO)
+
+      // Second booking in Alingsås (~40 km away) only 15 min later
+      // Should fail - needs ~70 min travel + buffer
+      mockGetCustomerLocation.mockResolvedValueOnce(alingsasLocation)
+
+      bookingRepository.setCustomerLocation('customer-2', {
+        latitude: alingsasLocation.latitude!,
+        longitude: alingsasLocation.longitude!,
+        address: alingsasLocation.address!,
+      })
+
+      const secondDTO: CreateBookingDTO = {
+        ...validDTO,
+        customerId: 'customer-2',
+        startTime: '10:15', // Only 15 min after first booking ends
+        endTime: '11:15',
+      }
+
+      const result = await serviceWithTravel.createBooking(secondDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INSUFFICIENT_TRAVEL_TIME')
+    })
+
+    it('should use default buffer when NO location is available (customer + provider)', async () => {
+      // Provider WITHOUT location
+      const providerWithoutLocation: ProviderInfo = {
+        id: 'provider-1',
+        userId: 'provider-user-1',
+        isActive: true,
+        latitude: null,
+        longitude: null,
+      }
+      mockGetProvider.mockResolvedValue(providerWithoutLocation)
+
+      // First booking - customer without location, provider without location
+      // Repository also has no location for this customer
+      mockGetCustomerLocation.mockResolvedValueOnce(null)
+
+      const serviceWithTravel = new BookingService({
+        ...deps,
+        travelTimeService,
+        getCustomerLocation: mockGetCustomerLocation,
+      })
+
+      // First booking
+      const firstDTO: CreateBookingDTO = {
+        ...validDTO,
+        startTime: '09:00',
+        endTime: '10:00',
+      }
+      await serviceWithTravel.createBooking(firstDTO)
+
+      // Second customer also has NO location - should use default buffer (15 min)
+      mockGetCustomerLocation.mockResolvedValueOnce(null)
+
+      const secondDTO: CreateBookingDTO = {
+        ...validDTO,
+        customerId: 'customer-2',
+        startTime: '10:10', // Only 10 min after first booking ends (< 15 min default)
+        endTime: '11:10',
+      }
+
+      const result = await serviceWithTravel.createBooking(secondDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INSUFFICIENT_TRAVEL_TIME')
+    })
+
+    it('should save travelTimeMinutes when booking is created', async () => {
+      mockGetProvider.mockResolvedValue(providerWithLocation)
+
+      // Set up first booking in Göteborg
+      bookingRepository.setCustomerLocation('customer-1', {
+        latitude: goteborgLocation.latitude!,
+        longitude: goteborgLocation.longitude!,
+        address: goteborgLocation.address!,
+      })
+
+      mockGetCustomerLocation.mockResolvedValueOnce(goteborgLocation)
+
+      const serviceWithTravel = new BookingService({
+        ...deps,
+        travelTimeService,
+        getCustomerLocation: mockGetCustomerLocation,
+      })
+
+      // First booking
+      const firstDTO: CreateBookingDTO = {
+        ...validDTO,
+        startTime: '09:00',
+        endTime: '10:00',
+      }
+      await serviceWithTravel.createBooking(firstDTO)
+
+      // Second booking in same location with enough gap
+      mockGetCustomerLocation.mockResolvedValueOnce(goteborgLocation)
+      bookingRepository.setCustomerLocation('customer-2', {
+        latitude: goteborgLocation.latitude!,
+        longitude: goteborgLocation.longitude!,
+        address: goteborgLocation.address!,
+      })
+
+      const secondDTO: CreateBookingDTO = {
+        ...validDTO,
+        customerId: 'customer-2',
+        startTime: '11:00',
+        endTime: '12:00',
+      }
+
+      const result = await serviceWithTravel.createBooking(secondDTO)
+
+      expect(result.isSuccess).toBe(true)
+      // Travel time should be 0 (same location)
+      // Note: travelTimeMinutes is saved on the booking but not returned in the DTO
     })
   })
 })

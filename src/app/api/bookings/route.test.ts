@@ -47,6 +47,9 @@ vi.mock('@/lib/prisma', () => ({
     routeOrder: {
       findUnique: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }))
@@ -216,7 +219,18 @@ describe('POST /api/bookings', () => {
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
       isActive: true,
+      latitude: 57.7089,
+      longitude: 11.9746,
     } as any)
+    // Default mock for customer location (for travel time validation)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      latitude: 57.7089,
+      longitude: 11.9746,
+      address: 'Göteborg',
+    } as any)
+    // Default mock for existing bookings (for travel time validation)
+    // Returns empty array - no existing bookings
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
   })
 
   it('should create booking for authenticated customer', async () => {

@@ -22,6 +22,8 @@ export interface Booking {
   horseName?: string
   horseInfo?: string
   notes?: string
+  /** Calculated travel time to this booking (minutes) */
+  travelTimeMinutes?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -42,6 +44,26 @@ export interface CreateBookingData {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  /** Calculated travel time to this booking (minutes) */
+  travelTimeMinutes?: number
+}
+
+/**
+ * BookingWithCustomerLocation - Booking with customer location for travel time calculations
+ *
+ * Used by findByProviderAndDateWithLocation for fetching bookings with
+ * their associated customer locations.
+ */
+export interface BookingWithCustomerLocation {
+  id: string
+  startTime: string
+  endTime: string
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  customer: {
+    latitude: number | null
+    longitude: number | null
+    address: string | null
+  }
 }
 
 /**
@@ -142,6 +164,21 @@ export interface IBookingRepository extends IRepository<Booking> {
    * Find bookings for a provider on a specific date
    */
   findByProviderAndDate(providerId: string, date: Date): Promise<Booking[]>
+
+  /**
+   * Find bookings for a provider on a specific date with customer location data
+   *
+   * Used for travel time validation between bookings.
+   * Only returns active bookings (pending, confirmed).
+   *
+   * @param providerId - Provider ID
+   * @param date - The booking date
+   * @returns Bookings with customer location (lat, lng, address)
+   */
+  findByProviderAndDateWithLocation(
+    providerId: string,
+    date: Date
+  ): Promise<BookingWithCustomerLocation[]>
 
   /**
    * Create booking with atomic overlap check (Serializable transaction)

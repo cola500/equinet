@@ -9,6 +9,7 @@ import {
   Booking,
   BookingWithRelations,
   CreateBookingData,
+  BookingWithCustomerLocation,
 } from './IBookingRepository'
 import { BookingMapper } from './BookingMapper'
 
@@ -130,6 +131,43 @@ export class PrismaBookingRepository
   }
 
   /**
+   * Find bookings for a provider on a specific date with customer location data
+   *
+   * Used for travel time validation between bookings.
+   * Only returns active bookings (pending, confirmed).
+   */
+  async findByProviderAndDateWithLocation(
+    providerId: string,
+    date: Date
+  ): Promise<BookingWithCustomerLocation[]> {
+    const bookings = await prisma.booking.findMany({
+      where: {
+        providerId,
+        bookingDate: date,
+        status: {
+          in: ['pending', 'confirmed'], // Only active bookings
+        },
+      },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        customer: {
+          select: {
+            latitude: true,
+            longitude: true,
+            address: true,
+          },
+        },
+      },
+      orderBy: { startTime: 'asc' },
+    })
+
+    return bookings as BookingWithCustomerLocation[]
+  }
+
+  /**
    * Create booking with atomic overlap check (Serializable transaction)
    *
    * Uses database-level isolation to prevent race conditions where
@@ -197,6 +235,7 @@ export class PrismaBookingRepository
             horseName: data.horseName,
             horseInfo: data.horseInfo,
             customerNotes: data.customerNotes,
+            travelTimeMinutes: data.travelTimeMinutes,
             status: 'pending',
           },
           select: {

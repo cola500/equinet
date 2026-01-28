@@ -9,3 +9,4 @@ export * from './errors'
 
 // Value Objects
 export * from './TimeSlot'
+export * from './Location'

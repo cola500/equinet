@@ -9,6 +9,7 @@ import {
   Booking,
   BookingWithRelations,
   CreateBookingData,
+  BookingWithCustomerLocation,
 } from './IBookingRepository'
 
 export class MockBookingRepository
@@ -16,12 +17,21 @@ export class MockBookingRepository
   implements IBookingRepository
 {
   private bookings: Map<string, Booking> = new Map()
+  // Customer location data (customerId -> location)
+  private customerLocations: Map<string, { latitude: number | null; longitude: number | null; address: string | null }> = new Map()
 
   constructor(initialData: Booking[] = []) {
     super()
     initialData.forEach((booking) => {
       this.bookings.set(booking.id, booking)
     })
+  }
+
+  /**
+   * Set customer location data for testing
+   */
+  setCustomerLocation(customerId: string, location: { latitude: number | null; longitude: number | null; address: string | null }): void {
+    this.customerLocations.set(customerId, location)
   }
 
   async findById(id: string): Promise<Booking | null> {
@@ -112,10 +122,49 @@ export class MockBookingRepository
   }
 
   /**
+   * Find bookings for a provider on a specific date with customer location data
+   *
+   * Used for travel time validation between bookings.
+   * Only returns active bookings (pending, confirmed).
+   */
+  async findByProviderAndDateWithLocation(
+    providerId: string,
+    date: Date
+  ): Promise<BookingWithCustomerLocation[]> {
+    const dateStr = date.toISOString().split('T')[0]
+
+    return Array.from(this.bookings.values())
+      .filter((b) => {
+        const bookingDateStr = b.bookingDate.toISOString().split('T')[0]
+        return (
+          b.providerId === providerId &&
+          bookingDateStr === dateStr &&
+          ['pending', 'confirmed'].includes(b.status)
+        )
+      })
+      .map((booking) => {
+        const location = this.customerLocations.get(booking.customerId)
+        return {
+          id: booking.id,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          status: booking.status,
+          customer: {
+            latitude: location?.latitude ?? null,
+            longitude: location?.longitude ?? null,
+            address: location?.address ?? null,
+          },
+        }
+      })
+      .sort((a, b) => this.parseTime(a.startTime) - this.parseTime(b.startTime))
+  }
+
+  /**
    * Clear all bookings (useful for test cleanup)
    */
   clear(): void {
     this.bookings.clear()
+    this.customerLocations.clear()
   }
 
   /**
