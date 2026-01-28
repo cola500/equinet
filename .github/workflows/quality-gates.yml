@@ -11,9 +11,23 @@ jobs:
   unit-tests:
     name: Unit Tests & Coverage
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: equinet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
-      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-      DIRECT_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
 
     steps:
       - name: Checkout code
@@ -105,9 +119,23 @@ jobs:
   type-check:
     name: TypeScript Check
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: equinet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
-      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-      DIRECT_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
 
     steps:
       - name: Checkout code
@@ -132,9 +160,23 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: equinet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
-      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-      DIRECT_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
 
     steps:
       - name: Checkout code
@@ -156,9 +198,23 @@ jobs:
   build:
     name: Build Check
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: equinet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
-      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-      DIRECT_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: test-secret-for-ci-only
       NEXT_TELEMETRY_DISABLED: 1
