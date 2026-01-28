@@ -7,8 +7,12 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { sendBookingConfirmationNotification } from "@/lib/email"
-import { calculateEndTimeHHMM } from "@/lib/utils/booking"
 import { z } from "zod"
+import {
+  BookingService,
+  mapBookingErrorToStatus,
+  mapBookingErrorToMessage,
+} from "@/domain/booking"
 
 // Input schema - endTime is optional (will be calculated from service duration if missing)
 const bookingInputSchema = z.object({
@@ -33,63 +37,26 @@ const bookingInputSchema = z.object({
   startTime: z.string().regex(
     /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/,
     "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
-  ).transform(t => t.substring(0, 5)), // Normalisera till HH:MM
+  ).transform(t => t.substring(0, 5)), // Normalize to HH:MM
   endTime: z.string().regex(
     /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/,
     "Ogiltigt tidsformat. Måste vara HH:MM (00:00-23:59)"
-  ).transform(t => t.substring(0, 5)).optional(), // Now optional!
+  ).transform(t => t.substring(0, 5)).optional(),
   horseName: z.string().max(100, "Hästnamn för långt (max 100 tecken)").optional(),
   horseInfo: z.string().max(500, "Hästinfo för lång (max 500 tecken)").optional(),
   customerNotes: z.string().max(1000, "Anteckningar för långa (max 1000 tecken)").optional(),
   routeOrderId: z.string().uuid("Ogiltigt ruttorder-ID format").optional(),
 }).strict()
 
-/**
- * Validates booking times (start/end) after endTime has been calculated
- * Returns error message if invalid, null if valid
- */
-function validateBookingTimes(startTime: string, endTime: string): string | null {
-  const [startH, startM] = startTime.split(':').map(Number)
-  const [endH, endM] = endTime.split(':').map(Number)
-  const startMinutes = startH * 60 + startM
-  const endMinutes = endH * 60 + endM
-  const durationMinutes = endMinutes - startMinutes
-
-  // Validate endTime is after startTime
-  if (endMinutes <= startMinutes) {
-    return "Sluttid måste vara efter starttid"
-  }
-
-  // Validate minimum duration (15 minutes)
-  if (durationMinutes < 15) {
-    return "Bokning måste vara minst 15 minuter"
-  }
-
-  // Validate maximum duration (8 hours)
-  if (durationMinutes > 480) {
-    return "Bokning kan inte överstiga 8 timmar"
-  }
-
-  // Validate business hours (08:00-18:00)
-  if (startH < 8 || endH > 18) {
-    return "Bokning måste vara inom öppettider (08:00-18:00)"
-  }
-
-  return null
-}
-
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
   try {
-    // Auth handled by middleware
     const session = await auth()
 
-    // Use repository instead of direct Prisma access
     const bookingRepo = new PrismaBookingRepository()
     let bookings
 
     if (session.user.userType === "provider") {
-      // Use repository to find provider
       const providerRepo = new ProviderRepository()
       const provider = await providerRepo.findByUserId(session.user.id)
 
@@ -97,16 +64,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
 
-      // Get bookings with customer contact info (provider view)
       bookings = await bookingRepo.findByProviderIdWithDetails(provider.id)
     } else {
-      // Get bookings without provider contact info (customer view)
       bookings = await bookingRepo.findByCustomerIdWithDetails(session.user.id)
     }
 
     return NextResponse.json(bookings)
   } catch (error) {
-    // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
     }
@@ -119,13 +83,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new booking
+// POST - Create new booking (delegated to BookingService)
 export async function POST(request: NextRequest) {
   try {
-    // Auth handled by middleware
     const session = await auth()
 
-    // Rate limiting - 10 bookings per hour per user (wrapped in try-catch to prevent crashes)
+    // Rate limiting
     const rateLimitKey = `booking:${session.user.id}`
     try {
       const isAllowed = await rateLimiters.booking(rateLimitKey)
@@ -143,352 +106,157 @@ export async function POST(request: NextRequest) {
         )
       }
     } catch (rateLimitError) {
-      // If rate limiter fails, log but allow the request (fail open for availability)
       console.error("Rate limiter error:", rateLimitError)
-      try {
-        logger.warn("Rate limiter failed, allowing request", {
-          userId: session.user.id,
-          error: rateLimitError instanceof Error ? rateLimitError.message : String(rateLimitError),
-        })
-      } catch (logError) {
-        // Even logging the warning should not crash the request
-        console.error("Logger also failed:", logError)
-      }
     }
 
-    // Parse request body with error handling
+    // Parse JSON
     let body
     try {
       body = await request.json()
-    } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+    } catch {
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
       )
     }
 
+    // Validate input
     const validatedInput = bookingInputSchema.parse(body)
 
-    // Validate routeOrderId if provided
-    if (validatedInput.routeOrderId) {
-      const routeOrder = await prisma.routeOrder.findUnique({
-        where: { id: validatedInput.routeOrderId },
-        select: { dateFrom: true, dateTo: true, status: true, providerId: true }
-      })
-
-      if (!routeOrder) {
-        return NextResponse.json({ error: "RouteOrder hittades inte" }, { status: 404 })
-      }
-
-      if (routeOrder.status !== "open") {
-        return NextResponse.json({ error: "Rutten är inte längre öppen för bokningar" }, { status: 400 })
-      }
-
-      const bookingDate = new Date(validatedInput.bookingDate)
-      if (bookingDate < routeOrder.dateFrom || bookingDate > routeOrder.dateTo) {
-        return NextResponse.json(
-          { error: "Bokningsdatum måste vara inom ruttens datum-spann" },
-          { status: 400 }
-        )
-      }
-
-      if (validatedInput.providerId !== routeOrder.providerId) {
-        return NextResponse.json({ error: "Provider matchar inte rutt-annonsen" }, { status: 400 })
-      }
-    }
-
-    // Verify service exists and belongs to provider (include provider info for checks)
-    const service = await prisma.service.findUnique({
-      where: { id: validatedInput.serviceId },
-      include: {
-        provider: {
+    // Create BookingService with dependencies
+    const bookingService = new BookingService({
+      bookingRepository: new PrismaBookingRepository(),
+      getService: async (id) => {
+        const service = await prisma.service.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            providerId: true,
+            durationMinutes: true,
+            isActive: true,
+          },
+        })
+        return service
+      },
+      getProvider: async (id) => {
+        const provider = await prisma.provider.findUnique({
+          where: { id },
           select: {
             id: true,
             userId: true,
             isActive: true,
           },
-        },
+        })
+        return provider
+      },
+      getRouteOrder: async (id) => {
+        const routeOrder = await prisma.routeOrder.findUnique({
+          where: { id },
+          select: {
+            dateFrom: true,
+            dateTo: true,
+            status: true,
+            providerId: true,
+          },
+        })
+        if (!routeOrder || !routeOrder.providerId) {
+          return null
+        }
+        return {
+          dateFrom: routeOrder.dateFrom,
+          dateTo: routeOrder.dateTo,
+          status: routeOrder.status,
+          providerId: routeOrder.providerId,
+        }
       },
     })
 
-    if (!service || service.providerId !== validatedInput.providerId) {
-      return NextResponse.json(
-        { error: "Ogiltig tjänst" },
-        { status: 400 }
-      )
-    }
-
-    // Check if service is active
-    if (!service.isActive) {
-      return NextResponse.json(
-        { error: "Tjänsten är inte längre tillgänglig" },
-        { status: 400 }
-      )
-    }
-
-    // Check if provider is active
-    if (!service.provider.isActive) {
-      return NextResponse.json(
-        { error: "Leverantören är för närvarande inte tillgänglig" },
-        { status: 400 }
-      )
-    }
-
-    // Prevent self-booking: customer cannot book their own service
-    if (service.provider.userId === session.user.id) {
-      return NextResponse.json(
-        { error: "Du kan inte boka din egen tjänst" },
-        { status: 400 }
-      )
-    }
-
-    // Calculate endTime from service duration if not provided
-    const endTime = validatedInput.endTime || calculateEndTimeHHMM(validatedInput.startTime, service.durationMinutes)
-
-    // Validate booking times (duration, business hours, etc.)
-    const timeValidationError = validateBookingTimes(validatedInput.startTime, endTime)
-    if (timeValidationError) {
-      return NextResponse.json(
-        { error: timeValidationError },
-        { status: 400 }
-      )
-    }
-
-    // Create validated data object with calculated endTime
-    const validatedData = {
-      ...validatedInput,
-      endTime,
-    }
-
-    // Use transaction for atomicity: check for overlaps and create booking atomically
-    // This prevents race conditions where two requests check simultaneously and both create bookings
-    // @ts-expect-error - Prisma transaction callback type inference issue
-    const booking: any = await prisma.$transaction(async (tx) => {
-      const bookingDate = new Date(validatedData.bookingDate)
-
-      // Check for overlapping bookings within the transaction
-      const overlappingBookings = await tx.booking.findMany({
-        where: {
-          providerId: validatedData.providerId,
-          bookingDate: bookingDate,
-          status: {
-            in: ["pending", "confirmed"], // Don't check cancelled/rejected
-          },
-          // Check for time overlap using OR conditions
-          OR: [
-            // New booking starts during an existing booking
-            {
-              AND: [
-                { startTime: { lte: validatedData.startTime } },
-                { endTime: { gt: validatedData.startTime } },
-              ],
-            },
-            // New booking ends during an existing booking
-            {
-              AND: [
-                { startTime: { lt: validatedData.endTime } },
-                { endTime: { gte: validatedData.endTime } },
-              ],
-            },
-            // New booking completely contains an existing booking
-            {
-              AND: [
-                { startTime: { gte: validatedData.startTime } },
-                { endTime: { lte: validatedData.endTime } },
-              ],
-            },
-          ],
-        },
-      })
-
-      if (overlappingBookings.length > 0) {
-        // Throw an error to rollback the transaction
-        throw new Error("BOOKING_CONFLICT")
-      }
-
-      // Create the booking atomically
-      return await tx.booking.create({
-        data: {
-          customerId: session.user.id,
-          providerId: validatedData.providerId,
-          serviceId: validatedData.serviceId,
-          routeOrderId: validatedData.routeOrderId, // NEW: Link to announcement
-          bookingDate: bookingDate,
-          startTime: validatedData.startTime,
-          endTime: validatedData.endTime,
-          horseName: validatedData.horseName,
-          horseInfo: validatedData.horseInfo,
-          customerNotes: validatedData.customerNotes,
-          status: "pending",
-        },
-        include: {
-          service: true,
-          provider: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      })
-    }, {
-      timeout: 15000, // 15 second timeout for transaction
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // Prevent race conditions
+    // Delegate to BookingService
+    const result = await bookingService.createBooking({
+      customerId: session.user.id,
+      providerId: validatedInput.providerId,
+      serviceId: validatedInput.serviceId,
+      bookingDate: new Date(validatedInput.bookingDate),
+      startTime: validatedInput.startTime,
+      endTime: validatedInput.endTime,
+      routeOrderId: validatedInput.routeOrderId,
+      horseName: validatedInput.horseName,
+      horseInfo: validatedInput.horseInfo,
+      customerNotes: validatedInput.customerNotes,
     })
 
-    // Safe logger pattern: logging errors should never crash the request
-    try {
-      logger.info("Booking created successfully", {
-        bookingId: booking.id,
-        customerId: session.user.id,
-        providerId: validatedData.providerId,
-      })
-    } catch (logError) {
-      console.error("Logger failed after successful booking:", logError)
+    if (result.isFailure) {
+      const status = mapBookingErrorToStatus(result.error)
+      const message = mapBookingErrorToMessage(result.error)
+
+      if (result.error.type === 'OVERLAP') {
+        return NextResponse.json(
+          { error: message, details: "Vänligen välj en annan tid eller datum" },
+          { status }
+        )
+      }
+
+      return NextResponse.json({ error: message }, { status })
     }
 
-    // Send booking confirmation email (async, don't block response)
-    sendBookingConfirmationNotification(booking.id).catch((err) => {
+    // Log success
+    try {
+      logger.info("Booking created successfully", {
+        bookingId: result.value.id,
+        customerId: session.user.id,
+        providerId: validatedInput.providerId,
+      })
+    } catch (logError) {
+      console.error("Logger failed:", logError)
+    }
+
+    // Send confirmation email (async, don't block)
+    sendBookingConfirmationNotification(result.value.id).catch((err) => {
       console.error("Failed to send booking confirmation email:", err)
     })
 
-    return NextResponse.json(booking, { status: 201 })
+    return NextResponse.json(result.value, { status: 201 })
   } catch (err: unknown) {
     const error = err as Error
 
-    // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
     }
 
-    // Handle validation errors
+    // Zod validation errors
     if (error instanceof z.ZodError) {
-      try {
-        logger.warn("Booking validation failed", {
-          errors: error.issues,
-        })
-      } catch (logError) {
-        console.error("Logger failed:", logError)
-      }
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }
 
-    // Handle booking conflict from transaction
-    if (error instanceof Error && error.message === "BOOKING_CONFLICT") {
-      try {
-        logger.warn("Booking conflict detected", {
-        })
-      } catch (logError) {
-        console.error("Logger failed:", logError)
-      }
-      return NextResponse.json(
-        {
-          error: "Leverantören är redan bokad under den valda tiden",
-          details: "Vänligen välj en annan tid eller datum",
-        },
-        { status: 409 }
-      )
-    }
-
-    // Handle Prisma-specific errors
+    // Prisma errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // P2002: Unique constraint violation
       if (error.code === "P2002") {
-        try {
-          logger.warn("Duplicate booking attempt", {
-            code: error.code,
-          })
-        } catch (logError) {
-          console.error("Logger failed:", logError)
-        }
-        return NextResponse.json(
-          { error: "Bokningen finns redan" },
-          { status: 409 }
-        )
+        return NextResponse.json({ error: "Bokningen finns redan" }, { status: 409 })
       }
-
-      // P2003: Foreign key constraint failed
       if (error.code === "P2003") {
-        const fieldName = (error.meta as any)?.field_name || "unknown"
-        console.error("Foreign key constraint failed:", fieldName, error.meta)
-        try {
-          logger.warn("Invalid foreign key during booking", {
-            code: error.code,
-            field: fieldName,
-          })
-        } catch (logError) {
-          console.error("Logger failed:", logError)
-        }
         return NextResponse.json(
-          { error: "Ogiltig referens - kontrollera att tjänst och leverantör finns", details: fieldName },
+          { error: "Ogiltig referens - kontrollera att tjänst och leverantör finns" },
           { status: 400 }
         )
       }
-
-      // P2025: Record not found
       if (error.code === "P2025") {
-        try {
-          logger.warn("Record not found during booking", {
-            code: error.code,
-          })
-        } catch (logError) {
-          console.error("Logger failed:", logError)
-        }
         return NextResponse.json(
           { error: "Tjänst eller leverantör hittades inte" },
           { status: 404 }
         )
       }
-
-      // Other Prisma errors
-      console.error("Prisma error:", error.code, error.message)
-      return NextResponse.json(
-        { error: "Databasfel uppstod" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Databasfel uppstod" }, { status: 500 })
     }
 
-    // Handle Prisma initialization errors (database connection issues)
     if (error instanceof Prisma.PrismaClientInitializationError) {
-      console.error("Database connection failed:", error.message)
-      try {
-        logger.fatal("Database unavailable during booking", {})
-      } catch (logError) {
-        console.error("Logger failed:", logError)
-      }
-      return NextResponse.json(
-        { error: "Databasen är inte tillgänglig" },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: "Databasen är inte tillgänglig" }, { status: 503 })
     }
 
-    // Handle query timeout errors
-    if (error instanceof Error && error.message.includes("Query timeout")) {
-      console.error("Query timeout:", error.message)
-      try {
-        logger.error("Booking query timeout", error, {})
-      } catch (logError) {
-        console.error("Logger failed:", logError)
-      }
-      return NextResponse.json(
-        { error: "Förfrågan tok för lång tid", details: "Försök igen" },
-        { status: 504 }
-      )
-    }
-
-    // Generic error fallback
     console.error("Unexpected error during booking:", error)
-    try {
-      logger.error("Failed to create booking", error as Error, {})
-    } catch (logError) {
-      console.error("Logger failed:", logError)
-    }
-    return NextResponse.json(
-      { error: "Failed to create booking" },
-      { status: 500 }
-    )
+    logger.error("Failed to create booking", error, {})
+    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
   }
 }

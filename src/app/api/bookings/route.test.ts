@@ -211,6 +211,12 @@ describe('GET /api/bookings', () => {
 describe('POST /api/bookings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default mock for provider (BookingService fetches provider separately)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+      id: TEST_UUIDS.provider,
+      userId: TEST_UUIDS.providerUser,
+      isActive: true,
+    } as any)
   })
 
   it('should create booking for authenticated customer', async () => {
@@ -348,9 +354,9 @@ describe('POST /api/bookings', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
+    // Assert - BookingService returns INACTIVE_SERVICE for null service
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Ogiltig tjänst')
+    expect(data.error).toBe('Tjänsten är inte längre tillgänglig')
   })
 
   it('should return 400 when service does not belong to provider', async () => {
@@ -826,8 +832,8 @@ describe('POST /api/bookings', () => {
       const response = await POST(request)
       const data = await response.json()
 
-      // Assert
-      expect(response.status).toBe(404)
+      // Assert - BookingService returns 400 for invalid route order
+      expect(response.status).toBe(400)
       expect(data.error).toBe('RouteOrder hittades inte')
     })
 
