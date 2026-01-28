@@ -125,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (400 unit/integration) + Playwright (54 E2E) = 70% coverage
+- **Testning**: Vitest (500+ unit/integration) + Playwright (54 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -156,7 +156,8 @@ equinet/
 │   │   ├── provider/         # Provider-specifika komponenter
 │   │   └── ui/               # shadcn/ui komponenter
 │   ├── domain/               # Affärslogik, entiteter, value objects
-│   │   └── booking/          # Booking domain (repository, types)
+│   │   ├── booking/          # BookingService, types
+│   │   └── shared/           # TimeSlot, Result, ValueObject
 │   ├── infrastructure/       # Repositories, externa tjänster
 │   │   └── repositories/     # Prisma-implementationer
 │   ├── hooks/
@@ -278,7 +279,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**454 tester** (54 E2E + 400 unit/integration) med **70% coverage**.
+**558 tester** (54 E2E + 504 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
