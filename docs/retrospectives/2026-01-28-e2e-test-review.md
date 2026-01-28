@@ -135,12 +135,14 @@ expect(newCount).toBeLessThan(initialCount);
 
 1. `2c4879d` - test: add calendar E2E tests and fix flaky tests
 2. `80f9c16` - fix: resolve test isolation issues and API bug
+3. `7df369a` - test: improve E2E test infrastructure and fix rate limiting
 
 ---
 
 ## Nästa steg
 
-1. [ ] Aktivera global-hooks.ts i playwright config
-2. [ ] Flytta error-retry till unit tests
-3. [ ] Uppdatera CLAUDE.md med nya learnings
-4. [ ] Överväg att lägga till E2E tests för betalningsflöde (när implementerat)
+1. [x] Aktivera global-hooks.ts i playwright config (fixtures.ts)
+2. [x] Flytta error-retry till unit tests (redan täckt, E2E borttagen)
+3. [x] Uppdatera CLAUDE.md med nya learnings
+4. [x] Fixa rate limiting för test-miljön (ökade limits i development)
+5. [ ] Överväg att lägga till E2E tests för betalningsflöde (när implementerat)
