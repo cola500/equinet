@@ -185,8 +185,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     }
   });
 
-  // TODO Sprint 2: Fix route creation flow (doesn't redirect to route detail page on CI)
-  test.skip('should select multiple orders and create route', async ({ page }) => {
+  test('should select multiple orders and create route', async ({ page }) => {
     await page.goto('/provider/route-planning');
     await expect(page.getByRole('heading', { name: /rutt-planering/i })).toBeVisible({ timeout: 10000 });
 
@@ -234,8 +233,11 @@ test.describe('Route Planning Flow (Provider)', () => {
     await expect(createButton).toBeEnabled();
     await createButton.click();
 
+    // Vänta på success toast först (mer stabilt än URL-redirect)
+    await expect(page.getByText(/rutt skapad/i)).toBeVisible({ timeout: 10000 });
+
     // Vänta på redirect till rutt-vy
-    await expect(page).toHaveURL(/\/provider\/routes\/[a-zA-Z0-9]+/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/provider\/routes\/[a-zA-Z0-9-]+/, { timeout: 15000 });
 
     // Verifiera att vi är på rutt-detaljsidan (kolla heading istället för text)
     await expect(page.getByRole('heading', { name: /rutt/i }).first()).toBeVisible({ timeout: 5000 });

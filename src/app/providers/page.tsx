@@ -202,6 +202,7 @@ export default function ProvidersPage() {
                     type="button"
                     variant="outline"
                     onClick={handleClearFilters}
+                    data-testid="clear-filters-button"
                   >
                     Rensa
                   </Button>

@@ -246,9 +246,9 @@ test.describe('Route Announcements Flow', () => {
       await page.getByLabel(/från datum/i).fill(dateString);
       await page.getByLabel(/till datum/i).fill(endDateString);
 
-      // Fill in route stop
+      // Fill in route stop (använd riktig adress för geocoding)
       await page.getByLabel(/platsnamn/i).fill('E2E Teststall');
-      await page.getByLabel(/adress/i).fill('Testgatan 123, Teststaden');
+      await page.getByLabel(/adress/i).fill('Kungsgatan 1, Stockholm');
 
       // Fill in optional info
       await page.getByLabel(/övrig information/i).fill('E2E test - automatiskt skapad');

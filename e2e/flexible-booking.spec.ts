@@ -109,6 +109,9 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     // Fyll i antal hästar
     await page.getByLabel(/antal hästar/i).fill('2');
 
+    // Fyll i kontakttelefon (required)
+    await page.getByLabel(/kontakttelefon/i).fill('070-123 45 67');
+
     // Fyll i särskilda instruktioner
     await page.getByLabel(/särskilda instruktioner/i).fill('Flexibel tid fungerar bra för mig');
 
@@ -174,6 +177,10 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     await page.locator('[data-testid="priority-urgent"]').click();
 
     await page.getByLabel(/antal hästar/i).fill('1');
+
+    // Fyll i kontakttelefon (required)
+    await page.getByLabel(/kontakttelefon/i).fill('070-999 88 77');
+
     await page.getByLabel(/särskilda instruktioner/i).fill('Detta är akut - behöver snabb hjälp!');
 
     await page.waitForTimeout(1000);

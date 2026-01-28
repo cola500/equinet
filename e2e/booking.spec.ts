@@ -103,8 +103,7 @@ test.describe('Booking Flow (Customer)', () => {
     await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
   });
 
-  // TODO Sprint 2: Fix "rensa alla filter" button selector (CI-only failure)
-  test.skip('should search and filter providers', async ({ page }) => {
+  test('should search and filter providers', async ({ page }) => {
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
 
@@ -129,7 +128,7 @@ test.describe('Booking Flow (Customer)', () => {
     await expect(page.locator('[data-testid="provider-card"]').first()).toBeVisible();
 
     // Använd sökfältet (sök på "Test" som matchar "Test Stall AB")
-    await page.getByPlaceholder(/sök/i).fill('Test');
+    await page.getByPlaceholder(/sök efter företagsnamn/i).fill('Test');
 
     // Vänta på att resultaten uppdateras
     await page.waitForTimeout(1000); // Vänta lite längre för debounce + filtering
@@ -159,11 +158,11 @@ test.describe('Booking Flow (Customer)', () => {
       }
     }
 
-    // Rensa filter (använd "rensa alla filter" knappen)
-    await page.getByRole('button', { name: /rensa alla filter/i }).click();
+    // Rensa filter
+    await page.locator('[data-testid="clear-filters-button"]').click();
 
     // Verifiera att alla leverantörer visas igen
-    await expect(page.getByPlaceholder(/sök/i)).toHaveValue('');
+    await expect(page.getByPlaceholder(/sök efter företagsnamn/i)).toHaveValue('');
   });
 
   test('should view provider details and services', async ({ page }) => {
