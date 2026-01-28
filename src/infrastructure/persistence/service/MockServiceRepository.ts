@@ -71,6 +71,37 @@ export class MockServiceRepository implements IServiceRepository {
     return this.services.has(id)
   }
 
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  async findByIdForProvider(id: string, providerId: string): Promise<Service | null> {
+    const service = this.services.get(id)
+    if (!service || service.providerId !== providerId) return null
+    return service
+  }
+
+  async updateWithAuth(
+    id: string,
+    data: Partial<Omit<Service, 'id' | 'providerId' | 'createdAt'>>,
+    providerId: string
+  ): Promise<Service | null> {
+    const service = this.services.get(id)
+    if (!service || service.providerId !== providerId) return null
+
+    const updated = { ...service, ...data, updatedAt: new Date() }
+    this.services.set(id, updated)
+    return updated
+  }
+
+  async deleteWithAuth(id: string, providerId: string): Promise<boolean> {
+    const service = this.services.get(id)
+    if (!service || service.providerId !== providerId) return false
+
+    this.services.delete(id)
+    return true
+  }
+
   // Test helpers
   clear(): void {
     this.services.clear()

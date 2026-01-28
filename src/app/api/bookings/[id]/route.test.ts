@@ -13,18 +13,22 @@ const mockUpdateStatusWithAuth = vi.fn()
 const mockDeleteWithAuth = vi.fn()
 const mockFindByUserId = vi.fn()
 
-vi.mock('@/infrastructure/persistence/booking/PrismaBookingRepository', () => ({
-  PrismaBookingRepository: vi.fn().mockImplementation(() => ({
-    updateStatusWithAuth: mockUpdateStatusWithAuth,
-    deleteWithAuth: mockDeleteWithAuth,
-  })),
-}))
+vi.mock('@/infrastructure/persistence/booking/PrismaBookingRepository', () => {
+  return {
+    PrismaBookingRepository: class {
+      updateStatusWithAuth = mockUpdateStatusWithAuth
+      deleteWithAuth = mockDeleteWithAuth
+    },
+  }
+})
 
-vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => ({
-  ProviderRepository: vi.fn().mockImplementation(() => ({
-    findByUserId: mockFindByUserId,
-  })),
-}))
+vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => {
+  return {
+    ProviderRepository: class {
+      findByUserId = mockFindByUserId
+    },
+  }
+})
 
 describe('PUT /api/bookings/[id]', () => {
   beforeEach(() => {

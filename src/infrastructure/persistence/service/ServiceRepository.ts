@@ -4,6 +4,7 @@
  * Handles data persistence for Service aggregate using Prisma ORM.
  */
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import type { IServiceRepository, Service, ServiceFilters } from './IServiceRepository'
 
 export class ServiceRepository implements IServiceRepository {
@@ -147,9 +148,10 @@ export class ServiceRepository implements IServiceRepository {
       return updated
     } catch (error) {
       // P2025: Record not found (service doesn't exist or provider doesn't own it)
-      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }
+      console.error(`Failed to update service ${id}:`, error)
       throw error
     }
   }
@@ -169,9 +171,10 @@ export class ServiceRepository implements IServiceRepository {
       return true
     } catch (error) {
       // P2025: Record not found (service doesn't exist or provider doesn't own it)
-      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return false
       }
+      console.error(`Failed to delete service ${id}:`, error)
       throw error
     }
   }

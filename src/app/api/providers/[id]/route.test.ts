@@ -18,13 +18,15 @@ const mockFindByIdWithPublicDetails = vi.fn()
 const mockFindByIdForOwner = vi.fn()
 const mockUpdateWithAuth = vi.fn()
 
-vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => ({
-  ProviderRepository: vi.fn().mockImplementation(() => ({
-    findByIdWithPublicDetails: mockFindByIdWithPublicDetails,
-    findByIdForOwner: mockFindByIdForOwner,
-    updateWithAuth: mockUpdateWithAuth,
-  })),
-}))
+vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => {
+  return {
+    ProviderRepository: class {
+      findByIdWithPublicDetails = mockFindByIdWithPublicDetails
+      findByIdForOwner = mockFindByIdForOwner
+      updateWithAuth = mockUpdateWithAuth
+    },
+  }
+})
 
 describe('GET /api/providers/[id]', () => {
   beforeEach(() => {

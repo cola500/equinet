@@ -199,4 +199,67 @@ export class MockBookingRepository
       },
     }))
   }
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  async updateStatusWithAuth(
+    id: string,
+    status: Booking['status'],
+    authContext: { providerId?: string; customerId?: string }
+  ): Promise<BookingWithRelations | null> {
+    const booking = this.bookings.get(id)
+    if (!booking) return null
+
+    // Check authorization
+    if (authContext.providerId && booking.providerId !== authContext.providerId) {
+      return null
+    }
+    if (authContext.customerId && booking.customerId !== authContext.customerId) {
+      return null
+    }
+
+    // Update status
+    const updated = { ...booking, status, updatedAt: new Date() }
+    this.bookings.set(id, updated)
+
+    // Return with mock relations
+    return {
+      ...updated,
+      customer: {
+        firstName: 'Mock',
+        lastName: 'Customer',
+        email: `customer-${updated.customerId}@example.com`,
+      },
+      service: {
+        name: 'Mock Service',
+        price: 500,
+        durationMinutes: 60,
+      },
+      provider: {
+        businessName: 'Mock Provider AB',
+        user: { firstName: 'Mock', lastName: 'Provider' },
+      },
+    }
+  }
+
+  async deleteWithAuth(
+    id: string,
+    authContext: { providerId?: string; customerId?: string }
+  ): Promise<boolean> {
+    const booking = this.bookings.get(id)
+    if (!booking) return false
+
+    // Check authorization
+    if (authContext.providerId && booking.providerId !== authContext.providerId) {
+      return false
+    }
+    if (authContext.customerId && booking.customerId !== authContext.customerId) {
+      return false
+    }
+
+    this.bookings.delete(id)
+    return true
+  }
 }

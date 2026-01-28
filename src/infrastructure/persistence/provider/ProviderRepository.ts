@@ -4,6 +4,7 @@
  * Handles data persistence for Provider aggregate using Prisma ORM.
  */
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import type {
   IProviderRepository,
   Provider,
@@ -303,9 +304,10 @@ export class ProviderRepository implements IProviderRepository {
       return updated
     } catch (error) {
       // P2025: Record not found (provider doesn't exist or user doesn't own it)
-      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }
+      console.error(`Failed to update provider ${id}:`, error)
       throw error
     }
   }

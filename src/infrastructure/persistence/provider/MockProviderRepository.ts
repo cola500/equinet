@@ -4,7 +4,14 @@
  * Provides a fast, predictable repository for unit tests.
  * No database required.
  */
-import type { IProviderRepository, Provider, ProviderFilters, ProviderWithDetails } from './IProviderRepository'
+import type {
+  IProviderRepository,
+  Provider,
+  ProviderFilters,
+  ProviderWithDetails,
+  ProviderWithFullDetails,
+  ProviderForEdit,
+} from './IProviderRepository'
 
 export class MockProviderRepository implements IProviderRepository {
   private providers: Map<string, Provider> = new Map()
@@ -86,6 +93,59 @@ export class MockProviderRepository implements IProviderRepository {
 
   async exists(id: string): Promise<boolean> {
     return this.providers.has(id)
+  }
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  async findByIdWithPublicDetails(id: string): Promise<ProviderWithFullDetails | null> {
+    const provider = this.providers.get(id)
+    if (!provider || !provider.isActive) return null
+
+    return {
+      ...provider,
+      latitude: null,
+      longitude: null,
+      serviceAreaKm: null,
+      address: null,
+      postalCode: null,
+      services: [],
+      availability: [],
+      user: {
+        firstName: 'Mock',
+        lastName: 'User',
+        phone: null,
+      },
+    }
+  }
+
+  async findByIdForOwner(id: string, userId: string): Promise<ProviderForEdit | null> {
+    const provider = this.providers.get(id)
+    if (!provider || provider.userId !== userId) return null
+
+    return {
+      id: provider.id,
+      userId: provider.userId,
+      address: null,
+      city: provider.city,
+      postalCode: null,
+      latitude: null,
+      longitude: null,
+    }
+  }
+
+  async updateWithAuth(
+    id: string,
+    data: Partial<Omit<Provider, 'id' | 'userId' | 'createdAt'>>,
+    userId: string
+  ): Promise<Provider | null> {
+    const provider = this.providers.get(id)
+    if (!provider || provider.userId !== userId) return null
+
+    const updated = { ...provider, ...data, updatedAt: new Date() }
+    this.providers.set(id, updated)
+    return updated
   }
 
   // Test helpers

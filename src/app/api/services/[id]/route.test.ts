@@ -13,18 +13,22 @@ const mockUpdateWithAuth = vi.fn()
 const mockDeleteWithAuth = vi.fn()
 const mockFindByUserId = vi.fn()
 
-vi.mock('@/infrastructure/persistence/service/ServiceRepository', () => ({
-  ServiceRepository: vi.fn().mockImplementation(() => ({
-    updateWithAuth: mockUpdateWithAuth,
-    deleteWithAuth: mockDeleteWithAuth,
-  })),
-}))
+vi.mock('@/infrastructure/persistence/service/ServiceRepository', () => {
+  return {
+    ServiceRepository: class {
+      updateWithAuth = mockUpdateWithAuth
+      deleteWithAuth = mockDeleteWithAuth
+    },
+  }
+})
 
-vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => ({
-  ProviderRepository: vi.fn().mockImplementation(() => ({
-    findByUserId: mockFindByUserId,
-  })),
-}))
+vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => {
+  return {
+    ProviderRepository: class {
+      findByUserId = mockFindByUserId
+    },
+  }
+})
 
 describe('PUT /api/services/[id]', () => {
   beforeEach(() => {

@@ -2,6 +2,7 @@
  * PrismaBookingRepository - Prisma implementation of IBookingRepository
  */
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { BaseRepository } from '../BaseRepository'
 import {
   IBookingRepository,
@@ -352,9 +353,10 @@ export class PrismaBookingRepository
       return updated as BookingWithRelations
     } catch (error) {
       // P2025: Record not found (booking doesn't exist or user doesn't own it)
-      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }
+      console.error(`Failed to update booking ${id}:`, error)
       throw error
     }
   }
@@ -388,9 +390,10 @@ export class PrismaBookingRepository
       return true
     } catch (error) {
       // P2025: Record not found (booking doesn't exist or user doesn't own it)
-      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return false
       }
+      console.error(`Failed to delete booking ${id}:`, error)
       throw error
     }
   }
