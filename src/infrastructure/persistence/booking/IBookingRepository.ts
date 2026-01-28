@@ -27,6 +27,24 @@ export interface Booking {
 }
 
 /**
+ * CreateBookingData - Data required to create a new booking
+ *
+ * Used by createWithOverlapCheck for atomic booking creation.
+ */
+export interface CreateBookingData {
+  customerId: string
+  providerId: string
+  serviceId: string
+  bookingDate: Date
+  startTime: string
+  endTime: string
+  routeOrderId?: string
+  horseName?: string
+  horseInfo?: string
+  customerNotes?: string
+}
+
+/**
  * BookingWithRelations - DTO for API layer (CQRS Query Side)
  *
  * Denormalized view that includes related entities for UI needs.
@@ -124,6 +142,17 @@ export interface IBookingRepository extends IRepository<Booking> {
    * Find bookings for a provider on a specific date
    */
   findByProviderAndDate(providerId: string, date: Date): Promise<Booking[]>
+
+  /**
+   * Create booking with atomic overlap check (Serializable transaction)
+   *
+   * Uses database-level isolation to prevent race conditions where
+   * two requests check for overlaps simultaneously and both succeed.
+   *
+   * @param data - Booking data to create
+   * @returns Created booking with relations, or null if overlap detected
+   */
+  createWithOverlapCheck(data: CreateBookingData): Promise<BookingWithRelations | null>
 
   // ==========================================
   // QUERY SIDE (Denormalized DTOs for API)

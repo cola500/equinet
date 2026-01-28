@@ -8,6 +8,7 @@ import {
   IBookingRepository,
   Booking,
   BookingWithRelations,
+  CreateBookingData,
 } from './IBookingRepository'
 
 export class MockBookingRepository
@@ -130,6 +131,76 @@ export class MockBookingRepository
   private parseTime(time: string): number {
     const [hours, minutes] = time.split(':').map(Number)
     return hours * 60 + minutes
+  }
+
+  /**
+   * Create booking with overlap check (mock implementation)
+   *
+   * Simulates the atomic overlap check behavior of the Prisma implementation.
+   *
+   * @param data - Booking data to create
+   * @returns Created booking with relations, or null if overlap detected
+   */
+  async createWithOverlapCheck(data: CreateBookingData): Promise<BookingWithRelations | null> {
+    // Check for overlapping bookings
+    const overlapping = await this.findOverlapping(
+      data.providerId,
+      data.bookingDate,
+      data.startTime,
+      data.endTime
+    )
+
+    if (overlapping.length > 0) {
+      return null
+    }
+
+    // Create the booking
+    const id = `mock-booking-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    const now = new Date()
+
+    const booking: Booking = {
+      id,
+      customerId: data.customerId,
+      providerId: data.providerId,
+      serviceId: data.serviceId,
+      routeOrderId: data.routeOrderId,
+      bookingDate: data.bookingDate,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      timezone: 'Europe/Stockholm',
+      status: 'pending',
+      horseName: data.horseName,
+      horseInfo: data.horseInfo,
+      notes: data.customerNotes,
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    this.bookings.set(id, booking)
+
+    // Return with mock relations
+    return {
+      ...booking,
+      customerNotes: data.customerNotes,
+      customer: {
+        firstName: 'Mock',
+        lastName: 'Customer',
+        email: `customer-${data.customerId}@example.com`,
+        phone: '+46701234567',
+      },
+      service: {
+        name: 'Mock Service',
+        price: 500,
+        durationMinutes: 60,
+      },
+      provider: {
+        businessName: 'Mock Provider AB',
+        user: {
+          firstName: 'Mock',
+          lastName: 'Provider',
+        },
+      },
+    }
   }
 
   // ==========================================

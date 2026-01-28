@@ -8,6 +8,7 @@ import {
   IBookingRepository,
   Booking,
   BookingWithRelations,
+  CreateBookingData,
 } from './IBookingRepository'
 import { BookingMapper } from './BookingMapper'
 
@@ -126,6 +127,139 @@ export class PrismaBookingRepository
     })
 
     return this.mapper.toDomainList(bookings)
+  }
+
+  /**
+   * Create booking with atomic overlap check (Serializable transaction)
+   *
+   * Uses database-level isolation to prevent race conditions where
+   * two requests check for overlaps simultaneously and both succeed.
+   *
+   * @param data - Booking data to create
+   * @returns Created booking with relations, or null if overlap detected
+   */
+  async createWithOverlapCheck(data: CreateBookingData): Promise<BookingWithRelations | null> {
+    try {
+      // Use Serializable isolation level for strongest consistency guarantee
+      // This prevents phantom reads and ensures the overlap check is atomic
+      // @ts-expect-error - Prisma transaction callback type inference issue
+      const booking = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Check for overlapping bookings within the transaction
+        const overlappingBookings = await tx.booking.findMany({
+          where: {
+            providerId: data.providerId,
+            bookingDate: data.bookingDate,
+            status: {
+              in: ['pending', 'confirmed'], // Only check active bookings
+            },
+            // Check for time overlap using OR conditions
+            OR: [
+              // New booking starts during an existing booking
+              {
+                AND: [
+                  { startTime: { lte: data.startTime } },
+                  { endTime: { gt: data.startTime } },
+                ],
+              },
+              // New booking ends during an existing booking
+              {
+                AND: [
+                  { startTime: { lt: data.endTime } },
+                  { endTime: { gte: data.endTime } },
+                ],
+              },
+              // New booking completely contains an existing booking
+              {
+                AND: [
+                  { startTime: { gte: data.startTime } },
+                  { endTime: { lte: data.endTime } },
+                ],
+              },
+            ],
+          },
+        })
+
+        if (overlappingBookings.length > 0) {
+          // Signal overlap by throwing (will be caught below)
+          throw new Error('BOOKING_OVERLAP')
+        }
+
+        // Create the booking atomically
+        return await tx.booking.create({
+          data: {
+            customerId: data.customerId,
+            providerId: data.providerId,
+            serviceId: data.serviceId,
+            routeOrderId: data.routeOrderId,
+            bookingDate: data.bookingDate,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            horseName: data.horseName,
+            horseInfo: data.horseInfo,
+            customerNotes: data.customerNotes,
+            status: 'pending',
+          },
+          select: {
+            // Core booking fields
+            id: true,
+            customerId: true,
+            providerId: true,
+            serviceId: true,
+            bookingDate: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            horseName: true,
+            horseInfo: true,
+            customerNotes: true,
+            createdAt: true,
+            updatedAt: true,
+
+            // Relations for response
+            customer: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+            service: {
+              select: {
+                name: true,
+                price: true,
+                durationMinutes: true,
+              },
+            },
+            provider: {
+              select: {
+                businessName: true,
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+      }, {
+        timeout: 15000, // 15 second timeout
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      })
+
+      return booking as unknown as BookingWithRelations
+    } catch (error) {
+      // Handle overlap signal
+      if (error instanceof Error && error.message === 'BOOKING_OVERLAP') {
+        return null
+      }
+
+      // Re-throw other errors
+      console.error('Failed to create booking with overlap check:', error)
+      throw error
+    }
   }
 
   /**

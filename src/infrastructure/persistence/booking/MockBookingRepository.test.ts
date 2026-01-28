@@ -13,6 +13,7 @@ describe('MockBookingRepository', () => {
     bookingDate: new Date('2025-01-15'),
     startTime: '10:00',
     endTime: '11:00',
+    timezone: 'Europe/Stockholm',
     status: 'pending',
     horseName: 'Thunder',
     notes: 'Test booking',
@@ -430,6 +431,182 @@ describe('MockBookingRepository', () => {
 
       const all = repo.getAll()
       expect(all).toHaveLength(2)
+    })
+  })
+
+  describe('createWithOverlapCheck', () => {
+    const createBookingData = (overrides = {}) => ({
+      customerId: 'customer-456',
+      providerId: 'provider-789',
+      serviceId: 'service-001',
+      bookingDate: new Date('2025-01-15'),
+      startTime: '10:00',
+      endTime: '11:00',
+      horseName: 'Thunder',
+      customerNotes: 'Test booking',
+      ...overrides,
+    })
+
+    it('should create booking when no overlap exists', async () => {
+      const data = createBookingData()
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+      expect(result?.customerId).toBe('customer-456')
+      expect(result?.providerId).toBe('provider-789')
+      expect(result?.startTime).toBe('10:00')
+      expect(result?.endTime).toBe('11:00')
+      expect(result?.status).toBe('pending')
+    })
+
+    it('should return null when overlap exists', async () => {
+      // First, save an existing booking
+      await repository.save(
+        createBooking({
+          id: 'existing-booking',
+          providerId: 'provider-789',
+          bookingDate: new Date('2025-01-15'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+        })
+      )
+
+      // Try to create overlapping booking
+      const data = createBookingData({
+        startTime: '10:30',
+        endTime: '11:30',
+      })
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).toBeNull()
+    })
+
+    it('should create booking when times are adjacent (no overlap)', async () => {
+      // First, save an existing booking
+      await repository.save(
+        createBooking({
+          id: 'existing-booking',
+          providerId: 'provider-789',
+          bookingDate: new Date('2025-01-15'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+        })
+      )
+
+      // Create booking that starts when existing one ends
+      const data = createBookingData({
+        startTime: '11:00',
+        endTime: '12:00',
+      })
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+      expect(result?.startTime).toBe('11:00')
+    })
+
+    it('should include relations data in result', async () => {
+      const data = createBookingData()
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+      expect(result?.customer).toBeDefined()
+      expect(result?.customer?.firstName).toBe('Mock')
+      expect(result?.service).toBeDefined()
+      expect(result?.service?.name).toBe('Mock Service')
+      expect(result?.provider).toBeDefined()
+      expect(result?.provider?.businessName).toBe('Mock Provider AB')
+    })
+
+    it('should ignore cancelled bookings when checking overlap', async () => {
+      // Save a cancelled booking
+      await repository.save(
+        createBooking({
+          id: 'cancelled-booking',
+          providerId: 'provider-789',
+          bookingDate: new Date('2025-01-15'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'cancelled',
+        })
+      )
+
+      // Create booking at same time should succeed
+      const data = createBookingData({
+        startTime: '10:00',
+        endTime: '11:00',
+      })
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+    })
+
+    it('should only check overlap for same provider', async () => {
+      // Save booking for different provider
+      await repository.save(
+        createBooking({
+          id: 'other-provider-booking',
+          providerId: 'other-provider',
+          bookingDate: new Date('2025-01-15'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+        })
+      )
+
+      // Create booking at same time for different provider should succeed
+      const data = createBookingData({
+        startTime: '10:00',
+        endTime: '11:00',
+      })
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+    })
+
+    it('should only check overlap for same date', async () => {
+      // Save booking for different date
+      await repository.save(
+        createBooking({
+          id: 'different-date-booking',
+          providerId: 'provider-789',
+          bookingDate: new Date('2025-01-16'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+        })
+      )
+
+      // Create booking at same time but different date should succeed
+      const data = createBookingData({
+        bookingDate: new Date('2025-01-15'),
+        startTime: '10:00',
+        endTime: '11:00',
+      })
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+    })
+
+    it('should persist booking to repository', async () => {
+      const data = createBookingData()
+
+      const result = await repository.createWithOverlapCheck(data)
+
+      expect(result).not.toBeNull()
+
+      // Verify booking was persisted
+      const all = repository.getAll()
+      expect(all).toHaveLength(1)
+      expect(all[0].customerId).toBe('customer-456')
     })
   })
 })
