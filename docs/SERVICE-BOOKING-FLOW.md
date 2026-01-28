@@ -253,17 +253,22 @@ const pdfBuffer = await pdf(<InvoicePDF />).toBuffer()
    - Klicka "Ladda ner kvitto"
    - Verifiera att kvittot visas korrekt
 
-### E2E-tester (TODO)
+### E2E-tester
 
-```typescript
-// tests/e2e/payment-flow.spec.ts
-test("customer can pay for confirmed booking", async ({ page }) => {
-  // Login as customer
-  // Navigate to bookings
-  // Click pay button
-  // Verify success message
-  // Verify receipt link
-})
+E2E-tester för betalningsflödet finns i `e2e/payment.spec.ts`:
+
+| Test | Beskrivning |
+|------|-------------|
+| `should pay for a confirmed booking` | Verifierar att kund kan betala bekräftad bokning |
+| `should show receipt link after payment` | Kontrollerar att kvittolänk visas efter betalning |
+| `should show invoice number after payment` | Verifierar att kvittonummer (EQ-YYYYMM-XXXX) visas |
+| `should hide cancel button for paid bookings` | Kontrollerar att avbokning blockeras för betalda |
+| `should not allow double payment` | Verifierar dubbelbetalningsskydd |
+| `should not show pay button for pending bookings` | Pending-bokningar kan inte betalas |
+
+Kör testerna:
+```bash
+npx playwright test e2e/payment.spec.ts
 ```
 
 ---
