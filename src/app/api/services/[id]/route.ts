@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
+import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Tjänstens namn krävs"),
@@ -25,21 +26,14 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-    })
+    // Use repositories instead of direct Prisma access
+    const serviceRepo = new ServiceRepository()
+    const providerRepo = new ProviderRepository()
+
+    const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
-    }
-
-    // Verify service belongs to provider
-    const existingService = await prisma.service.findUnique({
-      where: { id },
-    })
-
-    if (!existingService || existingService.providerId !== provider.id) {
-      return NextResponse.json({ error: "Service not found" }, { status: 404 })
     }
 
     // Parse request body with error handling
@@ -54,15 +48,14 @@ export async function PUT(
       )
     }
 
-    console.log("Received update request for service:", id)
-    console.log("Request body:", body)
-
     const validatedData = serviceSchema.parse(body)
 
-    const service = await prisma.service.update({
-      where: { id },
-      data: validatedData,
-    })
+    // Update with authorization check (atomic WHERE clause in repository)
+    const service = await serviceRepo.updateWithAuth(id, validatedData, provider.id)
+
+    if (!service) {
+      return NextResponse.json({ error: "Service not found" }, { status: 404 })
+    }
 
     return NextResponse.json(service)
   } catch (error) {
@@ -101,26 +94,22 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-    })
+    // Use repositories instead of direct Prisma access
+    const serviceRepo = new ServiceRepository()
+    const providerRepo = new ProviderRepository()
+
+    const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
-    // Verify service belongs to provider
-    const existingService = await prisma.service.findUnique({
-      where: { id },
-    })
+    // Delete with authorization check (atomic WHERE clause in repository)
+    const deleted = await serviceRepo.deleteWithAuth(id, provider.id)
 
-    if (!existingService || existingService.providerId !== provider.id) {
+    if (!deleted) {
       return NextResponse.json({ error: "Service not found" }, { status: 404 })
     }
-
-    await prisma.service.delete({
-      where: { id },
-    })
 
     return NextResponse.json({ message: "Service deleted" })
   } catch (error) {

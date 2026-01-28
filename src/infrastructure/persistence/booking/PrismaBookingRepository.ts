@@ -272,4 +272,126 @@ export class PrismaBookingRepository
 
     return bookings as BookingWithRelations[]
   }
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  /**
+   * Update booking status with atomic authorization check
+   *
+   * Uses WHERE clause with both id AND owner for IDOR prevention.
+   * Returns null if booking not found or user not authorized.
+   */
+  async updateStatusWithAuth(
+    id: string,
+    status: 'pending' | 'confirmed' | 'cancelled' | 'completed',
+    authContext: { providerId?: string; customerId?: string }
+  ): Promise<BookingWithRelations | null> {
+    // Build atomic WHERE clause
+    const whereClause: { id: string; providerId?: string; customerId?: string } = { id }
+
+    if (authContext.providerId) {
+      whereClause.providerId = authContext.providerId
+    } else if (authContext.customerId) {
+      whereClause.customerId = authContext.customerId
+    } else {
+      // No valid auth context provided
+      return null
+    }
+
+    try {
+      const updated = await prisma.booking.update({
+        where: whereClause,
+        data: { status },
+        select: {
+          // Core booking fields
+          id: true,
+          customerId: true,
+          providerId: true,
+          serviceId: true,
+          bookingDate: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          horseName: true,
+          horseInfo: true,
+          customerNotes: true,
+          createdAt: true,
+          updatedAt: true,
+
+          // Relations for email notification
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          service: {
+            select: {
+              name: true,
+              price: true,
+              durationMinutes: true,
+            },
+          },
+          provider: {
+            select: {
+              businessName: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      return updated as BookingWithRelations
+    } catch (error) {
+      // P2025: Record not found (booking doesn't exist or user doesn't own it)
+      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Delete booking with atomic authorization check
+   *
+   * Uses WHERE clause with both id AND owner for IDOR prevention.
+   * Returns false if booking not found or user not authorized.
+   */
+  async deleteWithAuth(
+    id: string,
+    authContext: { providerId?: string; customerId?: string }
+  ): Promise<boolean> {
+    // Build atomic WHERE clause
+    const whereClause: { id: string; providerId?: string; customerId?: string } = { id }
+
+    if (authContext.providerId) {
+      whereClause.providerId = authContext.providerId
+    } else if (authContext.customerId) {
+      whereClause.customerId = authContext.customerId
+    } else {
+      // No valid auth context provided
+      return false
+    }
+
+    try {
+      await prisma.booking.delete({
+        where: whereClause,
+      })
+      return true
+    } catch (error) {
+      // P2025: Record not found (booking doesn't exist or user doesn't own it)
+      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+        return false
+      }
+      throw error
+    }
+  }
 }

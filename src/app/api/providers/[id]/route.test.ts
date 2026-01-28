@@ -1,26 +1,29 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
-import * as authModule from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import * as geocoding from '@/lib/geocoding'
 
 // Mock dependencies
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    provider: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-  },
-}))
-
 vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
 vi.mock('@/lib/geocoding', () => ({
   geocodeAddress: vi.fn(),
+}))
+
+// Mock repositories
+const mockFindByIdWithPublicDetails = vi.fn()
+const mockFindByIdForOwner = vi.fn()
+const mockUpdateWithAuth = vi.fn()
+
+vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => ({
+  ProviderRepository: vi.fn().mockImplementation(() => ({
+    findByIdWithPublicDetails: mockFindByIdWithPublicDetails,
+    findByIdForOwner: mockFindByIdForOwner,
+    updateWithAuth: mockUpdateWithAuth,
+  })),
 }))
 
 describe('GET /api/providers/[id]', () => {
@@ -40,17 +43,14 @@ describe('GET /api/providers/[id]', () => {
         {
           id: 'service1',
           name: 'Hovslagning',
-          description: 'Standard hovslagning',
           price: 800,
           durationMinutes: 60,
-          isActive: true,
         },
         {
           id: 'service2',
           name: 'Massage',
           price: 600,
           durationMinutes: 45,
-          isActive: true,
         },
       ],
       availability: [
@@ -76,7 +76,7 @@ describe('GET /api/providers/[id]', () => {
       },
     }
 
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    mockFindByIdWithPublicDetails.mockResolvedValue(mockProvider)
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123')
 
@@ -86,46 +86,21 @@ describe('GET /api/providers/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
+    // Assert - Behavior-based: test WHAT the API returns
     expect(response.status).toBe(200)
     expect(data.id).toBe('provider123')
     expect(data.businessName).toBe('Test Hovslagare')
     expect(data.services).toHaveLength(2)
     expect(data.availability).toHaveLength(2)
     expect(data.user.firstName).toBe('John')
-    expect(prisma.provider.findUnique).toHaveBeenCalledWith({
-      where: {
-        id: 'provider123',
-        isActive: true,
-      },
-      include: {
-        services: {
-          where: {
-            isActive: true,
-          },
-        },
-        availability: {
-          where: {
-            isActive: true,
-          },
-          orderBy: {
-            dayOfWeek: 'asc',
-          },
-        },
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-      },
-    })
+
+    // Verify repository was called
+    expect(mockFindByIdWithPublicDetails).toHaveBeenCalledWith('provider123')
   })
 
   it('should return 404 when provider does not exist', async () => {
     // Arrange
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+    mockFindByIdWithPublicDetails.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/providers/nonexistent')
 
@@ -141,8 +116,8 @@ describe('GET /api/providers/[id]', () => {
   })
 
   it('should return 404 when provider is not active', async () => {
-    // Arrange
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+    // Arrange - repository returns null for inactive providers
+    mockFindByIdWithPublicDetails.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/providers/inactive123')
 
@@ -155,49 +130,6 @@ describe('GET /api/providers/[id]', () => {
     // Assert
     expect(response.status).toBe(404)
     expect(data.error).toBe('Provider not found')
-    expect(prisma.provider.findUnique).toHaveBeenCalledWith({
-      where: {
-        id: 'inactive123',
-        isActive: true,
-      },
-      include: expect.any(Object),
-    })
-  })
-
-  it('should only return active services', async () => {
-    // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      businessName: 'Test Provider',
-      isActive: true,
-      services: [
-        { id: 'service1', name: 'Active Service', isActive: true },
-      ],
-      availability: [],
-      user: { firstName: 'John', lastName: 'Doe' },
-    }
-
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-
-    const request = new NextRequest('http://localhost:3000/api/providers/provider123')
-
-    // Act
-    await GET(request, {
-      params: Promise.resolve({ id: 'provider123' }),
-    })
-
-    // Assert
-    expect(prisma.provider.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        include: expect.objectContaining({
-          services: {
-            where: {
-              isActive: true,
-            },
-          },
-        }),
-      })
-    )
   })
 
   it('should return provider with empty services array if no active services', async () => {
@@ -211,7 +143,7 @@ describe('GET /api/providers/[id]', () => {
       user: { firstName: 'John', lastName: 'Doe', phone: '0701234567' },
     }
 
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    mockFindByIdWithPublicDetails.mockResolvedValue(mockProvider)
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123')
 
@@ -235,21 +167,20 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should update provider with automatic geocoding when address changes', async () => {
     // Arrange - Mock session (provider owns this profile)
-    vi.mocked(authModule.auth).mockResolvedValue({
+    vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
-    // Mock existing provider
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+    // Mock existing provider (owner check passes)
+    mockFindByIdForOwner.mockResolvedValue({
       id: 'provider123',
       userId: 'user123',
-      businessName: 'Old Name',
       address: 'Old Street 1',
       city: 'Old City',
       postalCode: '11111',
       latitude: null,
       longitude: null,
-    } as any)
+    })
 
     // Mock successful geocoding
     vi.mocked(geocoding.geocodeAddress).mockResolvedValue({
@@ -258,7 +189,7 @@ describe('PUT /api/providers/[id]', () => {
     })
 
     // Mock successful update
-    vi.mocked(prisma.provider.update).mockResolvedValue({
+    mockUpdateWithAuth.mockResolvedValue({
       id: 'provider123',
       businessName: 'Test Hovslagare',
       address: 'Storgatan 1',
@@ -266,7 +197,7 @@ describe('PUT /api/providers/[id]', () => {
       postalCode: '44130',
       latitude: 57.930,
       longitude: 12.532,
-    } as any)
+    })
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
       method: 'PUT',
@@ -289,10 +220,10 @@ describe('PUT /api/providers/[id]', () => {
       'Storgatan 1, Alingsås, 44130'
     )
 
-    // Assert - Provider updated with coordinates
-    expect(prisma.provider.update).toHaveBeenCalledWith({
-      where: { id: 'provider123' },
-      data: expect.objectContaining({
+    // Assert - Repository updateWithAuth was called
+    expect(mockUpdateWithAuth).toHaveBeenCalledWith(
+      'provider123',
+      expect.objectContaining({
         businessName: 'Test Hovslagare',
         address: 'Storgatan 1',
         city: 'Alingsås',
@@ -300,7 +231,8 @@ describe('PUT /api/providers/[id]', () => {
         latitude: 57.930,
         longitude: 12.532,
       }),
-    })
+      'user123'
+    )
 
     expect(response.status).toBe(200)
     expect(data.latitude).toBe(57.930)
@@ -309,12 +241,12 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should NOT geocode if address unchanged', async () => {
     // Arrange
-    vi.mocked(authModule.auth).mockResolvedValue({
+    vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
     // Existing provider with coordinates
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+    mockFindByIdForOwner.mockResolvedValue({
       id: 'provider123',
       userId: 'user123',
       address: 'Storgatan 1',
@@ -322,16 +254,16 @@ describe('PUT /api/providers/[id]', () => {
       postalCode: '44130',
       latitude: 57.930,
       longitude: 12.532,
-    } as any)
+    })
 
-    vi.mocked(prisma.provider.update).mockResolvedValue({
+    mockUpdateWithAuth.mockResolvedValue({
       id: 'provider123',
       businessName: 'Updated Name',
       address: 'Storgatan 1',
       city: 'Alingsås',
       latitude: 57.930,
       longitude: 12.532,
-    } as any)
+    })
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
       method: 'PUT',
@@ -352,26 +284,31 @@ describe('PUT /api/providers/[id]', () => {
     expect(geocoding.geocodeAddress).not.toHaveBeenCalled()
 
     // Assert - Update used existing coordinates
-    expect(prisma.provider.update).toHaveBeenCalledWith({
-      where: { id: 'provider123' },
-      data: expect.objectContaining({
+    expect(mockUpdateWithAuth).toHaveBeenCalledWith(
+      'provider123',
+      expect.objectContaining({
         latitude: 57.930,
         longitude: 12.532,
       }),
-    })
+      'user123'
+    )
   })
 
   it('should return 400 if geocoding fails', async () => {
     // Arrange
-    vi.mocked(authModule.auth).mockResolvedValue({
+    vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+    mockFindByIdForOwner.mockResolvedValue({
       id: 'provider123',
       userId: 'user123',
       address: 'Old Address',
-    } as any)
+      city: null,
+      postalCode: null,
+      latitude: null,
+      longitude: null,
+    })
 
     // Mock geocoding failure
     vi.mocked(geocoding.geocodeAddress).mockResolvedValue(null)
@@ -397,7 +334,7 @@ describe('PUT /api/providers/[id]', () => {
 
   it('should return 401 if not authenticated', async () => {
     // Arrange - No session
-    vi.mocked(authModule.auth).mockResolvedValue(null)
+    vi.mocked(auth).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
       method: 'PUT',
@@ -415,16 +352,14 @@ describe('PUT /api/providers/[id]', () => {
     expect(data.error).toBe('Unauthorized')
   })
 
-  it('should return 403 if user does not own provider profile', async () => {
-    // Arrange - Different user
-    vi.mocked(authModule.auth).mockResolvedValue({
+  it('should return 404 if user does not own provider profile', async () => {
+    // Arrange - User authenticated but doesn't own this provider
+    vi.mocked(auth).mockResolvedValue({
       user: { id: 'otherUser', userType: 'provider' },
     } as any)
 
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
-      id: 'provider123',
-      userId: 'user123', // Different owner
-    } as any)
+    // Repository returns null for ownership check (security: 404 not 403)
+    mockFindByIdForOwner.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
       method: 'PUT',
@@ -437,18 +372,18 @@ describe('PUT /api/providers/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
-    expect(response.status).toBe(403)
-    expect(data.error).toBe('Forbidden')
+    // Assert - Returns 404 (not 403) for security best practice
+    expect(response.status).toBe(404)
+    expect(data.error).toBe('Provider not found')
   })
 
   it('should return 404 if provider not found', async () => {
     // Arrange
-    vi.mocked(authModule.auth).mockResolvedValue({
+    vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
 
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+    mockFindByIdForOwner.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/providers/nonexistent', {
       method: 'PUT',
@@ -464,5 +399,62 @@ describe('PUT /api/providers/[id]', () => {
     // Assert
     expect(response.status).toBe(404)
     expect(data.error).toBe('Provider not found')
+  })
+
+  it('should return 400 for invalid JSON body', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+
+    mockFindByIdForOwner.mockResolvedValue({
+      id: 'provider123',
+      userId: 'user123',
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
+      method: 'PUT',
+      body: 'invalid json',
+    })
+
+    // Act
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'provider123' }),
+    })
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Invalid JSON')
+  })
+
+  it('should return 400 for validation errors', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+
+    mockFindByIdForOwner.mockResolvedValue({
+      id: 'provider123',
+      userId: 'user123',
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/providers/provider123', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: '', // Empty string - might be invalid
+        serviceAreaKm: -10, // Negative - invalid
+      }),
+    })
+
+    // Act
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'provider123' }),
+    })
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Validation error')
   })
 })

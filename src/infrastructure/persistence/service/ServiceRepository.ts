@@ -107,4 +107,72 @@ export class ServiceRepository implements IServiceRepository {
     })
     return count > 0
   }
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  /**
+   * Find service by ID only if it belongs to the provider
+   */
+  async findByIdForProvider(id: string, providerId: string): Promise<Service | null> {
+    const service = await prisma.service.findFirst({
+      where: {
+        id,
+        providerId,
+      },
+    })
+
+    return service
+  }
+
+  /**
+   * Update service with atomic authorization check
+   */
+  async updateWithAuth(
+    id: string,
+    data: Partial<Omit<Service, 'id' | 'providerId' | 'createdAt'>>,
+    providerId: string
+  ): Promise<Service | null> {
+    try {
+      // Atomic update: WHERE includes both id AND providerId
+      const updated = await prisma.service.update({
+        where: {
+          id,
+          providerId, // Authorization check in WHERE clause
+        },
+        data,
+      })
+
+      return updated
+    } catch (error) {
+      // P2025: Record not found (service doesn't exist or provider doesn't own it)
+      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Delete service with atomic authorization check
+   */
+  async deleteWithAuth(id: string, providerId: string): Promise<boolean> {
+    try {
+      // Atomic delete: WHERE includes both id AND providerId
+      await prisma.service.delete({
+        where: {
+          id,
+          providerId, // Authorization check in WHERE clause
+        },
+      })
+      return true
+    } catch (error) {
+      // P2025: Record not found (service doesn't exist or provider doesn't own it)
+      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+        return false
+      }
+      throw error
+    }
+  }
 }

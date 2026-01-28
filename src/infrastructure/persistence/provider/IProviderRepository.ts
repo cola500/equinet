@@ -62,4 +62,75 @@ export interface IProviderRepository extends IRepository<Provider> {
    * Find provider by user ID
    */
   findByUserId(userId: string): Promise<Provider | null>
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  /**
+   * Find provider by ID with full details for public API
+   * Only returns active providers with active services
+   */
+  findByIdWithPublicDetails(id: string): Promise<ProviderWithFullDetails | null>
+
+  /**
+   * Find provider by ID for owner (includes all fields for editing)
+   *
+   * @param id - Provider ID
+   * @param userId - User ID for authorization
+   * @returns Provider if found and user owns it, null otherwise
+   */
+  findByIdForOwner(id: string, userId: string): Promise<ProviderForEdit | null>
+
+  /**
+   * Update provider with atomic authorization check
+   *
+   * @param id - Provider ID
+   * @param data - Fields to update
+   * @param userId - User ID for authorization
+   * @returns Updated provider, or null if not found/unauthorized
+   */
+  updateWithAuth(
+    id: string,
+    data: Partial<Omit<Provider, 'id' | 'userId' | 'createdAt'>>,
+    userId: string
+  ): Promise<Provider | null>
+}
+
+// Provider with full public details (for single provider view)
+export interface ProviderWithFullDetails extends Provider {
+  latitude?: number | null
+  longitude?: number | null
+  serviceAreaKm?: number | null
+  address?: string | null
+  postalCode?: string | null
+  services: Array<{
+    id: string
+    name: string
+    price: number
+    durationMinutes: number
+  }>
+  availability: Array<{
+    id: string
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+    isActive: boolean
+  }>
+  user: {
+    firstName: string
+    lastName: string
+    phone: string | null
+  }
+}
+
+// Provider for editing (owner view)
+export interface ProviderForEdit {
+  id: string
+  userId: string
+  address: string | null
+  city: string | null
+  postalCode: string | null
+  latitude: number | null
+  longitude: number | null
 }

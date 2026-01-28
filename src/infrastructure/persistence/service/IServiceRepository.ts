@@ -35,4 +35,40 @@ export interface IServiceRepository extends IRepository<Service> {
    * Find all services for a specific provider
    */
   findByProviderId(providerId: string): Promise<Service[]>
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  /**
+   * Find service by ID only if it belongs to the provider
+   *
+   * @param id - Service ID
+   * @param providerId - Provider ID for authorization
+   * @returns Service if found and authorized, null otherwise
+   */
+  findByIdForProvider(id: string, providerId: string): Promise<Service | null>
+
+  /**
+   * Update service with atomic authorization check
+   *
+   * @param id - Service ID
+   * @param data - Fields to update
+   * @param providerId - Provider ID for authorization
+   * @returns Updated service, or null if not found/unauthorized
+   */
+  updateWithAuth(
+    id: string,
+    data: Partial<Omit<Service, 'id' | 'providerId' | 'createdAt'>>,
+    providerId: string
+  ): Promise<Service | null>
+
+  /**
+   * Delete service with atomic authorization check
+   *
+   * @param id - Service ID
+   * @param providerId - Provider ID for authorization
+   * @returns true if deleted, false if not found/unauthorized
+   */
+  deleteWithAuth(id: string, providerId: string): Promise<boolean>
 }

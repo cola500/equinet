@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/geocoding"
 import { z } from "zod"
+import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 
 // GET single provider with services and availability
 export async function GET(
@@ -11,34 +11,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const provider = await prisma.provider.findUnique({
-      where: {
-        id,
-        isActive: true,
-      },
-      include: {
-        services: {
-          where: {
-            isActive: true,
-          },
-        },
-        availability: {
-          where: {
-            isActive: true,
-          },
-          orderBy: {
-            dayOfWeek: "asc",
-          },
-        },
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-      },
-    })
+
+    // Use repository instead of direct Prisma access
+    const providerRepo = new ProviderRepository()
+    const provider = await providerRepo.findByIdWithPublicDetails(id)
 
     if (!provider) {
       return NextResponse.json(
@@ -82,30 +58,18 @@ export async function PUT(
 
     const { id } = await params
 
-    // 2. Fetch existing provider
-    const existingProvider = await prisma.provider.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        userId: true,
-        address: true,
-        city: true,
-        postalCode: true,
-        latitude: true,
-        longitude: true,
-      },
-    })
+    // Use repository instead of direct Prisma access
+    const providerRepo = new ProviderRepository()
+
+    // 2. Fetch existing provider with authorization check
+    const existingProvider = await providerRepo.findByIdForOwner(id, session.user.id)
 
     if (!existingProvider) {
+      // Returns 404 for both "not found" and "not authorized" (security best practice)
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
-    // 3. Authorization check - user must own this provider profile
-    if (existingProvider.userId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // 4. Parse and validate request body
+    // 3. Parse and validate request body
     let body
     try {
       body = await request.json()
@@ -115,7 +79,7 @@ export async function PUT(
 
     const validated = updateProviderSchema.parse(body)
 
-    // 5. Geocoding logic - only if address changed
+    // 4. Geocoding logic - only if address changed
     let latitude = existingProvider.latitude
     let longitude = existingProvider.longitude
 
@@ -149,15 +113,20 @@ export async function PUT(
       }
     }
 
-    // 6. Update provider with geocoded coordinates
-    const updatedProvider = await prisma.provider.update({
-      where: { id },
-      data: {
+    // 5. Update provider with geocoded coordinates (auth already verified above)
+    const updatedProvider = await providerRepo.updateWithAuth(
+      id,
+      {
         ...validated,
         latitude,
         longitude,
       },
-    })
+      session.user.id
+    )
+
+    if (!updatedProvider) {
+      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+    }
 
     return NextResponse.json(updatedProvider)
   } catch (error) {

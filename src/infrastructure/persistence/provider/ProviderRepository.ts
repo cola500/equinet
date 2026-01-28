@@ -4,7 +4,14 @@
  * Handles data persistence for Provider aggregate using Prisma ORM.
  */
 import { prisma } from '@/lib/prisma'
-import type { IProviderRepository, Provider, ProviderFilters, ProviderWithDetails } from './IProviderRepository'
+import type {
+  IProviderRepository,
+  Provider,
+  ProviderFilters,
+  ProviderWithDetails,
+  ProviderWithFullDetails,
+  ProviderForEdit,
+} from './IProviderRepository'
 
 export class ProviderRepository implements IProviderRepository {
   async findById(id: string): Promise<Provider | null> {
@@ -179,5 +186,127 @@ export class ProviderRepository implements IProviderRepository {
       where: { id },
     })
     return count > 0
+  }
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  /**
+   * Find provider by ID with full details for public API
+   * Only returns active providers with active services
+   */
+  async findByIdWithPublicDetails(id: string): Promise<ProviderWithFullDetails | null> {
+    const provider = await prisma.provider.findUnique({
+      where: {
+        id,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        userId: true,
+        businessName: true,
+        description: true,
+        city: true,
+        address: true,
+        postalCode: true,
+        latitude: true,
+        longitude: true,
+        serviceAreaKm: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        services: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            durationMinutes: true,
+          },
+        },
+        availability: {
+          where: { isActive: true },
+          orderBy: { dayOfWeek: 'asc' },
+          select: {
+            id: true,
+            dayOfWeek: true,
+            startTime: true,
+            endTime: true,
+            isActive: true,
+          },
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+      },
+    })
+
+    return provider as ProviderWithFullDetails | null
+  }
+
+  /**
+   * Find provider by ID for owner (includes fields needed for editing)
+   */
+  async findByIdForOwner(id: string, userId: string): Promise<ProviderForEdit | null> {
+    const provider = await prisma.provider.findFirst({
+      where: {
+        id,
+        userId, // Authorization check in WHERE clause
+      },
+      select: {
+        id: true,
+        userId: true,
+        address: true,
+        city: true,
+        postalCode: true,
+        latitude: true,
+        longitude: true,
+      },
+    })
+
+    return provider
+  }
+
+  /**
+   * Update provider with atomic authorization check
+   */
+  async updateWithAuth(
+    id: string,
+    data: Partial<Omit<Provider, 'id' | 'userId' | 'createdAt'>> & {
+      latitude?: number | null
+      longitude?: number | null
+      address?: string | null
+      postalCode?: string | null
+      serviceAreaKm?: number | null
+      profileImageUrl?: string | null
+    },
+    userId: string
+  ): Promise<Provider | null> {
+    try {
+      // Atomic update: WHERE includes both id AND userId
+      const updated = await prisma.provider.update({
+        where: {
+          id,
+          userId, // Authorization check in WHERE clause
+        },
+        data: {
+          ...data,
+          updatedAt: new Date(),
+        },
+      })
+
+      return updated
+    } catch (error) {
+      // P2025: Record not found (provider doesn't exist or user doesn't own it)
+      if (error instanceof Error && 'code' in error && (error as any).code === 'P2025') {
+        return null
+      }
+      throw error
+    }
   }
 }

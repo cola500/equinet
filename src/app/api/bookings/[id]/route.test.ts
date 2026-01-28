@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth-server'
 import { NextRequest } from 'next/server'
 
@@ -9,24 +8,23 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    provider: {
-      findUnique: vi.fn(),
-    },
-    booking: {
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-  },
+// Mock repositories
+const mockUpdateStatusWithAuth = vi.fn()
+const mockDeleteWithAuth = vi.fn()
+const mockFindByUserId = vi.fn()
+
+vi.mock('@/infrastructure/persistence/booking/PrismaBookingRepository', () => ({
+  PrismaBookingRepository: vi.fn().mockImplementation(() => ({
+    updateStatusWithAuth: mockUpdateStatusWithAuth,
+    deleteWithAuth: mockDeleteWithAuth,
+  })),
 }))
 
-// Helper to create Prisma P2025 error (record not found)
-function createPrismaNotFoundError() {
-  const error = new Error('Record not found')
-  ;(error as any).code = 'P2025'
-  return error
-}
+vi.mock('@/infrastructure/persistence/provider/ProviderRepository', () => ({
+  ProviderRepository: vi.fn().mockImplementation(() => ({
+    findByUserId: mockFindByUserId,
+  })),
+}))
 
 describe('PUT /api/bookings/[id]', () => {
   beforeEach(() => {
@@ -45,16 +43,16 @@ describe('PUT /api/bookings/[id]', () => {
       customerId: 'customer123',
       providerId: 'provider123',
       status: 'confirmed',
-      service: { name: 'Hovslagning' },
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
       customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
-      provider: { user: { firstName: 'John', lastName: 'Smith' } },
+      provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
     }
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.booking.update).mockResolvedValue(mockUpdatedBooking as any)
+    mockFindByUserId.mockResolvedValue(mockProvider)
+    mockUpdateStatusWithAuth.mockResolvedValue(mockUpdatedBooking)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -67,15 +65,17 @@ describe('PUT /api/bookings/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
+    // Assert - Behavior-based: test WHAT the API returns, not HOW
     expect(response.status).toBe(200)
     expect(data.status).toBe('confirmed')
-    // Verify atomic authorization: providerId in WHERE clause
-    expect(prisma.booking.update).toHaveBeenCalledWith({
-      where: { id: 'booking1', providerId: 'provider123' },
-      data: { status: 'confirmed' },
-      include: expect.any(Object),
-    })
+    expect(data.id).toBe('booking1')
+
+    // Verify repository was called with correct auth context
+    expect(mockUpdateStatusWithAuth).toHaveBeenCalledWith(
+      'booking1',
+      'confirmed',
+      { providerId: 'provider123' }
+    )
   })
 
   it('should update booking status when customer is authorized', async () => {
@@ -85,12 +85,13 @@ describe('PUT /api/bookings/[id]', () => {
       customerId: 'customer123',
       providerId: 'provider123',
       status: 'cancelled',
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
     }
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.booking.update).mockResolvedValue(mockUpdatedBooking as any)
+    mockUpdateStatusWithAuth.mockResolvedValue(mockUpdatedBooking)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -103,15 +104,16 @@ describe('PUT /api/bookings/[id]', () => {
     })
     const data = await response.json()
 
-    // Assert
+    // Assert - Behavior-based
     expect(response.status).toBe(200)
     expect(data.status).toBe('cancelled')
-    // Verify atomic authorization: customerId in WHERE clause
-    expect(prisma.booking.update).toHaveBeenCalledWith({
-      where: { id: 'booking1', customerId: 'customer123' },
-      data: { status: 'cancelled' },
-      include: expect.any(Object),
-    })
+
+    // Verify repository was called with correct auth context
+    expect(mockUpdateStatusWithAuth).toHaveBeenCalledWith(
+      'booking1',
+      'cancelled',
+      { customerId: 'customer123' }
+    )
   })
 
   it('should return 404 when booking does not exist', async () => {
@@ -124,9 +126,9 @@ describe('PUT /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    // Prisma throws P2025 when record not found with atomic WHERE clause
-    vi.mocked(prisma.booking.update).mockRejectedValue(createPrismaNotFoundError())
+    mockFindByUserId.mockResolvedValue(mockProvider)
+    // Repository returns null when booking not found or unauthorized
+    mockUpdateStatusWithAuth.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/nonexistent', {
       method: 'PUT',
@@ -154,9 +156,9 @@ describe('PUT /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    // Atomic auth: WHERE clause won't match, Prisma throws P2025
-    vi.mocked(prisma.booking.update).mockRejectedValue(createPrismaNotFoundError())
+    mockFindByUserId.mockResolvedValue(mockProvider)
+    // Repository returns null for unauthorized access
+    mockUpdateStatusWithAuth.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -180,8 +182,8 @@ describe('PUT /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
     } as any)
-    // Atomic auth: WHERE clause won't match, Prisma throws P2025
-    vi.mocked(prisma.booking.update).mockRejectedValue(createPrismaNotFoundError())
+    // Repository returns null for unauthorized access
+    mockUpdateStatusWithAuth.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -226,7 +228,7 @@ describe('PUT /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+    mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -243,6 +245,28 @@ describe('PUT /api/bookings/[id]', () => {
     expect(response.status).toBe(404)
     expect(data.error).toBe('Provider not found')
   })
+
+  it('should return 400 for invalid JSON body', async () => {
+    // Arrange
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: 'invalid json',
+    })
+
+    // Act
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Invalid request body')
+  })
 })
 
 describe('DELETE /api/bookings/[id]', () => {
@@ -257,17 +281,11 @@ describe('DELETE /api/bookings/[id]', () => {
       userId: 'user123',
     }
 
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'customer123',
-      providerId: 'provider123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.booking.delete).mockResolvedValue(mockBooking as any)
+    mockFindByUserId.mockResolvedValue(mockProvider)
+    mockDeleteWithAuth.mockResolvedValue(true)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -282,24 +300,20 @@ describe('DELETE /api/bookings/[id]', () => {
     // Assert
     expect(response.status).toBe(200)
     expect(data.message).toBe('Booking deleted')
-    // Verify atomic authorization: providerId in WHERE clause
-    expect(prisma.booking.delete).toHaveBeenCalledWith({
-      where: { id: 'booking1', providerId: 'provider123' },
-    })
+
+    // Verify repository was called with correct auth context
+    expect(mockDeleteWithAuth).toHaveBeenCalledWith(
+      'booking1',
+      { providerId: 'provider123' }
+    )
   })
 
   it('should delete booking when customer is authorized', async () => {
     // Arrange
-    const mockBooking = {
-      id: 'booking1',
-      customerId: 'customer123',
-      providerId: 'provider123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.booking.delete).mockResolvedValue(mockBooking as any)
+    mockDeleteWithAuth.mockResolvedValue(true)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -314,10 +328,12 @@ describe('DELETE /api/bookings/[id]', () => {
     // Assert
     expect(response.status).toBe(200)
     expect(data.message).toBe('Booking deleted')
-    // Verify atomic authorization: customerId in WHERE clause
-    expect(prisma.booking.delete).toHaveBeenCalledWith({
-      where: { id: 'booking1', customerId: 'customer123' },
-    })
+
+    // Verify repository was called with correct auth context
+    expect(mockDeleteWithAuth).toHaveBeenCalledWith(
+      'booking1',
+      { customerId: 'customer123' }
+    )
   })
 
   it('should return 404 when booking does not exist', async () => {
@@ -330,9 +346,9 @@ describe('DELETE /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    // Prisma throws P2025 when record not found
-    vi.mocked(prisma.booking.delete).mockRejectedValue(createPrismaNotFoundError())
+    mockFindByUserId.mockResolvedValue(mockProvider)
+    // Repository returns false when booking not found
+    mockDeleteWithAuth.mockResolvedValue(false)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/nonexistent', {
       method: 'DELETE',
@@ -359,9 +375,9 @@ describe('DELETE /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    // Atomic auth: WHERE clause won't match, Prisma throws P2025
-    vi.mocked(prisma.booking.delete).mockRejectedValue(createPrismaNotFoundError())
+    mockFindByUserId.mockResolvedValue(mockProvider)
+    // Repository returns false for unauthorized access
+    mockDeleteWithAuth.mockResolvedValue(false)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -383,8 +399,8 @@ describe('DELETE /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
     } as any)
-    // Atomic auth: WHERE clause won't match, Prisma throws P2025
-    vi.mocked(prisma.booking.delete).mockRejectedValue(createPrismaNotFoundError())
+    // Repository returns false for unauthorized access
+    mockDeleteWithAuth.mockResolvedValue(false)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -406,7 +422,7 @@ describe('DELETE /api/bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+    mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',

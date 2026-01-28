@@ -156,4 +156,40 @@ export interface IBookingRepository extends IRepository<Booking> {
    * @returns Bookings with provider info (no contact) and service details
    */
   findByCustomerIdWithDetails(customerId: string): Promise<BookingWithRelations[]>
+
+  // ==========================================
+  // AUTH-AWARE COMMAND METHODS
+  // ==========================================
+
+  /**
+   * Authorization context for booking operations
+   * Uses atomic WHERE clause to prevent IDOR vulnerabilities
+   */
+  // (defined inline below)
+
+  /**
+   * Update booking status with atomic authorization check
+   *
+   * @param id - Booking ID
+   * @param status - New status
+   * @param authContext - Either providerId or customerId for authorization
+   * @returns Updated booking with relations, or null if not found/unauthorized
+   */
+  updateStatusWithAuth(
+    id: string,
+    status: Booking['status'],
+    authContext: { providerId?: string; customerId?: string }
+  ): Promise<BookingWithRelations | null>
+
+  /**
+   * Delete booking with atomic authorization check
+   *
+   * @param id - Booking ID
+   * @param authContext - Either providerId or customerId for authorization
+   * @returns true if deleted, false if not found/unauthorized
+   */
+  deleteWithAuth(
+    id: string,
+    authContext: { providerId?: string; customerId?: string }
+  ): Promise<boolean>
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { sendBookingStatusChangeNotification } from "@/lib/email"
+import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
+import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
@@ -32,50 +33,40 @@ export async function PUT(
 
     const validatedData = updateBookingSchema.parse(body)
 
-    // Build authorization filter based on user type
-    const whereClause: { id: string; customerId?: string; providerId?: string } = { id }
+    // Use repositories instead of direct Prisma access
+    const bookingRepo = new PrismaBookingRepository()
+    const providerRepo = new ProviderRepository()
+
+    // Build authorization context based on user type
+    let authContext: { providerId?: string; customerId?: string }
 
     if (session.user.userType === "provider") {
-      const provider = await prisma.provider.findUnique({
-        where: { userId: session.user.id },
-      })
+      const provider = await providerRepo.findByUserId(session.user.id)
 
       if (!provider) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
 
       // Provider can only update their own bookings
-      whereClause.providerId = provider.id
+      authContext = { providerId: provider.id }
     } else {
       // Customer can only update their own bookings
-      whereClause.customerId = session.user.id
+      authContext = { customerId: session.user.id }
     }
 
-    // Update with authorization check in WHERE clause (prevents IDOR + race conditions)
-    const updatedBooking = await prisma.booking.update({
-      where: whereClause,
-      data: { status: validatedData.status },
-      include: {
-        service: true,
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        provider: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-      },
-    })
+    // Update with authorization check (atomic WHERE clause in repository)
+    const updatedBooking = await bookingRepo.updateStatusWithAuth(
+      id,
+      validatedData.status,
+      authContext
+    )
+
+    if (!updatedBooking) {
+      return NextResponse.json(
+        { error: "Booking not found or you don't have permission to update it" },
+        { status: 404 }
+      )
+    }
 
     // Send status change notification email (async, don't block response)
     // Only send for meaningful status changes (not when customer updates their own booking)
@@ -99,14 +90,6 @@ export async function PUT(
       )
     }
 
-    // Handle Prisma P2025: Record not found (booking doesn't exist or user doesn't own it)
-    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
-      return NextResponse.json(
-        { error: "Booking not found or you don't have permission to update it" },
-        { status: 404 }
-      )
-    }
-
     console.error("Error updating booking:", error)
     return NextResponse.json(
       { error: "Failed to update booking" },
@@ -125,43 +108,42 @@ export async function DELETE(
     // Auth handled by middleware
     const session = await auth()
 
-    // Build authorization filter based on user type
-    const whereClause: { id: string; customerId?: string; providerId?: string } = { id }
+    // Use repositories instead of direct Prisma access
+    const bookingRepo = new PrismaBookingRepository()
+    const providerRepo = new ProviderRepository()
+
+    // Build authorization context based on user type
+    let authContext: { providerId?: string; customerId?: string }
 
     if (session.user.userType === "provider") {
-      const provider = await prisma.provider.findUnique({
-        where: { userId: session.user.id },
-      })
+      const provider = await providerRepo.findByUserId(session.user.id)
 
       if (!provider) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
 
       // Provider can only delete their own bookings
-      whereClause.providerId = provider.id
+      authContext = { providerId: provider.id }
     } else {
       // Customer can only delete their own bookings
-      whereClause.customerId = session.user.id
+      authContext = { customerId: session.user.id }
     }
 
-    // Delete with authorization check in WHERE clause (prevents IDOR + race conditions)
-    await prisma.booking.delete({
-      where: whereClause,
-    })
+    // Delete with authorization check (atomic WHERE clause in repository)
+    const deleted = await bookingRepo.deleteWithAuth(id, authContext)
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Booking not found or you don't have permission to delete it" },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({ message: "Booking deleted" })
   } catch (error) {
     // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
-    }
-
-    // Handle Prisma P2025: Record not found (booking doesn't exist or user doesn't own it)
-    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
-      return NextResponse.json(
-        { error: "Booking not found or you don't have permission to delete it" },
-        { status: 404 }
-      )
     }
 
     console.error("Error deleting booking:", error)
