@@ -21,7 +21,7 @@
 
 - **Stack**: Next.js 16 (App Router) + TypeScript + Prisma + NextAuth v5 + shadcn/ui
 - **Språk**: Svenska (UI/docs), Engelska (kod)
-- **Approach**: Databas-först, TDD, Feature branches
+- **Approach**: DDD-Light, TDD, Feature branches
 - **Databas**: Supabase (PostgreSQL)
 
 ## Workflow
@@ -49,9 +49,24 @@ git push --follow-tags origin main
 
 ## Testing (TDD är Obligatoriskt!)
 
-**Skriv tester FÖRST för:**
+### TDD-cykeln
+
+```
+1. RED:    Skriv test som failar
+2. GREEN:  Skriv minsta möjliga kod för att passera
+3. REFACTOR: Förbättra utan att bryta test
+```
+
+**Claude ska:**
+1. Visa dig testet INNAN implementation
+2. Köra testet (verifiera att det failar)
+3. Implementera
+4. Köra testet igen (verifiera grönt)
+
+### Skriv tester FÖRST för:
 - API routes (högst prioritet!)
-- Utilities, hooks, business logic
+- Domain services och affärslogik
+- Utilities och hooks
 
 **Coverage-mål:** API Routes >= 80%, Utilities >= 90%, Overall >= 70%
 
@@ -130,6 +145,75 @@ src/app/api/[feature]/
 │   ├── route.ts          # GET, PUT, DELETE
 │   └── route.test.ts
 ```
+
+---
+
+## Arkitektur (DDD-Light)
+
+Vi använder Domain-Driven Design pragmatiskt - inte dogmatiskt.
+
+### Lagerstruktur
+
+```
+src/
+├── app/api/          # Routes - ENDAST http-hantering, delegerar till services
+├── domain/           # Affärslogik, entiteter, value objects
+├── infrastructure/   # Repositories, externa tjänster
+└── lib/              # Utilities utan affärslogik
+```
+
+### När använda vad
+
+| Komplexitet | Approach | Exempel |
+|-------------|----------|---------|
+| **Enkel CRUD** | Prisma direkt i route | Hämta lista, enkel update |
+| **Affärslogik** | Domain Service | Bokningsvalidering, prisberäkning |
+| **Komplex entitet** | Domain Entity | Booking, Provider |
+| **Validering med regler** | Value Object | TimeSlot, Money, Location |
+
+### Repository Pattern (OBLIGATORISKT för kärndomäner)
+
+```typescript
+// RÄTT: Route använder repository
+const booking = await bookingRepository.findById(id)
+
+// FEL: Route använder Prisma direkt för kärndomän
+const booking = await prisma.booking.findUnique({ where: { id } })
+```
+
+**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`
+**Stöddomäner** (Prisma OK): `AvailabilityException`, `AvailabilitySchedule`
+
+### Domain Service Pattern
+
+Använd när logik:
+- Spänner över flera entiteter
+- Innehåller affärsregler
+- Behöver återanvändas
+
+```typescript
+// src/domain/booking/BookingService.ts
+class BookingService {
+  constructor(
+    private bookingRepo: IBookingRepository,
+    private providerRepo: IProviderRepository
+  ) {}
+
+  async createBooking(dto: CreateBookingDTO): Promise<Result<Booking, BookingError>> {
+    // 1. Validera provider finns
+    // 2. Kolla överlapp
+    // 3. Skapa bokning
+    // 4. Returnera Result (inte throw)
+  }
+}
+```
+
+### Checklista för ny feature
+
+- [ ] Är det en kärndomän? → Använd repository
+- [ ] Finns affärslogik? → Lägg i domain service
+- [ ] Behövs validering? → Överväg value object
+- [ ] Enkel CRUD? → Prisma direkt är OK
 
 ---
 
@@ -401,4 +485,4 @@ Före merge?          -> quality-gate
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-01-23
+**Senast uppdaterad**: 2026-01-28
