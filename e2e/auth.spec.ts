@@ -55,10 +55,11 @@ test.describe('Authentication Flow', () => {
     // Vänta på att businessName-fältet blir SYNLIGT (inte bara attached)
     await page.waitForSelector('#businessName', { state: 'visible', timeout: 5000 });
 
-    // Fyll i provider-specifika fält (nu är de synliga)
-    await page.getByLabel(/företagsnamn/i).fill('Test Stall AB');
+    // Fyll i provider-specifika fält (nu är de synliga) - använd unikt namn
+    const timestamp = Date.now();
+    await page.getByLabel(/företagsnamn/i).fill(`E2E Provider ${timestamp}`);
     await page.getByLabel(/beskrivning/i).fill('Vi erbjuder professionell hovslagning');
-    await page.getByLabel(/stad/i).fill('Stockholm');
+    await page.getByLabel(/stad/i).fill('Uppsala');
 
     // Fyll i lösenord
     const password = 'ProviderPass123!';

@@ -97,6 +97,9 @@ export async function POST(request: Request) {
             routeId: newRoute.id,
             routeOrderId: order.id,
             stopOrder: i + 1,
+            address: order.address,
+            latitude: order.latitude,
+            longitude: order.longitude,
             estimatedArrival: new Date(currentTime),
             estimatedDurationMin: estimatedDuration,
             status: 'pending'
