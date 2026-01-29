@@ -1,15 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
+import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
 
 interface RouteStop {
   id: string
@@ -88,6 +89,13 @@ export default function BookAnnouncementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate that user has selected a time slot
+    if (!formData.bookingDate || !formData.startTime || !formData.endTime) {
+      toast.error("Du måste välja en tid i kalendern")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -130,6 +138,22 @@ export default function BookAnnouncementPage() {
       month: "long",
       day: "numeric",
     })
+  }
+
+  // Get selected service to determine duration for calendar
+  const selectedService = useMemo(() => {
+    if (!announcement || !formData.serviceId) return null
+    return announcement.provider.services.find((s) => s.id === formData.serviceId)
+  }, [announcement, formData.serviceId])
+
+  // Handle slot selection from calendar
+  const handleSlotSelect = (date: string, startTime: string, endTime: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      bookingDate: date,
+      startTime,
+      endTime,
+    }))
   }
 
   if (authLoading || isLoading) {
@@ -247,45 +271,57 @@ export default function BookAnnouncementPage() {
                       </select>
                     </div>
 
-                    {/* Booking Date & Time */}
-                    <div className="grid grid-cols-3 gap-4">
+                    {/* Calendar for time selection */}
+                    {selectedService ? (
                       <div className="space-y-2">
-                        <Label htmlFor="bookingDate">Datum *</Label>
-                        <Input
-                          id="bookingDate"
-                          type="date"
-                          min={announcement.dateFrom.split("T")[0]}
-                          max={announcement.dateTo.split("T")[0]}
-                          value={formData.bookingDate}
-                          onChange={(e) =>
-                            setFormData({ ...formData, bookingDate: e.target.value })
-                          }
-                          required
+                        <Label>Välj tid *</Label>
+                        <CustomerBookingCalendar
+                          providerId={announcement.provider.id}
+                          serviceDurationMinutes={selectedService.durationMinutes}
+                          onSlotSelect={handleSlotSelect}
                         />
+                        {formData.bookingDate && formData.startTime && (
+                          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                            <p className="text-sm text-green-800">
+                              <span className="font-semibold">Vald tid:</span>{" "}
+                              {new Date(formData.bookingDate).toLocaleDateString("sv-SE", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}{" "}
+                              kl. {formData.startTime} - {formData.endTime}
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="startTime">Starttid *</Label>
-                        <Input
-                          id="startTime"
-                          type="time"
-                          value={formData.startTime}
-                          onChange={(e) =>
-                            setFormData({ ...formData, startTime: e.target.value })
-                          }
-                          required
-                        />
+                    ) : (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+                        <p className="text-sm text-gray-600 text-center">
+                          Välj en tjänst ovan för att se lediga tider
+                        </p>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="endTime">Sluttid *</Label>
-                        <Input
-                          id="endTime"
-                          type="time"
-                          value={formData.endTime}
-                          onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                          required
-                        />
-                      </div>
-                    </div>
+                    )}
+
+                    {/* Hidden inputs for form validation */}
+                    <input
+                      type="hidden"
+                      name="bookingDate"
+                      value={formData.bookingDate}
+                      required
+                    />
+                    <input
+                      type="hidden"
+                      name="startTime"
+                      value={formData.startTime}
+                      required
+                    />
+                    <input
+                      type="hidden"
+                      name="endTime"
+                      value={formData.endTime}
+                      required
+                    />
 
                     {/* Horse Information */}
                     <div className="space-y-2">
