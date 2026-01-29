@@ -511,7 +511,18 @@ const result = await prisma.$transaction(async (tx) => {
 
 **Bonus:** Transaktioner ger också atomicitet - om något misslyckas rullas allt tillbaka.
 
-**Impact:** Förhindrar "max clients reached" errors i produktion.
+**OBS - Zombie-processer (Prisma Studio):**
+Prisma Studio (`npm run db:studio`) stängs INTE automatiskt och lever kvar i bakgrunden. Flera instanser ackumuleras över tid och äter upp connections.
+
+```bash
+# Kolla om Prisma Studio-processer körs
+ps aux | grep prisma
+
+# Döda alla Prisma Studio-processer
+pkill -f "prisma studio"
+```
+
+**Impact:** Förhindrar "max clients reached" errors i produktion och lokalt.
 
 ---
 

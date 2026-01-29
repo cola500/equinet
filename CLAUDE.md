@@ -497,6 +497,12 @@ Före merge?          -> quality-gate
 - **Prisma test-mockar är fragila**: `$transaction` i produktionskod kräver `$transaction` i testmockar. Mockar som hårdkodar Prisma-modeller direkt bryts vid refactoring.
 - **Runda-struktur fungerar**: Säkerhet → Tech Debt → UX som prioriteringsordning, med verifiering mellan rundor, fångar problem tidigt.
 
+### Prisma Studio Zombie-processer (2026-01-29)
+- **Prisma Studio stängs inte automatiskt** - processer lever kvar i bakgrunden och ackumuleras.
+- **4 gamla instanser åt upp alla 10 connections** i Supabase Session Pooler -> hela appen fick 503.
+- **Symptom**: `FATAL: MaxClientsInSessionMode: max clients reached` - ser ut som databasproblem men är egentligen lokala zombie-processer.
+- **Felsökning**: `ps aux | grep prisma` avslöjar problemet. `pkill -f "prisma studio"` fixar det.
+
 ### Vercel Build Timeout Regression (2026-01-29)
 - **`ignoreBuildErrors: true` i next.config.ts är en MEDVETEN optimering** - ta INTE bort den. TypeScript checkas separat i CI.
 - **Agent-refaktoreringar kan ta bort "onödiga" inställningar** som i själva verket är kritiska. Kommentarer i koden räcker inte alltid som skydd.
