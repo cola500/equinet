@@ -156,6 +156,8 @@ export default function ProviderCalendarPage() {
   const handlePrevious = () => {
     if (viewMode === "day") {
       setCurrentDate((prev) => subDays(prev, 1))
+    } else if (viewMode === "3-day") {
+      setCurrentDate((prev) => subDays(prev, 3))
     } else {
       setCurrentDate((prev) => subWeeks(prev, 1))
     }
@@ -164,6 +166,8 @@ export default function ProviderCalendarPage() {
   const handleNext = () => {
     if (viewMode === "day") {
       setCurrentDate((prev) => addDays(prev, 1))
+    } else if (viewMode === "3-day") {
+      setCurrentDate((prev) => addDays(prev, 3))
     } else {
       setCurrentDate((prev) => addWeeks(prev, 1))
     }

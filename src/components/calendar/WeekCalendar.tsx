@@ -55,17 +55,25 @@ export function WeekCalendar({
   onDayClick,
   onDateClick,
 }: WeekCalendarProps) {
-  // Skapa veckans dagar (Mån-Sön) eller bara aktuell dag
+  // Skapa dagar baserat på vy-läge
   const displayDays = useMemo(() => {
     if (viewMode === "day") {
       return [currentDate]
+    }
+    if (viewMode === "3-day") {
+      return Array.from({ length: 3 }, (_, i) => addDays(currentDate, i))
     }
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   }, [currentDate, viewMode])
 
   // Antal kolumner baserat på vy
-  const gridCols = viewMode === "day" ? "grid-cols-[60px_1fr]" : "grid-cols-[60px_repeat(7,1fr)]"
+  const gridCols =
+    viewMode === "day"
+      ? "grid-cols-[60px_1fr]"
+      : viewMode === "3-day"
+        ? "grid-cols-[60px_repeat(3,1fr)]"
+        : "grid-cols-[60px_repeat(7,1fr)]"
 
   // Gruppera bokningar per dag
   const bookingsByDay = useMemo(() => {
@@ -95,7 +103,7 @@ export function WeekCalendar({
     <div className="bg-white rounded-lg border overflow-hidden">
       {/* Header med veckodagar */}
       <div className={`grid ${gridCols} border-b`}>
-        <div className="p-2 border-r bg-gray-50" /> {/* Tom cell för tidkolumnen */}
+        <div className="min-w-0 p-2 border-r bg-gray-50" /> {/* Tom cell för tidkolumnen */}
         {displayDays.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd")
           const dayOfWeek = jsDayToOurDay(getDay(day))
@@ -133,7 +141,7 @@ export function WeekCalendar({
                   onDayClick?.(dayOfWeek)
                 }
               }}
-              className={`p-2 text-center border-r last:border-r-0 hover:bg-gray-100 transition-colors cursor-pointer ${
+              className={`min-w-0 p-2 text-center border-r last:border-r-0 hover:bg-gray-100 transition-colors cursor-pointer ${
                 hasException && isClosed
                   ? "bg-orange-50"
                   : isToday(day)
@@ -177,7 +185,7 @@ export function WeekCalendar({
       {/* Kalenderrutnät */}
       <div className={`grid ${gridCols}`}>
         {/* Tidskolumn */}
-        <div className="border-r">
+        <div className="min-w-0 border-r">
           {HOURS.map((hour) => (
             <div
               key={hour}
@@ -220,7 +228,7 @@ export function WeekCalendar({
           return (
             <div
               key={day.toISOString()}
-              className={`relative border-r last:border-r-0 ${
+              className={`min-w-0 relative border-r last:border-r-0 ${
                 isClosed
                   ? hasException
                     ? "bg-orange-100"

@@ -1,11 +1,11 @@
 "use client"
 
-import { format, startOfWeek, endOfWeek, getWeek } from "date-fns"
+import { format, startOfWeek, endOfWeek, getWeek, addDays } from "date-fns"
 import { sv } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Calendar, CalendarDays } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, CalendarDays, CalendarRange } from "lucide-react"
 
-export type ViewMode = "day" | "week"
+export type ViewMode = "day" | "3-day" | "week"
 
 interface CalendarHeaderProps {
   currentDate: Date
@@ -54,6 +54,10 @@ export function CalendarHeader({
                 {format(weekEnd, "d MMM yyyy", { locale: sv })}
               </span>
             </>
+          ) : viewMode === "3-day" ? (
+            <h2 className="text-lg md:text-xl font-semibold">
+              {format(currentDate, "d", { locale: sv })}-{format(addDays(currentDate, 2), "d MMM", { locale: sv })}
+            </h2>
           ) : (
             <h2 className="text-lg md:text-xl font-semibold">
               {format(currentDate, "EEEE d MMMM", { locale: sv })}
@@ -63,26 +67,36 @@ export function CalendarHeader({
 
         {/* Vy-toggle knappar - bara om callback finns */}
         {showViewToggle && (
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-1">
             <Button
               variant={viewMode === "day" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewModeChange?.("day")}
-              className="h-8 px-2 md:px-3"
+              className="h-8 px-2"
               title="Dagvy"
             >
               <Calendar className="h-4 w-4" />
-              <span className="hidden md:inline ml-1">Dag</span>
+              <span className="hidden sm:inline ml-1">Dag</span>
+            </Button>
+            <Button
+              variant={viewMode === "3-day" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onViewModeChange?.("3-day")}
+              className="h-8 px-2"
+              title="3-dagarsvy"
+            >
+              <CalendarRange className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">3 dagar</span>
             </Button>
             <Button
               variant={viewMode === "week" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewModeChange?.("week")}
-              className="h-8 px-2 md:px-3"
+              className="h-8 px-2"
               title="Veckovy"
             >
               <CalendarDays className="h-4 w-4" />
-              <span className="hidden md:inline ml-1">Vecka</span>
+              <span className="hidden sm:inline ml-1">Vecka</span>
             </Button>
           </div>
         )}
@@ -95,12 +109,16 @@ export function CalendarHeader({
           size="sm"
           onClick={handlePrevious}
           className="h-10 px-3"
-          aria-label={viewMode === "week" ? "Föregående vecka" : "Föregående dag"}
+          aria-label={
+            viewMode === "week"
+              ? "Föregående vecka"
+              : viewMode === "3-day"
+                ? "Föregående 3 dagar"
+                : "Föregående dag"
+          }
         >
           <ChevronLeft className="h-4 w-4 sm:mr-1" />
-          <span className="hidden sm:inline">
-            {viewMode === "week" ? "Föregående" : "Föregående"}
-          </span>
+          <span className="hidden sm:inline">Föregående</span>
         </Button>
 
         <Button
@@ -117,11 +135,15 @@ export function CalendarHeader({
           size="sm"
           onClick={handleNext}
           className="h-10 px-3"
-          aria-label={viewMode === "week" ? "Nästa vecka" : "Nästa dag"}
+          aria-label={
+            viewMode === "week"
+              ? "Nästa vecka"
+              : viewMode === "3-day"
+                ? "Nästa 3 dagar"
+                : "Nästa dag"
+          }
         >
-          <span className="hidden sm:inline">
-            {viewMode === "week" ? "Nästa" : "Nästa"}
-          </span>
+          <span className="hidden sm:inline">Nästa</span>
           <ChevronRight className="h-4 w-4 sm:ml-1" />
         </Button>
       </div>
