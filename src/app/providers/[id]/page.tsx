@@ -14,11 +14,11 @@ import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
 import { format, addDays } from "date-fns"
-import { sv } from "date-fns/locale"
 import { Header } from "@/components/layout/Header"
 import { NearbyRoutesBanner, type NearbyRoute } from "@/components/NearbyRoutesBanner"
 import { ProviderHours } from "@/components/ProviderHours"
 import { UpcomingVisits } from "@/components/UpcomingVisits"
+import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
 
 interface Service {
   id: string
@@ -74,15 +74,6 @@ export default function ProviderDetailPage() {
     contactPhone: "",
     specialInstructions: "",
   })
-  const [bookedSlots, setBookedSlots] = useState<
-    Array<{ startTime: string; endTime: string; serviceName: string }>
-  >([])
-  const [dayAvailability, setDayAvailability] = useState<{
-    isClosed: boolean
-    openingTime: string | null
-    closingTime: string | null
-  } | null>(null)
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
   const [customerLocation, setCustomerLocation] = useState<{
     latitude: number
     longitude: number
@@ -158,36 +149,6 @@ export default function ProviderDetailPage() {
     }
   }
 
-  const fetchAvailability = async (date: string) => {
-    if (!params.id) return
-
-    try {
-      setIsLoadingAvailability(true)
-      const response = await fetch(
-        `/api/providers/${params.id}/availability?date=${date}`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setBookedSlots(data.bookedSlots || [])
-        setDayAvailability({
-          isClosed: data.isClosed,
-          openingTime: data.openingTime,
-          closingTime: data.closingTime,
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching availability:", error)
-    } finally {
-      setIsLoadingAvailability(false)
-    }
-  }
-
-  // Fetch availability when date changes (only for fixed time bookings)
-  useEffect(() => {
-    if (isBookingDialogOpen && !isFlexibleBooking && bookingForm.bookingDate) {
-      fetchAvailability(bookingForm.bookingDate)
-    }
-  }, [bookingForm.bookingDate, isBookingDialogOpen, isFlexibleBooking])
 
   const handleBookService = (service: Service) => {
     if (!isAuthenticated) {
@@ -202,7 +163,24 @@ export default function ProviderDetailPage() {
     }
 
     setSelectedService(service)
+    // Reset booking form when opening dialog
+    setBookingForm({
+      bookingDate: "",
+      startTime: "",
+      horseName: "",
+      horseInfo: "",
+      customerNotes: "",
+    })
     setIsBookingDialogOpen(true)
+  }
+
+  // Handle slot selection from calendar
+  const handleSlotSelect = (date: string, startTime: string, endTime: string) => {
+    setBookingForm((prev) => ({
+      ...prev,
+      bookingDate: date,
+      startTime,
+    }))
   }
 
   const calculateEndTime = (startTime: string, durationMinutes: number) => {
@@ -217,6 +195,12 @@ export default function ProviderDetailPage() {
     e.preventDefault()
 
     if (!selectedService || !provider) return
+
+    // Validate that user has selected a time slot for fixed booking
+    if (!isFlexibleBooking && (!bookingForm.bookingDate || !bookingForm.startTime)) {
+      toast.error("Du måste välja en tid i kalendern")
+      return
+    }
 
     try {
       if (isFlexibleBooking) {
@@ -516,90 +500,34 @@ export default function ProviderDetailPage() {
             </div>
 
             {/* Fixed Time Booking Fields */}
-            {!isFlexibleBooking && (
+            {!isFlexibleBooking && selectedService && (
               <>
+                {/* Calendar for time selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="bookingDate">Datum *</Label>
-                  <Input
-                    id="bookingDate"
-                    type="date"
-                    value={bookingForm.bookingDate}
-                    onChange={(e) =>
-                      setBookingForm({ ...bookingForm, bookingDate: e.target.value })
-                    }
-                    min={format(new Date(), "yyyy-MM-dd")}
-                    required
+                  <Label>Välj tid *</Label>
+                  <CustomerBookingCalendar
+                    providerId={provider.id}
+                    serviceDurationMinutes={selectedService.durationMinutes}
+                    onSlotSelect={handleSlotSelect}
                   />
+                  {bookingForm.bookingDate && bookingForm.startTime && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800">
+                        <span className="font-semibold">Vald tid:</span>{" "}
+                        {new Date(bookingForm.bookingDate).toLocaleDateString("sv-SE", {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}{" "}
+                        kl. {bookingForm.startTime}
+                        <span className="text-gray-600 ml-1">
+                          ({selectedService.durationMinutes} min)
+                        </span>
+                      </p>
+                    </div>
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="startTime">Önskad starttid *</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={bookingForm.startTime}
-                    onChange={(e) =>
-                      setBookingForm({ ...bookingForm, startTime: e.target.value })
-                    }
-                    required
-                  />
-                  <p className="text-xs text-gray-600">
-                    Varaktighet: {selectedService?.durationMinutes} min
-                  </p>
-
-              {/* Show availability status */}
-              {isLoadingAvailability && (
-                <div className="text-xs text-gray-500 flex items-center gap-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-500"></div>
-                  Kollar tillgänglighet...
-                </div>
-              )}
-
-              {/* Show if closed */}
-              {!isLoadingAvailability && dayAvailability?.isClosed && (
-                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-xs font-medium text-red-800">
-                    ⚠️ Leverantören är stängd denna dag
-                  </p>
-                  <p className="text-xs text-red-700 mt-1">
-                    Vänligen välj ett annat datum.
-                  </p>
-                </div>
-              )}
-
-              {/* Show opening hours */}
-              {!isLoadingAvailability && !dayAvailability?.isClosed && dayAvailability?.openingTime && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-xs font-medium text-blue-800">
-                    🕒 Öppettider: {dayAvailability.openingTime} - {dayAvailability.closingTime}
-                  </p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Bokning måste vara inom öppettiderna.
-                  </p>
-                </div>
-              )}
-
-              {/* Show booked slots */}
-              {!isLoadingAvailability && !dayAvailability?.isClosed && bookedSlots.length > 0 && (
-                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                  <p className="text-xs font-medium text-amber-800 mb-2">
-                    Redan bokade tider detta datum:
-                  </p>
-                  <div className="space-y-1">
-                    {bookedSlots.map((slot, i) => (
-                      <div key={i} className="text-xs text-amber-700">
-                        • {slot.startTime} - {slot.endTime}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {!isLoadingAvailability && !dayAvailability?.isClosed && bookedSlots.length === 0 && (
-                <p className="text-xs text-green-600">
-                  ✓ Inga bokningar detta datum ännu
-                </p>
-              )}
-            </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="horseName">Hästens namn</Label>
@@ -755,9 +683,9 @@ export default function ProviderDetailPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={dayAvailability?.isClosed}
+                disabled={!isFlexibleBooking && (!bookingForm.bookingDate || !bookingForm.startTime)}
               >
-                {dayAvailability?.isClosed ? "Stängt denna dag" : "Skicka bokningsförfrågan"}
+                Skicka bokningsförfrågan
               </Button>
             </div>
           </form>

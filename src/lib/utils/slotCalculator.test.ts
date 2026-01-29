@@ -7,14 +7,30 @@ import {
 
 describe("slotCalculator", () => {
   describe("calculateAvailableSlots", () => {
-    it("generates slots at 15-minute intervals", () => {
+    it("generates slots at service duration intervals by default", () => {
+      const slots = calculateAvailableSlots({
+        openingTime: "09:00",
+        closingTime: "11:00",
+        bookedSlots: [],
+        serviceDurationMinutes: 30,
+      })
+
+      // Default: slot interval = service duration (30 min)
+      // Should have slots at 09:00, 09:30, 10:00, 10:30
+      expect(slots).toHaveLength(4)
+      expect(slots.map((s) => s.startTime)).toEqual(["09:00", "09:30", "10:00", "10:30"])
+    })
+
+    it("generates slots at custom interval when slotInterval is specified", () => {
       const slots = calculateAvailableSlots({
         openingTime: "09:00",
         closingTime: "10:00",
         bookedSlots: [],
         serviceDurationMinutes: 30,
+        slotInterval: 15,
       })
 
+      // Custom: 15 min interval
       // Should have slots at 09:00, 09:15, 09:30 (09:45 would end at 10:15)
       expect(slots).toHaveLength(3)
       expect(slots.map((s) => s.startTime)).toEqual(["09:00", "09:15", "09:30"])
@@ -30,6 +46,7 @@ describe("slotCalculator", () => {
         closingTime: "11:00",
         bookedSlots,
         serviceDurationMinutes: 30,
+        slotInterval: 15, // Use 15 min interval for this test
       })
 
       // 09:00 - available (ends 09:30, before booking starts)
@@ -62,6 +79,7 @@ describe("slotCalculator", () => {
         closingTime: "10:00",
         bookedSlots: [],
         serviceDurationMinutes: 45,
+        slotInterval: 15, // Use 15 min interval for this test
       })
 
       // Only 09:00 and 09:15 fit (09:30 would end at 10:15)
@@ -103,9 +121,11 @@ describe("slotCalculator", () => {
       })
 
       const available = slots.filter((s) => s.isAvailable)
-      // 09:30 ends at 10:00 - OK (exactly at booking start, no overlap)
-      // 09:45 ends at 10:15 - overlaps with 10:00-10:30
-      // 10:30 ends at 11:00 - OK (after booking ends)
+      // With default interval (30 min): 09:00, 09:30, 10:00, 10:30
+      // 09:00 - booked
+      // 09:30 ends at 10:00 - OK (exactly at booking start)
+      // 10:00 - booked
+      // 10:30 ends at 11:00 - OK
       expect(available.map((s) => s.startTime)).toEqual(["09:30", "10:30"])
     })
 
@@ -115,6 +135,7 @@ describe("slotCalculator", () => {
         closingTime: "10:30",
         bookedSlots: [],
         serviceDurationMinutes: 60,
+        slotInterval: 15, // Slot interval shorter than service duration
       })
 
       // 09:00 -> 10:00, 09:15 -> 10:15, 09:30 -> 10:30
@@ -150,8 +171,8 @@ describe("slotCalculator", () => {
       })
 
       const available = slots.filter((s) => s.isAvailable)
-      // Slots at 09:00, 09:15, 09:30, 09:45, 10:00, 10:15 are in the past
-      // First available should be 10:30 or later
+      // With 30 min interval: 09:00, 09:30, 10:00 are in the past
+      // First available should be 10:30
       expect(available[0].startTime).toBe("10:30")
     })
 
@@ -178,7 +199,7 @@ describe("slotCalculator", () => {
 
       const slots = calculateAvailableSlots({
         openingTime: "09:00",
-        closingTime: "10:00",
+        closingTime: "10:30",
         bookedSlots: [],
         serviceDurationMinutes: 30,
         date: "2026-01-30",
@@ -186,7 +207,7 @@ describe("slotCalculator", () => {
       })
 
       const available = slots.filter((s) => s.isAvailable)
-      // All 3 slots should be available
+      // With 30 min interval: 09:00, 09:30, 10:00 - all 3 should be available
       expect(available).toHaveLength(3)
     })
 
@@ -194,12 +215,13 @@ describe("slotCalculator", () => {
       // Old behavior - no date filtering
       const slots = calculateAvailableSlots({
         openingTime: "09:00",
-        closingTime: "10:00",
+        closingTime: "10:30",
         bookedSlots: [],
         serviceDurationMinutes: 30,
       })
 
       const available = slots.filter((s) => s.isAvailable)
+      // With 30 min interval: 09:00, 09:30, 10:00 - 3 slots
       expect(available).toHaveLength(3)
     })
   })

@@ -20,9 +20,8 @@ interface CalculateAvailableSlotsParams {
   serviceDurationMinutes: number
   date?: string // "YYYY-MM-DD" format - the date for these slots
   currentDateTime?: Date // Current date/time for filtering past slots
+  slotInterval?: number // Minutes between slot starts (defaults to serviceDurationMinutes)
 }
-
-const SLOT_INTERVAL_MINUTES = 15
 
 /**
  * Convert "HH:mm" string to minutes from midnight
@@ -87,6 +86,7 @@ export function calculateAvailableSlots(
     serviceDurationMinutes,
     date,
     currentDateTime,
+    slotInterval = serviceDurationMinutes, // Default: slot interval = service duration
   } = params
 
   const openingMinutes = timeToMinutes(openingTime)
@@ -99,11 +99,11 @@ export function calculateAvailableSlots(
 
   const slots: TimeSlot[] = []
 
-  // Generate slots at SLOT_INTERVAL_MINUTES intervals
+  // Generate slots at slotInterval intervals
   for (
     let startMinutes = openingMinutes;
     startMinutes + serviceDurationMinutes <= closingMinutes;
-    startMinutes += SLOT_INTERVAL_MINUTES
+    startMinutes += slotInterval
   ) {
     const endMinutes = startMinutes + serviceDurationMinutes
     const startTime = minutesToTime(startMinutes)
