@@ -2,21 +2,37 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { addWeeks, subWeeks, startOfWeek, endOfWeek, format } from "date-fns"
+import { addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, format } from "date-fns"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
-import { CalendarHeader } from "@/components/calendar/CalendarHeader"
+import { CalendarHeader, ViewMode } from "@/components/calendar/CalendarHeader"
 import { WeekCalendar } from "@/components/calendar/WeekCalendar"
 import { BookingDetailDialog } from "@/components/calendar/BookingDetailDialog"
 import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDialog"
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
 
+// Detektera om vi är på mobil (client-side)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  return isMobile
+}
+
 export default function ProviderCalendarPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const isMobile = useIsMobile()
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [bookings, setBookings] = useState<CalendarBooking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -27,6 +43,13 @@ export default function ProviderCalendarPage() {
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([])
   const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+
+  // Sätt dagvy som default på mobil
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode("day")
+    }
+  }, [isMobile])
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -130,16 +153,28 @@ export default function ProviderCalendarPage() {
     }
   }, [providerId, fetchAvailability, fetchExceptions])
 
-  const handlePreviousWeek = () => {
-    setCurrentDate((prev) => subWeeks(prev, 1))
+  const handlePrevious = () => {
+    if (viewMode === "day") {
+      setCurrentDate((prev) => subDays(prev, 1))
+    } else {
+      setCurrentDate((prev) => subWeeks(prev, 1))
+    }
   }
 
-  const handleNextWeek = () => {
-    setCurrentDate((prev) => addWeeks(prev, 1))
+  const handleNext = () => {
+    if (viewMode === "day") {
+      setCurrentDate((prev) => addDays(prev, 1))
+    } else {
+      setCurrentDate((prev) => addWeeks(prev, 1))
+    }
   }
 
   const handleToday = () => {
     setCurrentDate(new Date())
+  }
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
   }
 
   const handleBookingClick = (booking: CalendarBooking) => {
@@ -277,13 +312,40 @@ export default function ProviderCalendarPage() {
 
   return (
     <ProviderLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Kalender</h1>
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold">Kalender</h1>
         <p className="text-gray-600 mt-1">Överblick av dina bokningar</p>
       </div>
 
-      {/* Färgförklaring */}
-      <div className="flex flex-wrap gap-4 mb-4 text-sm">
+      {/* Färgförklaring - kollapsad på mobil */}
+      <details className="mb-4 md:hidden">
+        <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+          Visa färgförklaring
+        </summary>
+        <div className="flex flex-wrap gap-3 mt-2 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-yellow-400 border-l-2 border-yellow-500" />
+            <span>Väntar</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-green-400 border-l-2 border-green-500" />
+            <span>Bekräftad</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-blue-400 border-l-2 border-blue-500" />
+            <span>Genomförd</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-emerald-500 border-l-2 border-emerald-600" />
+            <span>Betald</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-orange-200 border border-orange-300" />
+            <span>Undantag</span>
+          </div>
+        </div>
+      </details>
+      <div className="hidden md:flex flex-wrap gap-4 mb-4 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-yellow-400 border-l-4 border-yellow-500" />
           <span>Väntar på svar</span>
@@ -323,8 +385,10 @@ export default function ProviderCalendarPage() {
 
       <CalendarHeader
         currentDate={currentDate}
-        onPreviousWeek={handlePreviousWeek}
-        onNextWeek={handleNextWeek}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
         onToday={handleToday}
       />
 
@@ -333,6 +397,7 @@ export default function ProviderCalendarPage() {
         bookings={weekBookings}
         availability={availability}
         exceptions={exceptions}
+        viewMode={viewMode}
         onBookingClick={handleBookingClick}
         onDayClick={handleDayClick}
         onDateClick={handleDateClick}

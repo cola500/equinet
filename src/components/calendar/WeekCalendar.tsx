@@ -11,12 +11,14 @@ import {
 import { sv } from "date-fns/locale"
 import { BookingBlock } from "./BookingBlock"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
+import { ViewMode } from "./CalendarHeader"
 
 interface WeekCalendarProps {
   currentDate: Date
   bookings: CalendarBooking[]
   availability?: AvailabilityDay[]
   exceptions?: AvailabilityException[]
+  viewMode?: ViewMode
   onBookingClick: (booking: CalendarBooking) => void
   onDayClick?: (dayOfWeek: number) => void
   onDateClick?: (date: string) => void // YYYY-MM-DD format
@@ -48,15 +50,22 @@ export function WeekCalendar({
   bookings,
   availability = [],
   exceptions = [],
+  viewMode = "week",
   onBookingClick,
   onDayClick,
   onDateClick,
 }: WeekCalendarProps) {
-  // Skapa veckans dagar (Mån-Sön)
-  const weekDays = useMemo(() => {
+  // Skapa veckans dagar (Mån-Sön) eller bara aktuell dag
+  const displayDays = useMemo(() => {
+    if (viewMode === "day") {
+      return [currentDate]
+    }
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-  }, [currentDate])
+  }, [currentDate, viewMode])
+
+  // Antal kolumner baserat på vy
+  const gridCols = viewMode === "day" ? "grid-cols-[60px_1fr]" : "grid-cols-[60px_repeat(7,1fr)]"
 
   // Gruppera bokningar per dag
   const bookingsByDay = useMemo(() => {
@@ -85,9 +94,9 @@ export function WeekCalendar({
   return (
     <div className="bg-white rounded-lg border overflow-hidden">
       {/* Header med veckodagar */}
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
+      <div className={`grid ${gridCols} border-b`}>
         <div className="p-2 border-r bg-gray-50" /> {/* Tom cell för tidkolumnen */}
-        {weekDays.map((day) => {
+        {displayDays.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd")
           const dayOfWeek = jsDayToOurDay(getDay(day))
           const dayAvailability = availability[dayOfWeek]
@@ -166,13 +175,15 @@ export function WeekCalendar({
       </div>
 
       {/* Kalenderrutnät */}
-      <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+      <div className={`grid ${gridCols}`}>
         {/* Tidskolumn */}
         <div className="border-r">
           {HOURS.map((hour) => (
             <div
               key={hour}
-              className="h-12 border-b last:border-b-0 text-xs text-gray-500 text-right pr-2 pt-0.5"
+              className={`border-b last:border-b-0 text-xs text-gray-500 text-right pr-2 pt-0.5 ${
+                viewMode === "day" ? "h-16" : "h-12"
+              }`}
             >
               {hour.toString().padStart(2, "0")}:00
             </div>
@@ -180,7 +191,7 @@ export function WeekCalendar({
         </div>
 
         {/* Dagkolumner */}
-        {weekDays.map((day) => {
+        {displayDays.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd")
           const dayBookings = bookingsByDay[dateKey] || []
           const dayOfWeek = jsDayToOurDay(getDay(day))
@@ -221,7 +232,9 @@ export function WeekCalendar({
               {HOURS.map((hour) => (
                 <div
                   key={hour}
-                  className="h-12 border-b last:border-b-0 border-gray-100"
+                  className={`border-b last:border-b-0 border-gray-100 ${
+                    viewMode === "day" ? "h-16" : "h-12"
+                  }`}
                 />
               ))}
 
