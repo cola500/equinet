@@ -190,7 +190,7 @@ export function WeekCalendar({
             <div
               key={hour}
               className={`border-b last:border-b-0 text-xs text-gray-500 text-right pr-2 pt-0.5 ${
-                viewMode === "day" ? "h-16" : "h-12"
+                viewMode === "day" ? "h-16" : viewMode === "3-day" ? "h-14" : "h-12"
               }`}
             >
               {hour.toString().padStart(2, "0")}:00
@@ -241,7 +241,7 @@ export function WeekCalendar({
                 <div
                   key={hour}
                   className={`border-b last:border-b-0 border-gray-100 ${
-                    viewMode === "day" ? "h-16" : "h-12"
+                    viewMode === "day" ? "h-16" : viewMode === "3-day" ? "h-14" : "h-12"
                   }`}
                 />
               ))}
