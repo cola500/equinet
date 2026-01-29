@@ -46,9 +46,9 @@ describe('TravelTimeService', () => {
 
     it('should pass when enough time between bookings (same location)', () => {
       // Existing: 09:00-10:00 in Göteborg
-      // New: 10:15-11:15 in Göteborg (15 min gap, same place)
+      // New: 11:00-12:00 in Göteborg (60 min gap, same place - matches minimum buffer)
       const existing = [createBooking('09:00', '10:00', goteborg)]
-      const newBooking = createBooking('10:15', '11:15', goteborg)
+      const newBooking = createBooking('11:00', '12:00', goteborg)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
@@ -70,9 +70,9 @@ describe('TravelTimeService', () => {
 
     it('should pass when enough time for travel between different locations', () => {
       // Existing: 09:00-10:00 in Göteborg
-      // New: 11:30-12:30 in Alingsås (90 min gap, ~48 min needed)
+      // New: 12:00-13:00 in Alingsås (120 min gap, ~59 min travel + 60 min buffer = 119 min needed)
       const existing = [createBooking('09:00', '10:00', goteborg)]
-      const newBooking = createBooking('11:30', '12:30', alingsas)
+      const newBooking = createBooking('12:00', '13:00', alingsas)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
@@ -86,15 +86,15 @@ describe('TravelTimeService', () => {
 
   describe('multiple existing bookings', () => {
     it('should check both previous and next bookings', () => {
-      // Existing: 09:00-10:00 in Göteborg, 15:00-16:00 in Borås
-      // New: 11:30-12:30 in Alingsås
-      // Gap FROM Göteborg (10:00) TO new (11:30) = 90 min, needs ~70 min (41 km -> 59 min + 10 buffer)
-      // Gap FROM new (12:30) TO Borås (15:00) = 150 min, needs ~58 min (34 km -> 48 min + 10 buffer)
+      // Existing: 08:00-09:00 in Göteborg, 16:00-17:00 in Borås
+      // New: 12:00-13:00 in Alingsås
+      // Gap FROM Göteborg (09:00) TO new (12:00) = 180 min, needs ~59 min travel + 60 buffer = 119 min
+      // Gap FROM new (13:00) TO Borås (16:00) = 180 min, needs ~48 min travel + 60 buffer = 108 min
       const existing = [
-        createBooking('09:00', '10:00', goteborg),
-        createBooking('15:00', '16:00', boras),
+        createBooking('08:00', '09:00', goteborg),
+        createBooking('16:00', '17:00', boras),
       ]
-      const newBooking = createBooking('11:30', '12:30', alingsas)
+      const newBooking = createBooking('12:00', '13:00', alingsas)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
@@ -121,10 +121,10 @@ describe('TravelTimeService', () => {
       // Existing bookings given out of order
       // Same scenario as above but with different order in the array
       const existing = [
-        createBooking('15:00', '16:00', boras),
-        createBooking('09:00', '10:00', goteborg),
+        createBooking('16:00', '17:00', boras),
+        createBooking('08:00', '09:00', goteborg),
       ]
-      const newBooking = createBooking('11:30', '12:30', alingsas)
+      const newBooking = createBooking('12:00', '13:00', alingsas)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
@@ -139,31 +139,31 @@ describe('TravelTimeService', () => {
   describe('fallback when location is missing', () => {
     it('should use default buffer when new booking has no location', () => {
       const existing = [createBooking('09:00', '10:00', goteborg)]
-      const newBooking = createBooking('10:10', '11:10', undefined) // No location
+      const newBooking = createBooking('10:30', '11:30', undefined) // No location
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
-      // Should fail because gap (10 min) < default fallback (15 min)
+      // Should fail because gap (30 min) < default fallback (60 min)
       expect(result.valid).toBe(false)
     })
 
     it('should use default buffer when existing booking has no location', () => {
       const existing = [createBooking('09:00', '10:00', undefined)] // No location
-      const newBooking = createBooking('10:10', '11:10', goteborg)
+      const newBooking = createBooking('10:30', '11:30', goteborg)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
-      // Should fail because gap (10 min) < default fallback (15 min)
+      // Should fail because gap (30 min) < default fallback (60 min)
       expect(result.valid).toBe(false)
     })
 
     it('should pass with default buffer when enough gap', () => {
       const existing = [createBooking('09:00', '10:00', undefined)]
-      const newBooking = createBooking('10:20', '11:20', goteborg)
+      const newBooking = createBooking('11:00', '12:00', goteborg)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
-      // Gap (20 min) >= default fallback (15 min)
+      // Gap (60 min) >= default fallback (60 min)
       expect(result.valid).toBe(true)
     })
   })
@@ -194,19 +194,19 @@ describe('TravelTimeService', () => {
     })
 
     it('should enforce minimum buffer even for same location', () => {
-      // Same location but only 5 min gap (less than 10 min minimum)
+      // Same location but only 30 min gap (less than 60 min minimum)
       const existing = [createBooking('09:00', '10:00', goteborg)]
-      const newBooking = createBooking('10:05', '11:05', goteborg)
+      const newBooking = createBooking('10:30', '11:30', goteborg)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
       expect(result.valid).toBe(false)
-      expect(result.error).toContain('minst 10 minuter')
+      expect(result.error).toContain('minst 60 minuter')
     })
 
     it('should pass with exactly minimum buffer at same location', () => {
       const existing = [createBooking('09:00', '10:00', goteborg)]
-      const newBooking = createBooking('10:10', '11:10', goteborg)
+      const newBooking = createBooking('11:00', '12:00', goteborg)
 
       const result = service.hasEnoughTravelTime(newBooking, existing)
 
@@ -242,6 +242,7 @@ describe('TravelTimeService', () => {
     it('should respect custom speed', () => {
       const fastService = new TravelTimeService({
         averageSpeedKmh: 80, // Faster than default 50
+        minBufferMinutes: 10, // Use legacy buffer for this test
       })
 
       // 41 km at 80 km/h = 31 min * 1.2 = 37 min + 10 buffer = 47 min

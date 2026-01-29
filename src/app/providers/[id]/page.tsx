@@ -509,6 +509,7 @@ export default function ProviderDetailPage() {
                     providerId={provider.id}
                     serviceDurationMinutes={selectedService.durationMinutes}
                     onSlotSelect={handleSlotSelect}
+                    customerLocation={customerLocation || undefined}
                   />
                   {bookingForm.bookingDate && bookingForm.startTime && (
                     <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">

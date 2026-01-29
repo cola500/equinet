@@ -6,8 +6,8 @@
  * speed and margin.
  *
  * Business Rules:
- * - Minimum buffer: 10 min (even for same location - time for wrap-up/setup)
- * - Default fallback: 15 min (when location data is missing)
+ * - Minimum buffer: 60 min (1 timme mellan bokningar för förberedelse/efterarbete)
+ * - Default fallback: 60 min (when location data is missing)
  * - Travel speed: 50 km/h average
  * - Margin factor: 1.2 (20% extra for real road distance vs straight line)
  */
@@ -19,9 +19,9 @@ import { Location } from '@/domain/shared/Location'
 export interface TravelTimeConfig {
   /** Average travel speed in km/h (default: 50) */
   averageSpeedKmh?: number
-  /** Minimum buffer between bookings in minutes (default: 10) */
+  /** Minimum buffer between bookings in minutes (default: 60) */
   minBufferMinutes?: number
-  /** Default buffer when location data is missing (default: 15) */
+  /** Default buffer when location data is missing (default: 60) */
   defaultBufferMinutes?: number
   /** Margin factor for road distance vs straight line (default: 1.2) */
   marginFactor?: number
@@ -59,8 +59,8 @@ export class TravelTimeService {
   constructor(config?: TravelTimeConfig) {
     this.config = {
       averageSpeedKmh: config?.averageSpeedKmh ?? 50,
-      minBufferMinutes: config?.minBufferMinutes ?? 10,
-      defaultBufferMinutes: config?.defaultBufferMinutes ?? 15,
+      minBufferMinutes: config?.minBufferMinutes ?? 60,
+      defaultBufferMinutes: config?.defaultBufferMinutes ?? 60,
       marginFactor: config?.marginFactor ?? 1.2,
     }
   }

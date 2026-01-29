@@ -9,6 +9,13 @@ export interface BookedSlot {
   serviceName: string
 }
 
+export interface SlotWithReason {
+  startTime: string
+  endTime: string
+  isAvailable: boolean
+  unavailableReason?: "booked" | "travel-time" | "past"
+}
+
 export interface DayAvailability {
   date: string // YYYY-MM-DD
   dayOfWeek: number
@@ -16,6 +23,17 @@ export interface DayAvailability {
   openingTime: string | null
   closingTime: string | null
   bookedSlots: BookedSlot[]
+  slots?: SlotWithReason[] // New: pre-calculated slots from API
+}
+
+export interface CustomerLocation {
+  latitude: number
+  longitude: number
+}
+
+interface UseWeekAvailabilityOptions {
+  customerLocation?: CustomerLocation
+  serviceDurationMinutes?: number
 }
 
 interface UseWeekAvailabilityResult {
@@ -30,11 +48,13 @@ interface UseWeekAvailabilityResult {
  *
  * @param providerId - The provider's ID
  * @param weekStart - The start date of the week (any date, will normalize to Monday)
+ * @param options - Optional: customerLocation and serviceDurationMinutes for travel time calculation
  * @returns Week availability data with loading/error states
  */
 export function useWeekAvailability(
   providerId: string,
-  weekStart: Date
+  weekStart: Date,
+  options?: UseWeekAvailabilityOptions
 ): UseWeekAvailabilityResult {
   const [weekData, setWeekData] = useState<DayAvailability[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -45,6 +65,11 @@ export function useWeekAvailability(
     const monday = startOfWeek(weekStart, { weekStartsOn: 1 })
     return format(monday, "yyyy-MM-dd")
   }, [weekStart])
+
+  // Memoize options to prevent unnecessary refetches
+  const customerLat = options?.customerLocation?.latitude
+  const customerLng = options?.customerLocation?.longitude
+  const serviceDuration = options?.serviceDurationMinutes
 
   const fetchWeekAvailability = useCallback(async () => {
     if (!providerId) {
@@ -59,13 +84,27 @@ export function useWeekAvailability(
       // Parse the normalized Monday date
       const monday = new Date(weekStartStr)
 
+      // Build query params
+      const buildUrl = (dateStr: string) => {
+        const params = new URLSearchParams({ date: dateStr })
+
+        if (customerLat !== undefined && customerLng !== undefined) {
+          params.set("lat", customerLat.toString())
+          params.set("lng", customerLng.toString())
+        }
+
+        if (serviceDuration !== undefined) {
+          params.set("serviceDuration", serviceDuration.toString())
+        }
+
+        return `/api/providers/${providerId}/availability?${params.toString()}`
+      }
+
       // Fetch all 7 days in parallel
       const promises = Array.from({ length: 7 }, (_, i) => {
         const date = addDays(monday, i)
         const dateStr = format(date, "yyyy-MM-dd")
-        return fetch(
-          `/api/providers/${providerId}/availability?date=${dateStr}`
-        )
+        return fetch(buildUrl(dateStr))
       })
 
       const responses = await Promise.all(promises)
@@ -86,7 +125,7 @@ export function useWeekAvailability(
     } finally {
       setIsLoading(false)
     }
-  }, [providerId, weekStartStr])
+  }, [providerId, weekStartStr, customerLat, customerLng, serviceDuration])
 
   useEffect(() => {
     fetchWeekAvailability()

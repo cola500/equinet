@@ -4,7 +4,12 @@ import { useState, useMemo } from "react"
 import { addWeeks, subWeeks, startOfWeek } from "date-fns"
 import { CalendarHeader } from "@/components/calendar/CalendarHeader"
 import { DayColumn } from "./DayColumn"
-import { useWeekAvailability, DayAvailability } from "@/hooks/useWeekAvailability"
+import {
+  useWeekAvailability,
+  DayAvailability,
+  CustomerLocation,
+  SlotWithReason,
+} from "@/hooks/useWeekAvailability"
 import { calculateAvailableSlots, TimeSlot } from "@/lib/utils/slotCalculator"
 
 interface CustomerBookingCalendarProps {
@@ -12,6 +17,7 @@ interface CustomerBookingCalendarProps {
   serviceDurationMinutes: number
   onSlotSelect: (date: string, startTime: string, endTime: string) => void
   initialDate?: Date
+  customerLocation?: CustomerLocation
 }
 
 interface SelectedSlot {
@@ -25,6 +31,7 @@ interface SelectedSlot {
  * Features:
  * - Week navigation
  * - Shows available/booked slots
+ * - Travel time validation (when customerLocation is provided)
  * - Responsive (7 columns on desktop, tabs on mobile)
  */
 export function CustomerBookingCalendar({
@@ -32,6 +39,7 @@ export function CustomerBookingCalendar({
   serviceDurationMinutes,
   onSlotSelect,
   initialDate = new Date(),
+  customerLocation,
 }: CustomerBookingCalendarProps) {
   const [currentDate, setCurrentDate] = useState(
     startOfWeek(initialDate, { weekStartsOn: 1 })
@@ -40,10 +48,14 @@ export function CustomerBookingCalendar({
 
   const { weekData, isLoading, error } = useWeekAvailability(
     providerId,
-    currentDate
+    currentDate,
+    {
+      customerLocation,
+      serviceDurationMinutes,
+    }
   )
 
-  // Calculate slots for each day (filter out past slots)
+  // Use API-provided slots if available, otherwise calculate locally
   const daysWithSlots = useMemo(() => {
     const now = new Date()
 
@@ -55,6 +67,21 @@ export function CustomerBookingCalendar({
         }
       }
 
+      // If API provides pre-calculated slots (with travel time), use them
+      if (day.slots && day.slots.length > 0) {
+        // Convert SlotWithReason to TimeSlot for DayColumn compatibility
+        const slots: TimeSlot[] = day.slots.map((s: SlotWithReason) => ({
+          startTime: s.startTime,
+          endTime: s.endTime,
+          isAvailable: s.isAvailable,
+        }))
+        return {
+          ...day,
+          slots,
+        }
+      }
+
+      // Fallback: calculate locally (no travel time validation)
       const slots = calculateAvailableSlots({
         openingTime: day.openingTime,
         closingTime: day.closingTime,

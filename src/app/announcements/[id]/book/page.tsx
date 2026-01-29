@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
+import { CustomerLocation } from "@/hooks/useWeekAvailability"
 
 interface RouteStop {
   id: string
@@ -45,6 +46,7 @@ export default function BookAnnouncementPage() {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(null)
   const [formData, setFormData] = useState({
     serviceId: "",
     bookingDate: "",
@@ -66,6 +68,30 @@ export default function BookAnnouncementPage() {
       fetchAnnouncement(params.id as string)
     }
   }, [params.id])
+
+  // Fetch customer location for travel time calculation
+  useEffect(() => {
+    if (!user) return
+
+    const fetchCustomerLocation = async () => {
+      try {
+        const response = await fetch("/api/profile")
+        if (!response.ok) return
+
+        const profile = await response.json()
+        if (profile.latitude && profile.longitude) {
+          setCustomerLocation({
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching customer location:", error)
+      }
+    }
+
+    fetchCustomerLocation()
+  }, [user])
 
   const fetchAnnouncement = async (id: string) => {
     try {
@@ -279,6 +305,7 @@ export default function BookAnnouncementPage() {
                           providerId={announcement.provider.id}
                           serviceDurationMinutes={selectedService.durationMinutes}
                           onSlotSelect={handleSlotSelect}
+                          customerLocation={customerLocation || undefined}
                         />
                         {formData.bookingDate && formData.startTime && (
                           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
