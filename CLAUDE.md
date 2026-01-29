@@ -497,6 +497,12 @@ Före merge?          -> quality-gate
 - **Prisma test-mockar är fragila**: `$transaction` i produktionskod kräver `$transaction` i testmockar. Mockar som hårdkodar Prisma-modeller direkt bryts vid refactoring.
 - **Runda-struktur fungerar**: Säkerhet → Tech Debt → UX som prioriteringsordning, med verifiering mellan rundor, fångar problem tidigt.
 
+### Vercel Build Timeout Regression (2026-01-29)
+- **`ignoreBuildErrors: true` i next.config.ts är en MEDVETEN optimering** - ta INTE bort den. TypeScript checkas separat i CI.
+- **Agent-refaktoreringar kan ta bort "onödiga" inställningar** som i själva verket är kritiska. Kommentarer i koden räcker inte alltid som skydd.
+- **Verifiera alltid build-tiden efter stora refaktoreringar** - regressioner i build-pipeline syns inte i tester.
+- **Root cause**: Commit `66a0ea0` tog bort `ignoreBuildErrors`, vilket fick Next.js att köra full typecheck under build (14+ min istället för ~50s).
+
 ---
 
 ## Automated Quality Gates

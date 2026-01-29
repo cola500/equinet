@@ -23,6 +23,7 @@
 17. [Upsert för Race Conditions](#17-upsert-för-race-conditions)
 18. [Behavior-Based vs Implementation-Based Testing](#18-behavior-based-vs-implementation-based-testing)
 19. [E2E Tests Fångar API-Buggar](#19-e2e-tests-fångar-api-buggar)
+20. [Vercel Build Timeout (ignoreBuildErrors)](#20-vercel-build-timeout-ignorebuildErrors)
 
 ---
 
@@ -820,6 +821,45 @@ test('should create booking with valid data', async ({ page }) => {
 | E2E | Hela flödet | Långsam | Bred |
 
 **Impact:** Fångar buggar som unit tests missar, särskilt validation och constraints.
+
+---
+
+## 20. Vercel Build Timeout (ignoreBuildErrors)
+
+> **Learning: 2026-01-29** | **Severity: KRITISKT**
+
+**Problem:** `next build` kör en full TypeScript-check som tar 14+ minuter på Vercels 8GB maskin.
+
+**Symptom:** Vercel-build hänger sig vid "Running TypeScript ..." och tar 14+ minuter istället för ~50 sekunder.
+
+**Orsak:** Projektet har 150+ TypeScript-filer inklusive testfiler. `next build` typecheckar ALLA filer via `tsconfig.json`, som inkluderar `**/*.ts` och `**/*.tsx` (alltså även tester).
+
+```typescript
+// ❌ FEL - next.config.ts UTAN ignoreBuildErrors
+const nextConfig: NextConfig = {
+  productionBrowserSourceMaps: false,
+  // TypeScript-check körs under build -> 14+ min timeout
+}
+
+// ✅ RÄTT - TypeScript checkas i CI, inte under build
+const nextConfig: NextConfig = {
+  productionBrowserSourceMaps: false,
+  // TypeScript errors checked separately in CI - skip during build to avoid timeout
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+}
+```
+
+**Varför är detta säkert?**
+- TypeScript checkas redan via Husky pre-push hook (`npm run typecheck`)
+- TypeScript checkas i GitHub Actions CI pipeline
+- `tsconfig.typecheck.json` exkluderar testfiler och använder incremental builds
+- Dubbelarbete att köra det igen i `next build`
+
+**VARNING:** Denna inställning ser "osäker" ut och kan tas bort vid refaktorering. Den är en MEDVETEN optimering, inte ett hack.
+
+**Impact:** Build-tid: 14+ min -> ~50 sekunder.
 
 ---
 
