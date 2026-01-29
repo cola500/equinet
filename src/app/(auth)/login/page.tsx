@@ -26,10 +26,15 @@ function LoginForm() {
     },
   })
 
-  // Show success toast if user just registered
+  // Show success toast for various states
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
-      toast.success("Kontot har skapats! Du kan nu logga in.", {
+      toast.success("Kontot har skapats! Kolla din e-post for att verifiera.", {
+        duration: 5000,
+      })
+    }
+    if (searchParams.get("verified") === "true") {
+      toast.success("Din e-post har verifierats! Du kan nu logga in.", {
         duration: 5000,
       })
     }
@@ -48,7 +53,11 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        setError("Ogiltig email eller lösenord")
+        if (result.error === "EMAIL_NOT_VERIFIED") {
+          setError("EMAIL_NOT_VERIFIED")
+        } else {
+          setError("Ogiltig email eller lösenord")
+        }
       } else {
         router.push("/dashboard")
         router.refresh()
@@ -98,7 +107,19 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && retryCount === 0 && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                {error}
+                {error === "EMAIL_NOT_VERIFIED" ? (
+                  <div>
+                    <p>Din e-post ar inte verifierad.</p>
+                    <Link
+                      href="/resend-verification"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Skicka nytt verifieringsmail
+                    </Link>
+                  </div>
+                ) : (
+                  error
+                )}
               </div>
             )}
 

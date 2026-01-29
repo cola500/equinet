@@ -20,6 +20,10 @@ model User {
   lastName     String
   phone        String?
 
+  // Email verification
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+
   // Geographic location (for customers to enable route matching)
   city         String?
   address      String?
@@ -29,10 +33,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  provider      Provider?
-  bookings      Booking[]
-  notifications Notification[]
-  routeOrders   RouteOrder[]
+  provider                  Provider?
+  bookings                  Booking[]
+  notifications             Notification[]
+  routeOrders               RouteOrder[]
+  emailVerificationTokens   EmailVerificationToken[]
 
   @@index([latitude, longitude]) // For geo-queries
 }
@@ -280,4 +285,17 @@ model RouteStop {
   @@index([routeId, stopOrder])
   @@index([routeOrderId])
   @@index([status])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
 }

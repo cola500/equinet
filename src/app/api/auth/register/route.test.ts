@@ -14,7 +14,15 @@ vi.mock('@/lib/prisma', () => ({
     provider: {
       create: vi.fn(),
     },
+    emailVerificationToken: {
+      create: vi.fn(),
+    },
   },
+}))
+
+// Mock email service
+vi.mock('@/lib/email', () => ({
+  sendEmailVerificationNotification: vi.fn(() => Promise.resolve()),
 }))
 
 // Mock bcrypt
@@ -50,6 +58,7 @@ describe('POST /api/auth/register', () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
     vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password' as never)
     vi.mocked(prisma.user.create).mockResolvedValue(mockUser as any)
+    vi.mocked(prisma.emailVerificationToken.create).mockResolvedValue({} as any)
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
@@ -106,6 +115,7 @@ describe('POST /api/auth/register', () => {
     vi.mocked(prisma.user.create).mockResolvedValue(mockUser as any)
     // @ts-expect-error - Vitest type instantiation depth limitation
     vi.mocked(prisma.provider.create).mockResolvedValue(mockProvider as any)
+    vi.mocked(prisma.emailVerificationToken.create).mockResolvedValue({} as any)
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
