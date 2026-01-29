@@ -1,11 +1,19 @@
 # Retrospektiv - Travel Time Feature
 
-**Datum:** 2026-01-28
+**Datum:** 2026-01-28 (uppdaterad 2026-01-29)
 **Feature:** Restidsvalidering mellan bokningar baserat på geografisk placering
 
 ## Sammanfattning
 
 Travel time-funktionen implementerar automatisk validering av restid mellan bokningar genom Location value object, TravelTimeService och integration med BookingService. Implementationen följer DDD-principer med 100% test coverage på domain-lagret.
+
+### Uppdatering 2026-01-29: Kalender-integration
+
+Restidsvalidering är nu integrerad i kundens kalendervy:
+- Availability API utökad med `lat`/`lng`/`serviceDuration` query-parametrar
+- Slots som inte har tillräcklig restid visas som gråa (unavailable)
+- Buffert ökad från 10 till 60 minuter mellan bokningar
+- Kundens plats hämtas från profilen och skickas till API:et
 
 ## Vad gick bra?
 
@@ -77,6 +85,12 @@ Travel time-funktionen implementerar automatisk validering av restid mellan bokn
 1. **DDD fungerar** - Value objects och domain services gör logiken testbar och återanvändbar
 2. **Mocks måste uppdateras** - När nya dependencies läggs till i BookingService måste API-test mocks också uppdateras
 3. **Haversine är snabb** - O(1) beräkning, ingen prestandapåverkan
+
+### Nya lärdomar från kalender-integration (2026-01-29)
+
+4. **Prisma schema är sanning** - Antog att Booking hade latitude/longitude, men de finns på User (kunden). Kontrollera alltid schemat innan implementation.
+5. **Datum-jämförelser i JavaScript** - `new Date()` skapar UTC-tid, jämför alltid med normaliserade datum (year, month, day) för att undvika tidszonsproblem.
+6. **Bakåtkompatibilitet** - Behöll `bookedSlots` i API-response även om nya `slots` med `unavailableReason` lades till.
 
 ## Betyg
 

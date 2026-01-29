@@ -398,6 +398,12 @@ Före merge?          -> quality-gate
 - **Fixtures**: Importera `test, expect` från `./fixtures` för automatisk afterEach cleanup
 - **Unit vs E2E**: ErrorState/useRetry testas bättre som unit tests - E2E med API-blocking är fragilt
 
+### Travel Time Kalender-integration (2026-01-29)
+- **Kontrollera Prisma-schema först**: Antog att Booking hade lat/lng, men de finns på User. Verifiera alltid datamodellen innan implementation.
+- **Datum-jämförelser**: `new Date("2026-01-29")` skapar UTC-tid. Normalisera till (year, month, day) för korrekt jämförelse av "förflutna dagar".
+- **Bakåtkompatibilitet i API**: Behåll gamla fält (`bookedSlots`) även när nya läggs till (`slots` med `unavailableReason`).
+- **1 timmes buffert**: Ökad från 10 min till 60 min för realistisk tid mellan bokningar (förberedelse, efterarbete).
+
 ---
 
 ## Automated Quality Gates
@@ -492,4 +498,4 @@ Före merge?          -> quality-gate
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-01-28
+**Senast uppdaterad**: 2026-01-29
