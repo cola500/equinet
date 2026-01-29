@@ -7,6 +7,7 @@ import { sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/sanitize"
 import { sendEmailVerificationNotification } from "@/lib/email"
 import { randomBytes } from "crypto"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
       sanitizedFirstName,
       verificationToken
     ).catch((error) => {
-      console.error("Failed to send verification email:", error)
+      logger.error("Failed to send verification email", error instanceof Error ? error : new Error(String(error)))
     })
 
     return NextResponse.json(
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.error("Registreringsfel:", error)
+    logger.error("Registreringsfel", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Något gick fel vid registrering" },
       { status: 500 }

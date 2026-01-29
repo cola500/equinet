@@ -389,7 +389,8 @@ Database Layer (Prisma Studio)
 - [ ] Input validation (Zod)
 - [ ] Ownership check (i WHERE clause!)
 - [ ] Error handling (Zod, Prisma, JSON parsing)
-- [ ] Logga errors
+- [ ] Strukturerad logging (`logger` från `@/lib/logger`, INTE `console.*`)
+- [ ] Rate limiting (via `rateLimiters` från `@/lib/rate-limit`)
 
 ---
 
@@ -488,6 +489,13 @@ Före merge?          -> quality-gate
 - **Använd agenter proaktivt**: Discovery INNAN problem uppstår, inte bara execution.
 - **Pattern**: REVIEW → PRIORITIZE → IMPLEMENT → VERIFY (Phase 1-4).
 - **Agenter för kvalitet**: security-reviewer, quality-gate före merge/release.
+
+### Paralleliserad Team-Review (2026-01-29)
+- **Utforska före planering**: Kartlägg kodbasen med explore-agent *innan* prioriteringslistan skapas, inte efter. Annars planerar man redan-klara saker.
+- **Bakgrundsagent för mekaniskt arbete**: Logger-migrering (36 filer) var perfekt agent-uppgift. Mekaniska, repeterbara ändringar = bra agentuppgift.
+- **Undvik parallellt arbete på samma fil**: Agent + manuellt arbete på samma fil ger konflikter. Agenten kan revertera manuella ändringar.
+- **Prisma test-mockar är fragila**: `$transaction` i produktionskod kräver `$transaction` i testmockar. Mockar som hårdkodar Prisma-modeller direkt bryts vid refactoring.
+- **Runda-struktur fungerar**: Säkerhet → Tech Debt → UX som prioriteringsordning, med verifiering mellan rundor, fångar problem tidigt.
 
 ---
 

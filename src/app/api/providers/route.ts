@@ -6,6 +6,7 @@ import { calculateBoundingBox, getMaxRadiusKm } from "@/lib/geo/bounding-box"
 import { getCachedProviders, setCachedProviders, CachedProvider } from "@/lib/cache/provider-cache"
 import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
+import { logger } from "@/lib/logger"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -269,7 +270,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("Error fetching providers:", error)
+    logger.error("Error fetching providers", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch providers" },
       { status: 500 }

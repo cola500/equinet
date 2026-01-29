@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "Förnamn krävs"),
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       return error
     }
 
-    console.error("Error fetching profile:", error)
+    logger.error("Error fetching profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }
@@ -66,7 +67,7 @@ export async function PUT(request: NextRequest) {
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -106,7 +107,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.error("Error updating profile:", error)
+    logger.error("Error updating profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to update profile" },
       { status: 500 }

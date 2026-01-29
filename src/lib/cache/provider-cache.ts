@@ -14,6 +14,7 @@
 import { Redis } from "@upstash/redis"
 import crypto from "crypto"
 import { ProviderWithDetails } from "@/infrastructure/persistence/provider/IProviderRepository"
+import { logger } from "@/lib/logger"
 
 // Lazy initialization of Redis client
 let redis: Redis | null = null
@@ -68,7 +69,7 @@ export async function getCachedProviders(
     const cached = await client.get<CachedProviderResult>(key)
     return cached?.providers ?? null
   } catch (error) {
-    console.error("[Provider Cache] Read error:", error)
+    logger.error("[Provider Cache] Read error", error instanceof Error ? error : new Error(String(error)))
     return null // Fail open - continue without cache
   }
 }
@@ -99,7 +100,7 @@ export async function setCachedProviders(
     const TTL_SECONDS = 5 * 60
     await client.setex(key, TTL_SECONDS, data)
   } catch (error) {
-    console.error("[Provider Cache] Write error:", error)
+    logger.error("[Provider Cache] Write error", error instanceof Error ? error : new Error(String(error)))
     // Fail silently - caching is not critical
   }
 }
@@ -129,7 +130,7 @@ export async function invalidateProviderCache(): Promise<void> {
       await client.del(...keys)
     }
   } catch (error) {
-    console.error("[Provider Cache] Invalidation error:", error)
+    logger.error("[Provider Cache] Invalidation error", error instanceof Error ? error : new Error(String(error)))
     // Fail silently - cache will expire naturally
   }
 }

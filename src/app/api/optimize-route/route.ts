@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from "@/lib/logger"
 
 const MODAL_API_URL = 'https://johan-26538--route-optimizer-fastapi-app.modal.run'
 
@@ -6,8 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Log request för debugging
-    console.log('Optimize route request:', JSON.stringify(body, null, 2))
+    // Log request for debugging
+    logger.debug("Optimize route request", { body: JSON.stringify(body) })
 
     const response = await fetch(`${MODAL_API_URL}/optimize-route`, {
       method: 'POST',
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Modal API error response:', errorText)
+      logger.error("Modal API error response", new Error(errorText))
       return NextResponse.json(
         { error: `Optimization failed: ${errorText}` },
         { status: response.status }
@@ -27,11 +28,11 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Optimize route success:', data)
+    logger.info("Optimize route success")
     return NextResponse.json(data)
 
   } catch (error: any) {
-    console.error('Route optimization error:', error)
+    logger.error("Route optimization error", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

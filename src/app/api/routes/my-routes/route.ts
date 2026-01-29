@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 // GET /api/routes/my-routes - Get provider's routes
 export async function GET() {
@@ -54,7 +55,7 @@ export async function GET() {
       return error
     }
 
-    console.error("Error fetching routes:", error)
+    logger.error("Error fetching routes", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internt serverfel", { status: 500 })
   }
 }

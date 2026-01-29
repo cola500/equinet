@@ -4,6 +4,7 @@ import { z } from "zod"
 import { sendBookingStatusChangeNotification } from "@/lib/email"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
+import { logger } from "@/lib/logger"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
@@ -24,7 +25,7 @@ export async function PUT(
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -72,7 +73,7 @@ export async function PUT(
     // Only send for meaningful status changes (not when customer updates their own booking)
     if (["confirmed", "cancelled", "completed"].includes(validatedData.status)) {
       sendBookingStatusChangeNotification(id, validatedData.status).catch((err) => {
-        console.error("Failed to send status change notification:", err)
+        logger.error("Failed to send status change notification", err instanceof Error ? err : new Error(String(err)))
       })
     }
 
@@ -90,7 +91,7 @@ export async function PUT(
       )
     }
 
-    console.error("Error updating booking:", error)
+    logger.error("Error updating booking", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to update booking" },
       { status: 500 }
@@ -146,7 +147,7 @@ export async function DELETE(
       return error
     }
 
-    console.error("Error deleting booking:", error)
+    logger.error("Error deleting booking", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to delete booking" },
       { status: 500 }

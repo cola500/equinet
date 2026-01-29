@@ -53,6 +53,7 @@ export function DayColumn({
               startTime={slot.startTime}
               endTime={slot.endTime}
               isAvailable={slot.isAvailable}
+              unavailableReason={slot.unavailableReason}
               isSelected={selectedTime === slot.startTime}
               onClick={() => onSlotSelect(date, slot.startTime, slot.endTime)}
             />

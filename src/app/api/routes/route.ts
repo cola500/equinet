@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { calculateDistance } from "@/lib/distance"
+import { logger } from "@/lib/logger"
 
 // Validation schema for creating route
 const createRouteSchema = z.object({
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    console.error("Error creating route:", error)
+    logger.error("Error creating route", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internt serverfel", { status: 500 })
   }
 }

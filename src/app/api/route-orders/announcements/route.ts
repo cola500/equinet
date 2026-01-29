@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -194,7 +195,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(announcements)
 
   } catch (error) {
-    console.error('Error fetching announcements:', error)
+    logger.error("Error fetching announcements", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: 'Failed to fetch announcements' },
       { status: 500 }

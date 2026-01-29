@@ -329,12 +329,60 @@ export default function ProviderDashboard() {
         {services.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-gray-600 mb-4">
-                Du har inga tjänster ännu. Skapa din första tjänst för att komma igång!
+              <div className="mb-4">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Inga tjänster ännu
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Skapa din första tjänst för att börja ta emot bokningar.
+                Lägg till namn, pris och varaktighet.
               </p>
               <Link href="/provider/services">
-                <Button>Skapa tjänst</Button>
+                <Button size="lg">Skapa din första tjänst</Button>
               </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {services.length > 0 && bookings.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <div className="mb-3">
+                <svg
+                  className="mx-auto h-10 w-10 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Inga bokningar ännu
+              </h3>
+              <p className="text-gray-600 max-w-md mx-auto">
+                Dina tjänster finns tillgängliga. Bokningar dyker upp här
+                när kunder börjar boka.
+              </p>
             </CardContent>
           </Card>
         )}

@@ -28,8 +28,10 @@ vi.mock('@/lib/auth-server', () => ({
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
+    api: vi.fn().mockResolvedValue(true),
     booking: vi.fn().mockResolvedValue(true), // Always allow in tests
   },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
 vi.mock('@/lib/prisma', () => ({

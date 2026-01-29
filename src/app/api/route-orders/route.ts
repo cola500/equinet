@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { geocodeAddress } from "@/lib/geocoding"
+import { logger } from "@/lib/logger"
 
 // Validation schema for route stop
 const routeStopSchema = z.object({
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    console.error("Error creating route order:", error)
+    logger.error("Error creating route order", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Internt serverfel", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
@@ -224,7 +225,7 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
   }
 
   // 3. Geocode each stop's address - FAIL if any address cannot be geocoded
-  const stopsWithCoordinates = []
+  const stopsWithCoordinates: Array<{ locationName: string; address: string; latitude?: number; longitude?: number }> = []
   for (const stop of validated.stops) {
     // Only geocode if coordinates not already provided
     if (stop.latitude && stop.longitude) {
@@ -253,57 +254,61 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
   // 4. Use first stop as primary location
   const firstStop = stopsWithCoordinates[0]
 
-  // 5. Create announcement
-  const announcement = await prisma.routeOrder.create({
-    data: {
-      providerId: provider.id,
-      serviceType: validated.serviceType,
-      address: firstStop.address,
-      latitude: firstStop.latitude ?? null,
-      longitude: firstStop.longitude ?? null,
-      numberOfHorses: 1,
-      dateFrom,
-      dateTo,
-      priority: "normal",
-      specialInstructions: validated.specialInstructions,
-      announcementType: "provider_announced",
-      status: "open",
-    },
-    include: {
-      provider: {
-        select: {
-          id: true,
-          businessName: true,
-        }
-      }
-    }
-  })
-
-  // 6. Create route stops (using geocoded coordinates)
-  if (stopsWithCoordinates.length > 1) {
-    await prisma.routeStop.createMany({
-      data: stopsWithCoordinates.map((stop, index) => ({
-        routeOrderId: announcement.id,
-        locationName: stop.locationName,
-        address: stop.address,
-        latitude: stop.latitude ?? null,
-        longitude: stop.longitude ?? null,
-        stopOrder: index + 1,
-      })),
-    })
-  } else {
-    // Create single stop for consistency
-    await prisma.routeStop.create({
+  // 5. Create announcement + route stops in a single transaction
+  // @ts-expect-error - Prisma transaction callback type inference issue
+  const announcement = await prisma.$transaction(async (tx: any) => {
+    const newAnnouncement = await tx.routeOrder.create({
       data: {
-        routeOrderId: announcement.id,
-        locationName: firstStop.locationName,
+        providerId: provider.id,
+        serviceType: validated.serviceType,
         address: firstStop.address,
         latitude: firstStop.latitude ?? null,
         longitude: firstStop.longitude ?? null,
-        stopOrder: 1,
+        numberOfHorses: 1,
+        dateFrom,
+        dateTo,
+        priority: "normal",
+        specialInstructions: validated.specialInstructions,
+        announcementType: "provider_announced",
+        status: "open",
       },
+      include: {
+        provider: {
+          select: {
+            id: true,
+            businessName: true,
+          }
+        }
+      }
     })
-  }
+
+    // Create route stops within the same transaction
+    if (stopsWithCoordinates.length > 1) {
+      await tx.routeStop.createMany({
+        data: stopsWithCoordinates.map((stop: { locationName: string; address: string; latitude?: number; longitude?: number }, index: number) => ({
+          routeOrderId: newAnnouncement.id,
+          locationName: stop.locationName,
+          address: stop.address,
+          latitude: stop.latitude ?? null,
+          longitude: stop.longitude ?? null,
+          stopOrder: index + 1,
+        })),
+      })
+    } else {
+      await tx.routeStop.create({
+        data: {
+          routeOrderId: newAnnouncement.id,
+          locationName: firstStop.locationName,
+          address: firstStop.address,
+          latitude: firstStop.latitude ?? null,
+          longitude: firstStop.longitude ?? null,
+          stopOrder: 1,
+        },
+      })
+    }
+
+    return newAnnouncement
+  })
 
   return NextResponse.json(announcement, { status: 201 })
 }
@@ -399,7 +404,7 @@ export async function GET(request: Request) {
       return error
     }
 
-    console.error("Error fetching route orders:", error)
+    logger.error("Error fetching route orders", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Internt serverfel", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

@@ -6,6 +6,7 @@ export interface TimeSlot {
   startTime: string // "HH:mm" format
   endTime: string // "HH:mm" format
   isAvailable: boolean
+  unavailableReason?: "booked" | "travel-time" | "past"
 }
 
 export interface BookedSlot {

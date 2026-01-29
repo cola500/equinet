@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 /**
  * GET /api/provider/onboarding-status
@@ -70,7 +71,7 @@ export async function GET() {
       allComplete,
     })
   } catch (error) {
-    console.error("Error fetching onboarding status:", error)
+    logger.error("Error fetching onboarding status", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }

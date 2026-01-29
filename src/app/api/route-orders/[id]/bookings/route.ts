@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 /**
  * GET /api/route-orders/[id]/bookings
@@ -141,7 +142,7 @@ export async function GET(
       return error
     }
 
-    console.error("Error fetching announcement bookings:", error)
+    logger.error("Error fetching announcement bookings", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Kunde inte hämta bokningar" },
       { status: 500 }

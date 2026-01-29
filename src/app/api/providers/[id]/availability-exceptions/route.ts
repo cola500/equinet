@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
 import { parseDate } from "@/lib/date-utils"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 // Validation schema for query parameters
 const querySchema = z.object({
@@ -99,7 +100,7 @@ export async function GET(
 
     return NextResponse.json(formattedExceptions)
   } catch (error) {
-    console.error("Error fetching availability exceptions:", error)
+    logger.error("Error fetching availability exceptions", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }
@@ -206,14 +207,14 @@ export async function POST(
     }
 
     if (error instanceof z.ZodError) {
-      console.error("Zod validation error:", JSON.stringify(error.issues, null, 2))
+      logger.warn("Zod validation error", { issues: JSON.stringify(error.issues) })
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }
 
-    console.error("Error creating availability exception:", error)
+    logger.error("Error creating availability exception", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }

@@ -49,19 +49,19 @@ export function Header() {
                   {user?.name || user?.email}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[200px]">
-                <DropdownMenuItem asChild>
+              <DropdownMenuContent align="end" className="min-w-[220px]">
+                <DropdownMenuItem asChild className="py-3 px-4">
                   <Link href={isProvider ? "/provider/dashboard" : "/dashboard"}>
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="py-3 px-4">
                   <Link href={isProvider ? "/provider/profile" : "/customer/profile"}>
                     Min profil
                   </Link>
                 </DropdownMenuItem>
                 {isCustomer && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem asChild className="py-3 px-4">
                     <Link href="/customer/bookings">
                       Mina bokningar
                     </Link>
@@ -69,12 +69,12 @@ export function Header() {
                 )}
                 {isProvider && (
                   <>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="py-3 px-4">
                       <Link href="/provider/services">
                         Mina tjänster
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="py-3 px-4">
                       <Link href="/provider/bookings">
                         Bokningar
                       </Link>
@@ -82,7 +82,7 @@ export function Header() {
                   </>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={handleLogout} className="py-3 px-4">
                   Logga ut
                 </DropdownMenuItem>
               </DropdownMenuContent>

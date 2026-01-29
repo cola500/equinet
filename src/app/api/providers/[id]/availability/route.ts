@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { TravelTimeService, BookingWithLocation } from "@/domain/booking/TravelTimeService"
 import { Location } from "@/domain/shared/Location"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 interface SlotWithReason {
   startTime: string
@@ -43,6 +45,16 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limiting: 100 requests per minute per IP
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "För många förfrågningar. Försök igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     const { id: providerId } = await params
     const { searchParams } = new URL(request.url)
@@ -261,7 +273,7 @@ export async function GET(
       })),
     })
   } catch (error) {
-    console.error("Error fetching availability:", error)
+    logger.error("Error fetching availability", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch availability" },
       { status: 500 }

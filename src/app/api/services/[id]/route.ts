@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { z } from "zod"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
+import { logger } from "@/lib/logger"
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Tjänstens namn krävs"),
@@ -41,7 +42,7 @@ export async function PUT(
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -65,14 +66,14 @@ export async function PUT(
     }
 
     if (error instanceof z.ZodError) {
-      console.error("Validation error:", error.issues)
+      logger.warn("Validation error", { issues: JSON.stringify(error.issues) })
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }
 
-    console.error("Error updating service:", error)
+    logger.error("Error updating service", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to update service" },
       { status: 500 }
@@ -118,7 +119,7 @@ export async function DELETE(
       return error
     }
 
-    console.error("Error deleting service:", error)
+    logger.error("Error deleting service", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to delete service" },
       { status: 500 }

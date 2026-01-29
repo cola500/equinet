@@ -4,6 +4,7 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { sendEmailVerificationNotification } from "@/lib/email"
 import { z } from "zod"
 import { randomBytes } from "crypto"
+import { logger } from "@/lib/logger"
 
 const resendSchema = z.object({
   email: z.string().email("Ogiltig e-postadress"),
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
 
       // Send email (non-blocking)
       sendEmailVerificationNotification(user.email, user.firstName, token).catch(
-        (error) => console.error("Failed to send verification email:", error)
+        (error) => logger.error("Failed to send verification email", error instanceof Error ? error : new Error(String(error)))
       )
     }
 
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
         "Om e-postadressen finns i vårt system och inte redan är verifierad, har vi skickat ett nytt verifieringsmail.",
     })
   } catch (error) {
-    console.error("Resend verification error:", error)
+    logger.error("Resend verification error", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Något gick fel. Försök igen senare." },
       { status: 500 }

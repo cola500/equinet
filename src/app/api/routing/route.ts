@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 100 requests per minute per IP
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "För många förfrågningar. Försök igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     const { coordinates } = await request.json()
 
@@ -53,7 +65,7 @@ export async function POST(request: NextRequest) {
       duration: route.duration,
     })
   } catch (error: any) {
-    console.error('Routing proxy error:', error)
+    logger.error("Routing proxy error", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

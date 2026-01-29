@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { geocodeAddress } from "@/lib/geocoding"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 /**
  * GET /api/geocode
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Error in geocode endpoint:", error)
+    logger.error("Error in geocode endpoint", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to geocode address" },
       { status: 500 }

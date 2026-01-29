@@ -5,6 +5,7 @@ import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceR
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Tjänstens namn krävs"),
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       return error
     }
 
-    console.error("Error fetching services:", error)
+    logger.error("Error fetching services", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch services" },
       { status: 500 }
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.error("Error creating service:", error)
+    logger.error("Error creating service", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to create service" },
       { status: 500 }

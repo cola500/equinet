@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 // Validation schema for availability schedule
 const scheduleItemSchema = z.object({
@@ -39,7 +40,7 @@ export async function GET(
 
     return NextResponse.json(availability)
   } catch (error) {
-    console.error("Error fetching availability schedule:", error)
+    logger.error("Error fetching availability schedule", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }
@@ -78,7 +79,7 @@ export async function PUT(
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -131,13 +132,13 @@ export async function PUT(
     }
 
     if (error instanceof z.ZodError) {
-      console.error("Zod validation error:", error.issues)
+      logger.warn("Zod validation error", { issues: JSON.stringify(error.issues) })
       return NextResponse.json(
         { error: "Validation error", details: error.issues },
         { status: 400 }
       )
     }
-    console.error("Error updating availability schedule:", error)
+    logger.error("Error updating availability schedule", error instanceof Error ? error : new Error(String(error)))
     // Return more detailed error for debugging
     return NextResponse.json(
       { error: "Internal error", details: error instanceof Error ? error.message : "Unknown error" },

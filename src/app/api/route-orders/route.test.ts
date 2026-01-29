@@ -20,8 +20,8 @@ function getFutureDates(daysFromNow: number = 5, spanDays: number = 5) {
 }
 
 // Mock dependencies
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
+vi.mock('@/lib/prisma', () => {
+  const mockPrisma = {
     routeOrder: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -33,8 +33,11 @@ vi.mock('@/lib/prisma', () => ({
     provider: {
       findUnique: vi.fn(),
     },
-  },
-}))
+    // $transaction executes callback with prisma itself as the tx client
+    $transaction: vi.fn(async (cb: (tx: any) => Promise<any>) => cb(mockPrisma)),
+  }
+  return { prisma: mockPrisma }
+})
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),

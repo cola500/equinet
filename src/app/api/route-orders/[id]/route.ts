@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth-server"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 // Validation schema for PATCH updates
 const updateStatusSchema = z.object({
@@ -66,7 +67,7 @@ export async function GET(
 
     return NextResponse.json(routeOrder)
   } catch (error) {
-    console.error("Error fetching route order:", error)
+    logger.error("Error fetching route order", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch route order" },
       { status: 500 }
@@ -171,7 +172,7 @@ export async function PATCH(
       )
     }
 
-    console.error("Error updating route order:", error)
+    logger.error("Error updating route order", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Internt serverfel" },
       { status: 500 }

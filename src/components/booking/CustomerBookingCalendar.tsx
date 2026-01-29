@@ -74,6 +74,7 @@ export function CustomerBookingCalendar({
           startTime: s.startTime,
           endTime: s.endTime,
           isAvailable: s.isAvailable,
+          unavailableReason: s.unavailableReason,
         }))
         return {
           ...day,

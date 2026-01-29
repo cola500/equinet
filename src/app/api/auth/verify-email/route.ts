@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1, "Token krävs"),
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       email: verificationToken.user.email,
     })
   } catch (error) {
-    console.error("Verify email error:", error)
+    logger.error("Verify email error", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Något gick fel vid verifiering" },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -31,7 +32,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Tile proxy error:', error)
+    logger.error("Tile proxy error", error instanceof Error ? error : new Error(String(error)))
     return new NextResponse('Error fetching tile', { status: 500 })
   }
 }

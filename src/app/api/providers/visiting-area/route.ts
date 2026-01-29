@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 /**
  * GET /api/providers/visiting-area?location=Sollebrunn
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
       total: results.length,
     })
   } catch (error) {
-    console.error("Error fetching providers by visiting area:", error)
+    logger.error("Error fetching providers by visiting area", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch providers" },
       { status: 500 }

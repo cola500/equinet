@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 // Validation schema for updating stop
 const updateStopSchema = z.object({
@@ -53,7 +54,7 @@ export async function PATCH(
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -127,7 +128,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    console.error("Error updating stop:", error)
+    logger.error("Error updating stop", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internt serverfel", { status: 500 })
   }
 }

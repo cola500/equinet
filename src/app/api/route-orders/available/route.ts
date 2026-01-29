@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { calculateDistance } from "@/lib/distance"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 // GET /api/route-orders/available - Get available route orders for providers
 export async function GET(request: Request) {
@@ -106,7 +107,7 @@ export async function GET(request: Request) {
       return error
     }
 
-    console.error("Error fetching available route orders:", error)
+    logger.error("Error fetching available route orders", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internt serverfel", { status: 500 })
   }
 }

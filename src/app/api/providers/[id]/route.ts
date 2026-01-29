@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/geocoding"
 import { z } from "zod"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
+import { invalidateProviderCache } from "@/lib/cache/provider-cache"
+import { logger } from "@/lib/logger"
 
 // GET single provider with services and availability
 export async function GET(
@@ -25,7 +27,7 @@ export async function GET(
 
     return NextResponse.json(provider)
   } catch (error) {
-    console.error("Error fetching provider:", error)
+    logger.error("Error fetching provider", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch provider" },
       { status: 500 }
@@ -128,6 +130,11 @@ export async function PUT(
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
+    // Invalidate provider cache after update (async, don't block response)
+    invalidateProviderCache().catch(() => {
+      // Fail silently - cache will expire naturally
+    })
+
     return NextResponse.json(updatedProvider)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -137,7 +144,7 @@ export async function PUT(
       )
     }
 
-    console.error("Error updating provider:", error)
+    logger.error("Error updating provider", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to update provider" },
       { status: 500 }

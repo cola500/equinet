@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
+import { logger } from "@/lib/logger"
 
 // GET - Get receipt HTML for a paid booking
 export async function GET(
@@ -91,7 +92,7 @@ export async function GET(
       return error
     }
 
-    console.error("Error generating receipt:", error)
+    logger.error("Error generating receipt", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Kunde inte generera kvitto" },
       { status: 500 }

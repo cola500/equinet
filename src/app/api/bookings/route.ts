@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
-import { rateLimiters } from "@/lib/rate-limit"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { sendBookingConfirmationNotification } from "@/lib/email"
 import { z } from "zod"
@@ -51,6 +51,16 @@ const bookingInputSchema = z.object({
 
 // GET bookings for logged-in user
 export async function GET(request: NextRequest) {
+  // Rate limiting: 100 requests per minute per IP
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "För många förfrågningar. Försök igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     const session = await auth()
 
@@ -107,7 +117,7 @@ export async function POST(request: NextRequest) {
         )
       }
     } catch (rateLimitError) {
-      console.error("Rate limiter error:", rateLimitError)
+      logger.error("Rate limiter error", rateLimitError instanceof Error ? rateLimitError : new Error(String(rateLimitError)))
     }
 
     // Parse JSON
@@ -234,12 +244,13 @@ export async function POST(request: NextRequest) {
         providerId: validatedInput.providerId,
       })
     } catch (logError) {
+      // Logger itself failed - use console as last resort
       console.error("Logger failed:", logError)
     }
 
     // Send confirmation email (async, don't block)
     sendBookingConfirmationNotification(result.value.id).catch((err) => {
-      console.error("Failed to send booking confirmation email:", err)
+      logger.error("Failed to send booking confirmation email", err instanceof Error ? err : new Error(String(err)))
     })
 
     return NextResponse.json(result.value, { status: 201 })
@@ -282,8 +293,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Databasen är inte tillgänglig" }, { status: 503 })
     }
 
-    console.error("Unexpected error during booking:", error)
-    logger.error("Failed to create booking", error, {})
+    logger.error("Unexpected error during booking", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
   }
 }

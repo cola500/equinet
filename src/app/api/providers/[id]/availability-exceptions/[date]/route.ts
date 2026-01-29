@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
 import { parseDate } from "@/lib/date-utils"
+import { logger } from "@/lib/logger"
 
 /**
  * GET /api/providers/[id]/availability-exceptions/[date]
@@ -44,7 +45,7 @@ export async function GET(
       date: exception.date.toISOString().split("T")[0],
     })
   } catch (error) {
-    console.error("Error fetching availability exception:", error)
+    logger.error("Error fetching availability exception", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }
@@ -128,7 +129,7 @@ export async function DELETE(
       )
     }
 
-    console.error("Error deleting availability exception:", error)
+    logger.error("Error deleting availability exception", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 /**
  * Health check endpoint for uptime monitoring
@@ -30,7 +31,7 @@ export async function GET() {
       { status: 200 }
     )
   } catch (error) {
-    console.error("Health check failed:", error)
+    logger.error("Health check failed", error instanceof Error ? error : new Error(String(error)))
 
     return NextResponse.json(
       {

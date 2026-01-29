@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { sendPaymentConfirmationNotification } from "@/lib/email"
+import { logger } from "@/lib/logger"
 
 // Generate unique invoice number
 function generateInvoiceNumber(): string {
@@ -93,7 +94,7 @@ export async function POST(
 
     // Send payment confirmation email (async, don't block response)
     sendPaymentConfirmationNotification(booking.id).catch((err) => {
-      console.error("Failed to send payment confirmation email:", err)
+      logger.error("Failed to send payment confirmation email", err instanceof Error ? err : new Error(String(err)))
     })
 
     return NextResponse.json({
@@ -114,7 +115,7 @@ export async function POST(
       return error
     }
 
-    console.error("Error processing payment:", error)
+    logger.error("Error processing payment", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Kunde inte genomföra betalningen" },
       { status: 500 }
@@ -176,7 +177,7 @@ export async function GET(
       return error
     }
 
-    console.error("Error fetching payment:", error)
+    logger.error("Error fetching payment", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Kunde inte hämta betalningsstatus" },
       { status: 500 }

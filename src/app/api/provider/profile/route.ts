@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
+import { invalidateProviderCache } from "@/lib/cache/provider-cache"
+import { logger } from "@/lib/logger"
 
 const providerProfileSchema = z.object({
   businessName: z.string().min(1, "Företagsnamn krävs"),
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
       return error
     }
 
-    console.error("Error fetching provider profile:", error)
+    logger.error("Error fetching provider profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to fetch provider profile" },
       { status: 500 }
@@ -76,7 +78,7 @@ export async function PUT(request: NextRequest) {
     try {
       body = await request.json()
     } catch (jsonError) {
-      console.error("Invalid JSON in request body:", jsonError)
+      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
         { error: "Invalid request body", details: "Request body must be valid JSON" },
         { status: 400 }
@@ -103,6 +105,11 @@ export async function PUT(request: NextRequest) {
       },
     })
 
+    // Invalidate provider cache after update (async, don't block response)
+    invalidateProviderCache().catch(() => {
+      // Fail silently - cache will expire naturally
+    })
+
     return NextResponse.json(updatedProvider)
   } catch (err: unknown) {
     const error = err as Error
@@ -124,7 +131,7 @@ export async function PUT(request: NextRequest) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // P2025: Record not found (provider doesn't exist for this userId)
       if (error.code === "P2025") {
-        console.error("Provider not found for userId")
+        logger.error("Provider not found for userId")
         return NextResponse.json(
           { error: "Provider profile not found" },
           { status: 404 }
@@ -140,7 +147,7 @@ export async function PUT(request: NextRequest) {
       }
 
       // Other Prisma errors
-      console.error("Prisma error during profile update:", error.code, error.message)
+      logger.error("Prisma error during profile update", error, { prismaCode: error.code })
       return NextResponse.json(
         { error: "Databasfel uppstod" },
         { status: 500 }
@@ -149,7 +156,7 @@ export async function PUT(request: NextRequest) {
 
     // Handle Prisma initialization errors (database connection issues)
     if (error instanceof Prisma.PrismaClientInitializationError) {
-      console.error("Database connection failed during profile update:", error.message)
+      logger.error("Database connection failed during profile update", error)
       return NextResponse.json(
         { error: "Databasen är inte tillgänglig" },
         { status: 503 }
@@ -158,7 +165,7 @@ export async function PUT(request: NextRequest) {
 
     // Handle query timeout errors
     if (error instanceof Error && error.message.includes("Query timeout")) {
-      console.error("Query timeout during profile update:", error.message)
+      logger.error("Query timeout during profile update", error)
       return NextResponse.json(
         { error: "Förfrågan tok för lång tid", details: "Försök igen" },
         { status: 504 }
@@ -166,7 +173,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Generic error fallback
-    console.error("Unexpected error updating provider profile:", error)
+    logger.error("Unexpected error updating provider profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Failed to update provider profile" },
       { status: 500 }
