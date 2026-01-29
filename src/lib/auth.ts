@@ -49,6 +49,11 @@ const fullConfig: NextAuthConfig = {
           throw new Error("Ogiltig email eller lösenord")
         }
 
+        // Check if email is verified
+        if (!user.emailVerified) {
+          throw new Error("EMAIL_NOT_VERIFIED")
+        }
+
         // Reset rate limit on successful login
         resetRateLimit(identifier)
 

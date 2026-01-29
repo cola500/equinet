@@ -4,6 +4,8 @@ import bcrypt from "bcrypt"
 import { rateLimiters } from "@/lib/rate-limit"
 import { registerSchema } from "@/lib/validations/auth"
 import { sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/sanitize"
+import { sendEmailVerificationNotification } from "@/lib/email"
+import { randomBytes } from "crypto"
 import { z } from "zod"
 
 export async function POST(request: NextRequest) {
@@ -79,6 +81,27 @@ export async function POST(request: NextRequest) {
         }
       })
     }
+
+    // Create email verification token
+    const verificationToken = randomBytes(32).toString("hex")
+    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await prisma.emailVerificationToken.create({
+      data: {
+        token: verificationToken,
+        userId: user.id,
+        expiresAt: tokenExpiresAt,
+      },
+    })
+
+    // Send verification email (non-blocking)
+    sendEmailVerificationNotification(
+      sanitizedEmail,
+      sanitizedFirstName,
+      verificationToken
+    ).catch((error) => {
+      console.error("Failed to send verification email:", error)
+    })
 
     return NextResponse.json(
       {

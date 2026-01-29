@@ -93,3 +93,34 @@ class EmailService {
 
 // Singleton instance
 export const emailService = new EmailService()
+
+// --- Email Verification Notification ---
+import { emailVerificationEmail } from "./templates"
+
+/**
+ * Send email verification notification
+ *
+ * @param email - Recipient email
+ * @param firstName - User's first name
+ * @param token - Verification token
+ */
+export async function sendEmailVerificationNotification(
+  email: string,
+  firstName: string,
+  token: string
+) {
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const verificationUrl = `${baseUrl}/verify-email?token=${token}`
+
+  const { html, text } = emailVerificationEmail({
+    firstName,
+    verificationUrl,
+  })
+
+  return await emailService.send({
+    to: email,
+    subject: "Verifiera din e-post - Equinet",
+    html,
+    text,
+  })
+}

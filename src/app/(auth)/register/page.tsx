@@ -67,8 +67,8 @@ export default function RegisterPage() {
         throw new Error(result.error || "Något gick fel")
       }
 
-      // Redirect to login page (toast will be shown there)
-      router.push("/login?registered=true")
+      // Redirect to check-email page
+      router.push("/check-email")
     } catch (error: any) {
       const errorMessage = error.message || "Något gick fel vid registrering. Kontrollera din internetanslutning."
       setError(errorMessage)
