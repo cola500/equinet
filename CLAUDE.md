@@ -217,6 +217,75 @@ class BookingService {
 
 ---
 
+## Refactoring Guidelines
+
+Principer som vägleder refactoring-beslut i projektet.
+
+### 1. Start Minimal - Lös det faktiska problemet
+
+- Identifiera det **specifika problemet** innan du börjar arkitektera lösningar
+- Fråga: "Kan detta lösas genom att **ta bort kod**?" innan du lägger till abstraktioner
+- Inkrementella förbättringar > kompletta omskrivningar
+- Exempel: Förvirrande logik? Ta bort den förvirrande delen, bygg inte om allt
+
+### 2. Respektera befintliga patterns
+
+**Detta projekt använder:**
+- Prisma direkt för enkel CRUD, repository för kärndomäner
+- Server Components som default, Client Components vid behov
+- Zod för validering (client + server)
+- shadcn/ui komponenter
+
+**Introducera INTE nya patterns** (Redux, Zustand, custom hooks för allt, etc.) utan diskussion.
+
+Konsistens med befintlig kod > "best practices" från andra projekt.
+
+### 3. Filgranularitet
+
+- **1 välorganiserad 300-rads fil > 10 små 30-rads filer**
+- Navigationsoverhead är verklig - varje filuppdelning har en kognitiv kostnad
+- **Locality of behavior**: Att se relaterad kod tillsammans hjälper förståelsen
+- Använd kommentarer (`// ---` eller regions) för organisation inom filer först
+- Dela bara upp filer när de överstiger ~400-500 rader eller har genuint oberoende ansvar
+
+**Undantag för React:** En komponent per fil är OK när komponenten är återanvändbar eller har egen state-logik.
+
+### 4. Komponentextrahering
+
+Extrahera komponenter när:
+- **Återanvänds 3+ gånger** ELLER
+- **Genuint komplex** (100+ rader med egen logik)
+
+| Situation | Åtgärd |
+|-----------|--------|
+| Button med custom styling, används 2 ggr | Behåll inline |
+| 100-rads formulär med validering | Överväg extrahering |
+| 15-rads loading spinner | Behåll inline |
+| Komplex datatabell med sortering | Extrahera |
+
+**Mikro-komponenter (10-20 rader) motiverar sällan egna filer.**
+
+### 5. Simplicity Hierarchy
+
+**Simple > Complex > Complicated**
+
+| Nivå | Beskrivning | Mål |
+|------|-------------|-----|
+| **Simple** | Lätt att förstå, uppenbart beteende | Alltid målet |
+| **Complex** | Intrikat men nödvändig | Acceptabelt när krav motiverar |
+| **Complicated** | Onödigt svårt att förstå | Undvik - ofta från over-engineering |
+
+### 6. Före större ändringar - diskutera först
+
+Diskutera alltid innan implementation av:
+- Arkitekturella ändringar (nya patterns, stora omstruktureringar)
+- Nya beroenden eller ramverk
+- Ändringar som påverkar hur andra utvecklare arbetar
+
+**När osäker:** Föreslå planen, visa alternativ, få buy-in först.
+
+---
+
 ## Top 5 Gotchas
 
 > Fullständig lista: [docs/GOTCHAS.md](docs/GOTCHAS.md)
@@ -403,6 +472,22 @@ Före merge?          -> quality-gate
 - **Datum-jämförelser**: `new Date("2026-01-29")` skapar UTC-tid. Normalisera till (year, month, day) för korrekt jämförelse av "förflutna dagar".
 - **Bakåtkompatibilitet i API**: Behåll gamla fält (`bookedSlots`) även när nya läggs till (`slots` med `unavailableReason`).
 - **1 timmes buffert**: Ökad från 10 min till 60 min för realistisk tid mellan bokningar (förberedelse, efterarbete).
+
+### Architecture & DDD
+- **Implementation utan adoption = dead code**: DoD måste inkludera "Används i production" - att koden finns räcker inte.
+- **DDD fungerar**: Value objects och domain services gör logiken testbar och återanvändbar.
+- **Repository pattern overhead motiverat**: Konsistens och testbarhet väger upp extra kod.
+- **E2E-tester avslöjar API-buggar**: Unit tests med mocks missar ofta validation/Prisma errors - kör E2E efter större ändringar.
+
+### Production Readiness
+- **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
+- **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.
+- **Serverless begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
+
+### Agent Workflow
+- **Använd agenter proaktivt**: Discovery INNAN problem uppstår, inte bara execution.
+- **Pattern**: REVIEW → PRIORITIZE → IMPLEMENT → VERIFY (Phase 1-4).
+- **Agenter för kvalitet**: security-reviewer, quality-gate före merge/release.
 
 ---
 

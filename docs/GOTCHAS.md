@@ -19,6 +19,10 @@
 13. [Connection Pool Exhaustion](#13-connection-pool-exhaustion)
 14. [Prisma DATE-kolumner och Timezone](#14-prisma-date-kolumner-och-timezone)
 15. [Safari Date Parsing](#15-safari-date-parsing)
+16. [Serverless State & Storage](#16-serverless-state--storage)
+17. [Upsert för Race Conditions](#17-upsert-för-race-conditions)
+18. [Behavior-Based vs Implementation-Based Testing](#18-behavior-based-vs-implementation-based-testing)
+19. [E2E Tests Fångar API-Buggar](#19-e2e-tests-fångar-api-buggar)
 
 ---
 
@@ -586,6 +590,236 @@ function parseDateUTC(dateStr: string): Date {
 - Testa alltid datumlogik i Safari/iOS
 
 **Impact:** Datum visas fel för ~15% av användare (Safari/iOS-användare).
+
+---
+
+## 16. Serverless State & Storage
+
+> **Learning: 2026-01-21** | **Severity: KRITISKT**
+
+**Problem:** Serverless-funktioner är stateless och ephemeral - många vanliga patterns fungerar inte.
+
+**Vad som INTE fungerar i serverless:**
+
+```typescript
+// ❌ In-memory state - delas INTE mellan instanser
+const cache = new Map<string, Data>()
+const attempts = new Map<string, number>()
+let globalCounter = 0
+
+// ❌ Filesystem writes - ephemeral, försvinner
+fs.writeFileSync('/tmp/data.json', data)  // Kan försvinna när som helst
+
+// ❌ Long-running processes - 10 min timeout på Vercel
+setInterval(() => cleanup(), 60000)  // Körs aldrig
+await longRunningTask()  // Timeout efter 10 min
+```
+
+**Vad som FUNGERAR:**
+
+```typescript
+// ✅ Stateless design - ingen lokal state
+async function handler(req: Request) {
+  const data = await fetchFromDB()  // Hämta state från extern källa
+  return process(data)
+}
+
+// ✅ Externa datastores
+import { Redis } from "@upstash/redis"
+const redis = Redis.fromEnv()
+await redis.set("key", value, { ex: 3600 })
+
+// ✅ Background jobs för långvariga tasks
+import { inngest } from "@/lib/inngest"
+await inngest.send({ name: "long.task", data: {...} })
+```
+
+**Pattern - Tänk så här:**
+- Varje request kan hamna på en ny instans
+- Allt lokalt försvinner mellan requests
+- Alla delade resurser måste vara externa (Redis, S3, databas)
+
+**Impact:** In-memory state fungerar lokalt men failar i produktion.
+
+---
+
+## 17. Upsert för Race Conditions
+
+> **Learning: 2026-01-27** | **Severity: HIGH**
+
+**Problem:** Check-then-create pattern skapar race conditions vid simultana requests.
+
+```typescript
+// ❌ FEL - Race condition: två requests kan skapa duplicates
+const existing = await prisma.exception.findUnique({
+  where: { providerId_date: { providerId, date } }
+})
+
+if (existing) {
+  await prisma.exception.update({
+    where: { id: existing.id },
+    data: { ...newData }
+  })
+} else {
+  await prisma.exception.create({
+    data: { providerId, date, ...newData }
+  })
+}
+// ⚠️ Två requests samtidigt → båda ser "finns inte" → duplicate key error
+
+// ✅ RÄTT - Upsert är atomär
+await prisma.exception.upsert({
+  where: {
+    providerId_date: {
+      providerId,
+      date
+    }
+  },
+  update: {
+    ...newData
+  },
+  create: {
+    providerId,
+    date,
+    ...newData
+  }
+})
+// Databasen hanterar concurrency - ingen race condition
+```
+
+**Varför?**
+- `upsert` är en enda atomär operation i databasen
+- Databasen hanterar locking/concurrency internt
+- Inga "gaps" där en annan request kan smyga in
+
+**Pattern - Använd upsert när:**
+- Du har en unique constraint (composite key)
+- Användare kan skicka samma data flera gånger (double-click, retry)
+- Operationen ska vara idempotent
+
+**Impact:** Eliminerar duplicate key errors och race conditions.
+
+---
+
+## 18. Behavior-Based vs Implementation-Based Testing
+
+> **Learning: 2026-01-21** | **Severity: MEDIUM**
+
+**Problem:** Implementation-based tester går sönder vid refactoring även om funktionaliteten är oförändrad.
+
+```typescript
+// ❌ IMPLEMENTATION-BASED - testar HOW
+describe('GET /api/providers', () => {
+  it('should call prisma with correct params', async () => {
+    await GET(mockRequest)
+
+    expect(prisma.provider.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isActive: true },
+        include: { services: true }
+      })
+    )
+  })
+})
+// Problem: Om du ändrar från include till select → test failar
+// Problem: Om du lägger till caching → test failar
+// Även om API:et returnerar exakt samma data!
+
+// ✅ BEHAVIOR-BASED - testar WHAT
+describe('GET /api/providers', () => {
+  it('should return active providers with services', async () => {
+    const response = await GET(mockRequest)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(2)
+    expect(data[0]).toMatchObject({
+      id: expect.any(String),
+      businessName: expect.any(String),
+      services: expect.any(Array)
+    })
+  })
+
+  it('should not expose sensitive data', async () => {
+    const response = await GET(mockRequest)
+    const data = await response.json()
+
+    expect(data[0].user?.passwordHash).toBeUndefined()
+    expect(data[0].user?.email).toBeUndefined()
+  })
+})
+// Överlever refactoring - testar API-kontraktet
+```
+
+**Fördelar med behavior-based:**
+- Tester överlever refactorings
+- Testar det användaren faktiskt bryr sig om (responsen)
+- Fångar säkerhetsproblem (känslig data som läcker)
+- Dokumenterar API-kontraktet
+
+**Impact:** Mindre test-underhåll, bättre förtroende vid refactoring.
+
+---
+
+## 19. E2E Tests Fångar API-Buggar
+
+> **Learning: 2026-01-28** | **Severity: MEDIUM**
+
+**Problem:** Unit tests med mockade beroenden missar integration-buggar.
+
+**Vad E2E-tester fångar som unit tests missar:**
+
+```typescript
+// Unit test - PASSERAR (mockar bort verkliga problem)
+vi.mock('@prisma/client')
+vi.mocked(prisma.booking.create).mockResolvedValue(mockBooking)
+
+it('should create booking', async () => {
+  const response = await POST(mockRequest)
+  expect(response.status).toBe(201)  // ✅ Passerar alltid
+})
+
+// Men i verkligheten...
+// ❌ Saknat fält i Zod schema
+// ❌ Foreign key constraint failure
+// ❌ Unique constraint violation
+// ❌ Felaktig date parsing
+// ❌ Missing authorization check
+```
+
+**E2E-test fångar dessa:**
+
+```typescript
+// E2E test - testar hela stacken
+test('should create booking with valid data', async ({ page }) => {
+  await page.goto('/providers/123')
+  await page.click('[data-testid="book-service"]')
+  await page.fill('[name="date"]', '2026-02-15')
+  await page.click('[type="submit"]')
+
+  // Denna assertion fångar ALLA problem i kedjan:
+  // - Zod validation
+  // - Prisma constraints
+  // - Auth checks
+  // - Response format
+  await expect(page.locator('[data-testid="booking-confirmation"]')).toBeVisible()
+})
+```
+
+**Pattern - E2E för kritiska flöden:**
+- Autentisering och authorization
+- Betalningsflöden
+- CRUD för kärndomäner (bookings, providers)
+- Användarresor med flera steg
+
+**Balans:**
+| Test Type | Vad det testar | Hastighet | Coverage |
+|-----------|----------------|-----------|----------|
+| Unit | Isolerad logik | Snabb | Djup |
+| Integration | API endpoints | Medium | Medium |
+| E2E | Hela flödet | Långsam | Bred |
+
+**Impact:** Fångar buggar som unit tests missar, särskilt validation och constraints.
 
 ---
 
