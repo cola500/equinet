@@ -2,7 +2,14 @@
 import { test as base } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+// Singleton pattern to avoid connection leaks
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 /**
  * Custom test fixture med afterEach cleanup
