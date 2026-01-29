@@ -24,27 +24,32 @@ export function Header() {
     <>
     <header className="bg-white border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-green-800">
+        <Link href="/" className="text-xl md:text-2xl font-bold text-green-800">
           Equinet
         </Link>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {!isAuthenticated ? (
             <>
               <Link href="/login">
-                <Button variant="ghost">Logga in</Button>
+                <Button variant="ghost" size="sm" className="h-11 px-3 md:px-4">
+                  Logga in
+                </Button>
               </Link>
               <Link href="/register">
-                <Button>Kom igång</Button>
+                <Button size="sm" className="h-11 px-3 md:px-4">
+                  <span className="hidden sm:inline">Kom igång</span>
+                  <span className="sm:hidden">Börja</span>
+                </Button>
               </Link>
             </>
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" className="h-11 px-3 md:px-4 max-w-[150px] md:max-w-none truncate">
                   {user?.name || user?.email}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="min-w-[200px]">
                 <DropdownMenuItem asChild>
                   <Link href={isProvider ? "/provider/dashboard" : "/dashboard"}>
                     Dashboard

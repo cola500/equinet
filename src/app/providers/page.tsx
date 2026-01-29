@@ -163,7 +163,7 @@ export default function ProvidersPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Hitta tjänsteleverantörer</h1>
+          <h1 className="text-2xl md:text-4xl font-bold mb-2">Hitta tjänsteleverantörer</h1>
           <p className="text-gray-600 mb-8">
             Bläddra bland professionella hovslagare, veterinärer och andra hästtjänster
           </p>
@@ -171,13 +171,13 @@ export default function ProvidersPage() {
           {/* Search Bar */}
           <div className="mb-8">
             <div className="flex flex-col gap-4">
-              <div className="flex gap-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                 <div className="flex-1 relative">
                   <Input
-                    placeholder="Sök efter företagsnamn eller beskrivning..."
+                    placeholder="Sök efter företagsnamn..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full"
+                    className="w-full h-11"
                   />
                   {isSearching && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -185,24 +185,27 @@ export default function ProvidersPage() {
                     </div>
                   )}
                 </div>
-                <Input
-                  placeholder="Filtrera på ort..."
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-48"
-                />
-                <Input
-                  placeholder="Besöker område..."
-                  value={visitingArea}
-                  onChange={(e) => setVisitingArea(e.target.value)}
-                  className="w-48"
-                />
+                <div className="flex gap-3 md:gap-4">
+                  <Input
+                    placeholder="Filtrera på ort..."
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full md:w-40 lg:w-48 h-11"
+                  />
+                  <Input
+                    placeholder="Besöker område..."
+                    value={visitingArea}
+                    onChange={(e) => setVisitingArea(e.target.value)}
+                    className="w-full md:w-40 lg:w-48 h-11"
+                  />
+                </div>
                 {(search || city || visitingArea) && (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleClearFilters}
                     data-testid="clear-filters-button"
+                    className="h-11 w-full md:w-auto"
                   >
                     Rensa
                   </Button>

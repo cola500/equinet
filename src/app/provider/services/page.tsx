@@ -203,9 +203,9 @@ export default function ProviderServicesPage() {
 
   return (
     <ProviderLayout>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Mina tjänster</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Mina tjänster</h1>
             <p className="text-gray-600 mt-1">
               Hantera de tjänster du erbjuder
             </p>
@@ -353,7 +353,7 @@ export default function ProviderServicesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-6">
             {services.map((service) => (
               <Card key={service.id} data-testid="service-item">
                 <CardHeader>

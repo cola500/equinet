@@ -11,24 +11,24 @@ export default function Home() {
       <Header />
 
       {/* Hero Section */}
-      <main className="container mx-auto px-4 py-20">
+      <main className="container mx-auto px-4 py-12 md:py-20">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
             Boka hästtjänster enkelt och smidigt
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 px-2">
             Equinet är din plattform för att hitta och boka hovslagare,
             veterinärer, hästterapeuter och andra professionella tjänster
             för din häst.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/register">
-              <Button size="lg" className="text-lg px-8">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4 sm:px-0">
+            <Link href="/register" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8">
                 Registrera dig gratis
               </Button>
             </Link>
-            <Link href="/providers">
-              <Button size="lg" variant="outline" className="text-lg px-8">
+            <Link href="/providers" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8">
                 Hitta tjänster
               </Button>
             </Link>
@@ -36,7 +36,7 @@ export default function Home() {
         </div>
 
         {/* Features Section */}
-        <div className="mt-32 grid md:grid-cols-3 gap-12">
+        <div className="mt-16 md:mt-32 grid md:grid-cols-3 gap-8 md:gap-12">
           <div className="text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
@@ -108,11 +108,11 @@ export default function Home() {
         <AnnouncementPreview />
 
         {/* CTA Section for Providers */}
-        <div className="mt-32 bg-green-800 text-white rounded-2xl p-12 text-center">
-          <h2 className="text-3xl font-bold mb-4">
+        <div className="mt-16 md:mt-32 bg-green-800 text-white rounded-2xl p-6 md:p-12 text-center mx-2 md:mx-0">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Är du tjänsteleverantör?
           </h2>
-          <p className="text-lg mb-6 text-green-100">
+          <p className="text-base md:text-lg mb-6 text-green-100">
             Gå med i Equinet och nå fler kunder. Hantera dina bokningar enkelt i vår plattform.
           </p>
           <Link href="/register">

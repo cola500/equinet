@@ -152,26 +152,26 @@ export default function ProviderBookingsPage() {
 
   return (
     <ProviderLayout>
-      <div className="mb-8">
-          <h1 className="text-3xl font-bold">Bokningar</h1>
+      <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold">Bokningar</h1>
           <p className="text-gray-600 mt-1">Hantera dina kundbokningar</p>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-wrap gap-2 md:gap-4 mb-6">
           <button
             onClick={() => setFilter("pending")}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base min-h-[44px] ${
               filter === "pending"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
             }`}
           >
-            Väntar på svar ({bookings.filter((b) => b.status === "pending").length})
+            Väntar ({bookings.filter((b) => b.status === "pending").length})
           </button>
           <button
             onClick={() => setFilter("confirmed")}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base min-h-[44px] ${
               filter === "confirmed"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -181,7 +181,7 @@ export default function ProviderBookingsPage() {
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base min-h-[44px] ${
               filter === "all"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -216,7 +216,7 @@ export default function ProviderBookingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid gap-4 md:grid-cols-2 md:gap-6">
                     <div className="space-y-2">
                       <h3 className="font-semibold text-sm text-gray-700">
                         Bokningsdetaljer

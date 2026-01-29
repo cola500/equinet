@@ -105,7 +105,7 @@ export default function RegisterPage() {
             {/* User Type Selection */}
             <div className="space-y-2">
               <Label>Jag är en</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <button
                   type="button"
                   data-testid="user-type-customer"
@@ -113,7 +113,7 @@ export default function RegisterPage() {
                     setUserType("customer")
                     form.setValue("userType", "customer")
                   }}
-                  className={`p-4 border-2 rounded-lg transition-all ${
+                  className={`p-4 border-2 rounded-lg transition-all min-h-[80px] ${
                     userType === "customer"
                       ? "border-blue-600 bg-blue-50"
                       : "border-gray-200 hover:border-gray-300"
@@ -132,7 +132,7 @@ export default function RegisterPage() {
                     setUserType("provider")
                     form.setValue("userType", "provider")
                   }}
-                  className={`p-4 border-2 rounded-lg transition-all ${
+                  className={`p-4 border-2 rounded-lg transition-all min-h-[80px] ${
                     userType === "provider"
                       ? "border-blue-600 bg-blue-50"
                       : "border-gray-200 hover:border-gray-300"
