@@ -177,11 +177,13 @@ Under **Mina hästar** kan du registrera och hantera alla dina hästar.
 - Färg
 - Kön (sto, valack, hingst)
 - Särskilda behov och medicinsk information
+- Foto (dra och släpp eller klicka för att ladda upp)
 
 **Fördelar med att registrera hästar:**
 - Vid bokning kan du välja häst från en dropdown istället för att skriva manuellt
 - All bokningshistorik kopplas till rätt häst
 - Hälsotidslinjen ger en samlad bild av vård och behandlingar
+- Foto gör det lättare att identifiera hästen
 
 Borttagna hästar tas bort mjukt (dold men inte raderad) så att bokningshistoriken bevaras.
 
@@ -256,6 +258,7 @@ Du ser din framgång som en procent-indikator. När alla steg är klara är du r
 
 Under **Min profil** fyller du i:
 
+- **Profilbild** - ladda upp en bild som visas för kunder (dra och släpp eller klicka)
 - **Företagsnamn** - det namn kunder ser
 - **Beskrivning** - berätta om din verksamhet och erfarenhet
 - **Adress, ort, postnummer** - din utgångspunkt (används för avståndberäkning)

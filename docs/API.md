@@ -1386,6 +1386,84 @@ Hämta körvägsbeskrivning från OSRM.
 
 ---
 
+## Dataexport (GDPR)
+
+### GET /api/export/my-data
+
+Exportera all anvandardata (GDPR Art 20 portabilitet).
+
+**Auth:** Required
+**Query:** `?format=csv` (valfritt, default JSON)
+**Response (JSON):** `{ exportedAt, user, horses, bookings, horseNotes, reviews, provider? }`
+**Response (CSV):** Content-Disposition: attachment med bokningar + anteckningar.
+
+### GET /api/horses/:id/export
+
+Exportera hastdata med fullstandig tidslinje.
+
+**Auth:** Required (agare)
+**Query:** `?format=csv`
+**Response (JSON):** `{ horse, bookings, notes, timeline }`
+
+---
+
+## Hastpass (delbar lank)
+
+### POST /api/horses/:id/passport
+
+Skapa en delbar hastpass-lank (30 dagars expiry).
+
+**Auth:** Required (agare)
+**Response:** `201` `{ token, url, expiresAt }`
+
+### GET /api/passport/:token
+
+Hamta hastdata via publik token (ingen auth).
+
+**Auth:** Inte required
+**Response:** `{ horse, timeline, expiresAt }`
+**Integritetsskydd:** Bara veterinar-, hovslagare- och medicinanteckningar visas.
+
+---
+
+## Bilduppladdning
+
+### POST /api/upload
+
+Ladda upp en bild (FormData: file + bucket + entityId).
+
+**Auth:** Required
+**Buckets:** avatars, horses, services
+**Validering:** JPEG/PNG/WebP, max 5MB. IDOR-skydd.
+**Response:** `201` `{ id, url, path }`
+
+### DELETE /api/upload/:id
+
+**Auth:** Required (uppladdaren)
+**Response:** `200` `{ success: true }`
+
+---
+
+## Fortnox-integration
+
+### GET /api/integrations/fortnox/connect
+
+Starta Fortnox OAuth-flode. **Auth:** Required (leverantor). Redirect.
+
+### GET /api/integrations/fortnox/callback
+
+OAuth callback. Byter code mot tokens, sparar krypterat. Redirect.
+
+### POST /api/integrations/fortnox/disconnect
+
+Koppla bort Fortnox. **Auth:** Required (leverantor). `{ success: true }`
+
+### POST /api/integrations/fortnox/sync
+
+Synka osynkade fakturor. **Auth:** Required (leverantor). `{ synced, failed, total }`
+
+---
+
 ## Gemensamma felkoder
 
 | Kod | Betydelse |
@@ -1416,4 +1494,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-01-30*
+*Senast uppdaterad: 2026-01-30 (Fas 3: Export, Hastpass, Bilduppladdning, Fortnox)*

@@ -1,0 +1,146 @@
+// Supabase Storage client for file uploads
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import { logger } from "@/lib/logger"
+
+const BUCKET_NAME = "equinet-uploads"
+
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+type UploadBucket = "avatars" | "horses" | "services"
+
+interface UploadResult {
+  path: string
+  url: string
+}
+
+interface UploadError {
+  message: string
+  code: "INVALID_TYPE" | "TOO_LARGE" | "UPLOAD_FAILED" | "NOT_CONFIGURED"
+}
+
+let supabaseClient: SupabaseClient | null = null
+
+function getSupabase(): SupabaseClient | null {
+  if (supabaseClient) return supabaseClient
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    return null
+  }
+
+  supabaseClient = createClient(url, key)
+  return supabaseClient
+}
+
+/**
+ * Validate file before upload.
+ */
+export function validateFile(
+  mimeType: string,
+  sizeBytes: number
+): UploadError | null {
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    return {
+      message: `Filtypen ${mimeType} stöds inte. Tillåtna: JPEG, PNG, WebP.`,
+      code: "INVALID_TYPE",
+    }
+  }
+
+  if (sizeBytes > MAX_FILE_SIZE) {
+    return {
+      message: `Filen är för stor (${Math.round(sizeBytes / 1024 / 1024)}MB). Max 5MB.`,
+      code: "TOO_LARGE",
+    }
+  }
+
+  return null
+}
+
+/**
+ * Upload a file to Supabase Storage.
+ * Accepts File (from FormData) or Buffer.
+ */
+export async function uploadFile(
+  file: File | Buffer,
+  bucket: UploadBucket,
+  fileName: string,
+  mimeType: string
+): Promise<{ data?: UploadResult; error?: UploadError }> {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    logger.warn("Supabase not configured, using mock upload")
+    // Mock upload for development
+    const mockPath = `${bucket}/${fileName}`
+    const mockUrl = `/mock-uploads/${mockPath}`
+    return { data: { path: mockPath, url: mockUrl } }
+  }
+
+  const path = `${bucket}/${fileName}`
+
+  // Convert File to Buffer if needed (Supabase SDK accepts both)
+  let uploadBody: Buffer | File = file
+  if (file instanceof File) {
+    const arrayBuffer = await file.arrayBuffer()
+    uploadBody = Buffer.from(arrayBuffer)
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(path, uploadBody, {
+      contentType: mimeType,
+      upsert: true,
+    })
+
+  if (uploadError) {
+    logger.error("Supabase upload failed", uploadError as any)
+    return {
+      error: {
+        message: "Kunde inte ladda upp filen. Försök igen.",
+        code: "UPLOAD_FAILED",
+      },
+    }
+  }
+
+  const { data: publicUrl } = supabase.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(path)
+
+  return {
+    data: {
+      path,
+      url: publicUrl.publicUrl,
+    },
+  }
+}
+
+/**
+ * Delete a file from Supabase Storage.
+ */
+export async function deleteFile(path: string): Promise<boolean> {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    logger.warn("Supabase not configured, mock delete")
+    return true
+  }
+
+  const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove([path])
+
+  if (error) {
+    logger.error("Supabase delete failed", error as any)
+    return false
+  }
+
+  return true
+}

@@ -562,6 +562,15 @@ Före merge?          -> quality-gate
 - **Status-transitions maste kontrolleras**: `VALID_STATUS_TRANSITIONS`-map i PUT-endpointen forhindrar ogiltiga overgangar. Terminal states (completed, cancelled) ar permanenta.
 - **Svenska tecken pa mobil**: Alla 6 UI-sidor saknade a, a, o (~60 strangar). Systematiskt problem vid mobil-forst-utveckling utan svenskt tangentbord.
 
+### Ecosystem-integration / Fas 3 (2026-01-30)
+- **Gateway-pattern skalade**: `IAccountingGateway` foljde exakt samma monster som `IPaymentGateway`. Att kopiera beprovat monster sparade tid och sakerstallde konsistens. Mock-implementation + factory-funktion gor det trivialt att byta till riktig Fortnox.
+- **FormData i vitest ar fragilt**: JSDOM har begransat stod for `FormData` + `File`. Upload-tester maste mocka `request.formData()` direkt istallet for att skicka riktig FormData. Dokumentera detta monster.
+- **`select` skyddar mot PII-lackor**: Export-endpoint anvander `select` (inte `include`) for att aldrig hamta `passwordHash`. TDD fangade detta direkt.
+- **AES-256-GCM for token-kryptering**: Authenticated encryption forhindrar bade lasning och tampering. Random IV per kryptering ger unika ciphertexter. Dev-fallback med deterministisk nyckel -- ENCRYPTION_KEY obligatoriskt i produktion.
+- **Publik data kraver integritetsskydd**: Hastpasset (publik URL utan auth) visar bara veterinar/hovslagare/medicin-anteckningar. Allmanna och skadeanteckningar doljs. Filtreringen sker i DB-query (WHERE), inte i JS.
+- **CSV-export utan externa beroenden**: `objectsToCsv` utility med korrekt escaping (komma, citattecken, newlines) raktar for GDPR Art 20 utan att lagga till dependencies.
+- **Supabase Storage med mock-fallback**: `uploadFile()` returnerar mock-URL om Supabase inte ar konfigurerat. Utveckling fungerar utan extern setup.
+
 ---
 
 ## Automated Quality Gates

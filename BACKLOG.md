@@ -18,7 +18,10 @@
 **Rutter:** RouteOrders, ruttplanering (Haversine + Nearest Neighbor), stopp-for-stopp, ETA, kartvy (Leaflet/OSM), announcements, geo-matching
 **Gruppbokning:** GroupBookingRequest + Participant-modeller, 7 API-endpoints (CRUD + join + available + match), GroupBookingService med sekventiell bokningslogik, invite codes, 6 UI-sidor (kund + leverantor), notifikationer
 **Notifikationer:** In-app notifikationer (klocka + dropdown + polling), automatiska aterbokningspaminnelser (cron), betalningsabstraktion (gateway pattern)
-**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 860+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
+**Dataexport:** GDPR-dataexport (JSON + CSV), hastpass med delbara lankar (30d expiry, integritetsskydd)
+**Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad pa hastprofil (foto) och leverantorsprofil (profilbild)
+**Bokforing:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
+**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 890+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
 
@@ -34,11 +37,12 @@
 
 ### Tier 2 -- Medellang sikt
 
-| Feature | Beskrivning |
-|---------|-------------|
-| Bilduppladdning | Profilbilder och tjänstebilder. Kräver beslut om lagring (D-6). |
-| Betalningsintegration | Swish eller Stripe via PaymentGateway-interface. Mock-gateway finns, behover bara ny implementation. |
-| Push/SMS-notifikationer | Komplement till in-app + email. Web Push (gratis) + SMS (Twilio) for kritiska handelser. |
+| Feature | Beskrivning | Status |
+|---------|-------------|--------|
+| ~~Bilduppladdning~~ | Supabase Storage, drag-and-drop, client-side komprimering | **Implementerad** |
+| ~~Bokforingsintegration~~ | IAccountingGateway + FortnoxGateway + MockAccountingGateway, OAuth, token-kryptering | **Implementerad** |
+| Betalningsintegration (Swish/Stripe) | Riktig betalning via PaymentGateway-interface. Mock-gateway finns. | Ej startad |
+| Push/SMS-notifikationer | Komplement till in-app + email. Web Push (gratis) + SMS (Twilio) for kritiska handelser. | Ej startad |
 
 ### Tier 3 -- Langsiktigt
 
@@ -57,9 +61,9 @@
 | D-3 | Realtid-strategi | Polling 30s (MVP) / SSE / WebSockets (Pusher) | Realtidsspårning |
 | D-4 | Notifikations-strategi | Email (redan finns) / Web Push (gratis) / SMS (Twilio, $0.01/sms) | Push/SMS-notifikationer |
 | D-5 | Ruttoptimeringsalgoritm | Nearest Neighbor (nuvarande) / 2-opt / Google Directions API | F-1.2 |
-| D-6 | Bildlagring | Supabase Storage / Cloudinary / S3 | Bilduppladdning |
+| ~~D-6~~ | ~~Bildlagring~~ | ~~Supabase Storage~~ | ~~Bilduppladdning~~ -- **beslut: Supabase Storage** |
 
-Borttagna beslut: D-1 (Kart-API = Leaflet/OSM, redan implementerat), D-2 (State management = ej behövt).
+Borttagna beslut: D-1 (Kart-API = Leaflet/OSM, redan implementerat), D-2 (State management = ej behövt), D-6 (Bildlagring = Supabase Storage, implementerat).
 
 ---
 
@@ -99,8 +103,9 @@ Framtida kostnader: Swish/Stripe (~2.9% + $0.30/transaktion), Twilio SMS ($0.01/
 
 ## Nästa steg
 
-- **Fas 2 klar:** Hästhälsotidslinje + leverantörsverifiering + gruppbokning -- alla implementerade
-- **Nästa feature-sprint:** Tier 1 polish (F-1.3 drag-and-drop, F-4.2 koordinat-precision)
-- **Före produktion:** Betalningsintegration, bilduppladdning, push-notifikationer
-- **Framtida "wow-faktor":** Realtidsspårning (Tier 3) -- kräver kartvy som foundation (redan klar)
+- **Fas 3 klar:** Dataexport, hastpass, bilduppladdning, Fortnox-integration -- alla implementerade
+- **Nasta fas:** Fortnox sandbox-verifiering, Supabase Storage bucket-setup, svenska tecken-audit
+- **Fore produktion:** Betalningsintegration (Swish/Stripe), push-notifikationer, E2E for nya features
+- **Tier 1 polish:** F-1.3 drag-and-drop, F-4.2 koordinat-precision
+- **Framtida "wow-faktor":** Realtidssparning (Tier 3) -- kraver kartvy som foundation (redan klar)
 - **Gruppbokning vidareutveckling:** Geo-filtrering i /available, E2E-tester, eventuellt stallkoncept (Stable-modell)

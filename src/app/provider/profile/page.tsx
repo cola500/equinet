@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 interface ProviderProfile {
   id: string
@@ -23,6 +24,7 @@ interface ProviderProfile {
   latitude?: number | null
   longitude?: number | null
   serviceAreaKm?: number | null
+  profileImageUrl?: string | null
   user: {
     firstName: string
     lastName: string
@@ -319,6 +321,25 @@ export default function ProviderProfilePage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Profile Image */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Profilbild</CardTitle>
+              <CardDescription>
+                Ladda upp en profilbild som visas för kunder
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ImageUpload
+                bucket="avatars"
+                entityId={profile.id}
+                currentUrl={profile.profileImageUrl}
+                onUploaded={(url) => setProfile({ ...profile, profileImageUrl: url })}
+                className="max-w-xs"
+              />
+            </CardContent>
+          </Card>
 
           {/* Personal Information Card */}
           <Card className="mb-6">

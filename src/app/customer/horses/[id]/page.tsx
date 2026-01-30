@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { SharePassportDialog } from "./SharePassportDialog"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 // --- Types ---
 
@@ -44,6 +46,7 @@ interface Horse {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  photoUrl: string | null
 }
 
 interface TimelineItem {
@@ -210,17 +213,31 @@ export default function HorseProfilePage() {
       {horse && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-2xl">{horse.name}</CardTitle>
-            <p className="text-gray-600">
-              {[
-                horse.breed,
-                horse.color,
-                horse.gender && GENDER_LABELS[horse.gender],
-                horse.birthYear && `f. ${horse.birthYear}`,
-              ]
-                .filter(Boolean)
-                .join(" · ") || "Ingen extra info"}
-            </p>
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <ImageUpload
+                  bucket="horses"
+                  entityId={horse.id}
+                  currentUrl={horse.photoUrl}
+                  onUploaded={(url) => setHorse({ ...horse, photoUrl: url })}
+                  className="w-32 flex-shrink-0"
+                />
+                <div>
+                  <CardTitle className="text-2xl">{horse.name}</CardTitle>
+                  <p className="text-gray-600">
+                    {[
+                      horse.breed,
+                      horse.color,
+                      horse.gender && GENDER_LABELS[horse.gender],
+                      horse.birthYear && `f. ${horse.birthYear}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "Ingen extra info"}
+                  </p>
+                </div>
+              </div>
+              <SharePassportDialog horseId={horse.id} horseName={horse.name} />
+            </div>
           </CardHeader>
           {horse.specialNeeds && (
             <CardContent>

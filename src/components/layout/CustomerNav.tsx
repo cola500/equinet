@@ -19,6 +19,7 @@ const navItems = [
   { href: "/customer/bookings", label: "Mina bokningar" },
   { href: "/customer/group-bookings", label: "Gruppbokningar", matchPrefix: "/customer/group-bookings" },
   { href: "/customer/horses", label: "Mina hästar" },
+  { href: "/customer/export", label: "Exportera data" },
   { href: "/customer/profile", label: "Min profil" },
 ]
 

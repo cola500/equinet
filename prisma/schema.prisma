@@ -46,6 +46,7 @@ model User {
   horseNotes                HorseNote[] @relation("HorseNoteAuthor")
   groupBookingRequests      GroupBookingRequest[]
   groupBookingParticipations GroupBookingParticipant[]
+  uploads                   Upload[]
 
   @@index([latitude, longitude]) // For geo-queries
 }
@@ -86,6 +87,7 @@ model Provider {
   reviews                Review[]
   verifications          ProviderVerification[]
   groupBookingRequests   GroupBookingRequest[]
+  fortnoxConnection      FortnoxConnection?
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -198,6 +200,7 @@ model Horse {
   color        String?  // Färg (t.ex. "Fux", "Brun", "Skimmel")
   gender       String?  // "mare" | "gelding" | "stallion" (sto/valack/hingst)
   specialNeeds String?  // Medicinska behov, allergier, temperament etc.
+  photoUrl     String?  // URL to horse photo (Supabase Storage)
 
   isActive     Boolean  @default(true) // Soft delete
   createdAt    DateTime @default(now())
@@ -206,8 +209,50 @@ model Horse {
   bookings     Booking[]
   notes        HorseNote[]
   groupBookingParticipants GroupBookingParticipant[]
+  passportTokens HorsePassportToken[]
 
   @@index([ownerId, isActive])
+}
+
+model HorsePassportToken {
+  id        String   @id @default(cuid())
+  horseId   String
+  horse     Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([horseId])
+}
+
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  bucket    String   // "avatars", "horses", "services"
+  path      String   // Supabase Storage path
+  url       String   // Public URL
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([bucket, path])
+}
+
+model FortnoxConnection {
+  id            String   @id @default(cuid())
+  providerId    String   @unique
+  provider      Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  accessToken   String   // Encrypted
+  refreshToken  String   // Encrypted
+  expiresAt     DateTime
+  companyId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([providerId])
 }
 
 model Payment {
@@ -229,6 +274,11 @@ model Payment {
   // Kvitto/Faktura
   invoiceNumber     String?   @unique
   invoiceUrl        String?   // URL till PDF-kvitto
+
+  // Fortnox integration
+  fortnoxInvoiceId  String?
+  fortnoxStatus     String?   // "draft" | "sent" | "paid"
+  sentToFortnoxAt   DateTime?
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

@@ -230,7 +230,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller (18 st):**
+**Huvudmodeller (21 st):**
 - **User** - Användarkonton (kunder + leverantörer + admin)
 - **Provider** - Leverantörsprofiler med företagsinformation och verifieringsstatus
 - **Service** - Tjänster som leverantörer erbjuder
@@ -249,6 +249,9 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **ProviderVerification** - Verifieringsansökningar (utbildning, organisation, erfarenhet)
 - **GroupBookingRequest** - Grupprequests för stallgemenskaper (invite code, status, period)
 - **GroupBookingParticipant** - Deltagare i grupprequests (hästinfo, status, koppling till bokning)
+- **HorsePassportToken** - Delbara hästpass-länkar med 30 dagars expiry
+- **Upload** - Uppladdade filer (bilder) med Supabase Storage-tracking
+- **FortnoxConnection** - Fortnox OAuth-tokens (krypterade) per leverantör
 
 Se `prisma/schema.prisma` för fullständig definition.
 
@@ -282,8 +285,9 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ### Kundfunktioner
 - Leverantörsgalleri med sökning och filtrera
-- **Hästregister**: Lägg till, redigera och ta bort hästar med namn, ras, födelseår, kön och specialbehov
+- **Hästregister**: Lägg till, redigera och ta bort hästar med namn, ras, födelseår, kön, specialbehov och foto
 - **Hästhälsotidslinje**: Samlad historik per häst -- bokningar + anteckningar (veterinär, hovslagare, skada, medicin, allmänt). Kategorifilter och färgkodad tidslinje.
+- **Hästpass (delbar länk)**: Skapa delbar länk till hästens profil och vårdhistorik. 30 dagars expiry, integritetsskydd (privata anteckningar döljs). Print-vänlig layout.
 - Traditionella bokningar med tillgänglighetskontroll och hästval (dropdown eller fritext)
 - Flexibla rutt-beställningar (datum-spann, prioritet)
 - Avboka bokningar med bekräftelsedialog
@@ -291,6 +295,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Kundprofil
 - **Recensioner & betyg**: Lämna, redigera och ta bort recensioner för avslutade bokningar
 - **Gruppbokningar**: Skapa grupprequests, dela invite code, se deltagare, lämna grupp
+- **Dataexport (GDPR)**: Exportera all personlig data som JSON eller CSV (profil, hästar, bokningar, anteckningar, recensioner)
 
 ### Gruppbokning (stallgemenskaper)
 - Kund skapar grupprequest med tjänsttyp, plats och datumperiod
@@ -338,6 +343,25 @@ Se `prisma/schema.prisma` för fullständig definition.
 - MockPaymentGateway for utveckling/demo
 - Factory-funktion for att byta implementation via env-variabel
 
+### Bilduppladdning
+- Supabase Storage-integration med public bucket (equinet-uploads)
+- Drag-and-drop + klick-uppladdning med preview
+- Client-side komprimering (max 1MB via browser-image-compression)
+- Stöd för JPEG, PNG, WebP (max 5MB)
+- IDOR-skydd vid uppladdning (verifierar ägarskap)
+- Återanvändbar ImageUpload-komponent
+- Inkopplad på hästprofilen (hästfoto) och leverantörsprofilen (profilbild)
+
+### Bokföringsabstraktion (Fortnox)
+- IAccountingGateway interface (samma mönster som PaymentGateway)
+- MockAccountingGateway för utveckling/demo
+- FortnoxGateway med OAuth 2.0 Authorization Code Grant
+- Token-kryptering med AES-256-GCM
+- Automatisk token-refresh vid expiry
+- InvoiceMapper (Booking -> Fortnox-faktura)
+- Manuell faktura-synkning för osynkade bokningar
+- Provider settings-sida för att koppla/koppla bort
+
 ### Email-notifikationer
 - Bokningsbekräftelse till kunder
 - Statusändringsnotifikationer (accepterad, avvisad, klar)
@@ -354,7 +378,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**860+ tester** (66 E2E + 792 unit/integration) med **70% coverage**.
+**900+ tester** (66 E2E + 901 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -377,9 +401,9 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 ### Test Coverage
 
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
-- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, PaymentGateway, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
+- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, PaymentGateway, AccountingGateway, InvoiceMapper, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, verification-requests, admin-verifications, group-bookings, cron)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -520,7 +544,6 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
 - **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
-- Bilduppladdning (profiler, tjänster)
 - Betalningsintegration (Swish/Stripe via PaymentGateway)
 
 Se `BACKLOG.md` för fullständig feature-lista.

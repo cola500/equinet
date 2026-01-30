@@ -56,7 +56,7 @@ Befintliga backlog-items som forskningen stödjer.
 | Swish dominerar, jagande efter betalning | Betalningsintegration (Tier 2) | Hög | Gateway-abstraktion klar, riktig provider kvar | Erik, Anna, Marknadsanalys |
 | Vill ha påminnelser om besök | In-app notifikationer + email | Hög | **Implementerat** | Anna, Erik |
 | Vill ha påminnelser om besök | Push/SMS-notifikationer | Medium | Kvar (komplement till in-app) | Anna, Erik |
-| Vill se foton på arbete | Bilduppladdning (Tier 2) | Medium | Ej startad | Anna |
+| Vill se foton på arbete | Bilduppladdning (hästfoto + profilbild) | Medium | **Implementerat** | Anna |
 | Bättre ruttoptimering sparar mer | F-1.2: Förbättrad ruttoptimering | Medium | Ej startad | Erik |
 | Vill justera ruttordning manuellt | F-1.3: Drag-and-drop stopp | Medium | Ej startad | Erik |
 
@@ -137,7 +137,7 @@ Features som gör Equinet unikt jämfört med potentiella konkurrenter.
 |-----------|---------|-----------|
 | 7 | **Fortnox-integration** | Sparar tid för leverantörer men nischad. Kräver API-arbete. |
 | 8 | **Dataexport / Hästpass** | Minskar adoption-barriär. Viktigt för förtroende långsiktigt. |
-| 9 | **Bilduppladdning** | "Nice to have" -- inte dagligt problem. Tier 2-backlog. |
+| ~~9~~ | ~~**Bilduppladdning**~~ | Implementerat -- hästfoto på hästprofilen, profilbild på leverantörsprofilen. ImageUpload-komponent med drag-and-drop, komprimering och Supabase Storage. |
 
 ---
 

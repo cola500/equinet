@@ -1,6 +1,15 @@
 echo "🔒 Running pre-push quality checks..."
 echo ""
 
+# Check for missing Swedish characters (å, ä, ö)
+echo "🇸🇪 Checking Swedish characters..."
+npm run check:swedish || {
+  echo "❌ Swedish character issues found! Fix before pushing."
+  exit 1
+}
+
+echo ""
+
 # Run unit tests
 echo "📊 Running unit tests..."
 npm run test:run || {
