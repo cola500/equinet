@@ -73,12 +73,11 @@ Behov som identifierats i forskningen men som inte finns i nuvarande backlog.
 **Vad som byggdes:** Leverantörer sätter `recommendedIntervalWeeks` per tjänst. Daglig Vercel Cron hittar förfallna bokningar och skickar in-app notifikation + email med "Boka igen"-länk. En påminnelse per bokning, inga dubbletter.
 **Implementation:** `ReminderService` (domain), `NotificationService`, cron-endpoint (`/api/cron/send-reminders`), email-template (`rebookingReminderEmail`), Select-dropdown i tjänstehantering.
 
-### 2. Gruppbokning för stallgemenskaper
-**Behov:** Hästägare i samma stall vill samordna leverantörsbesök men koordinering via SMS-grupp är kaotiskt.
-**Lösning:** En hästägare skapar en gruppbokning för stallet. Andra ägare kan "haka på". Leverantören ser alla hästar på samma plats.
+### ~~2. Gruppbokning för stallgemenskaper~~ -- IMPLEMENTERAT
+**Status:** Implementerat (2026-01-30)
+**Vad som byggdes:** GroupBookingRequest + GroupBookingParticipant-modeller, 7 API-endpoints (CRUD + join + available + match + participant removal), GroupBookingService med sekventiell bokningslogik, 6 UI-sidor (4 kund + 2 leverantör), kryptografiskt säker 8-teckens invite code (utan tvetydiga tecken), atomic operations med $transaction vid matchning, notifikationer vid join/match/cancel/leave.
+**Implementation:** `GroupBookingRequest`/`GroupBookingParticipant` (schema), `group-bookings/*` (API), `GroupBookingService` (domain), `customer/group-bookings/*` (UI), `provider/group-bookings/*` (UI), `invite-code.ts` (utility), CustomerNav + ProviderNav uppdaterade.
 **Källa:** Anna ("fyra ägare, samma dag, kaos att koordinera")
-**Komplexitet:** Medium-hög -- ny bokningsmodell, stallkoncept
-**Värde:** Högt -- leverantörer sparar restid, kunder sparar koordineringstid
 
 ### ~~3. Leverantörsverifiering~~ -- IMPLEMENTERAT
 **Status:** Implementerat (2026-01-30)
@@ -122,7 +121,7 @@ Dessa features validerades starkt av forskningen och byggde på befintlig infras
 
 **Kvarstår från original-planen:** Push/SMS-notifikationer (komplement till in-app, kräver Twilio/Web Push). Riktig Swish/Stripe-koppling (kräver teamdiskussion om provider).
 
-### Fas 2: Differentiering -- DELVIS GENOMFÖRD (2026-01-30)
+### Fas 2: Differentiering -- GENOMFÖRD (2026-01-30)
 
 Features som gör Equinet unikt jämfört med potentiella konkurrenter.
 
@@ -130,7 +129,7 @@ Features som gör Equinet unikt jämfört med potentiella konkurrenter.
 |-----------|---------|--------|
 | 4 | **Hästhälsotidslinje** | Implementerat -- HorseNote-modell, CRUD API, mergeTimeline, färgkodad tidslinje, kategorifilter, provider read-only (begränsade kategorier för integritet). |
 | 5 | **Leverantörsverifiering** | Implementerat -- ProviderVerification-modell, ansöknings-API (max 5 pending), admin-granskning (approve/reject i $transaction), VerificationBadge, isVerified i provider-galleriet. |
-| 6 | **Gruppbokning** | Kvar -- sparad till separat sprint (mest komplex, kräver stallkoncept och ny bokningsmodell). |
+| 6 | **Gruppbokning** | Implementerat -- GroupBookingRequest/Participant-modeller, 7 API-endpoints, GroupBookingService med sekventiell bokningslogik, invite codes, 6 UI-sidor, notifikationer. |
 
 ### Fas 3: Ecosystem-integration (långsiktigt)
 
@@ -159,5 +158,5 @@ Båda personerna betonade enkelhet. Erik: "som SMS fast smartare". Anna: "boka f
 ---
 
 *Syntesanalys genomförd: Januari 2026*
-*Senast uppdaterad: 2026-01-30 (Fas 1 + Fas 2 delvis implementerad)*
+*Senast uppdaterad: 2026-01-30 (Fas 1 + Fas 2 genomförd)*
 *Baserad på: Marknadsanalys, intervju med Erik Skog (leverantör), intervju med Anna Lindqvist (kund)*

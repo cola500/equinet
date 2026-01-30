@@ -554,6 +554,14 @@ Före merge?          -> quality-gate
 - **Kontext avgör om ett mönster är rätt**: `// Silently fail` var rimligt i en dropdown (NotificationBell) men fel på en dedikerad sida där användaren förväntar sig feedback. Kopiera inte mönster blint -- anpassa till kontexten.
 - **Workflow som fungerar**: Mobilen levererar snabbt, desktop granskar och polerar. Bra arbetsfördelning.
 
+### Gruppbokning for stallgemenskaper (2026-01-30)
+- **Schema-forst ger tydlig struktur**: Att borja med `GroupBookingRequest` + `GroupBookingParticipant` i Prisma och bygga uppat (API -> domain service -> UI) gav naturlig ordning och tidig typsakerhet.
+- **Domain service for komplex matchning**: `GroupBookingService.matchRequest()` skapar sekventiella bokningar (09:00-09:45, 09:45-10:30, etc.) i en `$transaction`. Att isolera detta fran route-handleren gor logiken testbar.
+- **Invite code utan tveetydiga tecken**: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (utan 0/O, 1/I/L) gor koden lattare att dela verbalt. `crypto.randomBytes()` for kryptografisk sakerhet.
+- **Push/pull-monster**: Kunder pushar requests, leverantorer pullar och matchar -- annorlunda fran vanlig bokning dar kunden valjer leverantor. Kraver separata UI-floden.
+- **Status-transitions maste kontrolleras**: `VALID_STATUS_TRANSITIONS`-map i PUT-endpointen forhindrar ogiltiga overgangar. Terminal states (completed, cancelled) ar permanenta.
+- **Svenska tecken pa mobil**: Alla 6 UI-sidor saknade a, a, o (~60 strangar). Systematiskt problem vid mobil-forst-utveckling utan svenskt tangentbord.
+
 ---
 
 ## Automated Quality Gates

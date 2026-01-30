@@ -16,6 +16,7 @@
 **Leverantör:** Verifieringsansokan (utbildning/organisation/erfarenhet), badge pa profil, read-only hasttidslinje
 **Admin:** Verifieringsgranskning (godkann/avvisa med kommentar, notifikation till provider)
 **Rutter:** RouteOrders, ruttplanering (Haversine + Nearest Neighbor), stopp-for-stopp, ETA, kartvy (Leaflet/OSM), announcements, geo-matching
+**Gruppbokning:** GroupBookingRequest + Participant-modeller, 7 API-endpoints (CRUD + join + available + match), GroupBookingService med sekventiell bokningslogik, invite codes, 6 UI-sidor (kund + leverantor), notifikationer
 **Notifikationer:** In-app notifikationer (klocka + dropdown + polling), automatiska aterbokningspaminnelser (cron), betalningsabstraktion (gateway pattern)
 **Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 860+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
@@ -98,8 +99,8 @@ Framtida kostnader: Swish/Stripe (~2.9% + $0.30/transaktion), Twilio SMS ($0.01/
 
 ## Nästa steg
 
-- **Fas 2 klar:** Hästhälsotidslinje + leverantörsverifiering implementerat
-- **Nästa feature-sprint:** Gruppbokning för stallgemenskaper (Fas 2, sista feature)
-- **Parallellt:** F-1.3 (drag-and-drop) + F-4.2 (koordinat-precision)
+- **Fas 2 klar:** Hästhälsotidslinje + leverantörsverifiering + gruppbokning -- alla implementerade
+- **Nästa feature-sprint:** Tier 1 polish (F-1.3 drag-and-drop, F-4.2 koordinat-precision)
 - **Före produktion:** Betalningsintegration, bilduppladdning, push-notifikationer
 - **Framtida "wow-faktor":** Realtidsspårning (Tier 3) -- kräver kartvy som foundation (redan klar)
+- **Gruppbokning vidareutveckling:** Geo-filtrering i /available, E2E-tester, eventuellt stallkoncept (Stable-modell)

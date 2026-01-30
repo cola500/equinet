@@ -153,6 +153,7 @@ equinet/
 │   │   │   ├── route-orders/ # Rutt-beställningar API
 │   │   │   ├── routes/       # Rutt-planering API
 │   │   │   ├── verification-requests/ # Leverantörsverifiering API
+│   │   │   ├── group-bookings/ # Gruppboknings-API (join, match, available)
 │   │   │   └── admin/        # Admin-endpoints (verifieringsgranskning)
 │   │   ├── admin/            # Admin-sidor (verifieringshantering)
 │   │   ├── customer/         # Kundsidor (dashboard, bookings, profile, hästprofil)
@@ -165,6 +166,7 @@ equinet/
 │   │   └── ui/               # shadcn/ui komponenter
 │   ├── domain/               # Affärslogik, entiteter, value objects
 │   │   ├── booking/          # BookingService, types
+│   │   ├── group-booking/    # GroupBookingService (matchning, sekventiella bokningar)
 │   │   ├── notification/     # NotificationService
 │   │   ├── payment/          # PaymentGateway (interface + mock)
 │   │   ├── reminder/         # ReminderService (återbokningspåminnelser)
@@ -228,7 +230,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller (16 st):**
+**Huvudmodeller (18 st):**
 - **User** - Användarkonton (kunder + leverantörer + admin)
 - **Provider** - Leverantörsprofiler med företagsinformation och verifieringsstatus
 - **Service** - Tjänster som leverantörer erbjuder
@@ -245,6 +247,8 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **RouteStop** - Enskilda stopp i en rutt
 - **Review** - Recensioner och betyg (1-5) med leverantörssvar
 - **ProviderVerification** - Verifieringsansökningar (utbildning, organisation, erfarenhet)
+- **GroupBookingRequest** - Grupprequests för stallgemenskaper (invite code, status, period)
+- **GroupBookingParticipant** - Deltagare i grupprequests (hästinfo, status, koppling till bokning)
 
 Se `prisma/schema.prisma` för fullständig definition.
 
@@ -268,6 +272,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg
 - **Verifiering**: Ansök om verifiering (utbildning, organisation, erfarenhet), badge på profil vid godkännande
 - **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin)
+- **Grupprequests**: Se öppna grupprequests, matcha och skapa bokningar för alla deltagare
 - **Rutt-planering**:
   - Visa tillgängliga flexibla beställningar sorterade efter avstånd
   - Skapa optimerade rutter (Haversine + Nearest Neighbor)
@@ -285,6 +290,15 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Mock-betalning med kvittogenerering
 - Kundprofil
 - **Recensioner & betyg**: Lämna, redigera och ta bort recensioner för avslutade bokningar
+- **Gruppbokningar**: Skapa grupprequests, dela invite code, se deltagare, lämna grupp
+
+### Gruppbokning (stallgemenskaper)
+- Kund skapar grupprequest med tjänsttyp, plats och datumperiod
+- Kryptografiskt säker 8-teckens invite code (utan tvetydiga tecken)
+- Andra hästägare går med via kod eller länk
+- Leverantörer ser öppna grupprequests och matchar
+- Matchning skapar sekventiella individuella bokningar för alla deltagare
+- Notifikationer vid join, match, cancel och leave
 
 ### Admin
 - **Verifieringsgranskning**: Granska, godkänna och avvisa leverantörers verifieringsansökningar med kommentarer
@@ -363,9 +377,9 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 ### Test Coverage
 
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
-- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, PaymentGateway, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
+- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, PaymentGateway, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, verification-requests, admin-verifications, cron)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, verification-requests, admin-verifications, group-bookings, cron)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -501,9 +515,9 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Betalningsabstraktion (gateway pattern for Swish/Stripe)
 - ✅ Hästhälsotidslinje (anteckningar, kategorifilter, färgkodning, provider read-only)
 - ✅ Leverantörsverifiering (ansökan, admin-granskning, badge, notifikation)
+- ✅ Gruppbokning för stallgemenskaper (invite codes, sekventiell matchning, 7 endpoints)
 
 ### Framtida Features
-- **Gruppbokning** - Samordna leverantörsbesök för stallgemenskaper
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
 - **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
 - Bilduppladdning (profiler, tjänster)
