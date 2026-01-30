@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 interface Horse {
   id: string
@@ -53,6 +54,7 @@ interface Horse {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  photoUrl: string | null
   createdAt: string
 }
 
@@ -271,17 +273,35 @@ export default function CustomerHorsesPage() {
           {horses.map((horse) => (
             <Card key={horse.id}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{horse.name}</CardTitle>
-                <CardDescription>
-                  {[
-                    horse.breed,
-                    horse.color,
-                    horse.gender && GENDER_LABELS[horse.gender],
-                    horse.birthYear && `f. ${horse.birthYear}`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "Ingen extra info"}
-                </CardDescription>
+                <div className="flex items-start gap-3">
+                  <ImageUpload
+                    bucket="horses"
+                    entityId={horse.id}
+                    currentUrl={horse.photoUrl}
+                    onUploaded={(url) =>
+                      setHorses((prev) =>
+                        prev.map((h) =>
+                          h.id === horse.id ? { ...h, photoUrl: url } : h
+                        )
+                      )
+                    }
+                    variant="square"
+                    className="w-20 flex-shrink-0"
+                  />
+                  <div>
+                    <CardTitle className="text-lg">{horse.name}</CardTitle>
+                    <CardDescription>
+                      {[
+                        horse.breed,
+                        horse.color,
+                        horse.gender && GENDER_LABELS[horse.gender],
+                        horse.birthYear && `f. ${horse.birthYear}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "Ingen extra info"}
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {horse.specialNeeds && (

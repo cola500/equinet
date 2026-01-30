@@ -1,6 +1,8 @@
 // Supabase Storage client for file uploads
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 import { logger } from "@/lib/logger"
+import { writeFile, mkdir } from "fs/promises"
+import nodePath from "path"
 
 const BUCKET_NAME = "equinet-uploads"
 
@@ -77,11 +79,23 @@ export async function uploadFile(
   const supabase = getSupabase()
 
   if (!supabase) {
-    logger.warn("Supabase not configured, using mock upload")
-    // Mock upload for development
-    const mockPath = `${bucket}/${fileName}`
-    const mockUrl = `/mock-uploads/${mockPath}`
-    return { data: { path: mockPath, url: mockUrl } }
+    logger.warn("Supabase not configured, saving to public/uploads for dev")
+    // Dev fallback: save to public/uploads/ so Next.js serves the file
+    try {
+      const dir = nodePath.join(process.cwd(), "public", "uploads", bucket)
+      await mkdir(dir, { recursive: true })
+      const filePath = nodePath.join(dir, fileName)
+      const buffer = file instanceof File
+        ? Buffer.from(await file.arrayBuffer())
+        : file
+      await writeFile(filePath, buffer)
+      const mockPath = `${bucket}/${fileName}`
+      const mockUrl = `/uploads/${mockPath}`
+      return { data: { path: mockPath, url: mockUrl } }
+    } catch (err) {
+      logger.error("Dev mock upload failed", err as any)
+      return { error: { message: "Mock upload failed", code: "UPLOAD_FAILED" } }
+    }
   }
 
   const path = `${bucket}/${fileName}`

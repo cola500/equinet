@@ -11,6 +11,8 @@ interface ImageUploadProps {
   currentUrl?: string | null
   onUploaded: (url: string) => void
   className?: string
+  /** "default" = rectangular with text, "square" = compact square, "circle" = compact round */
+  variant?: "default" | "square" | "circle"
 }
 
 const MAX_COMPRESSED_SIZE = 1024 * 1024 // 1MB after compression
@@ -21,7 +23,10 @@ export function ImageUpload({
   currentUrl,
   onUploaded,
   className = "",
+  variant = "default",
 }: ImageUploadProps) {
+  const isCompact = variant === "square" || variant === "circle"
+  const shapeClass = variant === "circle" ? "rounded-full" : "rounded-lg"
   const [isUploading, setIsUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(currentUrl || null)
   const [isDragging, setIsDragging] = useState(false)
@@ -112,7 +117,9 @@ export function ImageUpload({
   return (
     <div className={className}>
       <div
-        className={`relative border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+        className={`relative border-2 border-dashed ${shapeClass} text-center transition-colors cursor-pointer ${
+          isCompact ? "aspect-square overflow-hidden" : "p-4"
+        } ${
           isDragging
             ? "border-green-500 bg-green-50"
             : "border-gray-300 hover:border-gray-400"
@@ -123,25 +130,33 @@ export function ImageUpload({
         onDrop={handleDrop}
       >
         {preview ? (
-          <div className="relative">
+          <div className="relative h-full">
             <img
               src={preview}
               alt="Forhandsvisning"
-              className="mx-auto max-h-48 rounded object-cover"
+              className={`object-cover ${
+                isCompact
+                  ? `w-full h-full ${shapeClass}`
+                  : "mx-auto max-h-48 rounded"
+              }`}
             />
             {isUploading && (
-              <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded">
+              <div className={`absolute inset-0 bg-white/60 flex items-center justify-center ${shapeClass}`}>
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
               </div>
             )}
           </div>
         ) : (
-          <div className="py-8">
+          <div className={`flex flex-col items-center justify-center ${isCompact ? "h-full p-1" : "py-8"}`}>
             {isUploading ? (
               <>
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Laddar upp...</p>
+                {!isCompact && <p className="text-sm text-gray-500">Laddar upp...</p>}
               </>
+            ) : isCompact ? (
+              <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
             ) : (
               <>
                 <p className="text-sm text-gray-600 mb-1">
@@ -165,7 +180,7 @@ export function ImageUpload({
         />
       </div>
 
-      {preview && !isUploading && (
+      {preview && !isUploading && !isCompact && (
         <Button
           variant="ghost"
           size="sm"

@@ -74,6 +74,7 @@ export class MockProviderRepository implements IProviderRepository {
       latitude: null,
       longitude: null,
       serviceAreaKm: null,
+      profileImageUrl: null,
       isVerified: false,
       services: [],
       user: {
@@ -109,6 +110,7 @@ export class MockProviderRepository implements IProviderRepository {
       latitude: null,
       longitude: null,
       serviceAreaKm: null,
+      profileImageUrl: null,
       isVerified: false,
       verifiedAt: null,
       address: null,

@@ -336,7 +336,8 @@ export default function ProviderProfilePage() {
                 entityId={profile.id}
                 currentUrl={profile.profileImageUrl}
                 onUploaded={(url) => setProfile({ ...profile, profileImageUrl: url })}
-                className="max-w-xs"
+                variant="circle"
+                className="w-32"
               />
             </CardContent>
           </Card>

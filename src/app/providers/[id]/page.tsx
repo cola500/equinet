@@ -50,6 +50,7 @@ interface Provider {
   description?: string
   city?: string
   address?: string
+  profileImageUrl?: string | null
   services: Service[]
   availability: Availability[]
   user: {
@@ -366,12 +367,21 @@ export default function ProviderDetailPage() {
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-3xl">{provider.businessName}</CardTitle>
-                  <CardDescription className="text-lg">
-                    {provider.user.firstName} {provider.user.lastName}
-                    {provider.city && ` • ${provider.city}`}
-                  </CardDescription>
+                <div className="flex items-center gap-4">
+                  {provider.profileImageUrl && (
+                    <img
+                      src={provider.profileImageUrl}
+                      alt={provider.businessName}
+                      className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div>
+                    <CardTitle className="text-3xl">{provider.businessName}</CardTitle>
+                    <CardDescription className="text-lg">
+                      {provider.user.firstName} {provider.user.lastName}
+                      {provider.city && ` • ${provider.city}`}
+                    </CardDescription>
+                  </div>
                 </div>
                 {reviewSummary.totalCount > 0 && reviewSummary.averageRating !== null && (
                   <div className="flex items-center gap-2 text-sm">

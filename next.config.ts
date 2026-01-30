@@ -63,6 +63,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
               "connect-src 'self'", // API calls
+              "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection
               "base-uri 'self'",
               "form-action 'self'",

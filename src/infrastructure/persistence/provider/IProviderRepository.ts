@@ -36,6 +36,7 @@ export interface ProviderWithDetails extends Provider {
   latitude?: number | null
   longitude?: number | null
   serviceAreaKm?: number | null
+  profileImageUrl?: string | null
   isVerified: boolean
   services: Array<{
     id: string
@@ -103,6 +104,7 @@ export interface ProviderWithFullDetails extends Provider {
   latitude?: number | null
   longitude?: number | null
   serviceAreaKm?: number | null
+  profileImageUrl?: string | null
   isVerified: boolean
   verifiedAt?: Date | null
   address?: string | null

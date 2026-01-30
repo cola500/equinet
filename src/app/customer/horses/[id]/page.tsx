@@ -220,6 +220,7 @@ export default function HorseProfilePage() {
                   entityId={horse.id}
                   currentUrl={horse.photoUrl}
                   onUploaded={(url) => setHorse({ ...horse, photoUrl: url })}
+                  variant="square"
                   className="w-32 flex-shrink-0"
                 />
                 <div>

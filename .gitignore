@@ -62,6 +62,9 @@ prisma/dev.db
 /chatloggar/
 *.txt
 
+# Dev uploads (mock Supabase Storage)
+/public/uploads/
+
 # Sentry
 .sentryclirc
 sentry.properties
