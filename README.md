@@ -125,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (500+ unit/integration) + Playwright (54 E2E) = 70% coverage
+- **Testning**: Vitest (650+ unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -159,11 +159,12 @@ equinet/
 │   │   ├── booking/          # BookingService, types
 │   │   └── shared/           # TimeSlot, Result, ValueObject
 │   ├── infrastructure/       # Repositories, externa tjänster
-│   │   └── repositories/     # Prisma-implementationer
+│   │   └── persistence/      # Prisma-implementationer (booking, provider, service)
 │   ├── hooks/
 │   │   └── useAuth.ts        # Custom auth hook
 │   ├── lib/
 │   │   ├── auth.ts           # NextAuth konfiguration
+│   │   ├── email/            # Email-notifikationer och templates
 │   │   ├── prisma.ts         # Prisma client singleton
 │   │   ├── rate-limit.ts     # Rate limiting
 │   │   ├── sanitize.ts       # Input sanitization
@@ -215,12 +216,16 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller:**
+**Huvudmodeller (12 st):**
 - **User** - Användarkonton (kunder + leverantörer)
 - **Provider** - Leverantörsprofiler med företagsinformation
 - **Service** - Tjänster som leverantörer erbjuder
 - **Availability** - Öppettider per veckodag
+- **AvailabilityException** - Undantag från öppettider (lediga dagar, etc.)
 - **Booking** - Traditionella bokningar med fast tid
+- **Payment** - Betalningar kopplade till bokningar
+- **Notification** - Notifikationer till användare
+- **EmailVerificationToken** - Tokens för email-verifiering
 - **RouteOrder** - Flexibla beställningar utan fast tid
 - **Route** - Leverantörers planerade rutter
 - **RouteStop** - Enskilda stopp i en rutt
@@ -231,6 +236,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ### Autentisering
 - Registrering med rollval (kund/leverantör)
+- Email-verifiering vid registrering (verify-email, resend-verification)
 - Lösenordsstyrkeindikator med real-time feedback
 - Session-baserad autentisering
 - Rollbaserad access control
@@ -239,6 +245,8 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Dashboard med statistik och onboarding-checklista
 - Tjänstehantering (CRUD)
 - Öppettider & tillgänglighetskontroll
+- Availability Exceptions (undantag från öppettider, CRUD)
+- Kalendervy för bokningsöversikt
 - Bokningshantering med filter och automatisk tab-växling
 - Profilkompletteringsindikator
 - **Rutt-planering**:
@@ -246,12 +254,14 @@ Se `prisma/schema.prisma` för fullständig definition.
   - Skapa optimerade rutter (Haversine + Nearest Neighbor)
   - Köra rutter stopp-för-stopp med statusuppdateringar
   - Automatisk ETA-beräkning
+  - Kartvy med Leaflet-integration
 
 ### Kundfunktioner
 - Leverantörsgalleri med sökning och filtrera
 - Traditionella bokningar med tillgänglighetskontroll
 - Flexibla rutt-beställningar (datum-spann, prioritet)
-- Avboka bokningar
+- Avboka bokningar med bekräftelsedialog
+- Mock-betalning med kvittogenerering
 - Kundprofil
 
 ### UI/UX
@@ -271,6 +281,13 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Strukturerad logging med security events
 - Environment validation
 
+### Email-notifikationer
+- Bokningsbekräftelse till kunder
+- Statusändringsnotifikationer (accepterad, avvisad, klar)
+- Betalningsbekräftelse
+- Email-verifiering vid registrering
+- HTML-templates med responsiv design
+
 ### Performance & Skalning
 - Connection pooling (PgBouncer via Supabase)
 - Redis-cache för geocoding-resultat
@@ -279,7 +296,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**558 tester** (54 E2E + 504 unit/integration) med **70% coverage**.
+**722 tester** (66 E2E + 656 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -301,9 +318,11 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 
 ### Test Coverage
 
-- **Unit Tests**: sanitize, booking utils, hooks, validations
-- **Integration Tests**: API routes (auth, bookings, services, providers, routes, announcements)
-- **E2E Tests (54)**: Authentication, booking flow, provider flow, route planning, announcements
+- **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
+- **Domain Tests**: BookingService, TravelTimeService, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
+- **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
+- **Integration Tests**: API routes (auth, verify-email, bookings, services, providers, availability-exceptions, availability-schedule, routes, announcements)
+- **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 
@@ -412,24 +431,26 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ PostgreSQL Migration (Supabase)
 - ✅ Rate Limiting (Upstash Redis)
 - ✅ Förbättrad lösenordsvalidering (F-3.1)
+- ✅ Avboka-funktion för kunder (F-3.2)
 - ✅ Försök igen-knappar med useRetry hook (F-3.3)
+- ✅ Onboarding Checklist för leverantörer (F-3.4)
+- ✅ Kartvy - Visa beställningar och rutter på karta (F-1.1)
+- ✅ Provider hem-position (F-1.4)
 - ✅ Next.js 16 + NextAuth v5 upgrade
 - ✅ Announcement/Rutter-funktionalitet (leverantörer annonserar rutter)
 - ✅ Customer location support för geo-matching
 - ✅ NearbyRoutesBanner på leverantörsprofiler
-- ✅ Onboarding Checklist för leverantörer (F-3.4)
-- ✅ Provider hem-position (F-1.4)
 - ✅ Öppettider visas på leverantörsprofiler
 - ✅ Skalningsoptimering för 500 användare (connection pooling, geocoding cache)
-
-### 🚧 Nästa
-- **F-3.2**: Avboka-funktion för kunder
-- **F-1.1**: Kartvy - Visa beställningar och rutter på karta
+- ✅ Email-notifikationer (bokningsbekräftelse, statusändringar, betalning, verifiering)
+- ✅ Email-verifiering vid registrering
+- ✅ Mock-betalningssystem med kvittogenerering
+- ✅ Leverantörs-kalendervy
+- ✅ Availability Exceptions (undantag från öppettider)
 
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
-- **Notifikationer** - Push/Email/SMS för kunder
-- Email-notifikationer vid bokningar
+- **Push/SMS-notifikationer** - Komplement till befintliga email-notifikationer
 - Bilduppladdning (profiler, tjänster)
 - Betalningsintegration (Stripe/Klarna)
 - Recensioner & betyg

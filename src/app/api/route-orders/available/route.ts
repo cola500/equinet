@@ -46,9 +46,9 @@ export async function GET(request: Request) {
     const serviceType = searchParams.get('serviceType')
     const priority = searchParams.get('priority')
 
-    // 3. Fetch available route orders (status = pending)
+    // 3. Fetch available route orders (status = open or pending)
     const whereClause: any = {
-      status: 'pending'
+      status: { in: ['open', 'pending'] }
     }
 
     if (serviceType) {
