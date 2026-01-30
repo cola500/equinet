@@ -145,6 +145,7 @@ equinet/
 │   │   │   ├── bookings/     # Boknings-API
 │   │   │   ├── providers/    # Leverantörs-API
 │   │   │   │   └── [id]/availability/  # Tillgänglighetskontroll
+│   │   │   ├── reviews/      # Recensioner & betyg API
 │   │   │   ├── services/     # Tjänste-API
 │   │   │   ├── route-orders/ # Rutt-beställningar API
 │   │   │   └── routes/       # Rutt-planering API
@@ -154,6 +155,7 @@ equinet/
 │   ├── components/
 │   │   ├── layout/           # Header, navigation, layouts
 │   │   ├── provider/         # Provider-specifika komponenter
+│   │   ├── review/           # Recensionskomponenter (dialog, stjärnor, lista)
 │   │   └── ui/               # shadcn/ui komponenter
 │   ├── domain/               # Affärslogik, entiteter, value objects
 │   │   ├── booking/          # BookingService, types
@@ -216,7 +218,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller (12 st):**
+**Huvudmodeller (13 st):**
 - **User** - Användarkonton (kunder + leverantörer)
 - **Provider** - Leverantörsprofiler med företagsinformation
 - **Service** - Tjänster som leverantörer erbjuder
@@ -229,6 +231,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **RouteOrder** - Flexibla beställningar utan fast tid
 - **Route** - Leverantörers planerade rutter
 - **RouteStop** - Enskilda stopp i en rutt
+- **Review** - Recensioner och betyg (1-5) med leverantörssvar
 
 Se `prisma/schema.prisma` för fullständig definition.
 
@@ -249,6 +252,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Kalendervy för bokningsöversikt
 - Bokningshantering med filter och automatisk tab-växling
 - Profilkompletteringsindikator
+- **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg
 - **Rutt-planering**:
   - Visa tillgängliga flexibla beställningar sorterade efter avstånd
   - Skapa optimerade rutter (Haversine + Nearest Neighbor)
@@ -263,6 +267,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Avboka bokningar med bekräftelsedialog
 - Mock-betalning med kvittogenerering
 - Kundprofil
+- **Recensioner & betyg**: Lämna, redigera och ta bort recensioner för avslutade bokningar
 
 ### UI/UX
 - Responsiv design
@@ -321,7 +326,7 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
 - **Domain Tests**: BookingService, TravelTimeService, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, services, providers, availability-exceptions, availability-schedule, routes, announcements)
+- **Integration Tests**: API routes (auth, verify-email, bookings, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -333,7 +338,8 @@ Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 1. **Registrera leverantör** → Lägg till tjänster → Sätt öppettider
 2. **Registrera kund** → Bläddra leverantörer → Gör bokning
 3. **Logga in som leverantör** → Acceptera bokning → Markera som klar
-4. **Verifiera som kund** → Se uppdaterad status
+4. **Verifiera som kund** → Se uppdaterad status → Lämna recension
+5. **Logga in som leverantör** → Se recension → Svara på recension
 
 Se längre guide i [CLAUDE.md](./CLAUDE.md) för steg-för-steg instruktioner.
 
@@ -447,13 +453,13 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Mock-betalningssystem med kvittogenerering
 - ✅ Leverantörs-kalendervy
 - ✅ Availability Exceptions (undantag från öppettider)
+- ✅ Recensioner & betyg (1-5 stjärnor, kommentarer, leverantörssvar)
 
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
 - **Push/SMS-notifikationer** - Komplement till befintliga email-notifikationer
 - Bilduppladdning (profiler, tjänster)
 - Betalningsintegration (Stripe/Klarna)
-- Recensioner & betyg
 
 Se `BACKLOG.md` för fullständig feature-lista.
 
