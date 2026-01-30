@@ -12,9 +12,9 @@
 | 2 | **Ingen svensk bokningsplattform** finns för hästtjänster trots 120 000 hästägare | Marknadsanalys | Equinets grundproposition -- first mover | Kärna |
 | 3 | **Flexibel bokning** ("nån gång i mars") matchar hur branschen faktiskt fungerar | Erik, Anna | Flexibla rutt-beställningar | Redan implementerat |
 | 4 | **Manuell ruttplanering** kostar leverantörer ~2 000 kr/mån i onödig diesel | Erik, Marknadsanalys | Ruttoptimering med kartvy | Redan implementerat |
-| 5 | **Swish dominerar** (95% av privata betalningar) men "jagande efter betalning" är vanligt | Erik, Anna, Marknadsanalys | Betalningsintegration med Swish | Backlog (Tier 2) |
+| 5 | **Swish dominerar** (95% av privata betalningar) men "jagande efter betalning" är vanligt | Erik, Anna, Marknadsanalys | Betalningsabstraktion (gateway pattern) | Delvis implementerat |
 | 6 | **Hästhälsohistorik är fragmenterad** -- utspridd hos leverantör, kund och papper | Anna, Marknadsanalys | Hästregister + hälsotidslinje | Delvis implementerat |
-| 7 | **Leverantörer tappar kunder** pga missade uppföljningar | Erik | Automatisk återbokning/påminnelser | Ny möjlighet |
+| 7 | **Leverantörer tappar kunder** pga missade uppföljningar | Erik | Automatiska återbokningspåminnelser | Implementerat |
 | 8 | **Att hitta ny leverantör tar veckor** och bygger på mun-till-mun | Anna, Marknadsanalys | Leverantörsgalleri med recensioner | Redan implementerat |
 | 9 | **Leverantören driver adoption** -- kunden laddar ner när leverantören säger till | Anna | Leverantörs-first go-to-market | Strategisk insikt |
 | 10 | **Oskyddad hovslagartitel** skapar kvalitetsosäkerhet | Erik, Marknadsanalys | Leverantörsverifiering | Ny möjlighet |
@@ -39,8 +39,11 @@ Features som valideras av forskningen -- de löser verkliga problem.
 | Leverantörer annonserar rutter | Announcements + NearbyRoutesBanner | Implementerat | Anna ("push from leverantör") |
 | Priser synliga | Tjänster med priser i leverantörsgalleri | Implementerat | Anna |
 | Vet vad som förväntas | Onboarding-checklista för leverantörer | Implementerat | Erik ("ska sköta sig själv") |
+| Vill ha påminnelser om besök | In-app notifikationer (klocka, dropdown, polling) | Implementerat | Anna, Erik |
+| Leverantörer tappar kunder | Automatiska återbokningspåminnelser (cron + email + in-app) | Implementerat | Erik |
+| Jagande efter betalning | Betalningsabstraktion (PaymentGateway for Swish/Stripe) | Förberett | Erik, Anna |
 
-**Slutsats:** Equinets kärnfunktionalitet matchar väl mot identifierade behov. De viktigaste problemen (bokning, ruttplanering, hästregister, recensioner) är redan adresserade.
+**Slutsats:** Equinets kärnfunktionalitet matchar väl mot identifierade behov. De viktigaste problemen (bokning, ruttplanering, hästregister, recensioner, notifikationer, påminnelser) är redan adresserade.
 
 ---
 
@@ -48,15 +51,16 @@ Features som valideras av forskningen -- de löser verkliga problem.
 
 Befintliga backlog-items som forskningen stödjer.
 
-| Insikt | Backlog-item | Prioritet | Validerad av |
-|--------|-------------|-----------|--------------|
-| Swish dominerar, jagande efter betalning | Betalningsintegration (Tier 2) | Hög | Erik, Anna, Marknadsanalys |
-| Vill ha påminnelser om besök | Push/SMS-notifikationer (Tier 2) | Hög | Anna, Erik |
-| Vill se foton på arbete | Bilduppladdning (Tier 2) | Medium | Anna |
-| Bättre ruttoptimering sparar mer | F-1.2: Förbättrad ruttoptimering | Medium | Erik |
-| Vill justera ruttordning manuellt | F-1.3: Drag-and-drop stopp | Medium | Erik |
+| Insikt | Backlog-item | Prioritet | Status | Validerad av |
+|--------|-------------|-----------|--------|--------------|
+| Swish dominerar, jagande efter betalning | Betalningsintegration (Tier 2) | Hög | Gateway-abstraktion klar, riktig provider kvar | Erik, Anna, Marknadsanalys |
+| Vill ha påminnelser om besök | In-app notifikationer + email | Hög | **Implementerat** | Anna, Erik |
+| Vill ha påminnelser om besök | Push/SMS-notifikationer | Medium | Kvar (komplement till in-app) | Anna, Erik |
+| Vill se foton på arbete | Bilduppladdning (Tier 2) | Medium | Ej startad | Anna |
+| Bättre ruttoptimering sparar mer | F-1.2: Förbättrad ruttoptimering | Medium | Ej startad | Erik |
+| Vill justera ruttordning manuellt | F-1.3: Drag-and-drop stopp | Medium | Ej startad | Erik |
 
-**Rekommendation:** Betalningsintegration och push/SMS-notifikationer bör prioriteras högst av Tier 2-features baserat på forskningens resultat. Båda adresserar dagliga problem för båda användargrupper.
+**Rekommendation:** Betalningsintegration (Swish/Stripe via befintligt gateway-interface) och bilduppladdning bör prioriteras som nästa Tier 2-features. Notifikationsinfrastrukturen är nu på plats -- Push/SMS kan läggas till som komplement.
 
 ---
 
@@ -64,12 +68,10 @@ Befintliga backlog-items som forskningen stödjer.
 
 Behov som identifierats i forskningen men som inte finns i nuvarande backlog.
 
-### 1. Automatisk återbokning / Påminnelser
-**Behov:** Leverantörer tappar kunder pga missade uppföljningar. Kunder glömmer regelbundna besök (tandvård, hovvård var 6--8:e vecka).
-**Lösning:** Baserat på senaste bokningens typ, schemalägg automatisk påminnelse. "Storm behöver hovvård -- vill du boka Erik?" med ett klick.
-**Källa:** Erik ("tappar kunder"), Anna ("glömmer tandvården")
-**Komplexitet:** Medium -- kräver bokningshistorik (finns) + påminnelselogik + notifikation
-**Värde:** Högt -- ökar retention för leverantörer, minskar glömskerisken för kunder
+### ~~1. Automatisk återbokning / Påminnelser~~ -- IMPLEMENTERAT
+**Status:** Implementerat (2026-01-30)
+**Vad som byggdes:** Leverantörer sätter `recommendedIntervalWeeks` per tjänst. Daglig Vercel Cron hittar förfallna bokningar och skickar in-app notifikation + email med "Boka igen"-länk. En påminnelse per bokning, inga dubbletter.
+**Implementation:** `ReminderService` (domain), `NotificationService`, cron-endpoint (`/api/cron/send-reminders`), email-template (`rebookingReminderEmail`), Select-dropdown i tjänstehantering.
 
 ### 2. Gruppbokning för stallgemenskaper
 **Behov:** Hästägare i samma stall vill samordna leverantörsbesök men koordinering via SMS-grupp är kaotiskt.
@@ -112,15 +114,17 @@ Behov som identifierats i forskningen men som inte finns i nuvarande backlog.
 
 Baserat på forskningens resultat, ordnat efter uppskattad påverkan:
 
-### Fas 1: Stärk kärnan (nästa sprint-cykel)
+### Fas 1: Stärk kärnan -- GENOMFÖRD (2026-01-30)
 
-Dessa features valideras starkt av forskningen och bygger på befintlig infrastruktur.
+Dessa features validerades starkt av forskningen och byggde på befintlig infrastruktur.
 
-| Prioritet | Feature | Motivation |
-|-----------|---------|-----------|
-| 1 | **Betalningsintegration (Swish)** | Dagligt problem för båda grupper. Eliminerar "jagande". Tier 2-backlog. |
-| 2 | **Push/SMS-notifikationer** | Grund för påminnelser och ruttmeddelanden. Tier 2-backlog. |
-| 3 | **Automatisk återbokning/påminnelser** | Högt värde, löser retention + glömska. Kräver notifikationer (#2). |
+| Prioritet | Feature | Status |
+|-----------|---------|--------|
+| 1 | **Betalningsabstraktion (gateway pattern)** | Implementerat -- `IPaymentGateway` + `MockPaymentGateway`. Swish/Stripe kräver bara ny implementation-klass. |
+| 2 | **In-app notifikationer** | Implementerat -- NotificationBell, API routes, polling. Grund för alla framtida notifikationer. |
+| 3 | **Automatisk återbokning/påminnelser** | Implementerat -- Vercel Cron, ReminderService, email + in-app. |
+
+**Kvarstår från original-planen:** Push/SMS-notifikationer (komplement till in-app, kräver Twilio/Web Push). Riktig Swish/Stripe-koppling (kräver teamdiskussion om provider).
 
 ### Fas 2: Differentiering (efterföljande sprint)
 
@@ -159,4 +163,5 @@ Båda personerna betonade enkelhet. Erik: "som SMS fast smartare". Anna: "boka f
 ---
 
 *Syntesanalys genomförd: Januari 2026*
+*Senast uppdaterad: 2026-01-30 (Fas 1 implementerad)*
 *Baserad på: Marknadsanalys, intervju med Erik Skog (leverantör), intervju med Anna Lindqvist (kund)*
