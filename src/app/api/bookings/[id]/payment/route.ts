@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { sendPaymentConfirmationNotification } from "@/lib/email"
 import { logger } from "@/lib/logger"
+import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
+import { getPaymentGateway } from "@/domain/payment/PaymentGateway"
 
 // Generate unique invoice number
 function generateInvoiceNumber(): string {
@@ -67,6 +69,22 @@ export async function POST(
       )
     }
 
+    // Process payment through gateway
+    const gateway = getPaymentGateway()
+    const paymentResult = await gateway.initiatePayment({
+      bookingId: booking.id,
+      amount: booking.service.price,
+      currency: "SEK",
+      description: booking.service.name,
+    })
+
+    if (!paymentResult.success) {
+      return NextResponse.json(
+        { error: paymentResult.error || "Betalningen misslyckades" },
+        { status: 402 }
+      )
+    }
+
     // Generate receipt URL
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
     const receiptUrl = `${baseUrl}/api/bookings/${booking.id}/receipt`
@@ -79,14 +97,16 @@ export async function POST(
         amount: booking.service.price,
         currency: "SEK",
         provider: "mock",
-        status: "succeeded",
-        paidAt: new Date(),
+        providerPaymentId: paymentResult.providerPaymentId,
+        status: paymentResult.status,
+        paidAt: paymentResult.paidAt,
         invoiceNumber: generateInvoiceNumber(),
         invoiceUrl: receiptUrl,
       },
       update: {
-        status: "succeeded",
-        paidAt: new Date(),
+        providerPaymentId: paymentResult.providerPaymentId,
+        status: paymentResult.status,
+        paidAt: paymentResult.paidAt,
         invoiceNumber: generateInvoiceNumber(),
         invoiceUrl: receiptUrl,
       },
@@ -95,6 +115,15 @@ export async function POST(
     // Send payment confirmation email (async, don't block response)
     sendPaymentConfirmationNotification(booking.id).catch((err) => {
       logger.error("Failed to send payment confirmation email", err instanceof Error ? err : new Error(String(err)))
+    })
+
+    // Create in-app notification for provider (payment received)
+    notificationService.createAsync({
+      userId: booking.provider.userId,
+      type: NotificationType.PAYMENT_RECEIVED,
+      message: `Betalning mottagen: ${payment.amount} ${payment.currency} for ${booking.service.name}`,
+      linkUrl: "/provider/bookings",
+      metadata: { bookingId: booking.id, paymentId: payment.id },
     })
 
     return NextResponse.json({

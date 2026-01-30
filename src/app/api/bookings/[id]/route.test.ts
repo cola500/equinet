@@ -8,6 +8,25 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    provider: {
+      findUnique: vi.fn().mockResolvedValue({ userId: 'provider-user-1' }),
+    },
+  },
+}))
+
+vi.mock('@/domain/notification/NotificationService', () => ({
+  notificationService: {
+    createAsync: vi.fn(),
+  },
+  NotificationType: {
+    BOOKING_CONFIRMED: 'booking_confirmed',
+    BOOKING_CANCELLED: 'booking_cancelled',
+    BOOKING_COMPLETED: 'booking_completed',
+  },
+}))
+
 // Mock repositories
 const mockUpdateStatusWithAuth = vi.fn()
 const mockDeleteWithAuth = vi.fn()

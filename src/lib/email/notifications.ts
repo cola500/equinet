@@ -10,6 +10,7 @@ import {
   bookingConfirmationEmail,
   paymentConfirmationEmail,
   bookingStatusChangeEmail,
+  rebookingReminderEmail,
 } from "./templates"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
@@ -201,6 +202,52 @@ export async function sendBookingStatusChangeNotification(
     })
   } catch (error) {
     console.error("Error sending status change notification:", error)
+    return { success: false, error: String(error) }
+  }
+}
+
+export async function sendRebookingReminderNotification(
+  customerId: string,
+  data: {
+    serviceName: string
+    providerName: string
+    providerId: string
+    serviceId: string
+  }
+) {
+  try {
+    const customer = await prisma.user.findUnique({
+      where: { id: customerId },
+      select: {
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+    })
+
+    if (!customer || !customer.email) {
+      console.warn(`Cannot send rebooking reminder: customer ${customerId} not found or no email`)
+      return { success: false, error: "Customer not found or no email" }
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const rebookUrl = `${baseUrl}/providers/${data.providerId}`
+
+    const { html, text } = rebookingReminderEmail({
+      customerName: `${customer.firstName} ${customer.lastName}`,
+      serviceName: data.serviceName,
+      providerName: data.providerName,
+      rebookUrl,
+    })
+
+    return await emailService.send({
+      to: customer.email,
+      subject: `Dags att boka ${data.serviceName} igen!`,
+      html,
+      text,
+    })
+  } catch (error) {
+    console.error("Error sending rebooking reminder:", error)
     return { success: false, error: String(error) }
   }
 }

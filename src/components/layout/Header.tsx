@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { CustomerNav } from "./CustomerNav"
+import { NotificationBell } from "@/components/notification/NotificationBell"
 
 export function Header() {
   const { user, isAuthenticated, isProvider, isCustomer } = useAuth()
@@ -43,6 +44,8 @@ export function Header() {
               </Link>
             </>
           ) : (
+            <>
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-11 px-3 md:px-4 max-w-[150px] md:max-w-none truncate">
@@ -87,6 +90,7 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           )}
         </div>
       </div>

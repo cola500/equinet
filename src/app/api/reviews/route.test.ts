@@ -17,6 +17,18 @@ vi.mock('@/lib/prisma', () => ({
     review: {
       create: vi.fn(),
     },
+    provider: {
+      findUnique: vi.fn().mockResolvedValue({ userId: 'provider-user-1' }),
+    },
+  },
+}))
+
+vi.mock('@/domain/notification/NotificationService', () => ({
+  notificationService: {
+    createAsync: vi.fn(),
+  },
+  NotificationType: {
+    REVIEW_RECEIVED: 'review_received',
   },
 }))
 

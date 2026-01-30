@@ -11,7 +11,8 @@ const serviceSchema = z.object({
   price: z.number().positive("Pris måste vara positivt"),
   durationMinutes: z.number().int().positive("Varaktighet måste vara positiv"),
   isActive: z.boolean().optional(),
-}).strict()
+  recommendedIntervalWeeks: z.number().int().min(1).max(52).nullable().optional(),
+})
 
 // PUT - Update service
 export async function PUT(

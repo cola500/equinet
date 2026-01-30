@@ -43,6 +43,13 @@ interface BookingStatusChangeData {
   statusLabel: string
 }
 
+interface RebookingReminderData {
+  customerName: string
+  serviceName: string
+  providerName: string
+  rebookUrl: string
+}
+
 const baseStyles = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
   .header { background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
@@ -357,6 +364,53 @@ Datum: ${data.bookingDate}
 Tid: ${data.startTime}
 
 Se dina bokningar: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings
+
+--
+Equinet - Din plattform för hästtjänster
+`
+
+  return { html, text }
+}
+
+export function rebookingReminderEmail(data: RebookingReminderData): { html: string; text: string } {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dags att boka igen!</h1>
+  </div>
+  <div class="content">
+    <p>Hej ${data.customerName}!</p>
+    <p>Det har gått ett tag sedan du senast använde <strong>${data.serviceName}</strong> hos <strong>${data.providerName}</strong>.</p>
+    <p>Vi rekommenderar att du bokar en ny tid för att hålla din häst i bästa skick.</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${data.rebookUrl}" class="button" style="font-size: 16px;">
+        Boka igen
+      </a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>Equinet - Din plattform för hästtjänster</p>
+  </div>
+</body>
+</html>
+`
+
+  const text = `
+Dags att boka igen!
+
+Hej ${data.customerName}!
+
+Det har gått ett tag sedan du senast använde ${data.serviceName} hos ${data.providerName}.
+Vi rekommenderar att du bokar en ny tid för att hålla din häst i bästa skick.
+
+Boka igen: ${data.rebookUrl}
 
 --
 Equinet - Din plattform för hästtjänster

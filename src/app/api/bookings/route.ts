@@ -14,6 +14,7 @@ import {
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
 } from "@/domain/booking"
+import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
 
 // Input schema - endTime is optional (will be calculated from service duration if missing)
 const bookingInputSchema = z.object({
@@ -254,6 +255,21 @@ export async function POST(request: NextRequest) {
     sendBookingConfirmationNotification(result.value.id).catch((err) => {
       logger.error("Failed to send booking confirmation email", err instanceof Error ? err : new Error(String(err)))
     })
+
+    // Create in-app notification for provider (async, don't block)
+    const providerUser = await prisma.provider.findUnique({
+      where: { id: validatedInput.providerId },
+      select: { userId: true },
+    })
+    if (providerUser) {
+      notificationService.createAsync({
+        userId: providerUser.userId,
+        type: NotificationType.BOOKING_CREATED,
+        message: `Ny bokning: ${result.value.service?.name || "Tjänst"} den ${validatedInput.bookingDate.split("T")[0]}`,
+        linkUrl: "/provider/bookings",
+        metadata: { bookingId: result.value.id },
+      })
+    }
 
     return NextResponse.json(result.value, { status: 201 })
   } catch (err: unknown) {

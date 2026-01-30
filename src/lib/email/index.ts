@@ -8,9 +8,11 @@ export {
   bookingConfirmationEmail,
   paymentConfirmationEmail,
   bookingStatusChangeEmail,
+  rebookingReminderEmail,
 } from "./templates"
 export {
   sendBookingConfirmationNotification,
   sendPaymentConfirmationNotification,
   sendBookingStatusChangeNotification,
+  sendRebookingReminderNotification,
 } from "./notifications"

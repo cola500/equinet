@@ -5,6 +5,8 @@ import { sendBookingStatusChangeNotification } from "@/lib/email"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { logger } from "@/lib/logger"
+import { prisma } from "@/lib/prisma"
+import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
@@ -75,6 +77,47 @@ export async function PUT(
       sendBookingStatusChangeNotification(id, validatedData.status).catch((err) => {
         logger.error("Failed to send status change notification", err instanceof Error ? err : new Error(String(err)))
       })
+    }
+
+    // Create in-app notification for the other party
+    const statusLabels: Record<string, string> = {
+      confirmed: "bekräftad",
+      cancelled: "avbokad",
+      completed: "markerad som genomförd",
+    }
+    const notifTypeMap: Record<string, string> = {
+      confirmed: NotificationType.BOOKING_CONFIRMED,
+      cancelled: NotificationType.BOOKING_CANCELLED,
+      completed: NotificationType.BOOKING_COMPLETED,
+    }
+    const notifType = notifTypeMap[validatedData.status]
+    if (notifType) {
+      // Determine the recipient: notify the "other party"
+      if (session.user.userType === "provider" && updatedBooking.customerId) {
+        // Provider changed status -> notify customer
+        notificationService.createAsync({
+          userId: updatedBooking.customerId,
+          type: notifType as any,
+          message: `Din bokning har blivit ${statusLabels[validatedData.status] || validatedData.status}`,
+          linkUrl: "/customer/bookings",
+          metadata: { bookingId: id },
+        })
+      } else if (session.user.userType === "customer") {
+        // Customer changed status (e.g. cancelled) -> notify provider
+        const providerUser = await prisma.provider.findUnique({
+          where: { id: updatedBooking.providerId },
+          select: { userId: true },
+        })
+        if (providerUser) {
+          notificationService.createAsync({
+            userId: providerUser.userId,
+            type: notifType as any,
+            message: `En bokning har blivit ${statusLabels[validatedData.status] || validatedData.status}`,
+            linkUrl: "/provider/bookings",
+            metadata: { bookingId: id },
+          })
+        }
+      }
     }
 
     return NextResponse.json(updatedBooking)

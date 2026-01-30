@@ -531,6 +531,14 @@ Före merge?          -> quality-gate
 - **Verifiera alltid build-tiden efter stora refaktoreringar** - regressioner i build-pipeline syns inte i tester.
 - **Root cause**: Commit `66a0ea0` tog bort `ignoreBuildErrors`, vilket fick Next.js att köra full typecheck under build (14+ min istället för ~50s).
 
+### Notifikationer, Påminnelser & Betalningsabstraktion (2026-01-30)
+- **Oanvänd modell = gratis start**: Notification-modellen fanns redan i schema men var oanvänd. Att aktivera befintliga modeller är snabbare än att bygga från scratch.
+- **Polling > WebSocket för serverless**: 30s polling med `setInterval` i en hook är tillräckligt för MVP och fungerar direkt på Vercel utan extra infra.
+- **Gateway pattern förbereder utan overhead**: `IPaymentGateway` + `MockPaymentGateway` kräver minimal kod men gör Swish/Stripe-integration till en ren implementation-uppgift utan refaktorering av routes/UI.
+- **Vercel Cron + CRON_SECRET**: Enklaste scheduling för serverless. `Bearer`-header verifiering i endpointen, `vercel.json` för schema. Ingen extra infra behövs.
+- **Test-mockar måste uppdateras vid integration**: Att lägga till `notificationService.createAsync()` i befintliga routes bröt tester som saknade mock för prisma.provider/notification. Testa alltid efter integration.
+- **Zod `.strict()` vs öppen validering**: `.strict()` avvisar okända fält -- ta bort det när schemat utökas med nullable/optional fält som `recommendedIntervalWeeks`.
+
 ---
 
 ## Automated Quality Gates

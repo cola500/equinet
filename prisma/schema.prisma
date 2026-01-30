@@ -87,8 +87,9 @@ model Service {
   description     String?
   price           Float
   durationMinutes Int
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  isActive                  Boolean  @default(true)
+  recommendedIntervalWeeks  Int?     // Recommended rebooking interval in weeks (null = no reminder)
+  createdAt                 DateTime @default(now())
 
   bookings Booking[]
 
@@ -226,6 +227,8 @@ model Notification {
   type      String
   message   String
   isRead    Boolean  @default(false)
+  linkUrl   String?  // Navigation target, e.g. "/customer/bookings"
+  metadata  String?  // JSON string with extra context (bookingId, providerId, etc.)
   createdAt DateTime @default(now())
 
   @@index([userId, isRead])    // "Olästa notifikationer för användare"

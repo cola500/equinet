@@ -71,6 +71,7 @@ export class ServiceRepository implements IServiceRepository {
           price: entity.price,
           durationMinutes: entity.durationMinutes,
           isActive: entity.isActive,
+          recommendedIntervalWeeks: entity.recommendedIntervalWeeks,
         },
       })
       return updated
@@ -85,6 +86,7 @@ export class ServiceRepository implements IServiceRepository {
           price: entity.price,
           durationMinutes: entity.durationMinutes,
           isActive: entity.isActive,
+          recommendedIntervalWeeks: entity.recommendedIntervalWeeks,
         },
       })
       return created

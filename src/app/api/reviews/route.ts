@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
 
 const createReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
@@ -77,6 +78,21 @@ export async function POST(request: NextRequest) {
         providerId: booking.providerId,
       },
     })
+
+    // Create in-app notification for provider (review received)
+    const provider = await prisma.provider.findUnique({
+      where: { id: booking.providerId },
+      select: { userId: true },
+    })
+    if (provider) {
+      notificationService.createAsync({
+        userId: provider.userId,
+        type: NotificationType.REVIEW_RECEIVED,
+        message: `Ny recension: ${validated.rating}/5 stjärnor`,
+        linkUrl: "/provider/reviews",
+        metadata: { reviewId: review.id, bookingId: booking.id },
+      })
+    }
 
     return NextResponse.json(review, { status: 201 })
   } catch (error) {

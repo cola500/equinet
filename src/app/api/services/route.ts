@@ -12,7 +12,8 @@ const serviceSchema = z.object({
   description: z.string().optional(),
   price: z.number().positive("Pris måste vara positivt"),
   durationMinutes: z.number().int().positive("Varaktighet måste vara positiv"),
-}).strict()
+  recommendedIntervalWeeks: z.number().int().min(1).max(52).nullable().optional(),
+})
 
 // GET all services for logged-in provider
 export async function GET(request: NextRequest) {
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
       price: validatedData.price,
       durationMinutes: validatedData.durationMinutes,
       isActive: true,
+      recommendedIntervalWeeks: validatedData.recommendedIntervalWeeks ?? null,
       createdAt: new Date(),
     })
 

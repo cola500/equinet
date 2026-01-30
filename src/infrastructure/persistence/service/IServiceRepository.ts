@@ -16,6 +16,7 @@ export interface Service {
   price: number
   durationMinutes: number
   isActive: boolean
+  recommendedIntervalWeeks: number | null
   createdAt: Date
 }
 

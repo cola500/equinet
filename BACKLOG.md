@@ -14,7 +14,8 @@
 **Leverantor:** Dashboard, tjanster (CRUD), oppettider, exceptions, kalender, bokningshantering, onboarding, profil med geo-position, recensioner & svar
 **Kund:** Leverantorsgalleri, bokningar, avbokning, flexibla ruttbestallningar, profil, recensioner & betyg, mock-betalning, hastregister med vardhistorik
 **Rutter:** RouteOrders, ruttplanering (Haversine + Nearest Neighbor), stopp-for-stopp, ETA, kartvy (Leaflet/OSM), announcements, geo-matching
-**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 780+ tester (70% coverage), CI/CD, Sentry
+**Notifikationer:** In-app notifikationer (klocka + dropdown + polling), automatiska aterbokningspaminnelser (cron), betalningsabstraktion (gateway pattern)
+**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 810+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
 
@@ -33,8 +34,8 @@
 | Feature | Beskrivning |
 |---------|-------------|
 | Bilduppladdning | Profilbilder och tjänstebilder. Kräver beslut om lagring (D-6). |
-| Betalningsintegration | Stripe eller Klarna för riktiga betalningar. Ersätter mock-betalning. |
-| Push/SMS-notifikationer | Komplement till email. Web Push (gratis) + SMS (Twilio) för kritiska händelser. |
+| Betalningsintegration | Swish eller Stripe via PaymentGateway-interface. Mock-gateway finns, behover bara ny implementation. |
+| Push/SMS-notifikationer | Komplement till in-app + email. Web Push (gratis) + SMS (Twilio) for kritiska handelser. |
 
 ### Tier 3 -- Langsiktigt
 
@@ -86,9 +87,10 @@ Realtidsspårning (D-3) → Kund ser karta → Proximity-notifikationer (D-4)
 | Upstash Redis | Gratis (10k req/dag) | Implementerat |
 | Vercel hosting | Gratis (hobby) | Implementerat |
 | Sentry monitoring | Gratis (5k events) | Implementerat |
+| Vercel Cron | Ingår i hobby | Implementerat (påminnelser) |
 | **Nuvarande total** | **$0/mån** | Alla free tiers |
 
-Framtida kostnader: Stripe (~2.9% + $0.30/transaktion), Twilio SMS ($0.01/sms), bildlagring (gratis tier räcker initialt).
+Framtida kostnader: Swish/Stripe (~2.9% + $0.30/transaktion), Twilio SMS ($0.01/sms), bildlagring (gratis tier räcker initialt).
 
 ---
 

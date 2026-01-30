@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
@@ -19,7 +20,18 @@ interface Service {
   price: number
   durationMinutes: number
   isActive: boolean
+  recommendedIntervalWeeks?: number | null
 }
+
+const INTERVAL_OPTIONS = [
+  { value: "", label: "Ingen påminnelse" },
+  { value: "4", label: "4 veckor" },
+  { value: "6", label: "6 veckor" },
+  { value: "8", label: "8 veckor" },
+  { value: "12", label: "12 veckor" },
+  { value: "26", label: "26 veckor (halvår)" },
+  { value: "52", label: "52 veckor (1 år)" },
+]
 
 export default function ProviderServicesPage() {
   const router = useRouter()
@@ -32,6 +44,7 @@ export default function ProviderServicesPage() {
     description: "",
     price: "",
     durationMinutes: "",
+    recommendedIntervalWeeks: "",
   })
 
   useEffect(() => {
@@ -75,6 +88,9 @@ export default function ProviderServicesPage() {
         description: formData.description || undefined,
         price: parseFloat(formData.price),
         durationMinutes: parseInt(formData.durationMinutes),
+        recommendedIntervalWeeks: formData.recommendedIntervalWeeks
+          ? parseInt(formData.recommendedIntervalWeeks)
+          : null,
       }
 
       // Only include isActive when editing (PUT), not when creating (POST)
@@ -114,6 +130,7 @@ export default function ProviderServicesPage() {
       description: service.description || "",
       price: service.price.toString(),
       durationMinutes: service.durationMinutes.toString(),
+      recommendedIntervalWeeks: service.recommendedIntervalWeeks?.toString() || "",
     })
     setIsDialogOpen(true)
   }
@@ -186,6 +203,7 @@ export default function ProviderServicesPage() {
       description: "",
       price: "",
       durationMinutes: "",
+      recommendedIntervalWeeks: "",
     })
     setEditingService(null)
   }
@@ -289,6 +307,33 @@ export default function ProviderServicesPage() {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="interval">Återbesöksintervall</Label>
+                  <Select
+                    value={formData.recommendedIntervalWeeks}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, recommendedIntervalWeeks: value === "none" ? "" : value })
+                    }
+                  >
+                    <SelectTrigger id="interval">
+                      <SelectValue placeholder="Ingen påminnelse" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INTERVAL_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value || "none"}
+                          value={option.value || "none"}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Kunder får en påminnelse att boka igen efter valt intervall
+                  </p>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -386,6 +431,14 @@ export default function ProviderServicesPage() {
                         {service.durationMinutes} min
                       </span>
                     </div>
+                    {service.recommendedIntervalWeeks && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Återbesök:</span>
+                        <span className="font-semibold">
+                          {service.recommendedIntervalWeeks} veckor
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button

@@ -125,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (710+ unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (743+ unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -146,8 +146,10 @@ equinet/
 │   │   │   ├── horses/       # Hästregister-API
 │   │   │   ├── providers/    # Leverantörs-API
 │   │   │   │   └── [id]/availability/  # Tillgänglighetskontroll
+│   │   │   ├── notifications/ # In-app notifikationer API
 │   │   │   ├── reviews/      # Recensioner & betyg API
 │   │   │   ├── services/     # Tjänste-API
+│   │   │   ├── cron/         # Schemalagda jobb (påminnelser)
 │   │   │   ├── route-orders/ # Rutt-beställningar API
 │   │   │   └── routes/       # Rutt-planering API
 │   │   ├── customer/         # Kundsidor (dashboard, bookings, profile)
@@ -160,11 +162,15 @@ equinet/
 │   │   └── ui/               # shadcn/ui komponenter
 │   ├── domain/               # Affärslogik, entiteter, value objects
 │   │   ├── booking/          # BookingService, types
+│   │   ├── notification/     # NotificationService
+│   │   ├── payment/          # PaymentGateway (interface + mock)
+│   │   ├── reminder/         # ReminderService (återbokningspåminnelser)
 │   │   └── shared/           # TimeSlot, Result, ValueObject
 │   ├── infrastructure/       # Repositories, externa tjänster
 │   │   └── persistence/      # Prisma-implementationer (booking, provider, service)
 │   ├── hooks/
-│   │   └── useAuth.ts        # Custom auth hook
+│   │   ├── useAuth.ts        # Custom auth hook
+│   │   └── useNotifications.ts # Notifikationspolling och hantering
 │   ├── lib/
 │   │   ├── auth.ts           # NextAuth konfiguration
 │   │   ├── email/            # Email-notifikationer och templates
@@ -289,11 +295,30 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Strukturerad logging med security events
 - Environment validation
 
+### In-app notifikationer
+- Notifikationsklocka i headern med badge for olästa
+- Dropdown med senaste 10 notifikationer
+- Markera enskild/alla som lästa
+- Automatiska notifikationer vid bokning, statusändring, betalning, recension
+- Polling var 30:e sekund (serverless-kompatibelt)
+
+### Återbokningspåminnelser
+- Leverantörer sätter rekommenderat återbesöksintervall per tjänst
+- Daglig cron (Vercel Cron Jobs, kl 08:00) hittar förfallna påminnelser
+- In-app notifikation + email med "Boka igen"-länk
+- En påminnelse per avslutad bokning (inga dubbletter)
+
+### Betalningsabstraktion
+- PaymentGateway interface (IPaymentGateway) for framtida Swish/Stripe
+- MockPaymentGateway for utveckling/demo
+- Factory-funktion for att byta implementation via env-variabel
+
 ### Email-notifikationer
 - Bokningsbekräftelse till kunder
 - Statusändringsnotifikationer (accepterad, avvisad, klar)
 - Betalningsbekräftelse
 - Email-verifiering vid registrering
+- Återbokningspåminnelse med "Boka igen"-knapp
 - HTML-templates med responsiv design
 
 ### Performance & Skalning
@@ -304,7 +329,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**780+ tester** (66 E2E + 717 unit/integration) med **70% coverage**.
+**810+ tester** (66 E2E + 743 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -327,9 +352,9 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 ### Test Coverage
 
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
-- **Domain Tests**: BookingService, TravelTimeService, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
+- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, PaymentGateway, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, cron)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -458,12 +483,15 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Availability Exceptions (undantag från öppettider)
 - ✅ Recensioner & betyg (1-5 stjärnor, kommentarer, leverantörssvar)
 - ✅ Hästregister med vårdhistorik (CRUD, koppling till bokningar)
+- ✅ In-app notifikationer (klocka, dropdown, polling)
+- ✅ Automatiska återbokningspåminnelser (cron + email + in-app)
+- ✅ Betalningsabstraktion (gateway pattern for Swish/Stripe)
 
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
-- **Push/SMS-notifikationer** - Komplement till befintliga email-notifikationer
+- **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
 - Bilduppladdning (profiler, tjänster)
-- Betalningsintegration (Stripe/Klarna)
+- Betalningsintegration (Swish/Stripe via PaymentGateway)
 
 Se `BACKLOG.md` för fullständig feature-lista.
 
