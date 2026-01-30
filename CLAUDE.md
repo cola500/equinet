@@ -14,6 +14,7 @@
 | Tidigare Retros | [docs/retrospectives/](docs/retrospectives/) |
 | Sprint-historik | [docs/sprints/](docs/sprints/) |
 | Säkerhetsaudit | [docs/SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) |
+| Användarforskning | [docs/user-research/](docs/user-research/) |
 
 ---
 
