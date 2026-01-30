@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
+import { customerName, truncate } from "@/lib/notification-helpers"
 
 const createReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
@@ -40,6 +41,8 @@ export async function POST(request: NextRequest) {
         providerId: true,
         status: true,
         review: { select: { id: true } },
+        customer: { select: { firstName: true, lastName: true } },
+        service: { select: { name: true } },
       },
     })
 
@@ -85,10 +88,18 @@ export async function POST(request: NextRequest) {
       select: { userId: true },
     })
     if (provider) {
+      const cName = booking.customer
+        ? customerName(booking.customer.firstName, booking.customer.lastName)
+        : "Kund"
+      const sName = booking.service?.name
+      const commentPreview = validated.comment
+        ? ` - "${truncate(validated.comment)}"`
+        : ""
+      const servicePart = sName ? ` för ${sName}` : ""
       notificationService.createAsync({
         userId: provider.userId,
         type: NotificationType.REVIEW_RECEIVED,
-        message: `Ny recension: ${validated.rating}/5 stjärnor`,
+        message: `Ny recension från ${cName}: ${validated.rating}/5${servicePart}${commentPreview}`,
         linkUrl: "/provider/reviews",
         metadata: { reviewId: review.id, bookingId: booking.id },
       })

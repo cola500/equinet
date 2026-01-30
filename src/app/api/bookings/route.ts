@@ -15,6 +15,7 @@ import {
   mapBookingErrorToMessage,
 } from "@/domain/booking"
 import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
+import { formatNotifDate, customerName } from "@/lib/notification-helpers"
 
 // Input schema - endTime is optional (will be calculated from service duration if missing)
 const bookingInputSchema = z.object({
@@ -262,12 +263,17 @@ export async function POST(request: NextRequest) {
       select: { userId: true },
     })
     if (providerUser) {
+      const b = result.value
+      const cName = b.customer ? customerName(b.customer.firstName, b.customer.lastName) : "Kund"
+      const sName = b.service?.name || "Tjänst"
+      const dateStr = formatNotifDate(b.bookingDate)
+      const horsePart = b.horseName ? ` för ${b.horseName}` : ""
       notificationService.createAsync({
         userId: providerUser.userId,
         type: NotificationType.BOOKING_CREATED,
-        message: `Ny bokning: ${result.value.service?.name || "Tjänst"} den ${validatedInput.bookingDate.split("T")[0]}`,
+        message: `Ny bokning: ${cName} har bokat ${sName} den ${dateStr} kl ${b.startTime}${horsePart}`,
         linkUrl: "/provider/bookings",
-        metadata: { bookingId: result.value.id },
+        metadata: { bookingId: b.id },
       })
     }
 

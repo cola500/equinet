@@ -66,6 +66,8 @@ describe('PUT /api/bookings/[id]', () => {
       customerId: 'customer123',
       providerId: 'provider123',
       status: 'confirmed',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
       service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
       customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
       provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
@@ -108,7 +110,10 @@ describe('PUT /api/bookings/[id]', () => {
       customerId: 'customer123',
       providerId: 'provider123',
       status: 'cancelled',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
       service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
+      customer: { firstName: 'Jane', lastName: 'Doe' },
     }
 
     vi.mocked(auth).mockResolvedValue({
