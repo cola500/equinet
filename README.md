@@ -349,8 +349,11 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Client-side komprimering (max 1MB via browser-image-compression)
 - Stöd för JPEG, PNG, WebP (max 5MB)
 - IDOR-skydd vid uppladdning (verifierar ägarskap)
-- Återanvändbar ImageUpload-komponent
-- Inkopplad på hästprofilen (hästfoto) och leverantörsprofilen (profilbild)
+- Återanvändbar ImageUpload-komponent med variant-stöd (square, circle, default)
+- Hästfoto (square) på hästlistan och hästdetaljsidan
+- Leverantörens profilbild (circle) på leverantörsprofilen
+- Profilbilden visas på leverantörens publika sida (kundvyn)
+- Dev-fallback: sparar till public/uploads/ utan Supabase-konfiguration
 
 ### Bokföringsabstraktion (Fortnox)
 - IAccountingGateway interface (samma mönster som PaymentGateway)

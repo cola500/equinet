@@ -24,6 +24,8 @@
 18. [Behavior-Based vs Implementation-Based Testing](#18-behavior-based-vs-implementation-based-testing)
 19. [E2E Tests Fångar API-Buggar](#19-e2e-tests-fångar-api-buggar)
 20. [Vercel Build Timeout (ignoreBuildErrors)](#20-vercel-build-timeout-ignorebuildErrors)
+21. [CSP Blockerar Web Workers](#21-csp-blockerar-web-workers-browser-image-compression)
+22. [Mock-uploads Måste Servas av Next.js](#22-mock-uploads-måste-servas-av-nextjs)
 
 ---
 
@@ -871,6 +873,73 @@ const nextConfig: NextConfig = {
 **VARNING:** Denna inställning ser "osäker" ut och kan tas bort vid refaktorering. Den är en MEDVETEN optimering, inte ett hack.
 
 **Impact:** Build-tid: 14+ min -> ~50 sekunder.
+
+---
+
+## 21. CSP Blockerar Web Workers (browser-image-compression)
+
+> **Learning: 2026-01-30** | **Severity: MEDIUM**
+
+**Problem:** `browser-image-compression` använder Web Workers via blob-URLs. Utan `worker-src` i Content Security Policy blockerar browsern workern.
+
+**Symptom:** `Refused to load blob:http://localhost:3000/... because it does not appear in the worker-src directive of the Content Security Policy.`
+
+```typescript
+// ❌ FEL - CSP utan worker-src
+"default-src 'self'",
+"img-src 'self' data: blob: https:",
+// blob: i img-src hjälper INTE - workers har eget direktiv
+
+// ✅ RÄTT - Lägg till worker-src
+"default-src 'self'",
+"img-src 'self' data: blob: https:",
+"worker-src 'self' blob:", // Krävs för browser-image-compression
+```
+
+**Varför?**
+- `img-src blob:` tillåter blob-URLs för bilder, men inte för workers
+- `worker-src` är ett separat CSP-direktiv
+- Om `worker-src` saknas faller det tillbaka till `script-src`, som inte tillåter `blob:`
+
+**Pattern - Kontrollera CSP vid nya bibliotek:**
+- Läs bibliotekets dokumentation om Web Workers, Service Workers, eller WebAssembly
+- Testa med strikt CSP i dev (inte bara produktion)
+
+**Impact:** Bildkomprimering misslyckas tyst, okomprimerade bilder kan inte laddas upp.
+
+---
+
+## 22. Mock-uploads Måste Servas av Next.js
+
+> **Learning: 2026-01-30** | **Severity: MEDIUM**
+
+**Problem:** Mock-upload som returnerar en påhittad URL ger 404 eftersom ingen route servrar filen.
+
+**Symptom:** `Failed to load resource: the server responded with a status of 404` för uppladdade bilder i dev-läge.
+
+```typescript
+// ❌ FEL - URL pekar ingenstans
+const mockUrl = `/mock-uploads/${bucket}/${fileName}`
+return { data: { path: mockPath, url: mockUrl } }
+// Next.js har ingen route för /mock-uploads/* → 404
+
+// ✅ RÄTT - Spara till public/ så Next.js servrar filen
+import { writeFile, mkdir } from "fs/promises"
+const dir = nodePath.join(process.cwd(), "public", "uploads", bucket)
+await mkdir(dir, { recursive: true })
+await writeFile(nodePath.join(dir, fileName), buffer)
+const mockUrl = `/uploads/${bucket}/${fileName}`
+// Next.js servrar allt i public/ automatiskt
+```
+
+**Varför?**
+- Next.js servrar statiska filer från `public/` automatiskt
+- En påhittad URL utan motsvarande fil eller route ger alltid 404
+- I produktion används Supabase Storage som returnerar riktiga URLs
+
+**OBS:** Lägg till `/public/uploads/` i `.gitignore` så dev-bilder inte committas.
+
+**Impact:** Uppladdade bilder visas inte alls i dev-läge utan Supabase.
 
 ---
 

@@ -569,7 +569,10 @@ Före merge?          -> quality-gate
 - **AES-256-GCM for token-kryptering**: Authenticated encryption forhindrar bade lasning och tampering. Random IV per kryptering ger unika ciphertexter. Dev-fallback med deterministisk nyckel -- ENCRYPTION_KEY obligatoriskt i produktion.
 - **Publik data kraver integritetsskydd**: Hastpasset (publik URL utan auth) visar bara veterinar/hovslagare/medicin-anteckningar. Allmanna och skadeanteckningar doljs. Filtreringen sker i DB-query (WHERE), inte i JS.
 - **CSV-export utan externa beroenden**: `objectsToCsv` utility med korrekt escaping (komma, citattecken, newlines) raktar for GDPR Art 20 utan att lagga till dependencies.
-- **Supabase Storage med mock-fallback**: `uploadFile()` returnerar mock-URL om Supabase inte ar konfigurerat. Utveckling fungerar utan extern setup.
+- **Supabase Storage med mock-fallback**: `uploadFile()` sparar till `public/uploads/` i dev-lage sa Next.js servrar filen. Ursprunglig mock-URL (`/mock-uploads/...`) gav 404 eftersom ingen route servade den.
+- **CSP `worker-src blob:` kravs for bildkomprimering**: `browser-image-compression` anvander Web Workers via blob-URLs. Utan `worker-src 'self' blob:` i CSP blockerar browsern workern. Symtomet ar att komprimering misslyckas tyst.
+- **`select` i repository maste uppdateras for nya falt**: Att lagga till `profileImageUrl` i Prisma-schemat racker inte -- alla `select`-queries i ProviderRepository + interface-typer maste ocksa uppdateras, annars returneras aldrig faltet till klienten.
+- **ImageUpload variant-prop for konsekvent storlek**: Utan `aspect-square` + `object-cover` blir uppladdade bilder olika stora beroende pa original. `variant="square"` (hastar) och `variant="circle"` (profilbild) loser detta.
 
 ---
 
