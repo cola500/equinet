@@ -327,6 +327,12 @@ En feature är **DONE** när:
 - [ ] E2E tests uppdaterade
 - [ ] Coverage >= 70%
 
+### 5. Dokumentation
+- [ ] README.md uppdaterad (nya modeller, features, API-struktur, testantal)
+- [ ] docs/API.md uppdaterad (nya endpoints)
+- [ ] BACKLOG.md uppdaterad (implementerat-sammanfattning)
+- [ ] CLAUDE.md Key Learnings uppdaterad (nya insikter från implementationen)
+
 ---
 
 ## Production Readiness Checklist
@@ -509,6 +515,14 @@ Före merge?          -> quality-gate
 - **1:1-relationer som fält på samma modell** - Reply/repliedAt direkt på Review-modellen (istället för separat modell) reducerar joins och förenklar API:et.
 - **Kontrollera stöd-API:er tidigt** - Profile-API:et saknade `providerId`, fick patchas efteråt. Kartlägg beroenden innan implementation.
 - **Enrichment-pattern fungerar** - `enrichWithReviewStats()` i providers-routen följer samma mönster som `enrichWithNextVisit()`. Konsistens ger förutsägbar kod.
+
+### Hästregister / Horse Model (2026-01-30)
+- **`birthYear` > `age`** - Statiskt värde som inte behöver uppdateras varje år. Beräkna ålder i UI vid behov.
+- **Soft delete (`isActive=false`)** för hästar bevarar bokningshistorik -- hard delete skulle bryta foreign keys.
+- **Bakåtkompatibel integration**: `Booking.horseId` är nullable, befintliga bokningar med `horseName`/`horseInfo` som fritext fungerar fortfarande.
+- **Dropdown + fritext fallback**: Bokningsdialogen visar dropdown om kunden har registrerade hästar, annars fritt textfält. Bästa av två världar.
+- **Zod `z.enum()` i nya versionen**: Använd `message` istället för `errorMap` -- API:et ändrades i Zod 4.
+- **IDOR-skydd via `findFirst` + WHERE**: Horse API använder `{ id, ownerId, isActive }` i WHERE-clause, samma mönster som booking-repositoryt.
 
 ### Vercel Build Timeout Regression (2026-01-29)
 - **`ignoreBuildErrors: true` i next.config.ts är en MEDVETEN optimering** - ta INTE bort den. TypeScript checkas separat i CI.

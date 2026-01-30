@@ -39,6 +39,7 @@ model User {
   routeOrders               RouteOrder[]
   emailVerificationTokens   EmailVerificationToken[]
   reviews                   Review[]   @relation("CustomerReviews")
+  horses                    Horse[]
 
   @@index([latitude, longitude]) // For geo-queries
 }
@@ -150,6 +151,8 @@ model Booking {
   customerNotes String?
   horseName     String?
   horseInfo     String?
+  horseId       String?
+  horse         Horse?      @relation(fields: [horseId], references: [id])
 
   // Beräknad restid till denna bokning (för historik/rapportering)
   travelTimeMinutes Int?
@@ -165,6 +168,28 @@ model Booking {
   @@index([customerId, bookingDate])
   @@index([serviceId])
   @@index([routeOrderId])
+  @@index([horseId])
+}
+
+model Horse {
+  id           String   @id @default(uuid())
+  ownerId      String
+  owner        User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  name         String
+  breed        String?  // Ras (t.ex. "Svenskt varmblod", "Islandshäst")
+  birthYear    Int?     // Födelseår (inte ålder - statiskt värde)
+  color        String?  // Färg (t.ex. "Fux", "Brun", "Skimmel")
+  gender       String?  // "mare" | "gelding" | "stallion" (sto/valack/hingst)
+  specialNeeds String?  // Medicinska behov, allergier, temperament etc.
+
+  isActive     Boolean  @default(true) // Soft delete
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookings     Booking[]
+
+  @@index([ownerId, isActive])
 }
 
 model Payment {

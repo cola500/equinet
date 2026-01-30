@@ -19,15 +19,24 @@ interface Payment {
   invoiceNumber: string | null
 }
 
+interface Horse {
+  id: string
+  name: string
+  breed?: string | null
+  gender?: string | null
+}
+
 interface Booking {
   id: string
   bookingDate: string
   startTime: string
   endTime: string
   status: string
+  horseId?: string
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  horse?: Horse | null
   service: {
     name: string
     price: number
@@ -235,10 +244,17 @@ export default function ProviderBookingsPage() {
                           {booking.startTime} - {booking.endTime}
                         </span>
                       </div>
-                      {booking.horseName && (
+                      {(booking.horse || booking.horseName) && (
                         <div className="text-sm">
                           <span className="text-gray-600">Häst:</span>{" "}
-                          <span className="font-medium">{booking.horseName}</span>
+                          <span className="font-medium">
+                            {booking.horse?.name || booking.horseName}
+                          </span>
+                          {booking.horse?.breed && (
+                            <span className="text-gray-500 ml-1">
+                              ({booking.horse.breed})
+                            </span>
+                          )}
                         </div>
                       )}
                       <div className="text-sm">

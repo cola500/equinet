@@ -201,6 +201,70 @@ Ta bort bokning.
 
 ---
 
+## Horses
+
+Hästregister -- kundens hästar (CRUD). Alla endpoints kräver autentisering.
+
+### GET /api/horses
+
+Hämta inloggad kunds aktiva hästar.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Blansen",
+    "breed": "Svenskt varmblod",
+    "birthYear": 2018,
+    "color": "Brun",
+    "gender": "gelding",
+    "specialNeeds": null,
+    "isActive": true,
+    "createdAt": "2026-01-30T10:00:00Z",
+    "updatedAt": "2026-01-30T10:00:00Z"
+  }
+]
+```
+
+### POST /api/horses
+
+Skapa ny häst. Namn är obligatoriskt, övriga fält valfria.
+
+**Request body:**
+```json
+{
+  "name": "Blansen",
+  "breed": "Svenskt varmblod",
+  "birthYear": 2018,
+  "color": "Brun",
+  "gender": "mare | gelding | stallion",
+  "specialNeeds": "Känslig på vänster fram"
+}
+```
+
+**Response:** `201 Created` med skapad häst.
+
+### GET /api/horses/[id]
+
+Hämta häst med bokningshistorik (senaste 20 bokningar). IDOR-skyddad via ownerId i WHERE-clause.
+
+**Response:** `200 OK` -- häst-objekt + `bookings[]` med provider/service-info.
+
+### PUT /api/horses/[id]
+
+Uppdatera häst (partial updates). Alla fält utom `name` kan sättas till `null`.
+
+**Response:** `200 OK` med uppdaterad häst.
+
+### DELETE /api/horses/[id]
+
+Soft delete (sätter `isActive=false`). Hästen försvinner från listor men befintliga bokningar behåller kopplingen.
+
+**Response:** `200 OK` med `{ "message": "Hästen har tagits bort" }`.
+
+---
+
 ## Providers
 
 ### GET /api/providers

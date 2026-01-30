@@ -17,6 +17,7 @@ describe('BookingMapper', () => {
     endTime: '11:00',
     timezone: 'Europe/Stockholm',
     status: 'pending',
+    horseId: null,
     horseName: 'Thunder',
     horseInfo: null,
     customerNotes: 'Test booking',

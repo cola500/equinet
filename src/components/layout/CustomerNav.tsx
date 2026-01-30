@@ -17,6 +17,7 @@ const navItems = [
   { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
   { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
   { href: "/customer/bookings", label: "Mina bokningar" },
+  { href: "/customer/horses", label: "Mina hästar" },
   { href: "/customer/profile", label: "Min profil" },
 ]
 

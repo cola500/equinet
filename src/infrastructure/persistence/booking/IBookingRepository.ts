@@ -19,6 +19,7 @@ export interface Booking {
   endTime: string
   timezone: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  horseId?: string
   horseName?: string
   horseInfo?: string
   notes?: string
@@ -41,6 +42,7 @@ export interface CreateBookingData {
   startTime: string
   endTime: string
   routeOrderId?: string
+  horseId?: string
   horseName?: string
   horseInfo?: string
   customerNotes?: string
@@ -86,6 +88,7 @@ export interface BookingWithRelations {
   startTime: string
   endTime: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  horseId?: string
   horseName?: string
   horseInfo?: string
   customerNotes?: string
@@ -112,6 +115,13 @@ export interface BookingWithRelations {
       // NEVER includes email/phone in customer view
     }
   }
+  // Horse information (when horseId is linked)
+  horse?: {
+    id: string
+    name: string
+    breed?: string | null
+    gender?: string | null
+  } | null
   // Payment information (for customer view)
   payment?: {
     id: string

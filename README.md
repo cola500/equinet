@@ -125,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (650+ unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (710+ unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -143,6 +143,7 @@ equinet/
 │   │   ├── api/              # API routes (HTTP-hantering)
 │   │   │   ├── auth/         # NextAuth & registrering
 │   │   │   ├── bookings/     # Boknings-API
+│   │   │   ├── horses/       # Hästregister-API
 │   │   │   ├── providers/    # Leverantörs-API
 │   │   │   │   └── [id]/availability/  # Tillgänglighetskontroll
 │   │   │   ├── reviews/      # Recensioner & betyg API
@@ -218,13 +219,14 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller (13 st):**
+**Huvudmodeller (14 st):**
 - **User** - Användarkonton (kunder + leverantörer)
 - **Provider** - Leverantörsprofiler med företagsinformation
 - **Service** - Tjänster som leverantörer erbjuder
+- **Horse** - Hästregister med namn, ras, födelseår, kön, specialbehov
 - **Availability** - Öppettider per veckodag
 - **AvailabilityException** - Undantag från öppettider (lediga dagar, etc.)
-- **Booking** - Traditionella bokningar med fast tid
+- **Booking** - Traditionella bokningar med fast tid (kan kopplas till Horse)
 - **Payment** - Betalningar kopplade till bokningar
 - **Notification** - Notifikationer till användare
 - **EmailVerificationToken** - Tokens för email-verifiering
@@ -262,7 +264,8 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ### Kundfunktioner
 - Leverantörsgalleri med sökning och filtrera
-- Traditionella bokningar med tillgänglighetskontroll
+- **Hästregister**: Lägg till, redigera och ta bort hästar med namn, ras, födelseår, kön och specialbehov
+- Traditionella bokningar med tillgänglighetskontroll och hästval (dropdown eller fritext)
 - Flexibla rutt-beställningar (datum-spann, prioritet)
 - Avboka bokningar med bekräftelsedialog
 - Mock-betalning med kvittogenerering
@@ -301,7 +304,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**722 tester** (66 E2E + 656 unit/integration) med **70% coverage**.
+**780+ tester** (66 E2E + 717 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -326,7 +329,7 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
 - **Domain Tests**: BookingService, TravelTimeService, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -454,6 +457,7 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Leverantörs-kalendervy
 - ✅ Availability Exceptions (undantag från öppettider)
 - ✅ Recensioner & betyg (1-5 stjärnor, kommentarer, leverantörssvar)
+- ✅ Hästregister med vårdhistorik (CRUD, koppling till bokningar)
 
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar

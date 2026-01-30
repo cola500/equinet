@@ -10,6 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
@@ -64,10 +71,14 @@ export default function ProviderDetailPage() {
   const [bookingForm, setBookingForm] = useState({
     bookingDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
     startTime: "09:00",
+    horseId: "",
     horseName: "",
     horseInfo: "",
     customerNotes: "",
   })
+  const [customerHorses, setCustomerHorses] = useState<
+    { id: string; name: string; breed: string | null; specialNeeds: string | null }[]
+  >([])
   const [flexibleForm, setFlexibleForm] = useState({
     dateFrom: format(addDays(new Date(), 1), "yyyy-MM-dd"),
     dateTo: format(addDays(new Date(), 7), "yyyy-MM-dd"),
@@ -107,6 +118,23 @@ export default function ProviderDetailPage() {
       console.error("Error fetching review summary:", error)
     }
   }
+
+  // Fetch customer's horses
+  useEffect(() => {
+    if (!isCustomer) return
+    const fetchHorses = async () => {
+      try {
+        const response = await fetch("/api/horses")
+        if (response.ok) {
+          const data = await response.json()
+          setCustomerHorses(data)
+        }
+      } catch (error) {
+        console.error("Error fetching horses:", error)
+      }
+    }
+    fetchHorses()
+  }, [isCustomer])
 
   // Fetch customer location and nearby routes for customers
   useEffect(() => {
@@ -189,6 +217,7 @@ export default function ProviderDetailPage() {
     setBookingForm({
       bookingDate: "",
       startTime: "",
+      horseId: "",
       horseName: "",
       horseInfo: "",
       customerNotes: "",
@@ -273,9 +302,10 @@ export default function ProviderDetailPage() {
             bookingDate: bookingForm.bookingDate,
             startTime: bookingForm.startTime,
             endTime,
-            horseName: bookingForm.horseName,
-            horseInfo: bookingForm.horseInfo,
-            customerNotes: bookingForm.customerNotes,
+            horseId: bookingForm.horseId || undefined,
+            horseName: bookingForm.horseName || undefined,
+            horseInfo: bookingForm.horseInfo || undefined,
+            customerNotes: bookingForm.customerNotes || undefined,
           }),
         })
 
@@ -570,28 +600,74 @@ export default function ProviderDetailPage() {
                   )}
                 </div>
 
+                {/* Horse selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="horseName">Hästens namn</Label>
-                  <Input
-                    id="horseName"
-                    value={bookingForm.horseName}
-                    onChange={(e) =>
-                      setBookingForm({ ...bookingForm, horseName: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="horseInfo">Information om hästen</Label>
-                  <Textarea
-                    id="horseInfo"
-                    value={bookingForm.horseInfo}
-                    onChange={(e) =>
-                      setBookingForm({ ...bookingForm, horseInfo: e.target.value })
-                    }
-                    rows={2}
-                    placeholder="T.ex. ålder, ras, särskilda behov..."
-                  />
+                  <Label htmlFor="horse-select">Häst</Label>
+                  {customerHorses.length > 0 ? (
+                    <>
+                      <Select
+                        value={bookingForm.horseId}
+                        onValueChange={(value) => {
+                          if (value === "__manual__") {
+                            setBookingForm({
+                              ...bookingForm,
+                              horseId: "",
+                              horseName: "",
+                              horseInfo: "",
+                            })
+                          } else {
+                            const horse = customerHorses.find((h) => h.id === value)
+                            setBookingForm({
+                              ...bookingForm,
+                              horseId: value,
+                              horseName: horse?.name || "",
+                              horseInfo: horse?.specialNeeds || "",
+                            })
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="horse-select">
+                          <SelectValue placeholder="Välj häst..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customerHorses.map((horse) => (
+                            <SelectItem key={horse.id} value={horse.id}>
+                              {horse.name}
+                              {horse.breed && ` (${horse.breed})`}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__manual__">
+                            Annan häst (ange manuellt)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {bookingForm.horseId && bookingForm.horseId !== "__manual__" && bookingForm.horseInfo && (
+                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded">
+                          {bookingForm.horseInfo}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <Input
+                      id="horseName"
+                      value={bookingForm.horseName}
+                      onChange={(e) =>
+                        setBookingForm({ ...bookingForm, horseName: e.target.value })
+                      }
+                      placeholder="Hästens namn"
+                    />
+                  )}
+                  {/* Manual horse name input when "Annan häst" is selected */}
+                  {customerHorses.length > 0 && !bookingForm.horseId && (
+                    <Input
+                      id="horseName-manual"
+                      value={bookingForm.horseName}
+                      onChange={(e) =>
+                        setBookingForm({ ...bookingForm, horseName: e.target.value })
+                      }
+                      placeholder="Hästens namn"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">

@@ -31,6 +31,7 @@ export interface CreateBookingDTO {
   startTime: string
   endTime?: string // Optional - calculated from service duration if missing
   routeOrderId?: string
+  horseId?: string
   horseName?: string
   horseInfo?: string
   customerNotes?: string
@@ -200,6 +201,7 @@ export class BookingService {
       startTime: timeSlotResult.value.startTime,
       endTime: timeSlotResult.value.endTime,
       routeOrderId: dto.routeOrderId,
+      horseId: dto.horseId,
       horseName: dto.horseName,
       horseInfo: dto.horseInfo,
       customerNotes: dto.customerNotes,

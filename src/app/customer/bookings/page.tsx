@@ -41,6 +41,12 @@ interface Booking {
   endTime: string
   status: string
   horseName?: string
+  horse?: {
+    id: string
+    name: string
+    breed?: string | null
+    gender?: string | null
+  } | null
   customerNotes?: string
   service: {
     name: string
@@ -467,10 +473,17 @@ export default function CustomerBookingsPage() {
                               {booking.startTime} - {booking.endTime}
                             </span>
                           </div>
-                          {booking.horseName && (
+                          {(booking.horse || booking.horseName) && (
                             <div className="text-sm">
                               <span className="text-gray-600">Häst:</span>{" "}
-                              <span className="font-medium">{booking.horseName}</span>
+                              <span className="font-medium">
+                                {booking.horse?.name || booking.horseName}
+                              </span>
+                              {booking.horse?.breed && (
+                                <span className="text-gray-500 ml-1">
+                                  ({booking.horse.breed})
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

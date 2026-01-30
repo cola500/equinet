@@ -232,6 +232,7 @@ export class PrismaBookingRepository
             bookingDate: data.bookingDate,
             startTime: data.startTime,
             endTime: data.endTime,
+            horseId: data.horseId,
             horseName: data.horseName,
             horseInfo: data.horseInfo,
             customerNotes: data.customerNotes,
@@ -248,6 +249,7 @@ export class PrismaBookingRepository
             startTime: true,
             endTime: true,
             status: true,
+            horseId: true,
             horseName: true,
             horseInfo: true,
             customerNotes: true,
@@ -279,6 +281,14 @@ export class PrismaBookingRepository
                     lastName: true,
                   },
                 },
+              },
+            },
+            horse: {
+              select: {
+                id: true,
+                name: true,
+                breed: true,
+                gender: true,
               },
             },
           },
@@ -334,6 +344,7 @@ export class PrismaBookingRepository
         startTime: true,
         endTime: true,
         status: true,
+        horseId: true,
         horseName: true,
         horseInfo: true,
         customerNotes: true,
@@ -347,7 +358,6 @@ export class PrismaBookingRepository
             lastName: true,
             email: true, // Provider CAN see customer contact
             phone: true, // Provider needs to contact customer
-            // ❌ NEVER: passwordHash, role, userType
           },
         },
         service: {
@@ -355,7 +365,14 @@ export class PrismaBookingRepository
             name: true,
             price: true,
             durationMinutes: true,
-            // ❌ NOT: isActive, createdAt, updatedAt (not needed for booking list)
+          },
+        },
+        horse: {
+          select: {
+            id: true,
+            name: true,
+            breed: true,
+            gender: true,
           },
         },
         // Payment information for provider view
@@ -367,10 +384,8 @@ export class PrismaBookingRepository
             currency: true,
             paidAt: true,
             invoiceNumber: true,
-            // ❌ NOT: invoiceUrl (provider doesn't need download link)
           },
         },
-        // ❌ NO provider relation (provider already knows their own data)
       },
       orderBy: { bookingDate: 'desc' },
     })
@@ -399,6 +414,7 @@ export class PrismaBookingRepository
         startTime: true,
         endTime: true,
         status: true,
+        horseId: true,
         horseName: true,
         horseInfo: true,
         customerNotes: true,
@@ -413,7 +429,6 @@ export class PrismaBookingRepository
               select: {
                 firstName: true,
                 lastName: true,
-                // ❌ NEVER: email, phone (prevents spam/unsolicited contact)
               },
             },
           },
@@ -423,7 +438,14 @@ export class PrismaBookingRepository
             name: true,
             price: true,
             durationMinutes: true,
-            // ❌ NOT: isActive, createdAt, updatedAt
+          },
+        },
+        horse: {
+          select: {
+            id: true,
+            name: true,
+            breed: true,
+            gender: true,
           },
         },
         // Payment information for customer view
@@ -436,7 +458,6 @@ export class PrismaBookingRepository
             paidAt: true,
             invoiceNumber: true,
             invoiceUrl: true,
-            // ❌ NOT: provider, providerPaymentId (internal details)
           },
         },
         // Review for customer view (so they can see/edit their review)
@@ -447,7 +468,6 @@ export class PrismaBookingRepository
             comment: true,
           },
         },
-        // ❌ NO customer relation (customer already knows their own data)
       },
       orderBy: { bookingDate: 'desc' },
     })
