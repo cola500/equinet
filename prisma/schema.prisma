@@ -44,6 +44,8 @@ model User {
   reviews                   Review[]   @relation("CustomerReviews")
   horses                    Horse[]
   horseNotes                HorseNote[] @relation("HorseNoteAuthor")
+  groupBookingRequests      GroupBookingRequest[]
+  groupBookingParticipations GroupBookingParticipant[]
 
   @@index([latitude, longitude]) // For geo-queries
 }
@@ -83,6 +85,7 @@ model Provider {
   routeOrders            RouteOrder[] // NEW: Provider-announced route orders
   reviews                Review[]
   verifications          ProviderVerification[]
+  groupBookingRequests   GroupBookingRequest[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -174,6 +177,7 @@ model Booking {
 
   payment       Payment?
   review        Review?
+  groupBookingParticipant GroupBookingParticipant?
 
   @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
   @@index([providerId, bookingDate, status])
@@ -201,6 +205,7 @@ model Horse {
 
   bookings     Booking[]
   notes        HorseNote[]
+  groupBookingParticipants GroupBookingParticipant[]
 
   @@index([ownerId, isActive])
 }
@@ -401,4 +406,58 @@ model ProviderVerification {
 
   @@index([providerId, status])
   @@index([status, createdAt])
+}
+
+// Group Booking - coordination of multiple customers at same location
+model GroupBookingRequest {
+  id               String   @id @default(uuid())
+  creatorId        String
+  creator          User     @relation(fields: [creatorId], references: [id])
+  serviceType      String   // t.ex. "hovslagning", "massage"
+  providerId       String?  // Optional - can be matched later
+  provider         Provider? @relation(fields: [providerId], references: [id])
+  locationName     String   // "Sollebrunn Ridklubb"
+  address          String
+  latitude         Float?
+  longitude        Float?
+  dateFrom         DateTime
+  dateTo           DateTime
+  notes            String?
+  maxParticipants  Int      @default(10)
+  status           String   @default("open") // "open" | "matched" | "completed" | "cancelled"
+  inviteCode       String   @unique // 8-character unique code
+  joinDeadline     DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  participants     GroupBookingParticipant[]
+
+  @@index([creatorId, status])
+  @@index([status, dateFrom])
+  @@index([inviteCode])
+  @@index([providerId, status])
+  @@index([latitude, longitude])
+}
+
+model GroupBookingParticipant {
+  id                    String   @id @default(uuid())
+  groupBookingRequestId String
+  groupBookingRequest   GroupBookingRequest @relation(fields: [groupBookingRequestId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id])
+  numberOfHorses        Int      @default(1)
+  horseId               String?
+  horse                 Horse?   @relation(fields: [horseId], references: [id])
+  horseName             String?
+  horseInfo             String?
+  notes                 String?
+  status                String   @default("joined") // "joined" | "booked" | "cancelled"
+  bookingId             String?  @unique // Linked when provider matches
+  booking               Booking? @relation(fields: [bookingId], references: [id])
+  joinedAt              DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([groupBookingRequestId, userId])
+  @@index([groupBookingRequestId, status])
+  @@index([userId])
 }
