@@ -7,6 +7,7 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
+import { formatNotifDate, customerName } from "@/lib/notification-helpers"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
@@ -92,13 +93,20 @@ export async function PUT(
     }
     const notifType = notifTypeMap[validatedData.status]
     if (notifType) {
+      // Build rich notification message parts
+      const sName = updatedBooking.service?.name || "Bokning"
+      const dateStr = formatNotifDate(updatedBooking.bookingDate)
+      const timeStr = updatedBooking.startTime ? ` kl ${updatedBooking.startTime}` : ""
+      const statusLabel = statusLabels[validatedData.status] || validatedData.status
+
       // Determine the recipient: notify the "other party"
       if (session.user.userType === "provider" && updatedBooking.customerId) {
         // Provider changed status -> notify customer
+        const providerName = updatedBooking.provider?.businessName || "Leverantör"
         notificationService.createAsync({
           userId: updatedBooking.customerId,
           type: notifType as any,
-          message: `Din bokning har blivit ${statusLabels[validatedData.status] || validatedData.status}`,
+          message: `${sName} hos ${providerName} den ${dateStr}${timeStr} har blivit ${statusLabel}`,
           linkUrl: "/customer/bookings",
           metadata: { bookingId: id },
         })
@@ -109,10 +117,13 @@ export async function PUT(
           select: { userId: true },
         })
         if (providerUser) {
+          const cName = updatedBooking.customer
+            ? customerName(updatedBooking.customer.firstName, updatedBooking.customer.lastName)
+            : "Kund"
           notificationService.createAsync({
             userId: providerUser.userId,
             type: notifType as any,
-            message: `En bokning har blivit ${statusLabels[validatedData.status] || validatedData.status}`,
+            message: `${cName} har ${statusLabel === "avbokad" ? "avbokat" : statusLabel} ${sName} den ${dateStr}`,
             linkUrl: "/provider/bookings",
             metadata: { bookingId: id },
           })

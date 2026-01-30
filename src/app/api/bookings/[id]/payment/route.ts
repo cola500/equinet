@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { sendPaymentConfirmationNotification } from "@/lib/email"
 import { logger } from "@/lib/logger"
 import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
+import { formatNotifDate, customerName } from "@/lib/notification-helpers"
 import { getPaymentGateway } from "@/domain/payment/PaymentGateway"
 
 // Generate unique invoice number
@@ -33,6 +34,12 @@ export async function POST(
       include: {
         service: true,
         payment: true,
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
         provider: {
           include: {
             user: {
@@ -118,10 +125,14 @@ export async function POST(
     })
 
     // Create in-app notification for provider (payment received)
+    const cName = booking.customer
+      ? customerName(booking.customer.firstName, booking.customer.lastName)
+      : "Kund"
+    const dateStr = formatNotifDate(booking.bookingDate)
     notificationService.createAsync({
       userId: booking.provider.userId,
       type: NotificationType.PAYMENT_RECEIVED,
-      message: `Betalning mottagen: ${payment.amount} ${payment.currency} for ${booking.service.name}`,
+      message: `Betalning mottagen: ${cName} betalade ${payment.amount} kr för ${booking.service.name} (${dateStr})`,
       linkUrl: "/provider/bookings",
       metadata: { bookingId: booking.id, paymentId: payment.id },
     })
