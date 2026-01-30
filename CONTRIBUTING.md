@@ -17,8 +17,8 @@ Tack för att du vill bidra till Equinet! Detta dokument beskriver hur du sätte
 
 ### Prerequisites
 
-- **Node.js**: v18.17 eller senare
-- **npm**: v9 eller senare
+- **Node.js**: v20 eller senare
+- **npm**: v10 eller senare
 - **Git**: För version control
 - **VS Code** (rekommenderat): Med följande extensions:
   - ESLint
@@ -71,7 +71,7 @@ Tack för att du vill bidra till Equinet! Detta dokument beskriver hur du sätte
    # Kör full test suite
    npm run test:run        # Unit tests (ska passa 100%)
    npm run test:e2e        # E2E tests
-   npx tsc --noEmit        # TypeScript check (inga errors)
+   npm run typecheck       # TypeScript check (inga errors)
 
    # Starta dev server
    npm run dev
@@ -187,8 +187,10 @@ npx playwright test --ui    # Open UI mode
 ### TypeScript Check
 
 ```bash
-npx tsc --noEmit            # Kör TypeScript compiler utan att generera filer
+npm run typecheck            # Kör TypeScript check (använder tsconfig.typecheck.json)
 ```
+
+**OBS:** Använd alltid `npm run typecheck` istället för `npx tsc --noEmit`. Direktanrop till `tsc` kan krascha med "heap out of memory" på grund av testfiler och projektets storlek. `npm run typecheck` använder en separat tsconfig som exkluderar testfiler och aktiverar incremental builds.
 
 **Inga TypeScript-fel är tillåtna före commit!**
 
@@ -225,11 +227,11 @@ async function create(data: any) {
 
 **API Routes:**
 ```typescript
-// ✅ GOOD: Full error handling
+// ✅ GOOD: Full error handling (NextAuth v5 + strukturerad logging)
 export async function POST(request: Request) {
   try {
-    // 1. Auth check
-    const session = await getServerSession(authOptions)
+    // 1. Auth check (NextAuth v5: auth() ersätter getServerSession)
+    const session = await auth()
     if (!session) return new Response("Unauthorized", { status: 401 })
 
     // 2. Parse JSON med error handling
@@ -249,9 +251,12 @@ export async function POST(request: Request) {
     return NextResponse.json(result)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.issues },
+        { status: 400 }
+      )
     }
-    console.error("Error:", error)
+    logger.error("Error:", error instanceof Error ? error : new Error(String(error)))
     return new Response("Internal error", { status: 500 })
   }
 }
@@ -281,6 +286,80 @@ const providers = await prisma.provider.findMany({
   }
 })
 ```
+
+### Next.js 16 Gotchas
+
+**`params` är en Promise:**
+I Next.js 16 är `params` i dynamic routes en `Promise` och måste awaitas:
+
+```typescript
+// ✅ RÄTT (Next.js 16)
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+}
+
+// ❌ FEL (Next.js 15 och äldre)
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params  // Fungerar inte!
+}
+```
+
+### Logging
+
+Använd **alltid** den strukturerade loggern istället för `console.*`:
+
+```typescript
+import { logger } from "@/lib/logger"
+
+// ✅ RÄTT
+logger.info("Booking created", { bookingId, userId })
+logger.error("Failed to create booking", error instanceof Error ? error : new Error(String(error)))
+logger.security("unauthorized_access", "medium", { userId, resource })
+
+// ❌ FEL
+console.log("Booking created")
+console.error("Error:", error)
+```
+
+### Repository Pattern
+
+Kärndomäner (Booking, Provider, Service) ska använda repository pattern:
+
+```typescript
+// ✅ RÄTT: Route använder repository för kärndomän
+import { bookingRepository } from "@/infrastructure/BookingRepository"
+const booking = await bookingRepository.findById(id)
+
+// ❌ FEL: Route använder Prisma direkt för kärndomän
+const booking = await prisma.booking.findUnique({ where: { id } })
+```
+
+Stöddomäner (AvailabilityException, AvailabilitySchedule) kan använda Prisma direkt.
+
+### Rate Limiting
+
+Alla API routes ska ha rate limiting via Upstash Redis:
+
+```typescript
+import { rateLimiters } from "@/lib/rate-limit"
+
+// I route handler:
+const rateLimitResult = await rateLimiters.api(request)
+if (!rateLimitResult.success) {
+  return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+}
+```
+
+Gränsvärden:
+- Register/Login: 5/timme per IP
+- Bokningar: 10/timme per användare
+- Publika endpoints: 100/timme per IP
 
 ### Säkerhet
 
@@ -313,7 +392,7 @@ const providers = await prisma.provider.findMany({
    ```bash
    npm run test:run        # Alla unit tests måste passa
    npm run test:e2e        # Alla E2E tests måste passa
-   npx tsc --noEmit        # Inga TypeScript errors
+   npm run typecheck       # Inga TypeScript errors
    npm run build           # Build måste lyckas
    ```
 
@@ -328,6 +407,18 @@ const providers = await prisma.provider.findMany({
    ```bash
    git push origin main
    ```
+
+### Husky Pre-push Hook
+
+Projektet har en automatisk pre-push hook (via Husky) som körs innan varje `git push`:
+
+```bash
+# Hooken kör automatiskt:
+npm run test:run     # Alla unit tests
+npm run typecheck    # TypeScript check
+```
+
+Om något failar avbryts pushen. Du behöver inte köra dessa manuellt innan push - hooken sköter det åt dig. Men det kan vara bra att köra dem under utveckling för att slippa vänta vid push.
 
 ### Commit Messages
 
@@ -422,6 +513,15 @@ npx prisma generate
 lsof -ti:3000 | xargs kill -9
 ```
 
+**Issue: "MaxClientsInSessionMode: max clients reached" (503-fel)**
+```bash
+# Orsak: Prisma Studio-processer stängs inte automatiskt och äter alla DB-anslutningar
+# Lösning: Hitta och döda zombie-processer
+ps aux | grep prisma
+pkill -f "prisma studio"
+```
+Tips: Stäng alltid Prisma Studio med Ctrl+C när du är klar. Kontrollera med `ps aux | grep prisma` om appen plötsligt får 503-fel.
+
 **Issue: Tests failar efter schema-ändring**
 ```bash
 # Lösning: Uppdatera mocks/tests för att matcha nytt schema
@@ -438,7 +538,7 @@ lsof -ti:3000 | xargs kill -9
 - **Tech Stack**:
   - [Next.js Docs](https://nextjs.org/docs)
   - [Prisma Docs](https://www.prisma.io/docs)
-  - [NextAuth Docs](https://next-auth.js.org/)
+  - [NextAuth v5 Docs](https://authjs.dev/)
   - [shadcn/ui](https://ui.shadcn.com)
   - [Vitest Docs](https://vitest.dev/)
   - [Playwright Docs](https://playwright.dev/)
