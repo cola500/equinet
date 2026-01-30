@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 
-interface Notification {
+export interface Notification {
   id: string
   type: string
   message: string
