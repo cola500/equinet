@@ -23,7 +23,10 @@ interface RouteOrder {
   customer: {
     firstName: string
     lastName: string
-  }
+  } | null
+  provider?: {
+    businessName: string
+  } | null
 }
 
 interface RouteMapVisualizationProps {
@@ -276,7 +279,7 @@ export default function RouteMapVisualization({
           <div class="text-sm">
             <strong class="text-base capitalize">${order.serviceType}</strong><br/>
             <span class="text-gray-600">${order.address}</span><br/>
-            <span class="text-gray-600">${order.customer.firstName} ${order.customer.lastName}</span>
+            <span class="text-gray-600">${order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : order.provider?.businessName ?? ''}</span>
             ${optimizedPath ? `<br/><span class="text-green-600 font-medium">Stopp #${displayNumber}</span>` : ''}
           </div>
         `)
