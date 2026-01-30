@@ -20,6 +20,9 @@ model User {
   lastName     String
   phone        String?
 
+  // Admin flag
+  isAdmin      Boolean  @default(false)
+
   // Email verification
   emailVerified   Boolean   @default(false)
   emailVerifiedAt DateTime?
@@ -40,6 +43,7 @@ model User {
   emailVerificationTokens   EmailVerificationToken[]
   reviews                   Review[]   @relation("CustomerReviews")
   horses                    Horse[]
+  horseNotes                HorseNote[] @relation("HorseNoteAuthor")
 
   @@index([latitude, longitude]) // For geo-queries
 }
@@ -62,6 +66,12 @@ model Provider {
   serviceArea     String? // DEPRECATED: JSON array av områden (keep for backward compatibility)
   profileImageUrl String?
   isActive        Boolean  @default(true)
+
+  // Verification
+  isVerified      Boolean   @default(false)
+  verifiedAt      DateTime?
+  verifiedBy      String?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -72,6 +82,7 @@ model Provider {
   routes                 Route[]
   routeOrders            RouteOrder[] // NEW: Provider-announced route orders
   reviews                Review[]
+  verifications          ProviderVerification[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -189,6 +200,7 @@ model Horse {
   updatedAt    DateTime @updatedAt
 
   bookings     Booking[]
+  notes        HorseNote[]
 
   @@index([ownerId, isActive])
 }
@@ -354,4 +366,39 @@ model Review {
 
   @@index([providerId, createdAt])
   @@index([customerId])
+}
+
+model HorseNote {
+  id        String   @id @default(uuid())
+  horseId   String
+  horse     Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("HorseNoteAuthor", fields: [authorId], references: [id])
+  category  String   // "veterinary" | "farrier" | "general" | "injury" | "medication"
+  title     String   // "Vaccination - influensa"
+  content   String?  // Longer description
+  noteDate  DateTime // When the event occurred (not created)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([horseId, noteDate])
+  @@index([authorId])
+}
+
+model ProviderVerification {
+  id          String    @id @default(uuid())
+  providerId  String
+  provider    Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  type        String    // "education" | "organization" | "experience"
+  title       String    // "Wångens gesällprov"
+  description String?
+  status      String    @default("pending") // "pending" | "approved" | "rejected"
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNote  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([providerId, status])
+  @@index([status, createdAt])
 }

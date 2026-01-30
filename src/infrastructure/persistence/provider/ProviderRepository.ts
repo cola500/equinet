@@ -113,6 +113,7 @@ export class ProviderRepository implements IProviderRepository {
         longitude: true,
         serviceAreaKm: true,
         isActive: true,
+        isVerified: true,
         createdAt: true,
         updatedAt: true,
         services: {
@@ -215,6 +216,8 @@ export class ProviderRepository implements IProviderRepository {
         longitude: true,
         serviceAreaKm: true,
         isActive: true,
+        isVerified: true,
+        verifiedAt: true,
         createdAt: true,
         updatedAt: true,
         services: {
@@ -236,6 +239,16 @@ export class ProviderRepository implements IProviderRepository {
             endTime: true,
             isActive: true,
           },
+        },
+        verifications: {
+          where: { status: "approved" },
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            description: true,
+          },
+          orderBy: { createdAt: "desc" },
         },
         user: {
           select: {

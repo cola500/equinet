@@ -13,11 +13,11 @@
 | 3 | **Flexibel bokning** ("nån gång i mars") matchar hur branschen faktiskt fungerar | Erik, Anna | Flexibla rutt-beställningar | Redan implementerat |
 | 4 | **Manuell ruttplanering** kostar leverantörer ~2 000 kr/mån i onödig diesel | Erik, Marknadsanalys | Ruttoptimering med kartvy | Redan implementerat |
 | 5 | **Swish dominerar** (95% av privata betalningar) men "jagande efter betalning" är vanligt | Erik, Anna, Marknadsanalys | Betalningsabstraktion (gateway pattern) | Delvis implementerat |
-| 6 | **Hästhälsohistorik är fragmenterad** -- utspridd hos leverantör, kund och papper | Anna, Marknadsanalys | Hästregister + hälsotidslinje | Delvis implementerat |
+| 6 | **Hästhälsohistorik är fragmenterad** -- utspridd hos leverantör, kund och papper | Anna, Marknadsanalys | Hästregister + hälsotidslinje | Implementerat |
 | 7 | **Leverantörer tappar kunder** pga missade uppföljningar | Erik | Automatiska återbokningspåminnelser | Implementerat |
 | 8 | **Att hitta ny leverantör tar veckor** och bygger på mun-till-mun | Anna, Marknadsanalys | Leverantörsgalleri med recensioner | Redan implementerat |
 | 9 | **Leverantören driver adoption** -- kunden laddar ner när leverantören säger till | Anna | Leverantörs-first go-to-market | Strategisk insikt |
-| 10 | **Oskyddad hovslagartitel** skapar kvalitetsosäkerhet | Erik, Marknadsanalys | Leverantörsverifiering | Ny möjlighet |
+| 10 | **Oskyddad hovslagartitel** skapar kvalitetsosäkerhet | Erik, Marknadsanalys | Leverantörsverifiering | Implementerat |
 
 ---
 
@@ -80,19 +80,15 @@ Behov som identifierats i forskningen men som inte finns i nuvarande backlog.
 **Komplexitet:** Medium-hög -- ny bokningsmodell, stallkoncept
 **Värde:** Högt -- leverantörer sparar restid, kunder sparar koordineringstid
 
-### 3. Leverantörsverifiering
-**Behov:** Hovslagare är en oskyddad titel. Kunder saknar sätt att bedöma kompetens utöver mun-till-mun.
-**Lösning:** Verifierad badge baserad på utbildning (t.ex. Wången gesällprov), branschorganisation, eller antal genomförda bokningar.
-**Källa:** Erik ("folk som kallar sig hovslagare efter en helgkurs"), Anna ("vill veta om utbildning"), Marknadsanalys
-**Komplexitet:** Låg-medium -- UI-badge + manuell eller semiautomatisk verifiering
-**Värde:** Medium-högt -- differentiator, bygger förtroende
+### ~~3. Leverantörsverifiering~~ -- IMPLEMENTERAT
+**Status:** Implementerat (2026-01-30)
+**Vad som byggdes:** ProviderVerification-modell med typ (education/organization/experience), ansöknings-API med max 5 pending, admin-granskning via $transaction (godkänn→isVerified=true + notifikation), VerificationBadge-komponent, isVerified exponerat i providers-galleriet och detaljsidan, godkända verifieringar listade på providerdetalj.
+**Implementation:** `ProviderVerification` (schema), `verification-requests` (API), `admin/verification-requests` (API), `VerificationBadge` (komponent), `provider/verification` (UI), `admin/verifications` (UI), ProviderNav uppdaterad.
 
-### 4. Hästhälsotidslinje
-**Behov:** Hästhälsohistorik fragmenterad mellan leverantörer, ägare och papper. Ingen samlad överblick.
-**Lösning:** Utöka befintligt hästregister med en tidslinje som automatiskt visar alla bokningar/besök + möjlighet att lägga till egna anteckningar.
-**Källa:** Anna ("tidslinje per häst"), Erik ("se anteckningar innan besök")
-**Komplexitet:** Medium -- befintlig data (bokningar) finns, behöver ny vy + anteckningsfunktion
-**Värde:** Högt -- unik feature, inget liknande på marknaden
+### ~~4. Hästhälsotidslinje~~ -- IMPLEMENTERAT
+**Status:** Implementerat (2026-01-30)
+**Vad som byggdes:** HorseNote-modell med 5 kategorier (veterinary/farrier/general/injury/medication), fullständig CRUD API, Timeline API som mergar bokningar + anteckningar, mergeTimeline utility, hästprofil-sida med vertikal färgkodad tidslinje, kategorifilter-chips, anteckningsdialog, provider read-only tidslinje med begränsade kategorier (integritetsskydd: providers ser bara veterinär/hovslagare/medicin).
+**Implementation:** `HorseNote` (schema), `horses/[id]/notes` (API), `horses/[id]/timeline` (API), `timeline.ts` (utility), `customer/horses/[id]` (UI), `provider/horse-timeline/[horseId]` (UI), "Se historik"-knapp på hästkort.
 
 ### 5. Fortnox-integration
 **Behov:** Leverantörer lägger manuellt in fakturor i Fortnox varje kväll. Tar tid och leder till att fakturor glöms.
@@ -126,15 +122,15 @@ Dessa features validerades starkt av forskningen och byggde på befintlig infras
 
 **Kvarstår från original-planen:** Push/SMS-notifikationer (komplement till in-app, kräver Twilio/Web Push). Riktig Swish/Stripe-koppling (kräver teamdiskussion om provider).
 
-### Fas 2: Differentiering (efterföljande sprint)
+### Fas 2: Differentiering -- DELVIS GENOMFÖRD (2026-01-30)
 
 Features som gör Equinet unikt jämfört med potentiella konkurrenter.
 
-| Prioritet | Feature | Motivation |
-|-----------|---------|-----------|
-| 4 | **Hästhälsotidslinje** | Utökar befintligt register. Inget liknande finns. Hög kundnöjdhet. |
-| 5 | **Leverantörsverifiering** | Bygger förtroende. Differentiator. Relativt enkel implementation. |
-| 6 | **Gruppbokning** | Löser konkret samordningsproblem. Ökar bokningar per besök. |
+| Prioritet | Feature | Status |
+|-----------|---------|--------|
+| 4 | **Hästhälsotidslinje** | Implementerat -- HorseNote-modell, CRUD API, mergeTimeline, färgkodad tidslinje, kategorifilter, provider read-only (begränsade kategorier för integritet). |
+| 5 | **Leverantörsverifiering** | Implementerat -- ProviderVerification-modell, ansöknings-API (max 5 pending), admin-granskning (approve/reject i $transaction), VerificationBadge, isVerified i provider-galleriet. |
+| 6 | **Gruppbokning** | Kvar -- sparad till separat sprint (mest komplex, kräver stallkoncept och ny bokningsmodell). |
 
 ### Fas 3: Ecosystem-integration (långsiktigt)
 
@@ -163,5 +159,5 @@ Båda personerna betonade enkelhet. Erik: "som SMS fast smartare". Anna: "boka f
 ---
 
 *Syntesanalys genomförd: Januari 2026*
-*Senast uppdaterad: 2026-01-30 (Fas 1 implementerad)*
+*Senast uppdaterad: 2026-01-30 (Fas 1 + Fas 2 delvis implementerad)*
 *Baserad på: Marknadsanalys, intervju med Erik Skog (leverantör), intervju med Anna Lindqvist (kund)*

@@ -36,6 +36,7 @@ export interface ProviderWithDetails extends Provider {
   latitude?: number | null
   longitude?: number | null
   serviceAreaKm?: number | null
+  isVerified: boolean
   services: Array<{
     id: string
     name: string
@@ -102,6 +103,8 @@ export interface ProviderWithFullDetails extends Provider {
   latitude?: number | null
   longitude?: number | null
   serviceAreaKm?: number | null
+  isVerified: boolean
+  verifiedAt?: Date | null
   address?: string | null
   postalCode?: string | null
   services: Array<{
@@ -116,6 +119,12 @@ export interface ProviderWithFullDetails extends Provider {
     startTime: string
     endTime: string
     isActive: boolean
+  }>
+  verifications?: Array<{
+    id: string
+    type: string
+    title: string
+    description: string | null
   }>
   user: {
     firstName: string

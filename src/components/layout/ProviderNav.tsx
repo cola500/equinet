@@ -21,6 +21,7 @@ const navItems = [
   { href: "/provider/reviews", label: "Recensioner" },
   { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route" },
   { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },
+  { href: "/provider/verification", label: "Verifiering" },
   { href: "/provider/profile", label: "Min profil" },
 ]
 

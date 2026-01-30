@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
@@ -289,6 +290,11 @@ export default function CustomerHorsesPage() {
                   </p>
                 )}
                 <div className="flex gap-2">
+                  <Link href={`/customer/horses/${horse.id}`}>
+                    <Button variant="outline" size="sm">
+                      Se historik
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     size="sm"

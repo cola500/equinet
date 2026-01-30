@@ -265,6 +265,216 @@ Soft delete (sätter `isActive=false`). Hästen försvinner från listor men bef
 
 ---
 
+## Horse Notes (Hästhälsotidslinje)
+
+Anteckningar i hästens hälsohistorik. Alla endpoints kräver autentisering och ägarskap av hästen (IDOR-skyddade).
+
+### GET /api/horses/[id]/notes
+
+Lista anteckningar för en häst.
+
+**Auth:** Required (hästens ägare)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `category` | string | Filtrera på kategori: `veterinary`, `farrier`, `general`, `injury`, `medication` |
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "horseId": "uuid",
+    "authorId": "uuid",
+    "category": "veterinary",
+    "title": "Vaccination - influensa",
+    "content": "Årlig vaccination genomförd",
+    "noteDate": "2026-01-15T00:00:00.000Z",
+    "createdAt": "2026-01-30T10:00:00Z",
+    "author": {
+      "firstName": "Anna",
+      "lastName": "Svensson"
+    }
+  }
+]
+```
+
+### POST /api/horses/[id]/notes
+
+Skapa ny anteckning.
+
+**Auth:** Required (hästens ägare)
+
+**Request Body:**
+```json
+{
+  "category": "veterinary | farrier | general | injury | medication",
+  "title": "Vaccination - influensa",
+  "content": "Valfri beskrivning (max 2000 tecken)",
+  "noteDate": "2026-01-15T00:00:00.000Z"
+}
+```
+
+**Validering:**
+- `category`: obligatorisk, en av veterinary/farrier/general/injury/medication
+- `title`: obligatorisk, 1-200 tecken
+- `content`: valfri, max 2000 tecken
+- `noteDate`: obligatorisk, giltigt ISO-datum, inte i framtiden
+
+**Response:** `201 Created`
+
+### PUT /api/horses/[id]/notes/[noteId]
+
+Uppdatera anteckning (partial updates).
+
+**Auth:** Required (hästens ägare)
+
+**Request Body:** Samma fält som POST, alla valfria.
+
+**Response:** `200 OK`
+
+### DELETE /api/horses/[id]/notes/[noteId]
+
+Radera anteckning (hard delete).
+
+**Auth:** Required (hästens ägare)
+
+**Response:** `200 OK` med `{ "message": "Anteckningen har tagits bort" }`.
+
+---
+
+## Horse Timeline
+
+### GET /api/horses/[id]/timeline
+
+Kombinerad tidslinje: bokningar (completed) + anteckningar, sorterade kronologiskt.
+
+**Auth:** Required (hästens ägare ELLER provider med bokning för hästen)
+
+**Åtkomstnivåer:**
+- **Ägare:** Ser alla kategorier
+- **Provider:** Ser bara `veterinary`, `farrier`, `medication` (integritetsskydd)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `category` | string | Filtrera på kategori (döljer bokningar vid filtrering) |
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "type": "booking",
+    "id": "uuid",
+    "date": "2026-01-20T00:00:00.000Z",
+    "title": "Massage",
+    "providerName": "Sara Hästmassage",
+    "status": "completed",
+    "notes": "Stel i ryggen"
+  },
+  {
+    "type": "note",
+    "id": "uuid",
+    "date": "2026-01-15T00:00:00.000Z",
+    "title": "Vaccination - influensa",
+    "category": "veterinary",
+    "content": "Årlig vaccination genomförd",
+    "authorName": "Anna Svensson"
+  }
+]
+```
+
+---
+
+## Verification Requests (Leverantörsverifiering)
+
+### GET /api/verification-requests
+
+Lista providers egna verifieringsansökningar.
+
+**Auth:** Required (provider)
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "providerId": "uuid",
+    "type": "education",
+    "title": "Wångens gesällprov",
+    "description": "Godkänd hovslagare",
+    "status": "pending | approved | rejected",
+    "reviewNote": null,
+    "reviewedAt": null,
+    "createdAt": "2026-01-30T10:00:00Z"
+  }
+]
+```
+
+### POST /api/verification-requests
+
+Skapa verifieringsansökan.
+
+**Auth:** Required (provider)
+
+**Request Body:**
+```json
+{
+  "type": "education | organization | experience",
+  "title": "Wångens gesällprov",
+  "description": "Valfri beskrivning (max 1000 tecken)"
+}
+```
+
+**Begränsning:** Max 5 väntande ansökningar per provider.
+
+**Response:** `201 Created`
+
+**Errors:**
+- `400` - Max pending-gräns nådd eller valideringsfel
+- `404` - Användaren har ingen provider-profil
+
+---
+
+## Admin
+
+### GET /api/admin/verification-requests
+
+Lista alla väntande verifieringsansökningar.
+
+**Auth:** Required (admin -- `isAdmin=true` på User)
+
+**Response:** `200 OK` -- Array med verifieringar inkl. provider-info.
+
+### PUT /api/admin/verification-requests/[id]
+
+Godkänn eller avvisa verifieringsansökan.
+
+**Auth:** Required (admin)
+
+**Request Body:**
+```json
+{
+  "action": "approve | reject",
+  "reviewNote": "Valfri kommentar (max 500 tecken)"
+}
+```
+
+**Godkänn-flöde (atomär transaction):**
+1. Uppdatera ProviderVerification.status → "approved"
+2. Sätt Provider.isVerified → true, verifiedAt → now()
+3. Skapa notifikation till providern
+
+**Response:** `200 OK`
+
+**Errors:**
+- `400` - Ansökan redan behandlad eller valideringsfel
+- `403` - Ej admin-behörighet
+- `404` - Ansökan hittades inte
+
+---
+
 ## Providers
 
 ### GET /api/providers
@@ -295,6 +505,7 @@ Sök aktiva providers med geo-filtrering.
     "latitude": 57.7089,
     "longitude": 11.9746,
     "serviceAreaKm": 50,
+    "isVerified": true,
     "services": [...],
     "user": {
       "firstName": "Johan",
@@ -308,7 +519,7 @@ Sök aktiva providers med geo-filtrering.
 
 ### GET /api/providers/[id]
 
-Hämta specifik provider med tjänster och tillgänglighet.
+Hämta specifik provider med tjänster, tillgänglighet och verifieringsstatus.
 
 **Auth:** Optional (publikt endpoint)
 
@@ -317,6 +528,16 @@ Hämta specifik provider med tjänster och tillgänglighet.
 {
   "id": "uuid",
   "businessName": "Hovslagare AB",
+  "isVerified": true,
+  "verifiedAt": "2026-01-30T12:00:00Z",
+  "verifications": [
+    {
+      "id": "uuid",
+      "type": "education",
+      "title": "Wångens gesällprov",
+      "description": "Godkänd hovslagare"
+    }
+  ],
   "services": [...],
   "availability": [...],
   "user": {
@@ -983,4 +1204,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-01-28*
+*Senast uppdaterad: 2026-01-30*

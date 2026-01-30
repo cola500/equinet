@@ -539,6 +539,15 @@ Före merge?          -> quality-gate
 - **Test-mockar måste uppdateras vid integration**: Att lägga till `notificationService.createAsync()` i befintliga routes bröt tester som saknade mock för prisma.provider/notification. Testa alltid efter integration.
 - **Zod `.strict()` vs öppen validering**: `.strict()` avvisar okända fält -- ta bort det när schemat utökas med nullable/optional fält som `recommendedIntervalWeeks`.
 
+### Hästhälsotidslinje & Leverantörsverifiering (2026-01-30)
+- **`ProviderLayout` krävs på ALLA provider-sidor**: Sidor utan `ProviderLayout` tappar navigationsmenyn. Använd alltid layoutkomponenten -- aldrig manuell `<div>` + `<main>`-wrapper.
+- **mergeTimeline i JS, inte SQL**: Att hämta bookings + notes separat och mergea i JS med `sort()` är enklare och lättare att testa än komplexa SQL UNIONs. Fungerar bra vid låga volymer.
+- **Provider-access med begränsade kategorier**: Integritetsskydd genom att filtrera note-kategorier i WHERE (`category: { in: [...] }`) snarare än i JS. Databasen hanterar filtreringen.
+- **`$transaction` i Prisma kräver `@ts-expect-error`**: Interactive transactions med callback-syntax har kända TypeScript-inferensproblem. Befintligt mönster: `// @ts-expect-error` + `(tx: any)`.
+- **`logger.security()` har speciell signatur**: `(event, severity, context)` -- inte samma som `logger.info(message, context)`. Kontrollera alltid logger-API:et.
+- **MockProviderRepository måste uppdateras vid typändringar**: Att lägga till `isVerified` på `ProviderWithDetails` bröt mock-repositoryt. Interface-ändringar propagerar till alla implementationer.
+- **`db push` vid drift-detected**: `prisma migrate dev` kräver clean migration history. `prisma db push` synkar schema direkt utan migrationsfiler -- bättre för utveckling med Supabase.
+
 ---
 
 ## Automated Quality Gates
@@ -633,4 +642,4 @@ Före merge?          -> quality-gate
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-01-29
+**Senast uppdaterad**: 2026-01-30

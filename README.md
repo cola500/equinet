@@ -125,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (743+ unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (792+ unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -151,9 +151,12 @@ equinet/
 │   │   │   ├── services/     # Tjänste-API
 │   │   │   ├── cron/         # Schemalagda jobb (påminnelser)
 │   │   │   ├── route-orders/ # Rutt-beställningar API
-│   │   │   └── routes/       # Rutt-planering API
-│   │   ├── customer/         # Kundsidor (dashboard, bookings, profile)
-│   │   ├── provider/         # Leverantörssidor (dashboard, services, bookings, routes)
+│   │   │   ├── routes/       # Rutt-planering API
+│   │   │   ├── verification-requests/ # Leverantörsverifiering API
+│   │   │   └── admin/        # Admin-endpoints (verifieringsgranskning)
+│   │   ├── admin/            # Admin-sidor (verifieringshantering)
+│   │   ├── customer/         # Kundsidor (dashboard, bookings, profile, hästprofil)
+│   │   ├── provider/         # Leverantörssidor (dashboard, services, bookings, routes, verifiering)
 │   │   └── providers/        # Publika leverantörssidor
 │   ├── components/
 │   │   ├── layout/           # Header, navigation, layouts
@@ -225,11 +228,12 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller (14 st):**
-- **User** - Användarkonton (kunder + leverantörer)
-- **Provider** - Leverantörsprofiler med företagsinformation
+**Huvudmodeller (16 st):**
+- **User** - Användarkonton (kunder + leverantörer + admin)
+- **Provider** - Leverantörsprofiler med företagsinformation och verifieringsstatus
 - **Service** - Tjänster som leverantörer erbjuder
 - **Horse** - Hästregister med namn, ras, födelseår, kön, specialbehov
+- **HorseNote** - Anteckningar i hästens hälsotidslinje (veterinär, hovslagare, skada, medicin, allmänt)
 - **Availability** - Öppettider per veckodag
 - **AvailabilityException** - Undantag från öppettider (lediga dagar, etc.)
 - **Booking** - Traditionella bokningar med fast tid (kan kopplas till Horse)
@@ -240,6 +244,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **Route** - Leverantörers planerade rutter
 - **RouteStop** - Enskilda stopp i en rutt
 - **Review** - Recensioner och betyg (1-5) med leverantörssvar
+- **ProviderVerification** - Verifieringsansökningar (utbildning, organisation, erfarenhet)
 
 Se `prisma/schema.prisma` för fullständig definition.
 
@@ -261,6 +266,8 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Bokningshantering med filter och automatisk tab-växling
 - Profilkompletteringsindikator
 - **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg
+- **Verifiering**: Ansök om verifiering (utbildning, organisation, erfarenhet), badge på profil vid godkännande
+- **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin)
 - **Rutt-planering**:
   - Visa tillgängliga flexibla beställningar sorterade efter avstånd
   - Skapa optimerade rutter (Haversine + Nearest Neighbor)
@@ -271,12 +278,16 @@ Se `prisma/schema.prisma` för fullständig definition.
 ### Kundfunktioner
 - Leverantörsgalleri med sökning och filtrera
 - **Hästregister**: Lägg till, redigera och ta bort hästar med namn, ras, födelseår, kön och specialbehov
+- **Hästhälsotidslinje**: Samlad historik per häst -- bokningar + anteckningar (veterinär, hovslagare, skada, medicin, allmänt). Kategorifilter och färgkodad tidslinje.
 - Traditionella bokningar med tillgänglighetskontroll och hästval (dropdown eller fritext)
 - Flexibla rutt-beställningar (datum-spann, prioritet)
 - Avboka bokningar med bekräftelsedialog
 - Mock-betalning med kvittogenerering
 - Kundprofil
 - **Recensioner & betyg**: Lämna, redigera och ta bort recensioner för avslutade bokningar
+
+### Admin
+- **Verifieringsgranskning**: Granska, godkänna och avvisa leverantörers verifieringsansökningar med kommentarer
 
 ### UI/UX
 - Responsiv design
@@ -329,7 +340,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**810+ tester** (66 E2E + 743 unit/integration) med **70% coverage**.
+**860+ tester** (66 E2E + 792 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -354,7 +365,7 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
 - **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, PaymentGateway, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, cron)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, verification-requests, admin-verifications, cron)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -368,6 +379,8 @@ Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 3. **Logga in som leverantör** → Acceptera bokning → Markera som klar
 4. **Verifiera som kund** → Se uppdaterad status → Lämna recension
 5. **Logga in som leverantör** → Se recension → Svara på recension
+6. **Som kund** → Mina hästar → Se historik → Lägg till anteckning
+7. **Som leverantör** → Verifiering → Skicka ansökan
 
 Se längre guide i [CLAUDE.md](./CLAUDE.md) för steg-för-steg instruktioner.
 
@@ -486,8 +499,11 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ In-app notifikationer (klocka, dropdown, polling)
 - ✅ Automatiska återbokningspåminnelser (cron + email + in-app)
 - ✅ Betalningsabstraktion (gateway pattern for Swish/Stripe)
+- ✅ Hästhälsotidslinje (anteckningar, kategorifilter, färgkodning, provider read-only)
+- ✅ Leverantörsverifiering (ansökan, admin-granskning, badge, notifikation)
 
 ### Framtida Features
+- **Gruppbokning** - Samordna leverantörsbesök för stallgemenskaper
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
 - **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
 - Bilduppladdning (profiler, tjänster)
