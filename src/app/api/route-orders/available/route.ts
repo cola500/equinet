@@ -68,6 +68,11 @@ export async function GET(request: Request) {
             lastName: true,
             phone: true,
           }
+        },
+        provider: {
+          select: {
+            businessName: true,
+          }
         }
       },
       orderBy: {

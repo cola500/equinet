@@ -40,7 +40,10 @@ interface RouteOrder {
     firstName: string
     lastName: string
     phone?: string
-  }
+  } | null
+  provider: {
+    businessName: string
+  } | null
   distanceKm?: number
 }
 
@@ -156,7 +159,9 @@ export default function RoutePlanningPage() {
         id: index, // Använd array-index som ID för Modal API
         lat: order.latitude,
         lon: order.longitude,
-        customer: `${order.customer.firstName} ${order.customer.lastName}`,
+        customer: order.customer
+          ? `${order.customer.firstName} ${order.customer.lastName}`
+          : order.provider?.businessName ?? 'Okänd',
         address: order.address,
         service: order.serviceType,
       }))
