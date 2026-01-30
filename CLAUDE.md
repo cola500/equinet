@@ -548,6 +548,12 @@ Före merge?          -> quality-gate
 - **MockProviderRepository måste uppdateras vid typändringar**: Att lägga till `isVerified` på `ProviderWithDetails` bröt mock-repositoryt. Interface-ändringar propagerar till alla implementationer.
 - **`db push` vid drift-detected**: `prisma migrate dev` kräver clean migration history. `prisma db push` synkar schema direkt utan migrationsfiler -- bättre för utveckling med Supabase.
 
+### Mobil-first, Desktop-review Workflow (2026-01-30)
+- **Mobilen är bra på att skapa ny kod, sämre på integration**: Skriver fungerande sidor men missar att importera befintliga typer/funktioner -- duplicerar istället. Svårare att navigera kodbasen på mobilen.
+- **Copy-paste eskalerar utan kodsökning**: `Notification`-typ och `formatRelativeTime` kopierades rakt av istället för att importeras. Flagga med `// TODO: review - duplicated from X?` om du misstänker duplicering.
+- **Kontext avgör om ett mönster är rätt**: `// Silently fail` var rimligt i en dropdown (NotificationBell) men fel på en dedikerad sida där användaren förväntar sig feedback. Kopiera inte mönster blint -- anpassa till kontexten.
+- **Workflow som fungerar**: Mobilen levererar snabbt, desktop granskar och polerar. Bra arbetsfördelning.
+
 ---
 
 ## Automated Quality Gates

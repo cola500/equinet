@@ -2,36 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 import { Header } from "@/components/layout/Header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bell, Check, CheckCheck } from "lucide-react"
-
-interface Notification {
-  id: string
-  type: string
-  message: string
-  isRead: boolean
-  linkUrl: string | null
-  metadata: string | null
-  createdAt: string
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const now = new Date()
-  const date = new Date(dateStr)
-  const diffMs = now.getTime() - date.getTime()
-  const diffMinutes = Math.floor(diffMs / 60_000)
-  const diffHours = Math.floor(diffMs / 3_600_000)
-  const diffDays = Math.floor(diffMs / 86_400_000)
-
-  if (diffMinutes < 1) return "Just nu"
-  if (diffMinutes < 60) return `${diffMinutes} min sedan`
-  if (diffHours < 24) return `${diffHours} tim sedan`
-  if (diffDays < 7) return `${diffDays} dagar sedan`
-  return date.toLocaleDateString("sv-SE")
-}
+import { type Notification } from "@/hooks/useNotifications"
+import { formatRelativeTime } from "@/lib/format-utils"
 
 function getNotificationTypeLabel(type: string): string {
   const labels: Record<string, string> = {
@@ -94,7 +72,7 @@ export default function NotificationsPage() {
         )
       }
     } catch {
-      // Silently fail
+      toast.error("Kunde inte markera som läst")
     }
   }
 
@@ -105,7 +83,7 @@ export default function NotificationsPage() {
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
       }
     } catch {
-      // Silently fail
+      toast.error("Kunde inte markera alla som lästa")
     }
   }
 
