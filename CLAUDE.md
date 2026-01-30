@@ -503,6 +503,13 @@ Före merge?          -> quality-gate
 - **Symptom**: `FATAL: MaxClientsInSessionMode: max clients reached` - ser ut som databasproblem men är egentligen lokala zombie-processer.
 - **Felsökning**: `ps aux | grep prisma` avslöjar problemet. `pkill -f "prisma studio"` fixar det.
 
+### Recensioner & Betyg (2026-01-30)
+- **Prisma `groupBy` har komplexa TS-overloads** - `findMany` + manuell aggregering i JS är enklare och lika effektivt vid låga volymer. Undvik att slåss med TypeScript.
+- **Separata sidor > fullproppade dashboards** - Review-logik (reply-dialog, lista, etc) hör hemma på egen flik, inte inbäddad i dashboarden. Enklare kod, bättre UX.
+- **1:1-relationer som fält på samma modell** - Reply/repliedAt direkt på Review-modellen (istället för separat modell) reducerar joins och förenklar API:et.
+- **Kontrollera stöd-API:er tidigt** - Profile-API:et saknade `providerId`, fick patchas efteråt. Kartlägg beroenden innan implementation.
+- **Enrichment-pattern fungerar** - `enrichWithReviewStats()` i providers-routen följer samma mönster som `enrichWithNextVisit()`. Konsistens ger förutsägbar kod.
+
 ### Vercel Build Timeout Regression (2026-01-29)
 - **`ignoreBuildErrors: true` i next.config.ts är en MEDVETEN optimering** - ta INTE bort den. TypeScript checkas separat i CI.
 - **Agent-refaktoreringar kan ta bort "onödiga" inställningar** som i själva verket är kritiska. Kommentarer i koden räcker inte alltid som skydd.
