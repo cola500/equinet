@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
+import { StarRating } from "@/components/review/StarRating"
 
 export default function ProviderDashboard() {
   const router = useRouter()
@@ -21,6 +22,10 @@ export default function ProviderDashboard() {
   const [availableRouteOrders, setAvailableRouteOrders] = useState([])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [reviewStats, setReviewStats] = useState<{
+    averageRating: number | null
+    totalCount: number
+  }>({ averageRating: null, totalCount: 0 })
   const { retry, retryCount, isRetrying, canRetry } = useRetry({
     maxRetries: 3,
     onMaxRetriesReached: () => {
@@ -48,7 +53,8 @@ export default function ProviderDashboard() {
         fetchServices(),
         fetchBookings(),
         fetchRoutes(),
-        fetchAvailableRouteOrders()
+        fetchAvailableRouteOrders(),
+        fetchReviewStats(),
       ])
     } catch (error) {
       console.error("Error fetching data:", error)
@@ -94,6 +100,26 @@ export default function ProviderDashboard() {
       setAvailableRouteOrders(data)
     }
     // Ignore errors - not critical
+  }
+
+  const fetchReviewStats = async () => {
+    try {
+      const profileRes = await fetch("/api/profile")
+      if (!profileRes.ok) return
+      const profile = await profileRes.json()
+      if (!profile.providerId) return
+
+      const response = await fetch(`/api/providers/${profile.providerId}/reviews?limit=1`)
+      if (response.ok) {
+        const data = await response.json()
+        setReviewStats({
+          averageRating: data.averageRating,
+          totalCount: data.totalCount,
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching review stats:", error)
+    }
   }
 
   if (isLoading || !isProvider) {
@@ -177,18 +203,30 @@ export default function ProviderDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Tillgängliga ruttbeställningar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {availableRouteOrders.length}
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/provider/reviews">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  Recensioner
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reviewStats.totalCount > 0 && reviewStats.averageRating !== null ? (
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-3xl font-bold">{reviewStats.averageRating.toFixed(1)}</span>
+                      <StarRating rating={Math.round(reviewStats.averageRating)} readonly size="sm" />
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {reviewStats.totalCount} {reviewStats.totalCount === 1 ? "recension" : "recensioner"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-3xl font-bold text-gray-300">--</div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Routes Section */}

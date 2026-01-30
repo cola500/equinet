@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/useAuth"
 import { Header } from "@/components/layout/Header"
+import { StarRating } from "@/components/review/StarRating"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 
@@ -35,6 +36,10 @@ interface Provider {
     date: string
     location: string
   } | null
+  reviewStats?: {
+    averageRating: number | null
+    totalCount: number
+  }
 }
 
 interface ProviderWithVisit {
@@ -445,6 +450,15 @@ export default function ProvidersPage() {
                       {provider.city && `${provider.city} • `}
                       {provider.user.firstName} {provider.user.lastName}
                     </CardDescription>
+                    {provider.reviewStats && provider.reviewStats.totalCount > 0 && provider.reviewStats.averageRating !== null && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <StarRating rating={Math.round(provider.reviewStats.averageRating)} readonly size="sm" />
+                        <span className="text-sm font-medium">{provider.reviewStats.averageRating.toFixed(1)}</span>
+                        <span className="text-sm text-gray-500">
+                          ({provider.reviewStats.totalCount})
+                        </span>
+                      </div>
+                    )}
                     {provider.nextVisit && (
                       <div className="mt-2 text-sm text-purple-600">
                         Nästa besök: {provider.nextVisit.location} - {formatShortDate(provider.nextVisit.date)}

@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
         address: true,
         latitude: true,
         longitude: true,
+        provider: {
+          select: { id: true },
+        },
       },
     })
 
@@ -41,7 +44,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    // Flatten provider ID for convenience
+    const { provider, ...userData } = user
+    return NextResponse.json({
+      ...userData,
+      providerId: provider?.id || null,
+    })
   } catch (error) {
     // If error is a Response (from auth()), return it
     if (error instanceof Response) {

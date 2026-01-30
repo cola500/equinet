@@ -19,6 +19,8 @@ import { NearbyRoutesBanner, type NearbyRoute } from "@/components/NearbyRoutesB
 import { ProviderHours } from "@/components/ProviderHours"
 import { UpcomingVisits } from "@/components/UpcomingVisits"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
+import { ReviewList } from "@/components/review/ReviewList"
+import { StarRating } from "@/components/review/StarRating"
 
 interface Service {
   id: string
@@ -79,12 +81,32 @@ export default function ProviderDetailPage() {
     longitude: number
   } | null>(null)
   const [nearbyRoute, setNearbyRoute] = useState<NearbyRoute | null>(null)
+  const [reviewSummary, setReviewSummary] = useState<{
+    averageRating: number | null
+    totalCount: number
+  }>({ averageRating: null, totalCount: 0 })
 
   useEffect(() => {
     if (params.id) {
       fetchProvider()
+      fetchReviewSummary()
     }
   }, [params.id])
+
+  const fetchReviewSummary = async () => {
+    try {
+      const response = await fetch(`/api/providers/${params.id}/reviews?limit=1`)
+      if (response.ok) {
+        const data = await response.json()
+        setReviewSummary({
+          averageRating: data.averageRating,
+          totalCount: data.totalCount,
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching review summary:", error)
+    }
+  }
 
   // Fetch customer location and nearby routes for customers
   useEffect(() => {
@@ -313,11 +335,24 @@ export default function ProviderDetailPage() {
           {/* Provider Info */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-3xl">{provider.businessName}</CardTitle>
-              <CardDescription className="text-lg">
-                {provider.user.firstName} {provider.user.lastName}
-                {provider.city && ` • ${provider.city}`}
-              </CardDescription>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-3xl">{provider.businessName}</CardTitle>
+                  <CardDescription className="text-lg">
+                    {provider.user.firstName} {provider.user.lastName}
+                    {provider.city && ` • ${provider.city}`}
+                  </CardDescription>
+                </div>
+                {reviewSummary.totalCount > 0 && reviewSummary.averageRating !== null && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <StarRating rating={Math.round(reviewSummary.averageRating)} readonly size="sm" />
+                    <span className="font-semibold">{reviewSummary.averageRating.toFixed(1)}</span>
+                    <span className="text-gray-500">
+                      ({reviewSummary.totalCount})
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {provider.description && (
@@ -392,6 +427,11 @@ export default function ProviderDetailPage() {
               ))}
             </div>
           )}
+          {/* Reviews Section */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Recensioner</h2>
+            <ReviewList providerId={provider.id} />
+          </div>
         </div>
       </main>
 

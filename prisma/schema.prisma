@@ -38,6 +38,7 @@ model User {
   notifications             Notification[]
   routeOrders               RouteOrder[]
   emailVerificationTokens   EmailVerificationToken[]
+  reviews                   Review[]   @relation("CustomerReviews")
 
   @@index([latitude, longitude]) // For geo-queries
 }
@@ -69,6 +70,7 @@ model Provider {
   bookings               Booking[]
   routes                 Route[]
   routeOrders            RouteOrder[] // NEW: Provider-announced route orders
+  reviews                Review[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -156,6 +158,7 @@ model Booking {
   updatedAt     DateTime    @updatedAt
 
   payment       Payment?
+  review        Review?
 
   @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
   @@index([providerId, bookingDate, status])
@@ -298,4 +301,29 @@ model EmailVerificationToken {
 
   @@index([token])
   @@index([userId])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int      // 1-5
+  comment    String?  // Max 500 tecken, valfritt
+
+  bookingId  String   @unique // En recension per bokning
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   User     @relation("CustomerReviews", fields: [customerId], references: [id])
+
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  // Leverantörssvar
+  reply      String?  // Max 500 tecken
+  repliedAt  DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([providerId, createdAt])
+  @@index([customerId])
 }

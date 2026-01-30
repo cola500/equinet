@@ -439,6 +439,14 @@ export class PrismaBookingRepository
             // ❌ NOT: provider, providerPaymentId (internal details)
           },
         },
+        // Review for customer view (so they can see/edit their review)
+        review: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+          },
+        },
         // ❌ NO customer relation (customer already knows their own data)
       },
       orderBy: { bookingDate: 'desc' },

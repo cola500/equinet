@@ -14,6 +14,9 @@ vi.mock('@/lib/prisma', () => ({
     availabilityException: {
       findMany: vi.fn(),
     },
+    review: {
+      findMany: vi.fn(),
+    },
   },
 }))
 
@@ -22,6 +25,8 @@ describe('GET /api/providers', () => {
     vi.clearAllMocks()
     // Default: no upcoming visits
     vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
+    // Default: no reviews
+    vi.mocked(prisma.review.findMany).mockResolvedValue([])
   })
 
   it('should return all active providers with services', async () => {

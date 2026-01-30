@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { Badge } from "@/components/ui/badge"
+import { ReviewDialog } from "@/components/review/ReviewDialog"
+import { StarRating } from "@/components/review/StarRating"
 
 interface Payment {
   id: string
@@ -53,6 +55,11 @@ interface Booking {
     }
   }
   payment?: Payment | null
+  review?: {
+    id: string
+    rating: number
+    comment: string | null
+  } | null
   type: "fixed"
 }
 
@@ -96,6 +103,8 @@ export default function CustomerBookingsPage() {
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoadingBookings, setIsLoadingBookings] = useState(true)
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isCustomer) {
@@ -193,6 +202,25 @@ export default function CustomerBookingsPage() {
       toast.error(error instanceof Error ? error.message : "Kunde inte genomföra betalningen")
     } finally {
       setPayingBookingId(null)
+    }
+  }
+
+  const handleDeleteReview = async (reviewId: string) => {
+    setDeletingReviewId(reviewId)
+    try {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) {
+        throw new Error("Failed to delete review")
+      }
+      toast.success("Recension borttagen")
+      fetchBookings()
+    } catch (error) {
+      console.error("Error deleting review:", error)
+      toast.error("Kunde inte ta bort recensionen")
+    } finally {
+      setDeletingReviewId(null)
     }
   }
 
@@ -586,6 +614,54 @@ export default function CustomerBookingsPage() {
                     </div>
                   )}
 
+                  {/* Review section for completed fixed bookings */}
+                  {booking.type === "fixed" && booking.status === "completed" && (
+                    <div className="mt-3 pt-3 border-t">
+                      {booking.review ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-700">Din recension:</span>
+                              <StarRating rating={booking.review.rating} readonly size="sm" />
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-gray-500"
+                                onClick={() => setReviewBooking(booking)}
+                              >
+                                Redigera
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-red-500 hover:text-red-600"
+                                onClick={() => handleDeleteReview(booking.review!.id)}
+                                disabled={deletingReviewId === booking.review.id}
+                              >
+                                {deletingReviewId === booking.review.id ? "..." : "Ta bort"}
+                              </Button>
+                            </div>
+                          </div>
+                          {booking.review.comment && (
+                            <p className="text-sm text-gray-600 italic">
+                              "{booking.review.comment}"
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setReviewBooking(booking)}
+                        >
+                          Lämna recension
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   {/* Cancel button for flexible bookings */}
                   {booking.type === "flexible" && (booking.status === "pending" || booking.status === "in_route") && (
                     <div className="mt-4 pt-4 border-t">
@@ -603,6 +679,22 @@ export default function CustomerBookingsPage() {
             ))}
           </div>
         )}
+
+      {/* Review Dialog */}
+      {reviewBooking && (
+        <ReviewDialog
+          open={!!reviewBooking}
+          onOpenChange={(open) => { if (!open) setReviewBooking(null) }}
+          bookingId={reviewBooking.id}
+          serviceName={reviewBooking.service.name}
+          providerName={reviewBooking.provider.businessName}
+          existingReview={reviewBooking.review || undefined}
+          onSuccess={() => {
+            setReviewBooking(null)
+            fetchBookings()
+          }}
+        />
+      )}
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={!!bookingToCancel} onOpenChange={() => setBookingToCancel(null)}>

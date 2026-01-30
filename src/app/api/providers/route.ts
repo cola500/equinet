@@ -37,6 +37,46 @@ function toRad(value: number): number {
   return (value * Math.PI) / 180
 }
 
+// Enrich providers with aggregated review data
+async function enrichWithReviewStats<T extends { id: string }>(
+  providers: T[]
+): Promise<(T & { reviewStats: { averageRating: number | null; totalCount: number } })[]> {
+  const providerIds = providers.map((p) => p.id)
+  const defaultStats = { averageRating: null as number | null, totalCount: 0 }
+
+  if (providerIds.length === 0) {
+    return providers.map((p) => ({ ...p, reviewStats: { ...defaultStats } }))
+  }
+
+  // Fetch all reviews for these providers (only rating + providerId)
+  const reviews = await prisma.review.findMany({
+    where: { providerId: { in: providerIds } },
+    select: { providerId: true, rating: true },
+  })
+
+  // Aggregate manually (avoids complex groupBy TS overloads)
+  const statsMap = new Map<string, { sum: number; count: number }>()
+  for (const review of reviews) {
+    const existing = statsMap.get(review.providerId)
+    if (existing) {
+      existing.sum += review.rating
+      existing.count += 1
+    } else {
+      statsMap.set(review.providerId, { sum: review.rating, count: 1 })
+    }
+  }
+
+  return providers.map((provider) => {
+    const stats = statsMap.get(provider.id)
+    return {
+      ...provider,
+      reviewStats: stats
+        ? { averageRating: stats.sum / stats.count, totalCount: stats.count }
+        : { ...defaultStats },
+    }
+  })
+}
+
 // Enrich providers with their next planned visit
 async function enrichWithNextVisit<T extends { id: string }>(
   providers: T[]
@@ -239,8 +279,9 @@ export async function GET(request: NextRequest) {
       const total = filteredProviders.length
       const paginatedProviders = filteredProviders.slice(offset, offset + limit)
 
-      // Enrich with next visit info
-      const enrichedProviders = await enrichWithNextVisit(paginatedProviders)
+      // Enrich with next visit info and review stats
+      const withVisits = await enrichWithNextVisit(paginatedProviders)
+      const enrichedProviders = await enrichWithReviewStats(withVisits)
 
       return NextResponse.json({
         data: enrichedProviders,
@@ -257,8 +298,9 @@ export async function GET(request: NextRequest) {
     const total = providers.length
     const paginatedProviders = providers.slice(offset, offset + limit)
 
-    // Enrich with next visit info
-    const enrichedProviders = await enrichWithNextVisit(paginatedProviders)
+    // Enrich with next visit info and review stats
+    const withVisits = await enrichWithNextVisit(paginatedProviders)
+    const enrichedProviders = await enrichWithReviewStats(withVisits)
 
     return NextResponse.json({
       data: enrichedProviders,
