@@ -228,7 +228,7 @@ export class AuthService {
     if (!user) {
       return Result.fail({
         type: 'INVALID_CREDENTIALS',
-        message: 'Ogiltig email eller losenord',
+        message: 'Ogiltig email eller lösenord',
       })
     }
 
@@ -237,7 +237,7 @@ export class AuthService {
     if (!isValid) {
       return Result.fail({
         type: 'INVALID_CREDENTIALS',
-        message: 'Ogiltig email eller losenord',
+        message: 'Ogiltig email eller lösenord',
       })
     }
 
