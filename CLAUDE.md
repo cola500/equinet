@@ -487,6 +487,15 @@ Före merge?          -> quality-gate
 - **Repository pattern overhead motiverat**: Konsistens och testbarhet väger upp extra kod.
 - **E2E-tester avslöjar API-buggar**: Unit tests med mocks missar ofta validation/Prisma errors - kör E2E efter större ändringar.
 
+### DDD-Light Review Pilot (2026-02-01)
+- **Behavior-based route-tester overlever refactoring**: POST /api/reviews-testerna behövde NOLL andningar trots att hela implementationen byttes ut. Testa HTTP-kontrakt (status + response shape), inte Prisma-anrop.
+- **Alla routes bor ga via service-lagret**: PUT/DELETE-routes som anropar repository direkt gor route-testerna fragila (kopplade till P2025-mockar). POST-routen (via ReviewService) var robust. Lat alla routes delegera till service.
+- **Factory pattern for DI vid 3+ dependencies**: Inline `new ReviewService({ ... })` i varje route ar verbost. For Booking (5+ deps) ar factory obligatoriskt.
+- **`select` i repository maste inkludera allt UI:n behover**: Reply-buggen (kund sag inte leverantorens svar) berodde pa att `findByCustomerIdWithDetails` saknade `reply`/`repliedAt` i select. Nar du lagger till falt i schema -- kontrollera ALLA select-queries.
+- **Manuell testning fanger UI-buggar som unit tests missar**: Reply-buggen hittades bara manuellt. E2E-test for "kund ser leverantorens svar" hade fangt den automatiskt.
+- **Error-mapping bor ligga i domain-lagret**: `mapErrorToStatus` duplicerades i 2 route-filer. Flytta till domain for DRY + single source of truth.
+- **MockRepository bor stodja seedable relations**: Hardkodade "Test User" racker inte for att testa notis-meddelanden med riktiga namn.
+
 ### Production Readiness
 - **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
 - **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.
