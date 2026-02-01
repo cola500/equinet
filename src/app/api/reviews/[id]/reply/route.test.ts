@@ -26,8 +26,11 @@ const mockReview = {
   comment: 'Bra service',
   customerId: 'user-1',
   providerId: 'provider-1',
+  bookingId: 'booking-1',
   reply: null,
   repliedAt: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 }
 
 function createRequest(reviewId: string, method: string, body?: object) {
@@ -51,8 +54,8 @@ describe('POST /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-      userId: 'provider-user-1',
     } as any)
+    // ReviewService.addReply calls findById (findUnique) then addReplyWithAuth (update)
     vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
     vi.mocked(prisma.review.update).mockResolvedValue({
       ...mockReview,
@@ -104,7 +107,6 @@ describe('POST /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-      userId: 'provider-user-1',
     } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValue(null)
 
@@ -122,7 +124,6 @@ describe('POST /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'other-provider',
-      userId: 'provider-user-1',
     } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
 
@@ -156,7 +157,6 @@ describe('POST /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-      userId: 'provider-user-1',
     } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValue({
       ...mockReview,
@@ -184,7 +184,6 @@ describe('DELETE /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-      userId: 'provider-user-1',
     } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValue({
       ...mockReview,
@@ -209,7 +208,6 @@ describe('DELETE /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-      userId: 'provider-user-1',
     } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValue(null)
 
@@ -227,7 +225,6 @@ describe('DELETE /api/reviews/[id]/reply', () => {
     } as any)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'other-provider',
-      userId: 'provider-user-1',
     } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValue({
       ...mockReview,

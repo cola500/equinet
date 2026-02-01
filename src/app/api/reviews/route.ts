@@ -3,14 +3,32 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
-import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
-import { customerName, truncate } from "@/lib/notification-helpers"
+import { ReviewService, type ReviewError } from "@/domain/review/ReviewService"
+import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
+import { notificationService } from "@/domain/notification/NotificationService"
 
 const createReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
   rating: z.number().int().min(1, "Betyg måste vara minst 1").max(5, "Betyg måste vara max 5"),
   comment: z.string().max(500, "Kommentar kan vara max 500 tecken").optional(),
 }).strict()
+
+function mapErrorToStatus(error: ReviewError): number {
+  switch (error.type) {
+    case 'BOOKING_NOT_FOUND':
+    case 'REVIEW_NOT_FOUND':
+      return 404
+    case 'UNAUTHORIZED':
+      return 403
+    case 'BOOKING_NOT_COMPLETED':
+      return 400
+    case 'ALREADY_REVIEWED':
+    case 'ALREADY_REPLIED':
+      return 409
+    default:
+      return 500
+  }
+}
 
 // POST - Create a review for a completed booking
 export async function POST(request: NextRequest) {
@@ -32,80 +50,57 @@ export async function POST(request: NextRequest) {
     // Validate
     const validated = createReviewSchema.parse(body)
 
-    // Find booking with review status (atomic ownership check)
-    const booking = await prisma.booking.findUnique({
-      where: { id: validated.bookingId },
-      select: {
-        id: true,
-        customerId: true,
-        providerId: true,
-        status: true,
-        review: { select: { id: true } },
-        customer: { select: { firstName: true, lastName: true } },
-        service: { select: { name: true } },
+    const reviewService = new ReviewService({
+      reviewRepository: new ReviewRepository(),
+      getBooking: async (id) => {
+        const booking = await prisma.booking.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            customerId: true,
+            providerId: true,
+            status: true,
+            review: { select: { id: true } },
+            customer: { select: { firstName: true, lastName: true } },
+            service: { select: { name: true } },
+          },
+        })
+        if (!booking) return null
+        return {
+          id: booking.id,
+          customerId: booking.customerId,
+          providerId: booking.providerId,
+          status: booking.status,
+          hasReview: !!booking.review,
+          customer: booking.customer,
+          service: booking.service,
+        }
       },
+      getProviderUserId: async (providerId) => {
+        const provider = await prisma.provider.findUnique({
+          where: { id: providerId },
+          select: { userId: true },
+        })
+        return provider?.userId ?? null
+      },
+      notificationService,
     })
 
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 })
-    }
+    const result = await reviewService.createReview({
+      bookingId: validated.bookingId,
+      customerId: session.user.id,
+      rating: validated.rating,
+      comment: validated.comment || null,
+    })
 
-    // Authorization: customer must own the booking
-    if (booking.customerId !== session.user.id) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
-    }
-
-    // Business rule: booking must be completed
-    if (booking.status !== "completed") {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Only completed bookings can be reviewed" },
-        { status: 400 }
+        { error: result.error.message },
+        { status: mapErrorToStatus(result.error) }
       )
     }
 
-    // Business rule: one review per booking
-    if (booking.review) {
-      return NextResponse.json(
-        { error: "Review already exists for this booking" },
-        { status: 409 }
-      )
-    }
-
-    // Create review
-    const review = await prisma.review.create({
-      data: {
-        rating: validated.rating,
-        comment: validated.comment || null,
-        bookingId: booking.id,
-        customerId: session.user.id,
-        providerId: booking.providerId,
-      },
-    })
-
-    // Create in-app notification for provider (review received)
-    const provider = await prisma.provider.findUnique({
-      where: { id: booking.providerId },
-      select: { userId: true },
-    })
-    if (provider) {
-      const cName = booking.customer
-        ? customerName(booking.customer.firstName, booking.customer.lastName)
-        : "Kund"
-      const sName = booking.service?.name
-      const commentPreview = validated.comment
-        ? ` - "${truncate(validated.comment)}"`
-        : ""
-      const servicePart = sName ? ` för ${sName}` : ""
-      notificationService.createAsync({
-        userId: provider.userId,
-        type: NotificationType.REVIEW_RECEIVED,
-        message: `Ny recension från ${cName}: ${validated.rating}/5${servicePart}${commentPreview}`,
-        linkUrl: "/provider/reviews",
-        metadata: { reviewId: review.id, bookingId: booking.id },
-      })
-    }
-
-    return NextResponse.json(review, { status: 201 })
+    return NextResponse.json(result.value, { status: 201 })
   } catch (error) {
     if (error instanceof Response) {
       return error

@@ -3,6 +3,7 @@ import { PUT, DELETE } from './route'
 import { auth } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { Prisma } from '@prisma/client'
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
@@ -11,9 +12,9 @@ vi.mock('@/lib/auth-server', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     review: {
-      findUnique: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
   },
 }))
@@ -25,6 +26,10 @@ const mockReview = {
   customerId: 'user-1',
   providerId: 'provider-1',
   bookingId: 'booking-1',
+  reply: null,
+  repliedAt: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 }
 
 function createRequest(reviewId: string, method: string, body?: object) {
@@ -46,7 +51,6 @@ describe('PUT /api/reviews/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
     vi.mocked(prisma.review.update).mockResolvedValue({
       ...mockReview,
       rating: 5,
@@ -83,7 +87,14 @@ describe('PUT /api/reviews/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(null)
+    // updateWithAuth returns null (P2025)
+    const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
+      code: 'P2025',
+      clientVersion: '5.0.0',
+    })
+    vi.mocked(prisma.review.update).mockRejectedValue(p2025Error)
+    // exists check: count returns 0
+    vi.mocked(prisma.review.count).mockResolvedValue(0)
 
     const { request, params } = createRequest('nonexistent', 'PUT', { rating: 5 })
     const response = await PUT(request, { params })
@@ -97,7 +108,14 @@ describe('PUT /api/reviews/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'other-user', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
+    // updateWithAuth returns null because customerId doesn't match
+    const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
+      code: 'P2025',
+      clientVersion: '5.0.0',
+    })
+    vi.mocked(prisma.review.update).mockRejectedValue(p2025Error)
+    // exists check: review exists, so it's an auth issue
+    vi.mocked(prisma.review.count).mockResolvedValue(1)
 
     const { request, params } = createRequest('review-1', 'PUT', { rating: 5 })
     const response = await PUT(request, { params })
@@ -146,7 +164,6 @@ describe('DELETE /api/reviews/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
     vi.mocked(prisma.review.delete).mockResolvedValue(mockReview as any)
 
     const { request, params } = createRequest('review-1', 'DELETE')
@@ -172,7 +189,14 @@ describe('DELETE /api/reviews/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(null)
+    // deleteWithAuth returns false (P2025)
+    const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
+      code: 'P2025',
+      clientVersion: '5.0.0',
+    })
+    vi.mocked(prisma.review.delete).mockRejectedValue(p2025Error)
+    // exists check: count returns 0
+    vi.mocked(prisma.review.count).mockResolvedValue(0)
 
     const { request, params } = createRequest('nonexistent', 'DELETE')
     const response = await DELETE(request, { params })
@@ -186,7 +210,14 @@ describe('DELETE /api/reviews/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'other-user', userType: 'customer' },
     } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
+    // deleteWithAuth returns false (P2025 because customerId doesn't match)
+    const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
+      code: 'P2025',
+      clientVersion: '5.0.0',
+    })
+    vi.mocked(prisma.review.delete).mockRejectedValue(p2025Error)
+    // exists check: review exists, so it's an auth issue
+    vi.mocked(prisma.review.count).mockResolvedValue(1)
 
     const { request, params } = createRequest('review-1', 'DELETE')
     const response = await DELETE(request, { params })

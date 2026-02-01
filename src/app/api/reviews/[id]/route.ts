@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
 
 const updateReviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(500).optional(),
 }).strict()
+
+const reviewRepo = new ReviewRepository()
 
 // PUT - Update a review (customer only, must own it)
 export async function PUT(
@@ -32,28 +34,21 @@ export async function PUT(
 
     const validated = updateReviewSchema.parse(body)
 
-    // Find review with ownership check
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId },
-      select: { id: true, customerId: true },
-    })
+    // Atomic update with authorization (IDOR-safe)
+    const updated = await reviewRepo.updateWithAuth(
+      reviewId,
+      { rating: validated.rating, comment: validated.comment ?? null },
+      session.user.id
+    )
 
-    if (!review) {
-      return NextResponse.json({ error: "Review not found" }, { status: 404 })
-    }
-
-    if (review.customerId !== session.user.id) {
+    if (!updated) {
+      // Could be "not found" or "not authorized" - check which
+      const exists = await reviewRepo.exists(reviewId)
+      if (!exists) {
+        return NextResponse.json({ error: "Review not found" }, { status: 404 })
+      }
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
-
-    // Update review
-    const updated = await prisma.review.update({
-      where: { id: reviewId },
-      data: {
-        rating: validated.rating,
-        comment: validated.comment ?? null,
-      },
-    })
 
     return NextResponse.json(updated)
   } catch (error) {
@@ -89,21 +84,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Find review with ownership check
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId },
-      select: { id: true, customerId: true },
-    })
+    // Atomic delete with authorization (IDOR-safe)
+    const deleted = await reviewRepo.deleteWithAuth(reviewId, session.user.id)
 
-    if (!review) {
-      return NextResponse.json({ error: "Review not found" }, { status: 404 })
-    }
-
-    if (review.customerId !== session.user.id) {
+    if (!deleted) {
+      // Could be "not found" or "not authorized" - check which
+      const exists = await reviewRepo.exists(reviewId)
+      if (!exists) {
+        return NextResponse.json({ error: "Review not found" }, { status: 404 })
+      }
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
-
-    await prisma.review.delete({ where: { id: reviewId } })
 
     return new Response(null, { status: 204 })
   } catch (error) {

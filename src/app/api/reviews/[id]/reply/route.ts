@@ -3,10 +3,25 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { ReviewService, type ReviewError } from "@/domain/review/ReviewService"
+import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
 
 const replySchema = z.object({
   reply: z.string().min(1, "Svar krävs").max(500, "Svar kan vara max 500 tecken"),
 }).strict()
+
+function mapErrorToStatus(error: ReviewError): number {
+  switch (error.type) {
+    case 'REVIEW_NOT_FOUND':
+      return 404
+    case 'UNAUTHORIZED':
+      return 403
+    case 'ALREADY_REPLIED':
+      return 409
+    default:
+      return 500
+  }
+}
 
 // POST - Add a reply to a review (provider only)
 export async function POST(
@@ -41,39 +56,26 @@ export async function POST(
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
-    // Find review
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId },
-      select: { id: true, providerId: true, reply: true },
+    const reviewService = new ReviewService({
+      reviewRepository: new ReviewRepository(),
+      getBooking: async () => null,
+      getProviderUserId: async () => null,
     })
 
-    if (!review) {
-      return NextResponse.json({ error: "Review not found" }, { status: 404 })
-    }
+    const result = await reviewService.addReply({
+      reviewId,
+      reply: validated.reply,
+      providerId: provider.id,
+    })
 
-    // Authorization: provider must own the review's provider
-    if (review.providerId !== provider.id) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
-    }
-
-    // Business rule: only one reply per review
-    if (review.reply) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Reply already exists for this review" },
-        { status: 409 }
+        { error: result.error.message },
+        { status: mapErrorToStatus(result.error) }
       )
     }
 
-    // Add reply
-    const updated = await prisma.review.update({
-      where: { id: reviewId },
-      data: {
-        reply: validated.reply,
-        repliedAt: new Date(),
-      },
-    })
-
-    return NextResponse.json(updated)
+    return NextResponse.json(result.value)
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -117,29 +119,23 @@ export async function DELETE(
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
 
-    // Find review
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId },
-      select: { id: true, providerId: true },
+    const reviewService = new ReviewService({
+      reviewRepository: new ReviewRepository(),
+      getBooking: async () => null,
+      getProviderUserId: async () => null,
     })
 
-    if (!review) {
-      return NextResponse.json({ error: "Review not found" }, { status: 404 })
-    }
-
-    // Authorization
-    if (review.providerId !== provider.id) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
-    }
-
-    // Remove reply
-    await prisma.review.update({
-      where: { id: reviewId },
-      data: {
-        reply: null,
-        repliedAt: null,
-      },
+    const result = await reviewService.deleteReply({
+      reviewId,
+      providerId: provider.id,
     })
+
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapErrorToStatus(result.error) }
+      )
+    }
 
     return new Response(null, { status: 204 })
   } catch (error) {
