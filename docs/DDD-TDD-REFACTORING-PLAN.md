@@ -73,7 +73,7 @@ Equinet:       Notification     Horse, Review         Booking (framtida)
 | **RouteOrder** | Prisma direkt (uppskjuten) | Mestadels CRUD — lagt ROI for refaktorering just nu |
 | **Provider** | DDD-Light (klar) | Redan repo, behall |
 | **Service** | DDD-Light (klar) | Redan repo, behall |
-| **Auth** | DDD-Light | Sakerhetskritisk — behover repository for testbarhet av timing attacks, audit logging |
+| **Auth** | DDD-Light (klar) | Specialized repo (ej IRepository), service + factory, 21 tester, sakerhetsfixar |
 | **Notification** | Prisma direkt | Stoddoman, ren CRUD |
 | **Availability** | Prisma direkt | Schema-hantering, inga affarsregler |
 
@@ -270,7 +270,7 @@ await dispatcher.dispatchAll(booking.domainEvents)
 | **GroupBooking** | 6+ | Ja (interface + impl + mock) | Ja (555 rader, DI + Result, 25 tester) | DDD-Light (klar) | 100% |
 | **Review** | 3 | Ja (interface + impl + mock) | Ja (ReviewService, 14 tester) | DDD-Light (klar) | 100% |
 | **RouteOrder** | 6+ | Nej | Nej | Prisma direkt (uppskjuten) | N/A |
-| **Auth** | 3 | Nej | Nej | DDD-Light | 0% |
+| **Auth** | 3 | Ja (interface + impl + mock) | Ja (AuthService, 21 tester) | DDD-Light (klar) | 100% |
 | **Notification** | 4 | Nej | Prisma direkt | Prisma direkt (klar) | 90% |
 | **Availability** | 3 | Nej | Nej | Prisma direkt (klar) | 90% |
 
@@ -532,48 +532,39 @@ const bookingService = createBookingService()
 
 ---
 
-### Fas 3 — Auth DDD-Light (sakerhetskritisk)
+### Fas 3 — Auth DDD-Light (sakerhetskritisk) — KLAR
 
-**Sessioner:** 1-2 (beroende pa komplexitet)
-- Session A: IAuthRepository + PrismaAuthRepository + MockAuthRepository + AuthService med TDD
-- Session B (om behovs): Migrera routes + retro + docs
+> **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-auth-migration.md](retrospectives/2026-02-01-ddd-light-auth-migration.md)
 
-Auth ar sakerhetskritisk och behover repository-abstraktion for testbarhet.
-
+**Steg 1: Skapa repository (specialized -- ej IRepository<T>)**
 ```
 src/infrastructure/persistence/auth/
-  IAuthRepository.ts
-  PrismaAuthRepository.ts
-  MockAuthRepository.ts
+  IAuthRepository.ts          # Specialized metoder, strikta projektioner
+  PrismaAuthRepository.ts     # select overallt, aldrig include
+  MockAuthRepository.ts       # seedUser/seedProvider/seedToken helpers
+  index.ts                    # Re-exports
+```
 
+**Steg 2: TDD: Skapa AuthService**
+```
 src/domain/auth/
-  AuthService.ts
-  AuthService.test.ts
+  AuthService.ts              # 4 metoder + createAuthService() factory
+  AuthService.test.ts         # 21 tester med MockAuthRepository
+  mapAuthErrorToStatus.ts     # Centraliserad error -> HTTP status
 ```
 
-**Varfor?**
-- Timing attack prevention (testbart med mock)
-- Audit logging for misslyckade login
-- Rate limiting integration
-- Konstant svarstid oavsett om email finns eller ej
+Metoder: register, verifyEmail, resendVerification, verifyCredentials
+DI: hashPassword, comparePassword, generateToken, emailService
 
-```typescript
-class AuthService {
-  async authenticate(email: string, password: string) {
-    const user = await this.repo.findUserByEmail(email)
-    if (!user) {
-      // Constant-time response (forhindra timing attack)
-      await bcrypt.compare(password, FAKE_HASH)
-      await this.repo.recordLoginAttempt(email, false)
-      return null
-    }
-
-    const isValid = await bcrypt.compare(password, user.passwordHash)
-    await this.repo.recordLoginAttempt(email, isValid)
-    return isValid ? user : null
-  }
-}
+**Steg 3: Migrera routes + auth.ts**
 ```
+register/route.ts             # 136 -> 86 rader (-37%)
+verify-email/route.ts         # 85 -> 51 rader (-40%), fixar include -> select
+resend-verification/route.ts  # 87 -> 55 rader (-37%)
+src/lib/auth.ts               # prisma + bcrypt borta, anvander verifyCredentials()
+```
+
+**Sakerhetsfix:** verify-email anvande `include: { user: true }` (exponerade passwordHash). Fixat via `select` i PrismaAuthRepository.
 
 ---
 
@@ -999,7 +990,7 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 | 2 | Fas 1.2 | Horse | Repo + service + migrera 7 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-horse-migration.md) |
 | 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-groupbooking-migration.md) |
 | 4 | Fas 2 | Booking | BookingStatus VO + factory | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-booking-status-vo.md) |
-| 5 | Fas 3 | Auth | Repo + service (sakerhet) | |
+| 5 | Fas 3 | Auth | Repo + service + factory (sakerhet) | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-auth-migration.md) |
 | 6 | Fas 4 | Test-coverage | rate-limit, auth-server, auth routes | |
 
 ### Nar uppgradera en doman?

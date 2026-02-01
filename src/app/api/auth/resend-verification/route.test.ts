@@ -1,18 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { POST } from "./route"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
-// Mock Prisma
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    user: {
-      findUnique: vi.fn(),
-    },
-    emailVerificationToken: {
-      create: vi.fn(),
-    },
-  },
+// Mock AuthService
+const mockResendVerification = vi.fn()
+vi.mock("@/domain/auth/AuthService", () => ({
+  createAuthService: () => ({
+    resendVerification: mockResendVerification,
+  }),
 }))
 
 // Mock rate limiter
@@ -23,26 +19,13 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn(() => "127.0.0.1"),
 }))
 
-// Mock email service
-vi.mock("@/lib/email", () => ({
-  sendEmailVerificationNotification: vi.fn(() => Promise.resolve()),
-}))
-
 describe("POST /api/auth/resend-verification", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it("should send verification email for unverified user", async () => {
-    const mockUser = {
-      id: "user-123",
-      firstName: "Test",
-      email: "test@example.com",
-      emailVerified: false,
-    }
-
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any)
-    vi.mocked(prisma.emailVerificationToken.create).mockResolvedValue({} as any)
+    mockResendVerification.mockResolvedValue(Result.ok({ sent: true }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/auth/resend-verification",
@@ -57,11 +40,10 @@ describe("POST /api/auth/resend-verification", () => {
 
     expect(response.status).toBe(200)
     expect(data.message).toContain("Om e-postadressen finns")
-    expect(prisma.emailVerificationToken.create).toHaveBeenCalled()
   })
 
   it("should return same response for non-existent email (prevent enumeration)", async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+    mockResendVerification.mockResolvedValue(Result.ok({ sent: false }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/auth/resend-verification",
@@ -76,18 +58,10 @@ describe("POST /api/auth/resend-verification", () => {
 
     expect(response.status).toBe(200)
     expect(data.message).toContain("Om e-postadressen finns")
-    expect(prisma.emailVerificationToken.create).not.toHaveBeenCalled()
   })
 
   it("should not send email for already verified user", async () => {
-    const mockUser = {
-      id: "user-123",
-      firstName: "Test",
-      email: "test@example.com",
-      emailVerified: true, // Already verified
-    }
-
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any)
+    mockResendVerification.mockResolvedValue(Result.ok({ sent: false }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/auth/resend-verification",
@@ -102,7 +76,6 @@ describe("POST /api/auth/resend-verification", () => {
 
     expect(response.status).toBe(200)
     expect(data.message).toContain("Om e-postadressen finns")
-    expect(prisma.emailVerificationToken.create).not.toHaveBeenCalled()
   })
 
   it("should return 400 for invalid email format", async () => {

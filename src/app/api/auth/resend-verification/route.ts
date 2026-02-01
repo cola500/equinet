@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { sendEmailVerificationNotification } from "@/lib/email"
+import { createAuthService } from "@/domain/auth/AuthService"
 import { z } from "zod"
-import { randomBytes } from "crypto"
 import { logger } from "@/lib/logger"
 
 const resendSchema = z.object({
@@ -38,39 +36,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email } = result.data
-
-    // Always return success to prevent email enumeration
-    // But only actually send email if user exists and is not verified
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-      select: {
-        id: true,
-        firstName: true,
-        email: true,
-        emailVerified: true,
-      },
-    })
-
-    if (user && !user.emailVerified) {
-      // Generate new token
-      const token = randomBytes(32).toString("hex")
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-      // Create new token
-      await prisma.emailVerificationToken.create({
-        data: {
-          token,
-          userId: user.id,
-          expiresAt,
-        },
-      })
-
-      // Send email (non-blocking)
-      sendEmailVerificationNotification(user.email, user.firstName, token).catch(
-        (error) => logger.error("Failed to send verification email", error instanceof Error ? error : new Error(String(error)))
-      )
-    }
+    // Delegate to AuthService
+    const service = createAuthService()
+    await service.resendVerification(result.data.email.toLowerCase())
 
     // Always return same response to prevent email enumeration
     return NextResponse.json({

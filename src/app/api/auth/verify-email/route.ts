@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { createAuthService } from "@/domain/auth/AuthService"
+import { mapAuthErrorToStatus } from "@/domain/auth/mapAuthErrorToStatus"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 
@@ -25,55 +26,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { token } = result.data
+    // Delegate to AuthService
+    const service = createAuthService()
+    const verifyResult = await service.verifyEmail(result.data.token)
 
-    // Find the token
-    const verificationToken = await prisma.emailVerificationToken.findUnique({
-      where: { token },
-      include: { user: true },
-    })
-
-    if (!verificationToken) {
+    if (verifyResult.isFailure) {
       return NextResponse.json(
-        { error: "Ogiltig eller utgången verifieringslänk" },
-        { status: 400 }
+        { error: verifyResult.error.message },
+        { status: mapAuthErrorToStatus(verifyResult.error) }
       )
     }
-
-    // Check if already used
-    if (verificationToken.usedAt) {
-      return NextResponse.json(
-        { error: "Denna verifieringslänk har redan använts" },
-        { status: 400 }
-      )
-    }
-
-    // Check if expired
-    if (new Date() > verificationToken.expiresAt) {
-      return NextResponse.json(
-        { error: "Verifieringslänken har gått ut. Begär en ny." },
-        { status: 400 }
-      )
-    }
-
-    // Update user and mark token as used in a transaction
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: verificationToken.userId },
-        data: {
-          emailVerified: true,
-          emailVerifiedAt: new Date(),
-        },
-      }),
-      prisma.emailVerificationToken.update({
-        where: { id: verificationToken.id },
-        data: { usedAt: new Date() },
-      }),
-    ])
 
     return NextResponse.json({
       message: "E-postadressen har verifierats",
-      email: verificationToken.user.email,
+      email: verifyResult.value.email,
     })
   } catch (error) {
     logger.error("Verify email error", error instanceof Error ? error : new Error(String(error)))

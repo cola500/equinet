@@ -1,20 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { POST } from "./route"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
-// Mock Prisma
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    emailVerificationToken: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      update: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
+// Mock AuthService
+const mockVerifyEmail = vi.fn()
+vi.mock("@/domain/auth/AuthService", () => ({
+  createAuthService: () => ({
+    verifyEmail: mockVerifyEmail,
+  }),
 }))
 
 describe("POST /api/auth/verify-email", () => {
@@ -23,22 +17,9 @@ describe("POST /api/auth/verify-email", () => {
   })
 
   it("should verify email with valid token", async () => {
-    const mockToken = {
-      id: "token-123",
-      token: "valid-token",
-      userId: "user-123",
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
-      usedAt: null,
-      user: {
-        id: "user-123",
-        email: "test@example.com",
-      },
-    }
-
-    vi.mocked(prisma.emailVerificationToken.findUnique).mockResolvedValue(
-      mockToken as any
+    mockVerifyEmail.mockResolvedValue(
+      Result.ok({ email: "test@example.com" })
     )
-    vi.mocked(prisma.$transaction).mockResolvedValue([{}, {}])
 
     const request = new NextRequest(
       "http://localhost:3000/api/auth/verify-email",
@@ -54,11 +35,15 @@ describe("POST /api/auth/verify-email", () => {
     expect(response.status).toBe(200)
     expect(data.message).toBe("E-postadressen har verifierats")
     expect(data.email).toBe("test@example.com")
-    expect(prisma.$transaction).toHaveBeenCalled()
   })
 
   it("should return 400 for invalid token", async () => {
-    vi.mocked(prisma.emailVerificationToken.findUnique).mockResolvedValue(null)
+    mockVerifyEmail.mockResolvedValue(
+      Result.fail({
+        type: "TOKEN_NOT_FOUND",
+        message: "Ogiltig eller utgangen verifieringslank",
+      })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/auth/verify-email",
@@ -72,24 +57,15 @@ describe("POST /api/auth/verify-email", () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe("Ogiltig eller utgången verifieringslänk")
+    expect(data.error).toContain("Ogiltig")
   })
 
   it("should return 400 for already used token", async () => {
-    const mockToken = {
-      id: "token-123",
-      token: "used-token",
-      userId: "user-123",
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      usedAt: new Date(), // Already used
-      user: {
-        id: "user-123",
-        email: "test@example.com",
-      },
-    }
-
-    vi.mocked(prisma.emailVerificationToken.findUnique).mockResolvedValue(
-      mockToken as any
+    mockVerifyEmail.mockResolvedValue(
+      Result.fail({
+        type: "TOKEN_ALREADY_USED",
+        message: "Denna verifieringslank har redan anvants",
+      })
     )
 
     const request = new NextRequest(
@@ -104,24 +80,15 @@ describe("POST /api/auth/verify-email", () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe("Denna verifieringslänk har redan använts")
+    expect(data.error).toContain("redan")
   })
 
   it("should return 400 for expired token", async () => {
-    const mockToken = {
-      id: "token-123",
-      token: "expired-token",
-      userId: "user-123",
-      expiresAt: new Date(Date.now() - 1000), // Expired
-      usedAt: null,
-      user: {
-        id: "user-123",
-        email: "test@example.com",
-      },
-    }
-
-    vi.mocked(prisma.emailVerificationToken.findUnique).mockResolvedValue(
-      mockToken as any
+    mockVerifyEmail.mockResolvedValue(
+      Result.fail({
+        type: "TOKEN_EXPIRED",
+        message: "Verifieringslanken har gatt ut. Begar en ny.",
+      })
     )
 
     const request = new NextRequest(
@@ -136,7 +103,7 @@ describe("POST /api/auth/verify-email", () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe("Verifieringslänken har gått ut. Begär en ny.")
+    expect(data.error).toContain("gatt ut")
   })
 
   it("should return 400 for missing token", async () => {

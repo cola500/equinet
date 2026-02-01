@@ -1,8 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { prisma } from "./prisma"
-import bcrypt from "bcrypt"
 import { rateLimiters, resetRateLimit } from "./rate-limit"
+import { createAuthService } from "@/domain/auth/AuthService"
 import type { NextAuthConfig } from "next-auth"
 import { authConfig } from "./auth.config"
 
@@ -27,43 +26,20 @@ const fullConfig: NextAuthConfig = {
           throw new Error("För många inloggningsförsök. Försök igen om 15 minuter.")
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email as string
-          },
-          include: {
-            provider: true
-          }
-        })
-
-        if (!user || !user.passwordHash) {
-          throw new Error("Ogiltig email eller lösenord")
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
+        const service = createAuthService()
+        const result = await service.verifyCredentials(
+          credentials.email as string,
+          credentials.password as string
         )
 
-        if (!isPasswordValid) {
-          throw new Error("Ogiltig email eller lösenord")
-        }
-
-        // Check if email is verified
-        if (!user.emailVerified) {
-          throw new Error("EMAIL_NOT_VERIFIED")
+        if (result.isFailure) {
+          throw new Error(result.error.message)
         }
 
         // Reset rate limit on successful login
         resetRateLimit(identifier)
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          userType: user.userType,
-          providerId: user.provider?.id || null
-        }
+        return result.value
       }
     })
   ],

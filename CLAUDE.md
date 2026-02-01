@@ -511,6 +511,14 @@ Före merge?          -> quality-gate
 - **Inkrementell TDD med verifiering mellan steg**: VO -> service -> factory -> routes, med alla tester grona mellan varje steg. Ingen "big bang"-risk.
 - **Medvetet scope-beslut forhindrar creep**: Att exkludera DELETE (inget status-behov) holl sessionen fokuserad och snabb.
 
+### DDD-Light Auth Migration (Fas 3, 2026-02-01)
+- **Specialized repository > generic IRepository for auth**: Auth ar inte CRUD -- det ar specialiserade operationer (register, verify, login). Skippa IRepository<T> och definiera precis de metoder som behovs ger battre typsakerhet och tydligare security boundaries.
+- **Projection-driven security hittar buggar passivt**: verify-email anvande `include: { user: true }` (exponerade passwordHash). Migrering till `select` i repository fixade buggen utan separat sakerhetsgranskning.
+- **DI for bcrypt/crypto eliminerar fragila mocks**: Injicera `hashPassword`/`comparePassword`/`generateToken` istallet for att mocka moduler. Ger deterministiska, snabba tester utan `vi.mock('bcrypt')`.
+- **Factory pattern fungerar utanfor routes**: `createAuthService()` anvands bade i routes OCH i NextAuth authorize-callback. Bevisar att factory-pattern ar generellt anvandbart.
+- **Error-kontrakt fore implementation (bekraftat 3:e gangen)**: TOKEN_NOT_FOUND -> 400 (inte 404, sakerhet), INVALID_CREDENTIALS -> 401, EMAIL_NOT_VERIFIED -> 403. Noll forvirring under implementation.
+- **Migrering som sakerhetsgranskning**: Att systematiskt ga igenom varje route avslojjar `include`-buggar, saknad `select`, och inkonsekvent felhantering. DDD-Light-migrering fungerar som passiv security audit.
+
 ### Production Readiness
 - **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
 - **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.

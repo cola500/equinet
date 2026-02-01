@@ -1,41 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST } from './route'
-import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcrypt'
 import { NextRequest } from 'next/server'
+import { Result } from '@/domain/shared'
 
-// Mock Prisma
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    provider: {
-      create: vi.fn(),
-    },
-    emailVerificationToken: {
-      create: vi.fn(),
-    },
-  },
-}))
-
-// Mock email service
-vi.mock('@/lib/email', () => ({
-  sendEmailVerificationNotification: vi.fn(() => Promise.resolve()),
-}))
-
-// Mock bcrypt
-vi.mock('bcrypt', () => ({
-  default: {
-    hash: vi.fn(),
-  },
+// Mock AuthService
+const mockRegister = vi.fn()
+vi.mock('@/domain/auth/AuthService', () => ({
+  createAuthService: () => ({
+    register: mockRegister,
+  }),
 }))
 
 // Mock rate limiter
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
-    registration: vi.fn(() => true), // Always allow in tests
+    registration: vi.fn(() => true),
   },
 }))
 
@@ -45,20 +24,17 @@ describe('POST /api/auth/register', () => {
   })
 
   it('should register a new customer successfully', async () => {
-    // Arrange
-    const mockUser = {
-      id: '123',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      userType: 'customer',
-      passwordHash: 'hashed_password',
-    }
-
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-    vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password' as never)
-    vi.mocked(prisma.user.create).mockResolvedValue(mockUser as any)
-    vi.mocked(prisma.emailVerificationToken.create).mockResolvedValue({} as any)
+    mockRegister.mockResolvedValue(
+      Result.ok({
+        user: {
+          id: '123',
+          email: 'test@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+          userType: 'customer',
+        },
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
@@ -71,51 +47,26 @@ describe('POST /api/auth/register', () => {
       }),
     })
 
-    // Act
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
     expect(response.status).toBe(201)
     expect(data.message).toBe('Användare skapad')
     expect(data.user.email).toBe('test@example.com')
-    expect(prisma.user.create).toHaveBeenCalledWith({
-      data: {
-        email: 'test@example.com',
-        passwordHash: 'hashed_password',
-        firstName: 'Test',
-        lastName: 'User',
-        phone: undefined,
-        userType: 'customer',
-      },
-    })
   })
 
   it('should register a new provider with business info', async () => {
-    // Arrange
-    const mockUser = {
-      id: '456',
-      email: 'provider@example.com',
-      firstName: 'Provider',
-      lastName: 'User',
-      userType: 'provider',
-      passwordHash: 'hashed_password',
-    }
-
-    const mockProvider = {
-      id: '789',
-      userId: '456',
-      businessName: 'Test Business',
-      description: 'Test description',
-      city: 'Stockholm',
-    }
-
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-    vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password' as never)
-    vi.mocked(prisma.user.create).mockResolvedValue(mockUser as any)
-    // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.provider.create).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.emailVerificationToken.create).mockResolvedValue({} as any)
+    mockRegister.mockResolvedValue(
+      Result.ok({
+        user: {
+          id: '456',
+          email: 'provider@example.com',
+          firstName: 'Provider',
+          lastName: 'User',
+          userType: 'provider',
+        },
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
@@ -131,29 +82,21 @@ describe('POST /api/auth/register', () => {
       }),
     })
 
-    // Act
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
     expect(response.status).toBe(201)
     expect(data.message).toBe('Användare skapad')
-    expect(prisma.provider.create).toHaveBeenCalledWith({
-      data: {
-        userId: '456',
-        businessName: 'Test Business',
-        description: 'Test description',
-        city: 'Stockholm',
-      },
-    })
+    expect(data.user.userType).toBe('provider')
   })
 
   it('should return 400 if user already exists', async () => {
-    // Arrange
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: '123',
-      email: 'existing@example.com',
-    } as any)
+    mockRegister.mockResolvedValue(
+      Result.fail({
+        type: 'EMAIL_ALREADY_EXISTS',
+        message: 'En anvandare med denna email finns redan',
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
@@ -166,17 +109,14 @@ describe('POST /api/auth/register', () => {
       }),
     })
 
-    // Act
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('En användare med denna email finns redan')
+    expect(data.error).toContain('email finns redan')
   })
 
   it('should return 400 for invalid email', async () => {
-    // Arrange
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
@@ -188,17 +128,14 @@ describe('POST /api/auth/register', () => {
       }),
     })
 
-    // Act
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
     expect(response.status).toBe(400)
     expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for short password', async () => {
-    // Arrange
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
@@ -210,17 +147,14 @@ describe('POST /api/auth/register', () => {
       }),
     })
 
-    // Act
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
     expect(response.status).toBe(400)
     expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid userType', async () => {
-    // Arrange
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
@@ -228,15 +162,13 @@ describe('POST /api/auth/register', () => {
         password: 'password123',
         firstName: 'Test',
         lastName: 'User',
-        userType: 'invalid', // invalid type
+        userType: 'invalid',
       }),
     })
 
-    // Act
     const response = await POST(request)
     const data = await response.json()
 
-    // Assert
     expect(response.status).toBe(400)
     expect(data.error).toBe('Valideringsfel')
   })

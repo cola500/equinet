@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcrypt"
 import { rateLimiters } from "@/lib/rate-limit"
 import { registerSchema } from "@/lib/validations/auth"
 import { sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/sanitize"
-import { sendEmailVerificationNotification } from "@/lib/email"
-import { randomBytes } from "crypto"
+import { createAuthService } from "@/domain/auth/AuthService"
+import { mapAuthErrorToStatus } from "@/domain/auth/mapAuthErrorToStatus"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 
@@ -42,78 +40,31 @@ export async function POST(request: NextRequest) {
       : undefined
     const sanitizedCity = validatedData.city ? sanitizeString(validatedData.city) : undefined
 
-    // Kolla om användaren redan finns
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email: sanitizedEmail
-      }
+    // Delegate to AuthService
+    const service = createAuthService()
+    const result = await service.register({
+      email: sanitizedEmail,
+      password: validatedData.password,
+      firstName: sanitizedFirstName,
+      lastName: sanitizedLastName,
+      phone: sanitizedPhone,
+      userType: validatedData.userType,
+      businessName: sanitizedBusinessName,
+      description: sanitizedDescription,
+      city: sanitizedCity,
     })
 
-    if (existingUser) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "En användare med denna email finns redan" },
-        { status: 400 }
+        { error: result.error.message },
+        { status: mapAuthErrorToStatus(result.error) }
       )
     }
-
-    // Hasha lösenord (already validated by Zod)
-    const passwordHash = await bcrypt.hash(validatedData.password, 10)
-
-    // Skapa användare
-    const user = await prisma.user.create({
-      data: {
-        email: sanitizedEmail,
-        passwordHash,
-        firstName: sanitizedFirstName,
-        lastName: sanitizedLastName,
-        phone: sanitizedPhone,
-        userType: validatedData.userType,
-      }
-    })
-
-    // Om användaren är en leverantör, skapa även leverantörsprofil
-    if (validatedData.userType === "provider" && sanitizedBusinessName) {
-      await prisma.provider.create({
-        data: {
-          userId: user.id,
-          businessName: sanitizedBusinessName,
-          description: sanitizedDescription,
-          city: sanitizedCity,
-        }
-      })
-    }
-
-    // Create email verification token
-    const verificationToken = randomBytes(32).toString("hex")
-    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-    await prisma.emailVerificationToken.create({
-      data: {
-        token: verificationToken,
-        userId: user.id,
-        expiresAt: tokenExpiresAt,
-      },
-    })
-
-    // Send verification email (non-blocking)
-    sendEmailVerificationNotification(
-      sanitizedEmail,
-      sanitizedFirstName,
-      verificationToken
-    ).catch((error) => {
-      logger.error("Failed to send verification email", error instanceof Error ? error : new Error(String(error)))
-    })
 
     return NextResponse.json(
       {
         message: "Användare skapad",
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          userType: user.userType
-        }
+        user: result.value.user,
       },
       { status: 201 }
     )
