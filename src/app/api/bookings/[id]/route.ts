@@ -2,25 +2,29 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { z } from "zod"
 import { sendBookingStatusChangeNotification } from "@/lib/email"
-import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
+import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
 import { formatNotifDate, customerName } from "@/lib/notification-helpers"
+import {
+  createBookingService,
+  mapBookingErrorToStatus,
+  mapBookingErrorToMessage,
+} from "@/domain/booking"
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
 }).strict()
 
-// PUT - Update booking status
+// PUT - Update booking status (delegated to BookingService)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    // Auth handled by middleware
     const session = await auth()
 
     // Parse request body with error handling
@@ -37,12 +41,10 @@ export async function PUT(
 
     const validatedData = updateBookingSchema.parse(body)
 
-    // Use repositories instead of direct Prisma access
-    const bookingRepo = new PrismaBookingRepository()
+    // Build auth context for the service
     const providerRepo = new ProviderRepository()
-
-    // Build authorization context based on user type
-    let authContext: { providerId?: string; customerId?: string }
+    let providerId: string | undefined
+    let customerId: string | undefined
 
     if (session.user.userType === "provider") {
       const provider = await providerRepo.findByUserId(session.user.id)
@@ -51,29 +53,31 @@ export async function PUT(
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
 
-      // Provider can only update their own bookings
-      authContext = { providerId: provider.id }
+      providerId = provider.id
     } else {
-      // Customer can only update their own bookings
-      authContext = { customerId: session.user.id }
+      customerId = session.user.id
     }
 
-    // Update with authorization check (atomic WHERE clause in repository)
-    const updatedBooking = await bookingRepo.updateStatusWithAuth(
-      id,
-      validatedData.status,
-      authContext
-    )
+    // Delegate to BookingService for status transition validation
+    const bookingService = createBookingService()
+    const result = await bookingService.updateStatus({
+      bookingId: id,
+      newStatus: validatedData.status,
+      providerId,
+      customerId,
+    })
 
-    if (!updatedBooking) {
-      return NextResponse.json(
-        { error: "Booking not found or you don't have permission to update it" },
-        { status: 404 }
-      )
+    if (result.isFailure) {
+      const status = mapBookingErrorToStatus(result.error)
+      const message = mapBookingErrorToMessage(result.error)
+      return NextResponse.json({ error: message }, { status })
     }
+
+    const updatedBooking = result.value
+
+    // --- Side effects: notifications (stay in route, not in domain service) ---
 
     // Send status change notification email (async, don't block response)
-    // Only send for meaningful status changes (not when customer updates their own booking)
     if (["confirmed", "cancelled", "completed"].includes(validatedData.status)) {
       sendBookingStatusChangeNotification(id, validatedData.status).catch((err) => {
         logger.error("Failed to send status change notification", err instanceof Error ? err : new Error(String(err)))
@@ -93,15 +97,12 @@ export async function PUT(
     }
     const notifType = notifTypeMap[validatedData.status]
     if (notifType) {
-      // Build rich notification message parts
       const sName = updatedBooking.service?.name || "Bokning"
       const dateStr = formatNotifDate(updatedBooking.bookingDate)
       const timeStr = updatedBooking.startTime ? ` kl ${updatedBooking.startTime}` : ""
       const statusLabel = statusLabels[validatedData.status] || validatedData.status
 
-      // Determine the recipient: notify the "other party"
       if (session.user.userType === "provider" && updatedBooking.customerId) {
-        // Provider changed status -> notify customer
         const providerName = updatedBooking.provider?.businessName || "Leverantör"
         notificationService.createAsync({
           userId: updatedBooking.customerId,
@@ -111,7 +112,6 @@ export async function PUT(
           metadata: { bookingId: id },
         })
       } else if (session.user.userType === "customer") {
-        // Customer changed status (e.g. cancelled) -> notify provider
         const providerUser = await prisma.provider.findUnique({
           where: { id: updatedBooking.providerId },
           select: { userId: true },
@@ -133,7 +133,6 @@ export async function PUT(
 
     return NextResponse.json(updatedBooking)
   } catch (error) {
-    // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
     }
@@ -160,14 +159,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    // Auth handled by middleware
     const session = await auth()
 
-    // Use repositories instead of direct Prisma access
     const bookingRepo = new PrismaBookingRepository()
     const providerRepo = new ProviderRepository()
 
-    // Build authorization context based on user type
     let authContext: { providerId?: string; customerId?: string }
 
     if (session.user.userType === "provider") {
@@ -177,14 +173,11 @@ export async function DELETE(
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
       }
 
-      // Provider can only delete their own bookings
       authContext = { providerId: provider.id }
     } else {
-      // Customer can only delete their own bookings
       authContext = { customerId: session.user.id }
     }
 
-    // Delete with authorization check (atomic WHERE clause in repository)
     const deleted = await bookingRepo.deleteWithAuth(id, authContext)
 
     if (!deleted) {
@@ -196,7 +189,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Booking deleted" })
   } catch (error) {
-    // If error is a Response (from auth()), return it
     if (error instanceof Response) {
       return error
     }

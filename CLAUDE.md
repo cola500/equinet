@@ -504,6 +504,13 @@ Före merge?          -> quality-gate
 - **NotificationService DI loser test-brus**: Injicera mock via constructor istallet for att lata riktiga NotificationService anropa omockad Prisma. Tillampa samma monster pa Booking/Review.
 - **95% domain service coverage med MockRepository**: 25 tester, seedable data, snabbare och mer forutsagbart an Prisma-mocks.
 
+### DDD-Light Booking Status VO + Factory (Fas 2, 2026-02-01)
+- **Value objects skalar**: BookingStatus foljer exakt samma pattern som TimeSlot/Location. `create()` -> `Result`, immutable, self-validating. Varje ny VO ar snabbare att bygga an foregaende.
+- **Factory + VO = komplett service-lager**: `createBookingService()` + `BookingStatus.transitionTo()` ger routes en enda rad istallet for 60+ rader DI + manuell validering.
+- **Error-kontrakt fore implementation fungerar**: INVALID_STATUS_TRANSITION -> 400, BOOKING_NOT_FOUND -> 404 var bestamda i planen. Noll forvirring under implementation.
+- **Inkrementell TDD med verifiering mellan steg**: VO -> service -> factory -> routes, med alla tester grona mellan varje steg. Ingen "big bang"-risk.
+- **Medvetet scope-beslut forhindrar creep**: Att exkludera DELETE (inget status-behov) holl sessionen fokuserad och snabb.
+
 ### Production Readiness
 - **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
 - **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.

@@ -18,7 +18,10 @@ import {
   CreateBookingData,
   BookingWithCustomerLocation,
 } from '@/infrastructure/persistence/booking/IBookingRepository'
+import { PrismaBookingRepository } from '@/infrastructure/persistence/booking/PrismaBookingRepository'
 import { TravelTimeService, BookingWithLocation } from './TravelTimeService'
+import { BookingStatus } from './BookingStatus'
+import { prisma } from '@/lib/prisma'
 
 /**
  * DTO for creating a booking
@@ -80,6 +83,8 @@ export type BookingError =
   | { type: 'SELF_BOOKING' }
   | { type: 'SERVICE_PROVIDER_MISMATCH' }
   | { type: 'INVALID_ROUTE_ORDER'; message: string }
+  | { type: 'INVALID_STATUS_TRANSITION'; message: string; from: string; to: string }
+  | { type: 'BOOKING_NOT_FOUND' }
 
 /**
  * Route order info for validation
@@ -106,6 +111,21 @@ export interface BookingServiceDeps {
   /** Travel time service instance (optional - for travel time validation) */
   travelTimeService?: TravelTimeService
 }
+
+/**
+ * DTO for updating booking status
+ */
+export interface UpdateStatusDTO {
+  bookingId: string
+  newStatus: string
+  /** Provider ID if the actor is a provider */
+  providerId?: string
+  /** Customer ID if the actor is a customer */
+  customerId?: string
+}
+
+// Statuses that only providers can set (customers can only cancel)
+const PROVIDER_ONLY_STATUSES = ['confirmed', 'completed']
 
 export class BookingService {
   constructor(private readonly deps: BookingServiceDeps) {}
@@ -218,6 +238,85 @@ export class BookingService {
     }
 
     return Result.ok(booking)
+  }
+
+  /**
+   * Update booking status with state machine validation
+   *
+   * Validates:
+   * 1. Status string is valid
+   * 2. Booking exists
+   * 3. Transition is allowed by state machine
+   * 4. Actor has permission (customers can only cancel)
+   */
+  async updateStatus(
+    dto: UpdateStatusDTO
+  ): Promise<Result<BookingWithRelations, BookingError>> {
+    // 1. Validate new status string
+    const newStatusResult = BookingStatus.create(dto.newStatus)
+    if (newStatusResult.isFailure) {
+      return Result.fail({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: newStatusResult.error,
+        from: 'unknown',
+        to: dto.newStatus,
+      })
+    }
+
+    // 2. Fetch booking for current status
+    const booking = await this.deps.bookingRepository.findById(dto.bookingId)
+    if (!booking) {
+      return Result.fail({ type: 'BOOKING_NOT_FOUND' })
+    }
+
+    // 3. Validate state machine transition
+    const currentStatusResult = BookingStatus.create(booking.status)
+    if (currentStatusResult.isFailure) {
+      // Current status in DB is invalid -- should not happen but handle gracefully
+      return Result.fail({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: `Bokningens nuvarande status "${booking.status}" är ogiltig`,
+        from: booking.status,
+        to: dto.newStatus,
+      })
+    }
+
+    const transitionResult = currentStatusResult.value.transitionTo(newStatusResult.value)
+    if (transitionResult.isFailure) {
+      return Result.fail({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: transitionResult.error,
+        from: booking.status,
+        to: dto.newStatus,
+      })
+    }
+
+    // 4. Authorization: customers can only cancel, not confirm/complete
+    if (dto.customerId && PROVIDER_ONLY_STATUSES.includes(dto.newStatus)) {
+      return Result.fail({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: `Kunder kan inte ändra status till "${dto.newStatus}". Bara leverantörer kan bekräfta och slutföra bokningar.`,
+        from: booking.status,
+        to: dto.newStatus,
+      })
+    }
+
+    // 5. Delegate to repository (preserves IDOR protection via WHERE clause)
+    const authContext: { providerId?: string; customerId?: string } = {}
+    if (dto.providerId) authContext.providerId = dto.providerId
+    if (dto.customerId) authContext.customerId = dto.customerId
+
+    const updated = await this.deps.bookingRepository.updateStatusWithAuth(
+      dto.bookingId,
+      dto.newStatus as 'pending' | 'confirmed' | 'cancelled' | 'completed',
+      authContext
+    )
+
+    if (!updated) {
+      return Result.fail({ type: 'BOOKING_NOT_FOUND' })
+    }
+
+    return Result.ok(updated)
   }
 
   /**
@@ -424,7 +523,10 @@ export function mapBookingErrorToStatus(error: BookingError): number {
     case 'SELF_BOOKING':
     case 'SERVICE_PROVIDER_MISMATCH':
     case 'INVALID_ROUTE_ORDER':
+    case 'INVALID_STATUS_TRANSITION':
       return 400
+    case 'BOOKING_NOT_FOUND':
+      return 404
     case 'OVERLAP':
     case 'INSUFFICIENT_TRAVEL_TIME':
       return 409
@@ -454,7 +556,77 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return 'Ogiltig tjänst'
     case 'INVALID_ROUTE_ORDER':
       return error.message
+    case 'INVALID_STATUS_TRANSITION':
+      return error.message
+    case 'BOOKING_NOT_FOUND':
+      return 'Bokningen hittades inte'
     default:
       return 'Ett fel uppstod vid bokning'
   }
+}
+
+/**
+ * Factory function for creating BookingService with production dependencies
+ *
+ * Follows the same pattern as createGroupBookingService().
+ * Centralizes DI wiring so routes can use a single function call.
+ */
+export function createBookingService(): BookingService {
+  return new BookingService({
+    bookingRepository: new PrismaBookingRepository(),
+    getService: async (id) => {
+      return prisma.service.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          providerId: true,
+          durationMinutes: true,
+          isActive: true,
+        },
+      })
+    },
+    getProvider: async (id) => {
+      return prisma.provider.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          userId: true,
+          isActive: true,
+          latitude: true,
+          longitude: true,
+        },
+      })
+    },
+    getRouteOrder: async (id) => {
+      const routeOrder = await prisma.routeOrder.findUnique({
+        where: { id },
+        select: {
+          dateFrom: true,
+          dateTo: true,
+          status: true,
+          providerId: true,
+        },
+      })
+      if (!routeOrder || !routeOrder.providerId) {
+        return null
+      }
+      return {
+        dateFrom: routeOrder.dateFrom,
+        dateTo: routeOrder.dateTo,
+        status: routeOrder.status,
+        providerId: routeOrder.providerId,
+      }
+    },
+    getCustomerLocation: async (customerId) => {
+      return prisma.user.findUnique({
+        where: { id: customerId },
+        select: {
+          latitude: true,
+          longitude: true,
+          address: true,
+        },
+      })
+    },
+    travelTimeService: new TravelTimeService(),
+  })
 }

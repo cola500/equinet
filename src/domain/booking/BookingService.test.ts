@@ -590,4 +590,186 @@ describe('BookingService', () => {
       // Note: travelTimeMinutes is saved on the booking but not returned in the DTO
     })
   })
+
+  describe('updateStatus', () => {
+    // Helper to create a booking in the repository
+    async function createPendingBooking(): Promise<string> {
+      const result = await service.createBooking(validDTO)
+      expect(result.isSuccess).toBe(true)
+      return result.value.id
+    }
+
+    it('should allow provider to confirm a pending booking', async () => {
+      const bookingId = await createPendingBooking()
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('confirmed')
+    })
+
+    it('should allow customer to cancel a pending booking', async () => {
+      const bookingId = await createPendingBooking()
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'cancelled',
+        customerId: 'customer-1',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('cancelled')
+    })
+
+    it('should NOT allow pending -> completed (must confirm first)', async () => {
+      const bookingId = await createPendingBooking()
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'completed',
+        providerId: 'provider-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+      expect(result.error.from).toBe('pending')
+      expect(result.error.to).toBe('completed')
+    })
+
+    it('should NOT allow customer to confirm (only provider can)', async () => {
+      const bookingId = await createPendingBooking()
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        customerId: 'customer-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should NOT allow customer to complete (only provider can)', async () => {
+      const bookingId = await createPendingBooking()
+
+      // First confirm as provider
+      await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+
+      // Then try to complete as customer
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'completed',
+        customerId: 'customer-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should fail for invalid status string', async () => {
+      const bookingId = await createPendingBooking()
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'bogus' as any,
+        providerId: 'provider-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should fail when booking does not exist', async () => {
+      const result = await service.updateStatus({
+        bookingId: 'non-existent-id',
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('BOOKING_NOT_FOUND')
+    })
+
+    it('should fail when transitioning from terminal state', async () => {
+      const bookingId = await createPendingBooking()
+
+      // Cancel the booking (terminal state)
+      await service.updateStatus({
+        bookingId,
+        newStatus: 'cancelled',
+        customerId: 'customer-1',
+      })
+
+      // Try to confirm the cancelled booking
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should allow full lifecycle: pending -> confirmed -> completed', async () => {
+      const bookingId = await createPendingBooking()
+
+      // Confirm
+      const confirmResult = await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+      expect(confirmResult.isSuccess).toBe(true)
+      expect(confirmResult.value.status).toBe('confirmed')
+
+      // Complete
+      const completeResult = await service.updateStatus({
+        bookingId,
+        newStatus: 'completed',
+        providerId: 'provider-1',
+      })
+      expect(completeResult.isSuccess).toBe(true)
+      expect(completeResult.value.status).toBe('completed')
+    })
+  })
+
+  describe('mapBookingErrorToStatus - new error types', () => {
+    it('should return 400 for INVALID_STATUS_TRANSITION', () => {
+      expect(mapBookingErrorToStatus({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: 'test',
+        from: 'pending',
+        to: 'completed',
+      })).toBe(400)
+    })
+
+    it('should return 404 for BOOKING_NOT_FOUND', () => {
+      expect(mapBookingErrorToStatus({ type: 'BOOKING_NOT_FOUND' })).toBe(404)
+    })
+  })
+
+  describe('mapBookingErrorToMessage - new error types', () => {
+    it('should return message for INVALID_STATUS_TRANSITION', () => {
+      expect(mapBookingErrorToMessage({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: 'Custom transition error',
+        from: 'pending',
+        to: 'completed',
+      })).toBe('Custom transition error')
+    })
+
+    it('should return message for BOOKING_NOT_FOUND', () => {
+      expect(mapBookingErrorToMessage({ type: 'BOOKING_NOT_FOUND' }))
+        .toBe('Bokningen hittades inte')
+    })
+  })
 })

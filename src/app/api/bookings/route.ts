@@ -9,8 +9,7 @@ import { logger } from "@/lib/logger"
 import { sendBookingConfirmationNotification } from "@/lib/email"
 import { z } from "zod"
 import {
-  BookingService,
-  TravelTimeService,
+  createBookingService,
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
 } from "@/domain/booking"
@@ -137,67 +136,8 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedInput = bookingInputSchema.parse(body)
 
-    // Create BookingService with dependencies
-    const bookingService = new BookingService({
-      bookingRepository: new PrismaBookingRepository(),
-      getService: async (id) => {
-        const service = await prisma.service.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            providerId: true,
-            durationMinutes: true,
-            isActive: true,
-          },
-        })
-        return service
-      },
-      getProvider: async (id) => {
-        const provider = await prisma.provider.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            userId: true,
-            isActive: true,
-            latitude: true,
-            longitude: true,
-          },
-        })
-        return provider
-      },
-      getRouteOrder: async (id) => {
-        const routeOrder = await prisma.routeOrder.findUnique({
-          where: { id },
-          select: {
-            dateFrom: true,
-            dateTo: true,
-            status: true,
-            providerId: true,
-          },
-        })
-        if (!routeOrder || !routeOrder.providerId) {
-          return null
-        }
-        return {
-          dateFrom: routeOrder.dateFrom,
-          dateTo: routeOrder.dateTo,
-          status: routeOrder.status,
-          providerId: routeOrder.providerId,
-        }
-      },
-      getCustomerLocation: async (customerId) => {
-        const user = await prisma.user.findUnique({
-          where: { id: customerId },
-          select: {
-            latitude: true,
-            longitude: true,
-            address: true,
-          },
-        })
-        return user
-      },
-      travelTimeService: new TravelTimeService(),
-    })
+    // Create BookingService with production dependencies (factory pattern)
+    const bookingService = createBookingService()
 
     // Delegate to BookingService
     const result = await bookingService.createBooking({

@@ -998,7 +998,7 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 | 1 | Fas 1.1 | Review (pilot) | Repo + service + migrera 3 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-review-pilot.md) |
 | 2 | Fas 1.2 | Horse | Repo + service + migrera 7 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-horse-migration.md) |
 | 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-groupbooking-migration.md) |
-| 4 | Fas 2 | Booking | BookingStatus VO + factory | |
+| 4 | Fas 2 | Booking | BookingStatus VO + factory | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-booking-status-vo.md) |
 | 5 | Fas 3 | Auth | Repo + service (sakerhet) | |
 | 6 | Fas 4 | Test-coverage | rate-limit, auth-server, auth routes | |
 
