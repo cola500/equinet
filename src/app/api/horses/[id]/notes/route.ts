@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
+import { createHorseService } from "@/domain/horse/HorseService"
+import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 
 const NOTE_CATEGORIES = [
   "veterinary",
@@ -40,42 +41,24 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id: horseId } = await context.params
 
-    // Verify horse ownership (IDOR protection)
-    const horse = await prisma.horse.findFirst({
-      where: {
-        id: horseId,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-    })
-
-    if (!horse) {
-      return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
-      )
-    }
-
     // Optional category filter
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
+    const validCategory = category && NOTE_CATEGORIES.includes(category as any)
+      ? category
+      : undefined
 
-    const where: { horseId: string; category?: string } = { horseId }
-    if (category && NOTE_CATEGORIES.includes(category as any)) {
-      where.category = category
+    const service = createHorseService()
+    const result = await service.listNotes(horseId, session.user.id, validCategory)
+
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
+      )
     }
 
-    const notes = await prisma.horseNote.findMany({
-      where,
-      orderBy: { noteDate: "desc" },
-      include: {
-        author: {
-          select: { firstName: true, lastName: true },
-        },
-      },
-    })
-
-    return NextResponse.json(notes)
+    return NextResponse.json(result.value)
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -95,22 +78,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id: horseId } = await context.params
 
-    // Verify horse ownership (IDOR protection)
-    const horse = await prisma.horse.findFirst({
-      where: {
-        id: horseId,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-    })
-
-    if (!horse) {
-      return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
-      )
-    }
-
     // Parse JSON
     let body
     try {
@@ -125,29 +92,32 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Validate
     const validated = noteCreateSchema.parse(body)
 
-    const note = await prisma.horseNote.create({
-      data: {
-        horseId,
-        authorId: session.user.id,
+    const service = createHorseService()
+    const result = await service.createNote(
+      horseId,
+      {
         category: validated.category,
         title: validated.title,
         content: validated.content,
         noteDate: new Date(validated.noteDate),
       },
-      include: {
-        author: {
-          select: { firstName: true, lastName: true },
-        },
-      },
-    })
+      session.user.id
+    )
+
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
+      )
+    }
 
     logger.info("Horse note created", {
-      noteId: note.id,
+      noteId: result.value.id,
       horseId,
       category: validated.category,
     })
 
-    return NextResponse.json(note, { status: 201 })
+    return NextResponse.json(result.value, { status: 201 })
   } catch (error) {
     if (error instanceof Response) {
       return error

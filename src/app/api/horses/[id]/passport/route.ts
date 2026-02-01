@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
-import { randomBytes } from "crypto"
+import { createHorseService } from "@/domain/horse/HorseService"
+import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 
 type RouteContext = { params: Promise<{ id: string }> }
-
-const PASSPORT_EXPIRY_DAYS = 30
-
-/**
- * Generate a URL-safe random token for passport sharing.
- */
-function generatePassportToken(): string {
-  return randomBytes(32).toString("hex")
-}
 
 // POST /api/horses/[id]/passport - Create a shareable passport link
 export async function POST(request: NextRequest, context: RouteContext) {
@@ -31,52 +22,33 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id: horseId } = await context.params
 
-    // IDOR protection: verify ownership
-    const horse = await prisma.horse.findFirst({
-      where: {
-        id: horseId,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-    })
+    const service = createHorseService()
+    const result = await service.createPassportToken(horseId, session.user.id)
 
-    if (!horse) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
       )
     }
-
-    const token = generatePassportToken()
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + PASSPORT_EXPIRY_DAYS)
-
-    const passportToken = await prisma.horsePassportToken.create({
-      data: {
-        horseId,
-        token,
-        expiresAt,
-      },
-    })
 
     // Build the public URL
     const baseUrl = request.headers.get("x-forwarded-host")
       ? `https://${request.headers.get("x-forwarded-host")}`
       : new URL(request.url).origin
-    const url = `${baseUrl}/passport/${passportToken.token}`
+    const url = `${baseUrl}/passport/${result.value.token}`
 
     logger.info("Passport token created", {
       horseId,
-      tokenId: passportToken.id,
       userId: session.user.id,
-      expiresAt: expiresAt.toISOString(),
+      expiresAt: result.value.expiresAt.toISOString(),
     })
 
     return NextResponse.json(
       {
-        token: passportToken.token,
+        token: result.value.token,
         url,
-        expiresAt: passportToken.expiresAt.toISOString(),
+        expiresAt: result.value.expiresAt.toISOString(),
       },
       { status: 201 }
     )

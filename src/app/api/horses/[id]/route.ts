@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
+import { createHorseService } from "@/domain/horse/HorseService"
+import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 
 const currentYear = new Date().getFullYear()
 
@@ -39,44 +40,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
     const { id } = await context.params
+    const service = createHorseService()
 
-    // Atomic ownership check (IDOR protection)
-    const horse = await prisma.horse.findFirst({
-      where: {
-        id,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-      include: {
-        bookings: {
-          select: {
-            id: true,
-            bookingDate: true,
-            startTime: true,
-            endTime: true,
-            status: true,
-            customerNotes: true,
-            provider: {
-              select: { businessName: true },
-            },
-            service: {
-              select: { name: true },
-            },
-          },
-          orderBy: { bookingDate: "desc" },
-          take: 20,
-        },
-      },
-    })
+    const result = await service.getHorse(id, session.user.id)
 
-    if (!horse) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
       )
     }
 
-    return NextResponse.json(horse)
+    return NextResponse.json(result.value)
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -110,30 +85,19 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     // Validate input
     const validated = horseUpdateSchema.parse(body)
 
-    // Verify ownership (IDOR protection)
-    const existing = await prisma.horse.findFirst({
-      where: {
-        id,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-    })
+    const service = createHorseService()
+    const result = await service.updateHorse(id, validated, session.user.id)
 
-    if (!existing) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
       )
     }
 
-    const updated = await prisma.horse.update({
-      where: { id },
-      data: validated,
-    })
-
     logger.info("Horse updated", { horseId: id, ownerId: session.user.id })
 
-    return NextResponse.json(updated)
+    return NextResponse.json(result.value)
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -160,27 +124,15 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id } = await context.params
 
-    // Verify ownership (IDOR protection)
-    const existing = await prisma.horse.findFirst({
-      where: {
-        id,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-    })
+    const service = createHorseService()
+    const result = await service.softDeleteHorse(id, session.user.id)
 
-    if (!existing) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
       )
     }
-
-    // Soft delete
-    await prisma.horse.update({
-      where: { id },
-      data: { isActive: false },
-    })
 
     logger.info("Horse soft-deleted", { horseId: id, ownerId: session.user.id })
 

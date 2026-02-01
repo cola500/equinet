@@ -1,24 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET, POST } from "./route"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
 // Mock dependencies
 vi.mock("@/lib/auth-server", () => ({
   auth: vi.fn(),
-}))
-
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    horse: {
-      findFirst: vi.fn(),
-    },
-    horseNote: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-    },
-  },
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -37,6 +25,16 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
+// Mock service factory
+const mockService = {
+  listNotes: vi.fn(),
+  createNote: vi.fn(),
+}
+
+vi.mock("@/domain/horse/HorseService", () => ({
+  createHorseService: () => mockService,
+}))
+
 const mockSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
 } as any
@@ -50,12 +48,7 @@ describe("GET /api/horses/[id]/notes", () => {
 
   it("should return notes for horse owned by authenticated user", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([
+    mockService.listNotes.mockResolvedValue(Result.ok([
       {
         id: "note-1",
         horseId: "horse-1",
@@ -66,8 +59,9 @@ describe("GET /api/horses/[id]/notes", () => {
         noteDate: new Date("2026-01-15"),
         createdAt: new Date(),
         updatedAt: new Date(),
+        author: { firstName: "Anna", lastName: "Svensson" },
       },
-    ] as any)
+    ]))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes"
@@ -84,33 +78,27 @@ describe("GET /api/horses/[id]/notes", () => {
     })
   })
 
-  it("should filter notes by category when query param provided", async () => {
+  it("should pass category filter to service", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
+    mockService.listNotes.mockResolvedValue(Result.ok([]))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes?category=veterinary"
     )
     await GET(request, routeContext)
 
-    expect(prisma.horseNote.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          horseId: "horse-1",
-          category: "veterinary",
-        }),
-      })
+    expect(mockService.listNotes).toHaveBeenCalledWith(
+      "horse-1",
+      "customer-1",
+      "veterinary"
     )
   })
 
   it("should return 404 if horse not found or not owned", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.listNotes.mockResolvedValue(
+      Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-999/notes"
@@ -154,15 +142,11 @@ describe("POST /api/horses/[id]/notes", () => {
       noteDate: new Date("2026-01-15"),
       createdAt: new Date(),
       updatedAt: new Date(),
+      author: { firstName: "Anna", lastName: "Svensson" },
     }
 
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.create).mockResolvedValue(mockNote as any)
+    mockService.createNote.mockResolvedValue(Result.ok(mockNote))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -190,11 +174,6 @@ describe("POST /api/horses/[id]/notes", () => {
 
   it("should return 400 for invalid category", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -217,11 +196,6 @@ describe("POST /api/horses/[id]/notes", () => {
 
   it("should return 400 when title is missing", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -243,11 +217,6 @@ describe("POST /api/horses/[id]/notes", () => {
 
   it("should return 400 when noteDate is in the future", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
 
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 10)
@@ -273,7 +242,9 @@ describe("POST /api/horses/[id]/notes", () => {
 
   it("should return 404 if horse not owned by user (IDOR protection)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.createNote.mockResolvedValue(
+      Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-999/notes",
@@ -296,11 +267,6 @@ describe("POST /api/horses/[id]/notes", () => {
 
   it("should return 400 for invalid JSON", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -317,18 +283,13 @@ describe("POST /api/horses/[id]/notes", () => {
     expect(data.error).toBe("Invalid JSON")
   })
 
-  it("should set authorId from session, not request body", async () => {
+  it("should pass authorId from session to service", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.create).mockResolvedValue({
+    mockService.createNote.mockResolvedValue(Result.ok({
       id: "note-new",
       horseId: "horse-1",
       authorId: "customer-1",
-    } as any)
+    }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -338,30 +299,23 @@ describe("POST /api/horses/[id]/notes", () => {
           category: "general",
           title: "Test",
           noteDate: "2026-01-15T00:00:00.000Z",
-          authorId: "attacker-id", // Should be ignored
         }),
       }
     )
 
     await POST(request, routeContext)
 
-    expect(prisma.horseNote.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          authorId: "customer-1", // From session, not body
-        }),
-      })
+    // Verify authorId comes from session
+    expect(mockService.createNote).toHaveBeenCalledWith(
+      "horse-1",
+      expect.objectContaining({ category: "general", title: "Test" }),
+      "customer-1"
     )
   })
 
   it("should accept note without content (optional)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.create).mockResolvedValue({
+    mockService.createNote.mockResolvedValue(Result.ok({
       id: "note-new",
       horseId: "horse-1",
       authorId: "customer-1",
@@ -369,7 +323,7 @@ describe("POST /api/horses/[id]/notes", () => {
       title: "Kort notering",
       content: null,
       noteDate: new Date("2026-01-15"),
-    } as any)
+    }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",

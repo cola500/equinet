@@ -1,24 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT, DELETE } from './route'
 import { auth } from '@/lib/auth-server'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { Result } from '@/domain/shared'
 
 // Mock dependencies
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
-}))
-
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    horse: {
-      findFirst: vi.fn(),
-      update: vi.fn(),
-    },
-    booking: {
-      findMany: vi.fn(),
-    },
-  },
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -35,6 +23,17 @@ vi.mock('@/lib/logger', () => ({
     warn: vi.fn(),
     security: vi.fn(),
   },
+}))
+
+// Mock service factory
+const mockService = {
+  getHorse: vi.fn(),
+  updateHorse: vi.fn(),
+  softDeleteHorse: vi.fn(),
+}
+
+vi.mock('@/domain/horse/HorseService', () => ({
+  createHorseService: () => mockService,
 }))
 
 const mockCustomerSession = {
@@ -79,7 +78,7 @@ describe('GET /api/horses/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(horseWithBookings as any)
+    mockService.getHorse.mockResolvedValue(Result.ok(horseWithBookings))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1')
     const response = await GET(request, { params: makeParams('horse-1') })
@@ -95,28 +94,11 @@ describe('GET /api/horses/[id]', () => {
     expect(data.bookings[0].provider.businessName).toBe('Magnus Hovslageri')
   })
 
-  it('should use ownership check in WHERE clause (IDOR protection)', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
-
-    const request = new NextRequest('http://localhost:3000/api/horses/horse-1')
-    await GET(request, { params: makeParams('horse-1') })
-
-    // Verify atomic ownership check
-    expect(prisma.horse.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          id: 'horse-1',
-          ownerId: 'customer-1',
-          isActive: true,
-        },
-      })
-    )
-  })
-
   it('should return 404 when horse not found or not owned by user', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.getHorse.mockResolvedValue(
+      Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-999')
     const response = await GET(request, { params: makeParams('horse-999') })
@@ -155,8 +137,7 @@ describe('PUT /api/horses/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(mockHorse as any)
-    vi.mocked(prisma.horse.update).mockResolvedValue(updatedHorse as any)
+    mockService.updateHorse.mockResolvedValue(Result.ok(updatedHorse))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'PUT',
@@ -176,11 +157,10 @@ describe('PUT /api/horses/[id]', () => {
 
   it('should allow partial updates', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(mockHorse as any)
-    vi.mocked(prisma.horse.update).mockResolvedValue({
+    mockService.updateHorse.mockResolvedValue(Result.ok({
       ...mockHorse,
       specialNeeds: 'Ny info',
-    } as any)
+    }))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'PUT',
@@ -194,7 +174,9 @@ describe('PUT /api/horses/[id]', () => {
 
   it('should return 404 when horse not found or not owned', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.updateHorse.mockResolvedValue(
+      Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-999', {
       method: 'PUT',
@@ -210,7 +192,6 @@ describe('PUT /api/horses/[id]', () => {
 
   it('should return 400 for invalid data', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(mockHorse as any)
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'PUT',
@@ -245,13 +226,9 @@ describe('DELETE /api/horses/[id]', () => {
     vi.clearAllMocks()
   })
 
-  it('should soft-delete horse (set isActive=false)', async () => {
+  it('should soft-delete horse', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(mockHorse as any)
-    vi.mocked(prisma.horse.update).mockResolvedValue({
-      ...mockHorse,
-      isActive: false,
-    } as any)
+    mockService.softDeleteHorse.mockResolvedValue(Result.ok(undefined))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'DELETE',
@@ -262,19 +239,13 @@ describe('DELETE /api/horses/[id]', () => {
 
     expect(response.status).toBe(200)
     expect(data.message).toBeDefined()
-
-    // Verify soft delete (isActive=false), not hard delete
-    expect(prisma.horse.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 'horse-1' },
-        data: { isActive: false },
-      })
-    )
   })
 
   it('should return 404 when horse not found or not owned', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.softDeleteHorse.mockResolvedValue(
+      Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-999', {
       method: 'DELETE',

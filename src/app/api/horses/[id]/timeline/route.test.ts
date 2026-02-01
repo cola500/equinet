@@ -1,28 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
-import { auth, getSession } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth-server"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
 // Mock dependencies
 vi.mock("@/lib/auth-server", () => ({
   auth: vi.fn(),
-  getSession: vi.fn(),
-}))
-
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    horse: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-    },
-    booking: {
-      findMany: vi.fn(),
-    },
-    horseNote: {
-      findMany: vi.fn(),
-    },
-  },
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -41,12 +25,17 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
+// Mock service factory
+const mockService = {
+  getTimeline: vi.fn(),
+}
+
+vi.mock("@/domain/horse/HorseService", () => ({
+  createHorseService: () => mockService,
+}))
+
 const mockCustomerSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
-
-const mockProviderSession = {
-  user: { id: "provider-user-1", email: "magnus@test.se", userType: "provider" },
 } as any
 
 const routeContext = { params: Promise.resolve({ id: "horse-1" }) }
@@ -58,33 +47,26 @@ describe("GET /api/horses/[id]/timeline", () => {
 
   it("should return merged timeline for horse owner", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([
+    mockService.getTimeline.mockResolvedValue(Result.ok([
       {
+        type: "booking",
         id: "b1",
-        bookingDate: new Date("2026-01-20"),
+        date: "2026-01-20T00:00:00.000Z",
+        title: "Massage",
+        providerName: "Sara Hästmassage",
         status: "completed",
-        customerNotes: "Stel i ryggen",
-        service: { name: "Massage" },
-        provider: { businessName: "Sara Hästmassage" },
+        notes: "Stel i ryggen",
       },
-    ] as any)
-
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([
       {
+        type: "note",
         id: "n1",
-        category: "veterinary",
+        date: "2026-01-15T00:00:00.000Z",
         title: "Vaccination",
+        category: "veterinary",
         content: "Influensa",
-        noteDate: new Date("2026-01-15"),
-        author: { firstName: "Anna", lastName: "Svensson" },
+        authorName: "Anna Svensson",
       },
-    ] as any)
+    ]))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/timeline"
@@ -103,13 +85,7 @@ describe("GET /api/horses/[id]/timeline", () => {
 
   it("should return empty timeline for horse with no history", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
+    mockService.getTimeline.mockResolvedValue(Result.ok([]))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/timeline"
@@ -121,36 +97,27 @@ describe("GET /api/horses/[id]/timeline", () => {
     expect(data).toEqual([])
   })
 
-  it("should filter by category when query param provided", async () => {
+  it("should pass category filter to service", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
+    mockService.getTimeline.mockResolvedValue(Result.ok([]))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/timeline?category=veterinary"
     )
     await GET(request, routeContext)
 
-    expect(prisma.horseNote.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          category: "veterinary",
-        }),
-      })
+    expect(mockService.getTimeline).toHaveBeenCalledWith(
+      "horse-1",
+      "customer-1",
+      "veterinary"
     )
   })
 
-  it("should return 404 if horse not found or not owned", async () => {
+  it("should return 404 if horse not found or not accessible", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
-    // Provider booking check also returns nothing
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
-    vi.mocked(prisma.horse.findUnique).mockResolvedValue(null)
+    mockService.getTimeline.mockResolvedValue(
+      Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-999/timeline"
@@ -173,53 +140,5 @@ describe("GET /api/horses/[id]/timeline", () => {
     const response = await GET(request, routeContext)
 
     expect(response.status).toBe(401)
-  })
-
-  it("should allow provider access if they have a booking for the horse", async () => {
-    vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    // Not the owner
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
-    // But has a booking for this horse
-    vi.mocked(prisma.horse.findUnique).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-
-    // Provider has a booking for this horse
-    const bookingFindMany = vi.mocked(prisma.booking.findMany)
-    // First call: check provider access
-    bookingFindMany.mockResolvedValueOnce([
-      { id: "booking-1", providerId: "provider-1" },
-    ] as any)
-    // Second call: fetch bookings for timeline
-    bookingFindMany.mockResolvedValueOnce([
-      {
-        id: "booking-1",
-        bookingDate: new Date("2026-01-20"),
-        status: "completed",
-        customerNotes: null,
-        service: { name: "Hovvård" },
-        provider: { businessName: "Magnus Hovslageri" },
-      },
-    ] as any)
-
-    // Notes should only include provider-visible categories
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
-
-    const request = new NextRequest(
-      "http://localhost:3000/api/horses/horse-1/timeline"
-    )
-    const response = await GET(request, routeContext)
-
-    expect(response.status).toBe(200)
-    // Should filter notes to provider-visible categories
-    expect(prisma.horseNote.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          category: { in: ["veterinary", "farrier", "medication"] },
-        }),
-      })
-    )
   })
 })

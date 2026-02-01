@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { objectsToCsv, flattenBookings, flattenNotes } from "@/lib/export-utils"
-import { mergeTimeline, TimelineBooking, TimelineNote } from "@/lib/timeline"
+import { createHorseService } from "@/domain/horse/HorseService"
+import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -23,75 +23,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id: horseId } = await context.params
 
-    // IDOR protection: verify ownership in WHERE clause
-    const horse = await prisma.horse.findFirst({
-      where: {
-        id: horseId,
-        ownerId: session.user.id,
-        isActive: true,
-      },
-    })
+    const service = createHorseService()
+    const result = await service.exportData(horseId, session.user.id)
 
-    if (!horse) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Hästen hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
       )
     }
 
-    // Fetch bookings for this horse
-    const bookings = await prisma.booking.findMany({
-      where: { horseId },
-      select: {
-        id: true,
-        bookingDate: true,
-        startTime: true,
-        endTime: true,
-        status: true,
-        customerNotes: true,
-        service: { select: { name: true } },
-        provider: { select: { businessName: true } },
-        horse: { select: { name: true } },
-      },
-      orderBy: { bookingDate: "desc" },
-    })
-
-    // Fetch notes for this horse
-    const notes = await prisma.horseNote.findMany({
-      where: { horseId },
-      select: {
-        id: true,
-        category: true,
-        title: true,
-        content: true,
-        noteDate: true,
-        author: { select: { firstName: true, lastName: true } },
-      },
-      orderBy: { noteDate: "desc" },
-    })
-
-    // Build timeline
-    const timelineBookings: TimelineBooking[] = bookings.map((b) => ({
-      type: "booking" as const,
-      id: b.id,
-      date: b.bookingDate.toISOString(),
-      title: b.service.name,
-      providerName: b.provider.businessName,
-      status: b.status,
-      notes: b.customerNotes,
-    }))
-
-    const timelineNotes: TimelineNote[] = notes.map((n) => ({
-      type: "note" as const,
-      id: n.id,
-      date: n.noteDate.toISOString(),
-      title: n.title,
-      category: n.category,
-      content: n.content,
-      authorName: `${n.author.firstName} ${n.author.lastName}`,
-    }))
-
-    const timeline = mergeTimeline(timelineBookings, timelineNotes)
+    const { horse, bookings, notes, timeline } = result.value
 
     const { searchParams } = new URL(request.url)
     const format = searchParams.get("format")
@@ -128,14 +70,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // JSON format (default)
     return NextResponse.json({
       exportedAt: new Date().toISOString(),
-      horse: {
-        name: horse.name,
-        breed: horse.breed,
-        birthYear: horse.birthYear,
-        color: horse.color,
-        gender: horse.gender,
-        specialNeeds: horse.specialNeeds,
-      },
+      horse,
       bookings,
       notes,
       timeline,

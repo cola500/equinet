@@ -1,21 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
 import { auth } from '@/lib/auth-server'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { Result } from '@/domain/shared'
 
 // Mock dependencies
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
-}))
-
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    horse: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-    },
-  },
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -34,12 +25,18 @@ vi.mock('@/lib/logger', () => ({
   },
 }))
 
+// Mock service factory
+const mockService = {
+  listHorses: vi.fn(),
+  createHorse: vi.fn(),
+}
+
+vi.mock('@/domain/horse/HorseService', () => ({
+  createHorseService: () => mockService,
+}))
+
 const mockCustomerSession = {
   user: { id: 'customer-1', email: 'anna@test.se', userType: 'customer' },
-} as any
-
-const mockProviderSession = {
-  user: { id: 'provider-user-1', email: 'magnus@test.se', userType: 'provider' },
 } as any
 
 describe('GET /api/horses', () => {
@@ -78,7 +75,7 @@ describe('GET /api/horses', () => {
     ]
 
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findMany).mockResolvedValue(mockHorses as any)
+    mockService.listHorses.mockResolvedValue(Result.ok(mockHorses))
 
     const request = new NextRequest('http://localhost:3000/api/horses')
     const response = await GET(request)
@@ -98,24 +95,6 @@ describe('GET /api/horses', () => {
     })
   })
 
-  it('should only return active horses', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findMany).mockResolvedValue([])
-
-    const request = new NextRequest('http://localhost:3000/api/horses')
-    await GET(request)
-
-    // Verify that we filter by ownerId AND isActive
-    expect(prisma.horse.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          ownerId: 'customer-1',
-          isActive: true,
-        },
-      })
-    )
-  })
-
   it('should return 401 when not authenticated', async () => {
     const unauthorizedResponse = new Response(
       JSON.stringify({ error: 'Unauthorized' }),
@@ -133,7 +112,7 @@ describe('GET /api/horses', () => {
 
   it('should return empty array when customer has no horses', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.findMany).mockResolvedValue([])
+    mockService.listHorses.mockResolvedValue(Result.ok([]))
 
     const request = new NextRequest('http://localhost:3000/api/horses')
     const response = await GET(request)
@@ -165,7 +144,7 @@ describe('POST /api/horses', () => {
     }
 
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.create).mockResolvedValue(mockHorse as any)
+    mockService.createHorse.mockResolvedValue(Result.ok(mockHorse))
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -206,7 +185,7 @@ describe('POST /api/horses', () => {
     }
 
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.create).mockResolvedValue(mockHorse as any)
+    mockService.createHorse.mockResolvedValue(Result.ok(mockHorse))
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -320,16 +299,16 @@ describe('POST /api/horses', () => {
     expect(data.error).toBe('Unauthorized')
   })
 
-  it('should not expose ownerId in response (set server-side)', async () => {
+  it('should pass ownerId from session to service', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.horse.create).mockResolvedValue({
+    mockService.createHorse.mockResolvedValue(Result.ok({
       id: 'horse-1',
       ownerId: 'customer-1',
       name: 'Blansen',
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as any)
+    }))
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -338,13 +317,10 @@ describe('POST /api/horses', () => {
 
     await POST(request)
 
-    // Verify ownerId is set from session, not from request body
-    expect(prisma.horse.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          ownerId: 'customer-1',
-        }),
-      })
+    // Verify ownerId is passed from session
+    expect(mockService.createHorse).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Blansen' }),
+      'customer-1'
     )
   })
 })

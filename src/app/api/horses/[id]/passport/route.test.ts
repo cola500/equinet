@@ -1,16 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { POST } from "./route"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
 vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    horse: { findFirst: vi.fn() },
-    horsePassportToken: { create: vi.fn() },
-  },
-}))
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
@@ -19,16 +13,18 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), security: vi.fn() },
 }))
 
+// Mock service factory
+const mockService = {
+  createPassportToken: vi.fn(),
+}
+
+vi.mock("@/domain/horse/HorseService", () => ({
+  createHorseService: () => mockService,
+}))
+
 const mockSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
 } as any
-
-const mockHorse = {
-  id: "horse-1",
-  name: "Blansen",
-  ownerId: "customer-1",
-  isActive: true,
-}
 
 const makeContext = (id: string) => ({ params: Promise.resolve({ id }) })
 
@@ -37,14 +33,10 @@ describe("POST /api/horses/[id]/passport", () => {
 
   it("should create passport token for owned horse", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(mockHorse as any)
-    vi.mocked(prisma.horsePassportToken.create).mockResolvedValue({
-      id: "token-1",
-      horseId: "horse-1",
+    mockService.createPassportToken.mockResolvedValue(Result.ok({
       token: "abc123def456",
       expiresAt: new Date("2026-03-01"),
-      createdAt: new Date(),
-    } as any)
+    }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/passport",
@@ -61,37 +53,34 @@ describe("POST /api/horses/[id]/passport", () => {
 
   it("should set 30 day expiry", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(mockHorse as any)
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 30)
 
-    let capturedData: any
-    vi.mocked(prisma.horsePassportToken.create).mockImplementation(async (args: any) => {
-      capturedData = args.data
-      return {
-        id: "token-1",
-        token: capturedData.token,
-        expiresAt: capturedData.expiresAt,
-        horseId: "horse-1",
-        createdAt: new Date(),
-      }
-    })
+    mockService.createPassportToken.mockResolvedValue(Result.ok({
+      token: "test-token",
+      expiresAt,
+    }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/passport",
       { method: "POST" }
     )
-    await POST(request, makeContext("horse-1"))
+    const response = await POST(request, makeContext("horse-1"))
+    const data = await response.json()
 
     // Check that expiry is approximately 30 days from now
     const now = Date.now()
     const thirtyDays = 30 * 24 * 60 * 60 * 1000
-    const expiresAt = new Date(capturedData.expiresAt).getTime()
-    expect(expiresAt - now).toBeGreaterThan(thirtyDays - 60000) // Within 1 minute
-    expect(expiresAt - now).toBeLessThan(thirtyDays + 60000)
+    const expiresAtMs = new Date(data.expiresAt).getTime()
+    expect(expiresAtMs - now).toBeGreaterThan(thirtyDays - 60000)
+    expect(expiresAtMs - now).toBeLessThan(thirtyDays + 60000)
   })
 
   it("should return 404 for non-owned horse (IDOR protection)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.createPassportToken.mockResolvedValue(
+      Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/other-horse/passport",

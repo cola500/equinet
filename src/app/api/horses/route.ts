@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
+import { createHorseService } from "@/domain/horse/HorseService"
+import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 
 const currentYear = new Date().getFullYear()
 
@@ -35,16 +36,18 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await auth()
+    const service = createHorseService()
 
-    const horses = await prisma.horse.findMany({
-      where: {
-        ownerId: session.user.id,
-        isActive: true,
-      },
-      orderBy: { name: "asc" },
-    })
+    const result = await service.listHorses(session.user.id)
 
-    return NextResponse.json(horses)
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
+      )
+    }
+
+    return NextResponse.json(result.value)
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -77,21 +80,19 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validated = horseCreateSchema.parse(body)
 
-    const horse = await prisma.horse.create({
-      data: {
-        ownerId: session.user.id,
-        name: validated.name,
-        breed: validated.breed,
-        birthYear: validated.birthYear,
-        color: validated.color,
-        gender: validated.gender,
-        specialNeeds: validated.specialNeeds,
-      },
-    })
+    const service = createHorseService()
+    const result = await service.createHorse(validated, session.user.id)
 
-    logger.info("Horse created", { horseId: horse.id, ownerId: session.user.id })
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapHorseErrorToStatus(result.error) }
+      )
+    }
 
-    return NextResponse.json(horse, { status: 201 })
+    logger.info("Horse created", { horseId: result.value.id, ownerId: session.user.id })
+
+    return NextResponse.json(result.value, { status: 201 })
   } catch (error) {
     if (error instanceof Response) {
       return error

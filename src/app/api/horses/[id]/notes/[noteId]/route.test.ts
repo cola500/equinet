@@ -1,25 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { PUT, DELETE } from "./route"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
 // Mock dependencies
 vi.mock("@/lib/auth-server", () => ({
   auth: vi.fn(),
-}))
-
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    horse: {
-      findFirst: vi.fn(),
-    },
-    horseNote: {
-      findFirst: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-  },
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -38,6 +25,16 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
+// Mock service factory
+const mockService = {
+  updateNote: vi.fn(),
+  deleteNote: vi.fn(),
+}
+
+vi.mock("@/domain/horse/HorseService", () => ({
+  createHorseService: () => mockService,
+}))
+
 const mockSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
 } as any
@@ -53,17 +50,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
 
   it("should update a note owned by the user", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findFirst).mockResolvedValue({
-      id: "note-1",
-      horseId: "horse-1",
-      authorId: "customer-1",
-    } as any)
-    vi.mocked(prisma.horseNote.update).mockResolvedValue({
+    mockService.updateNote.mockResolvedValue(Result.ok({
       id: "note-1",
       horseId: "horse-1",
       authorId: "customer-1",
@@ -71,7 +58,8 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
       title: "Uppdaterad titel",
       content: "Nytt innehåll",
       noteDate: new Date("2026-01-15"),
-    } as any)
+      author: { firstName: "Anna", lastName: "Svensson" },
+    }))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",
@@ -93,7 +81,9 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
 
   it("should return 404 if horse not owned (IDOR)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.updateNote.mockResolvedValue(
+      Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-999/notes/note-1",
@@ -110,12 +100,9 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
 
   it("should return 404 if note not found on this horse", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findFirst).mockResolvedValue(null)
+    mockService.updateNote.mockResolvedValue(
+      Result.fail({ type: "NOTE_NOT_FOUND", message: "Anteckningen hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-999",
@@ -132,16 +119,6 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
 
   it("should return 400 for invalid category", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findFirst).mockResolvedValue({
-      id: "note-1",
-      horseId: "horse-1",
-      authorId: "customer-1",
-    } as any)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",
@@ -158,16 +135,6 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
 
   it("should return 400 for future noteDate", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findFirst).mockResolvedValue({
-      id: "note-1",
-      horseId: "horse-1",
-      authorId: "customer-1",
-    } as any)
 
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 10)
@@ -191,19 +158,9 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
     vi.clearAllMocks()
   })
 
-  it("should hard delete a note", async () => {
+  it("should delete a note", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findFirst).mockResolvedValue({
-      id: "note-1",
-      horseId: "horse-1",
-      authorId: "customer-1",
-    } as any)
-    vi.mocked(prisma.horseNote.delete).mockResolvedValue({} as any)
+    mockService.deleteNote.mockResolvedValue(Result.ok(undefined))
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",
@@ -215,14 +172,13 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
 
     expect(response.status).toBe(200)
     expect(data.message).toBeDefined()
-    expect(prisma.horseNote.delete).toHaveBeenCalledWith({
-      where: { id: "note-1" },
-    })
   })
 
   it("should return 404 if horse not owned (IDOR)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
+    mockService.deleteNote.mockResolvedValue(
+      Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-999/notes/note-1",
@@ -236,12 +192,9 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
 
   it("should return 404 if note not found", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
-      ownerId: "customer-1",
-      isActive: true,
-    } as any)
-    vi.mocked(prisma.horseNote.findFirst).mockResolvedValue(null)
+    mockService.deleteNote.mockResolvedValue(
+      Result.fail({ type: "NOTE_NOT_FOUND", message: "Anteckningen hittades inte" })
+    )
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-999",
