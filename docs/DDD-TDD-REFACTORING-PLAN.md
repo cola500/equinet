@@ -266,9 +266,9 @@ await dispatcher.dispatchAll(booking.domainEvents)
 | **Booking** | 3+ | Ja (fullstandig) | Ja (461 rader, 100% komplett) | DDD-Light + VO | 85% — saknar BookingStatus VO |
 | **Provider** | 2 | Ja (interface + impl + mock) | Nej | DDD-Light (klar) | 80% |
 | **Service** | 2 | Ja (interface + impl + mock) | Nej | DDD-Light (klar) | 80% |
-| **Horse** | 7 | Nej | Nej | DDD-Light | 0% |
+| **Horse** | 7 | Ja (interface + impl + mock) | Ja (HorseService, 91 tester) | DDD-Light (klar) | 100% |
 | **GroupBooking** | 6+ | Nej | Ja (186 rader, Prisma direkt) | DDD-Light | 15% |
-| **Review** | 3 | Nej | Nej | DDD-Light | 0% |
+| **Review** | 3 | Ja (interface + impl + mock) | Ja (ReviewService, 14 tester) | DDD-Light (klar) | 100% |
 | **RouteOrder** | 6+ | Nej | Nej | Prisma direkt (uppskjuten) | N/A |
 | **Auth** | 3 | Nej | Nej | DDD-Light | 0% |
 | **Notification** | 4 | Nej | Prisma direkt | Prisma direkt (klar) | 90% |
@@ -341,7 +341,9 @@ Bara repository + service.
 Review ar enklast (3 routes, tydliga regler) och fungerar som pilot for att
 validera att monstret funkar innan vi anvander det pa Horse och GroupBooking.
 
-#### 1.1 Review (DDD-Light) — PILOT
+#### 1.1 Review (DDD-Light) — PILOT (KLAR)
+
+> **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-review-pilot.md](retrospectives/2026-02-01-ddd-light-review-pilot.md)
 
 **Steg 1: Skapa repository**
 ```
@@ -370,7 +372,9 @@ src/app/api/reviews/[id]/route.ts      -> repository + service
 src/app/api/reviews/[id]/reply/route.ts -> repository
 ```
 
-#### 1.2 Horse (DDD-Light)
+#### 1.2 Horse (DDD-Light) — KLAR
+
+> **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-horse-migration.md](retrospectives/2026-02-01-ddd-light-horse-migration.md)
 
 **Steg 1: Skapa repository**
 ```
@@ -933,15 +937,15 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 
 ## Del 9: Prioritetsordning
 
-| Prio | Fas | Doman | Steg |
-|------|-----|-------|------|
-| 0 | Fas 0 | Forberedelse | Baseline, feature branch |
-| 1 | Fas 1.1 | Review (pilot) | Repo + service + migrera 3 routes |
-| 2 | Fas 1.2 | Horse | Repo + service + migrera 7 routes |
-| 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes |
-| 4 | Fas 2 | Booking | BookingStatus VO + factory |
-| 5 | Fas 3 | Auth | Repo + service (sakerhet) |
-| 6 | Fas 4 | Test-coverage | rate-limit, auth-server, auth routes |
+| Prio | Fas | Doman | Steg | Status |
+|------|-----|-------|------|--------|
+| 0 | Fas 0 | Forberedelse | Baseline, feature branch | KLAR |
+| 1 | Fas 1.1 | Review (pilot) | Repo + service + migrera 3 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-review-pilot.md) |
+| 2 | Fas 1.2 | Horse | Repo + service + migrera 7 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-horse-migration.md) |
+| 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | |
+| 4 | Fas 2 | Booking | BookingStatus VO + factory | |
+| 5 | Fas 3 | Auth | Repo + service (sakerhet) | |
+| 6 | Fas 4 | Test-coverage | rate-limit, auth-server, auth routes | |
 
 ### Nar uppgradera en doman?
 
