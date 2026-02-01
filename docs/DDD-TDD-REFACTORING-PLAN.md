@@ -69,7 +69,7 @@ Equinet:       Notification     Horse, Review         Booking (framtida)
 | **Booking** | DDD-Light + BookingStatus VO | State machine via value object, overlap-validering i repo. Uppgradera till strikt DDD nar 3+ sidoeffekter motiverar events. |
 | **Horse** | DDD-Light | IDOR-skydd, soft delete, notes — men inga komplexa regler |
 | **Review** | DDD-Light | "One per booking" + "must be completed" — enkla regler, repo racker |
-| **GroupBooking** | DDD-Light | Befintlig service behover fixas (Prisma direkt i service), men logiken ar begransad |
+| **GroupBooking** | DDD-Light (klar) | Repo + service + factory, 25 tester, 95% coverage |
 | **RouteOrder** | Prisma direkt (uppskjuten) | Mestadels CRUD — lagt ROI for refaktorering just nu |
 | **Provider** | DDD-Light (klar) | Redan repo, behall |
 | **Service** | DDD-Light (klar) | Redan repo, behall |
@@ -267,7 +267,7 @@ await dispatcher.dispatchAll(booking.domainEvents)
 | **Provider** | 2 | Ja (interface + impl + mock) | Nej | DDD-Light (klar) | 80% |
 | **Service** | 2 | Ja (interface + impl + mock) | Nej | DDD-Light (klar) | 80% |
 | **Horse** | 7 | Ja (interface + impl + mock) | Ja (HorseService, 91 tester) | DDD-Light (klar) | 100% |
-| **GroupBooking** | 6+ | Nej | Ja (186 rader, Prisma direkt) | DDD-Light | 15% |
+| **GroupBooking** | 6+ | Ja (interface + impl + mock) | Ja (555 rader, DI + Result, 25 tester) | DDD-Light (klar) | 100% |
 | **Review** | 3 | Ja (interface + impl + mock) | Ja (ReviewService, 14 tester) | DDD-Light (klar) | 100% |
 | **RouteOrder** | 6+ | Nej | Nej | Prisma direkt (uppskjuten) | N/A |
 | **Auth** | 3 | Nej | Nej | DDD-Light | 0% |
@@ -407,9 +407,9 @@ src/app/api/horses/[id]/passport/route.ts          -> repository
 src/app/api/horses/[id]/export/route.ts            -> repository
 ```
 
-#### 1.3 GroupBooking (DDD-Light)
+#### 1.3 GroupBooking (DDD-Light) — KLAR
 
-Befintlig `GroupBookingService` anvander Prisma direkt. Refaktorera till repository.
+> **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-groupbooking-migration.md](retrospectives/2026-02-01-ddd-light-groupbooking-migration.md)
 
 **Steg 1: Skapa repository**
 ```
@@ -421,14 +421,20 @@ src/infrastructure/persistence/group-booking/
 
 **Steg 2: Refaktorera GroupBookingService**
 - Ta bort `import { prisma }` fran servicen
-- Injicera repository via constructor
-- Behall befintlig logik (invite code, status, max participants)
+- Injicera repository via constructor DI (5 dependencies -> factory)
+- Alla 8 metoder returnerar `Result<T, GroupBookingError>`
+- 25 service-tester med MockRepository
 
 **Steg 3: Migrera routes (en per commit)**
+- Alla 8 routes delegerar till `createGroupBookingService()`
+- `mapGroupBookingErrorToStatus` centraliserad (28 rader)
+- `match/route.ts` behaller Prisma for provider/service-lookup (support-doman)
 
 ---
 
 ### Fas 2 — BookingStatus value object
+
+**Session:** 1 (liten andring, ~2 nya filer)
 
 Booking ar redan 85% klar (fullstandig service + repository). Det enda som saknas
 ar en BookingStatus value object for state machine-validering.
@@ -528,6 +534,10 @@ const bookingService = createBookingService()
 
 ### Fas 3 — Auth DDD-Light (sakerhetskritisk)
 
+**Sessioner:** 1-2 (beroende pa komplexitet)
+- Session A: IAuthRepository + PrismaAuthRepository + MockAuthRepository + AuthService med TDD
+- Session B (om behovs): Migrera routes + retro + docs
+
 Auth ar sakerhetskritisk och behover repository-abstraktion for testbarhet.
 
 ```
@@ -568,6 +578,11 @@ class AuthService {
 ---
 
 ### Fas 4 — Test-coverage
+
+**Sessioner:** 2-3 (en per testgrupp)
+- Session A: rate-limit.ts + auth-server.ts tester
+- Session B: auth routes tester
+- Session C (om behovs): Logger + IDOR E2E-tester
 
 Inga nya abstraktioner. Bara tester for otestade filer.
 
@@ -691,6 +706,38 @@ Steg 7: Verifiera
         -> E2E (om det finns)
         -> Om fail: git bisect
 ```
+
+### Session Management (Context Window)
+
+**Lardom fran Fas 1:** GroupBooking (8 routes, 19 filer) fyllde context-fonstret.
+Review (3 routes) och Horse (7 routes) klarade sig men var nara gransen med retro + docs.
+
+**Tumregel:** En session klarar ~5-6 routes + tester ELLER repo + service + tester.
+Retro + docs kraver egen session om migreringen ar stor (6+ routes).
+
+**Splitting-strategi for DDD-Light-domaner:**
+
+| Storlek | Routes | Sessioner | Split |
+|---------|--------|-----------|-------|
+| Liten (Review) | 1-3 | 1 | Allt i en session inkl retro |
+| Medel (Horse) | 4-6 | 1-2 | Kan klara en session, splitta om retro ingar |
+| Stor (GroupBooking) | 7+ | 2 | Obligatorisk split |
+
+**Session A: Infrastruktur + Service**
+- Steg 1-4: Interface, Prisma-repo, Mock-repo, Service med TDD
+- Kor tester, commit
+- DoD: Service-tester grona, inga TypeScript-fel
+
+**Session B: Routes + Retro + Docs**
+- Steg 5-N: Migrera alla routes (en per commit)
+- Steg N+1: Verifiering (full testsvit + typecheck)
+- Retro med agenter (tech-architect + test-lead)
+- Uppdatera CLAUDE.md key learnings
+- Uppdatera DDD-TDD-REFACTORING-PLAN.md (markera klar, lanka retro)
+- Commit docs
+- DoD: Alla tester grona, retro sparad, docs uppdaterade
+
+**For sma domaner (1-3 routes):** Allt i en session ar OK.
 
 ---
 
@@ -912,6 +959,14 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 - [ ] API latency: < 20ms regression vs baseline
 ```
 
+### Session DoD
+
+```markdown
+- [ ] Alla tester grona innan session avslutas
+- [ ] Commit gjord (inte opushat arbete over sessionsgranser)
+- [ ] Om sista sessionen: retro + docs uppdaterade
+```
+
 ### BookingStatus value object
 
 ```markdown
@@ -942,7 +997,7 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 | 0 | Fas 0 | Forberedelse | Baseline, feature branch | KLAR |
 | 1 | Fas 1.1 | Review (pilot) | Repo + service + migrera 3 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-review-pilot.md) |
 | 2 | Fas 1.2 | Horse | Repo + service + migrera 7 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-horse-migration.md) |
-| 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | |
+| 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-groupbooking-migration.md) |
 | 4 | Fas 2 | Booking | BookingStatus VO + factory | |
 | 5 | Fas 3 | Auth | Repo + service (sakerhet) | |
 | 6 | Fas 4 | Test-coverage | rate-limit, auth-server, auth routes | |

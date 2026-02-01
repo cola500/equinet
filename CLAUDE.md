@@ -496,6 +496,14 @@ Före merge?          -> quality-gate
 - **Error-mapping bor ligga i domain-lagret**: `mapErrorToStatus` duplicerades i 2 route-filer. Flytta till domain for DRY + single source of truth.
 - **MockRepository bor stodja seedable relations**: Hardkodade "Test User" racker inte for att testa notis-meddelanden med riktiga namn.
 
+### DDD-Light GroupBooking Migration (2026-02-01)
+- **Aggregate-first design forenklar**: Request + Participant som ett aggregat eliminerade distribuerade transaktioner. Entiteter som andras tillsammans bor modelleras tillsammans.
+- **Factory pattern obligatoriskt vid 5+ dependencies**: `createGroupBookingService()` med 5 deps (repo, invite code, notifications, provider lookup, service lookup). Inline-konstruktion i varje route ar omojligt att underhalla.
+- **Definiera error-kontrakt fore implementation**: Ad-hoc error-mapping under testning ger forvirring om ratt HTTP-status (PARTICIPANT_NOT_FOUND -> 404 vs 403). Bestam mappingen medvetet i forvag.
+- **Mixed mocks ar tech debt**: Routes som mockar bade Prisma OCH service (match/route.ts) ar fragila. Dokumentera och planera bort vid nasta migrering.
+- **NotificationService DI loser test-brus**: Injicera mock via constructor istallet for att lata riktiga NotificationService anropa omockad Prisma. Tillampa samma monster pa Booking/Review.
+- **95% domain service coverage med MockRepository**: 25 tester, seedable data, snabbare och mer forutsagbart an Prisma-mocks.
+
 ### Production Readiness
 - **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
 - **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.
