@@ -526,6 +526,14 @@ Före merge?          -> quality-gate
 - **Rate limiting MASTE ske fore request-parsing**: Om `request.json()` kastas fore rate limit-checken kan en angripare spamma requests utan att triggra rate limiting. Checka IP + rate limit forst, parsa request sen.
 - **Logger PII-varning**: Logger filtrerar INTE kansliga falt (password, token). Utvecklare maste vara medvetna om att aldrig logga kanslig data. Dokumenterat via test men ar tech debt.
 
+### DDD-Light Event-infrastruktur (Fas 5, 2026-02-01)
+- **Events utan aggregat ar pragmatiskt och sakert**: BookingService (632 rader) orordes -- events emitteras fran routes EFTER service-anrop. 90% av vardet med 10% av risken jamfort med full aggregat-omskrivning.
+- **Generisk `IDomainEvent<TPayload>` loser TypeScript index signature**: Explicita interfaces (som `BookingCreatedPayload`) kan inte extends `Record<string, unknown>` direkt. Default generics (`IDomainEvent<TPayload = Record<string, unknown>>`) loser det elegant.
+- **Per-handler error isolation ar kritiskt for resiliens**: `InMemoryEventDispatcher` wrapprar varje handler i try-catch. Email-failure blockerar INTE notifikation eller HTTP-response. Testat explicit.
+- **Behavior-based route-tester overlever event-migrering**: POST /api/bookings behovde NOLL test-andringar. PUT behovde bara 3 rader ny mock for dispatcher. Testa HTTP-kontrakt, inte implementation details.
+- **Flat event payloads eliminerar DB-queries i handlers**: Payload innehaller allt handlers behover (customerName, serviceName, providerUserId). Trade-off: routes gor en extra query for providerUserId, men handlers blir deterministiska och snabba.
+- **Factory pattern for dispatcher ar serverless-safe**: `createBookingEventDispatcher()` skapar ny instans per request. Inga singletons, inget shared state. Konsistent med `createBookingService()`, `createAuthService()`.
+
 ### Production Readiness
 - **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
 - **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.

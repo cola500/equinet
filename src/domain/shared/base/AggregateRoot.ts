@@ -9,7 +9,7 @@
  * - Entry point for all operations on the aggregate
  * - Enforces business invariants across all entities in the aggregate
  * - Transactional consistency boundary
- * - Can emit domain events (future enhancement)
+ * - Can emit domain events for decoupled side-effects
  *
  * @example
  * ```typescript
@@ -35,33 +35,27 @@
  * ```
  */
 import { Entity, EntityProps } from './Entity'
+import type { IDomainEvent } from '@/infrastructure/events'
 
 export abstract class AggregateRoot<T extends EntityProps> extends Entity<T> {
-  // Domain events could be added here in the future
-  // private _domainEvents: DomainEvent[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _domainEvents: IDomainEvent<any>[] = []
 
   constructor(props: T) {
     super(props)
   }
 
-  /**
-   * Get domain events (for future event-driven architecture)
-   */
-  // getDomainEvents(): DomainEvent[] {
-  //   return this._domainEvents
-  // }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getDomainEvents(): IDomainEvent<any>[] {
+    return [...this._domainEvents]
+  }
 
-  /**
-   * Add domain event (for future event-driven architecture)
-   */
-  // protected addDomainEvent(event: DomainEvent): void {
-  //   this._domainEvents.push(event)
-  // }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected addDomainEvent(event: IDomainEvent<any>): void {
+    this._domainEvents.push(event)
+  }
 
-  /**
-   * Clear domain events (typically after dispatching)
-   */
-  // clearDomainEvents(): void {
-  //   this._domainEvents = []
-  // }
+  clearDomainEvents(): void {
+    this._domainEvents = []
+  }
 }

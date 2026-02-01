@@ -66,7 +66,7 @@ Equinet:       Notification     Horse, Review         Booking (framtida)
 
 | Doman | Niva | Motivering |
 |-------|------|-----------|
-| **Booking** | DDD-Light + BookingStatus VO | State machine via value object, overlap-validering i repo. Uppgradera till strikt DDD nar 3+ sidoeffekter motiverar events. |
+| **Booking** | DDD-Light + BookingStatus VO + Events | State machine via value object, overlap-validering i repo, domain events for sidoeffekter (Fas 5). |
 | **Horse** | DDD-Light | IDOR-skydd, soft delete, notes — men inga komplexa regler |
 | **Review** | DDD-Light | "One per booking" + "must be completed" — enkla regler, repo racker |
 | **GroupBooking** | DDD-Light (klar) | Repo + service + factory, 25 tester, 95% coverage |
@@ -252,7 +252,7 @@ await dispatcher.dispatchAll(booking.domainEvents)
 
 | Byggsten | Finns | Anvands |
 |----------|-------|---------|
-| `AggregateRoot.ts` | Ja (67 rader) | Nej (events utkommenterade) |
+| `AggregateRoot.ts` | Ja (58 rader) | Ja (events aktiverade, Fas 5) |
 | `Entity.ts` | Ja (105 rader) | Ja (AggregateRoot extends det) |
 | `ValueObject.ts` | Ja (138 rader) | Ja (TimeSlot, Location) |
 | `Result.ts` | Ja (129 rader) | Ja (BookingService) |
@@ -593,11 +593,11 @@ Inga nya abstraktioner. Bara tester for otestade filer.
 
 ---
 
-### Fas 5 — (Framtida) Event-infrastruktur + Booking aggregat
+### Fas 5 — Event-infrastruktur for Booking — KLAR
 
-> **Implementera INTE denna fas nu.** Dokumenterad for framtida referens.
-> Uppgraderingskriterium: 3+ sidoeffekter per booking-handelse
-> (t.ex. payment flow, kalender-sync, analytics).
+> **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-event-infrastructure.md](retrospectives/2026-02-01-ddd-light-event-infrastructure.md)
+>
+> Events utan fullstandigt aggregat. BookingService orordes -- events emitteras fran routes EFTER service-anrop.
 
 #### 5.1 Aktivera Domain Events i AggregateRoot
 
@@ -853,7 +853,7 @@ src/
   domain/
     shared/
       base/
-        AggregateRoot.ts         # Finns (events utkommenterade — Fas 5)
+        AggregateRoot.ts         # Finns (events aktiverade — Fas 5)
         Entity.ts                # Finns
         ValueObject.ts           # Finns
       types/
@@ -992,18 +992,18 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 | 4 | Fas 2 | Booking | BookingStatus VO + factory | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-booking-status-vo.md) |
 | 5 | Fas 3 | Auth | Repo + service + factory (sakerhet) | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-auth-migration.md) |
 | 6 | Fas 4 | Test-coverage | rate-limit, auth-server, logger, auth routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-test-coverage.md) |
+| 7 | Fas 5 | Event-infrastruktur | InMemoryEventDispatcher, 3 event-typer, 7 handlers, 3 routes migrerade | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-event-infrastructure.md) |
 
-### Nar uppgradera en doman?
+### Nar uppgradera nasta doman till events?
 
-Om du i framtiden marker att Booking behover events:
+Event-monstret ar nu bevisat for Booking. For att anvanda events i en annan doman:
 
-1. Aktivera events i AggregateRoot (Fas 5.1)
-2. Skapa EventDispatcher med Factory Pattern (Fas 5.2)
-3. Skapa Booking aggregat + event handlers (Fas 5.3)
-4. Migrera BookingService -> aggregat
-5. Migrera routes -> dispatcha events
+1. Skapa `XxxEvents.ts` med event-typer + factory-funktioner
+2. Skapa `XxxEventHandlers.ts` med handlers + dispatcher factory
+3. Migrera routes fran manuella sidoeffekter till event dispatch
+4. Kor befintliga tester -- behavior-based tester overlever
 
-**Trigger:** 3+ sidoeffekter per booking-handelse (notis + email + kalender + ...)
+**Trigger for nya domaner:** 3+ sidoeffekter per handelse (notis + email + kalender + ...)
 
 ---
 

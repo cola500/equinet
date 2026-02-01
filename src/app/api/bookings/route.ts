@@ -6,15 +6,17 @@ import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/Pr
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
-import { sendBookingConfirmationNotification } from "@/lib/email"
+import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { z } from "zod"
 import {
   createBookingService,
+  createBookingEventDispatcher,
+  createBookingCreatedEvent,
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
 } from "@/domain/booking"
-import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
-import { formatNotifDate, customerName } from "@/lib/notification-helpers"
+import { notificationService } from "@/domain/notification/NotificationService"
+import { customerName } from "@/lib/notification-helpers"
 
 // Input schema - endTime is optional (will be calculated from service duration if missing)
 const bookingInputSchema = z.object({
@@ -180,41 +182,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: message }, { status })
     }
 
-    // Log success
-    try {
-      logger.info("Booking created successfully", {
-        bookingId: result.value.id,
-        customerId: session.user.id,
-        providerId: validatedInput.providerId,
-      })
-    } catch (logError) {
-      // Logger itself failed - use console as last resort
-      console.error("Logger failed:", logError)
-    }
-
-    // Send confirmation email (async, don't block)
-    sendBookingConfirmationNotification(result.value.id).catch((err) => {
-      logger.error("Failed to send booking confirmation email", err instanceof Error ? err : new Error(String(err)))
-    })
-
-    // Create in-app notification for provider (async, don't block)
+    // Dispatch domain event for side-effects (email, notification, logging)
+    const b = result.value
     const providerUser = await prisma.provider.findUnique({
       where: { id: validatedInput.providerId },
       select: { userId: true },
     })
+
     if (providerUser) {
-      const b = result.value
-      const cName = b.customer ? customerName(b.customer.firstName, b.customer.lastName) : "Kund"
-      const sName = b.service?.name || "Tjänst"
-      const dateStr = formatNotifDate(b.bookingDate)
-      const horsePart = b.horseName ? ` för ${b.horseName}` : ""
-      notificationService.createAsync({
-        userId: providerUser.userId,
-        type: NotificationType.BOOKING_CREATED,
-        message: `Ny bokning: ${cName} har bokat ${sName} den ${dateStr} kl ${b.startTime}${horsePart}`,
-        linkUrl: "/provider/bookings",
-        metadata: { bookingId: b.id },
+      const dispatcher = createBookingEventDispatcher({
+        emailService: {
+          sendBookingConfirmation: sendBookingConfirmationNotification,
+          sendBookingStatusChange: sendBookingStatusChangeNotification,
+          sendPaymentConfirmation: sendPaymentConfirmationNotification,
+        },
+        notificationService,
+        logger,
       })
+
+      await dispatcher.dispatch(createBookingCreatedEvent({
+        bookingId: b.id,
+        customerId: session.user.id,
+        providerId: validatedInput.providerId,
+        providerUserId: providerUser.userId,
+        customerName: b.customer ? customerName(b.customer.firstName, b.customer.lastName) : "Kund",
+        serviceName: b.service?.name || "Tjänst",
+        bookingDate: b.bookingDate instanceof Date ? b.bookingDate.toISOString() : String(b.bookingDate),
+        startTime: b.startTime,
+        horseName: b.horseName,
+      }))
     }
 
     return NextResponse.json(result.value, { status: 201 })

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
-import { sendPaymentConfirmationNotification } from "@/lib/email"
+import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { logger } from "@/lib/logger"
-import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
-import { formatNotifDate, customerName } from "@/lib/notification-helpers"
+import { notificationService } from "@/domain/notification/NotificationService"
+import { customerName } from "@/lib/notification-helpers"
 import { getPaymentGateway } from "@/domain/payment/PaymentGateway"
+import { createBookingEventDispatcher, createBookingPaymentReceivedEvent } from "@/domain/booking"
 
 // Generate unique invoice number
 function generateInvoiceNumber(): string {
@@ -119,23 +120,35 @@ export async function POST(
       },
     })
 
-    // Send payment confirmation email (async, don't block response)
-    sendPaymentConfirmationNotification(booking.id).catch((err) => {
-      logger.error("Failed to send payment confirmation email", err instanceof Error ? err : new Error(String(err)))
+    // Dispatch domain event for side-effects (email, notification)
+    const dispatcher = createBookingEventDispatcher({
+      emailService: {
+        sendBookingConfirmation: sendBookingConfirmationNotification,
+        sendBookingStatusChange: sendBookingStatusChangeNotification,
+        sendPaymentConfirmation: sendPaymentConfirmationNotification,
+      },
+      notificationService,
+      logger,
     })
 
-    // Create in-app notification for provider (payment received)
     const cName = booking.customer
       ? customerName(booking.customer.firstName, booking.customer.lastName)
       : "Kund"
-    const dateStr = formatNotifDate(booking.bookingDate)
-    notificationService.createAsync({
-      userId: booking.provider.userId,
-      type: NotificationType.PAYMENT_RECEIVED,
-      message: `Betalning mottagen: ${cName} betalade ${payment.amount} kr för ${booking.service.name} (${dateStr})`,
-      linkUrl: "/provider/bookings",
-      metadata: { bookingId: booking.id, paymentId: payment.id },
-    })
+
+    await dispatcher.dispatch(createBookingPaymentReceivedEvent({
+      bookingId: booking.id,
+      customerId: session.user.id,
+      providerId: booking.providerId,
+      providerUserId: booking.provider.userId,
+      customerName: cName,
+      serviceName: booking.service.name,
+      bookingDate: booking.bookingDate instanceof Date
+        ? booking.bookingDate.toISOString()
+        : String(booking.bookingDate),
+      amount: payment.amount,
+      currency: payment.currency,
+      paymentId: payment.id,
+    }))
 
     return NextResponse.json({
       success: true,

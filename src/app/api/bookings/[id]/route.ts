@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { z } from "zod"
-import { sendBookingStatusChangeNotification } from "@/lib/email"
+import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
-import { notificationService, NotificationType } from "@/domain/notification/NotificationService"
-import { formatNotifDate, customerName } from "@/lib/notification-helpers"
+import { notificationService } from "@/domain/notification/NotificationService"
+import { customerName } from "@/lib/notification-helpers"
 import {
   createBookingService,
+  createBookingEventDispatcher,
+  createBookingStatusChangedEvent,
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
 } from "@/domain/booking"
@@ -75,60 +77,43 @@ export async function PUT(
 
     const updatedBooking = result.value
 
-    // --- Side effects: notifications (stay in route, not in domain service) ---
+    // --- Side effects via domain events ---
+    const providerUser = await prisma.provider.findUnique({
+      where: { id: updatedBooking.providerId },
+      select: { userId: true },
+    })
 
-    // Send status change notification email (async, don't block response)
-    if (["confirmed", "cancelled", "completed"].includes(validatedData.status)) {
-      sendBookingStatusChangeNotification(id, validatedData.status).catch((err) => {
-        logger.error("Failed to send status change notification", err instanceof Error ? err : new Error(String(err)))
+    if (providerUser) {
+      const dispatcher = createBookingEventDispatcher({
+        emailService: {
+          sendBookingConfirmation: sendBookingConfirmationNotification,
+          sendBookingStatusChange: sendBookingStatusChangeNotification,
+          sendPaymentConfirmation: sendPaymentConfirmationNotification,
+        },
+        notificationService,
+        logger,
       })
-    }
 
-    // Create in-app notification for the other party
-    const statusLabels: Record<string, string> = {
-      confirmed: "bekräftad",
-      cancelled: "avbokad",
-      completed: "markerad som genomförd",
-    }
-    const notifTypeMap: Record<string, string> = {
-      confirmed: NotificationType.BOOKING_CONFIRMED,
-      cancelled: NotificationType.BOOKING_CANCELLED,
-      completed: NotificationType.BOOKING_COMPLETED,
-    }
-    const notifType = notifTypeMap[validatedData.status]
-    if (notifType) {
-      const sName = updatedBooking.service?.name || "Bokning"
-      const dateStr = formatNotifDate(updatedBooking.bookingDate)
-      const timeStr = updatedBooking.startTime ? ` kl ${updatedBooking.startTime}` : ""
-      const statusLabel = statusLabels[validatedData.status] || validatedData.status
+      const cName = updatedBooking.customer
+        ? customerName(updatedBooking.customer.firstName, updatedBooking.customer.lastName)
+        : "Kund"
 
-      if (session.user.userType === "provider" && updatedBooking.customerId) {
-        const providerName = updatedBooking.provider?.businessName || "Leverantör"
-        notificationService.createAsync({
-          userId: updatedBooking.customerId,
-          type: notifType as any,
-          message: `${sName} hos ${providerName} den ${dateStr}${timeStr} har blivit ${statusLabel}`,
-          linkUrl: "/customer/bookings",
-          metadata: { bookingId: id },
-        })
-      } else if (session.user.userType === "customer") {
-        const providerUser = await prisma.provider.findUnique({
-          where: { id: updatedBooking.providerId },
-          select: { userId: true },
-        })
-        if (providerUser) {
-          const cName = updatedBooking.customer
-            ? customerName(updatedBooking.customer.firstName, updatedBooking.customer.lastName)
-            : "Kund"
-          notificationService.createAsync({
-            userId: providerUser.userId,
-            type: notifType as any,
-            message: `${cName} har ${statusLabel === "avbokad" ? "avbokat" : statusLabel} ${sName} den ${dateStr}`,
-            linkUrl: "/provider/bookings",
-            metadata: { bookingId: id },
-          })
-        }
-      }
+      await dispatcher.dispatch(createBookingStatusChangedEvent({
+        bookingId: id,
+        customerId: updatedBooking.customerId,
+        providerId: updatedBooking.providerId,
+        providerUserId: providerUser.userId,
+        customerName: cName,
+        providerName: updatedBooking.provider?.businessName || "Leverantör",
+        serviceName: updatedBooking.service?.name || "Bokning",
+        bookingDate: updatedBooking.bookingDate instanceof Date
+          ? updatedBooking.bookingDate.toISOString()
+          : String(updatedBooking.bookingDate),
+        startTime: updatedBooking.startTime,
+        oldStatus: updatedBooking.status, // Note: already updated by service
+        newStatus: validatedData.status,
+        changedByUserType: session.user.userType as 'provider' | 'customer',
+      }))
     }
 
     return NextResponse.json(updatedBooking)

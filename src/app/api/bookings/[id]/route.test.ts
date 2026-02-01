@@ -29,7 +29,9 @@ vi.mock('@/domain/notification/NotificationService', () => ({
 }))
 
 vi.mock('@/lib/email', () => ({
+  sendBookingConfirmationNotification: vi.fn().mockResolvedValue(undefined),
   sendBookingStatusChangeNotification: vi.fn().mockResolvedValue(undefined),
+  sendPaymentConfirmationNotification: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Mock BookingService for PUT tests
@@ -38,6 +40,16 @@ vi.mock('@/domain/booking', () => ({
   createBookingService: () => ({
     updateStatus: mockUpdateStatus,
   }),
+  createBookingEventDispatcher: () => ({
+    dispatch: vi.fn().mockResolvedValue(undefined),
+    dispatchAll: vi.fn().mockResolvedValue(undefined),
+  }),
+  createBookingStatusChangedEvent: vi.fn((payload: any) => ({
+    eventId: 'test-evt',
+    eventType: 'BOOKING_STATUS_CHANGED',
+    occurredAt: new Date(),
+    payload,
+  })),
   mapBookingErrorToStatus: vi.fn((error: any) => {
     if (error.type === 'BOOKING_NOT_FOUND') return 404
     if (error.type === 'INVALID_STATUS_TRANSITION') return 400
