@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
+import Link from "next/link"
 
 interface ProviderProfile {
   id: string
@@ -625,6 +626,21 @@ export default function ProviderProfilePage() {
 
       {/* Availability Schedule Card */}
       {profile && <AvailabilitySchedule providerId={profile.id} />}
+
+      {/* Verification Link */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Verifiering</CardTitle>
+          <CardDescription>
+            Verifiera ditt företag för att öka förtroendet hos kunder
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/provider/verification">
+            <Button variant="outline">Gå till verifiering</Button>
+          </Link>
+        </CardContent>
+      </Card>
     </ProviderLayout>
   )
 }

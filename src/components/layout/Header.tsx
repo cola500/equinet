@@ -55,7 +55,7 @@ export function Header() {
               <DropdownMenuContent align="end" className="min-w-[220px]">
                 <DropdownMenuItem asChild className="py-3 px-4">
                   <Link href={isProvider ? "/provider/dashboard" : "/dashboard"}>
-                    Dashboard
+                    Översikt
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="py-3 px-4">
@@ -63,27 +63,6 @@ export function Header() {
                     Min profil
                   </Link>
                 </DropdownMenuItem>
-                {isCustomer && (
-                  <DropdownMenuItem asChild className="py-3 px-4">
-                    <Link href="/customer/bookings">
-                      Mina bokningar
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isProvider && (
-                  <>
-                    <DropdownMenuItem asChild className="py-3 px-4">
-                      <Link href="/provider/services">
-                        Mina tjänster
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="py-3 px-4">
-                      <Link href="/provider/bookings">
-                        Bokningar
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="py-3 px-4">
                   Logga ut

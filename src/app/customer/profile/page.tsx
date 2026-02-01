@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import Link from "next/link"
 
 interface Profile {
   id: string
@@ -365,6 +366,23 @@ export default function CustomerProfilePage() {
                   </div>
                 </form>
               )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Data Export Link */}
+        <div className="max-w-2xl mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Exportera data</CardTitle>
+              <CardDescription>
+                Ladda ner din personliga data i CSV-format
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/customer/export">
+                <Button variant="outline">Gå till dataexport</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

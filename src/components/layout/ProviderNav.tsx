@@ -13,18 +13,26 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
-const navItems = [
-  { href: "/provider/dashboard", label: "Dashboard" },
-  { href: "/provider/services", label: "Mina tjänster" },
-  { href: "/provider/bookings", label: "Bokningar" },
-  { href: "/provider/calendar", label: "Kalender" },
-  { href: "/provider/reviews", label: "Recensioner" },
-  { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route" },
-  { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },
-  { href: "/provider/group-bookings", label: "Grupprequests", matchPrefix: "/provider/group-bookings" },
-  { href: "/provider/verification", label: "Verifiering" },
-  { href: "/provider/profile", label: "Min profil" },
+// Groups for mobile dividers (flat list used for desktop)
+const navGroups = [
+  [
+    { href: "/provider/dashboard", label: "Översikt" },
+    { href: "/provider/calendar", label: "Kalender" },
+    { href: "/provider/bookings", label: "Bokningar" },
+  ],
+  [
+    { href: "/provider/services", label: "Mina tjänster" },
+    { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route" },
+    { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },
+  ],
+  [
+    { href: "/provider/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/provider/group-bookings" },
+    { href: "/provider/reviews", label: "Recensioner" },
+    { href: "/provider/profile", label: "Min profil" },
+  ],
 ]
+
+const navItems = navGroups.flat()
 
 export function ProviderNav() {
   const pathname = usePathname()
@@ -83,15 +91,22 @@ export function ProviderNav() {
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col py-2">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={linkClasses(item, true)}
-                    onClick={() => setOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
+                {navGroups.map((group, groupIndex) => (
+                  <div key={groupIndex}>
+                    {groupIndex > 0 && (
+                      <div className="border-b border-gray-200 my-1" />
+                    )}
+                    {group.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={linkClasses(item, true)}
+                        onClick={() => setOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
                 ))}
               </nav>
             </SheetContent>
