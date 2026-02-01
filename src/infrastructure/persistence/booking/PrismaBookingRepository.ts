@@ -460,12 +460,14 @@ export class PrismaBookingRepository
             invoiceUrl: true,
           },
         },
-        // Review for customer view (so they can see/edit their review)
+        // Review for customer view (so they can see/edit their review + see provider reply)
         review: {
           select: {
             id: true,
             rating: true,
             comment: true,
+            reply: true,
+            repliedAt: true,
           },
         },
       },

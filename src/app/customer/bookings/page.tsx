@@ -65,6 +65,8 @@ interface Booking {
     id: string
     rating: number
     comment: string | null
+    reply: string | null
+    repliedAt: string | null
   } | null
   type: "fixed"
 }
@@ -661,6 +663,12 @@ export default function CustomerBookingsPage() {
                             <p className="text-sm text-gray-600 italic">
                               "{booking.review.comment}"
                             </p>
+                          )}
+                          {booking.review.reply && (
+                            <div className="mt-2 pl-3 border-l-2 border-green-300 bg-green-50 p-2 rounded-r">
+                              <p className="text-xs font-medium text-green-800 mb-1">Svar från leverantören</p>
+                              <p className="text-sm text-green-700">{booking.review.reply}</p>
+                            </div>
                           )}
                         </div>
                       ) : (
