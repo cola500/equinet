@@ -137,4 +137,22 @@ describe("POST /api/auth/verify-email", () => {
     expect(response.status).toBe(400)
     expect(data.error).toBe("Ogiltig JSON")
   })
+
+  it("should return 500 on unexpected error", async () => {
+    mockVerifyEmail.mockRejectedValue(new Error("Database connection lost"))
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/auth/verify-email",
+      {
+        method: "POST",
+        body: JSON.stringify({ token: "valid-token" }),
+      }
+    )
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(500)
+    expect(data.error).toContain("Något gick fel")
+  })
 })

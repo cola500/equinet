@@ -9,9 +9,7 @@ import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-
-    // Rate limiting - Check IP address
+    // Rate limiting - Check IP address (before JSON parsing to prevent spam)
     const identifier = request.headers.get('x-forwarded-for') ||
                       request.headers.get('x-real-ip') ||
                       'unknown'
@@ -22,6 +20,13 @@ export async function POST(request: NextRequest) {
         { error: "För många registreringsförsök. Försök igen om en timme." },
         { status: 429 }
       )
+    }
+
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 
     // Validera input

@@ -128,4 +128,22 @@ describe("POST /api/auth/resend-verification", () => {
     expect(response.status).toBe(429)
     expect(data.error).toContain("För många försök")
   })
+
+  it("should return 500 on unexpected error", async () => {
+    mockResendVerification.mockRejectedValue(new Error("SMTP connection failed"))
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/auth/resend-verification",
+      {
+        method: "POST",
+        body: JSON.stringify({ email: "test@example.com" }),
+      }
+    )
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(500)
+    expect(data.error).toContain("Något gick fel")
+  })
 })

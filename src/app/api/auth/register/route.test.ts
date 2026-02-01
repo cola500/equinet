@@ -172,4 +172,60 @@ describe('POST /api/auth/register', () => {
     expect(response.status).toBe(400)
     expect(data.error).toBe('Valideringsfel')
   })
+
+  it('should return 429 when rate limited', async () => {
+    const { rateLimiters } = await import('@/lib/rate-limit')
+    vi.mocked(rateLimiters.registration).mockResolvedValueOnce(false)
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'test@example.com',
+        password: 'Password123!',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+      }),
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(429)
+    expect(data.error).toContain('För många')
+  })
+
+  it('should return 500 on unexpected error', async () => {
+    mockRegister.mockRejectedValue(new Error('Database connection lost'))
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'test@example.com',
+        password: 'Password123!',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+      }),
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(500)
+    expect(data.error).toContain('Något gick fel')
+  })
+
+  it('should return 400 for invalid JSON body', async () => {
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: 'not valid json{{{',
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Ogiltig JSON')
+  })
 })

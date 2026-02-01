@@ -519,6 +519,13 @@ Före merge?          -> quality-gate
 - **Error-kontrakt fore implementation (bekraftat 3:e gangen)**: TOKEN_NOT_FOUND -> 400 (inte 404, sakerhet), INVALID_CREDENTIALS -> 401, EMAIL_NOT_VERIFIED -> 403. Noll forvirring under implementation.
 - **Migrering som sakerhetsgranskning**: Att systematiskt ga igenom varje route avslojjar `include`-buggar, saknad `select`, och inkonsekvent felhantering. DDD-Light-migrering fungerar som passiv security audit.
 
+### DDD-Light Test Coverage (Fas 4, 2026-02-01)
+- **Att skriva tester for otestade filer hittar produktionsbuggar**: Register-route saknade try-catch runt `request.json()` (500 istallet for 400) OCH hade rate limiting efter JSON-parsing (angripare kunde spamma utan att triggra rate limit). Bada hittades via TDD.
+- **Testa bade production OCH development mode for miljo-beroende kod**: Logger anvander `console.log` (JSON) i production men `console.info/error/warn` i development. Testerna toggler `NODE_ENV` + `vi.resetModules()` for att tacka bada vagar.
+- **Class-baserade mocks for `new`-anrop**: `@upstash/ratelimit` och `@upstash/redis` anvander `new Ratelimit(...)` / `new Redis(...)`. Arrow functions som mock (`() => ({})`) ger "is not a constructor". Anvand `class MockRatelimit { ... }` istallet.
+- **Rate limiting MASTE ske fore request-parsing**: Om `request.json()` kastas fore rate limit-checken kan en angripare spamma requests utan att triggra rate limiting. Checka IP + rate limit forst, parsa request sen.
+- **Logger PII-varning**: Logger filtrerar INTE kansliga falt (password, token). Utvecklare maste vara medvetna om att aldrig logga kanslig data. Dokumenterat via test men ar tech debt.
+
 ### Production Readiness
 - **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
 - **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.

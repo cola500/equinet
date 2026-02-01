@@ -991,7 +991,7 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 | 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-groupbooking-migration.md) |
 | 4 | Fas 2 | Booking | BookingStatus VO + factory | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-booking-status-vo.md) |
 | 5 | Fas 3 | Auth | Repo + service + factory (sakerhet) | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-auth-migration.md) |
-| 6 | Fas 4 | Test-coverage | rate-limit, auth-server, auth routes | |
+| 6 | Fas 4 | Test-coverage | rate-limit, auth-server, logger, auth routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-test-coverage.md) |
 
 ### Nar uppgradera en doman?
 
