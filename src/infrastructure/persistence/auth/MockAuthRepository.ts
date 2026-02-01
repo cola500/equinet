@@ -21,6 +21,7 @@ interface StoredUser {
   firstName: string
   lastName: string
   userType: string
+  isAdmin?: boolean
   passwordHash: string
   emailVerified: boolean
   phone?: string
@@ -69,6 +70,7 @@ export class MockAuthRepository implements IAuthRepository {
           firstName: user.firstName,
           lastName: user.lastName,
           userType: user.userType,
+          isAdmin: user.isAdmin ?? false,
           passwordHash: user.passwordHash,
           emailVerified: user.emailVerified,
           provider: provider ? { id: provider.id } : null,

@@ -14,6 +14,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id
         token.userType = user.userType
+        token.isAdmin = user.isAdmin ?? false
         token.providerId = user.providerId
       }
       return token
@@ -22,6 +23,7 @@ export const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string
         session.user.userType = token.userType as string
+        session.user.isAdmin = (token.isAdmin as boolean) ?? false
         session.user.providerId = token.providerId as string | null
       }
       return session
@@ -31,7 +33,9 @@ export const authConfig: NextAuthConfig = {
       const isProtectedRoute =
         nextUrl.pathname.startsWith('/provider') ||
         nextUrl.pathname.startsWith('/customer') ||
+        nextUrl.pathname.startsWith('/admin') ||
         nextUrl.pathname.startsWith('/dashboard') ||
+        nextUrl.pathname.startsWith('/api/admin') ||
         nextUrl.pathname.startsWith('/api/bookings') ||
         nextUrl.pathname.startsWith('/api/routes') ||
         nextUrl.pathname.startsWith('/api/route-orders') ||

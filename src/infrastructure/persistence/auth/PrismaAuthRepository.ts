@@ -34,6 +34,7 @@ const credentialsSelect = {
   firstName: true,
   lastName: true,
   userType: true,
+  isAdmin: true,
   passwordHash: true,
   emailVerified: true,
   provider: {

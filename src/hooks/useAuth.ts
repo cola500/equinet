@@ -11,5 +11,6 @@ export function useAuth() {
     isLoading: status === "loading",
     isProvider: session?.user?.userType === "provider",
     isCustomer: session?.user?.userType === "customer",
+    isAdmin: session?.user?.isAdmin === true,
   }
 }

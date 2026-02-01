@@ -29,6 +29,7 @@ export interface AuthUserWithCredentials {
   firstName: string
   lastName: string
   userType: string
+  isAdmin: boolean
   passwordHash: string
   emailVerified: boolean
   provider: { id: string } | null

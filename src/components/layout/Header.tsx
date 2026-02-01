@@ -15,7 +15,7 @@ import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 
 export function Header() {
-  const { user, isAuthenticated, isProvider, isCustomer } = useAuth()
+  const { user, isAuthenticated, isProvider, isCustomer, isAdmin } = useAuth()
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" })
@@ -63,6 +63,16 @@ export function Header() {
                     Min profil
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="py-3 px-4">
+                      <Link href="/admin/verifications">
+                        Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="py-3 px-4">
                   Logga ut

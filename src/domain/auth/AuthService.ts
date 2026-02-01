@@ -55,6 +55,7 @@ export interface VerifyCredentialsResult {
   email: string
   name: string
   userType: string
+  isAdmin: boolean
   providerId: string | null
 }
 
@@ -255,6 +256,7 @@ export class AuthService {
       email: user.email,
       name: `${user.firstName} ${user.lastName}`,
       userType: user.userType,
+      isAdmin: user.isAdmin,
       providerId: user.provider?.id || null,
     })
   }
