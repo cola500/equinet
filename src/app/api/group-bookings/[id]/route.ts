@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import {
-  notificationService,
-  NotificationType,
-} from "@/domain/notification/NotificationService"
+import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
+import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -20,13 +17,6 @@ const updateGroupBookingSchema = z.object({
   ).optional(),
   status: z.enum(["open", "matched", "completed", "cancelled"]).optional(),
 })
-
-// Valid status transitions from customer perspective
-const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-  open: ["cancelled"],
-  matched: ["cancelled"],
-  // completed and cancelled are terminal states
-}
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const clientIp = getClientIP(request)
@@ -42,51 +32,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await auth()
     const { id } = await params
 
-    // Access: participant, creator, matched provider, or any provider for open requests
-    const isProvider = session.user.userType === "provider"
-    const groupRequest = await prisma.groupBookingRequest.findFirst({
-      where: {
-        id,
-        OR: [
-          { creatorId: session.user.id },
-          { participants: { some: { userId: session.user.id } } },
-          { provider: { userId: session.user.id } },
-          // Providers can view open requests (needed to evaluate before matching)
-          ...(isProvider ? [{ status: "open" }] : []),
-        ],
-      },
-      include: {
-        participants: {
-          where: { status: { not: "cancelled" } },
-          include: {
-            user: {
-              select: { firstName: true }, // Privacy: only first name
-            },
-            horse: {
-              select: { name: true },
-            },
-          },
-        },
-        provider: {
-          select: {
-            id: true,
-            businessName: true,
-          },
-        },
-        _count: {
-          select: { participants: { where: { status: { not: "cancelled" } } } },
-        },
-      },
-    })
+    const service = createGroupBookingService()
+    const result = await service.getById(id, session.user.id, session.user.userType)
 
-    if (!groupRequest) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Grupprequest hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
       )
     }
 
-    return NextResponse.json(groupRequest)
+    return NextResponse.json(result.value)
   } catch (err: unknown) {
     if (err instanceof Response) {
       return err
@@ -105,24 +61,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const session = await auth()
     const { id } = await params
 
-    // Only creator can update
-    const existing = await prisma.groupBookingRequest.findFirst({
-      where: { id, creatorId: session.user.id },
-      include: {
-        participants: {
-          where: { status: { not: "cancelled" } },
-          select: { userId: true },
-        },
-      },
-    })
-
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Bara skaparen kan uppdatera grupprequesten" },
-        { status: 403 }
-      )
-    }
-
     // Parse JSON
     let body
     try {
@@ -136,55 +74,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const validated = updateGroupBookingSchema.parse(body)
 
-    // Validate status transition
-    if (validated.status) {
-      const allowedTransitions = VALID_STATUS_TRANSITIONS[existing.status] || []
-      if (!allowedTransitions.includes(validated.status)) {
-        return NextResponse.json(
-          { error: `Kan inte ändra status från "${existing.status}" till "${validated.status}"` },
-          { status: 400 }
-        )
-      }
-    }
-
-    const updated = await prisma.groupBookingRequest.update({
-      where: { id },
-      data: {
-        ...(validated.notes !== undefined && { notes: validated.notes }),
-        ...(validated.maxParticipants !== undefined && { maxParticipants: validated.maxParticipants }),
-        ...(validated.joinDeadline !== undefined && { joinDeadline: new Date(validated.joinDeadline) }),
-        ...(validated.status !== undefined && { status: validated.status }),
-      },
-      include: {
-        participants: {
-          where: { status: { not: "cancelled" } },
-          include: {
-            user: {
-              select: { firstName: true },
-            },
-          },
-        },
-      },
+    const service = createGroupBookingService()
+    const result = await service.updateRequest({
+      groupBookingId: id,
+      userId: session.user.id,
+      notes: validated.notes,
+      maxParticipants: validated.maxParticipants,
+      joinDeadline: validated.joinDeadline ? new Date(validated.joinDeadline) : undefined,
+      status: validated.status,
     })
 
-    // Notify participants if cancelled
-    if (validated.status === "cancelled") {
-      for (const participant of existing.participants) {
-        if (participant.userId !== session.user.id) {
-          notificationService.createAsync({
-            userId: participant.userId,
-            type: NotificationType.GROUP_BOOKING_CANCELLED,
-            message: `Grupprequest för ${existing.serviceType} har avbrutits`,
-            linkUrl: "/customer/group-bookings",
-            metadata: { groupBookingId: id },
-          })
-        }
-      }
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
+      )
     }
 
-    logger.info("Group booking updated", { groupBookingId: id, updatedFields: Object.keys(validated) })
-
-    return NextResponse.json(updated)
+    return NextResponse.json(result.value)
   } catch (err: unknown) {
     if (err instanceof Response) {
       return err

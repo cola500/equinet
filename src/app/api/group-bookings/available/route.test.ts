@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
 const TEST_UUIDS = {
   providerUser: "11111111-1111-4111-8111-111111111111",
@@ -19,11 +19,12 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    provider: { findUnique: vi.fn() },
-    groupBookingRequest: { findMany: vi.fn() },
-  },
+const mockService = {
+  listAvailableForProvider: vi.fn(),
+}
+
+vi.mock("@/domain/group-booking/GroupBookingService", () => ({
+  createGroupBookingService: () => mockService,
 }))
 
 describe("GET /api/group-bookings/available", () => {
@@ -35,20 +36,21 @@ describe("GET /api/group-bookings/available", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: "provider" },
     } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
-      id: TEST_UUIDS.provider,
-      services: [{ name: "Hovslagning" }],
-    } as any)
-    vi.mocked(prisma.groupBookingRequest.findMany).mockResolvedValue([
-      {
-        id: "gr1",
-        serviceType: "hovslagning",
-        locationName: "Sollebrunn Ridklubb",
-        status: "open",
-        participants: [{ user: { firstName: "Anna" } }],
-        _count: { participants: 1 },
-      },
-    ] as any)
+    mockService.listAvailableForProvider.mockResolvedValue(
+      Result.ok({
+        provider: { id: TEST_UUIDS.provider },
+        requests: [
+          {
+            id: "gr1",
+            serviceType: "hovslagning",
+            locationName: "Sollebrunn Ridklubb",
+            status: "open",
+            participants: [{ user: { firstName: "Anna" } }],
+            _count: { participants: 1 },
+          },
+        ],
+      })
+    )
 
     const request = new NextRequest("http://localhost:3000/api/group-bookings/available")
     const response = await GET(request)

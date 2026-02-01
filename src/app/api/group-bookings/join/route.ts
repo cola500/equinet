@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import {
-  notificationService,
-  NotificationType,
-} from "@/domain/notification/NotificationService"
+import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
+import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 
 const joinSchema = z.object({
   inviteCode: z.string().min(1, "Inbjudningskod krävs").max(20),
@@ -49,93 +46,25 @@ export async function POST(request: NextRequest) {
 
     const validated = joinSchema.parse(body)
 
-    // Find group booking by invite code
-    const groupRequest = await prisma.groupBookingRequest.findUnique({
-      where: { inviteCode: validated.inviteCode },
-      include: {
-        _count: {
-          select: { participants: { where: { status: { not: "cancelled" } } } },
-        },
-      },
-    })
-
-    if (!groupRequest) {
-      return NextResponse.json(
-        { error: "Ogiltig inbjudningskod" },
-        { status: 404 }
-      )
-    }
-
-    // Validate: must be open
-    if (groupRequest.status !== "open") {
-      return NextResponse.json(
-        { error: "Grupprequesten är inte längre öppen för nya deltagare" },
-        { status: 400 }
-      )
-    }
-
-    // Validate: not full
-    if (groupRequest._count.participants >= groupRequest.maxParticipants) {
-      return NextResponse.json(
-        { error: "Grupprequesten är fullt belagd" },
-        { status: 400 }
-      )
-    }
-
-    // Validate: join deadline not passed
-    if (groupRequest.joinDeadline && new Date() > groupRequest.joinDeadline) {
-      return NextResponse.json(
-        { error: "Anslutnings-deadline har passerat" },
-        { status: 400 }
-      )
-    }
-
-    // Validate: not already joined
-    const existingParticipant = await prisma.groupBookingParticipant.findUnique({
-      where: {
-        groupBookingRequestId_userId: {
-          groupBookingRequestId: groupRequest.id,
-          userId: session.user.id,
-        },
-      },
-    })
-
-    if (existingParticipant) {
-      return NextResponse.json(
-        { error: "Du är redan med i denna grupprequest" },
-        { status: 409 }
-      )
-    }
-
-    // Create participant
-    const participant = await prisma.groupBookingParticipant.create({
-      data: {
-        groupBookingRequestId: groupRequest.id,
-        userId: session.user.id,
-        numberOfHorses: validated.numberOfHorses ?? 1,
-        horseId: validated.horseId,
-        horseName: validated.horseName,
-        horseInfo: validated.horseInfo,
-        notes: validated.notes,
-        status: "joined",
-      },
-    })
-
-    // Notify creator
-    notificationService.createAsync({
-      userId: groupRequest.creatorId,
-      type: NotificationType.GROUP_BOOKING_JOINED,
-      message: `En ny deltagare har gått med i din grupprequest för ${groupRequest.serviceType}`,
-      linkUrl: `/customer/group-bookings/${groupRequest.id}`,
-      metadata: { groupBookingId: groupRequest.id },
-    })
-
-    logger.info("User joined group booking", {
-      groupBookingId: groupRequest.id,
+    const service = createGroupBookingService()
+    const result = await service.joinByInviteCode({
       userId: session.user.id,
+      inviteCode: validated.inviteCode,
+      numberOfHorses: validated.numberOfHorses,
+      horseId: validated.horseId,
+      horseName: validated.horseName,
+      horseInfo: validated.horseInfo,
+      notes: validated.notes,
     })
 
-    return NextResponse.json(participant, { status: 201 })
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
+      )
+    }
+
+    return NextResponse.json(result.value, { status: 201 })
   } catch (err: unknown) {
     if (err instanceof Response) {
       return err

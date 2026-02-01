@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
+import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 
 /**
  * GET /api/group-bookings/available
  * Returns open group booking requests visible to the authenticated provider.
- * Optionally filtered by service type matching provider's services.
  */
 export async function GET(request: NextRequest) {
   const clientIp = getClientIP(request)
@@ -29,54 +29,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get provider with their services to match service types
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-      select: {
-        id: true,
-        latitude: true,
-        longitude: true,
-        serviceAreaKm: true,
-        services: {
-          where: { isActive: true },
-          select: { name: true },
-        },
-      },
-    })
+    const service = createGroupBookingService()
+    const result = await service.listAvailableForProvider(session.user.id)
 
-    if (!provider) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Provider hittades inte" },
-        { status: 404 }
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
       )
     }
 
-    // Fetch open group requests, ordered by date
-    const groupRequests = await prisma.groupBookingRequest.findMany({
-      where: {
-        status: "open",
-        dateFrom: { gte: new Date() }, // Only future requests
-      },
-      include: {
-        participants: {
-          where: { status: { not: "cancelled" } },
-          include: {
-            user: {
-              select: { firstName: true },
-            },
-          },
-        },
-        _count: {
-          select: { participants: { where: { status: { not: "cancelled" } } } },
-        },
-      },
-      orderBy: { dateFrom: "asc" },
-    })
-
-    // TODO: Add geo-filtering when lat/lng is available on requests
-    // For now, return all open requests
-
-    return NextResponse.json(groupRequests)
+    return NextResponse.json(result.value.requests)
   } catch (err: unknown) {
     if (err instanceof Response) {
       return err

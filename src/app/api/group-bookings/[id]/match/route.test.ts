@@ -3,6 +3,7 @@ import { POST } from "./route"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
+import { Result } from "@/domain/shared"
 
 const TEST_UUIDS = {
   providerUser: "11111111-1111-4111-8111-111111111111",
@@ -25,20 +26,16 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     provider: { findUnique: vi.fn() },
     service: { findFirst: vi.fn() },
-    groupBookingRequest: { findFirst: vi.fn() },
-    groupBookingParticipant: { update: vi.fn() },
-    booking: { create: vi.fn() },
-    $transaction: vi.fn(),
   },
 }))
+
+const mockService = {
+  matchRequest: vi.fn(),
+}
 
 vi.mock("@/domain/group-booking/GroupBookingService", () => ({
-  groupBookingService: {
-    matchRequest: vi.fn(),
-  },
+  createGroupBookingService: () => mockService,
 }))
-
-import { groupBookingService } from "@/domain/group-booking/GroupBookingService"
 
 const makeParams = (id: string) => Promise.resolve({ id })
 
@@ -58,11 +55,12 @@ describe("POST /api/group-bookings/[id]/match", () => {
       id: TEST_UUIDS.service,
       durationMinutes: 60,
     } as any)
-    vi.mocked(groupBookingService.matchRequest).mockResolvedValue({
-      success: true,
-      bookingsCreated: 3,
-      errors: [],
-    })
+    mockService.matchRequest.mockResolvedValue(
+      Result.ok({
+        bookingsCreated: 3,
+        errors: [],
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/match`,
@@ -143,11 +141,12 @@ describe("POST /api/group-bookings/[id]/match", () => {
       id: TEST_UUIDS.service,
       durationMinutes: 60,
     } as any)
-    vi.mocked(groupBookingService.matchRequest).mockResolvedValue({
-      success: false,
-      bookingsCreated: 0,
-      errors: ["Grupprequesten hittades inte eller är inte öppen"],
-    })
+    mockService.matchRequest.mockResolvedValue(
+      Result.fail({
+        type: 'GROUP_BOOKING_NOT_FOUND',
+        message: 'Grupprequesten hittades inte eller är inte öppen',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/match`,
@@ -164,7 +163,7 @@ describe("POST /api/group-bookings/[id]/match", () => {
     const response = await POST(request, { params: makeParams(TEST_UUIDS.groupRequest) })
     const data = await response.json()
 
-    expect(response.status).toBe(400)
-    expect(data.error).toContain("Matchning misslyckades")
+    expect(response.status).toBe(404)
+    expect(data.error).toContain("hittades inte")
   })
 })

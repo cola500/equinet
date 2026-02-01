@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { DELETE } from './route'
 import { auth } from '@/lib/auth-server'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { Result } from '@/domain/shared'
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -16,23 +16,12 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
-vi.mock('@/lib/rate-limit', () => ({
-  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
-  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
-}))
+const mockService = {
+  removeParticipant: vi.fn(),
+}
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    groupBookingRequest: {
-      findFirst: vi.fn(),
-      update: vi.fn(),
-    },
-    groupBookingParticipant: {
-      findFirst: vi.fn(),
-      update: vi.fn(),
-      count: vi.fn(),
-    },
-  },
+vi.mock('@/domain/group-booking/GroupBookingService', () => ({
+  createGroupBookingService: () => mockService,
 }))
 
 const makeParams = (id: string, pid: string) => Promise.resolve({ id, pid })
@@ -47,25 +36,9 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
       user: { id: TEST_UUIDS.participant, userType: 'customer' },
     } as any)
 
-    const mockParticipant = {
-      id: TEST_UUIDS.participantId,
-      groupBookingRequestId: TEST_UUIDS.groupRequest,
-      userId: TEST_UUIDS.participant,
-      status: 'joined',
-      groupBookingRequest: {
-        id: TEST_UUIDS.groupRequest,
-        creatorId: TEST_UUIDS.creator,
-        status: 'open',
-        serviceType: 'hovslagning',
-      },
-    }
-
-    vi.mocked(prisma.groupBookingParticipant.findFirst).mockResolvedValue(mockParticipant as any)
-    vi.mocked(prisma.groupBookingParticipant.update).mockResolvedValue({
-      ...mockParticipant,
-      status: 'cancelled',
-    } as any)
-    vi.mocked(prisma.groupBookingParticipant.count).mockResolvedValue(1) // Others still remain
+    mockService.removeParticipant.mockResolvedValue(
+      Result.ok({ message: 'Deltagaren har lämnat grupprequesten' })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/participants/${TEST_UUIDS.participantId}`,
@@ -86,25 +59,9 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
     } as any)
 
-    const mockParticipant = {
-      id: TEST_UUIDS.participantId,
-      groupBookingRequestId: TEST_UUIDS.groupRequest,
-      userId: TEST_UUIDS.participant, // Not the creator
-      status: 'joined',
-      groupBookingRequest: {
-        id: TEST_UUIDS.groupRequest,
-        creatorId: TEST_UUIDS.creator, // Creator is the one making the request
-        status: 'open',
-        serviceType: 'hovslagning',
-      },
-    }
-
-    vi.mocked(prisma.groupBookingParticipant.findFirst).mockResolvedValue(mockParticipant as any)
-    vi.mocked(prisma.groupBookingParticipant.update).mockResolvedValue({
-      ...mockParticipant,
-      status: 'cancelled',
-    } as any)
-    vi.mocked(prisma.groupBookingParticipant.count).mockResolvedValue(1)
+    mockService.removeParticipant.mockResolvedValue(
+      Result.ok({ message: 'Deltagaren har lämnat grupprequesten' })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/participants/${TEST_UUIDS.participantId}`,
@@ -123,26 +80,9 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
       user: { id: TEST_UUIDS.participant, userType: 'customer' },
     } as any)
 
-    const mockParticipant = {
-      id: TEST_UUIDS.participantId,
-      groupBookingRequestId: TEST_UUIDS.groupRequest,
-      userId: TEST_UUIDS.participant,
-      status: 'joined',
-      groupBookingRequest: {
-        id: TEST_UUIDS.groupRequest,
-        creatorId: TEST_UUIDS.creator,
-        status: 'open',
-        serviceType: 'hovslagning',
-      },
-    }
-
-    vi.mocked(prisma.groupBookingParticipant.findFirst).mockResolvedValue(mockParticipant as any)
-    vi.mocked(prisma.groupBookingParticipant.update).mockResolvedValue({
-      ...mockParticipant,
-      status: 'cancelled',
-    } as any)
-    vi.mocked(prisma.groupBookingParticipant.count).mockResolvedValue(0) // No active participants
-    vi.mocked(prisma.groupBookingRequest.update).mockResolvedValue({} as any)
+    mockService.removeParticipant.mockResolvedValue(
+      Result.ok({ message: 'Deltagaren har lämnat grupprequesten' })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/participants/${TEST_UUIDS.participantId}`,
@@ -154,20 +94,20 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
     })
 
     expect(response.status).toBe(200)
-    // Should auto-cancel the group
-    expect(prisma.groupBookingRequest.update).toHaveBeenCalledWith({
-      where: { id: TEST_UUIDS.groupRequest },
-      data: { status: 'cancelled' },
-    })
+    // Auto-cancel logic is tested in GroupBookingService.test.ts
   })
 
-  it('should return 403 when unauthorized user tries to remove', async () => {
+  it('should return 404 when unauthorized user tries to remove', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.otherUser, userType: 'customer' },
     } as any)
 
-    // findFirst returns null because user is neither the participant nor creator
-    vi.mocked(prisma.groupBookingParticipant.findFirst).mockResolvedValue(null)
+    mockService.removeParticipant.mockResolvedValue(
+      Result.fail({
+        type: 'PARTICIPANT_NOT_FOUND',
+        message: 'Deltagaren hittades inte eller saknar behörighet',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/participants/${TEST_UUIDS.participantId}`,
@@ -178,6 +118,7 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
       params: makeParams(TEST_UUIDS.groupRequest, TEST_UUIDS.participantId),
     })
 
-    expect(response.status).toBe(403)
+    // 404 is correct: we don't reveal whether the resource exists for unauthorized users
+    expect(response.status).toBe(404)
   })
 })

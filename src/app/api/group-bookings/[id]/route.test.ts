@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
 import { auth } from '@/lib/auth-server'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { Result } from '@/domain/shared'
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -30,13 +30,13 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    groupBookingRequest: {
-      findFirst: vi.fn(),
-      update: vi.fn(),
-    },
-  },
+const mockService = {
+  getById: vi.fn(),
+  updateRequest: vi.fn(),
+}
+
+vi.mock('@/domain/group-booking/GroupBookingService', () => ({
+  createGroupBookingService: () => mockService,
 }))
 
 const mockGroupRequest = {
@@ -69,6 +69,7 @@ const mockGroupRequest = {
     },
   ],
   _count: { participants: 2 },
+  provider: null,
 }
 
 const makeParams = (id: string) => Promise.resolve({ id })
@@ -82,7 +83,7 @@ describe('GET /api/group-bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findFirst).mockResolvedValue(mockGroupRequest as any)
+    mockService.getById.mockResolvedValue(Result.ok(mockGroupRequest))
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`
@@ -103,7 +104,12 @@ describe('GET /api/group-bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.otherUser, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findFirst).mockResolvedValue(null)
+    mockService.getById.mockResolvedValue(
+      Result.fail({
+        type: 'GROUP_BOOKING_NOT_FOUND',
+        message: 'Grupprequest hittades inte',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`
@@ -141,11 +147,12 @@ describe('PUT /api/group-bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findFirst).mockResolvedValue(mockGroupRequest as any)
-    vi.mocked(prisma.groupBookingRequest.update).mockResolvedValue({
-      ...mockGroupRequest,
-      notes: 'Uppdaterade anteckningar',
-    } as any)
+    mockService.updateRequest.mockResolvedValue(
+      Result.ok({
+        ...mockGroupRequest,
+        notes: 'Uppdaterade anteckningar',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`,
@@ -166,11 +173,12 @@ describe('PUT /api/group-bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findFirst).mockResolvedValue(mockGroupRequest as any)
-    vi.mocked(prisma.groupBookingRequest.update).mockResolvedValue({
-      ...mockGroupRequest,
-      status: 'cancelled',
-    } as any)
+    mockService.updateRequest.mockResolvedValue(
+      Result.ok({
+        ...mockGroupRequest,
+        status: 'cancelled',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`,
@@ -191,8 +199,12 @@ describe('PUT /api/group-bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.otherUser, userType: 'customer' },
     } as any)
-    // findFirst with creatorId check returns null
-    vi.mocked(prisma.groupBookingRequest.findFirst).mockResolvedValue(null)
+    mockService.updateRequest.mockResolvedValue(
+      Result.fail({
+        type: 'UNAUTHORIZED',
+        message: 'Bara skaparen kan uppdatera grupprequesten',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`,
@@ -213,13 +225,18 @@ describe('PUT /api/group-bookings/[id]', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findFirst).mockResolvedValue(mockGroupRequest as any)
+    mockService.updateRequest.mockResolvedValue(
+      Result.fail({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: 'Kan inte ändra status från "open" till "completed"',
+      })
+    )
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`,
       {
         method: 'PUT',
-        body: JSON.stringify({ status: 'completed' }), // Can't go from open -> completed directly
+        body: JSON.stringify({ status: 'completed' }),
       }
     )
 

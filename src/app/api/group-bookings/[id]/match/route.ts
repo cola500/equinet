@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import { groupBookingService } from "@/domain/group-booking/GroupBookingService"
+import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
+import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const validated = matchSchema.parse(body)
 
-    // Verify provider
+    // Verify provider (still in route - this is provider lookup, not group-booking domain)
     const provider = await prisma.provider.findUnique({
       where: { userId: session.user.id },
       select: { id: true },
@@ -89,7 +90,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Delegate to GroupBookingService
+    // Delegate to service
+    const groupBookingService = createGroupBookingService()
     const result = await groupBookingService.matchRequest({
       groupBookingRequestId: id,
       providerId: provider.id,
@@ -100,17 +102,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       serviceDurationMinutes: service.durationMinutes,
     })
 
-    if (!result.success) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Matchning misslyckades", details: result.errors },
-        { status: 400 }
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
       )
     }
 
     return NextResponse.json({
-      message: `${result.bookingsCreated} bokningar skapade`,
-      bookingsCreated: result.bookingsCreated,
-      errors: result.errors,
+      message: `${result.value.bookingsCreated} bokningar skapade`,
+      bookingsCreated: result.value.bookingsCreated,
+      errors: result.value.errors,
     })
   } catch (err: unknown) {
     if (err instanceof Response) {

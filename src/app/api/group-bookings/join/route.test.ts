@@ -1,21 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST } from './route'
 import { auth } from '@/lib/auth-server'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { Result } from '@/domain/shared'
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
   joiner: '22222222-2222-4222-8222-222222222222',
   groupRequest: '33333333-3333-4333-8333-333333333333',
-  participant: '44444444-4444-4444-8444-444444444444',
   newParticipant: '55555555-5555-4555-8555-555555555555',
 }
-
-const FUTURE_DATE = new Date()
-FUTURE_DATE.setDate(FUTURE_DATE.getDate() + 14)
-const FUTURE_DATE_END = new Date(FUTURE_DATE)
-FUTURE_DATE_END.setDate(FUTURE_DATE_END.getDate() + 7)
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
@@ -28,40 +22,13 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    groupBookingRequest: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    groupBookingParticipant: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-  },
-}))
-
-const baseGroupRequest = {
-  id: TEST_UUIDS.groupRequest,
-  creatorId: TEST_UUIDS.creator,
-  serviceType: 'hovslagning',
-  locationName: 'Sollebrunn Ridklubb',
-  address: 'Stallvägen 1',
-  dateFrom: FUTURE_DATE,
-  dateTo: FUTURE_DATE_END,
-  maxParticipants: 6,
-  status: 'open',
-  inviteCode: 'ABC12345',
-  joinDeadline: null,
-  participants: [
-    {
-      id: TEST_UUIDS.participant,
-      userId: TEST_UUIDS.creator,
-      status: 'joined',
-    },
-  ],
-  _count: { participants: 1 },
+const mockService = {
+  joinByInviteCode: vi.fn(),
 }
+
+vi.mock('@/domain/group-booking/GroupBookingService', () => ({
+  createGroupBookingService: () => mockService,
+}))
 
 describe('POST /api/group-bookings/join', () => {
   beforeEach(() => {
@@ -72,17 +39,17 @@ describe('POST /api/group-bookings/join', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findUnique).mockResolvedValue(baseGroupRequest as any)
-    vi.mocked(prisma.groupBookingParticipant.findUnique).mockResolvedValue(null) // Not already joined
-    vi.mocked(prisma.groupBookingParticipant.create).mockResolvedValue({
-      id: TEST_UUIDS.newParticipant,
-      groupBookingRequestId: TEST_UUIDS.groupRequest,
-      userId: TEST_UUIDS.joiner,
-      numberOfHorses: 2,
-      horseName: 'Blansen',
-      status: 'joined',
-      joinedAt: new Date(),
-    } as any)
+    mockService.joinByInviteCode.mockResolvedValue(
+      Result.ok({
+        id: TEST_UUIDS.newParticipant,
+        groupBookingRequestId: TEST_UUIDS.groupRequest,
+        userId: TEST_UUIDS.joiner,
+        numberOfHorses: 2,
+        horseName: 'Blansen',
+        status: 'joined',
+        joinedAt: new Date(),
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings/join', {
       method: 'POST',
@@ -105,7 +72,12 @@ describe('POST /api/group-bookings/join', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findUnique).mockResolvedValue(null)
+    mockService.joinByInviteCode.mockResolvedValue(
+      Result.fail({
+        type: 'GROUP_BOOKING_NOT_FOUND',
+        message: 'Ogiltig inbjudningskod',
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings/join', {
       method: 'POST',
@@ -123,10 +95,12 @@ describe('POST /api/group-bookings/join', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findUnique).mockResolvedValue({
-      ...baseGroupRequest,
-      status: 'matched',
-    } as any)
+    mockService.joinByInviteCode.mockResolvedValue(
+      Result.fail({
+        type: 'GROUP_NOT_OPEN',
+        message: 'Grupprequesten är inte längre öppen för nya deltagare',
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings/join', {
       method: 'POST',
@@ -144,11 +118,12 @@ describe('POST /api/group-bookings/join', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findUnique).mockResolvedValue({
-      ...baseGroupRequest,
-      maxParticipants: 1,
-      _count: { participants: 1 },
-    } as any)
+    mockService.joinByInviteCode.mockResolvedValue(
+      Result.fail({
+        type: 'GROUP_FULL',
+        message: 'Grupprequesten är fullt belagd',
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings/join', {
       method: 'POST',
@@ -166,12 +141,12 @@ describe('POST /api/group-bookings/join', () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findUnique).mockResolvedValue(baseGroupRequest as any)
-    vi.mocked(prisma.groupBookingParticipant.findUnique).mockResolvedValue({
-      id: TEST_UUIDS.newParticipant,
-      userId: TEST_UUIDS.joiner,
-      status: 'joined',
-    } as any)
+    mockService.joinByInviteCode.mockResolvedValue(
+      Result.fail({
+        type: 'ALREADY_JOINED',
+        message: 'Du är redan med i denna grupprequest',
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings/join', {
       method: 'POST',
@@ -186,16 +161,15 @@ describe('POST /api/group-bookings/join', () => {
   })
 
   it('should return 400 when join deadline has passed', async () => {
-    const pastDeadline = new Date()
-    pastDeadline.setDate(pastDeadline.getDate() - 1)
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as any)
-    vi.mocked(prisma.groupBookingRequest.findUnique).mockResolvedValue({
-      ...baseGroupRequest,
-      joinDeadline: pastDeadline,
-    } as any)
+    mockService.joinByInviteCode.mockResolvedValue(
+      Result.fail({
+        type: 'JOIN_DEADLINE_PASSED',
+        message: 'Anslutnings-deadline har passerat',
+      })
+    )
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings/join', {
       method: 'POST',

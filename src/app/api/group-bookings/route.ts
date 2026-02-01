@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import { generateInviteCode } from "@/lib/invite-code"
+import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
+import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 
 const createGroupBookingSchema = z.object({
   serviceType: z.string().min(1, "Tjänsttyp krävs").max(100),
@@ -92,55 +92,35 @@ export async function POST(request: NextRequest) {
     // Validate
     const validated = createGroupBookingSchema.parse(body)
 
-    // Generate unique invite code
-    const inviteCode = generateInviteCode()
-
-    // Create request + creator as first participant (atomic)
-    const groupRequest = await prisma.groupBookingRequest.create({
-      data: {
-        creatorId: session.user.id,
-        serviceType: validated.serviceType,
-        providerId: validated.providerId,
-        locationName: validated.locationName,
-        address: validated.address,
-        latitude: validated.latitude,
-        longitude: validated.longitude,
-        dateFrom: new Date(validated.dateFrom),
-        dateTo: new Date(validated.dateTo),
-        notes: validated.notes,
-        maxParticipants: validated.maxParticipants ?? 10,
-        status: "open",
-        inviteCode,
-        joinDeadline: validated.joinDeadline ? new Date(validated.joinDeadline) : undefined,
-        participants: {
-          create: {
-            userId: session.user.id,
-            numberOfHorses: validated.numberOfHorses ?? 1,
-            horseId: validated.horseId,
-            horseName: validated.horseName,
-            horseInfo: validated.horseInfo,
-            status: "joined",
-          },
-        },
-      },
-      include: {
-        participants: {
-          include: {
-            user: {
-              select: { firstName: true },
-            },
-          },
-        },
-      },
+    // Delegate to service
+    const service = createGroupBookingService()
+    const result = await service.createRequest({
+      userId: session.user.id,
+      serviceType: validated.serviceType,
+      providerId: validated.providerId,
+      locationName: validated.locationName,
+      address: validated.address,
+      latitude: validated.latitude,
+      longitude: validated.longitude,
+      dateFrom: new Date(validated.dateFrom),
+      dateTo: new Date(validated.dateTo),
+      notes: validated.notes,
+      maxParticipants: validated.maxParticipants ?? 10,
+      joinDeadline: validated.joinDeadline ? new Date(validated.joinDeadline) : undefined,
+      numberOfHorses: validated.numberOfHorses,
+      horseId: validated.horseId,
+      horseName: validated.horseName,
+      horseInfo: validated.horseInfo,
     })
 
-    logger.info("Group booking request created", {
-      groupBookingId: groupRequest.id,
-      creatorId: session.user.id,
-      inviteCode,
-    })
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
+      )
+    }
 
-    return NextResponse.json(groupRequest, { status: 201 })
+    return NextResponse.json(result.value, { status: 201 })
   } catch (err: unknown) {
     if (err instanceof Response) {
       return err
@@ -174,31 +154,17 @@ export async function GET(request: NextRequest) {
   try {
     const session = await auth()
 
-    // Fetch all group bookings where user is creator OR participant
-    const groupRequests = await prisma.groupBookingRequest.findMany({
-      where: {
-        OR: [
-          { creatorId: session.user.id },
-          { participants: { some: { userId: session.user.id } } },
-        ],
-      },
-      include: {
-        participants: {
-          where: { status: { not: "cancelled" } },
-          include: {
-            user: {
-              select: { firstName: true }, // Privacy: only first name
-            },
-          },
-        },
-        _count: {
-          select: { participants: { where: { status: { not: "cancelled" } } } },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    })
+    const service = createGroupBookingService()
+    const result = await service.listForUser(session.user.id)
 
-    return NextResponse.json(groupRequests)
+    if (result.isFailure) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: mapGroupBookingErrorToStatus(result.error) }
+      )
+    }
+
+    return NextResponse.json(result.value)
   } catch (err: unknown) {
     if (err instanceof Response) {
       return err
