@@ -32,11 +32,8 @@ test.describe('Authentication Flow', () => {
     // Submitta formuläret
     await page.getByRole('button', { name: /skapa konto/i }).click();
 
-    // Vänta på redirect till login (med registered=true parameter)
-    await expect(page).toHaveURL(/\/login\?registered=true/, { timeout: 15000 });
-
-    // Verifiera att success-meddelande visas (via toast)
-    await expect(page.getByText(/kontot har skapats/i).first()).toBeVisible({ timeout: 5000 });
+    // Vänta på redirect till check-email (email-verifieringsflöde)
+    await expect(page).toHaveURL(/\/check-email/, { timeout: 15000 });
   });
 
   test('should register a new provider', async ({ page }) => {
@@ -68,11 +65,8 @@ test.describe('Authentication Flow', () => {
     // Submitta formuläret
     await page.getByRole('button', { name: /skapa konto/i }).click();
 
-    // Vänta på redirect till login
-    await expect(page).toHaveURL(/\/login\?registered=true/, { timeout: 10000 });
-
-    // Verifiera att success-meddelande visas
-    await expect(page.getByText(/kontot har skapats/i).first()).toBeVisible({ timeout: 5000 });
+    // Vänta på redirect till check-email (email-verifieringsflöde)
+    await expect(page).toHaveURL(/\/check-email/, { timeout: 10000 });
   });
 
   test('should login as existing customer', async ({ page }) => {

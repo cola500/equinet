@@ -18,7 +18,10 @@ async function main() {
   // Skapa eller uppdatera testkund
   const customer = await prisma.user.upsert({
     where: { email: 'test@example.com' },
-    update: {},
+    update: {
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
     create: {
       email: 'test@example.com',
       passwordHash: customerPassword,
@@ -26,6 +29,8 @@ async function main() {
       lastName: 'Testsson',
       phone: '0701234567',
       userType: 'customer',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
     },
   })
   console.log('✅ Customer created:', customer.email)
@@ -33,7 +38,10 @@ async function main() {
   // Skapa eller uppdatera testleverantör (user)
   const providerUser = await prisma.user.upsert({
     where: { email: 'provider@example.com' },
-    update: {},
+    update: {
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
     create: {
       email: 'provider@example.com',
       passwordHash: providerPassword,
@@ -41,6 +49,8 @@ async function main() {
       lastName: 'Testsson',
       phone: '0709876543',
       userType: 'provider',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
     },
   })
   console.log('✅ Provider user created:', providerUser.email)
