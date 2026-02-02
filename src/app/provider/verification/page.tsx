@@ -455,17 +455,32 @@ export default function ProviderVerificationPage() {
                       <div className="flex flex-wrap gap-2 mb-3">
                         {req.images.map((img) => (
                           <div key={img.id} className="relative group">
-                            <img
-                              src={img.url}
-                              alt="Verifieringsbild"
-                              className="w-20 h-20 object-cover rounded cursor-pointer border border-gray-200"
-                              onClick={() => setLightboxImage(img.url)}
-                            />
+                            {img.mimeType === "application/pdf" ? (
+                              <a
+                                href={img.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-20 h-20 rounded border border-gray-200 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors"
+                                title="Öppna PDF"
+                              >
+                                <svg className="h-8 w-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4z" />
+                                </svg>
+                                <span className="text-[10px] text-gray-500 mt-0.5">PDF</span>
+                              </a>
+                            ) : (
+                              <img
+                                src={img.url}
+                                alt="Verifieringsbild"
+                                className="w-20 h-20 object-cover rounded cursor-pointer border border-gray-200"
+                                onClick={() => setLightboxImage(img.url)}
+                              />
+                            )}
                             {canEdit && (
                               <button
                                 onClick={() => handleDeleteImage(img.id)}
                                 className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Ta bort bild"
+                                title="Ta bort"
                               >
                                 x
                               </button>
@@ -484,9 +499,10 @@ export default function ProviderVerificationPage() {
                           onUploaded={handleImageUploaded}
                           variant="default"
                           className="max-w-xs"
+                          allowPdf
                         />
                         <p className="text-xs text-gray-400 mt-1">
-                          {req.images?.length || 0}/5 bilder
+                          {req.images?.length || 0}/5 filer
                         </p>
                       </div>
                     )}

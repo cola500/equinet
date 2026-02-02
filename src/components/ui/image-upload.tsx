@@ -13,6 +13,8 @@ interface ImageUploadProps {
   className?: string
   /** "default" = rectangular with text, "square" = compact square, "circle" = compact round */
   variant?: "default" | "square" | "circle"
+  /** Allow PDF uploads in addition to images */
+  allowPdf?: boolean
 }
 
 const MAX_COMPRESSED_SIZE = 1024 * 1024 // 1MB after compression
@@ -24,6 +26,7 @@ export function ImageUpload({
   onUploaded,
   className = "",
   variant = "default",
+  allowPdf = false,
 }: ImageUploadProps) {
   const isCompact = variant === "square" || variant === "circle"
   const shapeClass = variant === "circle" ? "rounded-full" : "rounded-lg"
@@ -34,9 +37,15 @@ export function ImageUpload({
 
   const handleFile = useCallback(
     async (file: File) => {
+      const isPdf = file.type === "application/pdf"
+
       // Client-side validation
-      if (!file.type.startsWith("image/")) {
-        toast.error("Bara bilder (JPEG, PNG, WebP) tillåtna")
+      if (!file.type.startsWith("image/") && !(allowPdf && isPdf)) {
+        toast.error(
+          allowPdf
+            ? "Bara bilder (JPEG, PNG, WebP) och PDF tillåtna"
+            : "Bara bilder (JPEG, PNG, WebP) tillåtna"
+        )
         return
       }
 
@@ -48,21 +57,26 @@ export function ImageUpload({
       setIsUploading(true)
 
       try {
-        // Client-side compression
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1200,
-          useWebWorker: true,
-        })
+        let fileToUpload: File | Blob = file
 
-        // Show preview immediately
-        const reader = new FileReader()
-        reader.onload = (e) => setPreview(e.target?.result as string)
-        reader.readAsDataURL(compressed)
+        if (isPdf) {
+          // PDF: use "pdf" as preview marker, skip compression
+          setPreview("pdf")
+        } else {
+          // Image: compress and show preview
+          fileToUpload = await imageCompression(file, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+          })
+          const reader = new FileReader()
+          reader.onload = (e) => setPreview(e.target?.result as string)
+          reader.readAsDataURL(fileToUpload as Blob)
+        }
 
         // Upload to server
         const formData = new FormData()
-        formData.append("file", compressed, file.name)
+        formData.append("file", fileToUpload, file.name)
         formData.append("bucket", bucket)
         formData.append("entityId", entityId)
 
@@ -77,9 +91,9 @@ export function ImageUpload({
         }
 
         const data = await response.json()
-        setPreview(data.url)
+        setPreview(isPdf ? "pdf" : data.url)
         onUploaded(data.url)
-        toast.success("Bilden har laddats upp!")
+        toast.success(isPdf ? "PDF har laddats upp!" : "Bilden har laddats upp!")
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Uppladdning misslyckades"
@@ -90,7 +104,7 @@ export function ImageUpload({
         setIsUploading(false)
       }
     },
-    [bucket, entityId, currentUrl, onUploaded]
+    [bucket, entityId, currentUrl, onUploaded, allowPdf]
   )
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,15 +145,24 @@ export function ImageUpload({
       >
         {preview ? (
           <div className="relative h-full">
-            <img
-              src={preview}
-              alt="Forhandsvisning"
-              className={`object-cover ${
-                isCompact
-                  ? `w-full h-full ${shapeClass}`
-                  : "mx-auto max-h-48 rounded"
-              }`}
-            />
+            {preview === "pdf" ? (
+              <div className={`flex flex-col items-center justify-center ${isCompact ? "h-full" : "py-6"}`}>
+                <svg className="h-10 w-10 text-red-500 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8.5 13H10v4.5H8.5V13zm3 0h2c.83 0 1.5.67 1.5 1.5v1.5c0 .83-.67 1.5-1.5 1.5h-2V13zm6 0H19v1h-1v1h1v1h-1.5v1.5H16V13z" />
+                </svg>
+                {!isCompact && <p className="text-xs text-gray-500">PDF uppladdad</p>}
+              </div>
+            ) : (
+              <img
+                src={preview}
+                alt="Forhandsvisning"
+                className={`object-cover ${
+                  isCompact
+                    ? `w-full h-full ${shapeClass}`
+                    : "mx-auto max-h-48 rounded"
+                }`}
+              />
+            )}
             {isUploading && (
               <div className={`absolute inset-0 bg-white/60 flex items-center justify-center ${shapeClass}`}>
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
@@ -160,10 +183,14 @@ export function ImageUpload({
             ) : (
               <>
                 <p className="text-sm text-gray-600 mb-1">
-                  Dra en bild hit eller klicka for att valja
+                  {allowPdf
+                    ? "Dra en fil hit eller klicka for att valja"
+                    : "Dra en bild hit eller klicka for att valja"}
                 </p>
                 <p className="text-xs text-gray-400">
-                  JPEG, PNG eller WebP. Max 5MB.
+                  {allowPdf
+                    ? "JPEG, PNG, WebP eller PDF. Max 5MB."
+                    : "JPEG, PNG eller WebP. Max 5MB."}
                 </p>
               </>
             )}
@@ -173,7 +200,7 @@ export function ImageUpload({
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={allowPdf ? "image/jpeg,image/png,image/webp,application/pdf" : "image/jpeg,image/png,image/webp"}
           onChange={handleInputChange}
           className="hidden"
           disabled={isUploading}
@@ -190,7 +217,7 @@ export function ImageUpload({
             inputRef.current?.click()
           }}
         >
-          Byt bild
+          Byt fil
         </Button>
       )}
     </div>
