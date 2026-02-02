@@ -101,18 +101,18 @@ const nextConfig: NextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',
           }]),
-          // Cross-Origin Policies - Spectre protection
+          // Cross-Origin Policies
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
           {
             key: 'Cross-Origin-Resource-Policy',
-            value: 'same-origin',
+            value: 'cross-origin', // Allow Supabase Storage images to be loaded
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'unsafe-none', // Required for cross-origin images (Supabase Storage)
           },
         ],
       },

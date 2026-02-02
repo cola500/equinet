@@ -34,10 +34,10 @@ test.describe('Security Headers', () => {
     // XSS Protection
     expect(headers['x-xss-protection']).toBe('1; mode=block')
 
-    // Cross-Origin Policies (Spectre protection)
+    // Cross-Origin Policies
     expect(headers['cross-origin-opener-policy']).toBe('same-origin')
-    expect(headers['cross-origin-resource-policy']).toBe('same-origin')
-    expect(headers['cross-origin-embedder-policy']).toBe('require-corp')
+    expect(headers['cross-origin-resource-policy']).toBe('cross-origin')
+    expect(headers['cross-origin-embedder-policy']).toBe('unsafe-none')
   })
 
   test('CSP should allow self-hosted fonts', async ({ page }) => {
