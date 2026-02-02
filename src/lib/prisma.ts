@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -30,13 +31,35 @@ const prismaWithExtensions = basePrisma.$extends({
           }, timeout)
         })
 
+        const start = Date.now()
+
         try {
           // Race between actual query and timeout
-          return await Promise.race([query(args), timeoutPromise])
+          const result = await Promise.race([query(args), timeoutPromise])
+          const duration = Date.now() - start
+
+          // Log slow queries (skip in test environment)
+          if (process.env.NODE_ENV !== 'test') {
+            if (duration > 2000) {
+              logger.warn(`Slow query: ${model}.${operation} took ${duration}ms`, {
+                model,
+                operation,
+                duration,
+              })
+            } else if (duration > 500) {
+              logger.database(`${model}.${operation} (${duration}ms)`, model, {
+                duration,
+              })
+            }
+          }
+
+          return result
         } catch (error) {
+          const duration = Date.now() - start
+
           // Log query timeout errors for debugging
           if (error instanceof Error && error.message.includes('Query timeout')) {
-            console.error('[Prisma Timeout]', {
+            logger.error(`Query timeout: ${model}.${operation} after ${duration}ms`, {
               model,
               operation,
               timeout: `${timeout}ms`,
