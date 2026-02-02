@@ -30,7 +30,7 @@ test.describe('Manual Booking Dialog', () => {
     await page.locator('#date').fill(dateStr)
 
     // Set start time
-    await page.locator('#start').fill('10:00')
+    await page.locator('#start').selectOption('10:00')
 
     // Switch to "Ny kund" mode
     await page.getByRole('button', { name: /ny kund/i }).click()
@@ -60,7 +60,7 @@ test.describe('Manual Booking Dialog', () => {
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 14)
     await page.locator('#date').fill(futureDate.toISOString().split('T')[0])
-    await page.locator('#start').fill('10:00')
+    await page.locator('#start').selectOption('10:00')
 
     // Switch to "Ny kund" but leave name empty
     await page.getByRole('button', { name: /ny kund/i }).click()

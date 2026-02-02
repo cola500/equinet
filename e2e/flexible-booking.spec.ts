@@ -40,8 +40,8 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     const toggle = page.locator('[data-testid="booking-type-toggle"]');
     await expect(toggle).toBeVisible();
 
-    // Verifiera att fast tid-formulär visas (date input)
-    await expect(page.getByLabel(/datum/i)).toBeVisible();
+    // Verifiera att kalenderkomponenten visas (fast tid)
+    await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 10000 });
 
     // Verifiera att flexibel tid-formulär INTE visas
     const flexibleSection = page.locator('[data-testid="flexible-booking-section"]');
@@ -53,8 +53,8 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     // Vänta på att flexibel section blir synlig
     await expect(flexibleSection).toBeVisible({ timeout: 5000 });
 
-    // Verifiera att fast tid-formulär är dolt (använd bookingDate id istället för datum-label)
-    await expect(page.locator('#bookingDate')).not.toBeVisible();
+    // Verifiera att kalenderkomponenten är dold
+    await expect(page.getByText(/välj tid/i)).not.toBeVisible();
 
     // Verifiera att prioritet-val visas
     await expect(page.locator('[data-testid="priority-normal"]')).toBeVisible();
@@ -63,8 +63,8 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     // Toggle tillbaka till fast tid
     await toggle.click();
 
-    // Verifiera att fast tid-formulär visas igen
-    await expect(page.locator('#bookingDate')).toBeVisible();
+    // Verifiera att kalenderkomponenten visas igen
+    await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 5000 });
     await expect(flexibleSection).not.toBeVisible();
   });
 

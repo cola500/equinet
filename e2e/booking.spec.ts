@@ -236,45 +236,38 @@ test.describe('Booking Flow (Customer)', () => {
     await page.locator('[data-testid="service-card"]').first()
       .getByRole('button', { name: /boka/i }).click();
 
-    // Fyll i bokningsformuläret med unik tid för varje testkörning
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 14); // 2 veckor fram
-    const dateString = futureDate.toISOString().split('T')[0];
+    // Vänta på att kalendern laddas
+    await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 10000 });
 
-    // Använd unik tid baserad på millisekunder för att undvika kollisioner
-    const uniqueMinute = new Date().getMilliseconds() % 60;
-    const safeTime = `09:${uniqueMinute.toString().padStart(2, '0')}`;
+    // Navigera till nästa vecka för att hitta lediga tider
+    await page.getByRole('button', { name: /nästa/i }).click();
+    await page.waitForTimeout(1000);
 
-    await page.getByLabel(/datum/i).fill(dateString);
-    await page.getByLabel(/önskad starttid|starttid/i).fill(safeTime);
-    // Sluttid beräknas automatiskt från tjänstens varaktighet
-    await page.getByLabel(/hästens namn/i).fill('Thunder');
-    await page.getByLabel(/information om hästen/i).fill('Lugn och trygg häst');
-    await page.getByLabel(/övriga kommentarer/i).fill('Vänligen kom 10 minuter innan');
+    // Klicka på första lediga (gröna) tidsknapp
+    const availableSlot = page.locator('button.bg-green-100').first();
+    const slotVisible = await availableSlot.isVisible({ timeout: 5000 }).catch(() => false);
 
-    // Wait for availability check to complete (loading spinner to disappear)
-    await page.waitForSelector('.animate-spin', { state: 'hidden', timeout: 10000 }).catch(() => {
-      console.log('No loading spinner found or already hidden');
-    });
-
-    // Give a small buffer for state updates
-    await page.waitForTimeout(500);
-
-    // Check specifically for "closed day" error message
-    const closedDayError = await page.getByText(/leverantören är stängd denna dag/i)
-      .isVisible().catch(() => false);
-
-    if (closedDayError) {
-      console.log('Provider is closed on selected date, skipping test');
-      const closeBtn = page.getByRole('button', { name: /avbryt|stäng/i });
-      const closeVisible = await closeBtn.isVisible().catch(() => false);
-      if (closeVisible) {
-        await closeBtn.click();
+    if (!slotVisible) {
+      // Testa ytterligare en vecka framåt
+      await page.getByRole('button', { name: /nästa/i }).click();
+      await page.waitForTimeout(1000);
+      const slotVisible2 = await availableSlot.isVisible({ timeout: 5000 }).catch(() => false);
+      if (!slotVisible2) {
+        console.log('No available time slots found, skipping test');
+        return;
       }
-      return;
     }
 
-    // Ingen error - submitta bokning
+    await availableSlot.click();
+
+    // Verifiera att "Vald tid" visas
+    await expect(page.getByText(/vald tid/i)).toBeVisible({ timeout: 5000 });
+
+    // Fyll i hästinfo och kommentarer
+    await page.getByRole('textbox', { name: /hästens namn/i }).fill('Thunder');
+    await page.getByRole('textbox', { name: /övriga kommentarer/i }).fill('Vänligen kom 10 minuter innan');
+
+    // Submitta bokning
     const submitBtn = page.getByRole('button', { name: /skicka bokningsförfrågan/i });
     const submitVisible = await submitBtn.isVisible().catch(() => false);
 
@@ -325,17 +318,30 @@ test.describe('Booking Flow (Customer)', () => {
     await page.locator('[data-testid="service-card"]').first()
       .getByRole('button', { name: /boka/i }).click();
 
-    // Välj ett datum 3 veckor fram
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 21);
-    const dateString = futureDate.toISOString().split('T')[0];
+    // Vänta på att kalendern laddas
+    await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 10000 });
 
-    await page.getByLabel(/datum/i).fill(dateString);
-    await page.getByLabel(/önskad starttid|starttid/i).fill('10:00');
-    await page.getByLabel(/hästens namn/i).fill('Test Horse');
-
-    // Vänta lite för att validering ska köras
+    // Navigera till nästa vecka för att hitta lediga tider
+    await page.getByRole('button', { name: /nästa/i }).click();
     await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: /nästa/i }).click();
+    await page.waitForTimeout(1000);
+
+    // Klicka på första lediga (gröna) tidsknapp
+    const availableSlot = page.locator('button.bg-green-100').first();
+    const slotVisible = await availableSlot.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!slotVisible) {
+      console.log('No available time slots found, skipping test');
+      return;
+    }
+
+    await availableSlot.click();
+
+    // Verifiera att "Vald tid" visas
+    await expect(page.getByText(/vald tid/i)).toBeVisible({ timeout: 5000 });
+
+    await page.getByRole('textbox', { name: /hästens namn/i }).fill('Test Horse');
 
     // Verifiera att NÅGON knapp visas (antingen submit eller closed day)
     const buttons = page.getByRole('button').filter({ hasText: /stäng|skicka|avbryt/i });

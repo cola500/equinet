@@ -172,12 +172,12 @@ test.describe('Provider Flow', () => {
     await expect(page.getByRole('heading', { name: /^bokningar$/i })).toBeVisible();
 
     // Verifiera filter-tabs (buttons, inte tabs - från koden)
-    await expect(page.getByRole('button', { name: /väntar på svar/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^väntar/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /bekräftade/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /alla/i })).toBeVisible();
 
-    // Klicka på "Väntar på svar" tab
-    await page.getByRole('button', { name: /väntar på svar/i }).click();
+    // Klicka på "Väntar" tab
+    await page.getByRole('button', { name: /^väntar/i }).click();
 
     // Om det finns väntande bokningar, visa hanteringsalternativ
     const hasPendingBookings = await page.locator('[data-testid="booking-item"]')
@@ -193,8 +193,8 @@ test.describe('Provider Flow', () => {
   test('should accept a pending booking', async ({ page }) => {
     await page.goto('/provider/bookings');
 
-    // Klicka på "Väntar på svar" button (inte tab - det är buttons från koden)
-    await page.getByRole('button', { name: /väntar på svar/i }).click();
+    // Klicka på "Väntar" button (inte tab - det är buttons från koden)
+    await page.getByRole('button', { name: /^väntar/i }).click();
 
     // Vänta på bokningar
     const bookingsExist = await page.locator('[data-testid="booking-item"]')
@@ -221,8 +221,8 @@ test.describe('Provider Flow', () => {
   test('should reject a pending booking', async ({ page }) => {
     await page.goto('/provider/bookings');
 
-    // Klicka på "Väntar på svar" button
-    await page.getByRole('button', { name: /väntar på svar/i }).click();
+    // Klicka på "Väntar" button
+    await page.getByRole('button', { name: /^väntar/i }).click();
 
     const bookingsExist = await page.locator('[data-testid="booking-item"]')
       .isVisible().catch(() => false);
