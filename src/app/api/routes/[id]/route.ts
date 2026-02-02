@@ -25,9 +25,18 @@ export async function GET(
     // 2. Fetch route
     const route = await prisma.route.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        date: true,
+        status: true,
+        providerId: true,
+        createdAt: true,
+        updatedAt: true,
         provider: {
-          include: {
+          select: {
+            id: true,
+            businessName: true,
             user: {
               select: {
                 firstName: true,
@@ -37,9 +46,22 @@ export async function GET(
           }
         },
         stops: {
-          include: {
+          select: {
+            id: true,
+            stopOrder: true,
+            locationName: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            estimatedArrival: true,
+            status: true,
             routeOrder: {
-              include: {
+              select: {
+                id: true,
+                serviceType: true,
+                address: true,
+                numberOfHorses: true,
+                specialInstructions: true,
                 customer: {
                   select: {
                     firstName: true,

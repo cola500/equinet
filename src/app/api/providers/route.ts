@@ -279,9 +279,15 @@ export async function GET(request: NextRequest) {
       const total = filteredProviders.length
       const paginatedProviders = filteredProviders.slice(offset, offset + limit)
 
-      // Enrich with next visit info and review stats
-      const withVisits = await enrichWithNextVisit(paginatedProviders)
-      const enrichedProviders = await enrichWithReviewStats(withVisits)
+      // Enrich with next visit info and review stats (parallel for performance)
+      const [withVisits, withReviews] = await Promise.all([
+        enrichWithNextVisit(paginatedProviders),
+        enrichWithReviewStats(paginatedProviders),
+      ])
+      const enrichedProviders = withVisits.map((p, i) => ({
+        ...p,
+        reviewStats: withReviews[i].reviewStats,
+      }))
 
       return NextResponse.json({
         data: enrichedProviders,
@@ -298,9 +304,15 @@ export async function GET(request: NextRequest) {
     const total = providers.length
     const paginatedProviders = providers.slice(offset, offset + limit)
 
-    // Enrich with next visit info and review stats
-    const withVisits = await enrichWithNextVisit(paginatedProviders)
-    const enrichedProviders = await enrichWithReviewStats(withVisits)
+    // Enrich with next visit info and review stats (parallel for performance)
+    const [withVisits, withReviews] = await Promise.all([
+      enrichWithNextVisit(paginatedProviders),
+      enrichWithReviewStats(paginatedProviders),
+    ])
+    const enrichedProviders = withVisits.map((p, i) => ({
+      ...p,
+      reviewStats: withReviews[i].reviewStats,
+    }))
 
     return NextResponse.json({
       data: enrichedProviders,

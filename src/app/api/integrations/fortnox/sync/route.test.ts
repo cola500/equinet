@@ -9,6 +9,9 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     booking: { findMany: vi.fn() },
     payment: { update: vi.fn() },
+    $transaction: vi.fn(async (fn: any) => fn({
+      payment: { update: vi.fn().mockResolvedValue({}) },
+    })),
   },
 }))
 vi.mock("@/lib/rate-limit", () => ({

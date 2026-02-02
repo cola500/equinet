@@ -61,7 +61,21 @@ export async function GET(request: Request) {
 
     const routeOrders = await prisma.routeOrder.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        serviceType: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        numberOfHorses: true,
+        dateFrom: true,
+        dateTo: true,
+        priority: true,
+        status: true,
+        specialInstructions: true,
+        contactPhone: true,
+        announcementType: true,
+        createdAt: true,
         customer: {
           select: {
             firstName: true,
@@ -77,7 +91,8 @@ export async function GET(request: Request) {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: 50,
     })
 
     // 4. Calculate distance from provider for each order

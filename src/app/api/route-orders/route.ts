@@ -381,12 +381,35 @@ export async function GET(request: Request) {
 
     // Customer orders list (for customer's own view)
     if (announcementType === "customer_initiated" && session.user.userType === "customer") {
+      const limitParam = searchParams.get("limit")
+      const offsetParam = searchParams.get("offset")
+      const limit = Math.min(Math.max(1, parseInt(limitParam || "50", 10) || 50), 100)
+      const customerOffset = Math.max(0, parseInt(offsetParam || "0", 10) || 0)
+
       const orders = await prisma.routeOrder.findMany({
         where: {
           customerId: session.user.id,
           announcementType: "customer_initiated"
         },
-        orderBy: { createdAt: "desc" }
+        select: {
+          id: true,
+          serviceType: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          numberOfHorses: true,
+          dateFrom: true,
+          dateTo: true,
+          priority: true,
+          status: true,
+          specialInstructions: true,
+          contactPhone: true,
+          announcementType: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: customerOffset,
       })
 
       return NextResponse.json(orders)

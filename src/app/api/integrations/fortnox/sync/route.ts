@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
           fortnoxInvoiceId: null,
         },
       },
-      include: {
+      select: {
+        id: true,
+        bookingDate: true,
         customer: {
           select: {
             firstName: true,
@@ -59,7 +61,15 @@ export async function POST(request: NextRequest) {
         service: {
           select: { name: true, price: true },
         },
-        payment: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            fortnoxInvoiceId: true,
+          },
+        },
       },
     })
 
@@ -74,30 +84,55 @@ export async function POST(request: NextRequest) {
     let synced = 0
     let failed = 0
 
-    for (const booking of unsyncedBookings) {
-      try {
-        const invoiceData = mapBookingToInvoice(booking)
-        const result = await gateway.createInvoice(invoiceData)
+    // Process API calls with limited concurrency (max 3 simultaneous)
+    const CONCURRENCY_LIMIT = 3
+    const pendingUpdates: { paymentId: string; externalId: string; status: string }[] = []
 
-        if (result.success && booking.payment) {
-          await prisma.payment.update({
-            where: { id: booking.payment.id },
+    for (let i = 0; i < unsyncedBookings.length; i += CONCURRENCY_LIMIT) {
+      const batch = unsyncedBookings.slice(i, i + CONCURRENCY_LIMIT)
+      const results = await Promise.allSettled(
+        batch.map(async (booking) => {
+          const invoiceData = mapBookingToInvoice(booking)
+          const result = await gateway.createInvoice(invoiceData)
+          return { booking, result }
+        })
+      )
+
+      for (const settled of results) {
+        if (settled.status === "fulfilled") {
+          const { booking, result } = settled.value
+          if (result.success && booking.payment) {
+            pendingUpdates.push({
+              paymentId: booking.payment.id,
+              externalId: result.externalId || "",
+              status: result.status || "sent",
+            })
+            synced++
+          } else {
+            failed++
+          }
+        } else {
+          logger.error("Failed to sync booking to Fortnox", settled.reason as Error)
+          failed++
+        }
+      }
+    }
+
+    // Batch all DB updates in a single transaction
+    if (pendingUpdates.length > 0) {
+      // @ts-expect-error - Prisma transaction callback type inference issue
+      await prisma.$transaction(async (tx: any) => {
+        for (const update of pendingUpdates) {
+          await tx.payment.update({
+            where: { id: update.paymentId },
             data: {
-              fortnoxInvoiceId: result.externalId,
-              fortnoxStatus: result.status,
+              fortnoxInvoiceId: update.externalId,
+              fortnoxStatus: update.status,
               sentToFortnoxAt: new Date(),
             },
           })
-          synced++
-        } else {
-          failed++
         }
-      } catch (error) {
-        logger.error("Failed to sync booking to Fortnox", error as Error, {
-          bookingId: booking.id,
-        })
-        failed++
-      }
+      })
     }
 
     logger.info("Fortnox sync completed", {
