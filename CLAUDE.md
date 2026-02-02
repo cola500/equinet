@@ -220,143 +220,43 @@ class BookingService {
 
 ## Refactoring Guidelines
 
-Principer som vägleder refactoring-beslut i projektet.
+### Principer
 
-### 1. Start Minimal - Lös det faktiska problemet
-
-- Identifiera det **specifika problemet** innan du börjar arkitektera lösningar
-- Fråga: "Kan detta lösas genom att **ta bort kod**?" innan du lägger till abstraktioner
-- Inkrementella förbättringar > kompletta omskrivningar
-- Exempel: Förvirrande logik? Ta bort den förvirrande delen, bygg inte om allt
-
-### 2. Respektera befintliga patterns
-
-**Detta projekt använder:**
-- Prisma direkt för enkel CRUD, repository för kärndomäner
-- Server Components som default, Client Components vid behov
-- Zod för validering (client + server)
-- shadcn/ui komponenter
-
-**Introducera INTE nya patterns** (Redux, Zustand, custom hooks för allt, etc.) utan diskussion.
-
-Konsistens med befintlig kod > "best practices" från andra projekt.
-
-### 3. Filgranularitet
-
-- **1 välorganiserad 300-rads fil > 10 små 30-rads filer**
-- Navigationsoverhead är verklig - varje filuppdelning har en kognitiv kostnad
-- **Locality of behavior**: Att se relaterad kod tillsammans hjälper förståelsen
-- Använd kommentarer (`// ---` eller regions) för organisation inom filer först
-- Dela bara upp filer när de överstiger ~400-500 rader eller har genuint oberoende ansvar
-
-**Undantag för React:** En komponent per fil är OK när komponenten är återanvändbar eller har egen state-logik.
-
-### 4. Komponentextrahering
-
-Extrahera komponenter när:
-- **Återanvänds 3+ gånger** ELLER
-- **Genuint komplex** (100+ rader med egen logik)
-
-| Situation | Åtgärd |
-|-----------|--------|
-| Button med custom styling, används 2 ggr | Behåll inline |
-| 100-rads formulär med validering | Överväg extrahering |
-| 15-rads loading spinner | Behåll inline |
-| Komplex datatabell med sortering | Extrahera |
-
-**Mikro-komponenter (10-20 rader) motiverar sällan egna filer.**
-
-### 5. Simplicity Hierarchy
-
-**Simple > Complex > Complicated**
-
-| Nivå | Beskrivning | Mål |
-|------|-------------|-----|
-| **Simple** | Lätt att förstå, uppenbart beteende | Alltid målet |
-| **Complex** | Intrikat men nödvändig | Acceptabelt när krav motiverar |
-| **Complicated** | Onödigt svårt att förstå | Undvik - ofta från over-engineering |
-
-### 6. Före större ändringar - diskutera först
-
-Diskutera alltid innan implementation av:
-- Arkitekturella ändringar (nya patterns, stora omstruktureringar)
-- Nya beroenden eller ramverk
-- Ändringar som påverkar hur andra utvecklare arbetar
-
-**När osäker:** Föreslå planen, visa alternativ, få buy-in först.
+1. **Start minimal**: Identifiera det specifika problemet. "Kan detta lösas genom att **ta bort kod**?" Inkrementella förbättringar > omskrivningar.
+2. **Respektera befintliga patterns**: Prisma direkt för CRUD, repository för kärndomäner, Server Components default, Zod, shadcn/ui. **Introducera INTE nya patterns** utan diskussion.
+3. **Filgranularitet**: 1 välorganiserad 300-rads fil > 10 x 30-rads filer. Dela upp vid ~400-500 rader. Undantag: återanvändbara React-komponenter med egen state.
+4. **Komponentextrahering**: Extrahera vid 3+ återanvändningar ELLER genuint komplex (100+ rader). Mikro-komponenter (10-20 rader) motiverar sällan egna filer.
+5. **Simple > Complex > Complicated**: Minsta nödvändiga komplexitet.
+6. **Diskutera före större ändringar**: Arkitekturella ändringar, nya beroenden, patterns som påverkar teamet.
 
 ---
 
-## Top 5 Gotchas
+## Gotchas
 
-> Fullständig lista: [docs/GOTCHAS.md](docs/GOTCHAS.md)
-
-| # | Problem | Lösning |
-|---|---------|---------|
-| 1 | Next.js 16 params | `await params` (Promise!) |
-| 2 | Zod errors | Använd `error.issues`, inte `error.errors` |
-| 3 | Rate limiting i serverless | Upstash Redis (INTE in-memory) |
-| 4 | IDOR vulnerability | Authorization i WHERE clause (atomärt) |
-| 5 | Prisma over-fetching | Använd `select`, inte `include` |
+> Se [docs/GOTCHAS.md](docs/GOTCHAS.md) för fullständig lista.
 
 ---
 
 ## Definition of Done
 
-En feature är **DONE** när:
-
-### 1. Funktionalitet
-- [ ] Fungerar som förväntat (manuellt testad)
-- [ ] Inga TypeScript-fel (`npm run typecheck`)
-- [ ] Inga console errors
-- [ ] Responsiv (desktop)
-
-### 2. Kod-kvalitet
-- [ ] Följer projektkonventioner
-- [ ] Säker (ingen XSS, SQL injection, etc.)
-- [ ] Error handling (try-catch, loggar fel)
-- [ ] Zod-validering (client + server)
-
-### 3. Git (Feature Branch Workflow)
-- [ ] Feature branch skapad (`feature/namn`)
-- [ ] Committed med beskrivande message
-- [ ] **Alla tester gröna INNAN merge** (unit + E2E)
-- [ ] Mergad till main, pushad till remote
-
-### 4. Testing (TDD)
-- [ ] Unit tests skrivna FÖRST
-- [ ] E2E tests uppdaterade
-- [ ] Coverage >= 70%
-
-### 5. Dokumentation
-- [ ] README.md uppdaterad (nya modeller, features, API-struktur, testantal)
-- [ ] docs/API.md uppdaterad (nya endpoints)
-- [ ] BACKLOG.md uppdaterad (implementerat-sammanfattning)
-- [ ] CLAUDE.md Key Learnings uppdaterad (nya insikter från implementationen)
+- [ ] Fungerar som förväntat, inga TypeScript-fel (`npm run typecheck`), inga console errors
+- [ ] Säker (Zod-validering, error handling, ingen XSS/SQL injection)
+- [ ] Unit tests skrivna FÖRST, E2E uppdaterade, coverage >= 70%
+- [ ] Feature branch, alla tester gröna, mergad till main
+- [ ] Docs uppdaterade: README.md, docs/API.md, BACKLOG.md, CLAUDE.md Key Learnings
 
 ---
 
-## Production Readiness Checklist
+## Production Readiness
 
 > Fullständig guide: [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md)
-
-### Security (MANDATORY)
-- [x] Rate limiting använder Redis (Upstash)
-- [ ] Authorization checks är atomära (i WHERE clause)
-- [ ] Ingen PII/känslig data exponeras i publika API endpoints
-- [ ] All user input är validerad (Zod client + server)
-
-### Monitoring (HIGHLY RECOMMENDED)
-- [x] Sentry DSN konfigurerad
-- [x] UptimeRobot konfigurerad
-- [ ] Error tracking verifierat
 
 ### Environment Variables (MANDATORY)
 ```bash
 DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="..."
 NEXTAUTH_URL="https://..."
-UPSTASH_REDIS_REST_URL="https://..."
+UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 NEXT_PUBLIC_SENTRY_DSN="https://..."
 ```
@@ -365,326 +265,60 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 
 ## Debugging (UI -> DB)
 
-```
-UI Layer (Browser console, React DevTools)
-   |
-Client Layer (Network tab - request/response)
-   |
-API Layer (Server console logs)
-   |
-Database Layer (Prisma Studio)
-```
-
-**Checklist när något failar:**
-1. Browser console - errors?
-2. Network tab - request skickad? response?
-3. Server terminal - loggas något?
-4. Prisma Studio - finns data?
+**Checklist:** Browser console -> Network tab -> Server terminal -> Prisma Studio
 
 ---
 
 ## Säkerhet
 
-### Implementerat
-- bcrypt password hashing, HTTP-only cookies, CSRF protection
-- SQL injection protection (Prisma), XSS protection (React)
-- Input validation (Zod client + server)
-- Authorization checks (session + ownership)
+**Implementerat:** bcrypt hashing, HTTP-only cookies, CSRF, Prisma (SQL injection), React (XSS), Zod validering, session + ownership checks.
 
-### Checklist för Nya API Routes
-- [ ] Session check
-- [ ] Input validation (Zod)
-- [ ] Ownership check (i WHERE clause!)
-- [ ] Error handling (Zod, Prisma, JSON parsing)
-- [ ] Strukturerad logging (`logger` från `@/lib/logger`, INTE `console.*`)
-- [ ] Rate limiting (via `rateLimiters` från `@/lib/rate-limit`)
+**Checklist nya API routes:** Session check -> Zod validation -> Ownership i WHERE clause -> Error handling (Zod, Prisma, JSON) -> `logger` (INTE `console.*`) -> `rateLimiters`
 
 ---
 
-## Agent-Team (Quick Reference)
+## Agent-Team
 
-> Fullständig guide: [docs/AGENTS.md](docs/AGENTS.md)
-
-| Agent | Använd när |
-|-------|------------|
-| **security-reviewer** | Efter nya API endpoints, före produktion |
-| **cx-ux-reviewer** | Efter UI-implementering, användarresor |
-| **tech-architect** | Nya features, performance-problem |
-| **test-lead** | Efter feature-implementation, coverage-gap |
-| **data-architect** | Nya datamodeller, query-optimering |
-| **quality-gate** | Före merge, före release |
-| **performance-guardian** | Performance-problem, monitoring-design |
-
-**Quick Reference:**
-```
-Nya features?        -> tech-architect + data-architect + test-lead
-Performance issue?   -> performance-guardian + data-architect
-Säkerhetsaudit?      -> security-reviewer
-Före merge?          -> quality-gate
-```
+> Se [docs/AGENTS.md](docs/AGENTS.md) för fullständig guide och quick reference.
 
 ---
 
 ## Key Learnings
 
-### Next.js 16 + React 19 + NextAuth v5 Upgrade (2026-01-22)
-- `params` är nu `Promise` i dynamic routes (måste awaitas)
-- NextAuth: `auth()` ersätter `getServerSession(authOptions)`
-- Test mocks måste uppdateras från `next-auth` -> `@/lib/auth`
-- Repository pattern + behavior-based tests minimerade uppgraderings-impact
+### Operationella fällor
+- **TypeScript heap OOM**: Använd `npm run typecheck` (inte `npx tsc --noEmit`). `tsconfig.typecheck.json` exkluderar testfiler + incremental builds.
+- **Prisma Studio zombie-processer**: Stängs inte automatiskt -- ackumuleras och äter DB-connections. Symptom: `MaxClientsInSessionMode`. Fix: `pkill -f "prisma studio"`.
+- **`ignoreBuildErrors: true` i next.config.ts**: MEDVETEN optimering -- ta INTE bort. TypeScript checkas i CI. Utan den: 14+ min build istället för ~50s.
+- **`db:seed:force` invaliderar sessioner**: Raderar alla användare -- aktiva sessioner blir ogiltiga. Logga ut/in efter reseed.
 
-### SQLite -> PostgreSQL Migration (2026-01-21)
-- SQLite fungerar inte i serverless (Vercel)
-- Använd Session Pooler (IPv4) för serverless kompatibilitet
+### API & Säkerhet
+- **Rate limiting FÖRE request-parsing**: Annars kan angripare spamma utan att trigga rate limit.
+- **Prisma `select` > `include`**: Både performance och säkerhet -- förhindrar PII-exponering (t.ex. passwordHash).
+- **JSON parsing MÅSTE ha try-catch**: Annars 500 istället för 400 vid ogiltig JSON.
+- **`$transaction` kräver `@ts-expect-error`**: Kända TS-inferensproblem med callback-syntax.
 
-### Performance & Skalbarhet
-- Database indexes är framtidssäkring (20 min -> 10-30x snabbare)
-- Prisma `select` vs `include` är **både** performance + säkerhet
-- Mät baseline -> Förväntat vid skalning -> Verifiera efter fix
+### Testing
+- **E2E: undvik `waitForTimeout()`** -- använd explicit waits (`waitFor({ state: 'visible' })`).
+- **E2E: unika identifiers** med `Date.now()` för test isolation.
+- **E2E: `getByRole` > `getByLabel` > `getByPlaceholder`** -- mest robust selektor.
+- **E2E: kör isolerat vid debugging** -- `npx playwright test file.spec.ts:215`.
+- **FormData i vitest**: JSDOM stödjer inte `FormData` + `File` -- mocka `request.formData()` direkt.
+- **Class-baserade mocks för `new`-anrop**: Arrow functions ger "is not a constructor".
 
-### Development
-- TDD fångar buggar tidigt, bättre design
-- Databas-först -> typsäkerhet hela vägen
-- JSON parsing i API routes MÅSTE ha try-catch
-
-### TypeScript Memory Issues (2026-01-23)
-- `npx tsc --noEmit` kraschar med "heap out of memory" på stora projekt
-- Lösning: `tsconfig.typecheck.json` som exkluderar testfiler och använder incremental builds
-- Använd alltid `npm run typecheck` istället för `npx tsc --noEmit`
-- Pre-push hooken är redan konfigurerad korrekt
-
-### ESLint + Next.js 16 (2026-01-24)
-- FlatCompat skapar circular structure med react-hooks plugin
-- Lösning: Använd direkta plugin-importer i `eslint.config.mjs`
-- `prefer-const` gäller även objekt som muteras (variabeln reassignas aldrig)
-
-### GitHub Workflow Permissions (2026-01-24)
-- Ändring av `.github/workflows/` kräver `workflow` scope
-- Fix: `gh auth login --scopes workflow`
-
-### Database Seeding & Sessions (2026-01-26)
-- `npm run db:seed:force` raderar ALLA användare - aktiva sessioner blir ogiltiga
-- Användare måste logga ut/in efter reseed för att få giltigt session-ID
-- Zod `z.string().datetime()` kräver fullständigt ISO-format - använd flexibel validering för datumfält
-- Prisma P2003 (foreign key) fel: logga alltid vilken constraint som failar, inte anta
-
-### E2E Test Best Practices (2026-01-28)
-- **Timing**: Undvik `waitForTimeout()` - använd explicit waits med `Promise.race()` eller `waitFor({ state: 'visible' })`
-- **Test isolation**: Använd unika identifiers med timestamp (`Date.now()`) för dynamiskt skapad data
-- **Flexibla assertions**: Testa beteende (`toBeLessThan`) istället för exakta värden (`toBe(5)`)
-- **Fixtures**: Importera `test, expect` från `./fixtures` för automatisk afterEach cleanup
-- **Unit vs E2E**: ErrorState/useRetry testas bättre som unit tests - E2E med API-blocking är fragilt
-
-### Travel Time Kalender-integration (2026-01-29)
-- **Kontrollera Prisma-schema först**: Antog att Booking hade lat/lng, men de finns på User. Verifiera alltid datamodellen innan implementation.
-- **Datum-jämförelser**: `new Date("2026-01-29")` skapar UTC-tid. Normalisera till (year, month, day) för korrekt jämförelse av "förflutna dagar".
-- **Bakåtkompatibilitet i API**: Behåll gamla fält (`bookedSlots`) även när nya läggs till (`slots` med `unavailableReason`).
-- **1 timmes buffert**: Ökad från 10 min till 60 min för realistisk tid mellan bokningar (förberedelse, efterarbete).
-
-### Architecture & DDD
-- **Implementation utan adoption = dead code**: DoD måste inkludera "Används i production" - att koden finns räcker inte.
-- **DDD fungerar**: Value objects och domain services gör logiken testbar och återanvändbar.
-- **Repository pattern overhead motiverat**: Konsistens och testbarhet väger upp extra kod.
-- **E2E-tester avslöjar API-buggar**: Unit tests med mocks missar ofta validation/Prisma errors - kör E2E efter större ändringar.
-
-### DDD-Light Review Pilot (2026-02-01)
-- **Behavior-based route-tester overlever refactoring**: POST /api/reviews-testerna behövde NOLL andningar trots att hela implementationen byttes ut. Testa HTTP-kontrakt (status + response shape), inte Prisma-anrop.
-- **Alla routes bor ga via service-lagret**: PUT/DELETE-routes som anropar repository direkt gor route-testerna fragila (kopplade till P2025-mockar). POST-routen (via ReviewService) var robust. Lat alla routes delegera till service.
-- **Factory pattern for DI vid 3+ dependencies**: Inline `new ReviewService({ ... })` i varje route ar verbost. For Booking (5+ deps) ar factory obligatoriskt.
-- **`select` i repository maste inkludera allt UI:n behover**: Reply-buggen (kund sag inte leverantorens svar) berodde pa att `findByCustomerIdWithDetails` saknade `reply`/`repliedAt` i select. Nar du lagger till falt i schema -- kontrollera ALLA select-queries.
-- **Manuell testning fanger UI-buggar som unit tests missar**: Reply-buggen hittades bara manuellt. E2E-test for "kund ser leverantorens svar" hade fangt den automatiskt.
-- **Error-mapping bor ligga i domain-lagret**: `mapErrorToStatus` duplicerades i 2 route-filer. Flytta till domain for DRY + single source of truth.
-- **MockRepository bor stodja seedable relations**: Hardkodade "Test User" racker inte for att testa notis-meddelanden med riktiga namn.
-
-### DDD-Light GroupBooking Migration (2026-02-01)
-- **Aggregate-first design forenklar**: Request + Participant som ett aggregat eliminerade distribuerade transaktioner. Entiteter som andras tillsammans bor modelleras tillsammans.
-- **Factory pattern obligatoriskt vid 5+ dependencies**: `createGroupBookingService()` med 5 deps (repo, invite code, notifications, provider lookup, service lookup). Inline-konstruktion i varje route ar omojligt att underhalla.
-- **Definiera error-kontrakt fore implementation**: Ad-hoc error-mapping under testning ger forvirring om ratt HTTP-status (PARTICIPANT_NOT_FOUND -> 404 vs 403). Bestam mappingen medvetet i forvag.
-- **Mixed mocks ar tech debt**: Routes som mockar bade Prisma OCH service (match/route.ts) ar fragila. Dokumentera och planera bort vid nasta migrering.
-- **NotificationService DI loser test-brus**: Injicera mock via constructor istallet for att lata riktiga NotificationService anropa omockad Prisma. Tillampa samma monster pa Booking/Review.
-- **95% domain service coverage med MockRepository**: 25 tester, seedable data, snabbare och mer forutsagbart an Prisma-mocks.
-
-### DDD-Light Booking Status VO + Factory (Fas 2, 2026-02-01)
-- **Value objects skalar**: BookingStatus foljer exakt samma pattern som TimeSlot/Location. `create()` -> `Result`, immutable, self-validating. Varje ny VO ar snabbare att bygga an foregaende.
-- **Factory + VO = komplett service-lager**: `createBookingService()` + `BookingStatus.transitionTo()` ger routes en enda rad istallet for 60+ rader DI + manuell validering.
-- **Error-kontrakt fore implementation fungerar**: INVALID_STATUS_TRANSITION -> 400, BOOKING_NOT_FOUND -> 404 var bestamda i planen. Noll forvirring under implementation.
-- **Inkrementell TDD med verifiering mellan steg**: VO -> service -> factory -> routes, med alla tester grona mellan varje steg. Ingen "big bang"-risk.
-- **Medvetet scope-beslut forhindrar creep**: Att exkludera DELETE (inget status-behov) holl sessionen fokuserad och snabb.
-
-### DDD-Light Auth Migration (Fas 3, 2026-02-01)
-- **Specialized repository > generic IRepository for auth**: Auth ar inte CRUD -- det ar specialiserade operationer (register, verify, login). Skippa IRepository<T> och definiera precis de metoder som behovs ger battre typsakerhet och tydligare security boundaries.
-- **Projection-driven security hittar buggar passivt**: verify-email anvande `include: { user: true }` (exponerade passwordHash). Migrering till `select` i repository fixade buggen utan separat sakerhetsgranskning.
-- **DI for bcrypt/crypto eliminerar fragila mocks**: Injicera `hashPassword`/`comparePassword`/`generateToken` istallet for att mocka moduler. Ger deterministiska, snabba tester utan `vi.mock('bcrypt')`.
-- **Factory pattern fungerar utanfor routes**: `createAuthService()` anvands bade i routes OCH i NextAuth authorize-callback. Bevisar att factory-pattern ar generellt anvandbart.
-- **Error-kontrakt fore implementation (bekraftat 3:e gangen)**: TOKEN_NOT_FOUND -> 400 (inte 404, sakerhet), INVALID_CREDENTIALS -> 401, EMAIL_NOT_VERIFIED -> 403. Noll forvirring under implementation.
-- **Migrering som sakerhetsgranskning**: Att systematiskt ga igenom varje route avslojjar `include`-buggar, saknad `select`, och inkonsekvent felhantering. DDD-Light-migrering fungerar som passiv security audit.
-
-### DDD-Light Test Coverage (Fas 4, 2026-02-01)
-- **Att skriva tester for otestade filer hittar produktionsbuggar**: Register-route saknade try-catch runt `request.json()` (500 istallet for 400) OCH hade rate limiting efter JSON-parsing (angripare kunde spamma utan att triggra rate limit). Bada hittades via TDD.
-- **Testa bade production OCH development mode for miljo-beroende kod**: Logger anvander `console.log` (JSON) i production men `console.info/error/warn` i development. Testerna toggler `NODE_ENV` + `vi.resetModules()` for att tacka bada vagar.
-- **Class-baserade mocks for `new`-anrop**: `@upstash/ratelimit` och `@upstash/redis` anvander `new Ratelimit(...)` / `new Redis(...)`. Arrow functions som mock (`() => ({})`) ger "is not a constructor". Anvand `class MockRatelimit { ... }` istallet.
-- **Rate limiting MASTE ske fore request-parsing**: Om `request.json()` kastas fore rate limit-checken kan en angripare spamma requests utan att triggra rate limiting. Checka IP + rate limit forst, parsa request sen.
-- **Logger PII-varning**: Logger filtrerar INTE kansliga falt (password, token). Utvecklare maste vara medvetna om att aldrig logga kanslig data. Dokumenterat via test men ar tech debt.
-
-### DDD-Light Event-infrastruktur (Fas 5, 2026-02-01)
-- **Events utan aggregat ar pragmatiskt och sakert**: BookingService (632 rader) orordes -- events emitteras fran routes EFTER service-anrop. 90% av vardet med 10% av risken jamfort med full aggregat-omskrivning.
-- **Generisk `IDomainEvent<TPayload>` loser TypeScript index signature**: Explicita interfaces (som `BookingCreatedPayload`) kan inte extends `Record<string, unknown>` direkt. Default generics (`IDomainEvent<TPayload = Record<string, unknown>>`) loser det elegant.
-- **Per-handler error isolation ar kritiskt for resiliens**: `InMemoryEventDispatcher` wrapprar varje handler i try-catch. Email-failure blockerar INTE notifikation eller HTTP-response. Testat explicit.
-- **Behavior-based route-tester overlever event-migrering**: POST /api/bookings behovde NOLL test-andringar. PUT behovde bara 3 rader ny mock for dispatcher. Testa HTTP-kontrakt, inte implementation details.
-- **Flat event payloads eliminerar DB-queries i handlers**: Payload innehaller allt handlers behover (customerName, serviceName, providerUserId). Trade-off: routes gor en extra query for providerUserId, men handlers blir deterministiska och snabba.
-- **Factory pattern for dispatcher ar serverless-safe**: `createBookingEventDispatcher()` skapar ny instans per request. Inga singletons, inget shared state. Konsistent med `createBookingService()`, `createAuthService()`.
-
-### Production Readiness
-- **Monitoring är INTE optional**: Ska vara del av MVP, inte efterkonstruktion.
-- **"90% done is not done"**: Verifiera alltid i target environment - inte bara lokalt.
-- **Serverless begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
-
-### Agent Workflow
-- **Använd agenter proaktivt**: Discovery INNAN problem uppstår, inte bara execution.
-- **Pattern**: REVIEW → PRIORITIZE → IMPLEMENT → VERIFY (Phase 1-4).
-- **Agenter för kvalitet**: security-reviewer, quality-gate före merge/release.
-
-### Paralleliserad Team-Review (2026-01-29)
-- **Utforska före planering**: Kartlägg kodbasen med explore-agent *innan* prioriteringslistan skapas, inte efter. Annars planerar man redan-klara saker.
-- **Bakgrundsagent för mekaniskt arbete**: Logger-migrering (36 filer) var perfekt agent-uppgift. Mekaniska, repeterbara ändringar = bra agentuppgift.
-- **Undvik parallellt arbete på samma fil**: Agent + manuellt arbete på samma fil ger konflikter. Agenten kan revertera manuella ändringar.
-- **Prisma test-mockar är fragila**: `$transaction` i produktionskod kräver `$transaction` i testmockar. Mockar som hårdkodar Prisma-modeller direkt bryts vid refactoring.
-- **Runda-struktur fungerar**: Säkerhet → Tech Debt → UX som prioriteringsordning, med verifiering mellan rundor, fångar problem tidigt.
-
-### Prisma Studio Zombie-processer (2026-01-29)
-- **Prisma Studio stängs inte automatiskt** - processer lever kvar i bakgrunden och ackumuleras.
-- **4 gamla instanser åt upp alla 10 connections** i Supabase Session Pooler -> hela appen fick 503.
-- **Symptom**: `FATAL: MaxClientsInSessionMode: max clients reached` - ser ut som databasproblem men är egentligen lokala zombie-processer.
-- **Felsökning**: `ps aux | grep prisma` avslöjar problemet. `pkill -f "prisma studio"` fixar det.
-
-### Recensioner & Betyg (2026-01-30)
-- **Prisma `groupBy` har komplexa TS-overloads** - `findMany` + manuell aggregering i JS är enklare och lika effektivt vid låga volymer. Undvik att slåss med TypeScript.
-- **Separata sidor > fullproppade dashboards** - Review-logik (reply-dialog, lista, etc) hör hemma på egen flik, inte inbäddad i dashboarden. Enklare kod, bättre UX.
-- **1:1-relationer som fält på samma modell** - Reply/repliedAt direkt på Review-modellen (istället för separat modell) reducerar joins och förenklar API:et.
-- **Kontrollera stöd-API:er tidigt** - Profile-API:et saknade `providerId`, fick patchas efteråt. Kartlägg beroenden innan implementation.
-- **Enrichment-pattern fungerar** - `enrichWithReviewStats()` i providers-routen följer samma mönster som `enrichWithNextVisit()`. Konsistens ger förutsägbar kod.
-
-### Hästregister / Horse Model (2026-01-30)
-- **`birthYear` > `age`** - Statiskt värde som inte behöver uppdateras varje år. Beräkna ålder i UI vid behov.
-- **Soft delete (`isActive=false`)** för hästar bevarar bokningshistorik -- hard delete skulle bryta foreign keys.
-- **Bakåtkompatibel integration**: `Booking.horseId` är nullable, befintliga bokningar med `horseName`/`horseInfo` som fritext fungerar fortfarande.
-- **Dropdown + fritext fallback**: Bokningsdialogen visar dropdown om kunden har registrerade hästar, annars fritt textfält. Bästa av två världar.
-- **Zod `z.enum()` i nya versionen**: Använd `message` istället för `errorMap` -- API:et ändrades i Zod 4.
-- **IDOR-skydd via `findFirst` + WHERE**: Horse API använder `{ id, ownerId, isActive }` i WHERE-clause, samma mönster som booking-repositoryt.
-
-### Vercel Build Timeout Regression (2026-01-29)
-- **`ignoreBuildErrors: true` i next.config.ts är en MEDVETEN optimering** - ta INTE bort den. TypeScript checkas separat i CI.
-- **Agent-refaktoreringar kan ta bort "onödiga" inställningar** som i själva verket är kritiska. Kommentarer i koden räcker inte alltid som skydd.
-- **Verifiera alltid build-tiden efter stora refaktoreringar** - regressioner i build-pipeline syns inte i tester.
-- **Root cause**: Commit `66a0ea0` tog bort `ignoreBuildErrors`, vilket fick Next.js att köra full typecheck under build (14+ min istället för ~50s).
-
-### Notifikationer, Påminnelser & Betalningsabstraktion (2026-01-30)
-- **Oanvänd modell = gratis start**: Notification-modellen fanns redan i schema men var oanvänd. Att aktivera befintliga modeller är snabbare än att bygga från scratch.
-- **Polling > WebSocket för serverless**: 30s polling med `setInterval` i en hook är tillräckligt för MVP och fungerar direkt på Vercel utan extra infra.
-- **Gateway pattern förbereder utan overhead**: `IPaymentGateway` + `MockPaymentGateway` kräver minimal kod men gör Swish/Stripe-integration till en ren implementation-uppgift utan refaktorering av routes/UI.
-- **Vercel Cron + CRON_SECRET**: Enklaste scheduling för serverless. `Bearer`-header verifiering i endpointen, `vercel.json` för schema. Ingen extra infra behövs.
-- **Test-mockar måste uppdateras vid integration**: Att lägga till `notificationService.createAsync()` i befintliga routes bröt tester som saknade mock för prisma.provider/notification. Testa alltid efter integration.
-- **Zod `.strict()` vs öppen validering**: `.strict()` avvisar okända fält -- ta bort det när schemat utökas med nullable/optional fält som `recommendedIntervalWeeks`.
-
-### Hästhälsotidslinje & Leverantörsverifiering (2026-01-30)
-- **`ProviderLayout` krävs på ALLA provider-sidor**: Sidor utan `ProviderLayout` tappar navigationsmenyn. Använd alltid layoutkomponenten -- aldrig manuell `<div>` + `<main>`-wrapper.
-- **mergeTimeline i JS, inte SQL**: Att hämta bookings + notes separat och mergea i JS med `sort()` är enklare och lättare att testa än komplexa SQL UNIONs. Fungerar bra vid låga volymer.
-- **Provider-access med begränsade kategorier**: Integritetsskydd genom att filtrera note-kategorier i WHERE (`category: { in: [...] }`) snarare än i JS. Databasen hanterar filtreringen.
-- **`$transaction` i Prisma kräver `@ts-expect-error`**: Interactive transactions med callback-syntax har kända TypeScript-inferensproblem. Befintligt mönster: `// @ts-expect-error` + `(tx: any)`.
-- **`logger.security()` har speciell signatur**: `(event, severity, context)` -- inte samma som `logger.info(message, context)`. Kontrollera alltid logger-API:et.
-- **MockProviderRepository måste uppdateras vid typändringar**: Att lägga till `isVerified` på `ProviderWithDetails` bröt mock-repositoryt. Interface-ändringar propagerar till alla implementationer.
-- **`db push` vid drift-detected**: `prisma migrate dev` kräver clean migration history. `prisma db push` synkar schema direkt utan migrationsfiler -- bättre för utveckling med Supabase.
-
-### Mobil-first, Desktop-review Workflow (2026-01-30)
-- **Mobilen är bra på att skapa ny kod, sämre på integration**: Skriver fungerande sidor men missar att importera befintliga typer/funktioner -- duplicerar istället. Svårare att navigera kodbasen på mobilen.
-- **Copy-paste eskalerar utan kodsökning**: `Notification`-typ och `formatRelativeTime` kopierades rakt av istället för att importeras. Flagga med `// TODO: review - duplicated from X?` om du misstänker duplicering.
-- **Kontext avgör om ett mönster är rätt**: `// Silently fail` var rimligt i en dropdown (NotificationBell) men fel på en dedikerad sida där användaren förväntar sig feedback. Kopiera inte mönster blint -- anpassa till kontexten.
-- **Workflow som fungerar**: Mobilen levererar snabbt, desktop granskar och polerar. Bra arbetsfördelning.
-
-### Gruppbokning for stallgemenskaper (2026-01-30)
-- **Schema-forst ger tydlig struktur**: Att borja med `GroupBookingRequest` + `GroupBookingParticipant` i Prisma och bygga uppat (API -> domain service -> UI) gav naturlig ordning och tidig typsakerhet.
-- **Domain service for komplex matchning**: `GroupBookingService.matchRequest()` skapar sekventiella bokningar (09:00-09:45, 09:45-10:30, etc.) i en `$transaction`. Att isolera detta fran route-handleren gor logiken testbar.
-- **Invite code utan tveetydiga tecken**: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (utan 0/O, 1/I/L) gor koden lattare att dela verbalt. `crypto.randomBytes()` for kryptografisk sakerhet.
-- **Push/pull-monster**: Kunder pushar requests, leverantorer pullar och matchar -- annorlunda fran vanlig bokning dar kunden valjer leverantor. Kraver separata UI-floden.
-- **Status-transitions maste kontrolleras**: `VALID_STATUS_TRANSITIONS`-map i PUT-endpointen forhindrar ogiltiga overgangar. Terminal states (completed, cancelled) ar permanenta.
-- **Svenska tecken pa mobil**: Alla 6 UI-sidor saknade a, a, o (~60 strangar). Systematiskt problem vid mobil-forst-utveckling utan svenskt tangentbord.
-
-### Ecosystem-integration / Fas 3 (2026-01-30)
-- **Gateway-pattern skalade**: `IAccountingGateway` foljde exakt samma monster som `IPaymentGateway`. Att kopiera beprovat monster sparade tid och sakerstallde konsistens. Mock-implementation + factory-funktion gor det trivialt att byta till riktig Fortnox.
-- **FormData i vitest ar fragilt**: JSDOM har begransat stod for `FormData` + `File`. Upload-tester maste mocka `request.formData()` direkt istallet for att skicka riktig FormData. Dokumentera detta monster.
-- **`select` skyddar mot PII-lackor**: Export-endpoint anvander `select` (inte `include`) for att aldrig hamta `passwordHash`. TDD fangade detta direkt.
-- **AES-256-GCM for token-kryptering**: Authenticated encryption forhindrar bade lasning och tampering. Random IV per kryptering ger unika ciphertexter. Dev-fallback med deterministisk nyckel -- ENCRYPTION_KEY obligatoriskt i produktion.
-- **Publik data kraver integritetsskydd**: Hastpasset (publik URL utan auth) visar bara veterinar/hovslagare/medicin-anteckningar. Allmanna och skadeanteckningar doljs. Filtreringen sker i DB-query (WHERE), inte i JS.
-- **CSV-export utan externa beroenden**: `objectsToCsv` utility med korrekt escaping (komma, citattecken, newlines) raktar for GDPR Art 20 utan att lagga till dependencies.
-- **Supabase Storage med mock-fallback**: `uploadFile()` sparar till `public/uploads/` i dev-lage sa Next.js servrar filen. Ursprunglig mock-URL (`/mock-uploads/...`) gav 404 eftersom ingen route servade den.
-- **CSP `worker-src blob:` kravs for bildkomprimering**: `browser-image-compression` anvander Web Workers via blob-URLs. Utan `worker-src 'self' blob:` i CSP blockerar browsern workern. Symtomet ar att komprimering misslyckas tyst.
-- **`select` i repository maste uppdateras for nya falt**: Att lagga till `profileImageUrl` i Prisma-schemat racker inte -- alla `select`-queries i ProviderRepository + interface-typer maste ocksa uppdateras, annars returneras aldrig faltet till klienten.
-- **ImageUpload variant-prop for konsekvent storlek**: Utan `aspect-square` + `object-cover` blir uppladdade bilder olika stora beroende pa original. `variant="square"` (hastar) och `variant="circle"` (profilbild) loser detta.
-
-### Manuell Bokning / Ghost User (2026-02-02)
-- **Ghost User-pattern eliminerar null-checks i hela stacken**: Genom att alltid ha `booking.customer` non-null behövde ingen befintlig kod ändras -- varken UI, email-service eller payment-routes. Sentinel-email (`manual-{uuid}@ghost.equinet.se`) + random bcrypt hash gör kontot oanvändbart för inloggning.
-- **Separerad `createManualBooking()` med tydliga skillnader**: Skippar self-booking check och travel time validation, sätter status till `confirmed`, men behåller overlap check och service/provider-validering. Dokumentera skillnaderna explicit i koden.
-- **Security-reviewer ger false positives -- verifiera alltid mot faktisk kod**: Häst-endpointens IDOR-skydd flaggades som "KRITISK brist" trots att relation-checken redan fanns (rad 43-54). Automatiserade granskningar ersätter inte manuell kodverifiering.
-- **E2E-test bör vara obligatoriskt för UI-features**: 27 unit/API-tester fångar domain-logik men INTE dialog-buggar (stängning, validering, multi-step flow). ManualBookingDialog saknar E2E-täckning -- tech debt.
-- **Ghost user error handling undertestade**: `createGhostUser` testas bara med success-mock. Failure scenarios (DB-error, duplicate email race condition) saknar tester. Lägg till error scenarios vid nästa TDD-pass.
-- **DI av `createGhostUser` fungerar väl**: Dependency injection av ghost user-skapandet gör BookingService testbar utan Prisma. Samma DI-pattern som `hashPassword`/`generateToken` i AuthService.
-
-### ManualBookingDialog Dagslista & UX (2026-02-02)
-- **Rensa hela state-kedjan vid lägesbyte**: När state hänger ihop (kund -> hästar) måste hela kedjan rensas vid reset -- inte bara roten. `setSelectedCustomer(null)` triggade `setHorses([])` via useEffect, men `selectedHorseId`/`horseName` blev orphan state. Tumregel: om state A driver state B, rensa båda explicit.
-- **Befintlig data > nytt API-anrop**: Dagslistan använde `bookings` som redan fanns i calendar-sidans state. Fråga alltid "finns datan redan?" innan du bygger nya fetch-anrop -- prop drilling är enklare, snabbare och undviker onödig nätverkstrafik.
-- **Dropdown > fritext för begränsade val**: `<select>` med 15-minutersintervall istället för `<input type="time">` ger bättre UX (snabbare, speciellt på mobil) och förhindrar ogiltiga tider. När möjliga värden är ändliga och förutsägbara är dropdown nästan alltid rätt val.
-
-### E2E-tester och UI-drift (2026-02-02)
-- **UI-andring = alla selektorer paverkas**: Nar en komponent byts ut (t.ex. manuella datum/tid-inputs -> `CustomerBookingCalendar`) andras ofta fler falt an de uppenbara. Kolla hela dialogen/formularet, inte bara det som planen namner.
-- **`getByRole` > `getByLabel` > `getByPlaceholder`**: `getByRole('textbox', { name: /hastens namn/i })` matchar oavsett om texten kommer fran label, placeholder eller aria-label. Mest robust selektorn for E2E-tester.
-- **Playwright error-context loser 90% av E2E-felsokningar**: DOM-snapshoten (`error-context.md`) visar exakt vilka element som finns -- combobox, textbox, button med namn. Anvand den alltid istallet for att gissa selektorer.
-- **Kor failande test isolerat under debugging**: `npx playwright test e2e/booking.spec.ts:215` istallet for hela sviten (80 tester, 12 min). Snabbare feedback-loop, mindre brus.
-- **Knappar med dynamisk text kraver flexibla regex**: "Vantar pa svar" andrades till "Vantar (X)" med raknare. `/^vantar/i` matchar bada varianter. Designa regex for framtida textandringar.
-- **Planera for sekundara andringar**: En plan som bara tar upp primara andringar (kalender-interaktion) men missar sekundara (faltselektorer, borttagna falt) ger extra iterationer. Las igenom hela komponenten/dialogen fore implementering.
-
-### Kompetenser & Certifikat (2026-02-02)
-- **Befintliga komponenter + ny bucket = minimal UI-kod**: ImageUpload behövde bara en ny bucket-typ. AlertDialog, Badge, Dialog fanns redan. Inventera befintliga komponenter före implementation.
-- **Security-reviewer ger false positives -- alltid verifiera**: Agenten flaggade IDOR som "KRITISK" trots att koden redan använde korrekta WHERE-clauser. Automatiserade granskningar ersätter inte manuell kodverifiering (bekräftat 2:a gången).
-- **DDD-Light ska vara all-or-nothing per domän**: Att skippa repository/service för Verification medan Booking/Auth/Review använder det skapar förvirring. Antingen följ mönstret eller dokumentera explicit varför inte.
-- **select i admin-query ger gratis metadata-exponering**: Att byta från include till select med nya fält gav admin-vyn all data automatiskt. select-first är både säkerhet och convenience.
-- **Schema-först eliminerar typproblem i kedjan**: Att börja med Prisma-schema och köra db push före API-implementation innebar att TypeScript-typer var korrekta från start. Ingen iteration krävdes.
+### Utvecklingsmönster
+- **Schema-först**: Prisma-schema -> API -> UI ger typsäkerhet hela vägen.
+- **Factory pattern vid 3+ dependencies**: Obligatoriskt för DI i routes.
+- **Definiera error-kontrakt före implementation**: Bestäm HTTP-status-mappning i förväg.
+- **`select` i repository måste inkludera alla fält UI:n behöver**: Kontrollera vid schema-ändringar.
+- **Serverless-begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
 
 ---
 
 ## Automated Quality Gates
 
-**Lokal Gate (Husky pre-push hook):**
-- Unit tests (`npm run test:run`)
-- TypeScript check (`npm run typecheck`)
-
-**CI Gate (GitHub Actions):**
-- Unit tests + coverage
-- E2E tests
-- TypeScript check
-- Build verification
-
-**Branch Protection:** Inaktiverat för MVP - återaktivera vid v1.0 eller produktion.
-
----
-
-## Sprint Planning & Retrospectives
-
-### Sprint Workflow
-1. Planera sprint med tech-architect
-2. Implementera features med TDD
-3. Commit och merge efter gröna tester
-4. Kör retrospective med agenter
-5. Uppdatera CLAUDE.md med learnings
-
-### Retrospective Template
-**Agenter:** tech-architect, test-lead, quality-gate, security-reviewer (vid behov)
-
-**Frågor:**
-1. Vad gick bra?
-2. Vad kunde vi göra bättre?
-3. Konkreta rekommendationer för nästa sprint?
-
-> Tidigare retrospectives: [docs/retrospectives/](docs/retrospectives/)
+**Lokal (Husky pre-push):** `npm run test:run` + `npm run typecheck`
+**CI (GitHub Actions):** Unit tests + coverage, E2E, TypeScript, Build
+**Branch Protection:** Inaktiverat för MVP.
 
 ---
 
@@ -721,6 +355,8 @@ Före merge?          -> quality-gate
 - Root Cause: State/timing issues mellan tester
 - Fix: Test isolation pattern i F2-5
 
+> Sprint workflow & retrospectives: [docs/retrospectives/](docs/retrospectives/)
+
 ---
 
 ## Design System
@@ -743,4 +379,4 @@ Före merge?          -> quality-gate
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-01-30
+**Senast uppdaterad**: 2026-02-02
