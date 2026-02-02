@@ -51,6 +51,7 @@ interface VerificationImage {
   id: string
   url: string
   mimeType: string
+  originalName: string | null
 }
 
 interface VerificationRequest {
@@ -111,6 +112,7 @@ export default function ProviderVerificationPage() {
   const [form, setForm] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [createdId, setCreatedId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
@@ -141,6 +143,14 @@ export default function ProviderVerificationPage() {
     }
   }, [isProvider, fetchRequests])
 
+  const handleDialogClose = () => {
+    setDialogOpen(false)
+    setForm(emptyForm)
+    setEditingId(null)
+    setCreatedId(null)
+    fetchRequests()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
@@ -166,20 +176,19 @@ export default function ProviderVerificationPage() {
         body: JSON.stringify(body),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || "Kunde inte spara ansökan")
       }
 
-      toast.success(
-        isEditing
-          ? "Verifieringsansökan uppdaterad!"
-          : "Verifieringsansökan skickad!"
-      )
-      setDialogOpen(false)
-      setForm(emptyForm)
-      setEditingId(null)
-      fetchRequests()
+      if (isEditing) {
+        toast.success("Verifieringsansökan uppdaterad!")
+        handleDialogClose()
+      } else {
+        toast.success("Kompetensen är sparad! Du kan nu ladda upp filer.")
+        setCreatedId(data.id)
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Kunde inte spara ansökan"
@@ -279,10 +288,10 @@ export default function ProviderVerificationPage() {
           <Dialog
             open={dialogOpen}
             onOpenChange={(open) => {
-              setDialogOpen(open)
               if (!open) {
-                setEditingId(null)
-                setForm(emptyForm)
+                handleDialogClose()
+              } else {
+                setDialogOpen(true)
               }
             }}
           >
@@ -292,104 +301,134 @@ export default function ProviderVerificationPage() {
               </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingId ? "Redigera kompetens" : "Ny kompetens"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingId
-                    ? "Uppdatera informationen. Om ansökan var avvisad återgår den till granskning."
-                    : "Beskriv din merit eller kvalifikation. Vi granskar ansökningar manuellt."}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="ver-type">Typ *</Label>
-                  <Select
-                    value={form.type}
-                    onValueChange={(value) =>
-                      setForm({ ...form, type: value })
-                    }
-                  >
-                    <SelectTrigger id="ver-type">
-                      <SelectValue placeholder="Välj typ..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="ver-title">Titel *</Label>
-                  <Input
-                    id="ver-title"
-                    value={form.title}
-                    onChange={(e) =>
-                      setForm({ ...form, title: e.target.value })
-                    }
-                    placeholder="T.ex. Wångens gesällprov"
-                    required
-                    maxLength={200}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ver-issuer">Utfärdare</Label>
-                  <Input
-                    id="ver-issuer"
-                    value={form.issuer}
-                    onChange={(e) =>
-                      setForm({ ...form, issuer: e.target.value })
-                    }
-                    placeholder="T.ex. Wången, SHF"
-                    maxLength={200}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ver-year">År</Label>
-                  <Input
-                    id="ver-year"
-                    type="number"
-                    value={form.year}
-                    onChange={(e) =>
-                      setForm({ ...form, year: e.target.value })
-                    }
-                    placeholder="T.ex. 2020"
-                    min={1900}
-                    max={2100}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ver-desc">Beskrivning</Label>
-                  <Textarea
-                    id="ver-desc"
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm({ ...form, description: e.target.value })
-                    }
-                    placeholder="Valfri beskrivning av din merit..."
-                    rows={3}
-                    maxLength={1000}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    type="submit"
-                    disabled={
-                      isSaving || !form.type || !form.title.trim()
-                    }
-                  >
-                    {isSaving
-                      ? "Sparar..."
-                      : editingId
-                        ? "Spara ändringar"
-                        : "Skicka ansökan"}
-                  </Button>
-                </DialogFooter>
-              </form>
+              {createdId !== null ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Kompetensen är sparad</DialogTitle>
+                    <DialogDescription>
+                      Ladda upp bilder eller PDF-filer som styrker din kompetens (valfritt).
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <ImageUpload
+                      bucket="verifications"
+                      entityId={createdId}
+                      onUploaded={handleImageUploaded}
+                      variant="default"
+                      allowPdf
+                    />
+                    <p className="text-xs text-gray-500">
+                      Du kan ladda upp fler filer senare via kompetenskortet.
+                    </p>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleDialogClose}>
+                      Klar
+                    </Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingId ? "Redigera kompetens" : "Ny kompetens"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingId
+                        ? "Uppdatera informationen. Om ansökan var avvisad återgår den till granskning."
+                        : "Beskriv din merit eller kvalifikation. Vi granskar ansökningar manuellt."}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="ver-type">Typ *</Label>
+                      <Select
+                        value={form.type}
+                        onValueChange={(value) =>
+                          setForm({ ...form, type: value })
+                        }
+                      >
+                        <SelectTrigger id="ver-type">
+                          <SelectValue placeholder="Välj typ..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TYPE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="ver-title">Titel *</Label>
+                      <Input
+                        id="ver-title"
+                        value={form.title}
+                        onChange={(e) =>
+                          setForm({ ...form, title: e.target.value })
+                        }
+                        placeholder="T.ex. Wångens gesällprov"
+                        required
+                        maxLength={200}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="ver-issuer">Utfärdare</Label>
+                      <Input
+                        id="ver-issuer"
+                        value={form.issuer}
+                        onChange={(e) =>
+                          setForm({ ...form, issuer: e.target.value })
+                        }
+                        placeholder="T.ex. Wången, SHF"
+                        maxLength={200}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="ver-year">År</Label>
+                      <Input
+                        id="ver-year"
+                        type="number"
+                        value={form.year}
+                        onChange={(e) =>
+                          setForm({ ...form, year: e.target.value })
+                        }
+                        placeholder="T.ex. 2020"
+                        min={1900}
+                        max={2100}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="ver-desc">Beskrivning</Label>
+                      <Textarea
+                        id="ver-desc"
+                        value={form.description}
+                        onChange={(e) =>
+                          setForm({ ...form, description: e.target.value })
+                        }
+                        placeholder="Valfri beskrivning av din merit..."
+                        rows={3}
+                        maxLength={1000}
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="submit"
+                        disabled={
+                          isSaving || !form.type || !form.title.trim()
+                        }
+                      >
+                        {isSaving
+                          ? "Sparar..."
+                          : editingId
+                            ? "Spara ändringar"
+                            : "Skicka ansökan"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </>
+              )}
             </DialogContent>
           </Dialog>
         </div>
@@ -460,13 +499,15 @@ export default function ProviderVerificationPage() {
                                 href={img.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-20 h-20 rounded border border-gray-200 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors"
-                                title="Öppna PDF"
+                                className="w-20 h-20 rounded border border-gray-200 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors p-1"
+                                title={img.originalName || "PDF"}
                               >
-                                <svg className="h-8 w-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-6 w-6 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4z" />
                                 </svg>
-                                <span className="text-[10px] text-gray-500 mt-0.5">PDF</span>
+                                <span className="text-[10px] text-gray-500 mt-0.5 text-center line-clamp-2 break-all leading-tight">
+                                  {img.originalName || "PDF"}
+                                </span>
                               </a>
                             ) : (
                               <img

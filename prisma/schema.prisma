@@ -244,6 +244,7 @@ model Upload {
   path           String                // Supabase Storage path
   url            String                // Public URL
   mimeType       String
+  originalName   String?               // Original filename from upload
   sizeBytes      Int
   verificationId String?
   verification   ProviderVerification? @relation(fields: [verificationId], references: [id], onDelete: SetNull)

@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
         path,
         url,
         mimeType: file.type,
+        originalName: file.name || null,
         sizeBytes: file.size,
         ...(bucket === "verifications" ? { verificationId: entityId } : {}),
       },
