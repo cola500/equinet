@@ -414,8 +414,10 @@ Projektet har en automatisk pre-push hook (via Husky) som körs innan varje `git
 
 ```bash
 # Hooken kör automatiskt:
-npm run test:run     # Alla unit tests
-npm run typecheck    # TypeScript check
+npm run check:swedish  # Kontroll av svenska tecken
+npm run test:run       # Alla unit tests
+npm run typecheck      # TypeScript check
+npm run lint           # ESLint check
 ```
 
 Om något failar avbryts pushen. Du behöver inte köra dessa manuellt innan push - hooken sköter det åt dig. Men det kan vara bra att köra dem under utveckling för att slippa vänta vid push.

@@ -6,8 +6,8 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
 
 ### Prerequisites
 
-- **Node.js**: v18.17 eller senare
-- **npm**: v9 eller senare
+- **Node.js**: v20 eller senare
+- **npm**: v10 eller senare
 - **Git**: För version control
 
 ### Initial Setup
@@ -97,8 +97,10 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 Automatiserade quality gates säkerställer kodkvalitet:
 
 **Lokal Gate (Husky pre-push hook):**
+- Swedish character check (`npm run check:swedish`)
 - Unit tests (`npm run test:run`)
 - TypeScript check (`npm run typecheck`)
+- Lint check (`npm run lint`)
 
 **CI Gate (GitHub Actions):**
 - Unit Tests & Coverage
@@ -125,7 +127,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (792+ unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (1144 unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -381,7 +383,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**900+ tester** (66 E2E + 901 unit/integration) med **70% coverage**.
+**1210+ tester** (66 E2E + 1144 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

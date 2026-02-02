@@ -18,6 +18,9 @@
   - [Hästregistret](#hästregistret)
   - [Hälsotidslinje](#hälsotidslinje)
   - [Recensioner](#recensioner)
+  - [Gruppbokning](#gruppbokning)
+  - [Hästpass](#hästpass)
+  - [Dataexport](#dataexport)
   - [Notifikationer](#notifikationer)
 - [Guide för leverantörer](#guide-för-leverantörer)
   - [Komma igång som leverantör](#komma-igång-som-leverantör)
@@ -25,11 +28,14 @@
   - [Hantera tjänster](#hantera-tjänster)
   - [Tillgänglighet och schema](#tillgänglighet-och-schema)
   - [Hantera bokningar](#hantera-bokningar-leverantör)
+  - [Manuell bokning](#manuell-bokning)
   - [Ruttplanering](#ruttplanering)
   - [Annonsera rutter](#annonsera-rutter)
   - [Genomföra en rutt](#genomföra-en-rutt)
   - [Recensioner och betyg](#recensioner-och-betyg)
   - [Verifiering](#verifiering)
+  - [Gruppbokning (leverantör)](#gruppbokning-leverantör)
+  - [Bokföring (Fortnox)](#bokföring-fortnox)
   - [Hästens hälsotidslinje](#hästens-hälsotidslinje-leverantör)
   - [Notifikationer](#notifikationer-leverantör)
 
@@ -220,6 +226,66 @@ Omdömen visas publikt på leverantörens profil och hjälper andra hästägare 
 
 ---
 
+### Gruppbokning
+
+Om ni är flera hästägare på samma stall eller i samma område kan ni skapa en **grupprequest** och boka tillsammans. Det ger leverantören möjlighet att planera in alla i samma besök.
+
+**Skapa en grupprequest:**
+1. Gå till **Gruppbokning** i menyn
+2. Välj tjänstetyp (t.ex. "Hovbeläggning")
+3. Ange plats och ett datumintervall
+4. Systemet skapar en unik **inbjudningskod** (8 tecken)
+5. Dela koden med andra hästägare
+
+**Gå med i en grupp:**
+- Ange inbjudningskoden eller klicka på en delad länk
+- Fyll i information om din häst
+- Du ser hur många som redan gått med
+
+**Vad händer sen?**
+- Leverantörer ser öppna grupprequests i sitt område
+- När en leverantör matchar gruppen skapas individuella bokningar för alla deltagare
+- Du får en notifikation med datum, tid och leverantörsinformation
+
+Du kan lämna en grupp innan den matchats. Om du är den som skapade gruppen kan du även avbryta hela requesten.
+
+---
+
+### Hästpass
+
+Du kan skapa en **delbar länk** till din hästs profil och vårdhistorik -- ett digitalt hästpass.
+
+1. Gå till din hästs profil under **Mina hästar**
+2. Klicka **Skapa hästpass**
+3. En unik länk skapas som är giltig i 30 dagar
+4. Dela länken med veterinär, ny ägare eller försäkringsbolag
+
+**Vad visas i hästpasset:**
+- Hästens grunduppgifter (namn, ras, födelseår, kön, foto)
+- Vårdhistorik: veterinär, hovvård, skador och medicinering
+- Utskriftsvänlig layout
+
+**Integritetsskydd:** Privata anteckningar (kategorin "Övrigt") visas inte i hästpasset. Länken kräver ingen inloggning men upphör automatiskt efter 30 dagar.
+
+---
+
+### Dataexport
+
+Du har rätt att exportera all din personliga data (GDPR).
+
+1. Gå till **Min profil**
+2. Klicka **Exportera min data**
+3. Välj format: **JSON** eller **CSV**
+4. Filen laddas ner direkt
+
+**Exporten innehåller:**
+- Profilinformation (namn, e-post)
+- Alla bokningar med status och detaljer
+- Hästregister med anteckningar
+- Recensioner du skrivit
+
+---
+
 ### Notifikationer
 
 Du får notifikationer vid viktiga händelser. Klockikonen i menyraden visar antal olästa.
@@ -231,6 +297,8 @@ Du får notifikationer vid viktiga händelser. Klockikonen i menyraden visar ant
 - Leverantören svarar på ditt omdöme
 - Det är dags att boka om en tjänst (automatisk påminnelse)
 - En leverantör annonserar en rutt i ditt område
+- Någon går med i din grupprequest
+- En grupprequest matchas av en leverantör
 
 Klicka på en notifikation för att komma direkt till den aktuella bokningen eller sidan. Du kan markera enskilda eller alla notifikationer som lästa.
 
@@ -333,6 +401,21 @@ Under **Bokningar** ser du alla inkommande och befintliga bokningar.
 
 ---
 
+### Manuell bokning
+
+Du kan skapa bokningar åt kunder direkt från kalendervyn -- till exempel när en kund ringer och vill boka.
+
+1. Klicka på en dag i **Kalendern**
+2. Klicka **Ny bokning**
+3. Sök efter en befintlig kund (bland dina tidigare kunder) eller ange namn och telefonnummer för en ny kund
+4. Välj tjänst och tid från en dropdown med lediga 15-minutersintervall
+5. Välj häst (om kunden har registrerade hästar) eller ange hästinformation manuellt
+6. Bekräfta
+
+Manuellt skapade bokningar markeras med ett **M** i kalendern så du kan skilja dem från kundinitierade bokningar. De bekräftas automatiskt (hoppar över "väntar på svar"-steget).
+
+---
+
 ### Ruttplanering
 
 Ruttplaneringen hjälper dig att optimera din dag när du har flera besök.
@@ -426,6 +509,42 @@ Godkänd verifiering ger ett synligt märke på din profil som stärker förtroe
 
 ---
 
+### Gruppbokning (leverantör)
+
+Under **Grupprequests** ser du öppna grupprequests från stallgemenskaper i ditt serviceområde.
+
+**För varje request ser du:**
+- Tjänstetyp, plats och önskat datumintervall
+- Antal deltagare och deras hästar
+- Kontaktperson
+
+**Matcha en grupprequest:**
+1. Välj en öppen grupprequest
+2. Systemet skapar automatiskt individuella bokningar för alla deltagare i sekvens (t.ex. 09:00, 09:45, 10:30)
+3. Alla deltagare notifieras med sin individuella tid
+
+Det här är ett effektivt sätt att fylla en halv- eller heldag med bokningar på samma plats.
+
+---
+
+### Bokföring (Fortnox)
+
+Du kan koppla ditt Fortnox-konto för automatisk fakturering.
+
+1. Gå till **Inställningar** i leverantörsmenyn
+2. Klicka **Koppla Fortnox**
+3. Logga in med ditt Fortnox-konto (OAuth)
+4. Equinet kan nu skapa fakturor i Fortnox
+
+**Funktioner:**
+- Manuell synkning av osynkade bokningar till Fortnox-fakturor
+- Automatisk token-förnyelse (du behöver inte logga in igen)
+- Du kan koppla bort Fortnox när som helst
+
+Tokens lagras krypterat. Under utveckling/demo används en mock-implementation.
+
+---
+
 ### Hästens hälsotidslinje (leverantör)
 
 Som leverantör kan du se en begränsad hälsotidslinje för hästar som är kopplade till dina bokningar. Det ger dig viktig kontext inför ett besök.
@@ -451,6 +570,8 @@ Du får notifikationer vid viktiga händelser.
 - En kund avbokar
 - En kund betalar
 - En kund lämnar ett omdöme
+- En verifieringsansökan godkänns eller avvisas
+- En ny grupprequest skapas i ditt område
 
 Notifikationer visas i klockan i menyraden och skickas även via e-post.
 
@@ -474,6 +595,10 @@ Bokningen ligger kvar som "Väntar på svar". Du kan avboka och välja en annan 
 
 Om leverantören har angett ett rekommenderat återbesöksintervall (t.ex. 8 veckor för hovbeläggning) får du automatiskt en påminnelse via notifikation och e-post när det är dags att boka om.
 
+### Kan jag exportera min data?
+
+Ja. Under **Min profil** kan du exportera all din personliga data som JSON eller CSV. Exporten inkluderar profil, bokningar, hästar, anteckningar och recensioner. Detta uppfyller GDPR:s krav på dataportabilitet (artikel 20).
+
 ### Är min data säker?
 
-Equinet använder krypterade anslutningar, säker lösenordshantering (bcrypt) och validerar all indata. Känslig information som lösenord lagras aldrig i klartext.
+Equinet använder krypterade anslutningar, säker lösenordshantering (bcrypt) och validerar all indata. Känslig information som lösenord lagras aldrig i klartext. Du kan exportera och ta del av all data vi lagrar om dig.

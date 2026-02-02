@@ -1,9 +1,9 @@
 # Non-Functional Requirements (NFR)
 
 **Projekt**: Equinet - Bokningsplattform för hästtjänster
-**Version**: v1.3.0 (MVP)
-**Senast uppdaterad**: 2025-11-16
-**Status**: 🟡 Work in Progress (dokumenterar learnings från MVP)
+**Version**: v0.2.0+
+**Senast uppdaterad**: 2026-02-02
+**Status**: 🟡 Work in Progress
 
 ---
 
@@ -132,36 +132,18 @@ const providers = await prisma.provider.findMany({
 | Authorization checks | ✅ | Session + ownership checks |
 | GDPR-compliant API | ✅ | Email/phone ej exponerat (F-3.4) |
 
-### 2.2 Saknas för Produktion
+### 2.2 Säkerhet -- Implementeringsstatus
 
-**Kritiska (måste fixas innan prod):**
-- [ ] **Rate limiting**
-  - Max 100 requests/min per IP för publika endpoints
-  - Max 300 requests/min per authenticated user
-  - Tools: `express-rate-limit` eller Vercel Edge Middleware
+**Implementerat:**
+- [x] **Rate limiting** -- Upstash Redis (5/h login, 10/h bookings, 100/h publika endpoints)
+- [x] **HTTPS-only** -- Vercel automatiskt + HSTS via next.config.ts security headers
+- [x] **CSP Headers** -- Strict policy i next.config.ts (inkl. worker-src blob: för bildkomprimering)
+- [x] **Security Headers** -- X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin (via next.config.ts)
+- [x] **Password strength requirements** -- Implementerat (F-3.1)
+- [x] **Audit logging** -- logger.security() för känsliga operationer
 
-- [ ] **HTTPS-only**
-  - HSTS headers (Strict-Transport-Security)
-  - Redirect all HTTP → HTTPS
-  - Vercel gör detta automatiskt
-
-- [ ] **CSP Headers** (Content Security Policy)
-  ```typescript
-  'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
-  ```
-
-- [ ] **Security Headers**
-  ```typescript
-  'X-Frame-Options': 'DENY',
-  'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'strict-origin-when-cross-origin'
-  ```
-
-**Nice-to-have:**
+**Kvarstår:**
 - [ ] 2FA för provider-konton
-- [ ] Password strength requirements (redan implementerat F-3.1)
-- [ ] Audit logging för känsliga operationer (bookings, cancellations)
 - [ ] Automated security scanning (Snyk, Dependabot)
 
 ### 2.3 GDPR Compliance
@@ -170,10 +152,13 @@ const providers = await prisma.provider.findMany({
 - ✅ Minimering av personuppgifter (email/phone ej i publikt API)
 - ✅ Bcrypt hashing av lösenord
 
-**Saknas:**
+**Implementerat:**
+- [x] User data export (GDPR Article 20) -- /api/export/my-data (JSON + CSV)
+- [x] Horse data export -- /api/horses/[id]/export
+
+**Kvarstår:**
 - [ ] Privacy Policy
 - [ ] Cookie consent banner
-- [ ] User data export (GDPR Article 20)
 - [ ] User data deletion ("right to be forgotten")
 - [ ] Data retention policy
 
@@ -265,8 +250,8 @@ test('should be accessible', async ({ page }) => {
 | API 4xx errors | <5% | <10% | ⚠️ Ej mätt |
 | Client errors (crashes) | <0.1% | <1% | ⚠️ Ej mätt |
 
-**Monitoring (saknas för MVP):**
-- [ ] Sentry för error tracking
+**Monitoring:**
+- [x] Sentry för error tracking
 - [ ] Vercel Analytics för performance monitoring
 - [ ] Custom metrics dashboard (Grafana eller Vercel)
 
@@ -333,9 +318,9 @@ const { retry, retryCount, isRetrying, canRetry } = useRetry({
 | **Hooks** | 80% | 70% | ✅ 100% (useRetry) |
 | **Components** | 60% | 50% | 🟡 ~40% |
 
-**Nuvarande status (2025-11-16):**
-- ✅ 162/162 unit tests passing
-- ✅ 44/47 E2E tests passing (2 skipped, 1 pre-existing failure)
+**Nuvarande status (2026-02-02):**
+- ✅ 1144/1144 unit/integration tests passing
+- ✅ 66 E2E tests passing
 
 **Coverage command:**
 ```bash
@@ -361,7 +346,7 @@ npm run test:coverage
 
 **Verification:**
 ```bash
-npx tsc --noEmit
+npm run typecheck
 # Output: No errors ✅
 ```
 
@@ -382,10 +367,10 @@ npx tsc --noEmit
 
 ### 5.4 Code Style & Linting
 
-**Tools (saknas för MVP):**
-- [ ] ESLint konfiguration
+**Tools:**
+- [x] ESLint konfiguration (flat config, eslint.config.mjs)
 - [ ] Prettier konfiguration
-- [ ] Husky pre-commit hooks
+- [x] Husky pre-push hook (test:run, typecheck, check:swedish, lint)
 - [ ] lint-staged för staged files
 
 **Kommando:**
@@ -403,9 +388,9 @@ npm run format      # Kör Prettier
 - [ ] **Deprecated packages**: Replace inom 3 månader
 
 **Current dependencies:**
-- Next.js 15.5.0 ✅ (uppgraderat från 15.0.3, fixade manifest bug)
+- Next.js 16.1.4 ✅
 - Prisma 6.19.0 ✅
-- NextAuth 4.x ✅
+- NextAuth v5 (beta.30) ✅
 - React 19 ✅
 
 ### 5.6 Documentation Standards
@@ -532,8 +517,8 @@ desktop: 1024px+
 - [x] Password hashing (bcrypt)
 - [x] Input validation (Zod)
 - [x] GDPR-compliant API (no email/phone exposure)
-- [ ] Rate limiting
-- [ ] HTTPS-only + Security headers
+- [x] Rate limiting (Upstash Redis)
+- [x] HTTPS-only + Security headers (next.config.ts)
 - [ ] Security audit (Snyk/Dependabot)
 
 **Reliability:**
@@ -546,8 +531,8 @@ desktop: 1024px+
 - [x] TypeScript strict mode
 - [x] Unit tests (≥70% coverage)
 - [x] E2E tests (critical flows)
-- [ ] ESLint + Prettier
-- [ ] Pre-commit hooks
+- [x] ESLint (flat config)
+- [x] Pre-push hooks (Husky)
 
 ### Should-Have (viktigt men ej blockerande)
 
@@ -557,7 +542,7 @@ desktop: 1024px+
 - [ ] Keyboard navigation testing
 
 **Monitoring:**
-- [ ] APM tool (Sentry)
+- [x] APM tool (Sentry)
 - [ ] Business metrics dashboard
 - [ ] Alerting rules
 
@@ -598,28 +583,5 @@ desktop: 1024px+
 
 ---
 
-## 🚀 Roadmap - NFR Improvements
-
-### Sprint 2 (Q1 2025)
-- [ ] Implementera rate limiting
-- [ ] Lägg till security headers
-- [ ] Setup Sentry för error tracking
-- [ ] ESLint + Prettier konfiguration
-
-### Sprint 3 (Q1 2025)
-- [ ] WCAG AA compliance audit & fixes
-- [ ] Automated backups
-- [ ] Load testing & performance tuning
-- [ ] Pagination för provider-lista
-
-### Sprint 4 (Q2 2025)
-- [ ] 2FA för providers
-- [ ] Caching strategy implementation
-- [ ] Advanced monitoring dashboard
-- [ ] Disaster recovery testing
-
----
-
 **Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2025-11-16
-**Nästa granskning**: 2025-12-01
+**Senast granskad**: 2026-02-02

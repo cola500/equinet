@@ -22,7 +22,7 @@
 **Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad pa hastprofil (foto) och leverantorsprofil (profilbild)
 **Bokforing:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
 **Manuell bokning:** Provider kan skapa bokningar at kunder (ghost user-pattern), kundsok begransad till egna kunder, hast-dropdown, steg-for-steg dialog, "M"-indikator i kalender, audit trail
-**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 920+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
+**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1210+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
 
@@ -77,7 +77,6 @@ TIER 1 (oberoende, kan göras parallellt)
 └── F-1.2: Förbättrad ruttoptimering (kräver D-5)
 
 TIER 2 (oberoende av varandra)
-├── Bilduppladdning (kräver D-6)
 ├── Betalningsintegration
 └── Push/SMS-notifikationer (kräver D-4)
 
