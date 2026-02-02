@@ -7,8 +7,14 @@ const mockFetch = vi.fn()
 global.fetch = mockFetch
 
 describe("CustomerBookingCalendar", () => {
-  // Use a future date for testing (next week from "today")
-  const FUTURE_MONDAY = "2026-02-02"
+  // Dynamically calculate a Monday that is always in the future
+  // so that slots like 09:00 are never filtered out as "past"
+  const getNextMonday = () => {
+    const d = new Date()
+    d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7))
+    return d.toISOString().slice(0, 10)
+  }
+  const FUTURE_MONDAY = getNextMonday()
 
   beforeEach(() => {
     mockFetch.mockReset()
@@ -178,8 +184,10 @@ describe("CustomerBookingCalendar", () => {
   })
 
   it("shows closed days correctly", async () => {
-    // Sunday of the week starting 2026-02-02 is 2026-02-08
-    const FUTURE_SUNDAY = "2026-02-08"
+    // Sunday of the same week as FUTURE_MONDAY (+6 days)
+    const sundayDate = new Date(FUTURE_MONDAY)
+    sundayDate.setDate(sundayDate.getDate() + 6)
+    const FUTURE_SUNDAY = sundayDate.toISOString().slice(0, 10)
     mockFetch.mockImplementation((url: string) => {
       const date = url.match(/date=(\d{4}-\d{2}-\d{2})/)?.[1] || FUTURE_MONDAY
       // Make Sunday closed
