@@ -25,8 +25,27 @@ test.describe('Customer Profile', () => {
     await expect(page.getByText(/e-post/i)).toBeVisible();
     await expect(page.getByText('test@example.com')).toBeVisible();
 
+    // Verifiera stall-sektion (inte "Min plats")
+    await expect(page.getByText('Mitt stall')).toBeVisible();
+    await expect(page.getByText('Stalladress', { exact: true })).toBeVisible();
+    await expect(page.getByText(/adressen dit leverantören åker/i)).toBeVisible();
+
     // Verifiera att redigera-knappen finns
     await expect(page.getByRole('button', { name: /redigera profil/i })).toBeVisible();
+  });
+
+  test('should show stable labels in edit mode', async ({ page }) => {
+    // Gå till redigeringsläge
+    await page.getByRole('button', { name: /redigera profil/i }).click();
+    await expect(page.getByLabel(/förnamn/i)).toBeVisible({ timeout: 5000 });
+
+    // Verifiera stall-sektion i redigeringsläge
+    await expect(page.getByText('Mitt stall')).toBeVisible();
+    await expect(page.getByLabel('Stalladress')).toBeVisible();
+    await expect(page.getByText(/stallets adress så leverantören kan beräkna restid/i)).toBeVisible();
+
+    // Verifiera placeholder
+    await expect(page.getByLabel('Stalladress')).toHaveAttribute('placeholder', 'Stallvägen 1');
   });
 
   test('should edit profile information', async ({ page }) => {

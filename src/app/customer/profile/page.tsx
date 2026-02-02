@@ -125,7 +125,7 @@ export default function CustomerProfilePage() {
 
   const handleGeocode = async () => {
     if (!formData.address && !formData.city) {
-      toast.error("Ange adress eller ort för att hitta koordinater")
+      toast.error("Ange stallets adress eller ort för att hitta koordinater")
       return
     }
 
@@ -220,13 +220,13 @@ export default function CustomerProfilePage() {
                     <p className="font-medium">{profile.phone || "Ej angiven"}</p>
                   </div>
                   <div className="border-t pt-4 mt-4">
-                    <Label className="text-sm text-gray-600">Min plats</Label>
+                    <Label className="text-sm text-gray-600">Mitt stall</Label>
                     <p className="text-xs text-gray-500 mb-2">
-                      Används för att matcha dig med leverantörer i ditt område
+                      Adressen dit leverantören åker för att utföra tjänsten
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm text-gray-600">Adress</Label>
+                    <Label className="text-sm text-gray-600">Stalladress</Label>
                     <p className="font-medium">{profile.address || "Ej angiven"}</p>
                   </div>
                   <div>
@@ -299,21 +299,21 @@ export default function CustomerProfilePage() {
                   </div>
 
                   <div className="border-t pt-4 mt-4">
-                    <Label className="text-sm font-medium">Min plats</Label>
+                    <Label className="text-sm font-medium">Mitt stall</Label>
                     <p className="text-xs text-gray-500 mb-3">
-                      Ange din adress för att hitta leverantörer nära dig
+                      Ange stallets adress så leverantören kan beräkna restid
                     </p>
                   </div>
 
                   <div>
-                    <Label htmlFor="address">Adress</Label>
+                    <Label htmlFor="address">Stalladress</Label>
                     <Input
                       id="address"
                       value={formData.address}
                       onChange={(e) =>
                         setFormData({ ...formData, address: e.target.value })
                       }
-                      placeholder="Storgatan 1"
+                      placeholder="Stallvägen 1"
                     />
                   </div>
 
