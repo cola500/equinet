@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
+import { useHorses as useSWRHorses } from "@/hooks/useHorses"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -76,8 +77,7 @@ const emptyForm = {
 export default function CustomerHorsesPage() {
   const router = useRouter()
   const { isLoading: authLoading, isCustomer } = useAuth()
-  const [horses, setHorses] = useState<Horse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { horses, isLoading, mutate: mutateHorses } = useSWRHorses()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingHorse, setEditingHorse] = useState<Horse | null>(null)
   const [formData, setFormData] = useState(emptyForm)
@@ -88,27 +88,6 @@ export default function CustomerHorsesPage() {
       router.push("/login")
     }
   }, [isCustomer, authLoading, router])
-
-  const fetchHorses = useCallback(async () => {
-    try {
-      const response = await fetch("/api/horses")
-      if (response.ok) {
-        const data = await response.json()
-        setHorses(data)
-      }
-    } catch (error) {
-      console.error("Error fetching horses:", error)
-      toast.error("Kunde inte hämta hästar")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (isCustomer) {
-      fetchHorses()
-    }
-  }, [isCustomer, fetchHorses])
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,7 +115,7 @@ export default function CustomerHorsesPage() {
       toast.success("Hästen har lagts till!")
       setAddDialogOpen(false)
       setFormData(emptyForm)
-      fetchHorses()
+      mutateHorses()
     } catch (error) {
       console.error("Error adding horse:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte lägga till häst")
@@ -172,7 +151,7 @@ export default function CustomerHorsesPage() {
       toast.success("Hästen har uppdaterats!")
       setEditingHorse(null)
       setFormData(emptyForm)
-      fetchHorses()
+      mutateHorses()
     } catch (error) {
       console.error("Error updating horse:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte uppdatera häst")
@@ -192,7 +171,7 @@ export default function CustomerHorsesPage() {
       }
 
       toast.success(`${horse.name} har tagits bort`)
-      fetchHorses()
+      mutateHorses()
     } catch (error) {
       console.error("Error deleting horse:", error)
       toast.error("Kunde inte ta bort häst")
@@ -278,13 +257,7 @@ export default function CustomerHorsesPage() {
                     bucket="horses"
                     entityId={horse.id}
                     currentUrl={horse.photoUrl}
-                    onUploaded={(url) =>
-                      setHorses((prev) =>
-                        prev.map((h) =>
-                          h.id === horse.id ? { ...h, photoUrl: url } : h
-                        )
-                      )
-                    }
+                    onUploaded={() => mutateHorses()}
                     variant="square"
                     className="w-20 flex-shrink-0"
                   />

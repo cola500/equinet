@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -104,13 +105,27 @@ type CombinedBooking = Booking | RouteOrder
 export default function CustomerBookingsPage() {
   const router = useRouter()
   const { isLoading, isCustomer } = useAuth()
-  const [bookings, setBookings] = useState<CombinedBooking[]>([])
+  const { data: regularBookings, error: bookingsError, isLoading: isLoadingSWRBookings, mutate: mutateBookings } =
+    useSWR<Booking[]>(isCustomer ? "/api/bookings" : null)
+  const { data: routeOrders, error: routeOrdersError, isLoading: isLoadingRouteOrders, mutate: mutateRouteOrders } =
+    useSWR<RouteOrder[]>(isCustomer ? "/api/route-orders/my-orders" : null)
+
+  const isLoadingBookings = isLoadingSWRBookings || isLoadingRouteOrders
+  const error = (bookingsError && routeOrdersError)
+    ? "Kunde inte hämta bokningar"
+    : null
+
+  const bookings: CombinedBooking[] = [
+    ...(regularBookings ?? []).map(b => ({ ...b, type: "fixed" as const })),
+    ...(routeOrders ?? []).map(r => ({ ...r, type: "flexible" as const })),
+  ]
+
+  const mutateAll = () => { mutateBookings(); mutateRouteOrders() }
+
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("upcoming")
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoadingBookings, setIsLoadingBookings] = useState(true)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
 
@@ -119,46 +134,6 @@ export default function CustomerBookingsPage() {
       router.push("/login")
     }
   }, [isCustomer, isLoading, router])
-
-  useEffect(() => {
-    if (isCustomer) {
-      fetchBookings()
-    }
-  }, [isCustomer])
-
-  const fetchBookings = async () => {
-    try {
-      setIsLoadingBookings(true)
-      setError(null)
-
-      // Fetch both regular bookings and route orders
-      const [bookingsRes, routeOrdersRes] = await Promise.all([
-        fetch("/api/bookings"),
-        fetch("/api/route-orders/my-orders")
-      ])
-
-      if (!bookingsRes.ok && !routeOrdersRes.ok) {
-        setError("Kunde inte hämta bokningar")
-        return
-      }
-
-      const regularBookings: Booking[] = bookingsRes.ok ? await bookingsRes.json() : []
-      const routeOrders: RouteOrder[] = routeOrdersRes.ok ? await routeOrdersRes.json() : []
-
-      // Add type field to distinguish between booking types
-      const combinedBookings: CombinedBooking[] = [
-        ...regularBookings.map(b => ({ ...b, type: "fixed" as const })),
-        ...routeOrders.map(r => ({ ...r, type: "flexible" as const }))
-      ]
-
-      setBookings(combinedBookings)
-    } catch (error) {
-      console.error("Error fetching bookings:", error)
-      setError("Något gick fel. Kontrollera din internetanslutning.")
-    } finally {
-      setIsLoadingBookings(false)
-    }
-  }
 
   const handleCancelBooking = async () => {
     if (!bookingToCancel) return
@@ -179,7 +154,7 @@ export default function CustomerBookingsPage() {
 
       toast.success("Bokningen har avbokats")
       setBookingToCancel(null)
-      fetchBookings() // Refresh the list
+      mutateAll() // Refresh the list
     } catch (error) {
       console.error("Error cancelling booking:", error)
       toast.error("Kunde inte avboka bokningen")
@@ -204,7 +179,7 @@ export default function CustomerBookingsPage() {
       }
 
       toast.success("Betalning genomförd!")
-      fetchBookings() // Refresh the list
+      mutateAll() // Refresh the list
     } catch (error) {
       console.error("Error processing payment:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte genomföra betalningen")
@@ -223,7 +198,7 @@ export default function CustomerBookingsPage() {
         throw new Error("Failed to delete review")
       }
       toast.success("Recension borttagen")
-      fetchBookings()
+      mutateAll()
     } catch (error) {
       console.error("Error deleting review:", error)
       toast.error("Kunde inte ta bort recensionen")
@@ -359,7 +334,7 @@ export default function CustomerBookingsPage() {
                 Något gick fel
               </h3>
               <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={fetchBookings}>Försök igen</Button>
+              <Button onClick={() => mutateAll()}>Försök igen</Button>
             </CardContent>
           </Card>
         ) : isLoadingBookings ? (
@@ -714,7 +689,7 @@ export default function CustomerBookingsPage() {
           existingReview={reviewBooking.review || undefined}
           onSuccess={() => {
             setReviewBooking(null)
-            fetchBookings()
+            mutateAll()
           }}
         />
       )}

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, format } from "date-fns"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
+import { useBookings as useSWRBookings } from "@/hooks/useBookings"
+import { useServices } from "@/hooks/useServices"
+import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CalendarHeader, ViewMode } from "@/components/calendar/CalendarHeader"
 import { WeekCalendar } from "@/components/calendar/WeekCalendar"
@@ -32,12 +35,15 @@ export default function ProviderCalendarPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const isMobile = useIsMobile()
+  const { bookings: rawBookings, mutate: mutateBookings } = useSWRBookings()
+  const bookings = rawBookings as unknown as CalendarBooking[]
+  const { services: allServices } = useServices()
+  const services = allServices.filter((s) => s.isActive)
+  const { providerId } = useProviderProfile()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
-  const [bookings, setBookings] = useState<CalendarBooking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [providerId, setProviderId] = useState<string | null>(null)
   const [availability, setAvailability] = useState<AvailabilityDay[]>([])
   const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false)
   const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(null)
@@ -45,7 +51,6 @@ export default function ProviderCalendarPage() {
   const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [manualBookingOpen, setManualBookingOpen] = useState(false)
-  const [services, setServices] = useState<{ id: string; name: string; price: number; durationMinutes: number }[]>([])
 
   // Sätt dagvy som default på mobil
   useEffect(() => {
@@ -59,19 +64,6 @@ export default function ProviderCalendarPage() {
       router.push("/login")
     }
   }, [isProvider, isLoading, router])
-
-  // Hämta provider-profil för att få provider-ID
-  const fetchProviderProfile = useCallback(async () => {
-    try {
-      const response = await fetch("/api/provider/profile")
-      if (response.ok) {
-        const data = await response.json()
-        setProviderId(data.id)
-      }
-    } catch (error) {
-      console.error("Error fetching provider profile:", error)
-    }
-  }, [])
 
   // Hämta öppettider
   const fetchAvailability = useCallback(async () => {
@@ -128,40 +120,6 @@ export default function ProviderCalendarPage() {
       console.error("Error fetching exceptions:", error)
     }
   }, [providerId, currentDate])
-
-  // Hämta leverantörens tjänster (för manuell bokning)
-  const fetchServices = useCallback(async () => {
-    try {
-      const response = await fetch("/api/services")
-      if (response.ok) {
-        const data = await response.json()
-        setServices(data.filter((s: { isActive: boolean }) => s.isActive))
-      }
-    } catch (error) {
-      console.error("Error fetching services:", error)
-    }
-  }, [])
-
-  const fetchBookings = useCallback(async () => {
-    try {
-      const response = await fetch("/api/bookings")
-      if (response.ok) {
-        const data = await response.json()
-        setBookings(data)
-      }
-    } catch (error) {
-      console.error("Error fetching bookings:", error)
-      toast.error("Kunde inte hämta bokningar")
-    }
-  }, [])
-
-  useEffect(() => {
-    if (isProvider) {
-      fetchProviderProfile()
-      fetchBookings()
-      fetchServices()
-    }
-  }, [isProvider, fetchProviderProfile, fetchBookings, fetchServices])
 
   useEffect(() => {
     if (providerId) {
@@ -304,7 +262,7 @@ export default function ProviderCalendarPage() {
 
       toast.success("Bokning uppdaterad!")
       setDialogOpen(false)
-      fetchBookings()
+      mutateBookings()
     } catch (error) {
       console.error("Error updating booking:", error)
       toast.error("Kunde inte uppdatera bokning")
@@ -462,7 +420,7 @@ export default function ProviderCalendarPage() {
         onOpenChange={setManualBookingOpen}
         services={services}
         bookings={bookings}
-        onBookingCreated={fetchBookings}
+        onBookingCreated={() => mutateBookings()}
       />
     </ProviderLayout>
   )

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useBookings as useSWRBookings } from "@/hooks/useBookings"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
@@ -53,7 +54,8 @@ interface Booking {
 export default function ProviderBookingsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const { bookings: rawBookings, mutate: mutateBookings } = useSWRBookings()
+  const bookings = rawBookings as unknown as Booking[]
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("pending")
 
   useEffect(() => {
@@ -61,25 +63,6 @@ export default function ProviderBookingsPage() {
       router.push("/login")
     }
   }, [isProvider, isLoading, router])
-
-  useEffect(() => {
-    if (isProvider) {
-      fetchBookings()
-    }
-  }, [isProvider])
-
-  const fetchBookings = async () => {
-    try {
-      const response = await fetch("/api/bookings")
-      if (response.ok) {
-        const data = await response.json()
-        setBookings(data)
-      }
-    } catch (error) {
-      console.error("Error fetching bookings:", error)
-      toast.error("Kunde inte hämta bokningar")
-    }
-  }
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
     try {
@@ -96,7 +79,7 @@ export default function ProviderBookingsPage() {
       }
 
       toast.success("Bokning uppdaterad!")
-      fetchBookings()
+      mutateBookings()
 
       // Automatically switch to the appropriate filter after status update
       if (status === "confirmed") {

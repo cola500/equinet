@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useServices } from "@/hooks/useServices"
+import { useBookings as useSWRBookings } from "@/hooks/useBookings"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,8 +18,8 @@ import { StarRating } from "@/components/review/StarRating"
 export default function ProviderDashboard() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [services, setServices] = useState([])
-  const [bookings, setBookings] = useState([])
+  const { services, isLoading: isLoadingServices } = useServices()
+  const { bookings, isLoading: isLoadingBookings } = useSWRBookings()
   const [routes, setRoutes] = useState([])
   const [availableRouteOrders, setAvailableRouteOrders] = useState([])
   const [error, setError] = useState<string | null>(null)
@@ -50,8 +52,6 @@ export default function ProviderDashboard() {
     setError(null)
     try {
       await Promise.all([
-        fetchServices(),
-        fetchBookings(),
         fetchRoutes(),
         fetchAvailableRouteOrders(),
         fetchReviewStats(),
@@ -61,26 +61,6 @@ export default function ProviderDashboard() {
       setError("Kunde inte hämta data. Kontrollera din internetanslutning.")
     } finally {
       setIsLoadingData(false)
-    }
-  }
-
-  const fetchServices = async () => {
-    const response = await fetch("/api/services")
-    if (response.ok) {
-      const data = await response.json()
-      setServices(data)
-    } else {
-      throw new Error("Failed to fetch services")
-    }
-  }
-
-  const fetchBookings = async () => {
-    const response = await fetch("/api/bookings")
-    if (response.ok) {
-      const data = await response.json()
-      setBookings(data)
-    } else {
-      throw new Error("Failed to fetch bookings")
     }
   }
 
@@ -147,7 +127,7 @@ export default function ProviderDashboard() {
             canRetry={canRetry}
             showContactSupport={retryCount >= 3}
           />
-        ) : isLoadingData ? (
+        ) : (isLoadingData || isLoadingServices || isLoadingBookings) ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
             <p className="mt-4 text-gray-600">Laddar dashboard...</p>

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { SWRProvider } from "@/components/providers/SWRProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from "@/components/layout/Footer";
 
@@ -24,13 +25,15 @@ export default function RootLayout({
     <html lang="sv">
       <body className={`${inter.className} antialiased`}>
         <SessionProvider>
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
-          <Toaster />
+          <SWRProvider>
+            <div className="min-h-screen flex flex-col">
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            <Toaster />
+          </SWRProvider>
         </SessionProvider>
       </body>
     </html>

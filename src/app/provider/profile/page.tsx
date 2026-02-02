@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -37,7 +38,8 @@ interface ProviderProfile {
 export default function ProviderProfilePage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [profile, setProfile] = useState<ProviderProfile | null>(null)
+  const { profile: swrProfile, mutate: mutateProfile } = useProviderProfile()
+  const profile = swrProfile as ProviderProfile | null
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
   const [isEditingBusiness, setIsEditingBusiness] = useState(false)
 
@@ -66,40 +68,27 @@ export default function ProviderProfilePage() {
     }
   }, [isProvider, isLoading, router])
 
+  // Sync form state when SWR profile data arrives or changes
   useEffect(() => {
-    if (isProvider) {
-      fetchProfile()
+    if (profile) {
+      setPersonalData({
+        firstName: profile.user.firstName,
+        lastName: profile.user.lastName,
+        phone: profile.user.phone || "",
+      })
+      setBusinessData({
+        businessName: profile.businessName,
+        description: profile.description || "",
+        address: profile.address || "",
+        city: profile.city || "",
+        postalCode: profile.postalCode || "",
+        serviceArea: profile.serviceArea || "",
+        latitude: profile.latitude ?? null,
+        longitude: profile.longitude ?? null,
+        serviceAreaKm: profile.serviceAreaKm ?? null,
+      })
     }
-  }, [isProvider])
-
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch("/api/provider/profile")
-      if (response.ok) {
-        const data = await response.json()
-        setProfile(data)
-        setPersonalData({
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          phone: data.user.phone || "",
-        })
-        setBusinessData({
-          businessName: data.businessName,
-          description: data.description || "",
-          address: data.address || "",
-          city: data.city || "",
-          postalCode: data.postalCode || "",
-          serviceArea: data.serviceArea || "",
-          latitude: data.latitude ?? null,
-          longitude: data.longitude ?? null,
-          serviceAreaKm: data.serviceAreaKm ?? null,
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error)
-      toast.error("Kunde inte hämta profil")
-    }
-  }
+  }, [profile])
 
   const handlePersonalSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,7 +112,7 @@ export default function ProviderProfilePage() {
 
       setIsEditingPersonal(false)
       toast.success("Personlig information uppdaterad!")
-      fetchProfile()
+      mutateProfile()
     } catch (error) {
       console.error("Error updating personal profile:", error)
       toast.error("Kunde inte uppdatera personlig information")
@@ -158,7 +147,7 @@ export default function ProviderProfilePage() {
 
       setIsEditingBusiness(false)
       toast.success("Företagsinformation uppdaterad!")
-      fetchProfile()
+      mutateProfile()
     } catch (error) {
       console.error("Error updating business profile:", error)
       toast.error("Kunde inte uppdatera företagsinformation")
@@ -338,7 +327,7 @@ export default function ProviderProfilePage() {
                 bucket="avatars"
                 entityId={profile.id}
                 currentUrl={profile.profileImageUrl}
-                onUploaded={(url) => setProfile({ ...profile, profileImageUrl: url })}
+                onUploaded={() => mutateProfile()}
                 variant="circle"
                 className="w-32"
               />

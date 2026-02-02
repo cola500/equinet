@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,7 +21,7 @@ import { toast } from "sonner"
 export default function ProviderReviewsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [providerId, setProviderId] = useState<string | null>(null)
+  const { providerId, isLoading: isLoadingProfile } = useProviderProfile()
   const [reviewStats, setReviewStats] = useState<{
     averageRating: number | null
     totalCount: number
@@ -38,22 +39,16 @@ export default function ProviderReviewsPage() {
   }, [isProvider, isLoading, router])
 
   useEffect(() => {
-    if (isProvider) {
-      fetchData()
+    if (providerId) {
+      fetchReviewStats()
     }
-  }, [isProvider])
+  }, [providerId])
 
-  const fetchData = async () => {
+  const fetchReviewStats = async () => {
+    if (!providerId) return
     setIsLoadingData(true)
     try {
-      const profileRes = await fetch("/api/profile")
-      if (!profileRes.ok) return
-      const profile = await profileRes.json()
-      if (!profile.providerId) return
-
-      setProviderId(profile.providerId)
-
-      const reviewsRes = await fetch(`/api/providers/${profile.providerId}/reviews?limit=1`)
+      const reviewsRes = await fetch(`/api/providers/${providerId}/reviews?limit=1`)
       if (reviewsRes.ok) {
         const data = await reviewsRes.json()
         setReviewStats({
@@ -143,7 +138,7 @@ export default function ProviderReviewsPage() {
         )}
       </div>
 
-      {isLoadingData ? (
+      {(isLoadingData || isLoadingProfile) ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
           <p className="mt-4 text-gray-600">Laddar recensioner...</p>

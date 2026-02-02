@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useServices } from "@/hooks/useServices"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,7 +17,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 interface Service {
   id: string
   name: string
-  description?: string
+  description?: string | null
   price: number
   durationMinutes: number
   isActive: boolean
@@ -36,7 +37,7 @@ const INTERVAL_OPTIONS = [
 export default function ProviderServicesPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [services, setServices] = useState<Service[]>([])
+  const { services, mutate: mutateServices } = useServices()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [formData, setFormData] = useState({
@@ -52,25 +53,6 @@ export default function ProviderServicesPage() {
       router.push("/login")
     }
   }, [isProvider, isLoading, router])
-
-  useEffect(() => {
-    if (isProvider) {
-      fetchServices()
-    }
-  }, [isProvider])
-
-  const fetchServices = async () => {
-    try {
-      const response = await fetch("/api/services")
-      if (response.ok) {
-        const data = await response.json()
-        setServices(data)
-      }
-    } catch (error) {
-      console.error("Error fetching services:", error)
-      toast.error("Kunde inte hämta tjänster")
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,7 +98,7 @@ export default function ProviderServicesPage() {
 
       setIsDialogOpen(false)
       resetForm()
-      fetchServices()
+      mutateServices()
     } catch (error) {
       console.error("Error saving service:", error)
       toast.error("Kunde inte spara tjänst")
@@ -150,7 +132,7 @@ export default function ProviderServicesPage() {
       }
 
       toast.success("Tjänst borttagen!")
-      fetchServices()
+      mutateServices()
     } catch (error) {
       console.error("Error deleting service:", error)
       toast.error("Kunde inte ta bort tjänst")
@@ -190,7 +172,7 @@ export default function ProviderServicesPage() {
       toast.success(
         service.isActive ? "Tjänst inaktiverad" : "Tjänst aktiverad"
       )
-      fetchServices()
+      mutateServices()
     } catch (error) {
       console.error("Error toggling service:", error)
       toast.error("Kunde inte uppdatera tjänst")
