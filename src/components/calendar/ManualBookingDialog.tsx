@@ -1,0 +1,544 @@
+"use client"
+
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import type { CalendarBooking } from "@/types"
+
+interface Service {
+  id: string
+  name: string
+  price: number
+  durationMinutes: number
+}
+
+interface CustomerResult {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+}
+
+interface HorseResult {
+  id: string
+  name: string
+  breed?: string
+  birthYear?: number
+  gender?: string
+}
+
+interface ManualBookingDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  services: Service[]
+  bookings?: CalendarBooking[]
+  onBookingCreated: () => void
+}
+
+export function ManualBookingDialog({
+  open,
+  onOpenChange,
+  services,
+  bookings,
+  onBookingCreated,
+}: ManualBookingDialogProps) {
+  // Form state
+  const [serviceId, setServiceId] = useState("")
+  const [bookingDate, setBookingDate] = useState("")
+  const [startTime, setStartTime] = useState("")
+  const [endTime, setEndTime] = useState("")
+
+  // Customer state
+  const [customerMode, setCustomerMode] = useState<"search" | "manual">("search")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<CustomerResult[]>([])
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResult | null>(null)
+  const [customerName, setCustomerName] = useState("")
+  const [customerPhone, setCustomerPhone] = useState("")
+  const [customerEmail, setCustomerEmail] = useState("")
+
+  // Horse state
+  const [horses, setHorses] = useState<HorseResult[]>([])
+  const [selectedHorseId, setSelectedHorseId] = useState("")
+  const [horseName, setHorseName] = useState("")
+  const [horseInfo, setHorseInfo] = useState("")
+
+  // Other
+  const [customerNotes, setCustomerNotes] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Auto-calculate end time from service duration
+  useEffect(() => {
+    if (serviceId && startTime) {
+      const service = services.find((s) => s.id === serviceId)
+      if (service) {
+        const [hours, minutes] = startTime.split(":").map(Number)
+        const totalMinutes = hours * 60 + minutes + service.durationMinutes
+        const endHours = Math.floor(totalMinutes / 60)
+        const endMins = totalMinutes % 60
+        setEndTime(
+          `${String(endHours).padStart(2, "0")}:${String(endMins).padStart(2, "0")}`
+        )
+      }
+    }
+  }, [serviceId, startTime, services])
+
+  // Search customers (debounced)
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([])
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const response = await fetch(
+          `/api/customers/search?q=${encodeURIComponent(searchQuery)}`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setSearchResults(data)
+        }
+      } catch {
+        // Silently handle search errors
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Fetch horses when customer is selected
+  const fetchHorses = useCallback(async (customerId: string) => {
+    try {
+      const response = await fetch(`/api/customers/${customerId}/horses`)
+      if (response.ok) {
+        const data = await response.json()
+        setHorses(data)
+      }
+    } catch {
+      // Silently handle - horse dropdown will just be empty
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      fetchHorses(selectedCustomer.id)
+    } else {
+      setHorses([])
+    }
+  }, [selectedCustomer, fetchHorses])
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setServiceId("")
+      setBookingDate("")
+      setStartTime("")
+      setEndTime("")
+      setCustomerMode("search")
+      setSearchQuery("")
+      setSearchResults([])
+      setSelectedCustomer(null)
+      setCustomerName("")
+      setCustomerPhone("")
+      setCustomerEmail("")
+      setHorses([])
+      setSelectedHorseId("")
+      setHorseName("")
+      setHorseInfo("")
+      setCustomerNotes("")
+    }
+  }, [open])
+
+  // Bookings for the selected day (excluding cancelled)
+  const dayBookings = useMemo(() => {
+    if (!bookingDate || !bookings) return []
+    return bookings
+      .filter(b => b.bookingDate.startsWith(bookingDate))
+      .filter(b => b.status !== "cancelled")
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+  }, [bookingDate, bookings])
+
+  // Overlap warning
+  const hasOverlap = useMemo(() => {
+    if (!startTime || !endTime || !dayBookings.length) return false
+    return dayBookings.some(b =>
+      startTime < b.endTime && endTime > b.startTime
+    )
+  }, [startTime, endTime, dayBookings])
+
+  const handleSelectCustomer = (customer: CustomerResult) => {
+    setSelectedCustomer(customer)
+    setSearchQuery("")
+    setSearchResults([])
+  }
+
+  const handleSubmit = async () => {
+    if (!serviceId || !bookingDate || !startTime) {
+      toast.error("Fyll i tjänst, datum och starttid")
+      return
+    }
+
+    if (customerMode === "search" && !selectedCustomer) {
+      toast.error("Välj en kund eller byt till manuell inmatning")
+      return
+    }
+
+    if (customerMode === "manual" && !customerName.trim()) {
+      toast.error("Ange kundens namn")
+      return
+    }
+
+    if (customerMode === "manual" && customerPhone.trim()) {
+      if (!/^(\+46|0)\d[\d\s-]{5,15}$/.test(customerPhone.trim())) {
+        toast.error("Ogiltigt telefonnummer. Använd format: 0701234567 eller +46701234567")
+        return
+      }
+    }
+
+    if (customerMode === "manual" && customerEmail.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+        toast.error("Ogiltig emailadress")
+        return
+      }
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const body: Record<string, unknown> = {
+        serviceId,
+        bookingDate,
+        startTime,
+        endTime: endTime || undefined,
+        customerNotes: customerNotes || undefined,
+      }
+
+      if (selectedCustomer) {
+        body.customerId = selectedCustomer.id
+      } else {
+        body.customerName = customerName.trim()
+        if (customerPhone) body.customerPhone = customerPhone.trim()
+        if (customerEmail) body.customerEmail = customerEmail.trim()
+      }
+
+      if (selectedHorseId) {
+        body.horseId = selectedHorseId
+      } else if (horseName) {
+        body.horseName = horseName
+      }
+      if (horseInfo) body.horseInfo = horseInfo
+
+      const response = await fetch("/api/bookings/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        if (data.details && Array.isArray(data.details)) {
+          // Zod validation errors -- show the first specific message
+          const firstIssue = data.details[0]
+          toast.error(firstIssue.message || data.error || "Kunde inte skapa bokning")
+        } else {
+          toast.error(data.error || "Kunde inte skapa bokning")
+        }
+        return
+      }
+
+      toast.success("Bokning skapad!")
+      onOpenChange(false)
+      onBookingCreated()
+    } catch {
+      toast.error("Kunde inte skapa bokning")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Ny manuell bokning</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* -- Tjänst & Tid -- */}
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="service">Tjänst</Label>
+              <select
+                id="service"
+                value={serviceId}
+                onChange={(e) => setServiceId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">Välj tjänst...</option>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.durationMinutes} min, {s.price} kr)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="date">Datum</Label>
+                <input
+                  id="date"
+                  type="date"
+                  value={bookingDate}
+                  onChange={(e) => setBookingDate(e.target.value)}
+                  onBlur={(e) => setBookingDate(e.target.value)}
+                  className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <Label htmlFor="start">Starttid</Label>
+                <select
+                  id="start"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Välj tid...</option>
+                  {Array.from({ length: (21 - 6) * 4 }, (_, i) => {
+                    const h = Math.floor(i / 4) + 6
+                    const m = (i % 4) * 15
+                    const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+                    return <option key={val} value={val}>{val}</option>
+                  })}
+                </select>
+                {endTime && (
+                  <p className="text-xs text-gray-500 mt-1">Sluttid: {endTime}</p>
+                )}
+                {hasOverlap && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Tiden krockar med en befintlig bokning
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {bookingDate && dayBookings.length > 0 && (
+              <div className="rounded-md border bg-gray-50 p-2">
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Bokningar denna dag
+                </p>
+                <div className="space-y-1">
+                  {dayBookings.map(b => (
+                    <div key={b.id} className="flex items-center gap-2 text-xs">
+                      <span className="font-mono text-gray-700">
+                        {b.startTime}&#8209;{b.endTime}
+                      </span>
+                      <span className="text-gray-500 truncate">
+                        {b.service.name} - {b.customer.firstName} {b.customer.lastName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* -- Kund -- */}
+          <div className="space-y-3 border-t pt-3">
+            <div className="flex items-center justify-between">
+              <Label>Kund</Label>
+              <div className="flex gap-1">
+                <Button
+                  variant={customerMode === "search" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setCustomerMode("search")
+                    setCustomerName("")
+                    setCustomerPhone("")
+                    setCustomerEmail("")
+                    setHorses([])
+                    setSelectedHorseId("")
+                    setHorseName("")
+                  }}
+                  className="h-7 text-xs"
+                >
+                  Befintlig
+                </Button>
+                <Button
+                  variant={customerMode === "manual" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setCustomerMode("manual")
+                    setSelectedCustomer(null)
+                    setSearchQuery("")
+                    setHorses([])
+                    setSelectedHorseId("")
+                    setHorseName("")
+                  }}
+                  className="h-7 text-xs"
+                >
+                  Ny kund
+                </Button>
+              </div>
+            </div>
+
+            {customerMode === "search" ? (
+              <div>
+                {selectedCustomer ? (
+                  <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                    <span className="text-sm font-medium">
+                      {selectedCustomer.firstName} {selectedCustomer.lastName}
+                      <span className="text-gray-500 ml-2">
+                        {selectedCustomer.email}
+                      </span>
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedCustomer(null)}
+                      className="h-6 text-xs"
+                    >
+                      Byt
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      placeholder="Sök kund (namn eller email)..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-3 text-xs text-gray-400">
+                        Söker...
+                      </div>
+                    )}
+                    {searchResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        {searchResults.map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => handleSelectCustomer(c)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm border-b last:border-b-0"
+                          >
+                            <span className="font-medium">
+                              {c.firstName} {c.lastName}
+                            </span>
+                            <span className="text-gray-500 ml-2">{c.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Input
+                  placeholder="Namn *"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Telefon"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Email"
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* -- Häst -- */}
+          <div className="space-y-2 border-t pt-3">
+            <Label>Häst</Label>
+            {horses.length > 0 && (
+              <select
+                value={selectedHorseId}
+                onChange={(e) => {
+                  setSelectedHorseId(e.target.value)
+                  if (e.target.value) {
+                    const horse = horses.find((h) => h.id === e.target.value)
+                    if (horse) setHorseName(horse.name)
+                  }
+                }}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">Välj häst eller skriv in...</option>
+                {horses.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name}
+                    {h.breed ? ` (${h.breed})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            {!selectedHorseId && (
+              <Input
+                placeholder="Hästens namn"
+                value={horseName}
+                onChange={(e) => setHorseName(e.target.value)}
+              />
+            )}
+            <Input
+              placeholder="Info om hästen (valfritt)"
+              value={horseInfo}
+              onChange={(e) => setHorseInfo(e.target.value)}
+            />
+          </div>
+
+          {/* -- Anteckningar -- */}
+          <div className="border-t pt-3">
+            <Label htmlFor="notes">Anteckningar</Label>
+            <Input
+              id="notes"
+              placeholder="Valfria anteckningar..."
+              value={customerNotes}
+              onChange={(e) => setCustomerNotes(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          {/* -- Submit -- */}
+          <div className="flex gap-2 pt-2 border-t">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? "Skapar..." : "Skapa bokning"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
+              Avbryt
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

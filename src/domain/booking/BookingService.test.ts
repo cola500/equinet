@@ -3,6 +3,7 @@ import {
   BookingService,
   BookingServiceDeps,
   CreateBookingDTO,
+  CreateManualBookingDTO,
   ServiceInfo,
   ProviderInfo,
   CustomerLocationInfo,
@@ -770,6 +771,307 @@ describe('BookingService', () => {
     it('should return message for BOOKING_NOT_FOUND', () => {
       expect(mapBookingErrorToMessage({ type: 'BOOKING_NOT_FOUND' }))
         .toBe('Bokningen hittades inte')
+    })
+  })
+
+  describe('createManualBooking', () => {
+    const manualDTO: CreateManualBookingDTO = {
+      providerId: 'provider-1',
+      serviceId: 'service-1',
+      bookingDate: new Date('2025-02-01'),
+      startTime: '10:00',
+      customerId: 'customer-1',
+    }
+
+    let mockCreateGhostUser: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      mockCreateGhostUser = vi.fn().mockResolvedValue('ghost-user-123')
+    })
+
+    it('should create manual booking with existing customer (customerId)', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.customerId).toBe('customer-1')
+      expect(result.value.status).toBe('confirmed')
+      // Ghost user should NOT be called when customerId is provided
+      expect(mockCreateGhostUser).not.toHaveBeenCalled()
+    })
+
+    it('should create manual booking with ghost user (customerName only)', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerName: 'Anna Svensson',
+        customerPhone: '070-1234567',
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.customerId).toBe('ghost-user-123')
+      expect(mockCreateGhostUser).toHaveBeenCalledWith({
+        name: 'Anna Svensson',
+        phone: '070-1234567',
+        email: undefined,
+      })
+    })
+
+    it('should set status to confirmed', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('confirmed')
+    })
+
+    it('should set isManualBooking to true', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isSuccess).toBe(true)
+      // Check the raw booking data
+      const allBookings = bookingRepository.getAll()
+      expect(allBookings[0].isManualBooking).toBe(true)
+    })
+
+    it('should set createdByProviderId', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isSuccess).toBe(true)
+      const allBookings = bookingRepository.getAll()
+      expect(allBookings[0].createdByProviderId).toBe('provider-1')
+    })
+
+    it('should NOT check self-booking', async () => {
+      // Provider's userId equals the customerId -- should still work
+      mockGetProvider.mockResolvedValue({ ...validProvider, userId: 'customer-1' })
+
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      // Should NOT fail with SELF_BOOKING
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should still check overlap', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      // First booking at 10:00
+      await svc.createManualBooking(manualDTO)
+
+      // Second booking at same time should fail
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('OVERLAP')
+    })
+
+    it('should still validate service/provider', async () => {
+      mockGetService.mockResolvedValue(null)
+
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INACTIVE_SERVICE')
+    })
+
+    it('should fail without customerId or customerName', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        // Neither customerId nor customerName
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_CUSTOMER_DATA')
+    })
+
+    it('should calculate endTime from service duration', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.endTime).toBe('11:00') // 10:00 + 60 min
+    })
+
+    it('should pass ghost user email to createGhostUser', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerName: 'Test Testsson',
+        customerEmail: 'test@example.com',
+      }
+
+      await svc.createManualBooking(dto)
+
+      expect(mockCreateGhostUser).toHaveBeenCalledWith({
+        name: 'Test Testsson',
+        phone: undefined,
+        email: 'test@example.com',
+      })
+    })
+
+    it('should return GHOST_USER_CREATION_FAILED when createGhostUser throws DB error', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: vi.fn().mockRejectedValue(new Error('Connection refused')),
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerName: 'Anna Svensson',
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('GHOST_USER_CREATION_FAILED')
+    })
+
+    it('should return GHOST_USER_CREATION_FAILED when bcrypt fails', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: vi.fn().mockRejectedValue(new Error('bcrypt: invalid salt')),
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerName: 'Anna Svensson',
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('GHOST_USER_CREATION_FAILED')
+    })
+
+    it('should return GHOST_USER_CREATION_FAILED on duplicate email race condition (P2002)', async () => {
+      const prismaError = new Error('Unique constraint failed on the fields: (`email`)')
+      ;(prismaError as any).code = 'P2002'
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: vi.fn().mockRejectedValue(prismaError),
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerName: 'Anna Svensson',
+        customerEmail: 'anna@example.com',
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('GHOST_USER_CREATION_FAILED')
+    })
+
+    it('should include horse info', async () => {
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: mockCreateGhostUser,
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        ...manualDTO,
+        horseName: 'Thunder',
+        horseInfo: 'Lugn häst',
+        customerNotes: 'Ring vid ankomst',
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isSuccess).toBe(true)
+      const allBookings = bookingRepository.getAll()
+      expect(allBookings[0].horseName).toBe('Thunder')
+    })
+  })
+
+  describe('mapBookingErrorToStatus - INVALID_CUSTOMER_DATA', () => {
+    it('should return 400 for INVALID_CUSTOMER_DATA', () => {
+      expect(mapBookingErrorToStatus({ type: 'INVALID_CUSTOMER_DATA', message: 'test' } as any)).toBe(400)
     })
   })
 })

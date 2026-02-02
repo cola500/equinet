@@ -217,10 +217,12 @@ export class MockBookingRepository
       startTime: data.startTime,
       endTime: data.endTime,
       timezone: 'Europe/Stockholm',
-      status: 'pending',
+      status: data.status || 'pending',
       horseName: data.horseName,
       horseInfo: data.horseInfo,
       notes: data.customerNotes,
+      isManualBooking: data.isManualBooking,
+      createdByProviderId: data.createdByProviderId,
       createdAt: now,
       updatedAt: now,
     }

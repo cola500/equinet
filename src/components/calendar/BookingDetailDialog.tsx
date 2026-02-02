@@ -78,6 +78,11 @@ export function BookingDetailDialog({
             >
               {getStatusLabel(booking.status, isPaid)}
             </span>
+            {booking.isManualBooking && (
+              <span className="px-2 py-1 rounded text-sm bg-purple-100 text-purple-800">
+                Manuell bokning
+              </span>
+            )}
           </div>
 
           {/* Bokningsdetaljer */}
@@ -127,10 +132,12 @@ export function BookingDetailDialog({
               Kundinformation
             </h4>
             <div className="text-sm space-y-1">
-              <div>
-                <span className="text-gray-600">Email:</span>{" "}
-                <span className="font-medium">{booking.customer.email}</span>
-              </div>
+              {booking.customer.email && !booking.customer.email.endsWith('@ghost.equinet.se') && (
+                <div>
+                  <span className="text-gray-600">Email:</span>{" "}
+                  <span className="font-medium">{booking.customer.email}</span>
+                </div>
+              )}
               {booking.customer.phone && (
                 <div>
                   <span className="text-gray-600">Telefon:</span>{" "}

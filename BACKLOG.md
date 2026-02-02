@@ -1,6 +1,6 @@
 # Equinet - Produktbacklog
 
-**Senast uppdaterad:** 2026-01-30
+**Senast uppdaterad:** 2026-02-02
 **Nuvarande version:** v0.2.0+
 **Produktagare:** Johan Lindengard
 
@@ -21,7 +21,8 @@
 **Dataexport:** GDPR-dataexport (JSON + CSV), hastpass med delbara lankar (30d expiry, integritetsskydd)
 **Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad pa hastprofil (foto) och leverantorsprofil (profilbild)
 **Bokforing:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
-**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 890+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
+**Manuell bokning:** Provider kan skapa bokningar at kunder (ghost user-pattern), kundsok begransad till egna kunder, hast-dropdown, steg-for-steg dialog, "M"-indikator i kalender, audit trail
+**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 920+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
 

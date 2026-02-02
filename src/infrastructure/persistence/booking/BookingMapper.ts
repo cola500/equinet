@@ -23,6 +23,8 @@ export class BookingMapper implements IMapper<Booking, PrismaBooking> {
       horseInfo: prisma.horseInfo ?? undefined,
       notes: prisma.customerNotes ?? undefined,
       travelTimeMinutes: prisma.travelTimeMinutes ?? undefined,
+      isManualBooking: prisma.isManualBooking,
+      createdByProviderId: prisma.createdByProviderId ?? undefined,
       createdAt: prisma.createdAt,
       updatedAt: prisma.updatedAt,
     }
@@ -45,6 +47,8 @@ export class BookingMapper implements IMapper<Booking, PrismaBooking> {
       horseInfo: domain.horseInfo ?? null,
       customerNotes: domain.notes ?? null,
       travelTimeMinutes: domain.travelTimeMinutes ?? null,
+      isManualBooking: domain.isManualBooking ?? false,
+      createdByProviderId: domain.createdByProviderId ?? null,
       createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
     }

@@ -11,6 +11,7 @@ import { WeekCalendar } from "@/components/calendar/WeekCalendar"
 import { BookingDetailDialog } from "@/components/calendar/BookingDetailDialog"
 import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDialog"
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
+import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
 
 // Detektera om vi är på mobil (client-side)
@@ -43,6 +44,8 @@ export default function ProviderCalendarPage() {
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([])
   const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [manualBookingOpen, setManualBookingOpen] = useState(false)
+  const [services, setServices] = useState<{ id: string; name: string; price: number; durationMinutes: number }[]>([])
 
   // Sätt dagvy som default på mobil
   useEffect(() => {
@@ -126,6 +129,19 @@ export default function ProviderCalendarPage() {
     }
   }, [providerId, currentDate])
 
+  // Hämta leverantörens tjänster (för manuell bokning)
+  const fetchServices = useCallback(async () => {
+    try {
+      const response = await fetch("/api/services")
+      if (response.ok) {
+        const data = await response.json()
+        setServices(data.filter((s: { isActive: boolean }) => s.isActive))
+      }
+    } catch (error) {
+      console.error("Error fetching services:", error)
+    }
+  }, [])
+
   const fetchBookings = useCallback(async () => {
     try {
       const response = await fetch("/api/bookings")
@@ -143,8 +159,9 @@ export default function ProviderCalendarPage() {
     if (isProvider) {
       fetchProviderProfile()
       fetchBookings()
+      fetchServices()
     }
-  }, [isProvider, fetchProviderProfile, fetchBookings])
+  }, [isProvider, fetchProviderProfile, fetchBookings, fetchServices])
 
   useEffect(() => {
     if (providerId) {
@@ -318,9 +335,17 @@ export default function ProviderCalendarPage() {
 
   return (
     <ProviderLayout>
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold">Kalender</h1>
-        <p className="text-gray-600 mt-1">Överblick av dina bokningar</p>
+      <div className="mb-6 md:mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Kalender</h1>
+          <p className="text-gray-600 mt-1">Överblick av dina bokningar</p>
+        </div>
+        <button
+          onClick={() => setManualBookingOpen(true)}
+          className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
+        >
+          + Bokning
+        </button>
       </div>
 
       {/* Färgförklaring - kollapsad på mobil */}
@@ -430,6 +455,14 @@ export default function ProviderCalendarPage() {
         onOpenChange={setExceptionDialogOpen}
         onSave={handleExceptionSave}
         onDelete={handleExceptionDelete}
+      />
+
+      <ManualBookingDialog
+        open={manualBookingOpen}
+        onOpenChange={setManualBookingOpen}
+        services={services}
+        bookings={bookings}
+        onBookingCreated={fetchBookings}
       />
     </ProviderLayout>
   )

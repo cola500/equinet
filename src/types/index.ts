@@ -117,6 +117,7 @@ export interface CalendarBooking {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  isManualBooking?: boolean
   service: CalendarService
   customer: CalendarCustomer
   payment?: CalendarPayment | null

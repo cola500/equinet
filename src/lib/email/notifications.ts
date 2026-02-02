@@ -58,6 +58,11 @@ export async function sendBookingConfirmationNotification(bookingId: string) {
       return { success: false, error: "Booking not found or no email" }
     }
 
+    // Skip email for ghost users (manual bookings with sentinel email)
+    if (booking.customer.email.endsWith('@ghost.equinet.se')) {
+      return { success: true, error: undefined }
+    }
+
     const { html, text } = bookingConfirmationEmail({
       customerName: `${booking.customer.firstName} ${booking.customer.lastName}`,
       serviceName: booking.service.name,
@@ -181,6 +186,11 @@ export async function sendBookingStatusChangeNotification(
     if (!booking || !booking.customer.email) {
       console.warn(`Cannot send status change notification: booking ${bookingId} not found or no email`)
       return { success: false, error: "Booking not found or no email" }
+    }
+
+    // Skip email for ghost users (manual bookings with sentinel email)
+    if (booking.customer.email.endsWith('@ghost.equinet.se')) {
+      return { success: true, error: undefined }
     }
 
     const { html, text } = bookingStatusChangeEmail({

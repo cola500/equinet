@@ -22,6 +22,8 @@ describe('BookingMapper', () => {
     horseInfo: null,
     customerNotes: 'Test booking',
     travelTimeMinutes: null,
+    isManualBooking: false,
+    createdByProviderId: null,
     createdAt: new Date('2025-01-01T12:00:00Z'),
     updatedAt: new Date('2025-01-02T12:00:00Z'),
   }
@@ -38,6 +40,7 @@ describe('BookingMapper', () => {
     status: 'pending',
     horseName: 'Thunder',
     notes: 'Test booking',
+    isManualBooking: false,
     createdAt: new Date('2025-01-01T12:00:00Z'),
     updatedAt: new Date('2025-01-02T12:00:00Z'),
   }

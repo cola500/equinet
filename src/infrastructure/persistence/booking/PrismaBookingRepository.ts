@@ -237,7 +237,9 @@ export class PrismaBookingRepository
             horseInfo: data.horseInfo,
             customerNotes: data.customerNotes,
             travelTimeMinutes: data.travelTimeMinutes,
-            status: 'pending',
+            isManualBooking: data.isManualBooking ?? false,
+            createdByProviderId: data.createdByProviderId,
+            status: data.status || 'pending',
           },
           select: {
             // Core booking fields
@@ -253,6 +255,8 @@ export class PrismaBookingRepository
             horseName: true,
             horseInfo: true,
             customerNotes: true,
+            isManualBooking: true,
+            createdByProviderId: true,
             createdAt: true,
             updatedAt: true,
 
@@ -348,6 +352,8 @@ export class PrismaBookingRepository
         horseName: true,
         horseInfo: true,
         customerNotes: true,
+        isManualBooking: true,
+        createdByProviderId: true,
         createdAt: true,
         updatedAt: true,
 

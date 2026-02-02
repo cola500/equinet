@@ -22,6 +22,7 @@ import { PrismaBookingRepository } from '@/infrastructure/persistence/booking/Pr
 import { TravelTimeService, BookingWithLocation } from './TravelTimeService'
 import { BookingStatus } from './BookingStatus'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 /**
  * DTO for creating a booking
@@ -34,6 +35,28 @@ export interface CreateBookingDTO {
   startTime: string
   endTime?: string // Optional - calculated from service duration if missing
   routeOrderId?: string
+  horseId?: string
+  horseName?: string
+  horseInfo?: string
+  customerNotes?: string
+}
+
+/**
+ * DTO for creating a manual booking (provider creates on behalf of customer)
+ */
+export interface CreateManualBookingDTO {
+  providerId: string
+  serviceId: string
+  bookingDate: Date
+  startTime: string
+  endTime?: string
+  // Either existing customer...
+  customerId?: string
+  // ...or new manual customer
+  customerName?: string
+  customerPhone?: string
+  customerEmail?: string
+  // Horse
   horseId?: string
   horseName?: string
   horseInfo?: string
@@ -85,6 +108,8 @@ export type BookingError =
   | { type: 'INVALID_ROUTE_ORDER'; message: string }
   | { type: 'INVALID_STATUS_TRANSITION'; message: string; from: string; to: string }
   | { type: 'BOOKING_NOT_FOUND' }
+  | { type: 'INVALID_CUSTOMER_DATA'; message: string }
+  | { type: 'GHOST_USER_CREATION_FAILED'; message: string }
 
 /**
  * Route order info for validation
@@ -110,6 +135,8 @@ export interface BookingServiceDeps {
   getCustomerLocation?: (customerId: string) => Promise<CustomerLocationInfo | null>
   /** Travel time service instance (optional - for travel time validation) */
   travelTimeService?: TravelTimeService
+  /** Create ghost user for manual bookings (optional - only needed for manual booking flow) */
+  createGhostUser?: (data: { name: string; phone?: string; email?: string }) => Promise<string>
 }
 
 /**
@@ -320,6 +347,103 @@ export class BookingService {
   }
 
   /**
+   * Create a manual booking (provider creates on behalf of a customer)
+   *
+   * Key differences from createBooking():
+   * - No self-booking check
+   * - No travel time validation
+   * - Initial status is "confirmed" (not "pending")
+   * - Can create ghost user if no customerId provided
+   * - Sets isManualBooking and createdByProviderId
+   */
+  async createManualBooking(
+    dto: CreateManualBookingDTO
+  ): Promise<Result<BookingWithRelations, BookingError>> {
+    // 1. Validate customer data
+    if (!dto.customerId && !dto.customerName) {
+      return Result.fail({
+        type: 'INVALID_CUSTOMER_DATA',
+        message: 'Ange antingen kund-ID eller kundnamn',
+      })
+    }
+
+    // 2. Get and validate service
+    const service = await this.deps.getService(dto.serviceId)
+    if (!service || !service.isActive) {
+      return Result.fail({ type: 'INACTIVE_SERVICE' })
+    }
+    if (service.providerId !== dto.providerId) {
+      return Result.fail({ type: 'SERVICE_PROVIDER_MISMATCH' })
+    }
+
+    // 3. Get and validate provider
+    const provider = await this.deps.getProvider(dto.providerId)
+    if (!provider || !provider.isActive) {
+      return Result.fail({ type: 'INACTIVE_PROVIDER' })
+    }
+
+    // 4. Resolve customer ID (existing or ghost user)
+    let customerId = dto.customerId
+    if (!customerId && dto.customerName && this.deps.createGhostUser) {
+      try {
+        customerId = await this.deps.createGhostUser({
+          name: dto.customerName,
+          phone: dto.customerPhone,
+          email: dto.customerEmail,
+        })
+      } catch {
+        return Result.fail({
+          type: 'GHOST_USER_CREATION_FAILED',
+          message: 'Kunde inte skapa kundprofil',
+        })
+      }
+    }
+
+    if (!customerId) {
+      return Result.fail({
+        type: 'INVALID_CUSTOMER_DATA',
+        message: 'Kunde inte skapa kundprofil',
+      })
+    }
+
+    // 5. Calculate end time if not provided
+    const endTime = dto.endTime || this.calculateEndTime(dto.startTime, service.durationMinutes)
+
+    // 6. Validate times
+    const timeSlotResult = TimeSlot.create(dto.startTime, endTime)
+    if (timeSlotResult.isFailure) {
+      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
+    }
+
+    // 7. Create booking with atomic overlap check
+    const bookingData: CreateBookingData = {
+      customerId,
+      providerId: dto.providerId,
+      serviceId: dto.serviceId,
+      bookingDate: dto.bookingDate,
+      startTime: timeSlotResult.value.startTime,
+      endTime: timeSlotResult.value.endTime,
+      horseId: dto.horseId,
+      horseName: dto.horseName,
+      horseInfo: dto.horseInfo,
+      customerNotes: dto.customerNotes,
+      isManualBooking: true,
+      createdByProviderId: dto.providerId,
+      status: 'confirmed',
+    }
+
+    const booking = await this.deps.bookingRepository.createWithOverlapCheck(bookingData)
+    if (!booking) {
+      return Result.fail({
+        type: 'OVERLAP',
+        message: 'Leverantören är redan bokad under den valda tiden',
+      })
+    }
+
+    return Result.ok(booking)
+  }
+
+  /**
    * Calculate end time from start time and duration
    */
   private calculateEndTime(startTime: string, durationMinutes: number): string {
@@ -524,7 +648,10 @@ export function mapBookingErrorToStatus(error: BookingError): number {
     case 'SERVICE_PROVIDER_MISMATCH':
     case 'INVALID_ROUTE_ORDER':
     case 'INVALID_STATUS_TRANSITION':
+    case 'INVALID_CUSTOMER_DATA':
       return 400
+    case 'GHOST_USER_CREATION_FAILED':
+      return 500
     case 'BOOKING_NOT_FOUND':
       return 404
     case 'OVERLAP':
@@ -560,6 +687,10 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return error.message
     case 'BOOKING_NOT_FOUND':
       return 'Bokningen hittades inte'
+    case 'INVALID_CUSTOMER_DATA':
+      return error.message
+    case 'GHOST_USER_CREATION_FAILED':
+      return error.message
     default:
       return 'Ett fel uppstod vid bokning'
   }
@@ -628,5 +759,44 @@ export function createBookingService(): BookingService {
       })
     },
     travelTimeService: new TravelTimeService(),
+    createGhostUser: async (data) => {
+      const { randomUUID } = await import('crypto')
+      const bcrypt = await import('bcrypt')
+
+      const email = data.email || `manual-${randomUUID()}@ghost.equinet.se`
+
+      const existing = await prisma.user.findUnique({ where: { email } })
+      if (existing) {
+        logger.info("Reusing existing user for manual booking", {
+          existingUserId: existing.id,
+        })
+        return existing.id
+      }
+
+      const parts = data.name.trim().split(/\s+/)
+      const firstName = parts[0]
+      const lastName = parts.slice(1).join(' ') || ''
+
+      const user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash: await bcrypt.hash(randomUUID(), 10),
+          userType: 'customer',
+          firstName,
+          lastName,
+          phone: data.phone,
+          isManualCustomer: true,
+          emailVerified: false,
+        },
+      })
+
+      logger.security("Ghost user created", "low", {
+        ghostUserId: user.id,
+        emailType: data.email ? 'real' : 'sentinel',
+        hasPhone: !!data.phone,
+      })
+
+      return user.id
+    },
   })
 }

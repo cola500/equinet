@@ -621,6 +621,19 @@ Före merge?          -> quality-gate
 - **`select` i repository maste uppdateras for nya falt**: Att lagga till `profileImageUrl` i Prisma-schemat racker inte -- alla `select`-queries i ProviderRepository + interface-typer maste ocksa uppdateras, annars returneras aldrig faltet till klienten.
 - **ImageUpload variant-prop for konsekvent storlek**: Utan `aspect-square` + `object-cover` blir uppladdade bilder olika stora beroende pa original. `variant="square"` (hastar) och `variant="circle"` (profilbild) loser detta.
 
+### Manuell Bokning / Ghost User (2026-02-02)
+- **Ghost User-pattern eliminerar null-checks i hela stacken**: Genom att alltid ha `booking.customer` non-null behövde ingen befintlig kod ändras -- varken UI, email-service eller payment-routes. Sentinel-email (`manual-{uuid}@ghost.equinet.se`) + random bcrypt hash gör kontot oanvändbart för inloggning.
+- **Separerad `createManualBooking()` med tydliga skillnader**: Skippar self-booking check och travel time validation, sätter status till `confirmed`, men behåller overlap check och service/provider-validering. Dokumentera skillnaderna explicit i koden.
+- **Security-reviewer ger false positives -- verifiera alltid mot faktisk kod**: Häst-endpointens IDOR-skydd flaggades som "KRITISK brist" trots att relation-checken redan fanns (rad 43-54). Automatiserade granskningar ersätter inte manuell kodverifiering.
+- **E2E-test bör vara obligatoriskt för UI-features**: 27 unit/API-tester fångar domain-logik men INTE dialog-buggar (stängning, validering, multi-step flow). ManualBookingDialog saknar E2E-täckning -- tech debt.
+- **Ghost user error handling undertestade**: `createGhostUser` testas bara med success-mock. Failure scenarios (DB-error, duplicate email race condition) saknar tester. Lägg till error scenarios vid nästa TDD-pass.
+- **DI av `createGhostUser` fungerar väl**: Dependency injection av ghost user-skapandet gör BookingService testbar utan Prisma. Samma DI-pattern som `hashPassword`/`generateToken` i AuthService.
+
+### ManualBookingDialog Dagslista & UX (2026-02-02)
+- **Rensa hela state-kedjan vid lägesbyte**: När state hänger ihop (kund -> hästar) måste hela kedjan rensas vid reset -- inte bara roten. `setSelectedCustomer(null)` triggade `setHorses([])` via useEffect, men `selectedHorseId`/`horseName` blev orphan state. Tumregel: om state A driver state B, rensa båda explicit.
+- **Befintlig data > nytt API-anrop**: Dagslistan använde `bookings` som redan fanns i calendar-sidans state. Fråga alltid "finns datan redan?" innan du bygger nya fetch-anrop -- prop drilling är enklare, snabbare och undviker onödig nätverkstrafik.
+- **Dropdown > fritext för begränsade val**: `<select>` med 15-minutersintervall istället för `<input type="time">` ger bättre UX (snabbare, speciellt på mobil) och förhindrar ogiltiga tider. När möjliga värden är ändliga och förutsägbara är dropdown nästan alltid rätt val.
+
 ---
 
 ## Automated Quality Gates

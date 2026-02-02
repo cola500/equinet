@@ -23,6 +23,9 @@ model User {
   // Admin flag
   isAdmin      Boolean  @default(false)
 
+  // Manual customer (created by provider, cannot log in)
+  isManualCustomer Boolean @default(false)
+
   // Email verification
   emailVerified   Boolean   @default(false)
   emailVerifiedAt DateTime?
@@ -88,6 +91,7 @@ model Provider {
   verifications          ProviderVerification[]
   groupBookingRequests   GroupBookingRequest[]
   fortnoxConnection      FortnoxConnection?
+  manualBookings         Booking[] @relation("ManualBookings")
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -174,6 +178,11 @@ model Booking {
   // Beräknad restid till denna bokning (för historik/rapportering)
   travelTimeMinutes Int?
 
+  // Manual booking fields (created by provider on behalf of customer)
+  isManualBooking     Boolean  @default(false)
+  createdByProviderId String?
+  createdByProvider   Provider? @relation("ManualBookings", fields: [createdByProviderId], references: [id])
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -184,6 +193,7 @@ model Booking {
   @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
   @@index([providerId, bookingDate, status])
   @@index([customerId, bookingDate])
+  @@index([customerId, status])
   @@index([serviceId])
   @@index([routeOrderId])
   @@index([horseId])

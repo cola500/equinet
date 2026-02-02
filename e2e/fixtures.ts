@@ -43,6 +43,14 @@ async function cleanupTestData() {
     // Delete dynamically created data (users with timestamp in email)
     // Order matters due to foreign key constraints
 
+    // 0. Delete ghost user bookings and ghost users from E2E tests
+    await prisma.booking.deleteMany({
+      where: { customer: { email: { endsWith: '@ghost.equinet.se' } } }
+    })
+    await prisma.user.deleteMany({
+      where: { email: { endsWith: '@ghost.equinet.se' } }
+    })
+
     // 1. Delete bokningar from dynamically created users/providers
     await prisma.booking.deleteMany({
       where: {

@@ -160,6 +160,52 @@ Skapa ny bokning.
 
 ---
 
+### POST /api/bookings/manual
+
+Skapa manuell bokning (provider bokar at en kund).
+
+**Auth:** Required (provider-only)
+
+**Request Body:**
+```json
+{
+  "serviceId": "uuid",
+  "bookingDate": "2026-02-15T00:00:00.000Z",
+  "startTime": "10:00",
+  "endTime": "11:00",
+  "customerId": "uuid",
+  "customerName": "Anna Svensson",
+  "customerPhone": "0701234567",
+  "customerEmail": "anna@example.com",
+  "horseId": "uuid",
+  "horseName": "Blansen",
+  "horseInfo": "Lugn hast",
+  "customerNotes": "Ring vid ankomst"
+}
+```
+
+**Kund-identifiering:** Ange `customerId` (befintlig kund) ELLER `customerName` (skapar ghost user). Minst ett av dessa kravs.
+
+**Ghost User:** Om ingen `customerId` anges skapas en minimal User-record (`isManualCustomer=true`) med sentinel-email (`manual-{uuid}@ghost.equinet.se`). Ghost users kan inte logga in.
+
+**Skillnader fran vanlig bokning:**
+- Status satts till `confirmed` (inte `pending`)
+- Self-booking check skippas
+- Travel time validation skippas
+- `isManualBooking=true` och `createdByProviderId` satts automatiskt
+
+**Response:** `201 Created` -- bokning med relationer
+
+**Errors:**
+- `400` - Valideringsfel, saknar customerId/customerName, ogiltig tjanst
+- `403` - Inte provider
+- `409` - Tidskollision med annan bokning
+- `429` - Rate limit
+
+> **Sakerhet:** `providerId` tas fran session (IDOR-skydd). Audit trail via `logger.security()`.
+
+---
+
 ### PUT /api/bookings/[id]
 
 Uppdatera bokningsstatus.
@@ -201,9 +247,77 @@ Ta bort bokning.
 
 ---
 
+## Customers (Provider-only)
+
+Endpoints for providers att soka kunder och hamta kunddata.
+
+### GET /api/customers/search
+
+Sok bland kunder som har bokat med denna provider.
+
+**Auth:** Required (provider-only)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `q` | string | Sokterm (min 2 tecken), **Required** |
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "firstName": "Anna",
+    "lastName": "Svensson",
+    "email": "anna@example.com",
+    "phone": "0701234567"
+  }
+]
+```
+
+**Begransningar:**
+- Max 10 resultat
+- Soker i firstName, lastName, email
+- Exkluderar ghost users (`isManualCustomer=false`)
+- Bara kunder som har minst en bokning med providern
+
+**Errors:**
+- `400` - Sokterm for kort (min 2 tecken)
+- `403` - Inte provider
+- `429` - Rate limit
+
+---
+
+### GET /api/customers/[id]/horses
+
+Hamta en kunds aktiva hastar.
+
+**Auth:** Required (provider-only, maste ha bokningsrelation med kunden)
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Blansen",
+    "breed": "Svenskt varmblod",
+    "birthYear": 2018,
+    "gender": "gelding"
+  }
+]
+```
+
+**Errors:**
+- `403` - Inte provider, eller saknar bokningsrelation med kunden (IDOR-skydd)
+- `429` - Rate limit
+
+> **Sakerhet:** Verifierar att providern har minst en bokning med kunden innan hastar visas.
+
+---
+
 ## Horses
 
-Hästregister -- kundens hästar (CRUD). Alla endpoints kräver autentisering.
+Hastregister -- kundens hastar (CRUD). Alla endpoints kraver autentisering.
 
 ### GET /api/horses
 
@@ -1489,9 +1603,12 @@ Synka osynkade fakturor. **Auth:** Required (leverantor). `{ synced, failed, tot
 | `/api/services` (POST) | 10 requests | Per timme per provider |
 | `/api/group-bookings` (POST) | 10 requests | Per timme per användare |
 | `/api/group-bookings/join` (POST) | 10 requests | Per timme per användare |
+| `/api/bookings/manual` (POST) | 10 requests | Per timme per provider |
+| `/api/customers/search` (GET) | 30 requests | Per minut per provider |
+| `/api/customers/[id]/horses` (GET) | 20 requests | Per minut per provider |
 
 Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-01-30 (Fas 3: Export, Hastpass, Bilduppladdning, Fortnox)*
+*Senast uppdaterad: 2026-02-02 (Manuell bokning, kundsok, kundhast-endpoints)*

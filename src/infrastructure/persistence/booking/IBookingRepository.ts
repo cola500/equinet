@@ -25,6 +25,10 @@ export interface Booking {
   notes?: string
   /** Calculated travel time to this booking (minutes) */
   travelTimeMinutes?: number
+  /** Whether this booking was created manually by a provider */
+  isManualBooking?: boolean
+  /** Provider ID that created this manual booking */
+  createdByProviderId?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -48,6 +52,12 @@ export interface CreateBookingData {
   customerNotes?: string
   /** Calculated travel time to this booking (minutes) */
   travelTimeMinutes?: number
+  /** Whether this booking was created manually by a provider */
+  isManualBooking?: boolean
+  /** Provider ID that created this manual booking */
+  createdByProviderId?: string
+  /** Initial status override (default: 'pending', manual bookings use 'confirmed') */
+  status?: 'pending' | 'confirmed'
 }
 
 /**
@@ -92,6 +102,8 @@ export interface BookingWithRelations {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  isManualBooking?: boolean
+  createdByProviderId?: string
   createdAt: Date
   updatedAt: Date
 

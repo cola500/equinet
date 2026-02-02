@@ -54,7 +54,12 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
       }}
       title={`${booking.service.name} - ${booking.customer.firstName} ${booking.customer.lastName}`}
     >
-      <div className="font-semibold truncate">{booking.service.name}</div>
+      <div className="font-semibold truncate">
+        {booking.isManualBooking && (
+          <span className="inline-block bg-white/30 text-[10px] font-bold rounded px-1 mr-1" title="Manuell bokning">M</span>
+        )}
+        {booking.service.name}
+      </div>
       <div className="truncate">
         {booking.startTime}-{booking.endTime}
       </div>
