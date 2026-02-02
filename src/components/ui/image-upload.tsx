@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import imageCompression from "browser-image-compression"
 
 interface ImageUploadProps {
-  bucket: "avatars" | "horses" | "services"
+  bucket: "avatars" | "horses" | "services" | "verifications"
   entityId: string
   currentUrl?: string | null
   onUploaded: (url: string) => void

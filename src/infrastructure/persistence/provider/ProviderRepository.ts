@@ -243,12 +243,21 @@ export class ProviderRepository implements IProviderRepository {
           },
         },
         verifications: {
-          where: { status: "approved" },
+          where: { status: { in: ["approved", "pending"] } },
           select: {
             id: true,
             type: true,
             title: true,
             description: true,
+            issuer: true,
+            year: true,
+            status: true,
+            images: {
+              select: {
+                id: true,
+                url: true,
+              },
+            },
           },
           orderBy: { createdAt: "desc" },
         },

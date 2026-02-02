@@ -13,8 +13,8 @@
 **Auth:** Registrering, login, rollval, email-verifiering, losenordsstyrka
 **Leverantor:** Dashboard, tjanster (CRUD), oppettider, exceptions, kalender, bokningshantering, onboarding, profil med geo-position, recensioner & svar
 **Kund:** Leverantorsgalleri, bokningar, avbokning, flexibla ruttbestallningar, profil, recensioner & betyg, mock-betalning, hastregister med vardhistorik, hasthalsotidslinje (anteckningar + kategorifilter)
-**Leverantör:** Verifieringsansokan (utbildning/organisation/erfarenhet), badge pa profil, read-only hasttidslinje
-**Admin:** Verifieringsgranskning (godkann/avvisa med kommentar, notifikation till provider)
+**Leverantör:** Kompetenser & certifikat (5 typer: utbildning/organisation/certifikat/erfarenhet/licens, utfardare, ar, max 5 bilder, redigera/ta bort, badge), read-only hasttidslinje
+**Admin:** Verifieringsgranskning (godkann/avvisa med kommentar, bilder, metadata, notifikation till provider)
 **Rutter:** RouteOrders, ruttplanering (Haversine + Nearest Neighbor), stopp-for-stopp, ETA, kartvy (Leaflet/OSM), announcements, geo-matching
 **Gruppbokning:** GroupBookingRequest + Participant-modeller, 7 API-endpoints (CRUD + join + available + match), GroupBookingService med sekventiell bokningslogik, invite codes, 6 UI-sidor (kund + leverantor), notifikationer
 **Notifikationer:** In-app notifikationer (klocka + dropdown + polling), automatiska aterbokningspaminnelser (cron), betalningsabstraktion (gateway pattern)

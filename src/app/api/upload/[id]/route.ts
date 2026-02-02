@@ -37,6 +37,21 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       )
     }
 
+    // If linked to a verification, check that it's editable (not approved)
+    if (upload.verificationId) {
+      const verification = await prisma.providerVerification.findUnique({
+        where: { id: upload.verificationId },
+        select: { status: true },
+      })
+
+      if (verification && verification.status === "approved") {
+        return NextResponse.json(
+          { error: "Kan inte ta bort bilder från godkända verifieringar" },
+          { status: 400 }
+        )
+      }
+    }
+
     // Delete from Supabase Storage
     await deleteFile(upload.path)
 

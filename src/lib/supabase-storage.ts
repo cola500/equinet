@@ -14,7 +14,7 @@ const ALLOWED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
-type UploadBucket = "avatars" | "horses" | "services"
+type UploadBucket = "avatars" | "horses" | "services" | "verifications"
 
 interface UploadResult {
   path: string

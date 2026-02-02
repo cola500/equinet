@@ -8,6 +8,7 @@ vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     upload: { findFirst: vi.fn(), delete: vi.fn() },
+    providerVerification: { findUnique: vi.fn() },
   },
 }))
 vi.mock("@/lib/rate-limit", () => ({
@@ -59,6 +60,51 @@ describe("DELETE /api/upload/[id]", () => {
     const response = await DELETE(request, makeContext("other-upload"))
 
     expect(response.status).toBe(404)
+  })
+
+  it("should reject delete if upload is linked to approved verification", async () => {
+    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(prisma.upload.findFirst).mockResolvedValue({
+      id: "upload-ver",
+      userId: "customer-1",
+      path: "verifications/cert.jpg",
+      verificationId: "ver-approved",
+    } as any)
+    vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
+      id: "ver-approved",
+      status: "approved",
+    } as any)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/upload/upload-ver",
+      { method: "DELETE" }
+    )
+    const response = await DELETE(request, makeContext("upload-ver"))
+
+    expect(response.status).toBe(400)
+  })
+
+  it("should allow delete if upload is linked to pending verification", async () => {
+    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(prisma.upload.findFirst).mockResolvedValue({
+      id: "upload-ver",
+      userId: "customer-1",
+      path: "verifications/cert.jpg",
+      verificationId: "ver-pending",
+    } as any)
+    vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
+      id: "ver-pending",
+      status: "pending",
+    } as any)
+    vi.mocked(prisma.upload.delete).mockResolvedValue({} as any)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/upload/upload-ver",
+      { method: "DELETE" }
+    )
+    const response = await DELETE(request, makeContext("upload-ver"))
+
+    expect(response.status).toBe(200)
   })
 
   it("should return 401 when not authenticated", async () => {

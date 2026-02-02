@@ -85,6 +85,48 @@ describe("GET /api/verification-requests", () => {
     })
   })
 
+  it("should return verifications with images, issuer, and year", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue({
+      id: "provider-1",
+      userId: "provider-user-1",
+    } as any)
+    vi.mocked(prisma.providerVerification.findMany).mockResolvedValue([
+      {
+        id: "ver-1",
+        type: "certificate",
+        title: "EHB Certifikat",
+        description: null,
+        issuer: "European Hoof Care Board",
+        year: 2023,
+        status: "approved",
+        reviewNote: null,
+        reviewedAt: null,
+        createdAt: new Date(),
+        images: [
+          { id: "img-1", url: "https://storage.example.com/cert.jpg", mimeType: "image/jpeg" },
+        ],
+      },
+    ] as any)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests"
+    )
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data[0]).toMatchObject({
+      issuer: "European Hoof Care Board",
+      year: 2023,
+    })
+    expect(data[0].images).toHaveLength(1)
+    expect(data[0].images[0]).toMatchObject({
+      id: "img-1",
+      url: expect.stringContaining("cert.jpg"),
+    })
+  })
+
   it("should return 404 if user has no provider profile", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
     vi.mocked(prisma.provider.findFirst).mockResolvedValue(null)
@@ -270,6 +312,81 @@ describe("POST /api/verification-requests", () => {
     const response = await POST(request)
 
     expect(response.status).toBe(400)
+  })
+
+  it("should create verification request with issuer and year", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue({
+      id: "provider-1",
+      userId: "provider-user-1",
+    } as any)
+    vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
+    vi.mocked(prisma.providerVerification.create).mockResolvedValue({
+      id: "ver-new",
+      providerId: "provider-1",
+      type: "certificate",
+      title: "EHB Certifikat",
+      issuer: "European Hoof Care Board",
+      year: 2023,
+      status: "pending",
+      createdAt: new Date(),
+    } as any)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          type: "certificate",
+          title: "EHB Certifikat",
+          issuer: "European Hoof Care Board",
+          year: 2023,
+        }),
+      }
+    )
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(data).toMatchObject({
+      type: "certificate",
+      title: "EHB Certifikat",
+      issuer: "European Hoof Care Board",
+      year: 2023,
+    })
+  })
+
+  it("should accept license type", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue({
+      id: "provider-1",
+      userId: "provider-user-1",
+    } as any)
+    vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
+    vi.mocked(prisma.providerVerification.create).mockResolvedValue({
+      id: "ver-new",
+      providerId: "provider-1",
+      type: "license",
+      title: "Veterinärlicens",
+      status: "pending",
+      createdAt: new Date(),
+    } as any)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          type: "license",
+          title: "Veterinärlicens",
+        }),
+      }
+    )
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(201)
   })
 
   it("should set providerId from session, not request body (IDOR)", async () => {

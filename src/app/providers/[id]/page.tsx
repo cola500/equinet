@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -44,6 +45,22 @@ interface Availability {
   isClosed: boolean
 }
 
+interface VerificationImage {
+  id: string
+  url: string
+}
+
+interface Verification {
+  id: string
+  type: string
+  title: string
+  description: string | null
+  issuer: string | null
+  year: number | null
+  status: string
+  images: VerificationImage[]
+}
+
 interface Provider {
   id: string
   businessName: string
@@ -53,6 +70,7 @@ interface Provider {
   profileImageUrl?: string | null
   services: Service[]
   availability: Availability[]
+  verifications?: Verification[]
   user: {
     firstName: string
     lastName: string
@@ -97,6 +115,7 @@ export default function ProviderDetailPage() {
     averageRating: number | null
     totalCount: number
   }>({ averageRating: null, totalCount: 0 })
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -425,6 +444,67 @@ export default function ProviderDetailPage() {
             />
           )}
 
+          {/* Verifications / Competences */}
+          {provider.verifications && provider.verifications.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">Kompetenser & Utbildningar</h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                {provider.verifications.map((ver) => {
+                  const typeLabels: Record<string, string> = {
+                    education: "Utbildning",
+                    organization: "Organisation",
+                    certificate: "Certifikat",
+                    experience: "Erfarenhet",
+                    license: "Licens",
+                  }
+                  const isApproved = ver.status === "approved"
+                  return (
+                    <Card key={ver.id}>
+                      <CardContent className="pt-4 pb-4">
+                        <div className="flex items-start justify-between mb-1">
+                          <div>
+                            <p className="font-semibold">{ver.title}</p>
+                            <p className="text-sm text-gray-500">
+                              {typeLabels[ver.type] || ver.type}
+                              {ver.issuer && ` - ${ver.issuer}`}
+                              {ver.year && ` (${ver.year})`}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              isApproved
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-600"
+                            }
+                          >
+                            {isApproved ? "Verifierad" : "Ej granskad"}
+                          </Badge>
+                        </div>
+                        {ver.description && (
+                          <p className="text-sm text-gray-600 mt-2">{ver.description}</p>
+                        )}
+                        {ver.images && ver.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {ver.images.map((img) => (
+                              <img
+                                key={img.id}
+                                src={img.url}
+                                alt="Kompetensbevis"
+                                className="w-16 h-16 object-cover rounded cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
+                                onClick={() => setLightboxImage(img.url)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Services */}
           <h2 className="text-2xl font-bold mb-4">Tillgängliga tjänster</h2>
           {provider.services.length === 0 ? (
@@ -474,6 +554,22 @@ export default function ProviderDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Image Lightbox */}
+      <Dialog open={lightboxImage !== null} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent className="max-w-3xl p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Bild</DialogTitle>
+          </DialogHeader>
+          {lightboxImage && (
+            <img
+              src={lightboxImage}
+              alt="Kompetensbevis"
+              className="w-full h-auto rounded"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Booking Dialog */}
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>

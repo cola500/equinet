@@ -127,6 +127,13 @@ export interface ProviderWithFullDetails extends Provider {
     type: string
     title: string
     description: string | null
+    issuer: string | null
+    year: number | null
+    status: string
+    images: Array<{
+      id: string
+      url: string
+    }>
   }>
   user: {
     firstName: string

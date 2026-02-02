@@ -33,7 +33,7 @@
   - [Annonsera rutter](#annonsera-rutter)
   - [Genomföra en rutt](#genomföra-en-rutt)
   - [Recensioner och betyg](#recensioner-och-betyg)
-  - [Verifiering](#verifiering)
+  - [Kompetenser & Verifiering](#kompetenser--verifiering)
   - [Gruppbokning (leverantör)](#gruppbokning-leverantör)
   - [Bokföring (Fortnox)](#bokföring-fortnox)
   - [Hästens hälsotidslinje](#hästens-hälsotidslinje-leverantör)
@@ -96,7 +96,7 @@ Gå till **Leverantörer** i menyn för att bläddra bland alla aktiva tjänstel
 - Alla tjänster med priser och tidsåtgång
 - Öppettider per veckodag
 - Omdömen från andra kunder
-- Verifieringsmärke (om leverantören är verifierad)
+- **Kompetenser & utbildningar** med verifieringsstatus (grön badge = verifierad, grå = ej granskad) och bilder
 - Kommande besök i ditt område
 
 ---
@@ -489,23 +489,62 @@ Bra omdömen bygger ditt rykte och gör att fler kunder hittar dig. Ta dig tid a
 
 ---
 
-### Verifiering
+### Kompetenser & Verifiering
 
-Du kan ansöka om verifiering för att visa kunder att din kompetens är granskad.
+Under **Kompetenser & Verifiering** lägger du till dina utbildningar, certifikat och meriter. Godkända kompetenser visas på din profil och stärker förtroendet hos potentiella kunder.
 
-**Verifieringstyper:**
-- **Utbildning** - formell utbildning och certifikat (t.ex. "Wångens gesällprov")
+**Kompetenstyper:**
+- **Utbildning** - formell utbildning (t.ex. "Wångens gesällprov")
 - **Organisation** - medlemskap i branschorganisation
+- **Certifikat** - godkänt certifieringsprov (t.ex. "EHB-certifikat")
 - **Erfarenhet** - arbetserfarenhet och referenser
+- **Licens** - yrkeslicens (t.ex. veterinärlicens)
 
-**Processen:**
-1. Gå till **Verifiering** i leverantörsmenyn
-2. Välj typ och fyll i titel och beskrivning
-3. Skicka in ansökan
-4. En administratör granskar din ansökan
-5. Du får en notifikation när ansökan är godkänd eller avvisad
+**Lägg till en kompetens:**
+1. Gå till **Kompetenser & Verifiering** i leverantörsmenyn
+2. Klicka **Ny kompetens**
+3. Välj typ och fyll i titel (obligatoriskt)
+4. Ange utfärdare (t.ex. "Wången", "SHF") och år -- valfritt men rekommenderas
+5. Lägg till en beskrivning om du vill
+6. Skicka in
 
-Godkänd verifiering ger ett synligt märke på din profil som stärker förtroendet hos potentiella kunder.
+**Ladda upp bilder:**
+
+Efter att du skapat en kompetenspost kan du ladda upp bilder som styrker din merit -- till exempel diplom, certifikat eller intyg.
+
+- Dra och släpp eller klicka för att ladda upp
+- Max 5 bilder per kompetenspost
+- Bilder komprimeras automatiskt (max 1 MB)
+- Du kan ta bort bilder genom att hovra och klicka krysset
+
+Bilder kan bara laddas upp och tas bort på poster som inte är godkända.
+
+**Redigera och ta bort:**
+
+Du kan redigera och ta bort kompetenser som har status "Under granskning" eller "Avvisad".
+
+- Klicka **Redigera** för att uppdatera titel, typ, utfärdare, år eller beskrivning
+- Om en avvisad kompetens redigeras återgår den automatiskt till granskning
+- Klicka **Ta bort** för att radera en kompetens och alla tillhörande bilder (kräver bekräftelse)
+- Godkända kompetenser kan inte redigeras eller tas bort
+
+**Statusar:**
+| Status | Betydelse |
+|--------|-----------|
+| Under granskning | En administratör har inte granskat ännu |
+| Godkänd | Kompetensen är verifierad och visas med grön badge på din profil |
+| Avvisad | Administratören behöver mer information (se granskningskommentaren) |
+
+**Begränsning:** Du kan ha max 5 kompetenser under granskning samtidigt. Vänta tills befintliga har granskats innan du skickar fler.
+
+**Vad ser kunder?**
+
+På din profil ser kunder en sektion "Kompetenser & Utbildningar" med:
+- Titel, typ, utfärdare och år
+- Grön badge "Verifierad" för godkända kompetenser
+- Grå badge "Ej granskad" för poster under granskning
+- Klickbara bilder (öppnas i förstoring)
+- Avvisade kompetenser visas inte för kunder
 
 ---
 

@@ -505,7 +505,7 @@ Kombinerad tidslinje: bokningar (completed) + anteckningar, sorterade kronologis
 
 ### GET /api/verification-requests
 
-Lista providers egna verifieringsansökningar.
+Lista providers egna verifieringsansökningar med bilder.
 
 **Auth:** Required (provider)
 
@@ -514,14 +514,18 @@ Lista providers egna verifieringsansökningar.
 [
   {
     "id": "uuid",
-    "providerId": "uuid",
     "type": "education",
     "title": "Wångens gesällprov",
     "description": "Godkänd hovslagare",
+    "issuer": "Wången",
+    "year": 2020,
     "status": "pending | approved | rejected",
     "reviewNote": null,
     "reviewedAt": null,
-    "createdAt": "2026-01-30T10:00:00Z"
+    "createdAt": "2026-01-30T10:00:00Z",
+    "images": [
+      { "id": "cuid", "url": "https://...", "mimeType": "image/jpeg" }
+    ]
   }
 ]
 ```
@@ -535,9 +539,11 @@ Skapa verifieringsansökan.
 **Request Body:**
 ```json
 {
-  "type": "education | organization | experience",
+  "type": "education | organization | certificate | experience | license",
   "title": "Wångens gesällprov",
-  "description": "Valfri beskrivning (max 1000 tecken)"
+  "description": "Valfri beskrivning (max 1000 tecken)",
+  "issuer": "Wången (valfritt, max 200 tecken)",
+  "year": 2020
 }
 ```
 
@@ -549,17 +555,52 @@ Skapa verifieringsansökan.
 - `400` - Max pending-gräns nådd eller valideringsfel
 - `404` - Användaren har ingen provider-profil
 
+### PUT /api/verification-requests/[id]
+
+Redigera en pending/rejected verifieringsansökan. Rejected poster återgår automatiskt till pending.
+
+**Auth:** Required (provider, ägare)
+
+**Request Body:** (alla fält valfria)
+```json
+{
+  "title": "Uppdaterad titel",
+  "description": "Ny beskrivning",
+  "issuer": "Ny utfärdare",
+  "year": 2023,
+  "type": "certificate"
+}
+```
+
+**Response:** `200 OK`
+
+**Errors:**
+- `400` - Godkända verifieringar kan inte redigeras, valideringsfel
+- `404` - Hittades inte eller IDOR
+
+### DELETE /api/verification-requests/[id]
+
+Ta bort en pending/rejected verifieringsansökan. Tar även bort tillhörande bilder.
+
+**Auth:** Required (provider, ägare)
+
+**Response:** `204 No Content`
+
+**Errors:**
+- `400` - Godkända verifieringar kan inte tas bort
+- `404` - Hittades inte eller IDOR
+
 ---
 
 ## Admin
 
 ### GET /api/admin/verification-requests
 
-Lista alla väntande verifieringsansökningar.
+Lista alla väntande verifieringsansökningar med provider-info, utfärdare, år och bilder.
 
 **Auth:** Required (admin -- `isAdmin=true` på User)
 
-**Response:** `200 OK` -- Array med verifieringar inkl. provider-info.
+**Response:** `200 OK` -- Array med verifieringar inkl. provider.businessName, issuer, year, images.
 
 ### PUT /api/admin/verification-requests/[id]
 
@@ -1547,13 +1588,15 @@ Hamta hastdata via publik token (ingen auth).
 Ladda upp en bild (FormData: file + bucket + entityId).
 
 **Auth:** Required
-**Buckets:** avatars, horses, services
+**Buckets:** avatars, horses, services, verifications
 **Validering:** JPEG/PNG/WebP, max 5MB. IDOR-skydd.
+**Verifications-bucket:** Max 5 bilder per verifiering. Bara pending/rejected kan få bilder. Sätter `verificationId` automatiskt.
 **Response:** `201` `{ id, url, path }`
 
 ### DELETE /api/upload/:id
 
 **Auth:** Required (uppladdaren)
+**Verifierings-check:** Kan inte ta bort bilder från godkända verifieringar.
 **Response:** `200` `{ success: true }`
 
 ---

@@ -7,9 +7,10 @@ import { NextRequest } from "next/server"
 vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    upload: { create: vi.fn() },
+    upload: { create: vi.fn(), count: vi.fn() },
     horse: { findFirst: vi.fn(), update: vi.fn() },
     provider: { findUnique: vi.fn(), update: vi.fn() },
+    providerVerification: { findFirst: vi.fn() },
   },
 }))
 vi.mock("@/lib/rate-limit", () => ({
@@ -155,6 +156,80 @@ describe("POST /api/upload", () => {
     const response = await POST(request)
 
     expect(response.status).toBe(404)
+  })
+
+  it("should upload a verification image", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue({
+      id: "ver-1",
+      providerId: "provider-1",
+      status: "pending",
+    } as any)
+    vi.mocked(prisma.upload.count).mockResolvedValue(0)
+    vi.mocked(prisma.upload.create).mockResolvedValue({
+      id: "upload-ver",
+      url: "https://storage.example.com/verifications/test.jpg",
+      path: "verifications/test.jpg",
+    } as any)
+
+    const request = createMockUploadRequest(
+      { bucket: "verifications", entityId: "ver-1" },
+      { name: "cert.jpg", type: "image/jpeg", size: 2048 }
+    )
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(201)
+  })
+
+  it("should return 404 for verification upload by non-owner (IDOR)", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(null)
+
+    const request = createMockUploadRequest(
+      { bucket: "verifications", entityId: "other-ver" },
+      { name: "cert.jpg", type: "image/jpeg", size: 1024 }
+    )
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(404)
+  })
+
+  it("should reject upload to approved verification", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    // findFirst with status: { in: ["pending", "rejected"] } returns null for approved
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(null)
+
+    const request = createMockUploadRequest(
+      { bucket: "verifications", entityId: "ver-approved" },
+      { name: "cert.jpg", type: "image/jpeg", size: 1024 }
+    )
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(404)
+  })
+
+  it("should reject when max 5 images per verification reached", async () => {
+    vi.mocked(auth).mockResolvedValue(mockProviderSession)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue({
+      id: "ver-1",
+      providerId: "provider-1",
+      status: "pending",
+    } as any)
+    vi.mocked(prisma.upload.count).mockResolvedValue(5)
+
+    const request = createMockUploadRequest(
+      { bucket: "verifications", entityId: "ver-1" },
+      { name: "cert6.jpg", type: "image/jpeg", size: 1024 }
+    )
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toContain("5")
   })
 
   it("should return 401 when not authenticated", async () => {

@@ -24,9 +24,24 @@ export async function GET(request: NextRequest) {
     const verifications = await prisma.providerVerification.findMany({
       where: { status: "pending" },
       orderBy: { createdAt: "asc" },
-      include: {
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        description: true,
+        issuer: true,
+        year: true,
+        status: true,
+        createdAt: true,
         provider: {
           select: { businessName: true },
+        },
+        images: {
+          select: {
+            id: true,
+            url: true,
+            mimeType: true,
+          },
         },
       },
     })

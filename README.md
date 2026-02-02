@@ -248,7 +248,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **Route** - Leverantörers planerade rutter
 - **RouteStop** - Enskilda stopp i en rutt
 - **Review** - Recensioner och betyg (1-5) med leverantörssvar
-- **ProviderVerification** - Verifieringsansökningar (utbildning, organisation, erfarenhet)
+- **ProviderVerification** - Kompetenser och verifieringsansökningar (utbildning, organisation, certifikat, erfarenhet, licens) med utfärdare, år och bilder
 - **GroupBookingRequest** - Grupprequests för stallgemenskaper (invite code, status, period)
 - **GroupBookingParticipant** - Deltagare i grupprequests (hästinfo, status, koppling till bokning)
 - **HorsePassportToken** - Delbara hästpass-länkar med 30 dagars expiry
@@ -275,7 +275,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Bokningshantering med filter och automatisk tab-växling
 - Profilkompletteringsindikator
 - **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg
-- **Verifiering**: Ansök om verifiering (utbildning, organisation, erfarenhet), badge på profil vid godkännande
+- **Kompetenser & Verifiering**: Lägg till kompetenser (utbildning, organisation, certifikat, erfarenhet, licens) med utfärdare, år, beskrivning och bilder (max 5 per post). Redigera/ta bort pending/rejected poster. Badge på profil vid godkännande
 - **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin)
 - **Grupprequests**: Se öppna grupprequests, matcha och skapa bokningar för alla deltagare
 - **Rutt-planering**:
@@ -308,7 +308,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Notifikationer vid join, match, cancel och leave
 
 ### Admin
-- **Verifieringsgranskning**: Granska, godkänna och avvisa leverantörers verifieringsansökningar med kommentarer
+- **Verifieringsgranskning**: Granska, godkänna och avvisa leverantörers verifieringsansökningar med kommentarer, bilder och metadata (utfärdare, år)
 
 ### UI/UX
 - Responsiv design

@@ -14,20 +14,35 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 // --- Types ---
+
+interface VerificationImage {
+  id: string
+  url: string
+  mimeType: string
+}
 
 interface PendingVerification {
   id: string
   type: string
   title: string
   description: string | null
+  issuer: string | null
+  year: number | null
   status: string
   createdAt: string
   provider: {
     businessName: string
   }
+  images: VerificationImage[]
 }
 
 // --- Constants ---
@@ -35,7 +50,9 @@ interface PendingVerification {
 const TYPE_LABELS: Record<string, string> = {
   education: "Utbildning",
   organization: "Organisation",
+  certificate: "Certifikat",
   experience: "Erfarenhet",
+  license: "Licens",
 }
 
 // --- Page ---
@@ -48,11 +65,10 @@ export default function AdminVerificationsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({})
   const [processing, setProcessing] = useState<string | null>(null)
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
   const fetchPending = useCallback(async () => {
     try {
-      // Use a dedicated admin endpoint in the future
-      // For now, we fetch all pending verifications via a GET on the admin endpoint
       const response = await fetch("/api/admin/verification-requests")
       if (response.ok) {
         const data = await response.json()
@@ -152,6 +168,8 @@ export default function AdminVerificationsPage() {
                       <CardDescription>
                         {ver.provider.businessName} &middot;{" "}
                         {TYPE_LABELS[ver.type] || ver.type}
+                        {ver.issuer && ` - ${ver.issuer}`}
+                        {ver.year && ` (${ver.year})`}
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
@@ -165,6 +183,22 @@ export default function AdminVerificationsPage() {
                       {ver.description}
                     </p>
                   )}
+
+                  {/* Images */}
+                  {ver.images && ver.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {ver.images.map((img) => (
+                        <img
+                          key={img.id}
+                          src={img.url}
+                          alt="Verifieringsbild"
+                          className="w-24 h-24 object-cover rounded cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
+                          onClick={() => setLightboxImage(img.url)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
                   <p className="text-xs text-gray-400 mb-4">
                     Skickad{" "}
                     {new Date(ver.createdAt).toLocaleDateString("sv-SE")}
@@ -215,6 +249,22 @@ export default function AdminVerificationsPage() {
           </div>
         )}
       </main>
+
+      {/* Image Lightbox */}
+      <Dialog open={lightboxImage !== null} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent className="max-w-3xl p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Bild</DialogTitle>
+          </DialogHeader>
+          {lightboxImage && (
+            <img
+              src={lightboxImage}
+              alt="Verifieringsbild"
+              className="w-full h-auto rounded"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

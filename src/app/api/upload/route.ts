@@ -5,8 +5,10 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { validateFile, uploadFile } from "@/lib/supabase-storage"
 
-const VALID_BUCKETS = ["avatars", "horses", "services"] as const
+const VALID_BUCKETS = ["avatars", "horses", "services", "verifications"] as const
 type UploadBucket = (typeof VALID_BUCKETS)[number]
+
+const MAX_IMAGES_PER_VERIFICATION = 5
 
 // POST /api/upload - Upload a file
 export async function POST(request: NextRequest) {
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     if (!bucket || !VALID_BUCKETS.includes(bucket as UploadBucket)) {
       return NextResponse.json(
-        { error: "Ogiltig bucket. Tillåtna: avatars, horses, services." },
+        { error: "Ogiltig bucket. Tillåtna: avatars, horses, services, verifications." },
         { status: 400 }
       )
     }
@@ -93,6 +95,32 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         )
       }
+    } else if (bucket === "verifications") {
+      // IDOR: verify ownership + only pending/rejected can have images added
+      const verification = await prisma.providerVerification.findFirst({
+        where: {
+          id: entityId,
+          provider: { userId: session.user.id },
+          status: { in: ["pending", "rejected"] },
+        },
+      })
+      if (!verification) {
+        return NextResponse.json(
+          { error: "Verifieringsansökan hittades inte eller kan inte ändras" },
+          { status: 404 }
+        )
+      }
+
+      // Check max images limit
+      const imageCount = await prisma.upload.count({
+        where: { verificationId: entityId },
+      })
+      if (imageCount >= MAX_IMAGES_PER_VERIFICATION) {
+        return NextResponse.json(
+          { error: `Max ${MAX_IMAGES_PER_VERIFICATION} bilder per verifiering` },
+          { status: 400 }
+        )
+      }
     }
     // "services" bucket - provider ownership checked via providerId
 
@@ -126,6 +154,7 @@ export async function POST(request: NextRequest) {
         url,
         mimeType: file.type,
         sizeBytes: file.size,
+        ...(bucket === "verifications" ? { verificationId: entityId } : {}),
       },
     })
 

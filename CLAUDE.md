@@ -634,6 +634,21 @@ Före merge?          -> quality-gate
 - **Befintlig data > nytt API-anrop**: Dagslistan använde `bookings` som redan fanns i calendar-sidans state. Fråga alltid "finns datan redan?" innan du bygger nya fetch-anrop -- prop drilling är enklare, snabbare och undviker onödig nätverkstrafik.
 - **Dropdown > fritext för begränsade val**: `<select>` med 15-minutersintervall istället för `<input type="time">` ger bättre UX (snabbare, speciellt på mobil) och förhindrar ogiltiga tider. När möjliga värden är ändliga och förutsägbara är dropdown nästan alltid rätt val.
 
+### E2E-tester och UI-drift (2026-02-02)
+- **UI-andring = alla selektorer paverkas**: Nar en komponent byts ut (t.ex. manuella datum/tid-inputs -> `CustomerBookingCalendar`) andras ofta fler falt an de uppenbara. Kolla hela dialogen/formularet, inte bara det som planen namner.
+- **`getByRole` > `getByLabel` > `getByPlaceholder`**: `getByRole('textbox', { name: /hastens namn/i })` matchar oavsett om texten kommer fran label, placeholder eller aria-label. Mest robust selektorn for E2E-tester.
+- **Playwright error-context loser 90% av E2E-felsokningar**: DOM-snapshoten (`error-context.md`) visar exakt vilka element som finns -- combobox, textbox, button med namn. Anvand den alltid istallet for att gissa selektorer.
+- **Kor failande test isolerat under debugging**: `npx playwright test e2e/booking.spec.ts:215` istallet for hela sviten (80 tester, 12 min). Snabbare feedback-loop, mindre brus.
+- **Knappar med dynamisk text kraver flexibla regex**: "Vantar pa svar" andrades till "Vantar (X)" med raknare. `/^vantar/i` matchar bada varianter. Designa regex for framtida textandringar.
+- **Planera for sekundara andringar**: En plan som bara tar upp primara andringar (kalender-interaktion) men missar sekundara (faltselektorer, borttagna falt) ger extra iterationer. Las igenom hela komponenten/dialogen fore implementering.
+
+### Kompetenser & Certifikat (2026-02-02)
+- **Befintliga komponenter + ny bucket = minimal UI-kod**: ImageUpload behövde bara en ny bucket-typ. AlertDialog, Badge, Dialog fanns redan. Inventera befintliga komponenter före implementation.
+- **Security-reviewer ger false positives -- alltid verifiera**: Agenten flaggade IDOR som "KRITISK" trots att koden redan använde korrekta WHERE-clauser. Automatiserade granskningar ersätter inte manuell kodverifiering (bekräftat 2:a gången).
+- **DDD-Light ska vara all-or-nothing per domän**: Att skippa repository/service för Verification medan Booking/Auth/Review använder det skapar förvirring. Antingen följ mönstret eller dokumentera explicit varför inte.
+- **select i admin-query ger gratis metadata-exponering**: Att byta från include till select med nya fält gav admin-vyn all data automatiskt. select-first är både säkerhet och convenience.
+- **Schema-först eliminerar typproblem i kedjan**: Att börja med Prisma-schema och köra db push före API-implementation innebar att TypeScript-typer var korrekta från start. Ingen iteration krävdes.
+
 ---
 
 ## Automated Quality Gates

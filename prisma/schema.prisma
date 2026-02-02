@@ -237,18 +237,21 @@ model HorsePassportToken {
 }
 
 model Upload {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  bucket    String   // "avatars", "horses", "services"
-  path      String   // Supabase Storage path
-  url       String   // Public URL
-  mimeType  String
-  sizeBytes Int
-  createdAt DateTime @default(now())
+  id             String                @id @default(cuid())
+  userId         String
+  user           User                  @relation(fields: [userId], references: [id])
+  bucket         String                // "avatars", "horses", "services", "verifications"
+  path           String                // Supabase Storage path
+  url            String                // Public URL
+  mimeType       String
+  sizeBytes      Int
+  verificationId String?
+  verification   ProviderVerification? @relation(fields: [verificationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime              @default(now())
 
   @@index([userId])
   @@index([bucket, path])
+  @@index([verificationId])
 }
 
 model FortnoxConnection {
@@ -454,15 +457,18 @@ model ProviderVerification {
   id          String    @id @default(uuid())
   providerId  String
   provider    Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  type        String    // "education" | "organization" | "experience"
+  type        String    // "education" | "organization" | "certificate" | "experience" | "license"
   title       String    // "Wångens gesällprov"
   description String?
+  issuer      String?   // Utfärdare (skola, organisation)
+  year        Int?      // År kompetensen erhölls
   status      String    @default("pending") // "pending" | "approved" | "rejected"
   reviewedAt  DateTime?
   reviewedBy  String?
   reviewNote  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  images      Upload[]
 
   @@index([providerId, status])
   @@index([status, createdAt])

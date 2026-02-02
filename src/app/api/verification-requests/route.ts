@@ -4,15 +4,17 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 
-const VERIFICATION_TYPES = ["education", "organization", "experience"] as const
+const VERIFICATION_TYPES = ["education", "organization", "certificate", "experience", "license"] as const
 const MAX_PENDING_REQUESTS = 5
 
 const verificationRequestSchema = z.object({
   type: z.enum(VERIFICATION_TYPES, {
-    message: "Typ måste vara education, organization eller experience",
+    message: "Typ måste vara education, organization, certificate, experience eller license",
   }),
   title: z.string().min(1, "Titel krävs").max(200, "Titel för lång (max 200 tecken)"),
   description: z.string().max(1000, "Beskrivning för lång (max 1000 tecken)").optional(),
+  issuer: z.string().max(200, "Utfärdare för lång (max 200 tecken)").optional(),
+  year: z.number().int().min(1900, "År måste vara minst 1900").max(2100, "År kan vara max 2100").optional(),
 })
 
 // GET - List own verification requests
@@ -35,6 +37,25 @@ export async function GET(request: NextRequest) {
     const verifications = await prisma.providerVerification.findMany({
       where: { providerId: provider.id },
       orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        description: true,
+        issuer: true,
+        year: true,
+        status: true,
+        reviewNote: true,
+        reviewedAt: true,
+        createdAt: true,
+        images: {
+          select: {
+            id: true,
+            url: true,
+            mimeType: true,
+          },
+        },
+      },
     })
 
     return NextResponse.json(verifications)
@@ -105,6 +126,8 @@ export async function POST(request: NextRequest) {
         type: validated.type,
         title: validated.title,
         description: validated.description,
+        issuer: validated.issuer,
+        year: validated.year,
       },
     })
 
