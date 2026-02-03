@@ -2,6 +2,8 @@
  * Email Templates - HTML templates for various email notifications
  */
 
+import { PREPARATION_CHECKLIST } from "@/lib/preparation-checklist"
+
 interface EmailVerificationData {
   firstName: string
   verificationUrl: string
@@ -338,6 +340,14 @@ export function bookingStatusChangeEmail(data: BookingStatusChangeData): { html:
       <span class="value">${data.startTime}</span>
     </div>
 
+    ${data.newStatus === "confirmed" ? `
+    <h3 style="margin-top: 20px;">Inför besöket</h3>
+    <p style="margin: 8px 0; color: #6b7280;">Se till att följande är på plats:</p>
+    <ul style="margin: 8px 0; padding-left: 20px; color: #333;">
+      ${PREPARATION_CHECKLIST.map((item) => `<li style="padding: 4px 0;">${item}</li>`).join("\n      ")}
+    </ul>
+    ` : ""}
+
     <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings" class="button">
       Se dina bokningar
     </a>
@@ -348,6 +358,13 @@ export function bookingStatusChangeEmail(data: BookingStatusChangeData): { html:
 </body>
 </html>
 `
+
+  const preparationText = data.newStatus === "confirmed" ? `
+INFÖR BESÖKET
+-------------
+Se till att följande är på plats:
+${PREPARATION_CHECKLIST.map((item) => `- ${item}`).join("\n")}
+` : ""
 
   const text = `
 Bokningsuppdatering
@@ -362,7 +379,7 @@ Tjänst: ${data.serviceName}
 Leverantör: ${data.businessName}
 Datum: ${data.bookingDate}
 Tid: ${data.startTime}
-
+${preparationText}
 Se dina bokningar: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings
 
 --
