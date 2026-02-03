@@ -181,7 +181,10 @@ export default function ProviderCalendarPage() {
     latitude?: number | null
     longitude?: number | null
   }) => {
-    if (!providerId) return
+    if (!providerId) {
+      toast.error("Kunde inte spara - profilen har inte laddats ännu. Försök igen.")
+      throw new Error("Provider ID not available")
+    }
 
     const response = await fetch(`/api/providers/${providerId}/availability-exceptions`, {
       method: "POST",
@@ -193,8 +196,14 @@ export default function ProviderCalendarPage() {
       toast.success("Undantag sparat!")
       fetchExceptions()
     } else {
-      const errorData = await response.json()
-      toast.error(errorData.error || "Kunde inte spara undantag")
+      let errorMessage = "Kunde inte spara undantag"
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.error || errorMessage
+      } catch {
+        // Non-JSON error response - use default message
+      }
+      toast.error(errorMessage)
       throw new Error("Failed to save exception")
     }
   }

@@ -119,7 +119,10 @@ export async function POST(
 
     // Provider check
     if (session.user.userType !== "provider") {
-      return new Response("Only providers can create availability exceptions", { status: 403 })
+      return NextResponse.json(
+        { error: "Endast leverantörer kan ändra tillgänglighet" },
+        { status: 403 }
+      )
     }
 
     // Rate limiting - use profileUpdate limiter (20/hour is reasonable for schedule changes)
@@ -140,7 +143,10 @@ export async function POST(
     })
 
     if (!provider || provider.userId !== session.user.id) {
-      return new Response("Forbidden - not your provider profile", { status: 403 })
+      return NextResponse.json(
+        { error: "Du har inte behörighet att ändra denna profil" },
+        { status: 403 }
+      )
     }
 
     // Parse request body with error handling
@@ -215,6 +221,9 @@ export async function POST(
     }
 
     logger.error("Error creating availability exception", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internal error", { status: 500 })
+    return NextResponse.json(
+      { error: "Internt fel vid sparning av undantag" },
+      { status: 500 }
+    )
   }
 }

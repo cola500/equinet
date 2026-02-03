@@ -947,4 +947,131 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       )
     })
   })
+
+  describe("Error responses should be JSON", () => {
+    it("should return JSON 403 when user is not a provider", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "customer" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ date: "2026-02-15", isClosed: true }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(403)
+      const data = await response.json()
+      expect(data.error).toBeDefined()
+    })
+
+    it("should return JSON 403 when provider does not own the profile", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: "different-user-id",
+      } as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ date: "2026-02-15", isClosed: true }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(403)
+      const data = await response.json()
+      expect(data.error).toBeDefined()
+    })
+
+    it("should return JSON 500 on unexpected error", async () => {
+      const mockSession = {
+        user: { id: mockUserId, userType: "provider" },
+      }
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+        userId: mockUserId,
+      } as any)
+      vi.mocked(prisma.availabilityException.upsert).mockRejectedValue(
+        new Error("DB connection lost")
+      )
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ date: "2026-02-15", isClosed: true }),
+        }
+      )
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(500)
+      const data = await response.json()
+      expect(data.error).toBeDefined()
+    })
+  })
+
+  describe("GET returns location fields", () => {
+    it("should include location in response when set", async () => {
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: mockProviderId,
+      } as any)
+
+      const mockExceptions = [
+        {
+          id: "exc-loc-1",
+          providerId: mockProviderId,
+          date: new Date("2026-03-01"),
+          isClosed: false,
+          startTime: "09:00",
+          endTime: "15:00",
+          reason: null,
+          location: "Sollebrunn",
+          latitude: 58.13,
+          longitude: 12.47,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]
+      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue(mockExceptions as any)
+
+      const request = new Request(
+        `http://localhost/api/providers/${mockProviderId}/availability-exceptions?from=2026-03-01&to=2026-03-07`,
+        { method: "GET" }
+      )
+
+      const response = await GET(request, {
+        params: Promise.resolve({ id: mockProviderId }),
+      })
+
+      expect(response.status).toBe(200)
+      const data = await response.json()
+      expect(data).toHaveLength(1)
+      expect(data[0].location).toBe("Sollebrunn")
+      expect(data[0].latitude).toBe(58.13)
+      expect(data[0].longitude).toBe(12.47)
+    })
+  })
 })
