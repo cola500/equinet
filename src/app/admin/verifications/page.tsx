@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -127,128 +128,128 @@ export default function AdminVerificationsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-4 text-gray-600">Laddar...</p>
+      <CustomerLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
+            <p className="mt-4 text-gray-600">Laddar...</p>
+          </div>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2">Verifieringsansökningar</h1>
-        <p className="text-gray-600 mb-8">
-          Granska och godkänn eller avvisa leverantörers verifieringsansökningar.
-        </p>
+    <CustomerLayout>
+      <h1 className="text-3xl font-bold mb-2">Verifieringsansökningar</h1>
+      <p className="text-gray-600 mb-8">
+        Granska och godkänn eller avvisa leverantörers verifieringsansökningar.
+      </p>
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto" />
-            <p className="mt-2 text-gray-600">Laddar ansökningar...</p>
-          </div>
-        ) : verifications.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-gray-600">
-                Inga väntande ansökningar att granska.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {verifications.map((ver) => (
-              <Card key={ver.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{ver.title}</CardTitle>
-                      <CardDescription>
-                        {ver.provider.businessName} &middot;{" "}
-                        {TYPE_LABELS[ver.type] || ver.type}
-                        {ver.issuer && ` - ${ver.issuer}`}
-                        {ver.year && ` (${ver.year})`}
-                      </CardDescription>
-                    </div>
-                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                      Väntar
-                    </Badge>
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto" />
+          <p className="mt-2 text-gray-600">Laddar ansökningar...</p>
+        </div>
+      ) : verifications.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-gray-600">
+              Inga väntande ansökningar att granska.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {verifications.map((ver) => (
+            <Card key={ver.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{ver.title}</CardTitle>
+                    <CardDescription>
+                      {ver.provider.businessName} &middot;{" "}
+                      {TYPE_LABELS[ver.type] || ver.type}
+                      {ver.issuer && ` - ${ver.issuer}`}
+                      {ver.year && ` (${ver.year})`}
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {ver.description && (
-                    <p className="text-sm text-gray-600 mb-4">
-                      {ver.description}
-                    </p>
-                  )}
-
-                  {/* Images */}
-                  {ver.images && ver.images.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {ver.images.map((img) => (
-                        <img
-                          key={img.id}
-                          src={img.url}
-                          alt="Verifieringsbild"
-                          className="w-24 h-24 object-cover rounded cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
-                          onClick={() => setLightboxImage(img.url)}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-xs text-gray-400 mb-4">
-                    Skickad{" "}
-                    {new Date(ver.createdAt).toLocaleDateString("sv-SE")}
+                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                    Väntar
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {ver.description && (
+                  <p className="text-sm text-gray-600 mb-4">
+                    {ver.description}
                   </p>
+                )}
 
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor={`note-${ver.id}`}>
-                        Kommentar (valfritt)
-                      </Label>
-                      <Textarea
-                        id={`note-${ver.id}`}
-                        value={reviewNotes[ver.id] || ""}
-                        onChange={(e) =>
-                          setReviewNotes({
-                            ...reviewNotes,
-                            [ver.id]: e.target.value,
-                          })
-                        }
-                        placeholder="Valfri kommentar till leverantören..."
-                        rows={2}
-                        maxLength={500}
+                {/* Images */}
+                {ver.images && ver.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {ver.images.map((img) => (
+                      <img
+                        key={img.id}
+                        src={img.url}
+                        alt="Verifieringsbild"
+                        className="w-24 h-24 object-cover rounded cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
+                        onClick={() => setLightboxImage(img.url)}
                       />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleReview(ver.id, "approve")}
-                        disabled={processing === ver.id}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {processing === ver.id
-                          ? "Behandlar..."
-                          : "Godkänn"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleReview(ver.id, "reject")}
-                        disabled={processing === ver.id}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Avvisa
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
+                )}
+
+                <p className="text-xs text-gray-400 mb-4">
+                  Skickad{" "}
+                  {new Date(ver.createdAt).toLocaleDateString("sv-SE")}
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor={`note-${ver.id}`}>
+                      Kommentar (valfritt)
+                    </Label>
+                    <Textarea
+                      id={`note-${ver.id}`}
+                      value={reviewNotes[ver.id] || ""}
+                      onChange={(e) =>
+                        setReviewNotes({
+                          ...reviewNotes,
+                          [ver.id]: e.target.value,
+                        })
+                      }
+                      placeholder="Valfri kommentar till leverantören..."
+                      rows={2}
+                      maxLength={500}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleReview(ver.id, "approve")}
+                      disabled={processing === ver.id}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {processing === ver.id
+                        ? "Behandlar..."
+                        : "Godkänn"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleReview(ver.id, "reject")}
+                      disabled={processing === ver.id}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Avvisa
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Image Lightbox */}
       <Dialog open={lightboxImage !== null} onOpenChange={(open) => !open && setLightboxImage(null)}>
@@ -265,6 +266,6 @@ export default function AdminVerificationsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </CustomerLayout>
   )
 }

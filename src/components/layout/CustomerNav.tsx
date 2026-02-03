@@ -12,19 +12,23 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-
-const navItems = [
-  { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
-  { href: "/customer/bookings", label: "Mina bokningar" },
-  { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
-  { href: "/customer/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/customer/group-bookings" },
-  { href: "/customer/horses", label: "Mina hästar" },
-  { href: "/customer/profile", label: "Min profil" },
-]
+import { useAuth } from "@/hooks/useAuth"
 
 export function CustomerNav() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { isAdmin } = useAuth()
+
+  const navItems = [
+    { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
+    { href: "/customer/bookings", label: "Mina bokningar" },
+    { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
+    { href: "/customer/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/customer/group-bookings" },
+    { href: "/customer/horses", label: "Mina hästar" },
+    { href: "/customer/faq", label: "Vanliga frågor" },
+    { href: "/customer/profile", label: "Min profil" },
+    ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", matchPrefix: "/admin" }] : []),
+  ]
 
   const isActive = (item: typeof navItems[0]) => {
     if (item.matchPrefix) {
