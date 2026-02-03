@@ -44,6 +44,14 @@ export class NotificationService {
       where: { userId },
       orderBy: { createdAt: "desc" },
       take: options?.limit ?? 20,
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        isRead: true,
+        linkUrl: true,
+        createdAt: true,
+      },
     })
   }
 
