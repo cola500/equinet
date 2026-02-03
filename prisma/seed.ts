@@ -178,6 +178,8 @@ async function main() {
       data: {
         ...data.user,
         passwordHash,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
       },
     })
 
@@ -229,6 +231,8 @@ async function main() {
       city: 'Göteborg',
       latitude: 57.7089,
       longitude: 11.9746,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
     },
   })
   console.log(`Created customer: ${customer.firstName} ${customer.lastName}`)

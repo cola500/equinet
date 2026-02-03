@@ -68,3 +68,4 @@ prisma/dev.db
 # Sentry
 .sentryclirc
 sentry.properties
+.env*.local

@@ -26,6 +26,7 @@
 20. [Vercel Build Timeout (ignoreBuildErrors)](#20-vercel-build-timeout-ignorebuildErrors)
 21. [CSP Blockerar Web Workers](#21-csp-blockerar-web-workers-browser-image-compression)
 22. [Mock-uploads Måste Servas av Next.js](#22-mock-uploads-måste-servas-av-nextjs)
+23. [Vercel env pull Overskrider Lokal Config](#23-vercel-env-pull-overskrider-lokal-config)
 
 ---
 
@@ -940,6 +941,53 @@ const mockUrl = `/uploads/${bucket}/${fileName}`
 **OBS:** Lägg till `/public/uploads/` i `.gitignore` så dev-bilder inte committas.
 
 **Impact:** Uppladdade bilder visas inte alls i dev-läge utan Supabase.
+
+---
+
+## 23. Vercel env pull Overskrider Lokal Config
+
+> **Learning: 2026-02-03** | **Severity: HIGH**
+
+**Problem:** `vercel env pull` skapar `.env.local` med produktionsvärden som overskrider `.env`.
+
+**Symptom:** Inloggning fungerar inte lokalt trots korrekt databas och lösenord. Felmeddelande: "Ogiltig email eller lösenord".
+
+```bash
+# Next.js prioritetsordning (högst först):
+# 1. .env.local        ← Vercel env pull skriver hit!
+# 2. .env.development
+# 3. .env
+```
+
+```bash
+# .env (lokal dev - KORREKT)
+NEXTAUTH_URL="http://localhost:3000"
+
+# .env.local (skapad av Vercel CLI - OVERSKRIDER .env!)
+NEXTAUTH_URL="https://equinet-app.vercel.app"
+# ❌ NextAuth tror appen kör på Vercel → CSRF-validering misslyckas
+```
+
+**Varför?**
+- `NEXTAUTH_URL` styr CSRF-token-validering och cookie-domän
+- Om URL:en inte matchar faktisk host misslyckas autentisering tyst
+- NextAuth returnerar 200 men med error i body - inget tydligt felmeddelande server-side
+
+**Fix efter `vercel env pull`:**
+```bash
+# Kontrollera och korrigera NEXTAUTH_URL i .env.local
+grep NEXTAUTH_URL .env.local
+# Ändra till: NEXTAUTH_URL="http://localhost:3000"
+```
+
+**Bonus-gotcha:** `.env.local` kan också innehålla Upstash-credentials, vilket gör att lokal dev delar rate-limiter med produktion (5 försök per 15 min). Misslyckade lokala inloggningar kan rate-limita dig.
+
+**Pattern - Efter `vercel env pull`:**
+- Kontrollera alltid `NEXTAUTH_URL` - måste vara `http://localhost:3000` lokalt
+- Var medveten om att Upstash rate-limiting nu är delad med produktion
+- Starta om dev-servern efter `.env.local`-ändringar
+
+**Impact:** Total login-blockering lokalt utan tydligt felmeddelande.
 
 ---
 
