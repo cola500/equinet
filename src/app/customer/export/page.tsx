@@ -98,7 +98,7 @@ export default function ExportPage() {
       <h1 className="text-3xl font-bold mb-2">Exportera mina data</h1>
       <p className="text-gray-600 mb-8">
         Ladda ner all din data i enlighet med GDPR (dataporterbarhet, artikel
-        20). Exporten innehåller din profil, hästar, bokningar, anteckningar och
+        20). Exporten innehåller dina personuppgifter, hästar, bokningar, anteckningar och
         recensioner.
       </p>
 
@@ -147,7 +147,7 @@ export default function ExportPage() {
         <CardContent className="py-6">
           <h3 className="font-semibold mb-2">Vad ingår i exporten?</h3>
           <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
-            <li>Din profil (namn, email, telefon, adress)</li>
+            <li>Dina personuppgifter (namn, email, telefon, adress)</li>
             <li>Alla dina registrerade hästar</li>
             <li>Alla bokningar (genomförda, kommande, avbokade)</li>
             <li>Anteckningar du skapat för dina hästar</li>

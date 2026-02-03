@@ -93,7 +93,7 @@ const emptyNoteForm = {
 
 // --- Page Component ---
 
-export default function HorseProfilePage() {
+export default function HorseDetailPage() {
   const router = useRouter()
   const params = useParams()
   const horseId = params.id as string

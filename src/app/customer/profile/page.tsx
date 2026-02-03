@@ -195,7 +195,7 @@ export default function CustomerProfilePage() {
       <div className="max-w-2xl">
         <Card>
             <CardHeader>
-              <CardTitle>Profilinformation</CardTitle>
+              <CardTitle>Personuppgifter</CardTitle>
               <CardDescription>
                 Hantera din personliga information
               </CardDescription>

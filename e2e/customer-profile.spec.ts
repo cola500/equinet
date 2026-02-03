@@ -19,7 +19,7 @@ test.describe('Customer Profile', () => {
     await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible();
 
     // Verifiera att profilinformation visas
-    await expect(page.getByText(/profilinformation/i)).toBeVisible();
+    await expect(page.getByText(/personuppgifter/i)).toBeVisible();
 
     // Verifiera att e-post-fältet visas (read-only)
     await expect(page.getByText(/e-post/i)).toBeVisible();

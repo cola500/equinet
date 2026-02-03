@@ -90,7 +90,7 @@ export function SharePassportDialog({
         <DialogHeader>
           <DialogTitle>Dela hastpass for {horseName}</DialogTitle>
           <DialogDescription>
-            Skapa en delbar lank till hastens profil och vardhistorik. Lanken
+            Skapa en delbar lank till hastens uppgifter och vardhistorik. Lanken
             ar giltig i 30 dagar och kan delas med veterinar, hovslagare eller
             andra som behover se hastens historik.
           </DialogDescription>

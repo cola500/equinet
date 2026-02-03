@@ -253,10 +253,10 @@ Du kan lämna en grupp innan den matchats. Om du är den som skapade gruppen kan
 
 ### Hästpass
 
-Du kan skapa en **delbar länk** till din hästs profil och vårdhistorik -- ett digitalt hästpass.
+Du kan skapa en **delbar länk** till din hästs uppgifter och vårdhistorik -- ett digitalt hästpass.
 
-1. Gå till din hästs profil under **Mina hästar**
-2. Klicka **Skapa hästpass**
+1. Gå till din häst under **Mina hästar**
+2. Klicka **Dela hästpass**
 3. En unik länk skapas som är giltig i 30 dagar
 4. Dela länken med veterinär, ny ägare eller försäkringsbolag
 
@@ -279,7 +279,7 @@ Du har rätt att exportera all din personliga data (GDPR).
 4. Filen laddas ner direkt
 
 **Exporten innehåller:**
-- Profilinformation (namn, e-post)
+- Personuppgifter (namn, e-post)
 - Alla bokningar med status och detaljer
 - Hästregister med anteckningar
 - Recensioner du skrivit
@@ -636,7 +636,17 @@ Om leverantören har angett ett rekommenderat återbesöksintervall (t.ex. 8 vec
 
 ### Kan jag exportera min data?
 
-Ja. Under **Min profil** kan du exportera all din personliga data som JSON eller CSV. Exporten inkluderar profil, bokningar, hästar, anteckningar och recensioner. Detta uppfyller GDPR:s krav på dataportabilitet (artikel 20).
+Ja. Under **Min profil** kan du exportera all din personliga data som JSON eller CSV. Exporten inkluderar personuppgifter, bokningar, hästar, anteckningar och recensioner. Detta uppfyller GDPR:s krav på dataportabilitet (artikel 20).
+
+### Vad behöver jag förbereda inför besöket?
+
+Se till att följande är på plats:
+- Lugn miljö
+- Väl upplyst
+- Plant underlag
+- Ren och torr häst
+
+Du hittar denna checklista under **Vanliga frågor** i kundmenyn samt i bekräftelsemailet du får vid bokning.
 
 ### Är min data säker?
 
