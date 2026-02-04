@@ -43,6 +43,7 @@ interface BookingStatusChangeData {
   startTime: string
   newStatus: string
   statusLabel: string
+  cancellationMessage?: string
 }
 
 interface RebookingReminderData {
@@ -322,6 +323,13 @@ export function bookingStatusChangeEmail(data: BookingStatusChangeData): { html:
       </span>
     </div>
 
+    ${data.newStatus === "cancelled" && data.cancellationMessage ? `
+    <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+      <p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>Meddelande:</strong></p>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #333;">${data.cancellationMessage}</p>
+    </div>
+    ` : ""}
+
     <h3>Bokningsdetaljer</h3>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
@@ -372,7 +380,9 @@ Bokningsuppdatering
 Hej ${data.customerName}!
 
 Din bokning har uppdaterats: ${data.statusLabel}
-
+${data.newStatus === "cancelled" && data.cancellationMessage ? `
+Meddelande: ${data.cancellationMessage}
+` : ""}
 BOKNINGSDETALJER
 ----------------
 Tjänst: ${data.serviceName}

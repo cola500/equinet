@@ -152,7 +152,8 @@ export async function sendPaymentConfirmationNotification(bookingId: string) {
 
 export async function sendBookingStatusChangeNotification(
   bookingId: string,
-  newStatus: string
+  newStatus: string,
+  cancellationMessage?: string
 ) {
   try {
     const booking = await prisma.booking.findUnique({
@@ -202,6 +203,7 @@ export async function sendBookingStatusChangeNotification(
       startTime: `${booking.startTime} - ${booking.endTime}`,
       newStatus,
       statusLabel: statusLabels[newStatus] || newStatus,
+      cancellationMessage,
     })
 
     return await emailService.send({

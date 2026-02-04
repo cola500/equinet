@@ -9,7 +9,7 @@ import { formatNotifDate } from '@/lib/notification-helpers'
 
 export interface IBookingEmailService {
   sendBookingConfirmation(bookingId: string): Promise<unknown>
-  sendBookingStatusChange(bookingId: string, newStatus: string): Promise<unknown>
+  sendBookingStatusChange(bookingId: string, newStatus: string, cancellationMessage?: string): Promise<unknown>
   sendPaymentConfirmation(bookingId: string): Promise<unknown>
 }
 
@@ -98,6 +98,7 @@ export class StatusChangedEmailHandler implements IEventHandler<BookingStatusCha
       await this.emailService.sendBookingStatusChange(
         event.payload.bookingId,
         event.payload.newStatus,
+        event.payload.cancellationMessage,
       )
     } catch {
       // Isolated
@@ -117,12 +118,16 @@ export class StatusChangedNotificationHandler implements IEventHandler<BookingSt
     const timeStr = p.startTime ? ` kl ${p.startTime}` : ''
     const statusLabel = STATUS_LABELS[p.newStatus] || p.newStatus
 
+    const cancelPart = p.newStatus === 'cancelled' && p.cancellationMessage
+      ? `. Meddelande: "${p.cancellationMessage}"`
+      : ''
+
     if (p.changedByUserType === 'provider') {
       // Notify customer
       await this.notificationService.createAsync({
         userId: p.customerId,
         type: notifType,
-        message: `${p.serviceName} hos ${p.providerName} den ${dateStr}${timeStr} har blivit ${statusLabel}`,
+        message: `${p.serviceName} hos ${p.providerName} den ${dateStr}${timeStr} har blivit ${statusLabel}${cancelPart}`,
         linkUrl: '/customer/bookings',
         metadata: { bookingId: p.bookingId },
       })
@@ -132,7 +137,7 @@ export class StatusChangedNotificationHandler implements IEventHandler<BookingSt
       await this.notificationService.createAsync({
         userId: p.providerUserId,
         type: notifType,
-        message: `${p.customerName} har ${verb} ${p.serviceName} den ${dateStr}`,
+        message: `${p.customerName} har ${verb} ${p.serviceName} den ${dateStr}${cancelPart}`,
         linkUrl: '/provider/bookings',
         metadata: { bookingId: p.bookingId },
       })

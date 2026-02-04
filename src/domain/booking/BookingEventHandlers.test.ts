@@ -173,7 +173,19 @@ describe('StatusChangedEmailHandler', () => {
 
     await handler.handle(statusChangedEvent({ newStatus: 'confirmed' }))
 
-    expect(emailService.sendBookingStatusChange).toHaveBeenCalledWith('booking-1', 'confirmed')
+    expect(emailService.sendBookingStatusChange).toHaveBeenCalledWith('booking-1', 'confirmed', undefined)
+  })
+
+  it('sends cancellation message with email for cancelled status', async () => {
+    const emailService = createMockEmailService()
+    const handler = new StatusChangedEmailHandler(emailService)
+
+    await handler.handle(statusChangedEvent({
+      newStatus: 'cancelled',
+      cancellationMessage: 'Sjuk häst',
+    }))
+
+    expect(emailService.sendBookingStatusChange).toHaveBeenCalledWith('booking-1', 'cancelled', 'Sjuk häst')
   })
 
   it('does not send email for pending status', async () => {
@@ -221,6 +233,20 @@ describe('StatusChangedNotificationHandler', () => {
         linkUrl: '/provider/bookings',
       })
     )
+  })
+
+  it('includes cancellation message in notification', async () => {
+    const notifService = createMockNotificationService()
+    const handler = new StatusChangedNotificationHandler(notifService)
+
+    await handler.handle(statusChangedEvent({
+      changedByUserType: 'provider',
+      newStatus: 'cancelled',
+      cancellationMessage: 'Hästen är sjuk',
+    }))
+
+    const call = notifService.createAsync.mock.calls[0][0]
+    expect(call.message).toContain('Hästen är sjuk')
   })
 })
 

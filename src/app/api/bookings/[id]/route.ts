@@ -121,6 +121,7 @@ export async function PUT(
         oldStatus: updatedBooking.status, // Note: already updated by service
         newStatus: validatedData.status,
         changedByUserType: session.user.userType as 'provider' | 'customer',
+        cancellationMessage,
       }))
     }
 

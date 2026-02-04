@@ -36,6 +36,7 @@ export interface BookingStatusChangedPayload {
   oldStatus: string
   newStatus: string
   changedByUserType: 'provider' | 'customer'
+  cancellationMessage?: string
 }
 
 export interface BookingPaymentReceivedPayload {
