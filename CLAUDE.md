@@ -290,6 +290,7 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Prisma Studio zombie-processer**: Stängs inte automatiskt -- ackumuleras och äter DB-connections. Symptom: `MaxClientsInSessionMode`. Fix: `pkill -f "prisma studio"`.
 - **`ignoreBuildErrors: true` i next.config.ts**: MEDVETEN optimering -- ta INTE bort. TypeScript checkas i CI. Utan den: 14+ min build istället för ~50s.
 - **`db:seed:force` invaliderar sessioner**: Raderar alla användare -- aktiva sessioner blir ogiltiga. Logga ut/in efter reseed.
+- **Prisma migration workflow**: Använd `prisma migrate dev` för schemaändringar (INTE `db push`). Baseline migration `0_init` representerar hela schemat. Nya migreringar: `npx prisma migrate dev --name beskrivning`. Committa alltid `prisma/migrations/`.
 
 ### API & Säkerhet
 - **Rate limiting FÖRE request-parsing**: Annars kan angripare spamma utan att trigga rate limit.

@@ -44,8 +44,8 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
 
 4. **Skapa och seeda databasen**
    ```bash
-   # Skapa databas från schema
-   npx prisma db push
+   # Skapa databas från schema (kör migrationer)
+   npx prisma migrate dev
 
    # Seeda med testdata (valfritt för utveckling)
    npx tsx prisma/seed-test-users.ts

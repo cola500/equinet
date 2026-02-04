@@ -27,6 +27,7 @@
 21. [CSP Blockerar Web Workers](#21-csp-blockerar-web-workers-browser-image-compression)
 22. [Mock-uploads Måste Servas av Next.js](#22-mock-uploads-måste-servas-av-nextjs)
 23. [Vercel env pull Overskrider Lokal Config](#23-vercel-env-pull-overskrider-lokal-config)
+24. [Prisma Migration Workflow (db push -> migrate dev)](#24-prisma-migration-workflow-db-push---migrate-dev)
 
 ---
 
@@ -988,6 +989,48 @@ grep NEXTAUTH_URL .env.local
 - Starta om dev-servern efter `.env.local`-ändringar
 
 **Impact:** Total login-blockering lokalt utan tydligt felmeddelande.
+
+---
+
+## 24. Prisma Migration Workflow (db push -> migrate dev)
+
+> **Learning: 2026-02-04** | **Severity: HIGH**
+
+**Problem:** Projektet anvande `prisma db push` for alla schemaandringar -- ingen migrationshistorik.
+
+**Symptom:** `prisma migrate dev` failar med drift detection. Ingen reversibel historik. Deploy-pipelines kan inte anvanda `prisma migrate deploy`.
+
+```bash
+# GAMMALT workflow (ingen historik)
+npx prisma db push
+
+# NYTT workflow (med migrationshistorik)
+npx prisma migrate dev
+```
+
+**Vad som andrades:**
+- Baseline migration skapades (`prisma/migrations/0_init/migration.sql`) som representerar hela schemat
+- Markerades som applicerad via `prisma migrate resolve --applied 0_init`
+- npm scripts uppdaterade: `setup` och `db:reset` anvander nu `migrate dev`/`migrate reset`
+
+**Nytt workflow for schemaandringar:**
+```bash
+# 1. Andra i prisma/schema.prisma
+# 2. Kor migrate dev (skapar migration + applicerar)
+npx prisma migrate dev --name add_my_field
+
+# 3. Migrationen hamnar i prisma/migrations/ -- committa den!
+git add prisma/migrations/
+git commit -m "feat: add my_field to MyModel"
+```
+
+**Viktigt:**
+- Anvand ALDRIG `db push` langre (forutom for prototyping utan historik)
+- `prisma migrate reset` raderar ALLT och kor alla migrationer fran scratch + seed
+- Migrationer ar idempotenta -- saker att kora pa ny maskin
+- Production deploy: `prisma migrate deploy` (kor bara pending migrations, ingen drift check)
+
+**Impact:** Reversibel migrationshistorik, production-ready deploys, teamkompatibelt.
 
 ---
 

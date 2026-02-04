@@ -56,11 +56,8 @@ Tack för att du vill bidra till Equinet! Detta dokument beskriver hur du sätte
 
 3. **Skapa databas och seeda testdata**
    ```bash
-   # Generera Prisma client
-   npx prisma generate
-
-   # Skapa databas från schema
-   npx prisma db push
+   # Generera Prisma client + kör migrationer
+   npx prisma migrate dev
 
    # Seeda testdata
    npx tsx prisma/seed-test-users.ts
@@ -106,13 +103,10 @@ Tack för att du vill bidra till Equinet! Detta dokument beskriver hur du sätte
 
 ```bash
 # 1. Uppdatera schema.prisma
-# 2. Generera Prisma client
-npx prisma generate
+# 2. Skapa migration + applicera
+npx prisma migrate dev --name beskrivning
 
-# 3. Pusha schema till databas
-npx prisma db push
-
-# 4. Verifiera ändringar
+# 3. Verifiera ändringar
 npm run db:studio
 ```
 
