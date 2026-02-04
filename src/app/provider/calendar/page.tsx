@@ -255,14 +255,19 @@ export default function ProviderCalendarPage() {
     }
   }
 
-  const handleStatusUpdate = async (bookingId: string, status: string) => {
+  const handleStatusUpdate = async (bookingId: string, status: string, cancellationMessage?: string) => {
     try {
+      const body: { status: string; cancellationMessage?: string } = { status }
+      if (cancellationMessage) {
+        body.cancellationMessage = cancellationMessage
+      }
+
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import {
@@ -9,14 +10,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { CalendarBooking } from "@/types"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onStatusUpdate?: (bookingId: string, status: string) => void
+  onStatusUpdate?: (bookingId: string, status: string, cancellationMessage?: string) => void
 }
 
 function getStatusLabel(status: string, isPaid: boolean): string {
@@ -53,11 +66,41 @@ export function BookingDetailDialog({
   onOpenChange,
   onStatusUpdate,
 }: BookingDetailDialogProps) {
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [cancellationMessage, setCancellationMessage] = useState("")
+  const [isCancelling, setIsCancelling] = useState(false)
+
   if (!booking) return null
 
   const isPaid = booking.payment?.status === "succeeded"
 
+  const handleCancelClick = () => {
+    setShowCancelDialog(true)
+  }
+
+  const handleCancelConfirm = async () => {
+    if (!onStatusUpdate) return
+    setIsCancelling(true)
+    try {
+      await onStatusUpdate(
+        booking.id,
+        "cancelled",
+        cancellationMessage.trim() || undefined
+      )
+      setShowCancelDialog(false)
+      setCancellationMessage("")
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
+  const handleCancelDialogClose = () => {
+    setShowCancelDialog(false)
+    setCancellationMessage("")
+  }
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -174,7 +217,7 @@ export function BookingDetailDialog({
                 Acceptera
               </Button>
               <Button
-                onClick={() => onStatusUpdate(booking.id, "cancelled")}
+                onClick={handleCancelClick}
                 variant="destructive"
                 className="flex-1"
               >
@@ -192,7 +235,7 @@ export function BookingDetailDialog({
                 Markera som genomförd
               </Button>
               <Button
-                onClick={() => onStatusUpdate(booking.id, "cancelled")}
+                onClick={handleCancelClick}
                 variant="outline"
                 className="flex-1"
               >
@@ -203,5 +246,43 @@ export function BookingDetailDialog({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Cancel Confirmation Dialog */}
+    <AlertDialog open={showCancelDialog} onOpenChange={handleCancelDialogClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Avboka bokning?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Kunden kommer att meddelas om avbokningen. Du kan skicka ett valfritt meddelande.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="py-2">
+          <Label htmlFor="cancel-message-calendar">Meddelande till kund (valfritt)</Label>
+          <Textarea
+            id="cancel-message-calendar"
+            placeholder="T.ex. anledning till avbokningen..."
+            value={cancellationMessage}
+            onChange={(e) => setCancellationMessage(e.target.value)}
+            maxLength={500}
+            className="mt-1.5"
+            rows={3}
+          />
+          <p className="text-xs text-gray-500 mt-1">{cancellationMessage.length}/500</p>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isCancelling}>
+            Avbryt
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleCancelConfirm}
+            disabled={isCancelling}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {isCancelling ? "Avbokar..." : "Ja, avboka"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
