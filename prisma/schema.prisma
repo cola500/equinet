@@ -169,7 +169,8 @@ model Booking {
   endTime       String
   timezone      String      @default("Europe/Stockholm") // Timezone för korrekt DST-hantering
   status        String      @default("pending") // pending, confirmed, cancelled, completed
-  customerNotes String?
+  customerNotes        String?
+  cancellationMessage  String?   // Message from whoever cancelled the booking
   horseName     String?
   horseInfo     String?
   horseId       String?

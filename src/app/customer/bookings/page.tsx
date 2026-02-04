@@ -41,6 +41,7 @@ interface Booking {
   startTime: string
   endTime: string
   status: string
+  cancellationMessage?: string
   horseName?: string
   horse?: {
     id: string
@@ -490,6 +491,13 @@ export default function CustomerBookingsPage() {
                         <div className="mt-4 p-3 bg-gray-50 rounded">
                           <p className="text-sm text-gray-600">
                             <strong>Dina kommentarer:</strong> {booking.customerNotes}
+                          </p>
+                        </div>
+                      )}
+                      {booking.status === "cancelled" && booking.cancellationMessage && (
+                        <div className="mt-4 p-3 bg-red-50 rounded border border-red-200">
+                          <p className="text-sm text-red-800">
+                            <strong>Meddelande vid avbokning:</strong> {booking.cancellationMessage}
                           </p>
                         </div>
                       )}

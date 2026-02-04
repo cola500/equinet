@@ -275,6 +275,141 @@ describe('PUT /api/bookings/[id]', () => {
     expect(response.status).toBe(400)
     expect(data.error).toBe('Invalid request body')
   })
+
+  it('should save cancellationMessage when status is cancelled', async () => {
+    const mockUpdatedBooking = {
+      id: 'booking1',
+      customerId: 'customer123',
+      providerId: 'provider123',
+      status: 'cancelled',
+      cancellationMessage: 'Sjukdom - måste ställa in',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
+      customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
+      provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
+    }
+
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
+    mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'cancelled', cancellationMessage: 'Sjukdom - måste ställa in' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mockUpdateStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: 'booking1',
+        newStatus: 'cancelled',
+        cancellationMessage: 'Sjukdom - måste ställa in',
+      })
+    )
+  })
+
+  it('should ignore cancellationMessage when status is not cancelled', async () => {
+    const mockUpdatedBooking = {
+      id: 'booking1',
+      customerId: 'customer123',
+      providerId: 'provider123',
+      status: 'confirmed',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
+      customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
+      provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
+    }
+
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
+    mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'confirmed', cancellationMessage: 'Should be ignored' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mockUpdateStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: 'booking1',
+        newStatus: 'confirmed',
+        cancellationMessage: undefined,
+      })
+    )
+  })
+
+  it('should return 400 for too long cancellationMessage', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user123', userType: 'provider' },
+    } as any)
+    mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
+
+    const longMessage = 'a'.repeat(501)
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'cancelled', cancellationMessage: longMessage }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Validation error')
+  })
+
+  it('should work without cancellationMessage (backwards compatible)', async () => {
+    const mockUpdatedBooking = {
+      id: 'booking1',
+      customerId: 'customer123',
+      providerId: 'provider123',
+      status: 'cancelled',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
+      customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
+      provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
+    }
+
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as any)
+    mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'cancelled' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mockUpdateStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: 'booking1',
+        newStatus: 'cancelled',
+        cancellationMessage: undefined,
+      })
+    )
+  })
 })
 
 describe('DELETE /api/bookings/[id]', () => {

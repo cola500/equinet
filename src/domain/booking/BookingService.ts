@@ -149,6 +149,8 @@ export interface UpdateStatusDTO {
   providerId?: string
   /** Customer ID if the actor is a customer */
   customerId?: string
+  /** Optional message from whoever cancels the booking */
+  cancellationMessage?: string
 }
 
 // Statuses that only providers can set (customers can only cancel)
@@ -336,7 +338,8 @@ export class BookingService {
     const updated = await this.deps.bookingRepository.updateStatusWithAuth(
       dto.bookingId,
       dto.newStatus as 'pending' | 'confirmed' | 'cancelled' | 'completed',
-      authContext
+      authContext,
+      dto.cancellationMessage
     )
 
     if (!updated) {

@@ -352,6 +352,7 @@ export class PrismaBookingRepository
         horseName: true,
         horseInfo: true,
         customerNotes: true,
+        cancellationMessage: true,
         isManualBooking: true,
         createdByProviderId: true,
         createdAt: true,
@@ -424,6 +425,7 @@ export class PrismaBookingRepository
         horseName: true,
         horseInfo: true,
         customerNotes: true,
+        cancellationMessage: true,
         createdAt: true,
         updatedAt: true,
 
@@ -496,7 +498,8 @@ export class PrismaBookingRepository
   async updateStatusWithAuth(
     id: string,
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed',
-    authContext: { providerId?: string; customerId?: string }
+    authContext: { providerId?: string; customerId?: string },
+    cancellationMessage?: string
   ): Promise<BookingWithRelations | null> {
     // Build atomic WHERE clause
     const whereClause: { id: string; providerId?: string; customerId?: string } = { id }
@@ -513,7 +516,10 @@ export class PrismaBookingRepository
     try {
       const updated = await prisma.booking.update({
         where: whereClause,
-        data: { status },
+        data: {
+          status,
+          ...(cancellationMessage !== undefined && { cancellationMessage }),
+        },
         select: {
           // Core booking fields
           id: true,
@@ -527,6 +533,7 @@ export class PrismaBookingRepository
           horseName: true,
           horseInfo: true,
           customerNotes: true,
+          cancellationMessage: true,
           createdAt: true,
           updatedAt: true,
 

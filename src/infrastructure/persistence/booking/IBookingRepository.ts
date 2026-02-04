@@ -23,6 +23,8 @@ export interface Booking {
   horseName?: string
   horseInfo?: string
   notes?: string
+  /** Message from whoever cancelled the booking */
+  cancellationMessage?: string
   /** Calculated travel time to this booking (minutes) */
   travelTimeMinutes?: number
   /** Whether this booking was created manually by a provider */
@@ -102,6 +104,7 @@ export interface BookingWithRelations {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  cancellationMessage?: string
   isManualBooking?: boolean
   createdByProviderId?: string
   createdAt: Date
@@ -266,7 +269,8 @@ export interface IBookingRepository extends IRepository<Booking> {
   updateStatusWithAuth(
     id: string,
     status: Booking['status'],
-    authContext: { providerId?: string; customerId?: string }
+    authContext: { providerId?: string; customerId?: string },
+    cancellationMessage?: string
   ): Promise<BookingWithRelations | null>
 
   /**

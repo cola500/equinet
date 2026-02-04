@@ -9,6 +9,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
 interface Payment {
@@ -57,6 +69,9 @@ export default function ProviderBookingsPage() {
   const { bookings: rawBookings, mutate: mutateBookings } = useSWRBookings()
   const bookings = rawBookings as unknown as Booking[]
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("pending")
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
+  const [cancellationMessage, setCancellationMessage] = useState("")
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -90,6 +105,38 @@ export default function ProviderBookingsPage() {
     } catch (error) {
       console.error("Error updating booking:", error)
       toast.error("Kunde inte uppdatera bokning")
+    }
+  }
+
+  const handleCancelBooking = async () => {
+    if (!bookingToCancel) return
+
+    setIsCancelling(true)
+    try {
+      const body: { status: string; cancellationMessage?: string } = { status: "cancelled" }
+      if (cancellationMessage.trim()) {
+        body.cancellationMessage = cancellationMessage.trim()
+      }
+
+      const response = await fetch(`/api/bookings/${bookingToCancel}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel booking")
+      }
+
+      toast.success("Bokningen har avbokats")
+      setBookingToCancel(null)
+      setCancellationMessage("")
+      mutateBookings()
+    } catch (error) {
+      console.error("Error cancelling booking:", error)
+      toast.error("Kunde inte avboka bokningen")
+    } finally {
+      setIsCancelling(false)
     }
   }
 
@@ -294,7 +341,10 @@ export default function ProviderBookingsPage() {
                         Acceptera
                       </Button>
                       <Button
-                        onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                        onClick={() => {
+                          setBookingToCancel(booking.id)
+                          setCancellationMessage("")
+                        }}
                         variant="destructive"
                         className="flex-1"
                       >
@@ -312,7 +362,10 @@ export default function ProviderBookingsPage() {
                         Markera som genomförd
                       </Button>
                       <Button
-                        onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                        onClick={() => {
+                          setBookingToCancel(booking.id)
+                          setCancellationMessage("")
+                        }}
                         variant="outline"
                         className="flex-1"
                       >
@@ -325,6 +378,42 @@ export default function ProviderBookingsPage() {
             ))}
           </div>
         )}
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={!!bookingToCancel} onOpenChange={() => { setBookingToCancel(null); setCancellationMessage("") }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Avboka bokning?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kunden kommer att meddelas om avbokningen. Du kan skicka ett valfritt meddelande.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label htmlFor="cancellation-message">Meddelande till kund (valfritt)</Label>
+            <Textarea
+              id="cancellation-message"
+              placeholder="T.ex. anledning till avbokningen..."
+              value={cancellationMessage}
+              onChange={(e) => setCancellationMessage(e.target.value)}
+              maxLength={500}
+              className="mt-1.5"
+              rows={3}
+            />
+            <p className="text-xs text-gray-500 mt-1">{cancellationMessage.length}/500</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>
+              Avbryt
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelBooking}
+              disabled={isCancelling}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isCancelling ? "Avbokar..." : "Ja, avboka"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ProviderLayout>
   )
 }

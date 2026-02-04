@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { notificationService } from "@/domain/notification/NotificationService"
 import { customerName } from "@/lib/notification-helpers"
+import { sanitizeString } from "@/lib/sanitize"
 import {
   createBookingService,
   createBookingEventDispatcher,
@@ -18,6 +19,7 @@ import {
 
 const updateBookingSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  cancellationMessage: z.string().max(500, "Meddelandet får vara max 500 tecken").optional(),
 }).strict()
 
 // PUT - Update booking status (delegated to BookingService)
@@ -60,6 +62,11 @@ export async function PUT(
       customerId = session.user.id
     }
 
+    // Only include cancellationMessage when actually cancelling
+    const cancellationMessage = validatedData.status === "cancelled" && validatedData.cancellationMessage
+      ? sanitizeString(validatedData.cancellationMessage)
+      : undefined
+
     // Delegate to BookingService for status transition validation
     const bookingService = createBookingService()
     const result = await bookingService.updateStatus({
@@ -67,6 +74,7 @@ export async function PUT(
       newStatus: validatedData.status,
       providerId,
       customerId,
+      cancellationMessage,
     })
 
     if (result.isFailure) {
