@@ -123,7 +123,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     const submitVisible = await submitBtn.isVisible().catch(() => false);
 
     if (!submitVisible) {
-      console.log('Submit button not available, skipping test');
+      test.skip(true, 'Submit button not available');
       return;
     }
 
@@ -189,7 +189,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     const submitVisible = await submitBtn.isVisible().catch(() => false);
 
     if (!submitVisible) {
-      console.log('Submit button not available, skipping test');
+      test.skip(true, 'Submit button not available');
       return;
     }
 
@@ -214,7 +214,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     const bookingCount = await page.locator('[data-testid="booking-item"]').count();
 
     if (bookingCount === 0) {
-      console.log('No bookings available, skipping test');
+      test.skip(true, 'No bookings available');
       return;
     }
 
@@ -247,7 +247,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     const allBookingsCount = await page.locator('[data-testid="booking-item"]').count();
 
     if (allBookingsCount === 0) {
-      console.log('No bookings available, skipping test');
+      test.skip(true, 'No bookings available');
       return;
     }
 
@@ -281,7 +281,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
     const flexibleBadgeCount = await page.locator('[data-testid="booking-type-badge"]').count();
 
     if (flexibleBadgeCount === 0) {
-      console.log('No flexible bookings available, skipping test');
+      test.skip(true, 'No flexible bookings available');
       return;
     }
 

@@ -174,6 +174,15 @@ export async function resetRateLimit(
 }
 
 /**
+ * Clear ALL in-memory rate limit state.
+ * Used by E2E test setup to prevent rate limit accumulation across test runs.
+ * Only affects in-memory fallback (no-op if Upstash is configured).
+ */
+export function clearAllInMemoryRateLimits(): void {
+  inMemoryAttempts.clear()
+}
+
+/**
  * Cleanup expired entries for in-memory storage (run periodically)
  */
 function cleanupExpiredEntries(): void {

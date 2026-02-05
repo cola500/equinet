@@ -168,7 +168,7 @@ test.describe('Route Announcements Flow', () => {
       const serviceCount = await serviceCheckboxes.count();
 
       if (serviceCount === 0) {
-        console.log('Provider has no services, skipping create test');
+        test.skip(true, 'Provider has no services');
         return;
       }
 
@@ -216,7 +216,7 @@ test.describe('Route Announcements Flow', () => {
       const hasAnnouncements = await detailsButton.isVisible().catch(() => false);
 
       if (!hasAnnouncements) {
-        console.log('No announcements available, skipping details test');
+        test.skip(true, 'No announcements available');
         return;
       }
 
@@ -242,7 +242,7 @@ test.describe('Route Announcements Flow', () => {
       const hasAnnouncements = await detailsButton.isVisible().catch(() => false);
 
       if (!hasAnnouncements) {
-        console.log('No announcements available, skipping booking details test');
+        test.skip(true, 'No announcements available for booking details');
         return;
       }
 
@@ -275,7 +275,7 @@ test.describe('Route Announcements Flow', () => {
       const hasAnnouncements = await detailsButton.isVisible().catch(() => false);
 
       if (!hasAnnouncements) {
-        console.log('No announcements available, skipping confirm booking test');
+        test.skip(true, 'No announcements available for confirm booking');
         return;
       }
 
@@ -287,7 +287,7 @@ test.describe('Route Announcements Flow', () => {
       const hasConfirmButton = await confirmButton.isVisible().catch(() => false);
 
       if (!hasConfirmButton) {
-        console.log('No pending bookings to confirm, test passes gracefully');
+        test.skip(true, 'No pending bookings to confirm');
         return;
       }
 
@@ -313,7 +313,7 @@ test.describe('Route Announcements Flow', () => {
       const hasCancelButton = await cancelButton.isVisible().catch(() => false);
 
       if (!hasCancelButton) {
-        console.log('No open announcements to cancel, skipping test');
+        test.skip(true, 'No open announcements to cancel');
         return;
       }
 
@@ -359,7 +359,7 @@ test.describe('Route Announcements Flow', () => {
       const announcementCount = await page.locator('.hover\\:shadow-lg').count();
 
       if (announcementCount === 0) {
-        console.log('No announcements available, skipping customer booking test');
+        test.skip(true, 'No announcements available for customer booking');
         return;
       }
 
@@ -385,7 +385,7 @@ test.describe('Route Announcements Flow', () => {
       const hasBookButton = await bookButton.isVisible().catch(() => false);
 
       if (!hasBookButton) {
-        console.log('No announcements with booking available, skipping test');
+        test.skip(true, 'No announcements with booking available');
         return;
       }
 

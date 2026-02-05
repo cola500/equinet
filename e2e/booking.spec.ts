@@ -22,15 +22,15 @@ test.describe('Booking Flow (Customer)', () => {
     try {
       await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
     } catch {
-      // Inga providers i databasen - skip test
-      console.log('No providers in database, skipping search test');
+      // Inga providers i databasen
+      test.skip(true, 'No providers in database');
       return;
     }
 
     // Verifiera att leverantörer visas
     const initialCount = await page.locator('[data-testid="provider-card"]').count();
     if (initialCount === 0) {
-      console.log('No providers found, skipping search test');
+      test.skip(true, 'No providers found');
       return;
     }
     await expect(page.locator('[data-testid="provider-card"]').first()).toBeVisible();
@@ -161,7 +161,7 @@ test.describe('Booking Flow (Customer)', () => {
       await page.waitForTimeout(1000);
       const slotVisible2 = await availableSlot.isVisible({ timeout: 5000 }).catch(() => false);
       if (!slotVisible2) {
-        console.log('No available time slots found, skipping test');
+        test.skip(true, 'No available time slots found');
         return;
       }
     }
@@ -180,7 +180,7 @@ test.describe('Booking Flow (Customer)', () => {
     const submitVisible = await submitBtn.isVisible().catch(() => false);
 
     if (!submitVisible) {
-      console.log('Submit button not available, skipping test');
+      test.skip(true, 'Submit button not available');
       return;
     }
 
@@ -197,7 +197,7 @@ test.describe('Booking Flow (Customer)', () => {
       const closeBtn = page.getByRole('button', { name: /avbryt|stäng/i });
       await closeBtn.click().catch(() => {});
       // Skip verification since booking failed
-      console.log('Skipping booking verification due to failure');
+      test.skip(true, 'Dialog did not close - booking likely failed');
       return;
     }
 
@@ -240,7 +240,7 @@ test.describe('Booking Flow (Customer)', () => {
     const slotVisible = await availableSlot.isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!slotVisible) {
-      console.log('No available time slots found, skipping test');
+      test.skip(true, 'No available time slots found');
       return;
     }
 
@@ -286,17 +286,8 @@ test.describe('Booking Flow (Customer)', () => {
     const bookingCount = await page.locator('[data-testid="booking-item"]').count();
 
     if (bookingCount === 0) {
-      console.log('No bookings available to cancel, skipping test gracefully');
-      // Verifiera att empty state visas istället
-      const emptyStateVisible = await page.getByText(/inga.*bokningar/i).isVisible().catch(() => false);
-      if (emptyStateVisible) {
-        // Test passerar - empty state fungerar
-        return;
-      } else {
-        // Sidan kanske fortfarande laddar
-        await page.waitForSelector('[data-testid="booking-item"], h1, h2', { timeout: 5000 });
-        return;
-      }
+      test.skip(true, 'No bookings available to cancel');
+      return;
     }
 
     // Det finns bokningar - testa avbokning

@@ -88,7 +88,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const dayCount = await dayButtons.count();
 
     if (dayCount === 0) {
-      console.log('No clickable day headers found, skipping test');
+      test.skip(true, 'No clickable day headers found');
       return;
     }
 
@@ -122,7 +122,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const dayCount = await dayButtons.count();
 
     if (dayCount === 0) {
-      console.log('No clickable day headers found, skipping test');
+      test.skip(true, 'No clickable day headers found');
       return;
     }
 
@@ -132,7 +132,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const dialogVisible = await page.getByRole('dialog').isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!dialogVisible) {
-      console.log('Dialog did not open, skipping test');
+      test.skip(true, 'Dialog did not open');
       return;
     }
 
@@ -173,7 +173,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const dayCount = await dayButtons.count();
 
     if (dayCount === 0) {
-      console.log('No clickable day headers found, skipping test');
+      test.skip(true, 'No clickable day headers found');
       return;
     }
 
@@ -183,7 +183,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const dialogVisible = await page.getByRole('dialog').isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!dialogVisible) {
-      console.log('Dialog did not open, skipping test');
+      test.skip(true, 'Dialog did not open');
       return;
     }
 
@@ -216,7 +216,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const hasDateCells = await dateCell.isVisible().catch(() => false);
 
     if (!hasDateCells) {
-      console.log('No date cells found, skipping exception test');
+      test.skip(true, 'No date cells found');
       return;
     }
 
@@ -227,7 +227,7 @@ test.describe('Calendar & Availability (Provider)', () => {
     const dialogVisible = await dialogTitle.isVisible({ timeout: 3000 }).catch(() => false);
 
     if (!dialogVisible) {
-      console.log('Exception dialog not available, skipping test');
+      test.skip(true, 'Exception dialog not available');
       return;
     }
 

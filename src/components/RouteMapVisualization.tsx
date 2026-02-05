@@ -51,6 +51,7 @@ export default function RouteMapVisualization({
   const [routedOriginalPath, setRoutedOriginalPath] = useState<[number, number][] | null>(null)
   const [routedOptimizedPath, setRoutedOptimizedPath] = useState<[number, number][] | null>(null)
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false)
+  const [mapReady, setMapReady] = useState(false)
 
   // Filter selected orders (only those with coordinates)
   const selectedOrders = useMemo(() =>
@@ -180,18 +181,24 @@ export default function RouteMapVisualization({
 
     mapRef.current = map
 
+    // Signal map is ready after initial render completes
+    map.whenReady(() => {
+      setMapReady(true)
+    })
+
     // Cleanup
     return () => {
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
+        setMapReady(false)
       }
     }
   }, [startLocation])
 
   // Update markers and routes
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || !mapReady) return
 
     const map = mapRef.current
 
@@ -288,18 +295,23 @@ export default function RouteMapVisualization({
     })
 
     // Fit bounds to show all markers (only orders with coordinates)
-    try {
-      const ordersWithCoords = selectedOrders.filter(o => o.latitude != null && o.longitude != null)
-      if (ordersWithCoords.length === 0) return
-      const bounds = L.latLngBounds(
-        ordersWithCoords.map(o => [o.latitude!, o.longitude!] as [number, number])
-      )
-      map.fitBounds(bounds, { padding: [50, 50] })
-    } catch (e) {
-      console.warn('Error fitting bounds:', e)
-    }
+    // Use requestAnimationFrame to ensure DOM layout is complete before Leaflet
+    // calculates positions (prevents _leaflet_pos race condition)
+    requestAnimationFrame(() => {
+      try {
+        if (!mapRef.current) return
+        const ordersWithCoords = selectedOrders.filter(o => o.latitude != null && o.longitude != null)
+        if (ordersWithCoords.length === 0) return
+        const bounds = L.latLngBounds(
+          ordersWithCoords.map(o => [o.latitude!, o.longitude!] as [number, number])
+        )
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] })
+      } catch (e) {
+        console.warn('Error fitting bounds:', e)
+      }
+    })
 
-  }, [selectedOrders, routedOriginalPath, routedOptimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes])
+  }, [selectedOrders, routedOriginalPath, routedOptimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes, mapReady])
 
   if (selectedOrders.length === 0) {
     const allSelected = orders.filter(o => selectedOrderIds.includes(o.id))

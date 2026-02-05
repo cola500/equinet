@@ -11,7 +11,7 @@ test.describe('Payment Flow', () => {
     })
 
     if (!customer) {
-      console.log('Test customer not found, skipping payment tests')
+      test.skip(true, 'Test customer not found')
       return
     }
 
@@ -26,7 +26,7 @@ test.describe('Payment Flow', () => {
     })
 
     if (!provider || !provider.services[0]) {
-      console.log('No provider with services found, skipping payment tests')
+      test.skip(true, 'No provider with services found')
       return
     }
 
@@ -90,7 +90,7 @@ test.describe('Payment Flow', () => {
 
   test('should pay for a confirmed booking', async ({ page }) => {
     if (!testBookingId) {
-      console.log('No test booking created, skipping test')
+      test.skip(true, 'No test booking created')
       return
     }
 
@@ -123,7 +123,7 @@ test.describe('Payment Flow', () => {
 
   test('should show receipt link after payment', async ({ page }) => {
     if (!testBookingId) {
-      console.log('No test booking created, skipping test')
+      test.skip(true, 'No test booking created')
       return
     }
 
@@ -159,7 +159,7 @@ test.describe('Payment Flow', () => {
 
   test('should show invoice number after payment', async ({ page }) => {
     if (!testBookingId) {
-      console.log('No test booking created, skipping test')
+      test.skip(true, 'No test booking created')
       return
     }
 
@@ -187,7 +187,7 @@ test.describe('Payment Flow', () => {
 
   test('should hide cancel button for paid bookings', async ({ page }) => {
     if (!testBookingId) {
-      console.log('No test booking created, skipping test')
+      test.skip(true, 'No test booking created')
       return
     }
 
@@ -219,7 +219,7 @@ test.describe('Payment Flow', () => {
 
   test('should not allow double payment', async ({ page }) => {
     if (!testBookingId) {
-      console.log('No test booking created, skipping test')
+      test.skip(true, 'No test booking created')
       return
     }
 
@@ -260,7 +260,7 @@ test.describe('Payment - Pending Booking', () => {
       })
 
       if (!customer) {
-        console.log('Test customer not found, skipping test')
+        test.skip(true, 'Test customer not found')
         return
       }
 
@@ -271,7 +271,7 @@ test.describe('Payment - Pending Booking', () => {
       })
 
       if (!provider?.services[0]) {
-        console.log('No provider with services found, skipping test')
+        test.skip(true, 'No provider with services found')
         return
       }
 

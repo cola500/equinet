@@ -55,7 +55,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     const orderCount = await page.locator('.border.rounded-lg.p-4').count();
 
     if (orderCount === 0) {
-      console.log('No route orders available, skipping test');
+      test.skip(true, 'No route orders available');
       return;
     }
 
@@ -162,7 +162,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     const routeCount = await page.locator('.border.rounded-lg').count();
 
     if (routeCount === 0) {
-      console.log('No routes available, skipping test');
+      test.skip(true, 'No routes available');
       return;
     }
 
@@ -199,7 +199,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     const routeCount = await page.locator('.border.rounded-lg').count();
 
     if (routeCount === 0) {
-      console.log('No routes available, skipping test');
+      test.skip(true, 'No routes available');
       return;
     }
 
@@ -211,7 +211,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     const stopCount = await page.locator('[data-testid="route-stop"]').count();
 
     if (stopCount === 0) {
-      console.log('No stops in route, skipping test');
+      test.skip(true, 'No stops in route');
       return;
     }
 
@@ -223,7 +223,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     const hasCompleteButton = await completeButton.isVisible().catch(() => false);
 
     if (!hasCompleteButton) {
-      console.log('First stop already completed or no complete button, skipping test');
+      test.skip(true, 'First stop already completed or no complete button');
       return;
     }
 

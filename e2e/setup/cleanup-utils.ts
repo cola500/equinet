@@ -16,19 +16,63 @@ const dynamicUserFilter = {
   ],
 } as const
 
+/** Seed horse name - never delete this */
+const SEED_HORSE_NAME = 'E2E Blansen'
+
 /**
  * Clean up all dynamically created test data.
  * Deletes in FK-safe order, preserving seed users and their base data.
  */
 export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void> {
   try {
-    // 0. Ghost users (from E2E auth tests)
+    // 0a. Ghost users (from E2E auth tests)
     await prisma.booking.deleteMany({
       where: { customer: { email: { endsWith: '@ghost.equinet.se' } } },
     })
     await prisma.user.deleteMany({
       where: { email: { endsWith: '@ghost.equinet.se' } },
     })
+
+    // 0b. Test-created horses (owned by seed users, NOT the seed horse)
+    // Nullify horseId on bookings first (optional FK)
+    const testHorseFilter = {
+      name: { not: SEED_HORSE_NAME },
+      owner: { email: { in: [...KEEP_EMAILS] } },
+    }
+    await prisma.booking.updateMany({
+      where: { horse: testHorseFilter },
+      data: { horseId: null },
+    })
+    await prisma.groupBookingParticipant.updateMany({
+      where: { horse: testHorseFilter },
+      data: { horseId: null },
+    })
+    // HorseNote + HorsePassportToken have onDelete: Cascade, deleted automatically
+    await prisma.horse.deleteMany({
+      where: testHorseFilter,
+    })
+
+    // Re-seed horse if the edit test renamed it (then cleanup deleted it above)
+    const customer = await prisma.user.findUnique({
+      where: { email: 'test@example.com' },
+    })
+    if (customer) {
+      const seedHorse = await prisma.horse.findFirst({
+        where: { ownerId: customer.id, name: SEED_HORSE_NAME },
+      })
+      if (!seedHorse) {
+        await prisma.horse.create({
+          data: {
+            ownerId: customer.id,
+            name: SEED_HORSE_NAME,
+            breed: 'Svenskt varmblod',
+            birthYear: 2018,
+            color: 'Brun',
+            gender: 'mare',
+          },
+        })
+      }
+    }
 
     // 1. Group booking participants + requests
     await prisma.groupBookingParticipant.deleteMany({

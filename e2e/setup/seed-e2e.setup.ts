@@ -27,6 +27,21 @@ setup('seed E2E test data', async () => {
 
   console.log('Seeding E2E test data...')
 
+  // Reset in-memory rate limits in the dev server to prevent
+  // "too many registration attempts" errors across test runs
+  try {
+    const res = await fetch('http://localhost:3000/api/test/reset-rate-limit', {
+      method: 'POST',
+    })
+    if (res.ok) {
+      console.log('  Rate limits reset OK')
+    } else {
+      console.log(`  Rate limit reset failed: ${res.status}`)
+    }
+  } catch {
+    console.log('  Rate limit reset skipped (dev server not ready)')
+  }
+
   try {
     // 2. Upsert users
     const customerPassword = await bcrypt.hash('TestPassword123!', 10)

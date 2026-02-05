@@ -123,7 +123,7 @@ test.describe('Provider Flow', () => {
     const initialCount = await page.locator('[data-testid="service-item"]').count();
 
     if (initialCount === 0) {
-      console.log('No services to delete, skipping test');
+      test.skip(true, 'No services to delete');
       return;
     }
 
@@ -201,8 +201,7 @@ test.describe('Provider Flow', () => {
       .isVisible().catch(() => false);
 
     if (!bookingsExist) {
-      // Ingen pending booking finns, skippa testet
-      console.log('No pending bookings available to accept');
+      test.skip(true, 'No pending bookings available to accept');
       return;
     }
 
@@ -228,7 +227,7 @@ test.describe('Provider Flow', () => {
       .isVisible().catch(() => false);
 
     if (!bookingsExist) {
-      console.log('No pending bookings available to reject');
+      test.skip(true, 'No pending bookings available to reject');
       return;
     }
 
