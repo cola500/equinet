@@ -24,12 +24,15 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CalendarBooking } from "@/types"
+import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
+import { StarRating } from "@/components/review/StarRating"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onStatusUpdate?: (bookingId: string, status: string, cancellationMessage?: string) => void
+  onReviewSuccess?: () => void
 }
 
 function getStatusLabel(status: string, isPaid: boolean): string {
@@ -65,10 +68,12 @@ export function BookingDetailDialog({
   open,
   onOpenChange,
   onStatusUpdate,
+  onReviewSuccess,
 }: BookingDetailDialogProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
+  const [showReviewDialog, setShowReviewDialog] = useState(false)
 
   if (!booking) return null
 
@@ -243,9 +248,51 @@ export function BookingDetailDialog({
               </Button>
             </div>
           )}
+
+          {/* Customer Review section for completed bookings */}
+          {booking.status === "completed" && (
+            <div className="pt-2 border-t">
+              {booking.customerReview ? (
+                <div className="space-y-1">
+                  <span className="text-sm font-medium text-gray-700">Din recension av kund</span>
+                  <div className="flex items-center gap-2">
+                    <StarRating rating={booking.customerReview.rating} readonly size="sm" />
+                    {booking.customerReview.comment && (
+                      <span className="text-sm text-gray-500">
+                        - {booking.customerReview.comment}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowReviewDialog(true)}
+                >
+                  Recensera kund
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Customer Review Dialog */}
+    {booking && showReviewDialog && (
+      <CustomerReviewDialog
+        open={showReviewDialog}
+        onOpenChange={setShowReviewDialog}
+        bookingId={booking.id}
+        customerName={`${booking.customer.firstName} ${booking.customer.lastName}`}
+        serviceName={booking.service.name}
+        onSuccess={() => {
+          setShowReviewDialog(false)
+          onReviewSuccess?.()
+        }}
+      />
+    )}
 
     {/* Cancel Confirmation Dialog */}
     <AlertDialog open={showCancelDialog} onOpenChange={handleCancelDialogClose}>

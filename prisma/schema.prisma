@@ -45,6 +45,7 @@ model User {
   routeOrders               RouteOrder[]
   emailVerificationTokens   EmailVerificationToken[]
   reviews                   Review[]   @relation("CustomerReviews")
+  customerReviewsReceived   CustomerReview[] @relation("CustomerReviewsReceived")
   horses                    Horse[]
   horseNotes                HorseNote[] @relation("HorseNoteAuthor")
   groupBookingRequests      GroupBookingRequest[]
@@ -88,6 +89,7 @@ model Provider {
   routes                 Route[]
   routeOrders            RouteOrder[] // NEW: Provider-announced route orders
   reviews                Review[]
+  customerReviews        CustomerReview[] @relation("ProviderCustomerReviews")
   verifications          ProviderVerification[]
   groupBookingRequests   GroupBookingRequest[]
   fortnoxConnection      FortnoxConnection?
@@ -189,6 +191,7 @@ model Booking {
 
   payment       Payment?
   review        Review?
+  customerReview CustomerReview?
   groupBookingParticipant GroupBookingParticipant?
 
   @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
@@ -433,6 +436,27 @@ model Review {
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([providerId, createdAt])
+  @@index([customerId])
+}
+
+// Customer reviews (provider → customer, immutable)
+model CustomerReview {
+  id         String   @id @default(uuid())
+  rating     Int      // 1-5
+  comment    String?  // Max 500 tecken, valfritt
+
+  bookingId  String   @unique // En recension per bokning
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  providerId String
+  provider   Provider @relation("ProviderCustomerReviews", fields: [providerId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   User     @relation("CustomerReviewsReceived", fields: [customerId], references: [id])
+
+  createdAt  DateTime @default(now())
 
   @@index([providerId, createdAt])
   @@index([customerId])

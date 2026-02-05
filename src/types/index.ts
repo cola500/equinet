@@ -108,6 +108,12 @@ export interface CalendarService {
   price: number
 }
 
+export interface CalendarCustomerReview {
+  id: string
+  rating: number
+  comment: string | null
+}
+
 export interface CalendarBooking {
   id: string
   bookingDate: string
@@ -121,6 +127,7 @@ export interface CalendarBooking {
   service: CalendarService
   customer: CalendarCustomer
   payment?: CalendarPayment | null
+  customerReview?: CalendarCustomerReview | null
 }
 
 export interface AvailabilityDay {

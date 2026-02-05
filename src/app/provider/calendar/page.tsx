@@ -411,6 +411,7 @@ export default function ProviderCalendarPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onStatusUpdate={handleStatusUpdate}
+        onReviewSuccess={() => mutateBookings()}
       />
 
       <AvailabilityEditDialog

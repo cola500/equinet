@@ -393,6 +393,14 @@ export class PrismaBookingRepository
             invoiceNumber: true,
           },
         },
+        // Customer review (provider → customer) for provider view
+        customerReview: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+          },
+        },
       },
       orderBy: { bookingDate: 'desc' },
     })

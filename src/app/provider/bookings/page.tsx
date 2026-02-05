@@ -22,6 +22,8 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
+import { StarRating } from "@/components/review/StarRating"
 
 interface Payment {
   id: string
@@ -61,6 +63,11 @@ interface Booking {
     phone?: string
   }
   payment?: Payment | null
+  customerReview?: {
+    id: string
+    rating: number
+    comment: string | null
+  } | null
 }
 
 export default function ProviderBookingsPage() {
@@ -72,6 +79,7 @@ export default function ProviderBookingsPage() {
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -373,6 +381,30 @@ export default function ProviderBookingsPage() {
                       </Button>
                     </div>
                   )}
+
+                  {booking.status === "completed" && (
+                    <div className="mt-4 pt-4 border-t">
+                      {booking.customerReview ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Din recension:</span>
+                          <StarRating rating={booking.customerReview.rating} readonly size="sm" />
+                          {booking.customerReview.comment && (
+                            <span className="text-sm text-gray-500 truncate max-w-[200px]">
+                              - {booking.customerReview.comment}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setReviewBooking(booking)}
+                        >
+                          Recensera kund
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -414,6 +446,21 @@ export default function ProviderBookingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Customer Review Dialog */}
+      {reviewBooking && (
+        <CustomerReviewDialog
+          open={!!reviewBooking}
+          onOpenChange={(open) => { if (!open) setReviewBooking(null) }}
+          bookingId={reviewBooking.id}
+          customerName={`${reviewBooking.customer.firstName} ${reviewBooking.customer.lastName}`}
+          serviceName={reviewBooking.service.name}
+          onSuccess={() => {
+            setReviewBooking(null)
+            mutateBookings()
+          }}
+        />
+      )}
     </ProviderLayout>
   )
 }
