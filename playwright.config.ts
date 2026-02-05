@@ -60,11 +60,10 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    // Setup project that runs before all tests
+    // Setup project: seed E2E data before all tests
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
-      testIgnore: /.*cleanup\.setup\.ts/, // Don't run cleanup in setup phase
+      testMatch: /seed-e2e\.setup\.ts/,
     },
     // Main test project with dependency on setup
     {

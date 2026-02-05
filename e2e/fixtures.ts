@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { test as base } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
+import { cleanupDynamicTestData } from './setup/cleanup-utils'
 
 // Singleton pattern to avoid connection leaks
 const globalForPrisma = globalThis as unknown as {
@@ -27,132 +28,10 @@ export const test = base.extend<object, object>({
     // Use the page normally
     await use(page)
 
-    // Cleanup after each test
-    await cleanupTestData()
+    // Cleanup dynamic test data (always runs, not affected by E2E_CLEANUP)
+    await cleanupDynamicTestData(prisma)
   },
 })
 
 // Re-export expect for convenience
 export { expect } from '@playwright/test'
-
-/**
- * Cleanup dynamically created test data
- * Keeps base test users (test@example.com, provider@example.com)
- */
-async function cleanupTestData() {
-  const keepEmails = ['test@example.com', 'provider@example.com']
-
-  try {
-    // Delete dynamically created data (users with timestamp in email)
-    // Order matters due to foreign key constraints
-
-    // 0. Delete ghost user bookings and ghost users from E2E tests
-    await prisma.booking.deleteMany({
-      where: { customer: { email: { endsWith: '@ghost.equinet.se' } } }
-    })
-    await prisma.user.deleteMany({
-      where: { email: { endsWith: '@ghost.equinet.se' } }
-    })
-
-    // 1. Delete group booking participants + requests from dynamically created users
-    await prisma.groupBookingParticipant.deleteMany({
-      where: {
-        OR: [
-          { groupBookingRequest: { locationName: { startsWith: 'E2E' } } },
-          { user: { AND: [{ email: { contains: '@example.com' } }, { email: { notIn: keepEmails } }] } },
-        ],
-      },
-    })
-    await prisma.groupBookingRequest.deleteMany({
-      where: {
-        OR: [
-          { locationName: { startsWith: 'E2E' } },
-          { creator: { AND: [{ email: { contains: '@example.com' } }, { email: { notIn: keepEmails } }] } },
-        ],
-      },
-    })
-
-    // 2. Delete bokningar from dynamically created users/providers
-    await prisma.booking.deleteMany({
-      where: {
-        OR: [
-          {
-            customer: {
-              AND: [
-                { email: { contains: '@example.com' } },
-                { email: { notIn: keepEmails } },
-              ],
-            },
-          },
-          {
-            service: {
-              provider: {
-                user: {
-                  AND: [
-                    { email: { contains: '@example.com' } },
-                    { email: { notIn: keepEmails } },
-                  ],
-                },
-              },
-            },
-          },
-        ],
-      },
-    })
-
-    // 2. Delete services from dynamically created providers
-    await prisma.service.deleteMany({
-      where: {
-        provider: {
-          user: {
-            AND: [
-              { email: { contains: '@example.com' } },
-              { email: { notIn: keepEmails } },
-            ],
-          },
-        },
-      },
-    })
-
-    // 3. Delete availability from dynamically created providers
-    await prisma.availability.deleteMany({
-      where: {
-        provider: {
-          user: {
-            AND: [
-              { email: { contains: '@example.com' } },
-              { email: { notIn: keepEmails } },
-            ],
-          },
-        },
-      },
-    })
-
-    // 4. Delete dynamically created providers
-    await prisma.provider.deleteMany({
-      where: {
-        user: {
-          AND: [
-            { email: { contains: '@example.com' } },
-            { email: { notIn: keepEmails } },
-          ],
-        },
-      },
-    })
-
-    // 5. Delete dynamically created users
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: '@example.com',
-          notIn: keepEmails,
-        },
-      },
-    })
-
-    // Success - no console.log to avoid cluttering test output
-  } catch (error) {
-    // Only log actual errors
-    console.error('Error in afterEach cleanup:', error)
-  }
-}

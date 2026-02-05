@@ -1,98 +1,13 @@
-import { test, expect, prisma } from './fixtures';
+import { test, expect } from './fixtures';
 
 test.describe('Booking Flow (Customer)', () => {
   test.beforeEach(async ({ page }) => {
-    // Sprint 2 F2-5: Clean up dynamically created providers from auth tests
-    // This prevents test pollution where auth.spec.ts creates providers
-    // that accumulate and cause booking tests to timeout
-    const keepEmails = ['test@example.com', 'provider@example.com'];
-
-      // Delete bookings from dynamically created data
-      await prisma.booking.deleteMany({
-        where: {
-          OR: [
-            {
-              customer: {
-                AND: [
-                  { email: { contains: '@example.com' } },
-                  { email: { notIn: keepEmails } }
-                ]
-              }
-            },
-            {
-              service: {
-                provider: {
-                  user: {
-                    AND: [
-                      { email: { contains: '@example.com' } },
-                      { email: { notIn: keepEmails } }
-                    ]
-                  }
-                }
-              }
-            }
-          ]
-        }
-      });
-
-      // Delete services from dynamically created providers
-      await prisma.service.deleteMany({
-        where: {
-          provider: {
-            user: {
-              AND: [
-                { email: { contains: '@example.com' } },
-                { email: { notIn: keepEmails } }
-              ]
-            }
-          }
-        }
-      });
-
-      // Delete availability from dynamically created providers
-      await prisma.availability.deleteMany({
-        where: {
-          provider: {
-            user: {
-              AND: [
-                { email: { contains: '@example.com' } },
-                { email: { notIn: keepEmails } }
-              ]
-            }
-          }
-        }
-      });
-
-      // Delete dynamically created providers
-      await prisma.provider.deleteMany({
-        where: {
-          user: {
-            AND: [
-              { email: { contains: '@example.com' } },
-              { email: { notIn: keepEmails } }
-            ]
-          }
-        }
-      });
-
-      // Delete dynamically created users
-      await prisma.user.deleteMany({
-        where: {
-          email: {
-            contains: '@example.com',
-            notIn: keepEmails
-          }
-        }
-      });
-
-    // Logga in som kund först
-    // OBS: Detta förutsätter att test@example.com finns i databasen
+    // Login as customer (seed-e2e.setup.ts ensures test@example.com exists)
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');
     await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Vänta på providers page (kunder redirectas dit direkt)
     await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
   });
 
