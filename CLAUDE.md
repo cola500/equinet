@@ -183,7 +183,7 @@ const booking = await bookingRepository.findById(id)
 const booking = await prisma.booking.findUnique({ where: { id } })
 ```
 
-**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`
+**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`
 **Stöddomäner** (Prisma OK): `AvailabilityException`, `AvailabilitySchedule`
 
 ### Domain Service Pattern
@@ -313,6 +313,8 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Definiera error-kontrakt före implementation**: Bestäm HTTP-status-mappning i förväg.
 - **`select` i repository måste inkludera alla fält UI:n behöver**: Kontrollera vid schema-ändringar.
 - **Serverless-begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
+- **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta, färre tester, enklare UI. Lägg till redigering senare vid behov.
+- **Befintliga DDD-patterns skalar bra**: Nya domäner (t.ex. CustomerReview) byggs snabbt genom att följa Review-mallen.
 
 ---
 
@@ -381,4 +383,4 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-02-02
+**Senast uppdaterad**: 2026-02-05

@@ -1,6 +1,6 @@
 # Equinet - Produktbacklog
 
-**Senast uppdaterad:** 2026-02-02
+**Senast uppdaterad:** 2026-02-05
 **Nuvarande version:** v0.2.0+
 **Produktagare:** Johan Lindengard
 
@@ -11,7 +11,7 @@
 > Se README.md for fullstandig lista.
 
 **Auth:** Registrering, login, rollval, email-verifiering, losenordsstyrka
-**Leverantor:** Dashboard, tjanster (CRUD), oppettider, exceptions, kalender, bokningshantering, onboarding, profil med geo-position, recensioner & svar
+**Leverantor:** Dashboard, tjanster (CRUD), oppettider, exceptions, kalender, bokningshantering, onboarding, profil med geo-position, recensioner & svar, kundrecensioner (betygsatt kunder)
 **Kund:** Leverantorsgalleri, bokningar, avbokning, flexibla ruttbestallningar, profil, recensioner & betyg, mock-betalning, hastregister med vardhistorik, hasthalsotidslinje (anteckningar + kategorifilter)
 **Leverantör:** Kompetenser & certifikat (5 typer: utbildning/organisation/certifikat/erfarenhet/licens, utfardare, ar, max 5 bilder, redigera/ta bort, badge), read-only hasttidslinje
 **Admin:** Verifieringsgranskning (godkann/avvisa med kommentar, bilder, metadata, notifikation till provider)
@@ -22,7 +22,7 @@
 **Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad pa hastprofil (foto) och leverantorsprofil (profilbild)
 **Bokforing:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
 **Manuell bokning:** Provider kan skapa bokningar at kunder (ghost user-pattern), kundsok begransad till egna kunder, hast-dropdown, steg-for-steg dialog, "M"-indikator i kalender, audit trail
-**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1210+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
+**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1213+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
 

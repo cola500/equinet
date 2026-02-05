@@ -149,7 +149,8 @@ equinet/
 │   │   │   ├── providers/    # Leverantörs-API
 │   │   │   │   └── [id]/availability/  # Tillgänglighetskontroll
 │   │   │   ├── notifications/ # In-app notifikationer API
-│   │   │   ├── reviews/      # Recensioner & betyg API
+│   │   │   ├── reviews/      # Recensioner & betyg API (kund → leverantör)
+│   │   │   ├── customer-reviews/ # Kundrecensioner API (leverantör → kund)
 │   │   │   ├── services/     # Tjänste-API
 │   │   │   ├── cron/         # Schemalagda jobb (påminnelser)
 │   │   │   ├── route-orders/ # Rutt-beställningar API
@@ -248,6 +249,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **Route** - Leverantörers planerade rutter
 - **RouteStop** - Enskilda stopp i en rutt
 - **Review** - Recensioner och betyg (1-5) med leverantörssvar
+- **CustomerReview** - Leverantörens recensioner av kunder (1-5, immutabel)
 - **ProviderVerification** - Kompetenser och verifieringsansökningar (utbildning, organisation, certifikat, erfarenhet, licens) med utfärdare, år och bilder
 - **GroupBookingRequest** - Grupprequests för stallgemenskaper (invite code, status, period)
 - **GroupBookingParticipant** - Deltagare i grupprequests (hästinfo, status, koppling till bokning)
@@ -274,7 +276,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Kalendervy för bokningsöversikt
 - Bokningshantering med filter och automatisk tab-växling
 - Profilkompletteringsindikator
-- **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg
+- **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg, recensera kunder efter genomförda bokningar
 - **Kompetenser & Verifiering**: Lägg till kompetenser (utbildning, organisation, certifikat, erfarenhet, licens) med utfärdare, år, beskrivning och bilder (max 5 per post). Redigera/ta bort pending/rejected poster. Badge på profil vid godkännande
 - **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin)
 - **Grupprequests**: Se öppna grupprequests, matcha och skapa bokningar för alla deltagare
@@ -406,9 +408,9 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 ### Test Coverage
 
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
-- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, PaymentGateway, AccountingGateway, InvoiceMapper, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
+- **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, CustomerReviewService, PaymentGateway, AccountingGateway, InvoiceMapper, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, customer-reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
