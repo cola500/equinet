@@ -3,9 +3,9 @@
 import { format, startOfWeek, endOfWeek, getWeek, addDays } from "date-fns"
 import { sv } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Calendar, CalendarDays, CalendarRange } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, CalendarDays, CalendarRange, Grid3X3 } from "lucide-react"
 
-export type ViewMode = "day" | "3-day" | "week"
+export type ViewMode = "day" | "3-day" | "week" | "month"
 
 interface CalendarHeaderProps {
   currentDate: Date
@@ -44,7 +44,11 @@ export function CalendarHeader({
       <div className="flex items-center justify-between">
         {/* Titel */}
         <div className="flex items-center gap-2 md:gap-4">
-          {viewMode === "week" ? (
+          {viewMode === "month" ? (
+            <h2 className="text-lg md:text-xl font-semibold capitalize">
+              {format(currentDate, "MMMM yyyy", { locale: sv })}
+            </h2>
+          ) : viewMode === "week" ? (
             <>
               <h2 className="text-lg md:text-xl font-semibold">
                 Vecka {weekNumber}
@@ -98,6 +102,16 @@ export function CalendarHeader({
               <CalendarDays className="h-4 w-4" />
               <span className="hidden sm:inline ml-1">Vecka</span>
             </Button>
+            <Button
+              variant={viewMode === "month" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onViewModeChange?.("month")}
+              className="h-8 px-2"
+              title="Månadsvy"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Månad</span>
+            </Button>
           </div>
         )}
       </div>
@@ -110,11 +124,13 @@ export function CalendarHeader({
           onClick={handlePrevious}
           className="h-10 px-3"
           aria-label={
-            viewMode === "week"
-              ? "Föregående vecka"
-              : viewMode === "3-day"
-                ? "Föregående 3 dagar"
-                : "Föregående dag"
+            viewMode === "month"
+              ? "Föregående månad"
+              : viewMode === "week"
+                ? "Föregående vecka"
+                : viewMode === "3-day"
+                  ? "Föregående 3 dagar"
+                  : "Föregående dag"
           }
         >
           <ChevronLeft className="h-4 w-4 sm:mr-1" />
@@ -136,11 +152,13 @@ export function CalendarHeader({
           onClick={handleNext}
           className="h-10 px-3"
           aria-label={
-            viewMode === "week"
-              ? "Nästa vecka"
-              : viewMode === "3-day"
-                ? "Nästa 3 dagar"
-                : "Nästa dag"
+            viewMode === "month"
+              ? "Nästa månad"
+              : viewMode === "week"
+                ? "Nästa vecka"
+                : viewMode === "3-day"
+                  ? "Nästa 3 dagar"
+                  : "Nästa dag"
           }
         >
           <span className="hidden sm:inline">Nästa</span>

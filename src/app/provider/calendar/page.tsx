@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, format } from "date-fns"
+import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
@@ -11,6 +11,7 @@ import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CalendarHeader, ViewMode } from "@/components/calendar/CalendarHeader"
 import { WeekCalendar } from "@/components/calendar/WeekCalendar"
+import { MonthCalendar } from "@/components/calendar/MonthCalendar"
 import { BookingDetailDialog } from "@/components/calendar/BookingDetailDialog"
 import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDialog"
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
@@ -99,16 +100,19 @@ export default function ProviderCalendarPage() {
     }
   }, [providerId])
 
-  // Hämta undantag för aktuell vecka
+  // Hämta undantag för aktuell period (vecka eller månad)
   const fetchExceptions = useCallback(async () => {
     if (!providerId) return
 
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
+    // Use month range to cover both week and month views
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(currentDate)
+    const rangeStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+    const rangeEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
 
     try {
-      const from = format(weekStart, "yyyy-MM-dd")
-      const to = format(weekEnd, "yyyy-MM-dd")
+      const from = format(rangeStart, "yyyy-MM-dd")
+      const to = format(rangeEnd, "yyyy-MM-dd")
       const response = await fetch(
         `/api/providers/${providerId}/availability-exceptions?from=${from}&to=${to}`
       )
@@ -129,7 +133,9 @@ export default function ProviderCalendarPage() {
   }, [providerId, fetchAvailability, fetchExceptions])
 
   const handlePrevious = () => {
-    if (viewMode === "day") {
+    if (viewMode === "month") {
+      setCurrentDate((prev) => subMonths(prev, 1))
+    } else if (viewMode === "day") {
       setCurrentDate((prev) => subDays(prev, 1))
     } else if (viewMode === "3-day") {
       setCurrentDate((prev) => subDays(prev, 3))
@@ -139,7 +145,9 @@ export default function ProviderCalendarPage() {
   }
 
   const handleNext = () => {
-    if (viewMode === "day") {
+    if (viewMode === "month") {
+      setCurrentDate((prev) => addMonths(prev, 1))
+    } else if (viewMode === "day") {
       setCurrentDate((prev) => addDays(prev, 1))
     } else if (viewMode === "3-day") {
       setCurrentDate((prev) => addDays(prev, 3))
@@ -283,13 +291,17 @@ export default function ProviderCalendarPage() {
     }
   }
 
-  // Filtrera bokningar för aktuell vecka
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
+  // Filtrera bokningar för aktuell period (vecka eller månad)
+  const periodStart = viewMode === "month"
+    ? startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 })
+    : startOfWeek(currentDate, { weekStartsOn: 1 })
+  const periodEnd = viewMode === "month"
+    ? endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 })
+    : endOfWeek(currentDate, { weekStartsOn: 1 })
 
-  const weekBookings = bookings.filter((booking) => {
+  const periodBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.bookingDate)
-    return bookingDate >= weekStart && bookingDate <= weekEnd
+    return bookingDate >= periodStart && bookingDate <= periodEnd
   })
 
   if (isLoading || !isProvider) {
@@ -320,72 +332,6 @@ export default function ProviderCalendarPage() {
         </button>
       </div>
 
-      {/* Färgförklaring - kollapsad på mobil */}
-      <details className="mb-4 md:hidden">
-        <summary className="text-sm font-medium text-gray-700 cursor-pointer">
-          Visa färgförklaring
-        </summary>
-        <div className="flex flex-wrap gap-3 mt-2 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-yellow-400 border-l-2 border-yellow-500" />
-            <span>Väntar</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-green-400 border-l-2 border-green-500" />
-            <span>Bekräftad</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-blue-400 border-l-2 border-blue-500" />
-            <span>Genomförd</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-emerald-500 border-l-2 border-emerald-600" />
-            <span>Betald</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-orange-200 border border-orange-300" />
-            <span>Undantag</span>
-          </div>
-        </div>
-      </details>
-      <div className="hidden md:flex flex-wrap gap-4 mb-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-yellow-400 border-l-4 border-yellow-500" />
-          <span>Väntar på svar</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-400 border-l-4 border-green-500" />
-          <span>Bekräftad</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-400 border-l-4 border-blue-500" />
-          <span>Genomförd</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-red-400 border-l-4 border-red-500" />
-          <span>Avbokad</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-500 border-l-4 border-emerald-600" />
-          <span>Betald</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
-          <span>Öppet</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300" />
-          <span>Stängt (veckoschema)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-orange-200 border border-orange-300" />
-          <span>Ledig/undantag</span>
-        </div>
-      </div>
-      <p className="text-xs text-gray-500 mb-4">
-        Klicka på en dag för att lägga till undantag (ledighet, semester, etc.)
-      </p>
-
       <CalendarHeader
         currentDate={currentDate}
         viewMode={viewMode}
@@ -395,16 +341,95 @@ export default function ProviderCalendarPage() {
         onToday={handleToday}
       />
 
-      <WeekCalendar
-        currentDate={currentDate}
-        bookings={weekBookings}
-        availability={availability}
-        exceptions={exceptions}
-        viewMode={viewMode}
-        onBookingClick={handleBookingClick}
-        onDayClick={handleDayClick}
-        onDateClick={handleDateClick}
-      />
+      {viewMode === "month" ? (
+        <MonthCalendar
+          currentDate={currentDate}
+          bookings={periodBookings}
+          availability={availability}
+          exceptions={exceptions}
+          onBookingClick={handleBookingClick}
+          onDateClick={handleDateClick}
+        />
+      ) : (
+        <WeekCalendar
+          currentDate={currentDate}
+          bookings={periodBookings}
+          availability={availability}
+          exceptions={exceptions}
+          viewMode={viewMode}
+          onBookingClick={handleBookingClick}
+          onDayClick={handleDayClick}
+          onDateClick={handleDateClick}
+        />
+      )}
+
+      {/* Färgförklaring - under kalendern */}
+      <div className="mt-4">
+        <p className="text-xs text-gray-500 mb-3">
+          Klicka på en dag för att lägga till undantag (ledighet, semester, etc.)
+        </p>
+        <details className="md:hidden">
+          <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+            Visa färgförklaring
+          </summary>
+          <div className="flex flex-wrap gap-3 mt-2 text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-yellow-400 border-l-2 border-yellow-500" />
+              <span>Väntar</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-green-400 border-l-2 border-green-500" />
+              <span>Bekräftad</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-blue-400 border-l-2 border-blue-500" />
+              <span>Genomförd</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-emerald-500 border-l-2 border-emerald-600" />
+              <span>Betald</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-orange-200 border border-orange-300" />
+              <span>Undantag</span>
+            </div>
+          </div>
+        </details>
+        <div className="hidden md:flex flex-wrap gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-yellow-400 border-l-4 border-yellow-500" />
+            <span>Väntar på svar</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-green-400 border-l-4 border-green-500" />
+            <span>Bekräftad</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-400 border-l-4 border-blue-500" />
+            <span>Genomförd</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-red-400 border-l-4 border-red-500" />
+            <span>Avbokad</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-emerald-500 border-l-4 border-emerald-600" />
+            <span>Betald</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
+            <span>Öppet</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300" />
+            <span>Stängt (veckoschema)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-orange-200 border border-orange-300" />
+            <span>Ledig/undantag</span>
+          </div>
+        </div>
+      </div>
 
       <BookingDetailDialog
         booking={selectedBooking}
