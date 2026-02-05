@@ -63,6 +63,15 @@ export default function ProvidersPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Geo-filtering state
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [radiusKm, setRadiusKm] = useState(50)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
+  const [searchPlace, setSearchPlace] = useState("")
+  const [searchPlaceName, setSearchPlaceName] = useState<string | null>(null)
+  const [isGeocoding, setIsGeocoding] = useState(false)
+
   useEffect(() => {
     fetchProviders()
   }, [])
@@ -74,8 +83,12 @@ export default function ProvidersPage() {
       setIsSearching(true)
     }
 
+    const geo = userLocation
+      ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }
+      : undefined
+
     const timer = setTimeout(() => {
-      fetchProviders(search, city)
+      fetchProviders(search, city, geo)
       setIsSearching(false)
     }, 500)
 
@@ -115,7 +128,9 @@ export default function ProvidersPage() {
     }
   }, [visitingArea])
 
-  const fetchProviders = async (searchQuery?: string, cityQuery?: string) => {
+  const fetchProviders = async (searchQuery?: string, cityQuery?: string, geo?: {
+    latitude: number; longitude: number; radiusKm: number
+  }) => {
     try {
       setIsLoading(true)
       setError(null)
@@ -126,6 +141,11 @@ export default function ProvidersPage() {
       }
       if (cityQuery) {
         params.append("city", cityQuery)
+      }
+      if (geo) {
+        params.append("latitude", geo.latitude.toString())
+        params.append("longitude", geo.longitude.toString())
+        params.append("radiusKm", geo.radiusKm.toString())
       }
 
       const url = params.toString()
@@ -150,7 +170,10 @@ export default function ProvidersPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchProviders(search, city)
+    const geo = userLocation
+      ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }
+      : undefined
+    fetchProviders(search, city, geo)
   }
 
   const handleClearFilters = () => {
@@ -158,7 +181,110 @@ export default function ProvidersPage() {
     setCity("")
     setVisitingArea("")
     setVisitingProviders([])
+    setUserLocation(null)
+    setRadiusKm(50)
+    setLocationError(null)
+    setSearchPlaceName(null)
+    setSearchPlace("")
     fetchProviders()
+  }
+
+  const handleSearchPlace = async () => {
+    const trimmed = searchPlace.trim()
+    if (!trimmed) return
+
+    setIsGeocoding(true)
+    setLocationError(null)
+
+    try {
+      const response = await fetch(`/api/geocode?address=${encodeURIComponent(trimmed)}`)
+      if (response.ok) {
+        const data = await response.json()
+        const location = { lat: data.latitude, lng: data.longitude }
+        setUserLocation(location)
+        setSearchPlaceName(trimmed)
+        fetchProviders(search, city, {
+          latitude: location.lat,
+          longitude: location.lng,
+          radiusKm,
+        })
+      } else {
+        setLocationError("Kunde inte hitta platsen. Prova en annan ort eller postnummer.")
+      }
+    } catch {
+      setLocationError("Något gick fel vid sökning. Försök igen.")
+    } finally {
+      setIsGeocoding(false)
+    }
+  }
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Din webbläsare stöder inte platsdelning")
+      return
+    }
+
+    setLocationLoading(true)
+    setLocationError(null)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        }
+        setUserLocation(location)
+        setSearchPlaceName(null)
+        setSearchPlace("")
+        setLocationLoading(false)
+        fetchProviders(search, city, {
+          latitude: location.lat,
+          longitude: location.lng,
+          radiusKm,
+        })
+      },
+      (err) => {
+        console.error("Geolocation error:", err)
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setLocationError("Du nekade platsåtkomst. Tillåt platsdelning i webbläsarens inställningar.")
+            break
+          case err.POSITION_UNAVAILABLE:
+            setLocationError("Din plats kunde inte fastställas")
+            break
+          case err.TIMEOUT:
+            setLocationError("Det tog för lång tid att hämta din plats")
+            break
+          default:
+            setLocationError("Kunde inte hämta din plats")
+        }
+        setLocationLoading(false)
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    )
+  }
+
+  const clearLocation = () => {
+    setUserLocation(null)
+    setLocationError(null)
+    setSearchPlaceName(null)
+    setSearchPlace("")
+    fetchProviders(search, city)
+  }
+
+  const handleRadiusChange = (newRadius: number) => {
+    setRadiusKm(newRadius)
+    if (userLocation) {
+      fetchProviders(search, city, {
+        latitude: userLocation.lat,
+        longitude: userLocation.lng,
+        radiusKm: newRadius,
+      })
+    }
   }
 
   return (
@@ -204,7 +330,7 @@ export default function ProvidersPage() {
                     className="w-full md:w-40 lg:w-48 h-11"
                   />
                 </div>
-                {(search || city || visitingArea) && (
+                {(search || city || visitingArea || userLocation) && (
                   <Button
                     type="button"
                     variant="outline"
@@ -216,23 +342,153 @@ export default function ProvidersPage() {
                   </Button>
                 )}
               </div>
+
+              {/* Place Search */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm font-medium text-gray-700">Sök i närheten:</span>
+                  <div className="flex gap-2 items-center flex-1 min-w-[200px] max-w-md">
+                    <Input
+                      placeholder="Ort, stad eller postnummer..."
+                      value={searchPlace}
+                      onChange={(e) => setSearchPlace(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSearchPlace() }}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleSearchPlace}
+                      disabled={isGeocoding || !searchPlace.trim()}
+                      variant="outline"
+                    >
+                      {isGeocoding ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          Söker...
+                        </>
+                      ) : (
+                        "Sök plats"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Location Quick Actions */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Button
+                    onClick={requestLocation}
+                    variant="outline"
+                    size="sm"
+                    disabled={locationLoading}
+                  >
+                    {locationLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Hämtar position...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="mr-2 h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        Använd min position
+                      </>
+                    )}
+                  </Button>
+
+                  {userLocation && (
+                    <select
+                      value={radiusKm}
+                      onChange={(e) => handleRadiusChange(Number(e.target.value))}
+                      className="border rounded-md px-3 py-2 text-sm bg-white"
+                    >
+                      <option value={25}>25 km</option>
+                      <option value={50}>50 km</option>
+                      <option value={100}>100 km</option>
+                      <option value={200}>200 km</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* Location Error */}
+              {locationError && (
+                <p className="text-sm text-red-600">{locationError}</p>
+              )}
+
               {isSearching && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <div className="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-green-600"></div>
                   <span>Söker...</span>
                 </div>
               )}
-              {!isSearching && (search || city || visitingArea) && (
+              {!isSearching && (search || city || visitingArea || userLocation) && (
                 <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
                   <span>Aktiva filter:</span>
                   {search && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
-                      Sökning: "{search}"
+                      Sökning: &quot;{search}&quot;
                       <button
                         type="button"
                         onClick={() => {
                           setSearch("")
-                          fetchProviders("", city)
+                          const geo = userLocation
+                            ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }
+                            : undefined
+                          fetchProviders("", city, geo)
                         }}
                         className="hover:text-green-900"
                       >
@@ -242,12 +498,15 @@ export default function ProvidersPage() {
                   )}
                   {city && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      Ort: "{city}"
+                      Ort: &quot;{city}&quot;
                       <button
                         type="button"
                         onClick={() => {
                           setCity("")
-                          fetchProviders(search, "")
+                          const geo = userLocation
+                            ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }
+                            : undefined
+                          fetchProviders(search, "", geo)
                         }}
                         className="hover:text-blue-900"
                       >
@@ -257,7 +516,7 @@ export default function ProvidersPage() {
                   )}
                   {visitingArea && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full">
-                      Besöker: "{visitingArea}"
+                      Besöker: &quot;{visitingArea}&quot;
                       <button
                         type="button"
                         onClick={() => {
@@ -265,6 +524,30 @@ export default function ProvidersPage() {
                           setVisitingProviders([])
                         }}
                         className="hover:text-purple-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {userLocation && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
+                      {searchPlaceName ? `Plats: ${searchPlaceName}` : "Min position"}
+                      <button
+                        type="button"
+                        onClick={clearLocation}
+                        className="hover:text-orange-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {userLocation && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
+                      Inom {radiusKm} km
+                      <button
+                        type="button"
+                        onClick={clearLocation}
+                        className="hover:text-orange-900"
                       >
                         ×
                       </button>
@@ -387,7 +670,12 @@ export default function ProvidersPage() {
                   Något gick fel
                 </h3>
                 <p className="text-gray-600 mb-4">{error}</p>
-                <Button onClick={() => fetchProviders(search, city)}>
+                <Button onClick={() => {
+                  const geo = userLocation
+                    ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }
+                    : undefined
+                  fetchProviders(search, city, geo)
+                }}>
                   Försök igen
                 </Button>
               </CardContent>
@@ -419,7 +707,7 @@ export default function ProvidersPage() {
                   Inga leverantörer hittades
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {search || city ? (
+                  {search || city || userLocation ? (
                     <>
                       Prova att ändra dina sökfilter eller{" "}
                       <button
@@ -433,7 +721,7 @@ export default function ProvidersPage() {
                     "Det finns inga leverantörer tillgängliga just nu. Kom tillbaka senare!"
                   )}
                 </p>
-                {user && user.userType === "provider" && !search && !city && (
+                {user && user.userType === "provider" && !search && !city && !userLocation && (
                   <p className="text-sm text-gray-500">
                     Tips: Se till att din profil är komplett och att du har skapat minst en tjänst för att synas här.
                   </p>

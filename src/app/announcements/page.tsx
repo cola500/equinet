@@ -51,6 +51,11 @@ export default function AnnouncementsPage() {
   const [locationError, setLocationError] = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
+  // Place search state
+  const [searchPlace, setSearchPlace] = useState("")
+  const [searchPlaceName, setSearchPlaceName] = useState<string | null>(null)
+  const [isGeocoding, setIsGeocoding] = useState(false)
+
   // Fetch user's saved location from profile
   useEffect(() => {
     const fetchSavedLocation = async () => {
@@ -150,6 +155,8 @@ export default function AnnouncementsPage() {
     setUserLocation(null)
     setRadiusKm(50)
     setLocationError(null)
+    setSearchPlaceName(null)
+    setSearchPlace("")
     fetchAnnouncements()
   }
 
@@ -168,6 +175,8 @@ export default function AnnouncementsPage() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         })
+        setSearchPlaceName(null)
+        setSearchPlace("")
         setLocationLoading(false)
         // Auto-search when location is obtained
         fetchAnnouncements({
@@ -202,9 +211,55 @@ export default function AnnouncementsPage() {
     )
   }
 
+  const handleSearchPlace = async () => {
+    const trimmed = searchPlace.trim()
+    if (!trimmed) return
+
+    setIsGeocoding(true)
+    setLocationError(null)
+
+    try {
+      const response = await fetch(`/api/geocode?address=${encodeURIComponent(trimmed)}`)
+      if (response.ok) {
+        const data = await response.json()
+        const location = { lat: data.latitude, lng: data.longitude }
+        setUserLocation(location)
+        setSearchPlaceName(trimmed)
+        fetchAnnouncements({
+          serviceType: serviceType || undefined,
+          latitude: location.lat,
+          longitude: location.lng,
+          radiusKm,
+        })
+      } else {
+        setLocationError("Kunde inte hitta platsen. Prova en annan ort eller postnummer.")
+      }
+    } catch {
+      setLocationError("Något gick fel vid sökning. Försök igen.")
+    } finally {
+      setIsGeocoding(false)
+    }
+  }
+
+  const handleResetToSavedLocation = () => {
+    if (!savedLocation) return
+    setUserLocation(savedLocation)
+    setSearchPlaceName(null)
+    setSearchPlace("")
+    setLocationError(null)
+    fetchAnnouncements({
+      serviceType: serviceType || undefined,
+      latitude: savedLocation.lat,
+      longitude: savedLocation.lng,
+      radiusKm,
+    })
+  }
+
   const clearLocation = () => {
     setUserLocation(null)
     setLocationError(null)
+    setSearchPlaceName(null)
+    setSearchPlace("")
     fetchAnnouncements({
       serviceType: serviceType || undefined,
     })
@@ -247,116 +302,159 @@ export default function AnnouncementsPage() {
           {/* Search/Filter Section */}
           <div className="mb-8">
             <div className="flex flex-col gap-4">
-              {/* Filter Row */}
-              <div className="flex flex-wrap gap-4 items-start">
-                <Input
-                  placeholder="Filtrera på tjänstetyp (t.ex. Hovslagning)..."
-                  value={serviceType}
-                  onChange={(e) => setServiceType(e.target.value)}
-                  className="flex-1 min-w-[200px]"
-                />
+              {/* Service Type Filter */}
+              <Input
+                placeholder="Filtrera på tjänstetyp (t.ex. Hovslagning)..."
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSearch() }}
+                className="max-w-md"
+              />
 
-                {/* Location Controls */}
-                <div className="flex gap-2 items-center">
-                  {userLocation ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md">
-                        {savedLocation && userLocation.lat === savedLocation.lat && userLocation.lng === savedLocation.lng
-                          ? `Min plats${savedLocation.city ? ` (${savedLocation.city})` : ""}`
-                          : "Position aktiv"}
-                      </span>
-                      <select
-                        value={radiusKm}
-                        onChange={(e) => handleRadiusChange(Number(e.target.value))}
-                        className="border rounded-md px-3 py-2 text-sm bg-white"
-                      >
-                        <option value={25}>25 km</option>
-                        <option value={50}>50 km</option>
-                        <option value={100}>100 km</option>
-                        <option value={200}>200 km</option>
-                      </select>
-                      <Button
-                        onClick={clearLocation}
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-500"
-                      >
-                        X
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 items-center">
-                      {user && !savedLocation && !profileLoading && (
-                        <Link href="/customer/profile">
-                          <Button variant="outline" size="sm">
-                            Spara min plats i profilen
-                          </Button>
-                        </Link>
-                      )}
-                      <Button
-                        onClick={requestLocation}
-                        variant="outline"
-                        disabled={locationLoading}
-                      >
-                        {locationLoading ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 mr-2 h-4 w-4"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              />
-                            </svg>
-                            Hämtar position...
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              className="mr-2 h-4 w-4"
-                              fill="none"
+              {/* Place Search */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm font-medium text-gray-700">Sök plats:</span>
+                  <div className="flex gap-2 items-center flex-1 min-w-[200px] max-w-md">
+                    <Input
+                      placeholder="Ort, stad eller postnummer..."
+                      value={searchPlace}
+                      onChange={(e) => setSearchPlace(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSearchPlace() }}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleSearchPlace}
+                      disabled={isGeocoding || !searchPlace.trim()}
+                      variant="outline"
+                    >
+                      {isGeocoding ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
                               stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            Använd min position
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          Söker...
+                        </>
+                      ) : (
+                        "Sök plats"
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
-                <Button onClick={handleSearch}>Sök</Button>
-                {hasActiveFilters && (
-                  <Button variant="outline" onClick={handleClearFilters}>
-                    Rensa
+                {/* Location Quick Actions */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Button
+                    onClick={requestLocation}
+                    variant="outline"
+                    size="sm"
+                    disabled={locationLoading}
+                  >
+                    {locationLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Hämtar position...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="mr-2 h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        Använd min position
+                      </>
+                    )}
                   </Button>
-                )}
+
+                  {savedLocation && !(userLocation && userLocation.lat === savedLocation.lat && userLocation.lng === savedLocation.lng) && (
+                    <Button
+                      onClick={handleResetToSavedLocation}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Min stallplats{savedLocation.city ? ` (${savedLocation.city})` : ""}
+                    </Button>
+                  )}
+
+                  {user && !savedLocation && !profileLoading && (
+                    <Link href="/customer/profile">
+                      <Button variant="ghost" size="sm" className="text-gray-500">
+                        Spara min plats i profilen
+                      </Button>
+                    </Link>
+                  )}
+
+                  {userLocation && (
+                    <select
+                      value={radiusKm}
+                      onChange={(e) => handleRadiusChange(Number(e.target.value))}
+                      className="border rounded-md px-3 py-2 text-sm bg-white"
+                    >
+                      <option value={25}>25 km</option>
+                      <option value={50}>50 km</option>
+                      <option value={100}>100 km</option>
+                      <option value={200}>200 km</option>
+                    </select>
+                  )}
+
+                  <Button onClick={handleSearch} size="sm">Sök</Button>
+                  {hasActiveFilters && (
+                    <Button variant="outline" size="sm" onClick={handleClearFilters}>
+                      Rensa
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Location Error */}
@@ -370,7 +468,7 @@ export default function AnnouncementsPage() {
                   <span>Aktiva filter:</span>
                   {serviceType && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
-                      Tjänst: "{serviceType}"
+                      Tjänst: &quot;{serviceType}&quot;
                       <button
                         type="button"
                         onClick={() => {
@@ -382,6 +480,22 @@ export default function AnnouncementsPage() {
                           })
                         }}
                         className="hover:text-green-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {userLocation && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                      {searchPlaceName
+                        ? `Plats: ${searchPlaceName}`
+                        : savedLocation && userLocation.lat === savedLocation.lat && userLocation.lng === savedLocation.lng
+                          ? `Min stallplats${savedLocation.city ? ` (${savedLocation.city})` : ""}`
+                          : "Min position"}
+                      <button
+                        type="button"
+                        onClick={clearLocation}
+                        className="hover:text-blue-900"
                       >
                         ×
                       </button>
