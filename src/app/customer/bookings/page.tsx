@@ -124,7 +124,7 @@ export default function CustomerBookingsPage() {
   const mutateAll = () => { mutateBookings(); mutateRouteOrders() }
 
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("upcoming")
-  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
+  const [bookingToCancel, setBookingToCancel] = useState<{ id: string; type: "fixed" | "flexible" } | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
@@ -141,13 +141,26 @@ export default function CustomerBookingsPage() {
 
     setIsCancelling(true)
     try {
-      const response = await fetch(`/api/bookings/${bookingToCancel}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "cancelled" }),
-      })
+      let response: Response
+
+      if (bookingToCancel.type === "flexible") {
+        // Route orders use a different API endpoint
+        response = await fetch(`/api/route-orders/${bookingToCancel.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "cancelled" }),
+        })
+      } else {
+        response = await fetch(`/api/bookings/${bookingToCancel.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "cancelled" }),
+        })
+      }
 
       if (!response.ok) {
         throw new Error("Failed to cancel booking")
@@ -605,7 +618,7 @@ export default function CustomerBookingsPage() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => setBookingToCancel(booking.id)}
+                            onClick={() => setBookingToCancel({ id: booking.id, type: "fixed" })}
                           >
                             Avboka
                           </Button>
@@ -674,7 +687,7 @@ export default function CustomerBookingsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => setBookingToCancel(booking.id)}
+                        onClick={() => setBookingToCancel({ id: booking.id, type: "flexible" })}
                       >
                         Avboka denna bokning
                       </Button>

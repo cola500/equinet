@@ -108,9 +108,9 @@ export function CalendarHeader({
               onClick={() => onViewModeChange?.("month")}
               className="h-8 px-2"
               title="Månadsvy"
+              aria-label="Månadsvy"
             >
               <Grid3X3 className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1">Månad</span>
             </Button>
           </div>
         )}

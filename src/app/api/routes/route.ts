@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const orders = await prisma.routeOrder.findMany({
       where: {
         id: { in: validated.orderIds },
-        status: 'pending'
+        status: { in: ['open', 'pending'] }
       }
     })
 

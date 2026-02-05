@@ -79,7 +79,8 @@ export async function GET(
  * PATCH /api/route-orders/[id]
  *
  * Update a route order (e.g., cancel it)
- * Only the owning provider can cancel their own announcements
+ * - Providers can cancel their own announcements (announcementType: provider_announced)
+ * - Customers can cancel their own orders (customerId matches)
  */
 export async function PATCH(
   request: NextRequest,
@@ -103,64 +104,112 @@ export async function PATCH(
     // Validate input
     const validated = updateStatusSchema.parse(body)
 
-    // Find the route order and verify ownership (atomically in WHERE clause)
-    const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
-      select: { id: true },
-    })
+    const isProvider = session.user.userType === "provider"
 
-    if (!provider) {
-      return NextResponse.json(
-        { error: "Provider profile not found" },
-        { status: 404 }
-      )
-    }
-
-    // Update with ownership check in WHERE clause (IDOR protection)
-    const updated = await prisma.routeOrder.updateMany({
-      where: {
-        id,
-        providerId: provider.id,
-        announcementType: "provider_announced",
-        status: { not: "cancelled" }, // Can't cancel already cancelled
-      },
-      data: {
-        status: validated.status,
-      },
-    })
-
-    if (updated.count === 0) {
-      // Check if order exists to give appropriate error message
-      const order = await prisma.routeOrder.findUnique({
-        where: { id },
-        select: { providerId: true, status: true },
+    if (isProvider) {
+      // Provider cancellation flow
+      const provider = await prisma.provider.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
       })
 
-      if (!order) {
+      if (!provider) {
         return NextResponse.json(
-          { error: "Rutt-annons hittades inte" },
+          { error: "Provider profile not found" },
           { status: 404 }
         )
       }
 
-      if (order.providerId !== provider.id) {
-        return NextResponse.json(
-          { error: "Du har inte behörighet att ändra denna rutt-annons" },
-          { status: 403 }
-        )
-      }
+      // Update with ownership check in WHERE clause (IDOR protection)
+      const updated = await prisma.routeOrder.updateMany({
+        where: {
+          id,
+          providerId: provider.id,
+          announcementType: "provider_announced",
+          status: { not: "cancelled" },
+        },
+        data: {
+          status: validated.status,
+        },
+      })
 
-      if (order.status === "cancelled") {
+      if (updated.count === 0) {
+        const order = await prisma.routeOrder.findUnique({
+          where: { id },
+          select: { providerId: true, status: true },
+        })
+
+        if (!order) {
+          return NextResponse.json(
+            { error: "Rutt-annons hittades inte" },
+            { status: 404 }
+          )
+        }
+
+        if (order.providerId !== provider.id) {
+          return NextResponse.json(
+            { error: "Du har inte behörighet att ändra denna rutt-annons" },
+            { status: 403 }
+          )
+        }
+
+        if (order.status === "cancelled") {
+          return NextResponse.json(
+            { error: "Rutt-annonsen är redan avbruten" },
+            { status: 400 }
+          )
+        }
+
         return NextResponse.json(
-          { error: "Rutt-annonsen är redan avbruten" },
+          { error: "Kunde inte uppdatera rutt-annons" },
           { status: 400 }
         )
       }
+    } else {
+      // Customer cancellation flow
+      const updated = await prisma.routeOrder.updateMany({
+        where: {
+          id,
+          customerId: session.user.id,
+          status: { notIn: ["cancelled", "completed"] },
+        },
+        data: {
+          status: validated.status,
+        },
+      })
 
-      return NextResponse.json(
-        { error: "Kunde inte uppdatera rutt-annons" },
-        { status: 400 }
-      )
+      if (updated.count === 0) {
+        const order = await prisma.routeOrder.findUnique({
+          where: { id },
+          select: { customerId: true, status: true },
+        })
+
+        if (!order) {
+          return NextResponse.json(
+            { error: "Beställningen hittades inte" },
+            { status: 404 }
+          )
+        }
+
+        if (order.customerId !== session.user.id) {
+          return NextResponse.json(
+            { error: "Du har inte behörighet att ändra denna beställning" },
+            { status: 403 }
+          )
+        }
+
+        if (order.status === "cancelled") {
+          return NextResponse.json(
+            { error: "Beställningen är redan avbokad" },
+            { status: 400 }
+          )
+        }
+
+        return NextResponse.json(
+          { error: "Kunde inte avboka beställningen" },
+          { status: 400 }
+        )
+      }
     }
 
     return NextResponse.json({ success: true, status: validated.status })
