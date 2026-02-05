@@ -60,7 +60,7 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
     upstashRateLimiters = {
       login: new Ratelimit({
         redis: redisClient,
-        limiter: Ratelimit.slidingWindow(5, "15 m"),
+        limiter: Ratelimit.slidingWindow(10, "15 m"),
         analytics: true,
         prefix: "ratelimit:login",
       }),
@@ -152,12 +152,25 @@ function checkRateLimitInMemory(
 /**
  * Reset rate limit for an identifier (e.g., after successful login)
  */
-export function resetRateLimit(identifier: string): void {
-  // For in-memory fallback
+export async function resetRateLimit(
+  identifier: string,
+  limiterType: string = 'login'
+): Promise<void> {
+  // In-memory fallback
   inMemoryAttempts.delete(identifier)
 
-  // For Upstash, we don't need to manually reset as it's time-based
-  // The rate limit will automatically reset after the time window
+  // Upstash: actually reset the sliding window
+  if (isUpstashConfigured()) {
+    try {
+      const limiters = getUpstashRateLimiters()
+      const limiter = limiters[limiterType]
+      if (limiter) {
+        await limiter.resetUsedTokens(identifier)
+      }
+    } catch (error) {
+      console.error("Failed to reset Upstash rate limit:", error)
+    }
+  }
 }
 
 /**

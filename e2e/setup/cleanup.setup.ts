@@ -82,6 +82,27 @@ teardown('cleanup test data after all tests', async () => {
     })
     console.log(`  ✓ Deleted ${deletedRouteOrders.count} test route orders`)
 
+    // 3.5 Ta bort GroupBookingParticipants och GroupBookingRequests
+    const deletedGBParticipants = await prisma.groupBookingParticipant.deleteMany({
+      where: {
+        OR: [
+          { groupBookingRequest: { locationName: { startsWith: 'E2E' } } },
+          { user: { AND: [{ email: { contains: '@example.com' } }, { email: { notIn: keepEmails } }] } },
+        ],
+      },
+    })
+    console.log(`  ✓ Deleted ${deletedGBParticipants.count} test group booking participants`)
+
+    const deletedGBRequests = await prisma.groupBookingRequest.deleteMany({
+      where: {
+        OR: [
+          { locationName: { startsWith: 'E2E' } },
+          { creator: { AND: [{ email: { contains: '@example.com' } }, { email: { notIn: keepEmails } }] } },
+        ],
+      },
+    })
+    console.log(`  ✓ Deleted ${deletedGBRequests.count} test group booking requests`)
+
     // 4. Ta bort ALLA bokningar relaterade till dynamiskt skapade test-users
     // Men INTE bokningar för test@example.com och provider@example.com
     const deletedBookings = await prisma.booking.deleteMany({

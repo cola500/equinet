@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST, GET } from './route'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth-server'
-import { geocodeAddress } from '@/lib/geocoding'
 import { NextRequest } from 'next/server'
 
 // Helper to generate future dates (avoids hardcoded dates becoming invalid)
@@ -33,6 +32,9 @@ vi.mock('@/lib/prisma', () => {
     provider: {
       findUnique: vi.fn(),
     },
+    service: {
+      findMany: vi.fn(),
+    },
     // $transaction executes callback with prisma itself as the tx client
     $transaction: vi.fn(async (cb: (tx: any) => Promise<any>) => cb(mockPrisma)),
   }
@@ -41,10 +43,6 @@ vi.mock('@/lib/prisma', () => {
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
-}))
-
-vi.mock('@/lib/geocoding', () => ({
-  geocodeAddress: vi.fn(),
 }))
 
 describe('POST /api/route-orders', () => {
@@ -135,8 +133,8 @@ describe('POST /api/route-orders', () => {
     })
   })
 
-  describe('Provider-announced orders (new functionality)', () => {
-    it('should create provider announcement with single stop', async () => {
+  describe('Provider-announced orders (municipality + services)', () => {
+    it('should create announcement with valid services and municipality', async () => {
       // Arrange
       const { dateFrom, dateTo, dateFromObj, dateToObj } = getFutureDates()
 
@@ -149,13 +147,17 @@ describe('POST /api/route-orders', () => {
         userId: 'user123',
       } as any)
 
+      // Provider owns these services
+      vi.mocked(prisma.service.findMany).mockResolvedValue([
+        { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
+        { id: 'b0000000-0000-4000-b000-000000000002', name: 'Verkning', providerId: 'provider123' },
+      ] as any)
+
       const mockAnnouncement = {
         id: 'announcement123',
         providerId: 'provider123',
-        serviceType: 'Hovslagning',
-        address: 'Alingsås',
-        latitude: 57.930,
-        longitude: 12.532,
+        serviceType: 'Hovslagning, Verkning',
+        municipality: 'Alingsås',
         dateFrom: dateFromObj,
         dateTo: dateToObj,
         announcementType: 'provider_announced',
@@ -163,28 +165,15 @@ describe('POST /api/route-orders', () => {
       }
 
       vi.mocked(prisma.routeOrder.create).mockResolvedValue(mockAnnouncement as any)
-      vi.mocked(prisma.routeStop.create).mockResolvedValue({
-        id: 'stop1',
-        routeOrderId: 'announcement123',
-        locationName: 'Alingsås centrum',
-        stopOrder: 1,
-      } as any)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'Hovslagning',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001', 'b0000000-0000-4000-b000-000000000002'],
           dateFrom,
           dateTo,
-          stops: [
-            {
-              locationName: 'Alingsås centrum',
-              address: 'Storgatan 1, Alingsås',
-              latitude: 57.930,
-              longitude: 12.532,
-            },
-          ],
+          municipality: 'Alingsås',
         }),
       })
 
@@ -196,10 +185,11 @@ describe('POST /api/route-orders', () => {
       expect(response.status).toBe(201)
       expect(data.id).toBe('announcement123')
       expect(data.providerId).toBe('provider123')
+      expect(data.municipality).toBe('Alingsås')
       expect(data.announcementType).toBe('provider_announced')
     })
 
-    it('should create provider announcement with multiple stops (1-3)', async () => {
+    it('should return 400 for invalid municipality', async () => {
       // Arrange
       const { dateFrom, dateTo } = getFutureDates()
 
@@ -212,42 +202,14 @@ describe('POST /api/route-orders', () => {
         userId: 'user123',
       } as any)
 
-      const mockAnnouncement = {
-        id: 'announcement123',
-        providerId: 'provider123',
-        announcementType: 'provider_announced',
-      }
-
-      vi.mocked(prisma.routeOrder.create).mockResolvedValue(mockAnnouncement as any)
-      vi.mocked(prisma.routeStop.createMany).mockResolvedValue({ count: 3 } as any)
-
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'Hovslagning',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001'],
           dateFrom,
           dateTo,
-          stops: [
-            {
-              locationName: 'Alingsås',
-              address: 'Storgatan 1, Alingsås',
-              latitude: 57.930,
-              longitude: 12.532,
-            },
-            {
-              locationName: 'Sollebrunn',
-              address: 'Centrumvägen 5, Sollebrunn',
-              latitude: 58.043,
-              longitude: 12.555,
-            },
-            {
-              locationName: 'Lerum',
-              address: 'Aspvägen 10, Lerum',
-              latitude: 57.770,
-              longitude: 12.269,
-            },
-          ],
+          municipality: 'Fantasistad',
         }),
       })
 
@@ -256,27 +218,11 @@ describe('POST /api/route-orders', () => {
       const data = await response.json()
 
       // Assert
-      expect(response.status).toBe(201)
-      expect(prisma.routeStop.createMany).toHaveBeenCalledWith({
-        data: expect.arrayContaining([
-          expect.objectContaining({
-            routeOrderId: 'announcement123',
-            locationName: 'Alingsås',
-            stopOrder: 1,
-          }),
-          expect.objectContaining({
-            locationName: 'Sollebrunn',
-            stopOrder: 2,
-          }),
-          expect.objectContaining({
-            locationName: 'Lerum',
-            stopOrder: 3,
-          }),
-        ]),
-      })
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Ogiltig kommun')
     })
 
-    it('should return 400 when provider announcement has no stops', async () => {
+    it('should return 400 when serviceIds is empty', async () => {
       // Arrange
       const { dateFrom, dateTo } = getFutureDates()
 
@@ -284,19 +230,14 @@ describe('POST /api/route-orders', () => {
         user: { id: 'user123', userType: 'provider' },
       } as any)
 
-      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
-        id: 'provider123',
-        userId: 'user123',
-      } as any)
-
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'Hovslagning',
+          serviceIds: [],
           dateFrom,
           dateTo,
-          stops: [],
+          municipality: 'Göteborg',
         }),
       })
 
@@ -307,11 +248,9 @@ describe('POST /api/route-orders', () => {
       // Assert
       expect(response.status).toBe(400)
       expect(data.error).toBe('Valideringsfel')
-      // Check that validation details mention the stops requirement
-      expect(JSON.stringify(data.details)).toContain('stops')
     })
 
-    it('should return 400 when provider announcement has too many stops (>3)', async () => {
+    it('should return 400 when serviceId does not belong to provider', async () => {
       // Arrange
       const { dateFrom, dateTo } = getFutureDates()
 
@@ -324,19 +263,47 @@ describe('POST /api/route-orders', () => {
         userId: 'user123',
       } as any)
 
+      // Only 1 of 2 serviceIds belongs to provider
+      vi.mocked(prisma.service.findMany).mockResolvedValue([
+        { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
+      ] as any)
+
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'Hovslagning',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001', 'c0000000-0000-4000-a000-000000000099'],
           dateFrom,
           dateTo,
-          stops: [
-            { locationName: 'Stop 1', address: 'Address 1', latitude: 57.0, longitude: 12.0 },
-            { locationName: 'Stop 2', address: 'Address 2', latitude: 57.1, longitude: 12.1 },
-            { locationName: 'Stop 3', address: 'Address 3', latitude: 57.2, longitude: 12.2 },
-            { locationName: 'Stop 4', address: 'Address 4', latitude: 57.3, longitude: 12.3 },
-          ],
+          municipality: 'Göteborg',
+        }),
+      })
+
+      // Act
+      const response = await POST(request)
+      const data = await response.json()
+
+      // Assert
+      expect(response.status).toBe(400)
+      expect(data.error).toContain('tillhör inte dig')
+    })
+
+    it('should return 400 when municipality is missing', async () => {
+      // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
+      vi.mocked(auth).mockResolvedValue({
+        user: { id: 'user123', userType: 'provider' },
+      } as any)
+
+      const request = new NextRequest('http://localhost:3000/api/route-orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          announcementType: 'provider_announced',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001'],
+          dateFrom,
+          dateTo,
+          // municipality missing
         }),
       })
 
@@ -347,8 +314,6 @@ describe('POST /api/route-orders', () => {
       // Assert
       expect(response.status).toBe(400)
       expect(data.error).toBe('Valideringsfel')
-      // Check that validation details mention the stops limit
-      expect(JSON.stringify(data.details)).toContain('stops')
     })
 
     it('should return 403 when customer tries to create provider announcement', async () => {
@@ -363,12 +328,10 @@ describe('POST /api/route-orders', () => {
         method: 'POST',
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'Hovslagning',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001'],
           dateFrom,
           dateTo,
-          stops: [
-            { locationName: 'Alingsås', address: 'Storgatan 1', latitude: 57.930, longitude: 12.532 },
-          ],
+          municipality: 'Göteborg',
         }),
       })
 
@@ -395,12 +358,10 @@ describe('POST /api/route-orders', () => {
         method: 'POST',
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'Hovslagning',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001'],
           dateFrom,
           dateTo,
-          stops: [
-            { locationName: 'Alingsås', address: 'Storgatan 1', latitude: 57.930, longitude: 12.532 },
-          ],
+          municipality: 'Göteborg',
         }),
       })
 
@@ -413,33 +374,44 @@ describe('POST /api/route-orders', () => {
       expect(data.error).toContain('Provider')
     })
 
-    it('should return 400 when geocoding fails for an address', async () => {
+    it('should include specialInstructions when provided', async () => {
       // Arrange
-      const { dateFrom, dateTo } = getFutureDates()
+      const { dateFrom, dateTo, dateFromObj, dateToObj } = getFutureDates()
 
       vi.mocked(auth).mockResolvedValue({
-        user: { id: 'provider1', userType: 'provider' },
+        user: { id: 'user123', userType: 'provider' },
       } as any)
 
-      // Mock provider exists
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
+        userId: 'user123',
       } as any)
 
-      // Mock geocoding failure (address not found)
-      vi.mocked(geocodeAddress).mockResolvedValue(null)
+      vi.mocked(prisma.service.findMany).mockResolvedValue([
+        { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
+      ] as any)
 
-      const request = new Request('http://localhost:3000/api/route-orders', {
+      vi.mocked(prisma.routeOrder.create).mockResolvedValue({
+        id: 'announcement123',
+        providerId: 'provider123',
+        serviceType: 'Hovslagning',
+        municipality: 'Alingsås',
+        specialInstructions: 'Ring innan',
+        dateFrom: dateFromObj,
+        dateTo: dateToObj,
+        announcementType: 'provider_announced',
+        status: 'open',
+      } as any)
+
+      const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           announcementType: 'provider_announced',
-          serviceType: 'hovslagning',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001'],
           dateFrom,
           dateTo,
-          stops: [
-            { locationName: 'Okänd plats', address: 'Xyzabc 123, Ingenstans' },
-          ],
+          municipality: 'Alingsås',
+          specialInstructions: 'Ring innan',
         }),
       })
 
@@ -448,10 +420,55 @@ describe('POST /api/route-orders', () => {
       const data = await response.json()
 
       // Assert
-      expect(response.status).toBe(400)
-      expect(data.error).toBe('Kunde inte hitta adressen')
-      expect(data.details).toContain('Xyzabc 123, Ingenstans')
-      expect(data.details).toContain('kunde inte geocodas')
+      expect(response.status).toBe(201)
+      expect(data.specialInstructions).toBe('Ring innan')
+    })
+
+    it('should set serviceType to comma-separated service names (backward compat)', async () => {
+      // Arrange
+      const { dateFrom, dateTo } = getFutureDates()
+
+      vi.mocked(auth).mockResolvedValue({
+        user: { id: 'user123', userType: 'provider' },
+      } as any)
+
+      vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+        id: 'provider123',
+        userId: 'user123',
+      } as any)
+
+      vi.mocked(prisma.service.findMany).mockResolvedValue([
+        { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
+        { id: 'b0000000-0000-4000-b000-000000000002', name: 'Verkning', providerId: 'provider123' },
+      ] as any)
+
+      vi.mocked(prisma.routeOrder.create).mockResolvedValue({
+        id: 'announcement123',
+        providerId: 'provider123',
+      } as any)
+
+      const request = new NextRequest('http://localhost:3000/api/route-orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          announcementType: 'provider_announced',
+          serviceIds: ['a0000000-0000-4000-a000-000000000001', 'b0000000-0000-4000-b000-000000000002'],
+          dateFrom,
+          dateTo,
+          municipality: 'Göteborg',
+        }),
+      })
+
+      // Act
+      await POST(request)
+
+      // Assert - verify that serviceType is set to comma-separated names
+      expect(prisma.routeOrder.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            serviceType: 'Hovslagning, Verkning',
+          }),
+        })
+      )
     })
   })
 })
@@ -477,6 +494,7 @@ describe('GET /api/route-orders', () => {
         id: 'announcement1',
         providerId: 'provider123',
         serviceType: 'Hovslagning',
+        municipality: 'Alingsås',
         announcementType: 'provider_announced',
         routeStops: [
           { id: 'stop1', locationName: 'Alingsås', stopOrder: 1 }

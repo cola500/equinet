@@ -5,7 +5,7 @@ test.describe('Manual Booking Dialog', () => {
     // Login as provider
     await page.goto('/login')
     await page.getByLabel(/email/i).fill('provider@example.com')
-    await page.getByLabel(/lösenord/i).fill('ProviderPass123!')
+    await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!')
     await page.getByRole('button', { name: /logga in/i }).click()
     await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 10000 })
 

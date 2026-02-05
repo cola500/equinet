@@ -2,16 +2,8 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { geocodeAddress } from "@/lib/geocoding"
+import { isValidMunicipality } from "@/lib/geo/municipalities"
 import { logger } from "@/lib/logger"
-
-// Validation schema for route stop
-const routeStopSchema = z.object({
-  locationName: z.string().min(1, "Platsnamn krävs"),
-  address: z.string().min(1, "Adress krävs"),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-})
 
 // Validation schema for customer-initiated route order
 const createRouteOrderSchema = z.object({
@@ -28,13 +20,13 @@ const createRouteOrderSchema = z.object({
   contactPhone: z.string().min(1, "Kontakttelefon krävs"),
 })
 
-// Validation schema for provider-announced route order
+// Validation schema for provider-announced route order (new: municipality + serviceIds)
 const createAnnouncementSchema = z.object({
   announcementType: z.literal('provider_announced'),
-  serviceType: z.string().min(1, "Tjänstetyp krävs"),
+  serviceIds: z.array(z.string().uuid()).min(1, "Minst en tjänst krävs"),
   dateFrom: z.string().min(1, "Från-datum krävs"),
   dateTo: z.string().min(1, "Till-datum krävs"),
-  stops: z.array(routeStopSchema).min(1, "Minst 1 stopp krävs").max(3, "Max 3 stopp tillåtna"),
+  municipality: z.string().min(1, "Kommun krävs"),
   specialInstructions: z.string().optional(),
 })
 
@@ -61,10 +53,10 @@ export async function POST(request: Request) {
 
     if (announcementType === 'provider_announced') {
       // Provider announcement flow
-      return await handleProviderAnnouncement(request, body, session)
+      return await handleProviderAnnouncement(body, session)
     } else {
       // Customer-initiated flow (existing)
-      return await handleCustomerOrder(request, body, session)
+      return await handleCustomerOrder(body, session)
     }
 
   } catch (error) {
@@ -88,7 +80,7 @@ export async function POST(request: Request) {
 }
 
 // Handle customer-initiated route orders
-async function handleCustomerOrder(request: Request, body: any, session: any) {
+async function handleCustomerOrder(body: any, session: any) {
   // Only customers can create route orders
   if (session.user.userType !== "customer") {
     return NextResponse.json(
@@ -171,7 +163,7 @@ async function handleCustomerOrder(request: Request, body: any, session: any) {
 }
 
 // Handle provider-announced route orders
-async function handleProviderAnnouncement(request: Request, body: any, session: any) {
+async function handleProviderAnnouncement(body: any, session: any) {
   // Only providers can create announcements
   if (session.user.userType !== "provider") {
     return NextResponse.json(
@@ -196,7 +188,15 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
     )
   }
 
-  // 2. Validate date range
+  // 2. Validate municipality
+  if (!isValidMunicipality(validated.municipality)) {
+    return NextResponse.json(
+      { error: "Ogiltig kommun" },
+      { status: 400 }
+    )
+  }
+
+  // 3. Validate date range
   const dateFrom = new Date(validated.dateFrom)
   const dateTo = new Date(validated.dateTo)
   const now = new Date()
@@ -224,90 +224,67 @@ async function handleProviderAnnouncement(request: Request, body: any, session: 
     )
   }
 
-  // 3. Geocode each stop's address - FAIL if any address cannot be geocoded
-  const stopsWithCoordinates: Array<{ locationName: string; address: string; latitude?: number; longitude?: number }> = []
-  for (const stop of validated.stops) {
-    // Only geocode if coordinates not already provided
-    if (stop.latitude && stop.longitude) {
-      stopsWithCoordinates.push(stop)
-      continue
-    }
+  // 4. Validate that all serviceIds belong to this provider
+  const services = await prisma.service.findMany({
+    where: {
+      id: { in: validated.serviceIds },
+      providerId: provider.id,
+      isActive: true,
+    },
+    select: { id: true, name: true },
+  })
 
-    const coords = await geocodeAddress(stop.address)
-    if (!coords) {
-      return NextResponse.json(
-        {
-          error: "Kunde inte hitta adressen",
-          details: `Adressen "${stop.address}" kunde inte geocodas. Kontrollera stavningen och försök igen.`
-        },
-        { status: 400 }
-      )
-    }
-
-    stopsWithCoordinates.push({
-      ...stop,
-      latitude: coords.latitude,
-      longitude: coords.longitude
-    })
+  if (services.length !== validated.serviceIds.length) {
+    return NextResponse.json(
+      { error: "En eller flera tjänster tillhör inte dig eller är inaktiva" },
+      { status: 400 }
+    )
   }
 
-  // 4. Use first stop as primary location
-  const firstStop = stopsWithCoordinates[0]
+  // 5. Create announcement with services (many-to-many)
+  const serviceNames = services.map(s => s.name).join(', ')
 
-  // 5. Create announcement + route stops in a single transaction
-  // @ts-expect-error - Prisma transaction callback type inference issue
-  const announcement = await prisma.$transaction(async (tx: any) => {
-    const newAnnouncement = await tx.routeOrder.create({
-      data: {
-        providerId: provider.id,
-        serviceType: validated.serviceType,
-        address: firstStop.address,
-        latitude: firstStop.latitude ?? null,
-        longitude: firstStop.longitude ?? null,
-        numberOfHorses: 1,
-        dateFrom,
-        dateTo,
-        priority: "normal",
-        specialInstructions: validated.specialInstructions,
-        announcementType: "provider_announced",
-        status: "open",
+  const announcement = await prisma.routeOrder.create({
+    data: {
+      providerId: provider.id,
+      serviceType: serviceNames, // Backward compat
+      address: validated.municipality, // Use municipality as address for backward compat
+      municipality: validated.municipality,
+      numberOfHorses: 1,
+      dateFrom,
+      dateTo,
+      priority: "normal",
+      specialInstructions: validated.specialInstructions,
+      announcementType: "provider_announced",
+      status: "open",
+      services: {
+        connect: services.map(s => ({ id: s.id })),
       },
-      include: {
-        provider: {
-          select: {
-            id: true,
-            businessName: true,
-          }
+    },
+    select: {
+      id: true,
+      providerId: true,
+      serviceType: true,
+      municipality: true,
+      dateFrom: true,
+      dateTo: true,
+      status: true,
+      specialInstructions: true,
+      announcementType: true,
+      createdAt: true,
+      provider: {
+        select: {
+          id: true,
+          businessName: true,
         }
-      }
-    })
-
-    // Create route stops within the same transaction
-    if (stopsWithCoordinates.length > 1) {
-      await tx.routeStop.createMany({
-        data: stopsWithCoordinates.map((stop: { locationName: string; address: string; latitude?: number; longitude?: number }, index: number) => ({
-          routeOrderId: newAnnouncement.id,
-          locationName: stop.locationName,
-          address: stop.address,
-          latitude: stop.latitude ?? null,
-          longitude: stop.longitude ?? null,
-          stopOrder: index + 1,
-        })),
-      })
-    } else {
-      await tx.routeStop.create({
-        data: {
-          routeOrderId: newAnnouncement.id,
-          locationName: firstStop.locationName,
-          address: firstStop.address,
-          latitude: firstStop.latitude ?? null,
-          longitude: firstStop.longitude ?? null,
-          stopOrder: 1,
-        },
-      })
+      },
+      services: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
     }
-
-    return newAnnouncement
   })
 
   return NextResponse.json(announcement, { status: 201 })
@@ -348,6 +325,7 @@ export async function GET(request: Request) {
           id: true,
           serviceType: true,
           address: true,
+          municipality: true,
           latitude: true,
           longitude: true,
           dateFrom: true,
@@ -368,6 +346,12 @@ export async function GET(request: Request) {
               status: true,
             },
             orderBy: { stopOrder: "asc" }
+          },
+          services: {
+            select: {
+              id: true,
+              name: true,
+            }
           },
           _count: {
             select: { bookings: true }

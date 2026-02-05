@@ -113,7 +113,8 @@ model Service {
   recommendedIntervalWeeks  Int?     // Recommended rebooking interval in weeks (null = no reminder)
   createdAt                 DateTime @default(now())
 
-  bookings Booking[]
+  bookings      Booking[]
+  announcements RouteOrder[] // Many-to-many: announcements using this service
 
   @@index([providerId, isActive])
 }
@@ -338,6 +339,7 @@ model RouteOrder {
   address             String
   latitude            Float?   // Optional - geocoding not required for MVP
   longitude           Float?   // Optional - geocoding not required for MVP
+  municipality        String?  // Kommun (nullable for legacy announcements)
   numberOfHorses      Int      @default(1)
   dateFrom            DateTime
   dateTo              DateTime
@@ -350,6 +352,7 @@ model RouteOrder {
 
   routeStops RouteStop[]
   bookings   Booking[]
+  services   Service[]  // Many-to-many: provider's services for this announcement
 
   @@index([status, serviceType])
   @@index([status, priority])
@@ -357,6 +360,7 @@ model RouteOrder {
   @@index([dateFrom, dateTo, status])
   @@index([providerId, announcementType, status]) // NEW: Provider announcements
   @@index([latitude, longitude, announcementType]) // NEW: Geo-search
+  @@index([municipality, announcementType, status]) // Municipality-based search
 }
 
 model Route {

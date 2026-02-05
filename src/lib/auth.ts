@@ -37,7 +37,7 @@ const fullConfig: NextAuthConfig = {
         }
 
         // Reset rate limit on successful login
-        resetRateLimit(identifier)
+        await resetRateLimit(identifier)
 
         return result.value
       }

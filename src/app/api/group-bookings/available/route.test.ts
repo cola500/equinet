@@ -44,6 +44,9 @@ describe("GET /api/group-bookings/available", () => {
             id: "gr1",
             serviceType: "hovslagning",
             locationName: "Sollebrunn Ridklubb",
+            address: "Stallvägen 1, Sollebrunn",
+            latitude: 57.93,
+            longitude: 12.53,
             status: "open",
             participants: [{ user: { firstName: "Anna" } }],
             _count: { participants: 1 },
@@ -59,6 +62,8 @@ describe("GET /api/group-bookings/available", () => {
     expect(response.status).toBe(200)
     expect(data).toHaveLength(1)
     expect(data[0].serviceType).toBe("hovslagning")
+    expect(data[0]).toHaveProperty("latitude")
+    expect(data[0]).toHaveProperty("longitude")
   })
 
   it("should return 403 for non-provider users", async () => {

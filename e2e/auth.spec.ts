@@ -78,7 +78,7 @@ test.describe('Authentication Flow', () => {
 
     // Fyll i login-formulär
     await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/lösenord/i).fill('TestPassword123!');
+    await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
 
     // Submitta
     await page.getByRole('button', { name: /logga in/i }).click();
@@ -97,7 +97,7 @@ test.describe('Authentication Flow', () => {
 
     // Fyll i felaktiga credentials
     await page.getByLabel(/email/i).fill('invalid@example.com');
-    await page.getByLabel(/lösenord/i).fill('WrongPassword123!');
+    await page.getByLabel('Lösenord', { exact: true }).fill('WrongPassword123!');
 
     // Submitta
     await page.getByRole('button', { name: /logga in/i }).click();
@@ -110,7 +110,7 @@ test.describe('Authentication Flow', () => {
     // Först logga in (förutsätter att test@example.com finns)
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/lösenord/i).fill('TestPassword123!');
+    await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
     // Vänta på providers page

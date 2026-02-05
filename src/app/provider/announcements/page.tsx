@@ -15,15 +15,22 @@ interface RouteStop {
   stopOrder: number
 }
 
+interface AnnouncementService {
+  id: string
+  name: string
+}
+
 interface Announcement {
   id: string
   serviceType: string
   address: string
+  municipality?: string
   dateFrom: string
   dateTo: string
   status: string
   specialInstructions?: string
   routeStops: RouteStop[]
+  services?: AnnouncementService[]
   _count?: {
     bookings: number
   }
@@ -214,21 +221,45 @@ export default function ProviderAnnouncementsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Route Stops */}
-                  <div>
-                    <h4 className="font-semibold text-sm mb-2">Platser:</h4>
-                    <div className="space-y-2">
-                      {announcement.routeStops.map((stop) => (
-                        <div key={stop.id} className="flex items-center gap-2 text-sm">
-                          <span className="font-semibold text-gray-600">
-                            {stop.stopOrder}.
-                          </span>
-                          <span className="font-medium">{stop.locationName}</span>
-                          <span className="text-gray-500">• {stop.address}</span>
-                        </div>
-                      ))}
+                  {/* Municipality (new) or Route Stops (legacy) */}
+                  {announcement.municipality ? (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">Kommun:</h4>
+                      <p className="text-sm text-gray-700">{announcement.municipality}</p>
                     </div>
-                  </div>
+                  ) : announcement.routeStops.length > 0 ? (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2">Platser:</h4>
+                      <div className="space-y-2">
+                        {announcement.routeStops.map((stop) => (
+                          <div key={stop.id} className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold text-gray-600">
+                              {stop.stopOrder}.
+                            </span>
+                            <span className="font-medium">{stop.locationName}</span>
+                            <span className="text-gray-500">{stop.address}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Services (new) */}
+                  {announcement.services && announcement.services.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">Tjänster:</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {announcement.services.map((service) => (
+                          <span
+                            key={service.id}
+                            className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"
+                          >
+                            {service.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Special Instructions */}
                   {announcement.specialInstructions && (

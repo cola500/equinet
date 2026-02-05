@@ -24,9 +24,7 @@ describe('GET /api/route-orders/announcements', () => {
         id: 'announcement1',
         providerId: 'provider1',
         serviceType: 'Hovslagning',
-        address: 'Alingsås',
-        latitude: 57.930,
-        longitude: 12.532,
+        municipality: 'Alingsås',
         dateFrom: new Date('2025-12-15'),
         dateTo: new Date('2025-12-20'),
         announcementType: 'provider_announced',
@@ -40,9 +38,7 @@ describe('GET /api/route-orders/announcements', () => {
         id: 'announcement2',
         providerId: 'provider2',
         serviceType: 'Massage',
-        address: 'Sollebrunn',
-        latitude: 58.043,
-        longitude: 12.555,
+        municipality: 'Göteborg',
         dateFrom: new Date('2025-12-18'),
         dateTo: new Date('2025-12-22'),
         announcementType: 'provider_announced',
@@ -79,7 +75,47 @@ describe('GET /api/route-orders/announcements', () => {
     )
   })
 
-  it('should filter announcements by location (within radius)', async () => {
+  it('should filter announcements by municipality', async () => {
+    // Arrange
+    const mockAnnouncements = [
+      {
+        id: 'announcement1',
+        providerId: 'provider1',
+        serviceType: 'Hovslagning',
+        municipality: 'Göteborg',
+        announcementType: 'provider_announced',
+        status: 'open',
+        provider: { id: 'provider1', businessName: 'Test Hovslagare' },
+        services: [{ id: 's1', name: 'Hovslagning' }],
+      },
+    ]
+
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as any)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/route-orders/announcements?municipality=Göteborg'
+    )
+
+    // Act
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(1)
+    expect(data[0].municipality).toBe('Göteborg')
+
+    // Verify municipality filter in query
+    expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          municipality: 'Göteborg',
+        }),
+      })
+    )
+  })
+
+  it('should filter announcements by location (within radius) - legacy support', async () => {
     // Arrange - Announcements near Alingsås (57.930, 12.532)
     const mockNearbyAnnouncements = [
       {
@@ -185,7 +221,7 @@ describe('GET /api/route-orders/announcements', () => {
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([])
 
     const request = new NextRequest(
-      'http://localhost:3000/api/route-orders/announcements?serviceType=NonexistentService'
+      'http://localhost:3000/api/route-orders/announcements?municipality=Kiruna'
     )
 
     // Act
@@ -197,34 +233,24 @@ describe('GET /api/route-orders/announcements', () => {
     expect(data).toHaveLength(0)
   })
 
-  it('should include route stops in response', async () => {
+  it('should include services in response', async () => {
     // Arrange
-    const mockAnnouncementsWithStops = [
+    const mockAnnouncementsWithServices = [
       {
         id: 'announcement1',
         announcementType: 'provider_announced',
         status: 'open',
-        routeStops: [
-          {
-            id: 'stop1',
-            locationName: 'Alingsås',
-            latitude: 57.930,
-            longitude: 12.532,
-            stopOrder: 1,
-          },
-          {
-            id: 'stop2',
-            locationName: 'Sollebrunn',
-            latitude: 58.043,
-            longitude: 12.555,
-            stopOrder: 2,
-          },
+        municipality: 'Alingsås',
+        services: [
+          { id: 's1', name: 'Hovslagning' },
+          { id: 's2', name: 'Verkning' },
         ],
+        routeStops: [],
         provider: { businessName: 'Test Provider' },
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncementsWithStops as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncementsWithServices as any)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/announcements')
 
@@ -234,22 +260,8 @@ describe('GET /api/route-orders/announcements', () => {
 
     // Assert
     expect(response.status).toBe(200)
-    expect(data[0].routeStops).toHaveLength(2)
-    expect(data[0].routeStops[0].locationName).toBe('Alingsås')
-
-    // Verify select statement includes routeStops
-    expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        select: expect.objectContaining({
-          routeStops: expect.objectContaining({
-            orderBy: { stopOrder: 'asc' },
-            select: expect.objectContaining({
-              locationName: true,
-            }),
-          }),
-        }),
-      })
-    )
+    expect(data[0].services).toHaveLength(2)
+    expect(data[0].services[0].name).toBe('Hovslagning')
   })
 
   it('should return 400 when geo-filter is incomplete (missing longitude)', async () => {
@@ -321,49 +333,6 @@ describe('GET /api/route-orders/announcements', () => {
     )
   })
 
-  it('should combine providerId with geo-filter', async () => {
-    // Arrange - Provider's announcement near customer
-    const mockAnnouncements = [
-      {
-        id: 'announcement1',
-        providerId: 'provider1',
-        serviceType: 'Hovslagning',
-        address: 'Alingsås',
-        latitude: 57.930,
-        longitude: 12.532,
-        announcementType: 'provider_announced',
-        status: 'open',
-        provider: { id: 'provider1', businessName: 'Test Hovslagare' },
-        routeStops: [],
-      },
-    ]
-
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as any)
-
-    const request = new NextRequest(
-      'http://localhost:3000/api/route-orders/announcements?providerId=provider1&latitude=57.930&longitude=12.532&radiusKm=50'
-    )
-
-    // Act
-    const response = await GET(request)
-    const data = await response.json()
-
-    // Assert
-    expect(response.status).toBe(200)
-    expect(data).toHaveLength(1)
-
-    // Verify both filters applied
-    expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          providerId: 'provider1',
-          announcementType: 'provider_announced',
-          status: 'open',
-        }),
-      })
-    )
-  })
-
   describe('Security', () => {
     it('should only select safe provider fields (no user relation)', async () => {
       // Arrange
@@ -411,6 +380,7 @@ describe('GET /api/route-orders/announcements', () => {
           select: expect.objectContaining({
             id: true,
             providerId: true,
+            municipality: true,
             provider: expect.objectContaining({
               select: expect.objectContaining({
                 id: true,

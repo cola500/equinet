@@ -189,7 +189,7 @@ describe("rate-limit (in-memory mode)", () => {
       expect(await rateLimiters.registration(identifier)).toBe(false)
 
       // Reset
-      resetRateLimit(identifier)
+      await resetRateLimit(identifier)
 
       // Should be allowed again
       const result = await rateLimiters.registration(identifier)
@@ -207,7 +207,7 @@ describe("rate-limit (in-memory mode)", () => {
       }
 
       // Reset only id1
-      resetRateLimit(id1)
+      await resetRateLimit(id1)
 
       expect(await rateLimiters.registration(id1)).toBe(true)
       expect(await rateLimiters.registration(id2)).toBe(false)

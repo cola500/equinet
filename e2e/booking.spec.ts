@@ -1,15 +1,11 @@
-import { test, expect } from './fixtures';
-import { PrismaClient } from '@prisma/client';
+import { test, expect, prisma } from './fixtures';
 
 test.describe('Booking Flow (Customer)', () => {
   test.beforeEach(async ({ page }) => {
     // Sprint 2 F2-5: Clean up dynamically created providers from auth tests
     // This prevents test pollution where auth.spec.ts creates providers
     // that accumulate and cause booking tests to timeout
-    const prisma = new PrismaClient();
-
-    try {
-      const keepEmails = ['test@example.com', 'provider@example.com'];
+    const keepEmails = ['test@example.com', 'provider@example.com'];
 
       // Delete bookings from dynamically created data
       await prisma.booking.deleteMany({
@@ -88,15 +84,12 @@ test.describe('Booking Flow (Customer)', () => {
           }
         }
       });
-    } finally {
-      await prisma.$disconnect();
-    }
 
     // Logga in som kund först
     // OBS: Detta förutsätter att test@example.com finns i databasen
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/lösenord/i).fill('TestPassword123!');
+    await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
     // Vänta på providers page (kunder redirectas dit direkt)

@@ -39,9 +39,10 @@ function toRad(value: number): number {
  *
  * Query parameters:
  * - providerId: Filter by specific provider
- * - latitude: Customer's latitude (for geo-filtering)
- * - longitude: Customer's longitude (for geo-filtering)
- * - radiusKm: Search radius in kilometers (for geo-filtering)
+ * - municipality: Filter by municipality (exact match)
+ * - latitude: Customer's latitude (for geo-filtering, legacy)
+ * - longitude: Customer's longitude (for geo-filtering, legacy)
+ * - radiusKm: Search radius in kilometers (for geo-filtering, legacy)
  * - serviceType: Filter by service type
  * - dateFrom: Filter announcements available from this date
  * - dateTo: Filter announcements available until this date
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const providerIdParam = searchParams.get('providerId')
+    const municipalityParam = searchParams.get('municipality')
     const latitudeParam = searchParams.get('latitude')
     const longitudeParam = searchParams.get('longitude')
     const radiusKmParam = searchParams.get('radiusKm')
@@ -70,7 +72,12 @@ export async function GET(request: NextRequest) {
       where.providerId = providerIdParam
     }
 
-    // Geo-filtering validation
+    // Municipality filter (exact match)
+    if (municipalityParam) {
+      where.municipality = municipalityParam
+    }
+
+    // Geo-filtering validation (legacy support)
     if (latitudeParam || longitudeParam || radiusKmParam) {
       if (!latitudeParam || !longitudeParam || !radiusKmParam) {
         return NextResponse.json(
@@ -115,6 +122,7 @@ export async function GET(request: NextRequest) {
         providerId: true,
         serviceType: true,
         address: true,
+        municipality: true,
         latitude: true,
         longitude: true,
         dateFrom: true,
@@ -143,13 +151,19 @@ export async function GET(request: NextRequest) {
             stopOrder: 'asc',
           },
         },
+        services: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         dateFrom: 'asc',
       },
     })
 
-    // Apply geo-filtering if coordinates provided
+    // Apply geo-filtering if coordinates provided (legacy support)
     if (latitudeParam && longitudeParam && radiusKmParam) {
       const latitude = parseFloat(latitudeParam)
       const longitude = parseFloat(longitudeParam)

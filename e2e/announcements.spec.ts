@@ -1,13 +1,9 @@
-import { test, expect } from './fixtures';
-import { PrismaClient } from '@prisma/client';
+import { test, expect, prisma } from './fixtures';
 
 test.describe('Route Announcements Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Clean up test data to prevent pollution
-    const prisma = new PrismaClient();
-
-    try {
-      const keepEmails = ['test@example.com', 'provider@example.com'];
+    const keepEmails = ['test@example.com', 'provider@example.com'];
 
       // Delete route stops from route orders
       await prisma.routeStop.deleteMany({
@@ -98,9 +94,6 @@ test.describe('Route Announcements Flow', () => {
           }
         }
       });
-    } finally {
-      await prisma.$disconnect();
-    }
   });
 
   test.describe('Public Announcements Page', () => {
@@ -111,12 +104,9 @@ test.describe('Route Announcements Flow', () => {
       // Verify page loaded
       await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
 
-      // Verify search/filter elements exist
-      await expect(page.getByPlaceholder(/filtrera på tjänstetyp/i)).toBeVisible();
-      await expect(page.getByRole('button', { name: /sök/i })).toBeVisible();
-
-      // Verify location button exists
-      await expect(page.getByRole('button', { name: /använd min position/i })).toBeVisible();
+      // Verify municipality search exists
+      await expect(page.getByPlaceholder(/sök kommun/i)).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Sök', exact: true })).toBeVisible();
 
       // Wait for announcements to load
       await page.waitForTimeout(2000);
@@ -138,26 +128,32 @@ test.describe('Route Announcements Flow', () => {
       }
     });
 
-    test('should filter announcements by service type', async ({ page }) => {
+    test('should filter announcements by municipality', async ({ page }) => {
       await page.goto('/announcements');
 
       // Wait for page to load
       await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
 
-      // Type in service type filter
-      await page.getByPlaceholder(/filtrera på tjänstetyp/i).fill('Hovslagning');
+      // Type in municipality search
+      await page.getByPlaceholder(/sök kommun/i).fill('Göte');
 
-      // Click search
-      await page.getByRole('button', { name: /sök/i }).click();
+      // Wait for dropdown to appear and select Göteborg
+      await page.waitForTimeout(500);
+      const option = page.locator('li', { hasText: 'Göteborg' });
+      const optionVisible = await option.isVisible().catch(() => false);
 
-      // Wait for results
-      await page.waitForTimeout(1500);
+      if (optionVisible) {
+        await option.click();
 
-      // Verify active filter is shown
-      const activeFilterVisible = await page.getByText(/aktiva filter/i).isVisible().catch(() => false);
+        // Wait for results
+        await page.waitForTimeout(1500);
 
-      if (activeFilterVisible) {
-        await expect(page.getByText(/tjänst.*hovslagning/i)).toBeVisible();
+        // Verify active filter is shown
+        const activeFilterVisible = await page.getByText(/aktiva filter/i).isVisible().catch(() => false);
+
+        if (activeFilterVisible) {
+          await expect(page.getByText(/kommun.*göteborg/i)).toBeVisible();
+        }
       }
 
       // Verify that either results or empty state is shown
@@ -173,21 +169,27 @@ test.describe('Route Announcements Flow', () => {
       // Wait for page to load
       await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
 
-      // Apply a filter
-      await page.getByPlaceholder(/filtrera på tjänstetyp/i).fill('Test');
-      await page.getByRole('button', { name: /sök/i }).click();
-      await page.waitForTimeout(1000);
+      // Apply a municipality filter
+      await page.getByPlaceholder(/sök kommun/i).fill('Stock');
+      await page.waitForTimeout(500);
+      const option = page.locator('li', { hasText: 'Stockholm' });
+      const optionVisible = await option.isVisible().catch(() => false);
 
-      // Clear filter
-      const clearButton = page.getByRole('button', { name: /rensa/i });
-      const clearVisible = await clearButton.isVisible().catch(() => false);
-
-      if (clearVisible) {
-        await clearButton.click();
+      if (optionVisible) {
+        await option.click();
         await page.waitForTimeout(1000);
 
-        // Verify filter is cleared
-        await expect(page.getByPlaceholder(/filtrera på tjänstetyp/i)).toHaveValue('');
+        // Clear filter
+        const clearButton = page.getByRole('button', { name: /rensa/i });
+        const clearVisible = await clearButton.isVisible().catch(() => false);
+
+        if (clearVisible) {
+          await clearButton.click();
+          await page.waitForTimeout(1000);
+
+          // Verify filter is cleared
+          await expect(page.getByPlaceholder(/sök kommun/i)).toHaveValue('');
+        }
       }
     });
   });
@@ -197,7 +199,7 @@ test.describe('Route Announcements Flow', () => {
       // Log in as provider
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('provider@example.com');
-      await page.getByLabel(/lösenord/i).fill('ProviderPass123!');
+      await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!');
       await page.getByRole('button', { name: /logga in/i }).click();
 
       // Wait for dashboard
@@ -225,14 +227,53 @@ test.describe('Route Announcements Flow', () => {
       }
     });
 
-    test('should create new announcement', async ({ page }) => {
+    test('should show create announcement form with services and municipality', async ({ page }) => {
       await page.goto('/provider/announcements/new');
 
       // Verify form page loaded
       await expect(page.getByRole('heading', { name: /skapa rutt-annons/i })).toBeVisible({ timeout: 10000 });
 
-      // Fill in form
-      await page.getByLabel(/tjänstetyp/i).fill('E2E Test Hovslagning');
+      // Verify new form elements exist
+      await expect(page.getByText(/tjänster/i).first()).toBeVisible();
+      await expect(page.getByPlaceholder(/sök kommun/i)).toBeVisible();
+      await expect(page.getByLabel(/från datum/i)).toBeVisible();
+      await expect(page.getByLabel(/till datum/i)).toBeVisible();
+      await expect(page.getByLabel(/övrig information/i)).toBeVisible();
+
+      // Verify services are loaded (either checkboxes or empty state)
+      await page.waitForTimeout(2000);
+      const hasServices = await page.locator('label:has([role="checkbox"])').count() > 0;
+      const noServices = await page.getByText(/inga aktiva tjänster/i).isVisible().catch(() => false);
+
+      expect(hasServices || noServices).toBeTruthy();
+    });
+
+    test('should create new announcement with services and municipality', async ({ page }) => {
+      await page.goto('/provider/announcements/new');
+
+      // Verify form page loaded
+      await expect(page.getByRole('heading', { name: /skapa rutt-annons/i })).toBeVisible({ timeout: 10000 });
+
+      // Wait for services to load
+      await page.waitForTimeout(2000);
+
+      // Check if provider has services
+      const serviceCheckboxes = page.locator('label:has([role="checkbox"])');
+      const serviceCount = await serviceCheckboxes.count();
+
+      if (serviceCount === 0) {
+        console.log('Provider has no services, skipping create test');
+        return;
+      }
+
+      // Select first service
+      await serviceCheckboxes.first().click();
+
+      // Select municipality
+      await page.getByPlaceholder(/sök kommun/i).fill('Aling');
+      await page.waitForTimeout(500);
+      const municipalityOption = page.locator('li', { hasText: 'Alingsås' });
+      await municipalityOption.click();
 
       // Set dates (2 weeks from now)
       const futureDate = new Date();
@@ -246,10 +287,6 @@ test.describe('Route Announcements Flow', () => {
       await page.getByLabel(/från datum/i).fill(dateString);
       await page.getByLabel(/till datum/i).fill(endDateString);
 
-      // Fill in route stop (använd riktig adress för geocoding)
-      await page.getByLabel(/platsnamn/i).fill('E2E Teststall');
-      await page.getByLabel(/adress/i).fill('Kungsgatan 1, Stockholm');
-
       // Fill in optional info
       await page.getByLabel(/övrig information/i).fill('E2E test - automatiskt skapad');
 
@@ -259,15 +296,8 @@ test.describe('Route Announcements Flow', () => {
       // Wait for redirect to announcements list
       await expect(page).toHaveURL(/\/provider\/announcements$/, { timeout: 15000 });
 
-      // Verify success toast or announcement appears in list
+      // Wait for list to load
       await page.waitForTimeout(2000);
-
-      // The announcement should now be visible
-      const announcementVisible = await page.getByText(/e2e test hovslagning/i).isVisible().catch(() => false);
-
-      if (announcementVisible) {
-        await expect(page.getByText(/e2e test hovslagning/i)).toBeVisible();
-      }
     });
 
     test('should navigate to announcement details', async ({ page }) => {
@@ -405,7 +435,7 @@ test.describe('Route Announcements Flow', () => {
       // Log in as customer
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/lösenord/i).fill('TestPassword123!');
+      await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
       await page.getByRole('button', { name: /logga in/i }).click();
 
       // Wait for providers page (customers redirect there)

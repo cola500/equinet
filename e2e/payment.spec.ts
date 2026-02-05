@@ -1,83 +1,76 @@
-import { test, expect } from './fixtures'
-import { PrismaClient } from '@prisma/client'
+import { test, expect, prisma } from './fixtures'
 
 test.describe('Payment Flow', () => {
   // Create a confirmed booking that can be paid
   let testBookingId: string | null = null
 
   test.beforeEach(async ({ page }) => {
-    const prisma = new PrismaClient()
+    // Find the test customer
+    const customer = await prisma.user.findUnique({
+      where: { email: 'test@example.com' }
+    })
 
-    try {
-      // Find the test customer
-      const customer = await prisma.user.findUnique({
-        where: { email: 'test@example.com' }
-      })
+    if (!customer) {
+      console.log('Test customer not found, skipping payment tests')
+      return
+    }
 
-      if (!customer) {
-        console.log('Test customer not found, skipping payment tests')
-        return
+    // Find a provider with services
+    const provider = await prisma.provider.findFirst({
+      where: {
+        services: { some: {} }
+      },
+      include: {
+        services: true
       }
+    })
 
-      // Find a provider with services
-      const provider = await prisma.provider.findFirst({
-        where: {
-          services: { some: {} }
-        },
-        include: {
-          services: true
-        }
-      })
+    if (!provider || !provider.services[0]) {
+      console.log('No provider with services found, skipping payment tests')
+      return
+    }
 
-      if (!provider || !provider.services[0]) {
-        console.log('No provider with services found, skipping payment tests')
-        return
-      }
+    // Create a confirmed booking for payment testing
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 30) // 30 days in future
+    const dateString = futureDate.toISOString().split('T')[0]
 
-      // Create a confirmed booking for payment testing
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 30) // 30 days in future
-      const dateString = futureDate.toISOString().split('T')[0]
-
-      // Clean up any existing test payment bookings first
-      await prisma.payment.deleteMany({
-        where: {
-          booking: {
-            horseName: 'PaymentTestHorse'
-          }
-        }
-      })
-
-      await prisma.booking.deleteMany({
-        where: {
+    // Clean up any existing test payment bookings first
+    await prisma.payment.deleteMany({
+      where: {
+        booking: {
           horseName: 'PaymentTestHorse'
         }
-      })
+      }
+    })
 
-      // Create a new confirmed booking
-      const booking = await prisma.booking.create({
-        data: {
-          customer: { connect: { id: customer.id } },
-          provider: { connect: { id: provider.id } },
-          service: { connect: { id: provider.services[0].id } },
-          bookingDate: new Date(dateString),
-          startTime: '14:00',
-          endTime: '15:00',
-          status: 'confirmed', // Already confirmed so it can be paid
-          horseName: 'PaymentTestHorse',
-          customerNotes: 'E2E payment test booking'
-        }
-      })
+    await prisma.booking.deleteMany({
+      where: {
+        horseName: 'PaymentTestHorse'
+      }
+    })
 
-      testBookingId = booking.id
-    } finally {
-      await prisma.$disconnect()
-    }
+    // Create a new confirmed booking
+    const booking = await prisma.booking.create({
+      data: {
+        customer: { connect: { id: customer.id } },
+        provider: { connect: { id: provider.id } },
+        service: { connect: { id: provider.services[0].id } },
+        bookingDate: new Date(dateString),
+        startTime: '14:00',
+        endTime: '15:00',
+        status: 'confirmed', // Already confirmed so it can be paid
+        horseName: 'PaymentTestHorse',
+        customerNotes: 'E2E payment test booking'
+      }
+    })
+
+    testBookingId = booking.id
 
     // Login as customer
     await page.goto('/login')
     await page.getByLabel(/email/i).fill('test@example.com')
-    await page.getByLabel(/lösenord/i).fill('TestPassword123!')
+    await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!')
     await page.getByRole('button', { name: /logga in/i }).click()
     await expect(page).toHaveURL(/\/providers/, { timeout: 10000 })
   })
@@ -85,17 +78,12 @@ test.describe('Payment Flow', () => {
   test.afterEach(async () => {
     // Clean up the test booking
     if (testBookingId) {
-      const prisma = new PrismaClient()
-      try {
-        await prisma.payment.deleteMany({
-          where: { bookingId: testBookingId }
-        })
-        await prisma.booking.delete({
-          where: { id: testBookingId }
-        }).catch(() => {}) // Ignore if already deleted
-      } finally {
-        await prisma.$disconnect()
-      }
+      await prisma.payment.deleteMany({
+        where: { bookingId: testBookingId }
+      })
+      await prisma.booking.delete({
+        where: { id: testBookingId }
+      }).catch(() => {}) // Ignore if already deleted
       testBookingId = null
     }
   })
@@ -263,7 +251,6 @@ test.describe('Payment Flow', () => {
 
 test.describe('Payment - Pending Booking', () => {
   test('should not show pay button for pending bookings', async ({ page }) => {
-    const prisma = new PrismaClient()
     let pendingBookingId: string | null = null
 
     try {
@@ -311,7 +298,7 @@ test.describe('Payment - Pending Booking', () => {
       // Login as customer
       await page.goto('/login')
       await page.getByLabel(/email/i).fill('test@example.com')
-      await page.getByLabel(/lösenord/i).fill('TestPassword123!')
+      await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!')
       await page.getByRole('button', { name: /logga in/i }).click()
       await expect(page).toHaveURL(/\/providers/, { timeout: 10000 })
 
@@ -342,7 +329,6 @@ test.describe('Payment - Pending Booking', () => {
           where: { id: pendingBookingId }
         }).catch(() => {})
       }
-      await prisma.$disconnect()
     }
   })
 })

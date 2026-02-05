@@ -8,23 +8,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
-interface RouteStop {
-  locationName: string
-  address: string
+interface ProviderService {
+  id: string
+  name: string
+  description?: string
+  price: number
 }
 
 export default function NewAnnouncementPage() {
   const router = useRouter()
-  const { isLoading, isProvider } = useAuth()
+  const { isLoading, isProvider, user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [stops, setStops] = useState<RouteStop[]>([
-    { locationName: "", address: "" }
-  ])
+  const [services, setServices] = useState<ProviderService[]>([])
+  const [servicesLoading, setServicesLoading] = useState(true)
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [formData, setFormData] = useState({
-    serviceType: "",
+    municipality: "",
     dateFrom: "",
     dateTo: "",
     specialInstructions: "",
@@ -36,35 +40,60 @@ export default function NewAnnouncementPage() {
     }
   }, [isProvider, isLoading, router])
 
+  // Fetch provider's services
+  useEffect(() => {
+    if (isProvider && user) {
+      fetchServices()
+    }
+  }, [isProvider, user])
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch("/api/services")
+      if (response.ok) {
+        const data = await response.json()
+        setServices(data.filter((s: ProviderService & { isActive?: boolean }) => s.isActive !== false))
+      }
+    } catch (error) {
+      console.error("Error fetching services:", error)
+      toast.error("Kunde inte hämta dina tjänster")
+    } finally {
+      setServicesLoading(false)
+    }
+  }
+
+  const toggleService = (serviceId: string) => {
+    setSelectedServiceIds(prev =>
+      prev.includes(serviceId)
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      // Validate stops have required data
-      const validStops = stops.filter(stop =>
-        stop.locationName.trim() && stop.address.trim()
-      )
-
-      if (validStops.length === 0) {
-        toast.error("Lägg till minst en plats för din rutt")
+      if (selectedServiceIds.length === 0) {
+        toast.error("Välj minst en tjänst")
         setIsSubmitting(false)
         return
       }
 
-      if (validStops.length > 3) {
-        toast.error("Max 3 platser tillåtna")
+      if (!formData.municipality) {
+        toast.error("Välj en kommun")
         setIsSubmitting(false)
         return
       }
 
       const payload = {
         announcementType: "provider_announced",
-        serviceType: formData.serviceType,
+        serviceIds: selectedServiceIds,
         dateFrom: formData.dateFrom,
         dateTo: formData.dateTo,
+        municipality: formData.municipality,
         specialInstructions: formData.specialInstructions || undefined,
-        stops: validStops,
       }
 
       const response = await fetch("/api/route-orders", {
@@ -90,24 +119,6 @@ export default function NewAnnouncementPage() {
     }
   }
 
-  const addStop = () => {
-    if (stops.length < 3) {
-      setStops([...stops, { locationName: "", address: "" }])
-    }
-  }
-
-  const removeStop = (index: number) => {
-    if (stops.length > 1) {
-      setStops(stops.filter((_, i) => i !== index))
-    }
-  }
-
-  const updateStop = (index: number, field: keyof RouteStop, value: string) => {
-    const updatedStops = [...stops]
-    updatedStops[index] = { ...updatedStops[index], [field]: value }
-    setStops(updatedStops)
-  }
-
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
@@ -127,7 +138,7 @@ export default function NewAnnouncementPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Skapa rutt-annons</h1>
           <p className="text-gray-600 mt-1">
-            Annonsera din planerade rutt så kunder kan boka in sig längs vägen
+            Annonsera din planerade rutt så kunder i kommunen kan boka in sig
           </p>
         </div>
 
@@ -135,22 +146,50 @@ export default function NewAnnouncementPage() {
           <CardHeader>
             <CardTitle>Rutt-information</CardTitle>
             <CardDescription>
-              Fyll i information om din planerade rutt
+              Välj tjänster, kommun och datumperiod
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Service Type */}
+              {/* Services Selection */}
+              <div className="space-y-3">
+                <Label>Tjänster *</Label>
+                {servicesLoading ? (
+                  <p className="text-sm text-gray-500">Laddar tjänster...</p>
+                ) : services.length === 0 ? (
+                  <div className="p-4 border rounded-md bg-yellow-50 text-sm text-yellow-800">
+                    Du har inga aktiva tjänster. <a href="/provider/services" className="underline font-medium">Skapa tjänster först</a>.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {services.map((service) => (
+                      <label
+                        key={service.id}
+                        className="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          checked={selectedServiceIds.includes(service.id)}
+                          onCheckedChange={() => toggleService(service.id)}
+                        />
+                        <div className="flex-1">
+                          <span className="font-medium">{service.name}</span>
+                          <span className="text-sm text-gray-500 ml-2">
+                            {service.price} kr
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Municipality */}
               <div className="space-y-2">
-                <Label htmlFor="serviceType">Tjänstetyp *</Label>
-                <Input
-                  id="serviceType"
-                  placeholder="t.ex. Hovslagning, Massage, Veterinärvård"
-                  value={formData.serviceType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, serviceType: e.target.value })
-                  }
-                  required
+                <Label htmlFor="municipality">Kommun *</Label>
+                <MunicipalitySelect
+                  id="municipality"
+                  value={formData.municipality}
+                  onChange={(value) => setFormData({ ...formData, municipality: value })}
                 />
               </div>
 
@@ -182,71 +221,12 @@ export default function NewAnnouncementPage() {
                 </div>
               </div>
 
-              {/* Route Stops */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label>Platser längs rutten * (1-3 st)</Label>
-                  {stops.length < 3 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addStop}
-                    >
-                      + Lägg till plats
-                    </Button>
-                  )}
-                </div>
-
-                {stops.map((stop, index) => (
-                  <Card key={index} className="border-dashed">
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold">Plats {index + 1}</h4>
-                        {stops.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeStop(index)}
-                          >
-                            Ta bort
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`locationName-${index}`}>Platsnamn *</Label>
-                        <Input
-                          id={`locationName-${index}`}
-                          placeholder="t.ex. Alingsås centrum"
-                          value={stop.locationName}
-                          onChange={(e) => updateStop(index, "locationName", e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`address-${index}`}>Adress *</Label>
-                        <Input
-                          id={`address-${index}`}
-                          placeholder="t.ex. Storgatan 1, Alingsås"
-                          value={stop.address}
-                          onChange={(e) => updateStop(index, "address", e.target.value)}
-                          required
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
               {/* Special Instructions */}
               <div className="space-y-2">
                 <Label htmlFor="specialInstructions">Övrig information (valfritt)</Label>
                 <Textarea
                   id="specialInstructions"
-                  placeholder="t.ex. Tidpunkt, parkeringsmöjligheter, kontaktinfo"
+                  placeholder="t.ex. Tidpunkt, kontaktinfo, extra information"
                   value={formData.specialInstructions}
                   onChange={(e) =>
                     setFormData({ ...formData, specialInstructions: e.target.value })
@@ -265,7 +245,7 @@ export default function NewAnnouncementPage() {
                 >
                   Avbryt
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting || services.length === 0}>
                   {isSubmitting ? "Skapar..." : "Skapa rutt-annons"}
                 </Button>
               </div>

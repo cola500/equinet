@@ -11,6 +11,9 @@ const prisma = globalForPrisma.prisma ?? new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
+// Export singleton for spec files -- NEVER call $disconnect() on this
+export { prisma }
+
 /**
  * Custom test fixture med afterEach cleanup
  * Sprint 2: Aktiverar global-hooks funktionalitet
@@ -51,7 +54,25 @@ async function cleanupTestData() {
       where: { email: { endsWith: '@ghost.equinet.se' } }
     })
 
-    // 1. Delete bokningar from dynamically created users/providers
+    // 1. Delete group booking participants + requests from dynamically created users
+    await prisma.groupBookingParticipant.deleteMany({
+      where: {
+        OR: [
+          { groupBookingRequest: { locationName: { startsWith: 'E2E' } } },
+          { user: { AND: [{ email: { contains: '@example.com' } }, { email: { notIn: keepEmails } }] } },
+        ],
+      },
+    })
+    await prisma.groupBookingRequest.deleteMany({
+      where: {
+        OR: [
+          { locationName: { startsWith: 'E2E' } },
+          { creator: { AND: [{ email: { contains: '@example.com' } }, { email: { notIn: keepEmails } }] } },
+        ],
+      },
+    })
+
+    // 2. Delete bokningar from dynamically created users/providers
     await prisma.booking.deleteMany({
       where: {
         OR: [

@@ -5,7 +5,7 @@ test.describe('Customer Profile', () => {
     // Logga in som kund
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/lösenord/i).fill('TestPassword123!');
+    await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
     await page.getByRole('button', { name: /logga in/i }).click();
     await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
 

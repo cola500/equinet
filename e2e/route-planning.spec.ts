@@ -1,13 +1,9 @@
-import { test, expect } from './fixtures';
-import { PrismaClient } from '@prisma/client';
+import { test, expect, prisma } from './fixtures';
 
 test.describe('Route Planning Flow (Provider)', () => {
   test.beforeEach(async ({ page }) => {
     // Sprint 2 F2-5: Clean up dynamically created data from auth tests
-    const prisma = new PrismaClient();
-
-    try {
-      const keepEmails = ['test@example.com', 'provider@example.com'];
+    const keepEmails = ['test@example.com', 'provider@example.com'];
 
       // Delete route stops
       await prisma.routeStop.deleteMany({
@@ -138,14 +134,11 @@ test.describe('Route Planning Flow (Provider)', () => {
           }
         }
       });
-    } finally {
-      await prisma.$disconnect();
-    }
 
     // Logga in som provider
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('provider@example.com');
-    await page.getByLabel(/lösenord/i).fill('ProviderPass123!');
+    await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
     // Vänta på dashboard (15s för CI med Turbopack recompiles)
