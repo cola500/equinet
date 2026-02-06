@@ -33,6 +33,8 @@
   - [Annonsera rutter](#annonsera-rutter)
   - [Genomföra en rutt](#genomföra-en-rutt)
   - [Recensioner och betyg](#recensioner-och-betyg)
+  - [Kundregister](#kundregister)
+  - [Besöksplanering](#besöksplanering)
   - [Kompetenser & Verifiering](#kompetenser--verifiering)
   - [Gruppbokning (leverantör)](#gruppbokning-leverantör)
   - [Bokföring (Fortnox)](#bokföring-fortnox)
@@ -489,6 +491,61 @@ Bra omdömen bygger ditt rykte och gör att fler kunder hittar dig. Ta dig tid a
 
 ---
 
+### Kundregister
+
+Under **Kunder** i leverantörsmenyn hittar du en samlad översikt över alla dina kunder.
+
+**Listan visar:**
+- Kundens namn, e-post och telefon
+- Antal genomförda bokningar
+- Datum för senaste bokning
+- Kundens registrerade hästar
+
+**Filtrera och sök:**
+- **Alla** - visa samtliga kunder
+- **Aktiva** - kunder med bokning senaste 12 månaderna
+- **Inaktiva** - kunder utan bokning senaste 12 månaderna
+- **Fritextsök** - sök på namn eller e-postadress
+
+Klicka på en kund för att visa detaljerad information och en lista på kundens hästar.
+
+Kundlistan bygger automatiskt upp sig från genomförda bokningar -- du behöver inte lägga till kunder manuellt.
+
+---
+
+### Besöksplanering
+
+Under **Besöksplanering** ser du vilka hästar som snart behöver besök, sorterade efter angelägenhet. Det hjälper dig att planera ditt schema och aldrig missa en kund.
+
+**Varje häst visas med:**
+- Hästnamn och ägare
+- Vilken tjänst som utfördes
+- Antal dagar sedan senaste besök
+- Återbesöksintervall (i veckor)
+- Beräknat nästa besöksdatum
+- Statusbadge
+
+**Statusbadges:**
+
+| Färg | Status | Betydelse |
+|------|--------|-----------|
+| Röd | Försenad | Besöket borde redan ha skett |
+| Gul | Inom 2 veckor | Dags att planera in besöket |
+| Grön | Ej aktuell | Inget besök behövs ännu |
+
+**Filtrering:**
+- **Alla** - visa samtliga hästar med återbesöksintervall
+- **Försenade** - enbart hästar som passerat sitt datum
+- **Inom 2 veckor** - hästar som snart behöver besök
+
+**Individuella intervall per häst:**
+
+Standardintervallet sätts på tjänstenivå (t.ex. 8 veckor för hovbeläggning). Men ibland behöver en specifik häst tätare -- eller glesare -- besök. Du kan sätta ett individuellt intervall per häst som override:ar tjänstens standard.
+
+Det individuella intervallet gäller bara för dig som leverantör. En annan leverantör (t.ex. massör) kan ha ett annat intervall för samma häst.
+
+---
+
 ### Kompetenser & Verifiering
 
 Under **Kompetenser & Verifiering** lägger du till dina utbildningar, certifikat och meriter. Godkända kompetenser visas på din profil och stärker förtroendet hos potentiella kunder.
@@ -632,7 +689,7 @@ Bokningen ligger kvar som "Väntar på svar". Du kan avboka och välja en annan 
 
 ### Hur fungerar de automatiska påminnelserna?
 
-Om leverantören har angett ett rekommenderat återbesöksintervall (t.ex. 8 veckor för hovbeläggning) får du automatiskt en påminnelse via notifikation och e-post när det är dags att boka om.
+Om leverantören har angett ett rekommenderat återbesöksintervall (t.ex. 8 veckor för hovbeläggning) får du automatiskt en påminnelse via notifikation och e-post när det är dags att boka om. Leverantören kan också sätta ett individuellt intervall för just din häst om den behöver tätare eller glesare besök.
 
 ### Kan jag exportera min data?
 

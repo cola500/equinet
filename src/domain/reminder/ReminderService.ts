@@ -37,6 +37,7 @@ export class ReminderService {
         id: true,
         customerId: true,
         providerId: true,
+        horseId: true,
         updatedAt: true,
         service: {
           select: {
@@ -56,8 +57,25 @@ export class ReminderService {
     const dueReminders: DueReminder[] = []
 
     for (const booking of completedBookings) {
-      const intervalWeeks = booking.service.recommendedIntervalWeeks
-      if (!intervalWeeks) continue
+      const serviceInterval = booking.service.recommendedIntervalWeeks
+      if (!serviceInterval) continue
+
+      // Check for horse-specific override (only if booking has a horse)
+      let intervalWeeks = serviceInterval
+      if (booking.horseId) {
+        const horseOverride = await prisma.horseServiceInterval.findUnique({
+          where: {
+            horseId_providerId: {
+              horseId: booking.horseId,
+              providerId: booking.providerId,
+            },
+          },
+          select: { revisitIntervalWeeks: true },
+        })
+        if (horseOverride) {
+          intervalWeeks = horseOverride.revisitIntervalWeeks
+        }
+      }
 
       // Check if enough time has passed
       const dueDate = new Date(booking.updatedAt)

@@ -94,6 +94,7 @@ model Provider {
   groupBookingRequests   GroupBookingRequest[]
   fortnoxConnection      FortnoxConnection?
   manualBookings         Booking[] @relation("ManualBookings")
+  horseServiceIntervals  HorseServiceInterval[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -226,6 +227,7 @@ model Horse {
   notes        HorseNote[]
   groupBookingParticipants GroupBookingParticipant[]
   passportTokens HorsePassportToken[]
+  serviceIntervals HorseServiceInterval[]
 
   @@index([ownerId, isActive])
 }
@@ -557,5 +559,23 @@ model GroupBookingParticipant {
   @@unique([groupBookingRequestId, userId])
   @@index([groupBookingRequestId, status])
   @@index([userId])
+  @@index([horseId])
+}
+
+// Per-horse revisit interval override (provider-specific)
+// Allows providers to set custom rebooking intervals per horse
+model HorseServiceInterval {
+  id                    String   @id @default(uuid())
+  horseId               String
+  horse                 Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  providerId            String
+  provider              Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  revisitIntervalWeeks  Int      // 1-52
+  notes                 String?  // "Hovproblem, behover tatare besok"
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([horseId, providerId])
+  @@index([providerId])
   @@index([horseId])
 }

@@ -26,6 +26,8 @@ const navGroups = [
     { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },
   ],
   [
+    { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
+    { href: "/provider/due-for-service", label: "Besoksplanering", matchPrefix: "/provider/due-for-service" },
     { href: "/provider/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/provider/group-bookings" },
     { href: "/provider/reviews", label: "Recensioner" },
     { href: "/provider/profile", label: "Min profil" },

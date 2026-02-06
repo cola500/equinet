@@ -127,7 +127,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1144 unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (1277 unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -157,6 +157,7 @@ equinet/
 │   │   │   ├── routes/       # Rutt-planering API
 │   │   │   ├── verification-requests/ # Leverantörsverifiering API
 │   │   │   ├── group-bookings/ # Gruppboknings-API (join, match, available)
+│   │   │   ├── provider/     # Leverantörs-specifika API (kunder, besöksplanering, intervall)
 │   │   │   └── admin/        # Admin-endpoints (verifieringsgranskning)
 │   │   ├── admin/            # Admin-sidor (verifieringshantering)
 │   │   ├── customer/         # Kundsidor (dashboard, bookings, profile, hästprofil)
@@ -233,7 +234,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## 🗄️ Databasschema
 
-**Huvudmodeller (21 st):**
+**Huvudmodeller (22 st):**
 - **User** - Användarkonton (kunder + leverantörer + admin)
 - **Provider** - Leverantörsprofiler med företagsinformation och verifieringsstatus
 - **Service** - Tjänster som leverantörer erbjuder
@@ -255,6 +256,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **GroupBookingParticipant** - Deltagare i grupprequests (hästinfo, status, koppling till bokning)
 - **HorsePassportToken** - Delbara hästpass-länkar med 30 dagars expiry
 - **Upload** - Uppladdade filer (bilder) med Supabase Storage-tracking
+- **HorseServiceInterval** - Individuellt återbesöksintervall per häst och leverantör (override av tjänstens default)
 - **FortnoxConnection** - Fortnox OAuth-tokens (krypterade) per leverantör
 
 Se `prisma/schema.prisma` för fullständig definition.
@@ -279,6 +281,8 @@ Se `prisma/schema.prisma` för fullständig definition.
 - **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg, recensera kunder efter genomförda bokningar
 - **Kompetenser & Verifiering**: Lägg till kompetenser (utbildning, organisation, certifikat, erfarenhet, licens) med utfärdare, år, beskrivning och bilder (max 5 per post). Redigera/ta bort pending/rejected poster. Badge på profil vid godkännande
 - **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin)
+- **Kundregister**: Samlad lista över alla kunder (härledd från bokningar) med antal bokningar, hästar, senaste besök. Filter (aktiva/inaktiva) och fritextsök
+- **Besöksplanering ("Dags för besök")**: Översikt över hästar som behöver återbesök, sorterade efter angelägenhet (försenad/inom 2 veckor/ej aktuell). Individuella återbesöksintervall per häst som override:ar tjänstens default
 - **Grupprequests**: Se öppna grupprequests, matcha och skapa bokningar för alla deltagare
 - **Rutt-planering**:
   - Visa tillgängliga flexibla beställningar sorterade efter avstånd
@@ -338,6 +342,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ### Återbokningspåminnelser
 - Leverantörer sätter rekommenderat återbesöksintervall per tjänst
+- Individuellt intervall per häst (override av tjänstens default) via HorseServiceInterval
 - Daglig cron (Vercel Cron Jobs, kl 08:00) hittar förfallna påminnelser
 - In-app notifikation + email med "Boka igen"-länk
 - En påminnelse per avslutad bokning (inga dubbletter)
@@ -385,7 +390,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**1210+ tester** (66 E2E + 1144 unit/integration) med **70% coverage**.
+**1340+ tester** (66 E2E + 1277 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -410,7 +415,7 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
 - **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, CustomerReviewService, PaymentGateway, AccountingGateway, InvoiceMapper, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, customer-reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, customer-reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron, provider/customers, provider/horses/interval, provider/due-for-service)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -547,6 +552,9 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Hästhälsotidslinje (anteckningar, kategorifilter, färgkodning, provider read-only)
 - ✅ Leverantörsverifiering (ansökan, admin-granskning, badge, notifikation)
 - ✅ Gruppbokning för stallgemenskaper (invite codes, sekventiell matchning, 7 endpoints)
+- ✅ Kundregister för leverantörer (samlad kundlista, filter, sök, hästöversikt)
+- ✅ Återbesöksintervall per häst (override av tjänstens default, leverantörsspecifikt)
+- ✅ Besöksplanering ("Dags för besök"-vy med statusbadges, filtrering, sortering)
 
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
