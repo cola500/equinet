@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Button } from "@/components/ui/button"
@@ -121,12 +120,12 @@ export default function ProviderHorseTimelinePage() {
     <ProviderLayout>
         {/* Back link */}
         <div className="mb-4">
-          <Link
-            href="/provider/bookings"
+          <button
+            onClick={() => router.back()}
             className="text-sm text-gray-500 hover:text-gray-700"
           >
-            &larr; Tillbaka till bokningar
-          </Link>
+            &larr; Tillbaka
+          </button>
         </div>
 
         <h1 className="text-2xl font-bold mb-2">Hästens hälsohistorik</h1>

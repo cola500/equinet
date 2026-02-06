@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -224,13 +225,14 @@ export default function ProviderCustomersPage() {
                       </p>
                       <div className="space-y-2">
                         {customer.horses.map((horse) => (
-                          <div
+                          <Link
                             key={horse.id}
-                            className="flex items-center gap-2 text-sm bg-white p-2 rounded-md"
+                            href={`/provider/horse-timeline/${horse.id}`}
+                            className="flex items-center gap-2 text-sm bg-white p-2 rounded-md hover:bg-green-50 hover:text-green-700 transition-colors"
                           >
                             <PawPrint className="h-4 w-4 text-gray-400" />
                             <span>{horse.name}</span>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     </div>
