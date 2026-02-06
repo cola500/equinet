@@ -94,7 +94,7 @@ export default function ProviderCustomersPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Kunder</h1>
         <p className="text-gray-600 mt-1">
-          Oversikt over dina kunder och deras hastar
+          Översikt över dina kunder och deras hästar
         </p>
       </div>
 
@@ -103,7 +103,7 @@ export default function ProviderCustomersPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Sok pa namn eller email..."
+            placeholder="Sök på namn eller email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -136,7 +136,7 @@ export default function ProviderCustomersPage() {
         <Card>
           <CardContent className="py-12 text-center text-gray-500">
             {searchQuery || statusFilter !== "all"
-              ? "Inga kunder matchar din sokning."
+              ? "Inga kunder matchar din sökning."
               : "Du har inga kunder an. Kunder dyker upp har efter avslutade bokningar."}
           </CardContent>
         </Card>
@@ -174,7 +174,7 @@ export default function ProviderCustomersPage() {
                       {customer.horses.length > 0 && (
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                           {customer.horses.length}{" "}
-                          {customer.horses.length === 1 ? "hast" : "hastar"}
+                          {customer.horses.length === 1 ? "häst" : "hästar"}
                         </span>
                       )}
                       {expandedCustomer === customer.id ? (
@@ -196,7 +196,7 @@ export default function ProviderCustomersPage() {
                         Telefon
                       </p>
                       <p className="text-sm">
-                        {customer.phone || "Ej angett"}
+                        {customer.phone || "Ej angivet"}
                       </p>
                     </div>
                     <div>
@@ -218,7 +218,7 @@ export default function ProviderCustomersPage() {
                   {customer.horses.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                        Hastar
+                        Hästar
                       </p>
                       <div className="space-y-2">
                         {customer.horses.map((horse) => (

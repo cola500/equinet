@@ -25,7 +25,7 @@ type Filter = "all" | "overdue" | "upcoming"
 
 const statusConfig = {
   overdue: {
-    label: "Forsenad",
+    label: "Försenad",
     bgColor: "bg-red-100",
     textColor: "text-red-700",
     icon: AlertTriangle,
@@ -92,7 +92,7 @@ export default function DueForServicePage() {
   const formatDaysUntilDue = (days: number) => {
     if (days < 0) {
       const overdueDays = Math.abs(days)
-      return `${overdueDays} ${overdueDays === 1 ? "dag" : "dagar"} forsenad`
+      return `${overdueDays} ${overdueDays === 1 ? "dag" : "dagar"} försenad`
     }
     if (days === 0) return "Idag"
     return `om ${days} ${days === 1 ? "dag" : "dagar"}`
@@ -115,9 +115,9 @@ export default function DueForServicePage() {
   return (
     <ProviderLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Besoksplanering</h1>
+        <h1 className="text-3xl font-bold">Besöksplanering</h1>
         <p className="text-gray-600 mt-1">
-          Hastar som snart behover besok, sorterade efter angelagenhet
+          Hästar som snart behöver besök, sorterade efter angelägenhet
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export default function DueForServicePage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-600">{overdueCount}</p>
-                <p className="text-sm text-gray-500">Forsenade</p>
+                <p className="text-sm text-gray-500">Försenade</p>
               </div>
             </CardContent>
           </Card>
@@ -161,7 +161,7 @@ export default function DueForServicePage() {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {f === "all" ? "Alla" : f === "overdue" ? "Forsenade" : "Inom 2 veckor"}
+            {f === "all" ? "Alla" : f === "overdue" ? "Försenade" : "Inom 2 veckor"}
           </button>
         ))}
       </div>
@@ -170,14 +170,14 @@ export default function DueForServicePage() {
       {isLoading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Laddar besoksplanering...</p>
+          <p className="mt-4 text-gray-600">Laddar besöksplanering...</p>
         </div>
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-gray-500">
             {filter !== "all"
-              ? "Inga hastar matchar filtret."
-              : "Inga hastar behover besok just nu. Hastar dyker upp har efter avslutade bokningar med tjanster som har aterbesoksintervall."}
+              ? "Inga hästar matchar filtret."
+              : "Inga hästar behöver besök just nu. Hästar dyker upp här efter avslutade bokningar med tjänster som har återbesöksintervall."}
           </CardContent>
         </Card>
       ) : (
@@ -217,7 +217,7 @@ export default function DueForServicePage() {
                   <div className="mt-3 grid grid-cols-3 gap-4 text-sm text-gray-500">
                     <div>
                       <span className="block text-xs uppercase tracking-wider">
-                        Senaste besok
+                        Senaste besök
                       </span>
                       <span>{formatDate(item.lastServiceDate)}</span>
                     </div>
@@ -229,7 +229,7 @@ export default function DueForServicePage() {
                     </div>
                     <div>
                       <span className="block text-xs uppercase tracking-wider">
-                        Nasta besok
+                        Nästa besök
                       </span>
                       <span>{formatDate(item.dueDate)}</span>
                     </div>
