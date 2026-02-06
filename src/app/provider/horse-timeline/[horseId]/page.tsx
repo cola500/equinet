@@ -12,6 +12,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
 // --- Types ---
@@ -29,7 +38,22 @@ interface TimelineItem {
   authorName?: string
 }
 
+interface HorseInterval {
+  id: string
+  revisitIntervalWeeks: number
+  notes: string | null
+}
+
 // --- Constants ---
+
+const INTERVAL_OPTIONS = [
+  { value: "4", label: "4 veckor" },
+  { value: "6", label: "6 veckor" },
+  { value: "8", label: "8 veckor" },
+  { value: "12", label: "12 veckor" },
+  { value: "26", label: "26 veckor (halvår)" },
+  { value: "52", label: "52 veckor (1 år)" },
+]
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   veterinary: { label: "Veterinär", color: "bg-blue-100 text-blue-800" },
@@ -56,6 +80,14 @@ export default function ProviderHorseTimelinePage() {
   const [horseName, setHorseName] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
+
+  // Interval state
+  const [interval, setInterval] = useState<HorseInterval | null>(null)
+  const [intervalLoading, setIntervalLoading] = useState(true)
+  const [isEditingInterval, setIsEditingInterval] = useState(false)
+  const [editWeeks, setEditWeeks] = useState<string>("")
+  const [editNotes, setEditNotes] = useState<string>("")
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isProvider) {
@@ -97,6 +129,95 @@ export default function ProviderHorseTimelinePage() {
       .catch(() => {})
   }, [isProvider, horseId])
 
+  // Fetch interval
+  // GET returns { interval: null } when no override, or { id, revisitIntervalWeeks, notes, ... } when override exists
+  const fetchInterval = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/provider/horses/${horseId}/interval`)
+      if (res.ok) {
+        const data = await res.json()
+        if ("interval" in data && data.interval === null) {
+          setInterval(null)
+        } else {
+          setInterval(data)
+        }
+      }
+    } catch {
+      // Interval is non-critical -- silently fail
+    } finally {
+      setIntervalLoading(false)
+    }
+  }, [horseId])
+
+  useEffect(() => {
+    if (isProvider && horseId) {
+      fetchInterval()
+    }
+  }, [isProvider, horseId, fetchInterval])
+
+  const startEditing = () => {
+    setEditWeeks(interval ? String(interval.revisitIntervalWeeks) : "")
+    setEditNotes(interval?.notes ?? "")
+    setIsEditingInterval(true)
+  }
+
+  const cancelEditing = () => {
+    setIsEditingInterval(false)
+    setEditWeeks("")
+    setEditNotes("")
+  }
+
+  const saveInterval = async () => {
+    if (!editWeeks) {
+      toast.error("Välj ett intervall")
+      return
+    }
+    setIsSaving(true)
+    try {
+      const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          revisitIntervalWeeks: Number(editWeeks),
+          notes: editNotes.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setInterval(data)
+        setIsEditingInterval(false)
+        toast.success("Intervall sparat")
+      } else {
+        const err = await res.json().catch(() => null)
+        toast.error(err?.error ?? "Kunde inte spara intervall")
+      }
+    } catch {
+      toast.error("Kunde inte spara intervall")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const deleteInterval = async () => {
+    setIsSaving(true)
+    try {
+      const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        setInterval(null)
+        setIsEditingInterval(false)
+        toast.success("Intervall borttaget")
+      } else {
+        toast.error("Kunde inte ta bort intervall")
+      }
+    } catch {
+      toast.error("Kunde inte ta bort intervall")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   useEffect(() => {
     if (isProvider && horseId) {
       fetchTimeline()
@@ -133,6 +254,94 @@ export default function ProviderHorseTimelinePage() {
           Du ser medicinsk historik för hästar du har behandlat.
           Av integritetsskäl visas bara veterinär-, hovslagare- och medicinanteckningar.
         </p>
+
+        {/* Interval section */}
+        {!intervalLoading && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Återbesöksintervall</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditingInterval ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="interval-weeks">Intervall</Label>
+                    <Select value={editWeeks} onValueChange={setEditWeeks}>
+                      <SelectTrigger id="interval-weeks" className="mt-1">
+                        <SelectValue placeholder="Välj intervall..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INTERVAL_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="interval-notes">Anteckning (valfritt)</Label>
+                    <Textarea
+                      id="interval-notes"
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      maxLength={500}
+                      placeholder="T.ex. 'Behöver kortare intervall pga hovproblem'"
+                      className="mt-1"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={saveInterval} disabled={isSaving}>
+                      {isSaving ? "Sparar..." : "Spara"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelEditing}
+                      disabled={isSaving}
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                </div>
+              ) : interval ? (
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    <span className="font-medium">Eget intervall:</span>{" "}
+                    {interval.revisitIntervalWeeks} veckor
+                  </p>
+                  {interval.notes && (
+                    <p className="text-sm text-gray-600">{interval.notes}</p>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="outline" onClick={startEditing}>
+                      Ändra
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={deleteInterval}
+                      disabled={isSaving}
+                    >
+                      Ta bort
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    Inget eget intervall. Standardintervallet från tjänsten används.
+                  </p>
+                  <Button size="sm" variant="outline" onClick={startEditing}>
+                    Sätt intervall
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filter chips */}
         <div className="flex flex-wrap gap-2 mb-6">
