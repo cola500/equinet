@@ -1,11 +1,11 @@
 ---
-name: commit
-description: Create a git commit following the project's conventional commit style
+name: ship
+description: Commit and push changes to remote in one step
 disable-model-invocation: true
 argument-hint: "[optional commit message]"
 ---
 
-Create a git commit for the current changes. Follow these steps:
+Commit current changes and push to remote. This runs the full commit flow followed by a push. Husky pre-push hooks (tests, typecheck, lint) will run automatically.
 
 ## 1. Analyze changes
 
@@ -13,6 +13,7 @@ Run these commands in parallel:
 - `git status` (never use -uall flag)
 - `git diff` and `git diff --cached` to see all changes
 - `git log --oneline -5` to see recent commit style
+- `git branch --show-current` to know which branch we're on
 
 ### Pre-commit checks (on staged/changed files)
 
@@ -60,12 +61,24 @@ EOF
 )"
 ```
 
-## 4. Verify
+## 4. Push to remote
 
-Run `git status` after committing to confirm success.
+After a successful commit:
+
+```bash
+git push origin <current-branch>
+```
+
+- Husky **pre-push hooks** will run automatically (tests, typecheck, lint, Swedish character check)
+- If pre-push fails: the commit is kept locally, report what failed so the user can fix it
+- NEVER use `--force` or `--no-verify`
+
+## 5. Verify
+
+Run `git status` after pushing to confirm success. Report the branch name and remote status.
 
 ## Important
 
 - NEVER amend previous commits unless explicitly asked
-- NEVER push to remote
 - If pre-commit hooks fail, fix the issue and create a NEW commit
+- If push fails due to remote changes, suggest `git pull --rebase` and let the user decide
