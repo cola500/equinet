@@ -15,6 +15,7 @@
 | Sprint-historik | [docs/sprints/](docs/sprints/) |
 | Säkerhetsaudit | [docs/SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) |
 | Databas-arkitektur | [docs/DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
+| Production Readiness | [NFR.md](NFR.md) |
 | Användarforskning | [docs/user-research/](docs/user-research/) |
 
 ---
@@ -250,7 +251,8 @@ class BookingService {
 
 ## Production Readiness
 
-> Fullständig guide: [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md)
+> Scorecard & gap-stories: [NFR.md](NFR.md)
+> Deploy-guide: [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md)
 
 ### Environment Variables (MANDATORY)
 ```bash
