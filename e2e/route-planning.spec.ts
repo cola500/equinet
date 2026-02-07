@@ -1,6 +1,18 @@
 import { test, expect } from './fixtures';
+import { seedRouteOrders, cleanupSpecData } from './setup/seed-helpers';
+
+const SPEC_TAG = 'route-planning';
 
 test.describe('Route Planning Flow (Provider)', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    await seedRouteOrders(SPEC_TAG, 4);
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Login as provider (seed-e2e.setup.ts ensures provider@example.com exists)
     await page.goto('/login');

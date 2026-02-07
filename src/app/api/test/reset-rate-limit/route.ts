@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { clearAllInMemoryRateLimits } from '@/lib/rate-limit'
+import { clearAllInMemoryRateLimits, resetRateLimit } from '@/lib/rate-limit'
 
 /**
- * Test-only endpoint to reset in-memory rate limits.
+ * Test-only endpoint to reset ALL rate limits (in-memory + Upstash).
  * Prevents rate limit accumulation across E2E test runs.
  *
  * BLOCKED in production via NODE_ENV check.
@@ -12,7 +12,18 @@ export async function POST() {
     return new Response('Not found', { status: 404 })
   }
 
+  // 1. Clear in-memory fallback state
   clearAllInMemoryRateLimits()
+
+  // 2. Reset Upstash rate limits for common test IPs
+  const testIPs = ['127.0.0.1', '::1', 'unknown']
+  const limiterTypes = ['registration', 'login']
+
+  for (const ip of testIPs) {
+    for (const type of limiterTypes) {
+      await resetRateLimit(ip, type)
+    }
+  }
 
   return NextResponse.json({ ok: true })
 }

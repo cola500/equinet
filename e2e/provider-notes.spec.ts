@@ -1,4 +1,7 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
+
+const SPEC_TAG = 'provider-notes';
 
 /**
  * E2E Tests for Provider Notes
@@ -10,10 +13,19 @@ import { test, expect } from './fixtures';
  * - Character counter shows {length}/2000
  *
  * Provider notes are only accessible via BookingDetailDialog in the calendar view.
- * The confirmed booking is 14 days in the future (seeded data).
  */
 
 test.describe('Provider Notes', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    await seedBooking({ specTag: SPEC_TAG, status: 'confirmed', daysFromNow: 10, horseName: 'E2E NotesConfirmed', startTime: '14:00', endTime: '15:00' });
+    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 7, horseName: 'E2E NotesPending' });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som provider
     await page.goto('/login');
@@ -32,14 +44,18 @@ test.describe('Provider Notes', () => {
     await page.goto('/provider/calendar');
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Scan forward up to 5 weeks to find a confirmed booking (green block)
+    // Scan forward up to 5 weeks to find a confirmed booking block.
+    // BookingBlock uses: absolute + border-l-4 + bg-green-400 (confirmed)
+    // This distinguishes it from availability background blocks.
+    const bookingBlockSelector = 'button.absolute.border-l-4[class*="bg-green"]';
+
     for (let week = 0; week < 5; week++) {
       if (week > 0) {
         await page.getByRole('button', { name: /nästa/i }).click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
       }
 
-      const greenBooking = page.locator('[class*="bg-green"]').first();
+      const greenBooking = page.locator(bookingBlockSelector).first();
       const found = await greenBooking.isVisible({ timeout: 2000 }).catch(() => false);
 
       if (found) {
@@ -60,12 +76,7 @@ test.describe('Provider Notes', () => {
   }
 
   test('should add note on confirmed booking', async ({ page }) => {
-    try {
-      await openConfirmedBookingDialog(page);
-    } catch {
-      test.skip(true, 'No confirmed booking available (cancelled by earlier tests)');
-      return;
-    }
+    await openConfirmedBookingDialog(page);
 
     // Notes section should be visible for confirmed booking
     await expect(page.getByText('Dina anteckningar')).toBeVisible();
@@ -94,12 +105,7 @@ test.describe('Provider Notes', () => {
   });
 
   test('should edit existing note', async ({ page }) => {
-    try {
-      await openConfirmedBookingDialog(page);
-    } catch {
-      test.skip(true, 'No confirmed booking available (cancelled by earlier tests)');
-      return;
-    }
+    await openConfirmedBookingDialog(page);
 
     // If there's already a note from the previous test, we should see "Klicka för att redigera"
     // If not, add one first
@@ -140,12 +146,7 @@ test.describe('Provider Notes', () => {
 
     // Use the pending bookings banner to open a pending booking dialog
     const banner = page.getByRole('button', { name: /bokning.*väntar/i });
-    const bannerVisible = await banner.isVisible({ timeout: 5000 }).catch(() => false);
-
-    if (!bannerVisible) {
-      test.skip(true, 'No pending bookings banner visible');
-      return;
-    }
+    await expect(banner).toBeVisible({ timeout: 10000 });
 
     // Expand banner and click first pending booking
     await banner.click();
@@ -161,12 +162,7 @@ test.describe('Provider Notes', () => {
   });
 
   test('should show character counter', async ({ page }) => {
-    try {
-      await openConfirmedBookingDialog(page);
-    } catch {
-      test.skip(true, 'No confirmed booking available (cancelled by earlier tests)');
-      return;
-    }
+    await openConfirmedBookingDialog(page);
 
     // Open the notes editing area
     const addNoteBtn = page.getByRole('button', { name: /lagg till anteckning/i });

@@ -1,4 +1,7 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData, getBaseEntities } from './setup/seed-helpers';
+
+const SPEC_TAG = 'due-for-service';
 
 /**
  * E2E Tests for Due-for-Service (Besöksplanering)
@@ -13,6 +16,22 @@ import { test, expect } from './fixtures';
  */
 
 test.describe('Due for Service (Provider)', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    const base = await getBaseEntities();
+    await seedBooking({
+      specTag: SPEC_TAG,
+      status: 'completed',
+      daysFromNow: -90,
+      horseName: 'E2E Blansen',
+      horseId: base.horseId,
+    });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som provider
     await page.goto('/login');

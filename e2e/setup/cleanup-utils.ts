@@ -25,6 +25,20 @@ const SEED_HORSE_NAME = 'E2E Blansen'
  */
 export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void> {
   try {
+    // 0pre. Clean up any leftover per-spec tagged data (E2E-spec:*)
+    await prisma.customerReview.deleteMany({
+      where: { booking: { customerNotes: { startsWith: 'E2E-spec:' } } },
+    })
+    await prisma.booking.deleteMany({
+      where: { customerNotes: { startsWith: 'E2E-spec:' } },
+    })
+    await prisma.routeStop.deleteMany({
+      where: { routeOrder: { specialInstructions: { startsWith: 'E2E-spec:' } } },
+    })
+    await prisma.routeOrder.deleteMany({
+      where: { specialInstructions: { startsWith: 'E2E-spec:' } },
+    })
+
     // 0. CustomerReview + HorseServiceInterval (FK to Booking/Horse -- delete before those)
     await prisma.customerReview.deleteMany({
       where: {

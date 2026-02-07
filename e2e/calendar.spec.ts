@@ -1,4 +1,7 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
+
+const SPEC_TAG = 'calendar';
 
 /**
  * E2E Tests för Kalender & Öppettider
@@ -11,6 +14,16 @@ import { test, expect } from './fixtures';
  */
 
 test.describe('Calendar & Availability (Provider)', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 7, horseName: 'E2E CalPending' });
+    await seedBooking({ specTag: SPEC_TAG, status: 'confirmed', daysFromNow: 14, horseName: 'E2E CalConfirmed' });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som provider
     await page.goto('/login');
@@ -269,15 +282,9 @@ test.describe('Calendar & Availability (Provider)', () => {
     // Vänta på att sidan laddas
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Bannern visas om det finns pending bookings (seed + dynamiskt skapade)
-    // Seed pending booking kan ha blivit accepted/rejected/cancelled av tidigare tester
+    // Bannern visas -- per-spec seed garanterar pending booking
     const banner = page.getByRole('button', { name: /bokning.*väntar/i });
-    const bannerVisible = await banner.isVisible({ timeout: 10000 }).catch(() => false);
-
-    if (!bannerVisible) {
-      test.skip(true, 'No pending bookings available (seed booking was modified by earlier tests)');
-      return;
-    }
+    await expect(banner).toBeVisible({ timeout: 10000 });
 
     // Expandera bannern
     await banner.click();
@@ -292,14 +299,9 @@ test.describe('Calendar & Availability (Provider)', () => {
     // Vänta på att sidan laddas
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Bannern visas om det finns pending bookings
+    // Bannern visas -- per-spec seed garanterar pending booking
     const banner = page.getByRole('button', { name: /bokning.*väntar/i });
-    const bannerVisible = await banner.isVisible({ timeout: 10000 }).catch(() => false);
-
-    if (!bannerVisible) {
-      test.skip(true, 'No pending bookings available (seed booking was modified by earlier tests)');
-      return;
-    }
+    await expect(banner).toBeVisible({ timeout: 10000 });
 
     // Expandera bannern
     await banner.click();

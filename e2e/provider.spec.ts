@@ -1,6 +1,20 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
+
+const SPEC_TAG = 'provider';
 
 test.describe('Provider Flow', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    // 2 pending bookings: one for accept, one for reject
+    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 7, horseName: 'E2E Accept' });
+    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 8, horseName: 'E2E Reject' });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som leverantör
     // OBS: Detta förutsätter att provider@example.com finns i databasen
@@ -196,9 +210,9 @@ test.describe('Provider Flow', () => {
     // Klicka på "Väntar" button (inte tab - det är buttons från koden)
     await page.getByRole('button', { name: /^väntar/i }).click();
 
-    // Vänta på bokningar
+    // Vänta på att pending bokningar laddas
     const bookingsExist = await page.locator('[data-testid="booking-item"]')
-      .isVisible().catch(() => false);
+      .first().isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!bookingsExist) {
       test.skip(true, 'No pending bookings available to accept');
@@ -223,8 +237,9 @@ test.describe('Provider Flow', () => {
     // Klicka på "Väntar" button
     await page.getByRole('button', { name: /^väntar/i }).click();
 
+    // Vänta på att pending bokningar laddas
     const bookingsExist = await page.locator('[data-testid="booking-item"]')
-      .isVisible().catch(() => false);
+      .first().isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!bookingsExist) {
       test.skip(true, 'No pending bookings available to reject');

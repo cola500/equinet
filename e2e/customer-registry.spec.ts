@@ -1,4 +1,7 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData, getBaseEntities } from './setup/seed-helpers';
+
+const SPEC_TAG = 'registry';
 
 /**
  * E2E Tests for Customer Registry (Kundregister)
@@ -8,11 +11,25 @@ import { test, expect } from './fixtures';
  * - Show customers from completed bookings (Test Testsson)
  * - Search customers by name
  * - Expand customer card to see details and horses
- *
- * Requires: 1 completed booking in seed data (customer: Test Testsson, horse: E2E Blansen)
  */
 
 test.describe('Customer Registry (Provider)', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    const base = await getBaseEntities();
+    await seedBooking({
+      specTag: SPEC_TAG,
+      status: 'completed',
+      daysFromNow: -90,
+      horseName: 'E2E Blansen',
+      horseId: base.horseId,
+    });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som provider
     await page.goto('/login');

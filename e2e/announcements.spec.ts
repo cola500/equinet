@@ -1,6 +1,18 @@
 import { test, expect } from './fixtures';
+import { seedProviderAnnouncement, seedRouteOrders, cleanupSpecData } from './setup/seed-helpers';
+
+const SPEC_TAG = 'announcements';
 
 test.describe('Route Announcements Flow', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    await seedProviderAnnouncement(SPEC_TAG);
+    await seedRouteOrders(SPEC_TAG, 2);
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
 
   test.describe('Public Announcements Page', () => {
     test('should display announcements page with search functionality', async ({ page }) => {

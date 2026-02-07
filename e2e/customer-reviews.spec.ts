@@ -1,4 +1,7 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData, getBaseEntities } from './setup/seed-helpers';
+
+const SPEC_TAG = 'reviews';
 
 /**
  * E2E Tests for Customer Reviews (Kundrecensioner)
@@ -9,14 +12,26 @@ import { test, expect } from './fixtures';
  * - Require rating before submitting
  * - Show existing review after submission
  *
- * Requires: 1 completed booking in seed data
- * Access: /provider/bookings -> filter "Alla" -> completed booking -> "Recensera kund"
- *
  * IMPORTANT: CustomerReview is immutable (one per booking). Tests 2-4 depend on test 1.
- * Cleanup in seed resets customer reviews between runs.
  */
 
 test.describe('Customer Reviews (Provider)', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    const base = await getBaseEntities();
+    await seedBooking({
+      specTag: SPEC_TAG,
+      status: 'completed',
+      daysFromNow: -90,
+      horseName: 'E2E Blansen',
+      horseId: base.horseId,
+    });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som provider
     await page.goto('/login');

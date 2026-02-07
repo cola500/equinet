@@ -1,6 +1,18 @@
 import { test, expect } from './fixtures';
+import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
+
+const SPEC_TAG = 'flexible';
 
 test.describe('Flexible Booking Flow (Customer)', () => {
+  test.beforeAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+    await seedBooking({ specTag: SPEC_TAG, status: 'confirmed', daysFromNow: 14, horseName: 'E2E FlexBooking' });
+  });
+
+  test.afterAll(async () => {
+    await cleanupSpecData(SPEC_TAG);
+  });
+
   test.beforeEach(async ({ page }) => {
     // Logga in som kund först
     await page.goto('/login');
