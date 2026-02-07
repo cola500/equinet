@@ -1,587 +1,411 @@
-# Non-Functional Requirements (NFR)
+# Production Readiness Scorecard
 
-**Projekt**: Equinet - Bokningsplattform för hästtjänster
-**Version**: v0.2.0+
-**Senast uppdaterad**: 2026-02-02
-**Status**: 🟡 Work in Progress
+**Projekt**: Equinet - Bokningsplattform for hasttjanster
+**Version**: v0.3.0+
+**Senast uppdaterad**: 2026-02-07
+**Syfte**: Levande dokument som visar production readiness-status och gap med story-ready acceptance criteria.
 
----
-
-## 📋 Översikt
-
-Detta dokument definierar de **icke-funktionella kraven** för Equinet-plattformen. NFRs är kvalitetsmål som systemet måste uppfylla för att vara produktionsredo, men som inte direkt beskriver funktionalitet.
-
-**Kategorier:**
-1. Performance & Skalbarhet
-2. Säkerhet & Privacy
-3. Tillgänglighet (Accessibility)
-4. Reliability & Availability
-5. Maintainability & Code Quality
-6. Usability & User Experience
+**Relaterade dokument:**
+- [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) -- Schema, RLS, pooling, backup
+- [SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) -- Sakerhetsaudit
+- [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) -- Deploy-guide
 
 ---
 
-## 🚀 1. Performance & Skalbarhet
+## Sammanfattning
 
-### 1.1 Response Time Targets
+| Kategori | Klart | Kvar | Score |
+|----------|-------|------|-------|
+| Performance & Skalbarhet | 7 | 3 | 70% |
+| Sakerhet & Privacy | 12 | 5 | 71% |
+| Reliability & Availability | 3 | 4 | 43% |
+| Kodkvalitet & Testning | 8 | 3 | 73% |
+| Tillganglighet | 2 | 5 | 29% |
+| Monitoring & Observability | 3 | 4 | 43% |
+| **Totalt** | **35** | **24** | **59%** |
 
-| Endpoint/Page | Target (p95) | Max Acceptable (p99) | Status |
-|---------------|-------------|----------------------|--------|
-| `/api/providers` (GET) | <200ms | <500ms | ✅ 97ms (2 providers) |
-| `/api/bookings` (GET) | <200ms | <500ms | ⚠️ Ej mätt |
-| `/api/services` (GET) | <200ms | <500ms | ⚠️ Ej mätt |
-| Provider-lista (client render) | <1s | <2s | ✅ Snabb |
-| Dashboard (client render) | <1s | <2s | ✅ Snabb |
-
-**Motivering:**
-- <200ms = "instant" upplevelse (Google standard)
-- <500ms = acceptabelt för de flesta användare
-- >1s = användare upplever systemet som långsamt
-
-### 1.2 Payload Size Targets
-
-| Endpoint | Target Size | Max Acceptable | Status |
-|----------|------------|----------------|--------|
-| `/api/providers` | <50KB | <100KB | ✅ Optimerad (F-3.4) |
-| `/api/bookings` | <30KB | <50KB | ⚠️ Ej verifierat |
-| Static assets (JS bundles) | <500KB total | <1MB | ⚠️ Ej mätt |
-
-**Learnings från F-3.4:**
-- ✅ Over-fetching reducerat med 40-50% genom att använda Prisma `select` istället för `include`
-- ✅ Känslig data (email/phone) borttagen = mindre payload + bättre säkerhet
-
-### 1.3 Skalbarhetsmål
-
-**Aktuell kapacitet:**
-- 2 providers i databasen
-- ~97ms response time för provider-lista
-
-**Målkapacitet (utan performance-degradering):**
-- **100 providers**: <150ms response time ✅ (med indexes från F-3.4)
-- **1,000 providers**: <200ms response time ✅ (med indexes)
-- **10,000 providers**: <400ms response time ✅ (med indexes)
-- **100+ concurrent users**: Ej testat ⚠️
-
-**Database Indexes (implementerat F-3.4):**
-```prisma
-Provider:
-  @@index([isActive, createdAt])  // List queries med filter + sort
-  @@index([city])                  // City-search
-  @@index([businessName])          // Name-search
-
-Service:
-  @@index([providerId, isActive])  // Provider's services lookup
-
-Booking:
-  @@index([providerId, bookingDate, status])
-  @@index([customerId, bookingDate])
-  @@index([serviceId])
-```
-
-**Impact:** 10-30x snabbare queries vid 1,000+ providers (enligt tech-arkitekt analys)
-
-### 1.4 Pagination Strategy (framtida)
-
-**Trigger:** När provider-listan når 100+ items
-
-**Implementation:**
-- Cursor-based pagination (Prisma native)
-- Default: 20-50 items per page
-- Client-side: Infinite scroll eller pagination controls
-- Estimerat arbete: 1-2 timmar
-
-**Exempel:**
-```typescript
-const providers = await prisma.provider.findMany({
-  take: 50,
-  skip: page * 50,
-  cursor: lastSeenId ? { id: lastSeenId } : undefined,
-})
-```
-
-### 1.5 Caching Strategy (framtida)
-
-**Server-Side:**
-- Next.js ISR med 60s revalidation för provider-lista
-- Redis cache för ofta-lästa data (bookings, availability)
-
-**Client-Side:**
-- SWR eller React Query med stale-while-revalidate
-- 5 min cache för sökresultat
-
-**CDN:**
-- Cloudflare/Vercel Edge för statiska routes
-- Image optimization med Next.js `<Image>` component
-
-**Estimerat arbete:** 2-3 timmar
+**Prioriterade gap:** P0: 4 st (launch blockers) | P1: 6 st (inom 2 veckor) | P2: 6 st (inom 1 manad)
 
 ---
 
-## 🔒 2. Säkerhet & Privacy
+## 1. Performance & Skalbarhet
 
-### 2.1 Implementerat (MVP)
+### Response Time Targets
 
-| Requirement | Status | Detaljer |
-|-------------|--------|----------|
-| Password hashing | ✅ | bcrypt, 10 rounds |
-| HTTP-only cookies | ✅ | NextAuth sessions |
-| CSRF protection | ✅ | NextAuth built-in |
-| SQL injection protection | ✅ | Prisma ORM (parameterized queries) |
-| XSS protection | ✅ | React auto-escaping |
-| Input validation | ✅ | Zod på både client & server |
-| Authorization checks | ✅ | Session + ownership checks |
-| GDPR-compliant API | ✅ | Email/phone ej exponerat (F-3.4) |
+| Endpoint/Page | Target (p95) | Max (p99) | Status |
+|---------------|-------------|-----------|--------|
+| `/api/providers` (GET) | <200ms | <500ms | Klart -- 97ms (2 providers) |
+| `/api/bookings` (GET) | <200ms | <500ms | Ej matt i produktion |
+| `/api/services` (GET) | <200ms | <500ms | Ej matt i produktion |
+| Provider-lista (render) | <1s | <2s | Klart |
+| Dashboard (render) | <1s | <2s | Klart |
 
-### 2.2 Säkerhet -- Implementeringsstatus
+### Payload Size Targets
 
-**Implementerat:**
-- [x] **Rate limiting** -- Upstash Redis (5/h login, 10/h bookings, 100/h publika endpoints)
-- [x] **HTTPS-only** -- Vercel automatiskt + HSTS via next.config.ts security headers
-- [x] **CSP Headers** -- Strict policy i next.config.ts (inkl. worker-src blob: för bildkomprimering)
-- [x] **Security Headers** -- X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin (via next.config.ts)
-- [x] **Password strength requirements** -- Implementerat (F-3.1)
-- [x] **Audit logging** -- logger.security() för känsliga operationer
+| Endpoint | Target | Max | Status |
+|----------|--------|-----|--------|
+| `/api/providers` | <50KB | <100KB | Klart -- optimerad med `select` |
+| `/api/bookings` | <30KB | <50KB | Ej verifierat |
+| JS bundles (total) | <500KB | <1MB | Ej matt |
 
-**Kvarstår:**
-- [ ] 2FA för provider-konton
-- [ ] Automated security scanning (Snyk, Dependabot)
+### Implementerat
 
-### 2.3 GDPR Compliance
+- Database indexes pa alla filter/sort-falt (Provider, Service, Booking, Horse, HorseServiceInterval)
+- API payload-optimering med Prisma `select` (40-50% reduktion)
+- Connection pooling via PgBouncer (10 connections/function). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md)
+- Query timeout (10s) och slow query-logging (>2s warn, >500ms info)
 
-**Implementerat:**
-- ✅ Minimering av personuppgifter (email/phone ej i publikt API)
-- ✅ Bcrypt hashing av lösenord
+### Kvarstar
 
-**Implementerat:**
-- [x] User data export (GDPR Article 20) -- /api/export/my-data (JSON + CSV)
-- [x] Horse data export -- /api/horses/[id]/export
-
-**Kvarstår:**
-- [ ] Privacy Policy
-- [ ] Cookie consent banner
-- [ ] User data deletion ("right to be forgotten")
-- [ ] Data retention policy
+- Lasttestning och prestandabaseline (se NFR-08)
+- Core Web Vitals-matning (se NFR-12)
+- Pagination (trigger: 100+ items i listvy)
 
 ---
 
-## ♿ 3. Tillgänglighet (Accessibility)
+## 2. Sakerhet & Privacy
 
-### 3.1 Målnivå
+### Implementerat
 
-**Target:** WCAG 2.1 Level AA compliance
+| Krav | Status | Detaljer |
+|------|--------|----------|
+| Losenordshashing | Klart | bcrypt, 10 rounds |
+| HTTP-only cookies | Klart | NextAuth sessions |
+| CSRF-skydd | Klart | NextAuth inbyggt |
+| SQL injection-skydd | Klart | Prisma (parameterized queries) |
+| XSS-skydd | Klart | React auto-escaping |
+| Input-validering | Klart | Zod pa bade client & server (.strict()) |
+| Auktoriseringskontroller | Klart | Session + ownership i WHERE clause |
+| GDPR-compliant API | Klart | Email/phone ej exponerat |
+| Rate limiting | Klart | Upstash Redis (5/h login, 10/h bookings, 100/h publikt) |
+| HTTPS + Security headers | Klart | Vercel + HSTS, CSP, X-Frame-Options DENY, nosniff |
+| Losenordskrav | Klart | Styrka-validering |
+| Audit logging | Klart | logger.security() for kansliga operationer |
+| Row Level Security | Klart | Deny-all pa alla 22 tabeller (migration 20260204120000). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
+| GDPR data export | Klart | /api/export/my-data (JSON + CSV), GDPR Art. 20 |
+| Horse data export | Klart | /api/horses/[id]/export |
 
-**Motivering:**
-- Level A = minimum (ej tillräckligt)
-- Level AA = industry standard (rekommenderat)
-- Level AAA = overkill för MVP
+### Kvarstar
 
-### 3.2 Implementerat (MVP)
-
-| Requirement | Status | Exempel |
-|-------------|--------|---------|
-| ARIA labels | 🟡 Partial | Password requirements (F-3.1) |
-| Semantic HTML | ✅ | `<button>`, `<nav>`, `<main>` |
-| ARIA live regions | ✅ | Screen reader support i PasswordRequirements |
-| Keyboard navigation | 🟡 Partial | Fungerar men ej testat systematiskt |
-| Focus indicators | ✅ | Default browser focus rings |
-
-### 3.3 Saknas för WCAG AA
-
-**Kritiska:**
-- [ ] **Keyboard navigation testing**
-  - Tab order ska vara logisk
-  - Alla interaktiva element nåbara med keyboard
-  - Escape-tangent stänger modals/dialogs
-
-- [ ] **Color contrast**
-  - Verifiera alla text/background-kombinationer
-  - Ratio ≥ 4.5:1 för normal text
-  - Ratio ≥ 3:1 för large text (18pt+)
-  - Tool: Chrome DevTools "Inspect Accessibility"
-
-- [ ] **Screen reader testing**
-  - Testa med NVDA (Windows) eller VoiceOver (Mac)
-  - Verifiera att alla actions är announced
-
-- [ ] **Mobile touch targets**
-  - Min size: 44x44px (Apple HIG)
-  - Min spacing: 8px mellan targets
-
-**Nice-to-have:**
-- [ ] Skip navigation link
-- [ ] Focus trap i modals
-- [ ] ARIA labels på alla form inputs
-
-### 3.4 Testing Strategy
-
-```bash
-# Automated accessibility testing
-npm install --save-dev @axe-core/playwright
-
-# E2E test med accessibility check
-test('should be accessible', async ({ page }) => {
-  await page.goto('/providers')
-  const accessibilityScanResults = await new AxeBuilder({ page }).analyze()
-  expect(accessibilityScanResults.violations).toEqual([])
-})
-```
+- 2FA for leverantorskonton (se NFR-14)
+- Automatiserad sakerhetsskanning (se NFR-05)
+- Privacy Policy + Cookie consent (se NFR-02)
+- Radera konto / right to be forgotten (se NFR-03)
+- Data retention policy (se NFR-16)
 
 ---
 
-## 🛡️ 4. Reliability & Availability
+## 3. Reliability & Availability
 
-### 4.1 Uptime Targets
+### Uptime Targets
 
-**MVP Target:** 99.5% uptime
-- = ~43 timmar downtime per år
-- = ~3.6 timmar per månad
-- Realistiskt för MVP utan 24/7 on-call
+| Fas | Target | Tillaten downtime |
+|-----|--------|-------------------|
+| MVP | 99.5% | ~3.6h/manad |
+| Produktion | 99.9% | ~43min/manad |
 
-**Produktion Target:** 99.9% uptime
-- = ~8.7 timmar downtime per år
-- = ~43 minuter per månad
-- Kräver monitoring + incident response
+### Error Rate Targets
 
-### 4.2 Error Rate Targets
+| Typ | Target | Max | Status |
+|-----|--------|-----|--------|
+| API 5xx | <0.1% | <1% | Ej matt |
+| API 4xx | <5% | <10% | Ej matt |
+| Client crashes | <0.1% | <1% | Ej matt |
 
-| Error Type | Target | Max Acceptable | Status |
-|------------|--------|----------------|--------|
-| API 5xx errors | <0.1% | <1% | ⚠️ Ej mätt |
-| API 4xx errors | <5% | <10% | ⚠️ Ej mätt |
-| Client errors (crashes) | <0.1% | <1% | ⚠️ Ej mätt |
+### Implementerat
 
-**Monitoring:**
-- [x] Sentry för error tracking
-- [ ] Vercel Analytics för performance monitoring
-- [ ] Custom metrics dashboard (Grafana eller Vercel)
+- Error handling & retry-logik (useRetry hook, ErrorState component, toast med retry)
+- Sentry for error tracking (client + server + edge, session replay)
+- Email-notifieringar via Resend (mock-fallback om nyckel saknas)
 
-### 4.3 Retry & Error Handling
+### Kvarstar
 
-**Implementerat (F-3.3):**
-- ✅ `useRetry` hook med max 3 retries
-- ✅ `ErrorState` component för unified error UX
-- ✅ Toast notifications med retry-action
-- ✅ Loading states under retry
-
-**Pattern:**
-```typescript
-const { retry, retryCount, isRetrying, canRetry } = useRetry({
-  maxRetries: 3,
-  onMaxRetriesReached: () => toast.error('Max retries reached')
-})
-
-// On error:
-<ErrorState
-  title="Något gick fel"
-  description={error}
-  onRetry={() => retry(fetchData)}
-  isRetrying={isRetrying}
-  retryCount={retryCount}
-  canRetry={canRetry}
-/>
-```
-
-### 4.4 Backup & Disaster Recovery
-
-**Saknas (kritiskt för produktion):**
-- [ ] **Automated backups**
-  - Frequency: Daglig (minimum)
-  - Retention: 30 dagar
-  - Tool: Vercel Postgres automated backups
-
-- [ ] **Point-in-time recovery**
-  - Ability to restore to any point inom 7 dagar
-  - PostgreSQL native feature
-
-- [ ] **Recovery Time Objective (RTO)**
-  - Target: <4 timmar från incident till system online
-  - Requires: Runbook + incident response plan
-
-- [ ] **Recovery Point Objective (RPO)**
-  - Target: <1 timme data loss max
-  - Requires: Frequent backups + transaction logs
-
-**Testing:**
-- [ ] Restore-test var 3:e månad (verifiera att backups funkar!)
+- Uptime-monitorering (se NFR-06)
+- Sentry-alertregler (se NFR-07)
+- Backup & disaster recovery -- dagliga backups finns pa Supabase free tier (7d retention), men PITR kraver Pro. Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md)
+- Separera dev/staging/prod-databaser (se NFR-04)
 
 ---
 
-## 🧰 5. Maintainability & Code Quality
+## 4. Kodkvalitet & Testning
 
-### 5.1 Test Coverage Targets
+### Implementerat
 
-| Area | Target Coverage | Min Coverage | Status |
-|------|----------------|--------------|--------|
-| **Overall** | 70% | 60% | ⚠️ Ej mätt |
-| **API Routes** | 80% | 70% | 🟡 ~60% (F-3.3 testad) |
-| **Utilities** | 90% | 80% | ✅ 100% (validation.ts) |
-| **Hooks** | 80% | 70% | ✅ 100% (useRetry) |
-| **Components** | 60% | 50% | 🟡 ~40% |
+| Krav | Status | Detaljer |
+|------|--------|----------|
+| TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
+| Unit/integration-tester | Klart | 1289+ tester, 101 testfiler (2026-02-07) |
+| E2E-tester | Klart | Playwright, kritiska floden |
+| ESLint | Klart | Flat config (eslint.config.mjs) |
+| Husky pre-commit | Klart | npm test |
+| Husky pre-push | Klart | test:run + typecheck + check:swedish + lint |
+| DDD-Light arkitektur | Klart | Repository pattern for karndomaner |
+| TDD workflow | Klart | Red -> Green -> Refactor |
 
-**Nuvarande status (2026-02-02):**
-- ✅ 1144/1144 unit/integration tests passing
-- ✅ 66 E2E tests passing
+### Coverage Targets
 
-**Coverage command:**
-```bash
-npm run test:coverage
-```
+| Omrade | Target | Min |
+|--------|--------|-----|
+| Overall | 70% | 60% |
+| API Routes | 80% | 70% |
+| Utilities | 90% | 80% |
+| Components | 60% | 50% |
 
-### 5.2 TypeScript Strictness
+**OBS:** Coverage-tracking ar inte integrerat i CI annu (se NFR-13).
 
-**Requirement:** ZERO TypeScript errors
+### Kvarstar
 
-**Config:**
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  }
-}
-```
-
-**Verification:**
-```bash
-npm run typecheck
-# Output: No errors ✅
-```
-
-### 5.3 Code Review Standards
-
-**Requirements:**
-- [ ] All PRs must be reviewed before merge
-- [ ] No direct commits to `main` (enforce with branch protection)
-- [ ] CI/CD must pass (tests + linting)
-- [ ] At least 1 approval required
-
-**Review Checklist:**
-- [ ] TypeScript errors: 0
-- [ ] Tests written & passing
-- [ ] Security considerations addressed
-- [ ] Performance implications considered
-- [ ] Documentation updated (README, SPRINT docs)
-
-### 5.4 Code Style & Linting
-
-**Tools:**
-- [x] ESLint konfiguration (flat config, eslint.config.mjs)
-- [ ] Prettier konfiguration
-- [x] Husky pre-push hook (test:run, typecheck, check:swedish, lint)
-- [ ] lint-staged för staged files
-
-**Kommando:**
-```bash
-npm run lint        # Kör ESLint
-npm run format      # Kör Prettier
-```
-
-### 5.5 Dependency Management
-
-**Policy:**
-- [ ] **Monthly security audit**: `npm audit`
-- [ ] **Dependabot alerts**: Enable på GitHub
-- [ ] **Major version updates**: Test thoroughly innan merge
-- [ ] **Deprecated packages**: Replace inom 3 månader
-
-**Current dependencies:**
-- Next.js 16.1.4 ✅
-- Prisma 6.19.0 ✅
-- NextAuth v5 (beta.30) ✅
-- React 19 ✅
-
-### 5.6 Documentation Standards
-
-**Requirement:** All features må ha dokumentation
-
-**Levels:**
-1. **Code comments** (engelsk) - komplex business logic
-2. **Component README** - nya shared components
-3. **SPRINT docs** - alla features i sprint-planeringen
-4. **CLAUDE.md** - utvecklingsprocesser & patterns
-5. **README.md** - user-facing features & setup
-
-**Exempel:**
-- ✅ F-3.3 Retry-mekanik: Dokumenterat i SPRINT-1.md + kod-kommentarer
-- ✅ E2E testing learnings: Dokumenterat i CLAUDE.md
-- ✅ Performance-optimering (F-3.4): Dokumenterat i SPRINT-1.md + NFR.md
+- Branch protection rules (se NFR-09)
+- Dependabot/Renovate (se NFR-10)
+- Coverage-tracking i CI (se NFR-13)
 
 ---
 
-## 👤 6. Usability & User Experience
+## 5. Tillganglighet
 
-### 6.1 UX Targets (från Sprint 1)
+### Mal
 
-| Metric | Baseline | Target | How to Measure |
-|--------|----------|--------|----------------|
-| **Provider Activation Rate** | ~40% | 75%+ | % providers som kompletterar onboarding inom 24h |
-| **Error Recovery Rate** | ~30% | 70%+ | % fel där user lyckas efter retry utan page reload |
-| **Password Creation Success** | ~70% | 90%+ | % users som skapar giltigt lösenord på första försöket |
-| **Support Tickets (avbokning)** | Baseline | -80% | Antal tickets om "är min avbokning bekräftad?" |
+**Target:** WCAG 2.1 Level AA
 
-**Status:** ⚠️ Ej mätt (MVP har inga users än)
+### Implementerat
 
-### 6.2 Page Load Performance (Core Web Vitals)
+| Krav | Status |
+|------|--------|
+| Semantic HTML | Klart -- button, nav, main |
+| ARIA live regions | Klart -- screen reader-stod |
 
-**Targets:**
-- **LCP** (Largest Contentful Paint): <2.5s
-- **FID** (First Input Delay): <100ms
-- **CLS** (Cumulative Layout Shift): <0.1
+### Kvarstar
 
-**Measurement:**
-- Google PageSpeed Insights
-- Vercel Analytics
-- Chrome DevTools Lighthouse
-
-### 6.3 Mobile Responsiveness
-
-**Requirement:** All pages må vara fully responsive
-
-**Breakpoints:**
-```css
-mobile: 0-640px
-tablet: 640-1024px
-desktop: 1024px+
-```
-
-**Testing:**
-- [ ] Chrome DevTools Device Mode
-- [ ] Faktiska devices (iPhone, Android)
-- [ ] Playwright E2E tests med mobile viewport
-
-### 6.4 Browser Support
-
-**Supported:**
-- Chrome/Edge: Last 2 versions ✅
-- Firefox: Last 2 versions ✅
-- Safari: Last 2 versions ✅
-
-**NOT supported:**
-- Internet Explorer (deprecated)
-- Opera Mini
-- UC Browser
+- ARIA labels pa alla form inputs (partial idag)
+- Keyboard navigation-testning (tab order, escape for modals)
+- Kontrastverifiering (4.5:1 normal text, 3:1 large text)
+- Screen reader-testning (VoiceOver)
+- Touch targets >= 44x44px
+- Automatiserad tillganglighetstestning (se NFR-11)
 
 ---
 
-## 📊 Monitoring & Metrics (Framtida)
+## 6. Monitoring & Observability
 
-### 7.1 Application Performance Monitoring (APM)
+### Implementerat
 
-**Tool:** Sentry eller Vercel Analytics
+| Krav | Status | Detaljer |
+|------|--------|----------|
+| Error tracking | Klart | Sentry (3 config-filer: client, server, edge) |
+| Session replay | Klart | Sentry session replay |
+| Structured logging | Klart | logger med nivaer (error, warn, info, debug) |
 
-**Metrics to track:**
-- API response times (p50, p95, p99)
-- Error rates (4xx, 5xx)
-- Page load times
-- User sessions & active users
-- Database query performance
+### Kvarstar
 
-### 7.2 Business Metrics
-
-**Dashboard (framtida):**
-- New user registrations (customer vs provider)
-- Active providers (% with ≥1 service)
-- Bookings per day/week
-- Conversion rate (visitor → registration → booking)
-- Provider activation rate (F-3.4 onboarding checklist)
-
-### 7.3 Alerting Rules
-
-**Critical alerts (PagerDuty/Email):**
-- [ ] API error rate >5% för 5 minuter
-- [ ] Database connection errors
-- [ ] Uptime <99.5%
-- [ ] Payment processing failures
-
-**Warning alerts (Slack):**
-- [ ] API p95 response time >500ms
-- [ ] Disk usage >80%
-- [ ] Memory usage >80%
+- Uptime-monitorering (se NFR-06)
+- Sentry-alertregler (se NFR-07)
+- Core Web Vitals-matning (se NFR-12)
+- Response time-dashboards (p50/p95/p99)
 
 ---
 
-## ✅ NFR Checklist - Production Readiness
+## Tekniska Stories -- Production Gaps
 
-### Must-Have (Critical för produktion)
+Varje gap ar formaterat som en story-ready post med prioritet, effort och acceptance criteria.
 
-**Performance:**
-- [x] Database indexes för alla filter/sort-fält
-- [x] API payload optimering (select vs include)
-- [ ] Response time monitoring
-- [ ] Load testing (100+ concurrent users)
+### P0: Launch Blockers
 
-**Security:**
-- [x] Password hashing (bcrypt)
-- [x] Input validation (Zod)
-- [x] GDPR-compliant API (no email/phone exposure)
-- [x] Rate limiting (Upstash Redis)
-- [x] HTTPS-only + Security headers (next.config.ts)
-- [ ] Security audit (Snyk/Dependabot)
+#### NFR-01: Integrera betalningsgateway (Stripe/Swish)
+**Prioritet:** P0
+**Kategori:** Funktionell / Sakerhet
+**Effort:** XL (1v+)
+**Varfor:** Ingen intakt utan betalning. Sakerhetskritiskt -- PCI DSS-hantering.
+**Acceptance Criteria:**
+- [ ] Stripe- eller Swish-integration fungerar i produktion
+- [ ] Betalning genomfors vid bokning
+- [ ] Webhook hanterar betalningsstatus (success/failure/refund)
+- [ ] Kvitton skickas via email
+- [ ] PCI-compliance verifierad (Stripe Checkout/Elements hanterar kortdata)
 
-**Reliability:**
-- [x] Error handling & retry logic
-- [ ] Automated backups (daglig)
-- [ ] Disaster recovery plan
-- [ ] Uptime monitoring
+#### NFR-02: Privacy Policy + Cookie Consent
+**Prioritet:** P0
+**Kategori:** Sakerhet & Privacy
+**Effort:** M (3-8h)
+**Varfor:** Lagkrav (GDPR Art. 13/14, EU Cookie Directive). Kan leda till boter.
+**Acceptance Criteria:**
+- [ ] Privacy Policy-sida publicerad (Swedish)
+- [ ] Cookie consent-banner visas for forstagangsbesokare
+- [ ] Samtycke loggas och respekteras
+- [ ] Lank till policy fran registreringssida och footer
 
-**Code Quality:**
-- [x] TypeScript strict mode
-- [x] Unit tests (≥70% coverage)
-- [x] E2E tests (critical flows)
-- [x] ESLint (flat config)
-- [x] Pre-push hooks (Husky)
+#### NFR-03: Radera konto (GDPR Art. 17)
+**Prioritet:** P0
+**Kategori:** Sakerhet & Privacy
+**Effort:** M (3-8h)
+**Varfor:** Lagkrav -- anvandare har ratt att fa sin data raderad.
+**Acceptance Criteria:**
+- [ ] Anvandare kan begara kontoradering fran profil
+- [ ] Personuppgifter anonymiseras/raderas (email, namn, telefon)
+- [ ] Bokningshistorik bevaras anonymiserad (for leverantorsstatistik)
+- [ ] Bekraftelse-email skickas fore slutgiltig radering
+- [ ] Grace period (t.ex. 30 dagar) fore permanent radering
 
-### Should-Have (viktigt men ej blockerande)
-
-**Accessibility:**
-- [ ] WCAG AA compliance
-- [ ] Screen reader testing
-- [ ] Keyboard navigation testing
-
-**Monitoring:**
-- [x] APM tool (Sentry)
-- [ ] Business metrics dashboard
-- [ ] Alerting rules
-
-**UX:**
-- [ ] Core Web Vitals <targets
-- [ ] Mobile responsiveness testing
-- [ ] Cross-browser testing
-
-### Nice-to-Have (framtida förbättringar)
-
-- [ ] 2FA för providers
-- [ ] Caching strategy (Redis)
-- [ ] CDN för static assets
-- [ ] Advanced monitoring (Grafana)
+#### NFR-04: Separera Dev/Staging/Prod-databaser
+**Prioritet:** P0
+**Kategori:** Reliability
+**Effort:** L (1-3d)
+**Varfor:** Delad databas innebar att utveckling kan paverka produktionsdata.
+**Acceptance Criteria:**
+- [ ] Tre separata Supabase-projekt (dev, staging, prod)
+- [ ] Environment-specifika DATABASE_URL i varje miljo
+- [ ] Migrations kors automatiskt vid deploy
+- [ ] Seed-data for dev/staging, ren prod
 
 ---
 
-## 📝 Maintenance Schedule
+### P1: Inom 2 veckor efter launch
 
-### Daglig
-- [ ] Check error logs (Sentry dashboard)
-- [ ] Monitor uptime (Vercel/Pingdom)
+#### NFR-05: Automatiserad sakerhetsskanning
+**Prioritet:** P1
+**Kategori:** Sakerhet
+**Effort:** S (1-2h)
+**Varfor:** Kanda sarbarheter i dependencies maste fangas automatiskt.
+**Acceptance Criteria:**
+- [ ] Dependabot aktiverat pa GitHub-repot
+- [ ] Automatiska PR:er for sakerhetspatchar
+- [ ] `npm audit` kors i CI-pipeline
 
-### Veckovis
-- [ ] Review performance metrics
-- [ ] Triage open issues/bugs
+#### NFR-06: Uptime-monitorering
+**Prioritet:** P1
+**Kategori:** Reliability
+**Effort:** S (1-2h)
+**Varfor:** Utan monitorering upptacks driftstorningar forst nar anvandare klagar.
+**Acceptance Criteria:**
+- [ ] Extern uptime-monitor konfigurerad (t.ex. UptimeRobot, Checkly)
+- [ ] Kontrollerar /api/health var 5:e minut
+- [ ] Email/Slack-alert vid downtime
+- [ ] Manatlig uptime-rapport tillganglig
 
-### Månadsvis
-- [ ] Security audit (`npm audit`)
-- [ ] Dependency updates
-- [ ] Review & update NFRs baserat på learnings
+#### NFR-07: Sentry-alertregler
+**Prioritet:** P1
+**Kategori:** Monitoring
+**Effort:** S (1-2h)
+**Varfor:** Sentry samlar data men notifierar inte vid problem utan konfigurerade regler.
+**Acceptance Criteria:**
+- [ ] Alert vid error rate >5% under 5 minuter
+- [ ] Alert vid nya unhandled exceptions
+- [ ] Email-notifiering till teamet
+- [ ] Veckovis error digest
 
-### Kvartalsvis
-- [ ] Full security review
-- [ ] Backup restore-test
-- [ ] Performance optimization sprint
-- [ ] Accessibility audit
+#### NFR-08: Lasttestning + prestandabaseline
+**Prioritet:** P1
+**Kategori:** Performance
+**Effort:** L (1-3d)
+**Varfor:** Utan baseline vet vi inte om performance forsamras over tid.
+**Acceptance Criteria:**
+- [ ] Lasttestverktyg uppsatt (k6, Artillery, eller liknande)
+- [ ] Baslinjetest for kritiska endpoints (providers, bookings, services)
+- [ ] Test med 100 concurrent users utan degradering
+- [ ] Resultat dokumenterade som referens
+
+#### NFR-09: Branch protection rules
+**Prioritet:** P1
+**Kategori:** Kodkvalitet
+**Effort:** S (1-2h)
+**Varfor:** Direkt-commits till main kan bryta produktion.
+**Acceptance Criteria:**
+- [ ] Krav pa PR for merge till main
+- [ ] CI maste passera fore merge
+- [ ] Minst 1 approval kravs (nar teamet vaxer)
+
+#### NFR-10: Dependabot/Renovate
+**Prioritet:** P1
+**Kategori:** Kodkvalitet
+**Effort:** S (1-2h)
+**Varfor:** Dependencies som inte uppdateras ackumulerar sakerhetsrisker och teknisk skuld.
+**Acceptance Criteria:**
+- [ ] Dependabot eller Renovate konfigurerat
+- [ ] Veckovisa PR:er for minor/patch-uppdateringar
+- [ ] Manatliga PR:er for major-uppdateringar
+- [ ] CI kor tester pa dependency-PRs automatiskt
 
 ---
 
-**Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2026-02-02
+### P2: Inom 1 manad efter launch
+
+#### NFR-11: Automatiserad tillganglighetstestning
+**Prioritet:** P2
+**Kategori:** Tillganglighet
+**Effort:** M (3-8h)
+**Varfor:** Manuell testning skalas inte -- automatisering fanger regressioner.
+**Acceptance Criteria:**
+- [ ] @axe-core/playwright integrerat i E2E-sviten
+- [ ] Tillganglighetstest for varje kritiskt flade (sok, bokning, profil)
+- [ ] CI failar vid WCAG AA-violations
+
+#### NFR-12: Core Web Vitals-matning
+**Prioritet:** P2
+**Kategori:** Performance
+**Effort:** S (1-2h)
+**Varfor:** LCP, FID, CLS paverkar SEO-ranking och anvandarupplevelse.
+**Acceptance Criteria:**
+- [ ] Vercel Analytics eller web-vitals-bibliotek installerat
+- [ ] LCP <2.5s, FID <100ms, CLS <0.1 for alla sidor
+- [ ] Dashboard for att folja trender
+
+#### NFR-13: Coverage-tracking i CI
+**Prioritet:** P2
+**Kategori:** Kodkvalitet
+**Effort:** S (1-2h)
+**Varfor:** Utan matning vet vi inte om coverage sjunker vid nya features.
+**Acceptance Criteria:**
+- [ ] `npm run test:coverage` kors i CI
+- [ ] Coverage-badge i README
+- [ ] CI varnar (inte failar) om coverage sjunker >2%
+
+#### NFR-14: 2FA for leverantorskonton
+**Prioritet:** P2
+**Kategori:** Sakerhet
+**Effort:** L (1-3d)
+**Varfor:** Leverantorskonton hanterar bokningar och kunddata -- hogre sakerhetskrav.
+**Acceptance Criteria:**
+- [ ] TOTP-baserad 2FA (Google Authenticator, Authy)
+- [ ] Frivilligt vid launch, obligatoriskt efter X manader
+- [ ] Backup-koder for aterhamtning
+- [ ] 2FA kravs vid kansliga operationer (t.ex. andring av bankuppgifter)
+
+#### NFR-15: Cross-browser-testning
+**Prioritet:** P2
+**Kategori:** Tillganglighet / UX
+**Effort:** M (3-8h)
+**Varfor:** Anvandare pa Safari/Firefox kan ha annan upplevelse.
+**Acceptance Criteria:**
+- [ ] Testade i Chrome, Firefox, Safari (senaste 2 versionerna)
+- [ ] E2E-tester kors i minst 2 browsers i CI
+- [ ] Kanda inkompatibiliteter dokumenterade och fixade
+
+#### NFR-16: Data retention policy
+**Prioritet:** P2
+**Kategori:** Sakerhet & Privacy
+**Effort:** S (1-2h)
+**Varfor:** GDPR kraver definierade lagringsperioder for personuppgifter.
+**Acceptance Criteria:**
+- [ ] Dokumenterad policy for varje datatyp (anvandare, bokningar, loggar)
+- [ ] Automatisk radering av gammal data (t.ex. loggar >1 ar)
+- [ ] Policy publicerad i Privacy Policy
+
+---
+
+## Underhallsschema
+
+| Kadens | Aktivitet |
+|--------|-----------|
+| Daglig | Kolla Sentry-dashboard for nya fel |
+| Daglig | Verifiera uptime (nar monitorering ar pa plats) |
+| Veckovis | Granska performance-metriker |
+| Veckovis | Triagera oppna buggar |
+| Manatlig | `npm audit` + dependency-uppdateringar |
+| Manatlig | Granska och uppdatera detta dokument |
+| Kvartalsvis | Full sakerhetsgenomgang |
+| Kvartalsvis | Backup restore-test |
+| Kvartalsvis | Tillganglighetsaudit |
+
+---
+
+**Dokumentagare**: Johan Lindengard
+**Senast granskad**: 2026-02-07
