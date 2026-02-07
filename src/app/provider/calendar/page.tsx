@@ -16,6 +16,7 @@ import { BookingDetailDialog } from "@/components/calendar/BookingDetailDialog"
 import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDialog"
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
+import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
 
 // Detektera om vi är på mobil (client-side)
@@ -41,6 +42,7 @@ export default function ProviderCalendarPage() {
   const { services: allServices } = useServices()
   const services = allServices.filter((s) => s.isActive)
   const { providerId } = useProviderProfile()
+  const pendingBookings = bookings.filter((b) => b.status === "pending")
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
@@ -331,6 +333,11 @@ export default function ProviderCalendarPage() {
           + Bokning
         </button>
       </div>
+
+      <PendingBookingsBanner
+        pendingBookings={pendingBookings}
+        onBookingClick={handleBookingClick}
+      />
 
       <CalendarHeader
         currentDate={currentDate}
