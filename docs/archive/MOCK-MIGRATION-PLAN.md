@@ -1,19 +1,19 @@
 # Mock-migrationsplan: Prisma-mocks -> Service-mocks
 
-> **Syfte:** Dokumentera strategin for att migrera kvarvarande Prisma-mockar till
-> service-mockar i testsviten. Sjalvstandig fas EFTER att DDD-refaktoreringen
-> (Fas 1-3 i DDD-TDD-REFACTORING-PLAN.md) ar klar.
+> **Syfte:** Dokumentera strategin för att migrera kvarvarande Prisma-mockar till
+> service-mockar i testsviten. Självständig fas EFTER att DDD-refaktoreringen
+> (Fas 1-3 i DDD-TDD-REFACTORING-PLAN.md) är klar.
 >
-> **Beroende:** Kravet ar att domanen redan har repository + service + factory.
-> Migrera inte tester for domaner som saknar service-lager.
+> **Beroende:** Kravet är att domänen redan har repository + service + factory.
+> Migrera inte tester för domäner som saknar service-lager.
 
 ---
 
-## 1. Nulagets-analys
+## 1. Nulägets-analys
 
 ### Siffror (2026-02-01)
 
-| Matpunkt | Antal |
+| Mätpunkt | Antal |
 |----------|-------|
 | Totalt `vi.mock()` anrop | 141 |
 | Testfiler med mockar | 48 |
@@ -21,9 +21,9 @@
 | Filer som mockar `@/domain/*` services | 24 (50%) |
 | Filer som mockar `@/infrastructure/*` repos | 3 (6%) |
 
-### Mock-fordelning per doman
+### Mock-fördelning per domän
 
-| Doman | DDD-Light klar? | Route-tester | Mock-typ idag |
+| Domän | DDD-Light klar? | Route-tester | Mock-typ idag |
 |-------|-----------------|--------------|---------------|
 | **Horse** | Ja | 7 filer | Service-mock (HorseService factory) |
 | **GroupBooking** | Ja | 6 filer | Service-mock (GroupBookingService factory) |
@@ -42,18 +42,18 @@
 
 ### Sammanfattning
 
-- **39% av route-testerna** anvander redan DDD-Light-mockar (service/factory)
+- **39% av route-testerna** använder redan DDD-Light-mockar (service/factory)
 - **52% av testfilerna** mockar fortfarande Prisma direkt
-- **6 filer** blandar bada monstren (mixed) -- dessa ar fragila och prioriterade
+- **6 filer** blandar båda mönstren (mixed) -- dessa är fragila och prioriterade
 
 ---
 
-## 2. Tva mock-strategier
+## 2. Två mock-strategier
 
-### Prisma-mock (fragilt monster)
+### Prisma-mock (fragilt mönster)
 
 ```typescript
-// Kopplar testet till Prisma-schema. Varje kolumnandrng -> bruten test.
+// Kopplar testet till Prisma-schema. Varje kolumnändring -> bruten test.
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     review: {
@@ -72,15 +72,15 @@ vi.mock('@/lib/prisma', () => ({
 ```
 
 **Problem:**
-- Tester bryts vid kolumnandringar, relationsandringar, eller Prisma-uppgraderingar
+- Tester bryts vid kolumnändringar, relationsändringar, eller Prisma-uppgraderingar
 - Testar HOW (Prisma-anrop), inte WHAT (API-beteende)
-- Mocken maste spegla exakt hur routen anropar Prisma -- fragilt
-- Saknar affarslogik-validering (reglerna bor i servicen)
+- Mocken måste spegla exakt hur routen anropar Prisma -- fragilt
+- Saknar affärslogik-validering (reglerna bor i servicen)
 
-### Service-mock (robust monster)
+### Service-mock (robust mönster)
 
 ```typescript
-// Kopplar testet till API-kontraktet. Schema-andringar paverkar bara repository.
+// Kopplar testet till API-kontraktet. Schema-ändringar påverkar bara repository.
 vi.mock('@/domain/review/ReviewService', () => ({
   createReviewService: vi.fn(() => ({
     createReview: vi.fn().mockResolvedValue(
@@ -93,21 +93,21 @@ vi.mock('@/domain/review/ReviewService', () => ({
 }))
 ```
 
-**Fordelar:**
-- Tester overlever Prisma-schema-andringar
+**Fördelar:**
+- Tester överlever Prisma-schema-ändringar
 - Testar API-kontrakt (HTTP status + response shape)
-- Affarsregler testas i service-tester (med MockRepository)
-- En mock-andring nar servicen andras -- inte N Prisma-mockar
+- Affärsregler testas i service-tester (med MockRepository)
+- En mock-ändring när servicen ändras -- inte N Prisma-mockar
 
-### Mixed mock (varsta fallet)
+### Mixed mock (värsta fallet)
 
 ```typescript
-// Blandar bada monstren -- dubbelt fragilt
+// Blandar båda mönstren -- dubbelt fragilt
 vi.mock('@/lib/prisma', () => ({ prisma: { ... } }))
 vi.mock('@/domain/notification/NotificationService', () => ({ ... }))
 ```
 
-Filer med mixed mocks ar prioriterade for migrering -- de har den hogsta underhallskostnaden.
+Filer med mixed mocks är prioriterade för migrering -- de har den högsta underhållskostnaden.
 
 ---
 
@@ -115,7 +115,7 @@ Filer med mixed mocks ar prioriterade for migrering -- de har den hogsta underha
 
 ### Prioritet 1: Mixed-mock-filer (6 filer)
 
-Dessa blandar Prisma-mock + service-mock och ar mest fragila.
+Dessa blandar Prisma-mock + service-mock och är mest fragila.
 
 | Fil | Prisma-mock | Service-mock | Aktion |
 |-----|-------------|--------------|--------|
@@ -123,27 +123,27 @@ Dessa blandar Prisma-mock + service-mock och ar mest fragila.
 | `reviews/[id]/route.test.ts` | `prisma.review.*` | NotificationService | Migrera till ReviewService factory |
 | `reviews/[id]/reply/route.test.ts` | `prisma.review.*` | NotificationService | Migrera till ReviewService factory |
 | `bookings/[id]/route.test.ts` | `prisma.booking.*` | NotificationService + repos | Migrera till BookingService factory |
-| `group-bookings/[id]/match/route.test.ts` | `prisma.provider.*` | GroupBookingService | Acceptera -- stoddomans-lookup |
+| `group-bookings/[id]/match/route.test.ts` | `prisma.provider.*` | GroupBookingService | Acceptera -- stöddomäns-lookup |
 | `services/[id]/route.test.ts` | -- | ServiceRepository | Redan DDD-Light |
 
-**Forvantad vinst:** 5 filer blir rent service-mockade, 1 accepteras som mixed.
+**Förväntad vinst:** 5 filer blir rent service-mockade, 1 accepteras som mixed.
 
-### Prioritet 2: DDD-domaner med kvarvarande Prisma-mock (4 filer)
+### Prioritet 2: DDD-domäner med kvarvarande Prisma-mock (4 filer)
 
-Dessa har service-lager men route-testerna anvander fortfarande Prisma.
+Dessa har service-lager men route-testerna använder fortfarande Prisma.
 
-| Fil | Doman | Service finns? | Aktion |
+| Fil | Domän | Service finns? | Aktion |
 |-----|-------|----------------|--------|
 | `providers/[id]/reviews/route.test.ts` | Review | Ja | Migrera till ReviewService factory |
 | `bookings/route.test.ts` | Booking | Ja | Migrera till BookingService factory |
 | `providers/route.test.ts` | Provider | Repo finns | Migrera till ProviderRepository mock |
 | `providers/[id]/route.test.ts` | Provider | Repo finns | Migrera till ProviderRepository mock |
 
-### Prioritet 3: Stoddomaner -- LAT VARA (11 filer)
+### Prioritet 3: Stöddomäner -- LÅT VARA (11 filer)
 
-Dessa har inget service-lager och Prisma-mock ar ratt abstraktionsniva.
+Dessa har inget service-lager och Prisma-mock är rätt abstraktionsnivå.
 
-| Fil | Doman | Motivering |
+| Fil | Domän | Motivering |
 |-----|-------|-----------|
 | `route-orders/route.test.ts` | RouteOrder | Prisma direkt -- inget DDD planerat |
 | `route-orders/[id]/bookings/route.test.ts` | RouteOrder | Prisma direkt |
@@ -163,34 +163,34 @@ Dessa har inget service-lager och Prisma-mock ar ratt abstraktionsniva.
 
 ## 4. Riktlinjer
 
-### Nar service-mock KRAVS
+### När service-mock KRÄVS
 
-Migrera till service-mock nar:
+Migrera till service-mock när:
 
-- [x] Domanen har en service + factory (`createXxxService()`)
+- [x] Domänen har en service + factory (`createXxxService()`)
 - [x] Route-testerna mockar Prisma men service finns
 - [x] Filen blandar Prisma-mock + service-mock (mixed)
-- [x] Testerna testar affarslogik som redan finns i servicen
+- [x] Testerna testar affärslogik som redan finns i servicen
 
-### Nar Prisma-mock ar OK
+### När Prisma-mock är OK
 
-Behal Prisma-mock nar:
+Behåll Prisma-mock när:
 
-- [x] Domanen ar stoddomaner (Prisma direkt enligt DDD-planen)
+- [x] Domänen är stöddomäner (Prisma direkt enligt DDD-planen)
 - [x] Ingen service eller repository existerar
-- [x] Routen ar enkel CRUD utan affarsregler
-- [x] Det gar support-lookups i en DDD-route (t.ex. provider-lookup i `match/route.ts`)
+- [x] Routen är enkel CRUD utan affärsregler
+- [x] Det gör support-lookups i en DDD-route (t.ex. provider-lookup i `match/route.ts`)
 
 ### Decision tree
 
 ```
-Har domanen en service + factory?
+Har domänen en service + factory?
   |
-  +-- Nej -> Behall Prisma-mock
+  +-- Nej -> Behåll Prisma-mock
   |
-  +-- Ja -> Anvander route-testet Prisma-mock?
+  +-- Ja -> Använder route-testet Prisma-mock?
         |
-        +-- Nej -> Redan migrerat, inget att gora
+        +-- Nej -> Redan migrerat, inget att göra
         |
         +-- Ja -> MIGRERA till service-mock
               |
@@ -201,13 +201,13 @@ Har domanen en service + factory?
 ### Migrerings-checklist per fil
 
 ```markdown
-- [ ] Las route-testet -- identifiera alla vi.mock() anrop
-- [ ] Verifiera att servicen stodjer alla mockade operationer
+- [ ] Läs route-testet -- identifiera alla vi.mock() anrop
+- [ ] Verifiera att servicen stödjer alla mockade operationer
 - [ ] Byt vi.mock('@/lib/prisma') -> vi.mock('@/domain/xxx/XxxService')
 - [ ] Uppdatera test-assertions till att testa HTTP-kontrakt
-- [ ] Kor testet -- verifiera att det passerar
+- [ ] Kör testet -- verifiera att det passerar
 - [ ] Ta bort alla Prisma-relaterade imports
-- [ ] Kor full testsvit (npm test -- --run)
+- [ ] Kör full testsvit (npm test -- --run)
 ```
 
 ---
@@ -216,22 +216,22 @@ Har domanen en service + factory?
 
 | Kategori | Filer | Aktion |
 |----------|-------|--------|
-| Redan DDD-Light-mockar | 19 filer | Inget att gora |
-| Prioritet 1 (mixed) | 5 filer | Migrera (hogst prio) |
-| Prioritet 2 (DDD-doman med Prisma-mock) | 4 filer | Migrera |
-| Prioritet 3 (stoddomaner) | 11 filer | Behall Prisma-mock |
-| Domain service-tester | 5 filer | Inget att gora (MockRepository) |
-| Ovriga (hooks, cron) | 4 filer | Bedomning per fil |
+| Redan DDD-Light-mockar | 19 filer | Inget att göra |
+| Prioritet 1 (mixed) | 5 filer | Migrera (högst prio) |
+| Prioritet 2 (DDD-domän med Prisma-mock) | 4 filer | Migrera |
+| Prioritet 3 (stöddomäner) | 11 filer | Behåll Prisma-mock |
+| Domain service-tester | 5 filer | Inget att göra (MockRepository) |
+| Övriga (hooks, cron) | 4 filer | Bedömning per fil |
 
-**Total migreringsinsats:** 9 filer att migrera, 11 att medvetet lata vara.
+**Total migreringsinsats:** 9 filer att migrera, 11 att medvetet låta vara.
 
-**Forvantad situation efter migrering:**
-- 28+ av 48 testfiler anvander service-mocks (58% -> uppskattning)
-- 0 mixed-mock-filer (ner fran 6)
-- 11 filer med medveten Prisma-mock for stoddomaner
+**Förväntad situation efter migrering:**
+- 28+ av 48 testfiler använder service-mocks (58% -> uppskattning)
+- 0 mixed-mock-filer (ner från 6)
+- 11 filer med medveten Prisma-mock för stöddomäner
 
 ---
 
 *Skapat: 2026-02-01*
 *Relaterat: [DDD-TDD-REFACTORING-PLAN.md](DDD-TDD-REFACTORING-PLAN.md)*
-*Fas: Sjalvstandig -- genomfor EFTER DDD-refaktorering (Fas 1-3 klara)*
+*Fas: Självständig -- genomför EFTER DDD-refaktorering (Fas 1-3 klara)*

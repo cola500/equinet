@@ -2,29 +2,29 @@
 
 **Senast uppdaterad:** 2026-02-06
 **Nuvarande version:** v0.2.0+
-**Produktagare:** Johan Lindengard
+**Produktägare:** Johan Lindengård
 
 ---
 
 ## Implementerat (sammanfattning)
 
-> Se README.md for fullstandig lista.
+> Se README.md för fullständig lista.
 
-**Auth:** Registrering, login, rollval, email-verifiering, losenordsstyrka
-**Leverantor:** Dashboard, tjanster (CRUD), oppettider, exceptions, kalender, bokningshantering, onboarding, profil med geo-position, recensioner & svar, kundrecensioner (betygsatt kunder)
-**Kund:** Leverantorsgalleri, bokningar, avbokning, flexibla ruttbestallningar, profil, recensioner & betyg, mock-betalning, hastregister med vardhistorik, hasthalsotidslinje (anteckningar + kategorifilter)
-**Leverantör:** Kompetenser & certifikat (5 typer: utbildning/organisation/certifikat/erfarenhet/licens, utfardare, ar, max 5 bilder, redigera/ta bort, badge), read-only hasttidslinje
-**Admin:** Verifieringsgranskning (godkann/avvisa med kommentar, bilder, metadata, notifikation till provider)
-**Rutter:** RouteOrders, ruttplanering (Haversine + Nearest Neighbor), stopp-for-stopp, ETA, kartvy (Leaflet/OSM), announcements, geo-matching
-**Gruppbokning:** GroupBookingRequest + Participant-modeller, 7 API-endpoints (CRUD + join + available + match), GroupBookingService med sekventiell bokningslogik, invite codes, 6 UI-sidor (kund + leverantor), notifikationer
-**Notifikationer:** In-app notifikationer (klocka + dropdown + polling), automatiska aterbokningspaminnelser (cron), betalningsabstraktion (gateway pattern)
-**Dataexport:** GDPR-dataexport (JSON + CSV), hastpass med delbara lankar (30d expiry, integritetsskydd)
-**Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad pa hastprofil (foto) och leverantorsprofil (profilbild)
-**Bokforing:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
-**Manuell bokning:** Provider kan skapa bokningar at kunder (ghost user-pattern), kundsok begransad till egna kunder, hast-dropdown, steg-for-steg dialog, "M"-indikator i kalender, audit trail
-**Kundregister:** Samlad kundlista for leverantorer (harledd fran bokningar), filter, sok, hastar per kund
-**Aterbesoksplanering:** "Dags for besok"-vy med statusbadges (forsenad/inom 2v/ej aktuell), individuella aterbesoksintervall per hast (override av tjanstens default via HorseServiceInterval)
-**Leverantorsanteckningar:** providerNotes pa bokningar, UI i bokningsdetalj och hastjournal (bara synligt for leverantoren, integritetsskyddat)
+**Auth:** Registrering, login, rollval, email-verifiering, lösenordsstyrka
+**Leverantör:** Dashboard, tjänster (CRUD), öppettider, exceptions, kalender, bokningshantering, onboarding, profil med geo-position, recensioner & svar, kundrecensioner (betygsatt kunder)
+**Kund:** Leverantörsgalleri, bokningar, avbokning, flexibla ruttbeställningar, profil, recensioner & betyg, mock-betalning, hästregister med vårdhistorik, hästhälsotidslinje (anteckningar + kategorifilter)
+**Leverantör:** Kompetenser & certifikat (5 typer: utbildning/organisation/certifikat/erfarenhet/licens, utfärdare, år, max 5 bilder, redigera/ta bort, badge), read-only hästtidslinje
+**Admin:** Verifieringsgranskning (godkänn/avvisa med kommentar, bilder, metadata, notifikation till provider)
+**Rutter:** RouteOrders, ruttplanering (Haversine + Nearest Neighbor), stopp-för-stopp, ETA, kartvy (Leaflet/OSM), announcements, geo-matching
+**Gruppbokning:** GroupBookingRequest + Participant-modeller, 7 API-endpoints (CRUD + join + available + match), GroupBookingService med sekventiell bokningslogik, invite codes, 6 UI-sidor (kund + leverantör), notifikationer
+**Notifikationer:** In-app notifikationer (klocka + dropdown + polling), automatiska återbokningspåminnelser (cron), betalningsabstraktion (gateway pattern)
+**Dataexport:** GDPR-dataexport (JSON + CSV), hästpass med delbara länkar (30d expiry, integritetsskydd)
+**Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad på hästprofil (foto) och leverantörsprofil (profilbild)
+**Bokföring:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
+**Manuell bokning:** Provider kan skapa bokningar åt kunder (ghost user-pattern), kundsök begränsad till egna kunder, häst-dropdown, steg-för-steg dialog, "M"-indikator i kalender, audit trail
+**Kundregister:** Samlad kundlista för leverantörer (härledd från bokningar), filter, sök, hästar per kund
+**Återbesöksplanering:** "Dags för besök"-vy med statusbadges (försenad/inom 2v/ej aktuell), individuella återbesöksintervall per häst (override av tjänstens default via HorseServiceInterval)
+**Leverantörsanteckningar:** providerNotes på bokningar, UI i bokningsdetalj och hästjournal (bara synligt för leverantören, integritetsskyddat)
 **Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1289+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
@@ -35,20 +35,20 @@
 
 | ID | Feature | Status | Beskrivning |
 |----|---------|--------|-------------|
-| F-1.3 | Drag-and-drop stopp | Ej startad | Dra och slapp stopp i ruttplaneringen for manuell justering. Omberaknar ETA automatiskt. |
-| F-4.2 | Koordinat-precision Float->Decimal | Ej startad | Andra latitude/longitude fran Float till Decimal(10,8) i Prisma for battre precision (+-1m istallet for +-10m). |
-| F-1.2 | Forbattrad ruttoptimering | Grundversion finns | Nuvarande: Nearest Neighbor. Mojlig upgrade till 2-opt eller extern API for battre resultat. |
+| F-1.3 | Drag-and-drop stopp | Ej startad | Dra och släpp stopp i ruttplaneringen för manuell justering. Omberäknar ETA automatiskt. |
+| F-4.2 | Koordinat-precision Float->Decimal | Ej startad | Ändra latitude/longitude från Float till Decimal(10,8) i Prisma för bättre precision (+-1m istället för +-10m). |
+| F-1.2 | Förbättrad ruttoptimering | Grundversion finns | Nuvarande: Nearest Neighbor. Möjlig upgrade till 2-opt eller extern API för bättre resultat. |
 
-### Tier 2 -- Medellang sikt
+### Tier 2 -- Medellång sikt
 
 | Feature | Beskrivning | Status |
 |---------|-------------|--------|
 | ~~Bilduppladdning~~ | Supabase Storage, drag-and-drop, client-side komprimering | **Implementerad** |
-| ~~Bokforingsintegration~~ | IAccountingGateway + FortnoxGateway + MockAccountingGateway, OAuth, token-kryptering | **Implementerad** |
+| ~~Bokföringsintegration~~ | IAccountingGateway + FortnoxGateway + MockAccountingGateway, OAuth, token-kryptering | **Implementerad** |
 | Betalningsintegration (Swish/Stripe) | Riktig betalning via PaymentGateway-interface. Mock-gateway finns. | Ej startad |
-| Push/SMS-notifikationer | Komplement till in-app + email. Web Push (gratis) + SMS (Twilio) for kritiska handelser. | Ej startad |
+| Push/SMS-notifikationer | Komplement till in-app + email. Web Push (gratis) + SMS (Twilio) för kritiska händelser. | Ej startad |
 
-### Tier 3 -- Langsiktigt
+### Tier 3 -- Långsiktigt
 
 | Feature | Beskrivning | Beroenden |
 |---------|-------------|-----------|
@@ -106,10 +106,10 @@ Framtida kostnader: Swish/Stripe (~2.9% + $0.30/transaktion), Twilio SMS ($0.01/
 
 ## Nästa steg
 
-- **Fas 3 klar:** Dataexport, hastpass, bilduppladdning, Fortnox-integration -- alla implementerade
-- **Fas 4 klar:** Kundregister, aterbesoksplanering, leverantorsanteckningar -- alla implementerade
-- **Nasta fas:** Fortnox sandbox-verifiering, Supabase Storage bucket-setup, svenska tecken-audit
-- **Fore produktion:** Betalningsintegration (Swish/Stripe), push-notifikationer, E2E for nya features
+- **Fas 3 klar:** Dataexport, hästpass, bilduppladdning, Fortnox-integration -- alla implementerade
+- **Fas 4 klar:** Kundregister, återbesöksplanering, leverantörsanteckningar -- alla implementerade
+- **Nästa fas:** Fortnox sandbox-verifiering, Supabase Storage bucket-setup, svenska tecken-audit
+- **Före produktion:** Betalningsintegration (Swish/Stripe), push-notifikationer, E2E för nya features
 - **Tier 1 polish:** F-1.3 drag-and-drop, F-4.2 koordinat-precision
-- **Framtida "wow-faktor":** Realtidssparning (Tier 3) -- kraver kartvy som foundation (redan klar)
+- **Framtida "wow-faktor":** Realtidsspårning (Tier 3) -- kräver kartvy som foundation (redan klar)
 - **Gruppbokning vidareutveckling:** Geo-filtrering i /available, E2E-tester, eventuellt stallkoncept (Stable-modell)

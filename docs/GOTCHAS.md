@@ -996,9 +996,9 @@ grep NEXTAUTH_URL .env.local
 
 > **Learning: 2026-02-04** | **Severity: HIGH**
 
-**Problem:** Projektet anvande `prisma db push` for alla schemaandringar -- ingen migrationshistorik.
+**Problem:** Projektet använde `prisma db push` för alla schemaändringar -- ingen migrationshistorik.
 
-**Symptom:** `prisma migrate dev` failar med drift detection. Ingen reversibel historik. Deploy-pipelines kan inte anvanda `prisma migrate deploy`.
+**Symptom:** `prisma migrate dev` failar med drift detection. Ingen reversibel historik. Deploy-pipelines kan inte använda `prisma migrate deploy`.
 
 ```bash
 # GAMMALT workflow (ingen historik)
@@ -1008,15 +1008,15 @@ npx prisma db push
 npx prisma migrate dev
 ```
 
-**Vad som andrades:**
+**Vad som ändrades:**
 - Baseline migration skapades (`prisma/migrations/0_init/migration.sql`) som representerar hela schemat
 - Markerades som applicerad via `prisma migrate resolve --applied 0_init`
-- npm scripts uppdaterade: `setup` och `db:reset` anvander nu `migrate dev`/`migrate reset`
+- npm scripts uppdaterade: `setup` och `db:reset` använder nu `migrate dev`/`migrate reset`
 
-**Nytt workflow for schemaandringar:**
+**Nytt workflow för schemaändringar:**
 ```bash
-# 1. Andra i prisma/schema.prisma
-# 2. Kor migrate dev (skapar migration + applicerar)
+# 1. Ändra i prisma/schema.prisma
+# 2. Kör migrate dev (skapar migration + applicerar)
 npx prisma migrate dev --name add_my_field
 
 # 3. Migrationen hamnar i prisma/migrations/ -- committa den!
@@ -1025,10 +1025,10 @@ git commit -m "feat: add my_field to MyModel"
 ```
 
 **Viktigt:**
-- Anvand ALDRIG `db push` langre (forutom for prototyping utan historik)
-- `prisma migrate reset` raderar ALLT och kor alla migrationer fran scratch + seed
-- Migrationer ar idempotenta -- saker att kora pa ny maskin
-- Production deploy: `prisma migrate deploy` (kor bara pending migrations, ingen drift check)
+- Använd ALDRIG `db push` längre (förutom för prototyping utan historik)
+- `prisma migrate reset` raderar ALLT och kör alla migrationer från scratch + seed
+- Migrationer är idempotenta -- säkert att köra på ny maskin
+- Production deploy: `prisma migrate deploy` (kör bara pending migrations, ingen drift check)
 
 **Impact:** Reversibel migrationshistorik, production-ready deploys, teamkompatibelt.
 

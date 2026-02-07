@@ -1,15 +1,15 @@
-# Retrospektiv: Kundregister och Aterbesoksplanering
+# Retrospektiv: Kundregister och Återbesöksplanering
 
 **Datum:** 2026-02-06
-**Scope:** 3 stories - kundlista, aterbesoksintervall per hast, "dags for besok"-vy
+**Scope:** 3 stories - kundlista, återbesöksintervall per häst, "dags för besök"-vy
 
 ---
 
 ## Resultat
 
-- 10 nya filer, 4 andrade filer
+- 10 nya filer, 4 ändrade filer
 - 44 nya tester (11 kundlista + 15 interval + 8 reminder + 10 due-for-service), alla TDD
-- 1277 totala tester (alla grona, inga regressioner)
+- 1277 totala tester (alla gröna, inga regressioner)
 - 1 ny Prisma-migration (`add_horse_service_interval`)
 - Typecheck = 0 errors
 - Tid: ~1 session (3 stories sekventiellt)
@@ -18,74 +18,74 @@
 
 | Story | Lager | Filer | Beskrivning |
 |-------|-------|-------|-------------|
-| S1 | API | `provider/customers/route.ts` + test | Kundlista fran completed bookings, filter, sok, IDOR-skydd |
-| S1 | UI | `provider/customers/page.tsx` | Expanderbara kundkort med hastar, sok, statusfilter |
+| S1 | API | `provider/customers/route.ts` + test | Kundlista från completed bookings, filter, sök, IDOR-skydd |
+| S1 | UI | `provider/customers/page.tsx` | Expanderbara kundkort med hästar, sök, statusfilter |
 | S2 | Schema | `schema.prisma` + migration | `HorseServiceInterval` junction-tabell (horse + provider) |
 | S2 | API | `provider/horses/[horseId]/interval/route.ts` + test | PUT/GET/DELETE med upsert, access control, Zod-validering |
 | S2 | Domain | `ReminderService.ts` + test | Override-logik: horse interval >> service default |
-| S3 | API | `provider/due-for-service/route.ts` + test | Berakna dueDate, sortera overdue forst, statusbadges |
-| S3 | UI | `provider/due-for-service/page.tsx` | Sammanfattningskort, filter, fargkodade statusbadges |
-| Nav | UI | `ProviderNav.tsx` | "Kunder" + "Besoksplanering" tillagda |
+| S3 | API | `provider/due-for-service/route.ts` + test | Beräkna dueDate, sortera overdue först, statusbadges |
+| S3 | UI | `provider/due-for-service/page.tsx` | Sammanfattningskort, filter, färgkodade statusbadges |
+| Nav | UI | `ProviderNav.tsx` | "Kunder" + "Besöksplanering" tillagda |
 
 ## Vad gick bra
 
-### 1. TDD-cykeln hojer kvaliteten och hastigheten
-Varje API-route testades forst (RED -> GREEN -> REFACTOR). Totalt 44 tester skrivna fore implementation. Fangar:
+### 1. TDD-cykeln höjer kvaliteten och hastigheten
+Varje API-route testades först (RED -> GREEN -> REFACTOR). Totalt 44 tester skrivna före implementation. Fångar:
 - IDOR-skydd (provider ser bara sina egna kunder)
 - Boundary cases (intervall 0, 53 avvisas)
-- Deduplisering (flera bokningar -> unika kunder/hastar)
+- Deduplisering (flera bokningar -> unika kunder/hästar)
 - Override-logik (horse interval overridar service default)
 
-### 2. Ren query-feature (S1) kraver inget nytt schema
-Kundlistan ar en ren aggregering fran Booking-tabellen. Ingen ny tabell behovdes, bara en smart query + JS-aggregering. Visar att befintligt schema ar valdesignat.
+### 2. Ren query-feature (S1) kräver inget nytt schema
+Kundlistan är en ren aggregering från Booking-tabellen. Ingen ny tabell behövdes, bara en smart query + JS-aggregering. Visar att befintligt schema är väldesignat.
 
-### 3. Junction-tabell (S2) ar ratt abstraktion
-`HorseServiceInterval` med `@@unique([horseId, providerId])` loser problemet elegant: olika leverantorer kan ha olika intervall for samma hast. Upsert-pattern gor PUT idempotent.
+### 3. Junction-tabell (S2) är rätt abstraktion
+`HorseServiceInterval` med `@@unique([horseId, providerId])` löser problemet elegant: olika leverantörer kan ha olika intervall för samma häst. Upsert-pattern gör PUT idempotent.
 
 ### 4. ReminderService-anpassningen var minimal
-Bara ~15 rader tillagda i `findDueReminders()` for att stodja override. Befintlig arkitektur (select-pattern, loop-baserad processing) gor det naturligt att lagga till en lookup per booking.
+Bara ~15 rader tillagda i `findDueReminders()` för att stödja override. Befintlig arkitektur (select-pattern, loop-baserad processing) gör det naturligt att lägga till en lookup per booking.
 
-### 5. Befintliga patterns ateranvands konsekvent
+### 5. Befintliga patterns återanvänds konsekvent
 - Auth: `auth()` + userType-check + provider lookup (samma som customers/search)
-- Rate limiting: `rateLimiters.api(clientIp)` fore all logic
+- Rate limiting: `rateLimiters.api(clientIp)` före all logic
 - Error handling: try-catch med `logger.error()` och Response-check
-- Zod: `.strict()` pa input-schemas
+- Zod: `.strict()` på input-schemas
 
-## Vad kan forbattras
+## Vad kan förbättras
 
-### 1. Kundlistan hamtar ALLA completed bookings
-`prisma.booking.findMany()` utan paginering kan bli slow vid stora dataset. For MVP med <500 anvandare ar det OK, men vid tillvaxt bor vi antingen:
-- Anvanda SQL-aggregering (GROUP BY) istallet for JS
-- Lagga till paginering pa API:t
+### 1. Kundlistan hämtar ALLA completed bookings
+`prisma.booking.findMany()` utan paginering kan bli slow vid stora dataset. För MVP med <500 användare är det OK, men vid tillväxt bör vi antingen:
+- Använda SQL-aggregering (GROUP BY) istället för JS
+- Lägga till paginering på API:t
 
-**Prioritet:** LAG -- prestanda ar fin for MVP-skalan.
+**Prioritet:** LÅG -- prestanda är fin för MVP-skalan.
 
-### 2. Due-for-service gor en query per provider-override
-`horseServiceInterval.findMany()` hamtar alla overrides pa en gang (bra!), men booking-queryn ar fortfarande N+1-risk vid stora dataset. En raw SQL-query som JOINar pa bade bookings och overrides vore effektivare.
+### 2. Due-for-service gör en query per provider-override
+`horseServiceInterval.findMany()` hämtar alla overrides på en gång (bra!), men booking-queryn är fortfarande N+1-risk vid stora dataset. En raw SQL-query som JOINar på både bookings och overrides vore effektivare.
 
-**Prioritet:** LAG -- optimera vid behov.
+**Prioritet:** LÅG -- optimera vid behov.
 
 ### 3. Interval-UI saknas i kundvyn
-Planen anger "Provider kan se/redigera fran kundvyn" men UI:t for att satta intervall (PUT-dialog pa hast) ar inte byggt. API:t finns - UI kan laggas till som nasta steg.
+Planen anger "Provider kan se/redigera från kundvyn" men UI:t för att sätta intervall (PUT-dialog på häst) är inte byggt. API:t finns - UI kan läggas till som nästa steg.
 
 **Prioritet:** MEDEL -- API:t finns, UI-arbete kvar.
 
-### 4. Ingen notifikation vid intervall-andringar
-Kunden informeras inte nar leverantoren andrar aterbesoksintervall. Kan vara vaerdefullt for transparens.
+### 4. Ingen notifikation vid intervall-ändringar
+Kunden informeras inte när leverantören ändrar återbesöksintervall. Kan vara värdefullt för transparens.
 
-**Prioritet:** LAG -- avvakta MVP-feedback.
+**Prioritet:** LÅG -- avvakta MVP-feedback.
 
 ## Patterns att spara
 
-### Aggregering fran befintliga tabeller
+### Aggregering från befintliga tabeller
 Kundlistan visar att man kan bygga rika features utan nya tabeller -- bara smart query + Map-baserad deduplicering i JS. Snabbt att implementera, noll migreringsrisk.
 
-### Junction-tabell for N:M overrides
-`HorseServiceInterval(horseId, providerId)` ar ett bra monster for fall dar tva entiteter har en overridebar relation. Kan ateranvandas for t.ex. "favorit-leverantor per hast" eller "specialpris per kund".
+### Junction-tabell för N:M overrides
+`HorseServiceInterval(horseId, providerId)` är ett bra mönster för fall där två entiteter har en overridebar relation. Kan återanvändas för t.ex. "favorit-leverantör per häst" eller "specialpris per kund".
 
-### Status-berakning i API (inte DB)
-Due-for-service-statusen (overdue/upcoming/ok) beraknas at runtime istallet for att lagras. Fordel: alltid aktuell, ingen synkronisering. Nackdel: berakning varje request. For var skala ar det ratt val.
+### Status-beräkning i API (inte DB)
+Due-for-service-statusen (overdue/upcoming/ok) beräknas at runtime istället för att lagras. Fördel: alltid aktuell, ingen synkronisering. Nackdel: beräkning varje request. För vår skala är det rätt val.
 
-## Larandeeffekt
+## Lärandeeffekt
 
-**For utvecklaren:** Denna session visar DDD-Light i praktiken -- nasta gang du bygger en leverantorsvy som aggregerar fran bokningar, folj S1-monstret (query + Map + filter). For override-logik, folj S2 (junction-tabell + upsert).
+**För utvecklaren:** Denna session visar DDD-Light i praktiken -- nästa gång du bygger en leverantörsvy som aggregerar från bokningar, följ S1-mönstret (query + Map + filter). För override-logik, följ S2 (junction-tabell + upsert).

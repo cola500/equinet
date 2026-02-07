@@ -110,7 +110,7 @@ Hämta bokningar för inloggad användare.
 ]
 ```
 
-> **Obs:** `providerNotes` inkluderas bara i provider-vy. Kunder ser inte detta falt.
+> **Obs:** `providerNotes` inkluderas bara i provider-vy. Kunder ser inte detta fält.
 
 ---
 
@@ -165,7 +165,7 @@ Skapa ny bokning.
 
 ### POST /api/bookings/manual
 
-Skapa manuell bokning (provider bokar at en kund).
+Skapa manuell bokning (provider bokar åt en kund).
 
 **Auth:** Required (provider-only)
 
@@ -182,30 +182,30 @@ Skapa manuell bokning (provider bokar at en kund).
   "customerEmail": "anna@example.com",
   "horseId": "uuid",
   "horseName": "Blansen",
-  "horseInfo": "Lugn hast",
+  "horseInfo": "Lugn häst",
   "customerNotes": "Ring vid ankomst"
 }
 ```
 
-**Kund-identifiering:** Ange `customerId` (befintlig kund) ELLER `customerName` (skapar ghost user). Minst ett av dessa kravs.
+**Kund-identifiering:** Ange `customerId` (befintlig kund) ELLER `customerName` (skapar ghost user). Minst ett av dessa krävs.
 
 **Ghost User:** Om ingen `customerId` anges skapas en minimal User-record (`isManualCustomer=true`) med sentinel-email (`manual-{uuid}@ghost.equinet.se`). Ghost users kan inte logga in.
 
-**Skillnader fran vanlig bokning:**
-- Status satts till `confirmed` (inte `pending`)
+**Skillnader från vanlig bokning:**
+- Status sätts till `confirmed` (inte `pending`)
 - Self-booking check skippas
 - Travel time validation skippas
-- `isManualBooking=true` och `createdByProviderId` satts automatiskt
+- `isManualBooking=true` och `createdByProviderId` sätts automatiskt
 
 **Response:** `201 Created` -- bokning med relationer
 
 **Errors:**
-- `400` - Valideringsfel, saknar customerId/customerName, ogiltig tjanst
+- `400` - Valideringsfel, saknar customerId/customerName, ogiltig tjänst
 - `403` - Inte provider
 - `409` - Tidskollision med annan bokning
 - `429` - Rate limit
 
-> **Sakerhet:** `providerId` tas fran session (IDOR-skydd). Audit trail via `logger.security()`.
+> **Säkerhet:** `providerId` tas från session (IDOR-skydd). Audit trail via `logger.security()`.
 
 ---
 
@@ -252,18 +252,18 @@ Ta bort bokning.
 
 ## Customers (Provider-only)
 
-Endpoints for providers att soka kunder och hamta kunddata.
+Endpoints för providers att söka kunder och hämta kunddata.
 
 ### GET /api/customers/search
 
-Sok bland kunder som har bokat med denna provider.
+Sök bland kunder som har bokat med denna provider.
 
 **Auth:** Required (provider-only)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `q` | string | Sokterm (min 2 tecken), **Required** |
+| `q` | string | Sökterm (min 2 tecken), **Required** |
 
 **Response:** `200 OK`
 ```json
@@ -278,14 +278,14 @@ Sok bland kunder som har bokat med denna provider.
 ]
 ```
 
-**Begransningar:**
+**Begränsningar:**
 - Max 10 resultat
-- Soker i firstName, lastName, email
+- Söker i firstName, lastName, email
 - Exkluderar ghost users (`isManualCustomer=false`)
 - Bara kunder som har minst en bokning med providern
 
 **Errors:**
-- `400` - Sokterm for kort (min 2 tecken)
+- `400` - Sökterm för kort (min 2 tecken)
 - `403` - Inte provider
 - `429` - Rate limit
 
@@ -293,9 +293,9 @@ Sok bland kunder som har bokat med denna provider.
 
 ### GET /api/customers/[id]/horses
 
-Hamta en kunds aktiva hastar.
+Hämta en kunds aktiva hästar.
 
-**Auth:** Required (provider-only, maste ha bokningsrelation med kunden)
+**Auth:** Required (provider-only, måste ha bokningsrelation med kunden)
 
 **Response:** `200 OK`
 ```json
@@ -314,13 +314,13 @@ Hamta en kunds aktiva hastar.
 - `403` - Inte provider, eller saknar bokningsrelation med kunden (IDOR-skydd)
 - `429` - Rate limit
 
-> **Sakerhet:** Verifierar att providern har minst en bokning med kunden innan hastar visas.
+> **Säkerhet:** Verifierar att providern har minst en bokning med kunden innan hästar visas.
 
 ---
 
 ## Horses
 
-Hastregister -- kundens hastar (CRUD). Alla endpoints kraver autentisering.
+Hästregister -- kundens hästar (CRUD). Alla endpoints kräver autentisering.
 
 ### GET /api/horses
 
@@ -509,15 +509,15 @@ Kombinerad tidslinje: bokningar (completed) + anteckningar, sorterade kronologis
 
 ### GET /api/provider/customers
 
-Hamta leverantorens kundregister (harledd fran bokningar).
+Hämta leverantörens kundregister (härledd från bokningar).
 
 **Auth:** Required (provider)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `status` | string | `active` (senaste 6 man) eller `inactive` (aldre). Default: alla |
-| `search` | string | Fritextsokning i namn |
+| `status` | string | `active` (senaste 6 mån) eller `inactive` (äldre). Default: alla |
+| `search` | string | Fritextsökning i namn |
 
 **Response:** `200 OK`
 ```json
@@ -540,17 +540,17 @@ Hamta leverantorens kundregister (harledd fran bokningar).
 - `403` - Inte provider
 - `429` - Rate limit
 
-> **Integritetsskydd:** Bara kunder med completed bokningar for denna provider visas. Data aggregeras fran Booking-tabellen utan ny tabell.
+> **Integritetsskydd:** Bara kunder med completed bokningar för denna provider visas. Data aggregeras från Booking-tabellen utan ny tabell.
 
 ---
 
-## Provider: Aterbesoksintervall
+## Provider: Återbesöksintervall
 
 ### GET /api/provider/horses/[horseId]/interval
 
-Hamta aterbesoksintervall for en hast (provider-specifikt override).
+Hämta återbesöksintervall för en häst (provider-specifikt override).
 
-**Auth:** Required (provider med bokning for hasten)
+**Auth:** Required (provider med bokning för hästen)
 
 **Response:** `200 OK`
 ```json
@@ -563,15 +563,15 @@ Hamta aterbesoksintervall for en hast (provider-specifikt override).
 
 **Errors:**
 - `403` - Inte provider
-- `404` - Inget intervall satt, eller saknar bokningsrelation med hasten
+- `404` - Inget intervall satt, eller saknar bokningsrelation med hästen
 
 ---
 
 ### PUT /api/provider/horses/[horseId]/interval
 
-Satt eller uppdatera aterbesoksintervall (upsert).
+Sätt eller uppdatera återbesöksintervall (upsert).
 
-**Auth:** Required (provider med bokning for hasten)
+**Auth:** Required (provider med bokning för hästen)
 
 **Request Body:**
 ```json
@@ -593,7 +593,7 @@ Satt eller uppdatera aterbesoksintervall (upsert).
 ```
 
 **Errors:**
-- `400` - Valideringsfel (utanfor 1-52)
+- `400` - Valideringsfel (utanför 1-52)
 - `403` - Inte provider eller saknar bokningsrelation
 - `429` - Rate limit
 
@@ -601,9 +601,9 @@ Satt eller uppdatera aterbesoksintervall (upsert).
 
 ### DELETE /api/provider/horses/[horseId]/interval
 
-Ta bort aterbesoksintervall (aterstall till tjanstens default).
+Ta bort återbesöksintervall (återställ till tjänstens default).
 
-**Auth:** Required (provider med bokning for hasten)
+**Auth:** Required (provider med bokning för hästen)
 
 **Response:** `200 OK`
 ```json
@@ -616,11 +616,11 @@ Ta bort aterbesoksintervall (aterstall till tjanstens default).
 
 ---
 
-## Provider: Besoksplanering
+## Provider: Besöksplanering
 
 ### GET /api/provider/due-for-service
 
-Hamta hastar som behover aterbesok, sorterade efter angelagenhet.
+Hämta hästar som behöver återbesök, sorterade efter angelägenhet.
 
 **Auth:** Required (provider)
 
@@ -646,10 +646,10 @@ Hamta hastar som behover aterbesok, sorterade efter angelagenhet.
 ]
 ```
 
-**Statusberakning (runtime):**
+**Statusberäkning (runtime):**
 - `overdue`: dueDate har passerat
 - `upcoming`: dueDate inom 2 veckor
-- `ok`: dueDate mer an 2 veckor bort
+- `ok`: dueDate mer än 2 veckor bort
 
 **Errors:**
 - `403` - Inte provider
@@ -657,36 +657,36 @@ Hamta hastar som behover aterbesok, sorterade efter angelagenhet.
 
 ---
 
-## Provider: Leverantorsanteckningar
+## Provider: Leverantörsanteckningar
 
 ### PUT /api/provider/bookings/[id]/notes
 
-Uppdatera leverantorsanteckningar pa en bokning.
+Uppdatera leverantörsanteckningar på en bokning.
 
-**Auth:** Required (provider, maste aga bokningen)
+**Auth:** Required (provider, måste äga bokningen)
 
 **Request Body:**
 ```json
 {
-  "providerNotes": "Behandlingen gick bra, behover uppfoljning om 8 veckor" | null
+  "providerNotes": "Behandlingen gick bra, behöver uppföljning om 8 veckor" | null
 }
 ```
 
 **Validering:**
 - `providerNotes`: string (max 2000 tecken) eller null (rensar anteckning)
-- Bokningen maste ha status `confirmed` eller `completed`
-- `.strict()` -- inga extra falt tillats
+- Bokningen måste ha status `confirmed` eller `completed`
+- `.strict()` -- inga extra fält tillåts
 
 **Response:** `200 OK` -- uppdaterad bokning
 
 **Errors:**
 - `400` - Valideringsfel, felaktig status (pending/cancelled)
-- `404` - Bokning finns inte **eller saknar behorighet** (IDOR-skydd)
+- `404` - Bokning finns inte **eller saknar behörighet** (IDOR-skydd)
 - `429` - Rate limit
 
-> **Integritetsskydd:** `providerNotes` visas BARA for leverantoren i timeline och bokningsdetaljer. Agaren och publika vyer (hastpass) ser INTE leverantorsanteckningar.
+> **Integritetsskydd:** `providerNotes` visas BARA för leverantören i timeline och bokningsdetaljer. Ägaren och publika vyer (hästpass) ser INTE leverantörsanteckningar.
 
-> **Sakerhet:** `updateProviderNotesWithAuth` anvander atomart WHERE (`id + providerId`) for IDOR-skydd.
+> **Säkerhet:** `updateProviderNotesWithAuth` använder atomärt WHERE (`id + providerId`) för IDOR-skydd.
 
 ---
 
@@ -1734,7 +1734,7 @@ Hämta körvägsbeskrivning från OSRM.
 
 ### GET /api/export/my-data
 
-Exportera all anvandardata (GDPR Art 20 portabilitet).
+Exportera all användardata (GDPR Art 20 portabilitet).
 
 **Auth:** Required
 **Query:** `?format=csv` (valfritt, default JSON)
@@ -1743,30 +1743,30 @@ Exportera all anvandardata (GDPR Art 20 portabilitet).
 
 ### GET /api/horses/:id/export
 
-Exportera hastdata med fullstandig tidslinje.
+Exportera hästdata med fullständig tidslinje.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 **Query:** `?format=csv`
 **Response (JSON):** `{ horse, bookings, notes, timeline }`
 
 ---
 
-## Hastpass (delbar lank)
+## Hästpass (delbar länk)
 
 ### POST /api/horses/:id/passport
 
-Skapa en delbar hastpass-lank (30 dagars expiry).
+Skapa en delbar hästpass-länk (30 dagars expiry).
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 **Response:** `201` `{ token, url, expiresAt }`
 
 ### GET /api/passport/:token
 
-Hamta hastdata via publik token (ingen auth).
+Hämta hästdata via publik token (ingen auth).
 
 **Auth:** Inte required
 **Response:** `{ horse, timeline, expiresAt }`
-**Integritetsskydd:** Bara veterinar-, hovslagare- och medicinanteckningar visas.
+**Integritetsskydd:** Bara veterinär-, hovslagare- och medicinanteckningar visas.
 
 ---
 
@@ -1794,7 +1794,7 @@ Ladda upp en bild (FormData: file + bucket + entityId).
 
 ### GET /api/integrations/fortnox/connect
 
-Starta Fortnox OAuth-flode. **Auth:** Required (leverantor). Redirect.
+Starta Fortnox OAuth-flöde. **Auth:** Required (leverantör). Redirect.
 
 ### GET /api/integrations/fortnox/callback
 
@@ -1802,11 +1802,11 @@ OAuth callback. Byter code mot tokens, sparar krypterat. Redirect.
 
 ### POST /api/integrations/fortnox/disconnect
 
-Koppla bort Fortnox. **Auth:** Required (leverantor). `{ success: true }`
+Koppla bort Fortnox. **Auth:** Required (leverantör). `{ success: true }`
 
 ### POST /api/integrations/fortnox/sync
 
-Synka osynkade fakturor. **Auth:** Required (leverantor). `{ synced, failed, total }`
+Synka osynkade fakturor. **Auth:** Required (leverantör). `{ synced, failed, total }`
 
 ---
 
@@ -1843,4 +1843,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-02-06 (Kundregister, aterbesoksplanering, leverantorsanteckningar)*
+*Senast uppdaterad: 2026-02-06 (Kundregister, återbesöksplanering, leverantörsanteckningar)*

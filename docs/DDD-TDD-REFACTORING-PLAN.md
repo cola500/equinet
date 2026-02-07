@@ -1,27 +1,27 @@
 # DDD & TDD Refaktoreringsplan — Hybrid (v2)
 
-> Lärande-dokument + handlingsplan for en solo-utvecklare med Claude Code.
+> Lärande-dokument + handlingsplan för en solo-utvecklare med Claude Code.
 >
-> **Niva: Hybrid** — DDD-Light for karndomaner, Prisma direkt for stoddomaner,
-> uppgradering till strikt DDD for Booking nar sidoeffekter motiverar det.
+> **Nivå: Hybrid** — DDD-Light för kärndomäner, Prisma direkt för stöddomäner,
+> uppgradering till strikt DDD för Booking när sidoeffekter motiverar det.
 >
 > **v2 (2026-02-01):** Omarbetad efter team-review (tech-architect, security-reviewer,
-> kodbasanalys). Inverterad prioritering, serverless-fix, sakerhetsriktlinjer.
+> kodbasanalys). Inverterad prioritering, serverless-fix, säkerhetsriktlinjer.
 
 ---
 
 ## Del 1: Koncept
 
-### Tre nivaer — och nar du anvander vilken
+### Tre nivåer — och när du använder vilken
 
-Inte varje doman fortjanar samma abstraktionsniva. Valj efter komplexitet:
+Inte varje domän förtjänar samma abstraktionsnivå. Välj efter komplexitet:
 
 ```
-Komplexitet:   Lag              Medel                 Hog
+Komplexitet:   Låg              Medel                 Hög
                |                |                     |
 Approach:      Prisma direkt    DDD-Light             Strikt DDD
                |                |                     |
-Vad du far:    Route -> Prisma  Route -> Service      Route -> Service
+Vad du får:    Route -> Prisma  Route -> Service      Route -> Service
                                       -> Repository         -> Aggregat
                                                              -> Events
                |                |                     |
@@ -31,55 +31,55 @@ Equinet:       Notification     Horse, Review         Booking (framtida)
                                 Service (klar)
 ```
 
-**Tumregel: valj den enklaste nivan som loser ditt problem.**
+**Tumregel: välj den enklaste nivån som löser ditt problem.**
 
-| Fraga | Om ja -> |
+| Fråga | Om ja -> |
 |-------|---------|
-| Har domanen affarsregler som spanner flera entiteter? | Minst DDD-Light |
-| Har domanen en state machine (status-overgangar)? | DDD-Light + value object |
-| Har domanen 3+ sidoeffekter som borde vara frikopplade? | Strikt DDD |
-| Ar det mestadels CRUD? | Prisma direkt |
-| Behover testerna sluta mocka Prisma direkt? | DDD-Light |
+| Har domänen affärsregler som spänner flera entiteter? | Minst DDD-Light |
+| Har domänen en state machine (status-övergångar)? | DDD-Light + value object |
+| Har domänen 3+ sidoeffekter som borde vara frikopplade? | Strikt DDD |
+| Är det mestadels CRUD? | Prisma direkt |
+| Behöver testerna sluta mocka Prisma direkt? | DDD-Light |
 
-### Decision Tree for nya features
+### Decision Tree för nya features
 
 ```
-1. Ar det CRUD utan affarslogik?
+1. Är det CRUD utan affärslogik?
    -> Prisma direkt
 
-2. Finns affarsregler som behover testas isolerat?
+2. Finns affärsregler som behöver testas isolerat?
    -> DDD-Light (repo + service)
 
 3. Finns state machine ELLER 3+ sidoeffekter att frikoppla?
    -> DDD-Light + BookingStatus value object
-   -> Uppgradera till strikt DDD FORST nar du faktiskt
+   -> Uppgradera till strikt DDD FÖRST när du faktiskt
       har 3+ handlers (inte hypotetiskt)
 ```
 
-### Red Flags — uppgradera domanen
+### Red Flags — uppgradera domänen
 
-- DDD-Light service nar 300+ rader
-- Service har if-statements for status-overgangar (-> value object)
-- Manuella sidoeffekt-anrop pa 3+ stallen i routes (-> events)
+- DDD-Light service når 300+ rader
+- Service har if-statements för status-övergångar (-> value object)
+- Manuella sidoeffekt-anrop på 3+ ställen i routes (-> events)
 
-### Equinets domaner — vilken niva?
+### Equinets domäner — vilken nivå?
 
-| Doman | Niva | Motivering |
+| Domän | Nivå | Motivering |
 |-------|------|-----------|
-| **Booking** | DDD-Light + BookingStatus VO + Events | State machine via value object, overlap-validering i repo, domain events for sidoeffekter (Fas 5). |
+| **Booking** | DDD-Light + BookingStatus VO + Events | State machine via value object, overlap-validering i repo, domain events för sidoeffekter (Fas 5). |
 | **Horse** | DDD-Light | IDOR-skydd, soft delete, notes — men inga komplexa regler |
-| **Review** | DDD-Light | "One per booking" + "must be completed" — enkla regler, repo racker |
+| **Review** | DDD-Light | "One per booking" + "must be completed" — enkla regler, repo räcker |
 | **GroupBooking** | DDD-Light (klar) | Repo + service + factory, 25 tester, 95% coverage |
-| **RouteOrder** | Prisma direkt (uppskjuten) | Mestadels CRUD — lagt ROI for refaktorering just nu |
-| **Provider** | DDD-Light (klar) | Redan repo, behall |
-| **Service** | DDD-Light (klar) | Redan repo, behall |
-| **Auth** | DDD-Light (klar) | Specialized repo (ej IRepository), service + factory, 21 tester, sakerhetsfixar |
-| **Notification** | Prisma direkt | Stoddoman, ren CRUD |
-| **Availability** | Prisma direkt | Schema-hantering, inga affarsregler |
+| **RouteOrder** | Prisma direkt (uppskjuten) | Mestadels CRUD — lågt ROI för refaktorering just nu |
+| **Provider** | DDD-Light (klar) | Redan repo, behåll |
+| **Service** | DDD-Light (klar) | Redan repo, behåll |
+| **Auth** | DDD-Light (klar) | Specialized repo (ej IRepository), service + factory, 21 tester, säkerhetsfixar |
+| **Notification** | Prisma direkt | Stöddomän, ren CRUD |
+| **Availability** | Prisma direkt | Schema-hantering, inga affärsregler |
 
 ---
 
-### Koncept: DDD-Light (det du anvander mest)
+### Koncept: DDD-Light (det du använder mest)
 
 DDD-Light = **repository + service + value objects**. Ingen aggregat-klass, inga events.
 
@@ -88,12 +88,12 @@ DDD-Light = **repository + service + value objects**. Ingen aggregat-klass, inga
 |  Route (HTTP-lager)                         |
 |  - Auth, Zod-validering, error-mapping      |
 |  - Delegerar till service                   |
-|  - Innehaller INGEN affarslogik             |
+|  - Innehåller INGEN affärslogik             |
 +---------------------+-----------------------+
                       |
 +---------------------v-----------------------+
 |  Domain Service                             |
-|  - Affarsregler (validering, koordinering)  |
+|  - Affärsregler (validering, koordinering)  |
 |  - Returnerar Result<T, Error>              |
 |  - Vet inget om HTTP eller Prisma           |
 +---------------------+-----------------------+
@@ -106,10 +106,10 @@ DDD-Light = **repository + service + value objects**. Ingen aggregat-klass, inga
 +---------------------------------------------+
 ```
 
-**Varfor repository?** Testerna slutar mocka Prisma-schema:
+**Varför repository?** Testerna slutar mocka Prisma-schema:
 
 ```typescript
-// FORE: Fragilt — byter du kolumnnamn i Prisma -> testet gar sonder
+// FÖRE: Fragilt — byter du kolumnnamn i Prisma -> testet går sönder
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     horse: {
@@ -118,21 +118,21 @@ jest.mock("@/lib/prisma", () => ({
   },
 }))
 
-// EFTER: Stabilt — schemaandringar paverkar bara PrismaHorseRepository
+// EFTER: Stabilt — schemaändringar påverkar bara PrismaHorseRepository
 const mockRepo: IHorseRepository = {
   findByOwnerId: async () => [{ id: "1", name: "Blansen" }],
 }
 const service = new HorseService(mockRepo)
 ```
 
-### Koncept: Strikt DDD (framtida — nar Booking behover events)
+### Koncept: Strikt DDD (framtida — när Booking behöver events)
 
 Strikt DDD = allt ovan PLUS **aggregat med beteende, domain events**.
 
-Booking KAN motivera detta i framtiden om sidoeffekterna vaxer:
-- **Idag**: 1 sidoeffekt (notis) — DDD-Light + value object racker
+Booking KAN motivera detta i framtiden om sidoeffekterna växer:
+- **Idag**: 1 sidoeffekt (notis) — DDD-Light + value object räcker
 - **Framtida trigger**: Payment flow, kalender-sync, email + notis + analytics
-  -> Nar du har 3+ handlers per event, uppgradera
+  -> När du har 3+ handlers per event, uppgradera
 
 ```typescript
 // Framtida pattern (INTE nu):
@@ -159,12 +159,12 @@ class Booking extends AggregateRoot<BookingProps> {
   +-------v--------+
   | GREEN           |
   | Skriv MINSTA    |
-  | mojliga kod     |
+  | möjliga kod     |
   +-------+---------+
           |
   +-------v---------+
   | REFACTOR         |
-  | Forbattra utan   |
+  | Förbättra utan   |
   | att bryta test   |
   +-------+----------+
           |
@@ -173,10 +173,10 @@ class Booking extends AggregateRoot<BookingProps> {
 
 ### Koncept: git bisect
 
-Binarsoekning genom commits for att hitta var ett test gick sonder.
+Binärsökning genom commits för att hitta var ett test gick sönder.
 
 ```bash
-# Automatiserat: git testar at dig
+# Automatiserat: git testar åt dig
 git bisect start HEAD abc1234
 git bisect run npm test -- --run src/domain/booking/BookingService.test.ts
 
@@ -184,15 +184,15 @@ git bisect run npm test -- --run src/domain/booking/BookingService.test.ts
 git bisect reset
 ```
 
-**Forutsattning:** en commit per logiskt steg, testerna grona vid varje commit.
+**Förutsättning:** en commit per logiskt steg, testerna gröna vid varje commit.
 
-### Koncept: Domain Events (framtida — nar Booking behover det)
+### Koncept: Domain Events (framtida — när Booking behöver det)
 
-> **OBS**: Implementera INTE events an. Dokumenterat har for framtida referens.
-> Uppgraderingskriterium: 3+ sidoeffekter per booking-handelse.
+> **OBS**: Implementera INTE events än. Dokumenterat här för framtida referens.
+> Uppgraderingskriterium: 3+ sidoeffekter per booking-händelse.
 
 ```typescript
-// Eventet (vad hande)
+// Eventet (vad hände)
 class BookingCreatedEvent implements IDomainEvent {
   readonly occurredAt = new Date()
   constructor(
@@ -206,7 +206,7 @@ class BookingCreatedEvent implements IDomainEvent {
 class SendNotificationOnBookingCreated implements IEventHandler<BookingCreatedEvent> {
   constructor(private notificationRepo: INotificationRepository) {}
   async handle(event: BookingCreatedEvent): Promise<void> {
-    // 1. Idempotency check (forhindra replay)
+    // 1. Idempotency check (förhindra replay)
     const existing = await this.notificationRepo.findByTypeAndRelatedId(
       "NEW_BOOKING", event.bookingId
     )
@@ -225,7 +225,7 @@ class SendNotificationOnBookingCreated implements IEventHandler<BookingCreatedEv
 **EventDispatcher i serverless (Vercel):**
 
 InMemoryEventDispatcher fungerar INTE direkt i serverless — handlers-mappen
-ar tom vid cold start. Losning: **Factory Pattern** som skapar dispatcher
+är tom vid cold start. Lösning: **Factory Pattern** som skapar dispatcher
 med pre-registrerade handlers per request.
 
 ```typescript
@@ -246,11 +246,11 @@ await dispatcher.dispatchAll(booking.domainEvents)
 
 ---
 
-## Del 2: Nulagesanalys
+## Del 2: Nulägesanalys
 
 ### Vad vi har idag
 
-| Byggsten | Finns | Anvands |
+| Byggsten | Finns | Används |
 |----------|-------|---------|
 | `AggregateRoot.ts` | Ja (58 rader) | Ja (events aktiverade, Fas 5) |
 | `Entity.ts` | Ja (105 rader) | Ja (AggregateRoot extends det) |
@@ -259,11 +259,11 @@ await dispatcher.dispatchAll(booking.domainEvents)
 | `DomainError.ts` | Ja | Ja |
 | `BookingMapper.ts` | Ja | Ja |
 
-### Doman-status (verifierat mot kodbasen)
+### Domän-status (verifierat mot kodbasen)
 
-| Doman | Routes | Repository | Service | Mal-niva | Status |
+| Domän | Routes | Repository | Service | Mål-nivå | Status |
 |-------|--------|------------|---------|----------|--------|
-| **Booking** | 3+ | Ja (fullstandig) | Ja (461 rader, 100% komplett) | DDD-Light + VO | 85% — saknar BookingStatus VO |
+| **Booking** | 3+ | Ja (fullständig) | Ja (461 rader, 100% komplett) | DDD-Light + VO | 85% — saknar BookingStatus VO |
 | **Provider** | 2 | Ja (interface + impl + mock) | Nej | DDD-Light (klar) | 80% |
 | **Service** | 2 | Ja (interface + impl + mock) | Nej | DDD-Light (klar) | 80% |
 | **Horse** | 7 | Ja (interface + impl + mock) | Ja (HorseService, 91 tester) | DDD-Light (klar) | 100% |
@@ -274,15 +274,15 @@ await dispatcher.dispatchAll(booking.domainEvents)
 | **Notification** | 4 | Nej | Prisma direkt | Prisma direkt (klar) | 90% |
 | **Availability** | 3 | Nej | Nej | Prisma direkt (klar) | 90% |
 
-### Var affarslogik bor fel idag
+### Var affärslogik bor fel idag
 
 | Regel | Bor idag | Ska bo |
 |-------|----------|--------|
-| Booking status-overgangar | BookingService (if-satser) | `BookingStatus` value object |
+| Booking status-övergångar | BookingService (if-satser) | `BookingStatus` value object |
 | "Must be completed before review" | `/api/reviews/route.ts` | `ReviewService` |
 | "One review per booking" | `/api/reviews/route.ts` | `ReviewService` |
 | "Max participants" | `/api/group-bookings/route.ts` | `GroupBookingService` (redan delvis) |
-| "Send notification" | 3 booking-routes (manuella anrop) | Behall i service — events nar 3+ sidoeffekter |
+| "Send notification" | 3 booking-routes (manuella anrop) | Behåll i service — events när 3+ sidoeffekter |
 
 ### Test-coverage (verifierat)
 
@@ -297,49 +297,49 @@ await dispatcher.dispatchAll(booking.domainEvents)
 
 ## Del 3: Handlingsplan
 
-### Oversikt (inverterad prioritering — enklast forst)
+### Översikt (inverterad prioritering — enklast först)
 
-| Fas | Vad | Domaner | Nya filer |
+| Fas | Vad | Domäner | Nya filer |
 |-----|-----|---------|-----------|
-| 0 | Forberedelse + baseline | — | 0 |
-| 1 | DDD-Light for karndomaner | Review, Horse, GroupBooking | ~4 per doman |
+| 0 | Förberedelse + baseline | — | 0 |
+| 1 | DDD-Light för kärndomäner | Review, Horse, GroupBooking | ~4 per domän |
 | 2 | BookingStatus value object | Booking | ~2 |
-| 3 | Auth repository (sakerhet) | Auth | ~4 |
-| 4 | Test-coverage for otestade filer | Alla | 0 (bara tester) |
+| 3 | Auth repository (säkerhet) | Auth | ~4 |
+| 4 | Test-coverage för otestade filer | Alla | 0 (bara tester) |
 | 5 | (Framtida) Event-infrastruktur | Booking | ~4 (konsoliderat) |
 
-**Totalt Fas 0-4: ~20 nya filer** (ner fran ~35 i v1).
-Fas 5 laggs till forst nar events motiveras (se "Red Flags" ovan).
+**Totalt Fas 0-4: ~20 nya filer** (ner från ~35 i v1).
+Fas 5 läggs till först när events motiveras (se "Red Flags" ovan).
 
-**Varfor inverterad ordning?**
-- Fas 1 validerar repo-pattern pa enkel doman (Review) innan den anvands pa komplex (Booking)
-- Snabbare feedback-loop — du far resultat redan efter forsta domanen
-- Booking ar redan 85% klar, behover bara BookingStatus VO (Fas 2)
-- Tester lopande istallet for efterkonstruktion
+**Varför inverterad ordning?**
+- Fas 1 validerar repo-pattern på enkel domän (Review) innan den används på komplex (Booking)
+- Snabbare feedback-loop — du får resultat redan efter första domänen
+- Booking är redan 85% klar, behöver bara BookingStatus VO (Fas 2)
+- Tester löpande istället för efterkonstruktion
 
 ---
 
-### Fas 0 — Forberedelse
+### Fas 0 — Förberedelse
 
-Innan nagon kod andras:
+Innan någon kod ändras:
 
 ```
-- [ ] Verifiera att alla tester ar grona: npm test -- --run
+- [ ] Verifiera att alla tester är gröna: npm test -- --run
 - [ ] Dokumentera nuvarande API latency (baseline)
 - [ ] Skapa feature branch: git checkout -b refactor/ddd-light
 ```
 
 ---
 
-### Fas 1 — DDD-Light for karndomaner
+### Fas 1 — DDD-Light för kärndomäner
 
-Samma monster for alla tre domaner. **Ingen aggregat-klass, inga events.**
+Samma mönster för alla tre domäner. **Ingen aggregat-klass, inga events.**
 Bara repository + service.
 
 **Ordning: Review (pilot) -> Horse -> GroupBooking**
 
-Review ar enklast (3 routes, tydliga regler) och fungerar som pilot for att
-validera att monstret funkar innan vi anvander det pa Horse och GroupBooking.
+Review är enklast (3 routes, tydliga regler) och fungerar som pilot för att
+validera att mönstret funkar innan vi använder det på Horse och GroupBooking.
 
 #### 1.1 Review (DDD-Light) — PILOT (KLAR)
 
@@ -360,7 +360,7 @@ src/domain/review/
   ReviewService.test.ts
 ```
 
-Affarsregler att flytta fran route.ts:
+Affärsregler att flytta från route.ts:
 - "Booking must be completed" (rad 59 i reviews/route.ts)
 - "One review per booking" (rad 67 i reviews/route.ts)
 - Authorization: customer must own booking
@@ -391,7 +391,7 @@ src/domain/horse/
   HorseService.test.ts
 ```
 
-Affarsregler att flytta:
+Affärsregler att flytta:
 - IDOR-skydd (ownerId i WHERE-clause)
 - Soft delete (isActive=false)
 - Note-kategorier (provider vs customer access)
@@ -420,7 +420,7 @@ src/infrastructure/persistence/group-booking/
 ```
 
 **Steg 2: Refaktorera GroupBookingService**
-- Ta bort `import { prisma }` fran servicen
+- Ta bort `import { prisma }` från servicen
 - Injicera repository via constructor DI (5 dependencies -> factory)
 - Alla 8 metoder returnerar `Result<T, GroupBookingError>`
 - 25 service-tester med MockRepository
@@ -428,18 +428,18 @@ src/infrastructure/persistence/group-booking/
 **Steg 3: Migrera routes (en per commit)**
 - Alla 8 routes delegerar till `createGroupBookingService()`
 - `mapGroupBookingErrorToStatus` centraliserad (28 rader)
-- `match/route.ts` behaller Prisma for provider/service-lookup (support-doman)
+- `match/route.ts` behåller Prisma för provider/service-lookup (support-domän)
 
 ---
 
 ### Fas 2 — BookingStatus value object
 
-**Session:** 1 (liten andring, ~2 nya filer)
+**Session:** 1 (liten ändring, ~2 nya filer)
 
-Booking ar redan 85% klar (fullstandig service + repository). Det enda som saknas
-ar en BookingStatus value object for state machine-validering.
+Booking är redan 85% klar (fullständig service + repository). Det enda som saknas
+är en BookingStatus value object för state machine-validering.
 
-**INTE aggregat, INTE events.** Bara ett value object som gor status-overgangar typsäkra.
+**INTE aggregat, INTE events.** Bara ett value object som gör status-övergångar typsäkra.
 
 #### 2.1 BookingStatus value object
 
@@ -460,7 +460,7 @@ class BookingStatus extends ValueObject<{ value: string }> {
     if (!this.canTransitionTo(next)) {
       return Result.fail({
         type: "INVALID_TRANSITION",
-        message: `Kan inte ga fran "${this.value}" till "${next}"`
+        message: `Kan inte gå från "${this.value}" till "${next}"`
       })
     }
     return Result.ok(BookingStatus.create(next))
@@ -470,11 +470,11 @@ class BookingStatus extends ValueObject<{ value: string }> {
 
 **TDD-cykel:**
 ```
-RED:    "pending kan ga till confirmed"
+RED:    "pending kan gå till confirmed"
 GREEN:  Implementera canTransitionTo()
 
-RED:    "completed kan INTE ga till pending"
-GREEN:  Returnera false for ogiltiga overgangar
+RED:    "completed kan INTE gå till pending"
+GREEN:  Returnera false för ogiltiga övergångar
 
 RED:    "transitionTo returnerar Result med ny BookingStatus"
 GREEN:  Implementera transitionTo()
@@ -498,9 +498,9 @@ async updateStatus(id: string, newStatus: string): Promise<Result<...>> {
 }
 ```
 
-#### 2.3 Factory Pattern for BookingService DI
+#### 2.3 Factory Pattern för BookingService DI
 
-BookingService har manga dependencies. Skapa factory for att minska boilerplate i routes:
+BookingService har många dependencies. Skapa factory för att minska boilerplate i routes:
 
 ```typescript
 // src/domain/booking/BookingServiceFactory.ts
@@ -515,7 +515,7 @@ export function createBookingService(): BookingService {
   })
 }
 
-// For test:
+// För test:
 export function createMockBookingService(
   overrides?: Partial<BookingServiceDeps>
 ): BookingService {
@@ -526,13 +526,13 @@ export function createMockBookingService(
   })
 }
 
-// I route.ts (manga rader -> 1 rad):
+// I route.ts (många rader -> 1 rad):
 const bookingService = createBookingService()
 ```
 
 ---
 
-### Fas 3 — Auth DDD-Light (sakerhetskritisk) — KLAR
+### Fas 3 — Auth DDD-Light (säkerhetskritisk) — KLAR
 
 > **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-auth-migration.md](retrospectives/2026-02-01-ddd-light-auth-migration.md)
 
@@ -540,7 +540,7 @@ const bookingService = createBookingService()
 ```
 src/infrastructure/persistence/auth/
   IAuthRepository.ts          # Specialized metoder, strikta projektioner
-  PrismaAuthRepository.ts     # select overallt, aldrig include
+  PrismaAuthRepository.ts     # select överallt, aldrig include
   MockAuthRepository.ts       # seedUser/seedProvider/seedToken helpers
   index.ts                    # Re-exports
 ```
@@ -561,10 +561,10 @@ DI: hashPassword, comparePassword, generateToken, emailService
 register/route.ts             # 136 -> 86 rader (-37%)
 verify-email/route.ts         # 85 -> 51 rader (-40%), fixar include -> select
 resend-verification/route.ts  # 87 -> 55 rader (-37%)
-src/lib/auth.ts               # prisma + bcrypt borta, anvander verifyCredentials()
+src/lib/auth.ts               # prisma + bcrypt borta, använder verifyCredentials()
 ```
 
-**Sakerhetsfix:** verify-email anvande `include: { user: true }` (exponerade passwordHash). Fixat via `select` i PrismaAuthRepository.
+**Säkerhetsfix:** verify-email använde `include: { user: true }` (exponerade passwordHash). Fixat via `select` i PrismaAuthRepository.
 
 ---
 
@@ -573,31 +573,31 @@ src/lib/auth.ts               # prisma + bcrypt borta, anvander verifyCredential
 **Sessioner:** 2-3 (en per testgrupp)
 - Session A: rate-limit.ts + auth-server.ts tester
 - Session B: auth routes tester
-- Session C (om behovs): Logger + IDOR E2E-tester
+- Session C (om behövs): Logger + IDOR E2E-tester
 
-Inga nya abstraktioner. Bara tester for otestade filer.
+Inga nya abstraktioner. Bara tester för otestade filer.
 
-**Prioriterade (sakerhetskritiska):**
+**Prioriterade (säkerhetskritiska):**
 1. `src/lib/rate-limit.ts` (saknar tester)
 2. `src/lib/auth-server.ts` (saknar tester)
 3. `src/app/api/auth/*/route.ts` (saknar tester)
 
-**OBS:** `src/lib/encryption.ts` har redan 6 tester — behover inte skrivas.
+**OBS:** `src/lib/encryption.ts` har redan 6 tester — behöver inte skrivas.
 
-**Utokad test-scope (fran security-review):**
-4. Logger — verifiera att kanslig data INTE loggas
+**Utökad test-scope (från security-review):**
+4. Logger — verifiera att känslig data INTE loggas
 5. Auth routes — timing attack resistance
 6. IDOR — cross-user access (E2E)
 
-**Mal:** API-routes 66% -> 80%, lib utilities 33% -> 90%.
+**Mål:** API-routes 66% -> 80%, lib utilities 33% -> 90%.
 
 ---
 
-### Fas 5 — Event-infrastruktur for Booking — KLAR
+### Fas 5 — Event-infrastruktur för Booking — KLAR
 
 > **Retrospektiv:** [docs/retrospectives/2026-02-01-ddd-light-event-infrastructure.md](retrospectives/2026-02-01-ddd-light-event-infrastructure.md)
 >
-> Events utan fullstandigt aggregat. BookingService orordes -- events emitteras fran routes EFTER service-anrop.
+> Events utan fullständigt aggregat. BookingService orördes -- events emitteras från routes EFTER service-anrop.
 
 #### 5.1 Aktivera Domain Events i AggregateRoot
 
@@ -605,7 +605,7 @@ Inga nya abstraktioner. Bara tester for otestade filer.
 
 #### 5.2 Skapa EventDispatcher (Factory Pattern)
 
-**VIKTIGT:** Anvand Factory Pattern for serverless-kompatibilitet (Vercel).
+**VIKTIGT:** Använd Factory Pattern för serverless-kompatibilitet (Vercel).
 
 ```
 src/infrastructure/events/
@@ -619,7 +619,7 @@ src/infrastructure/events/
 
 #### 5.3 Booking-aggregat + event handlers
 
-Konsolidera filer for locality of behavior:
+Konsolidera filer för locality of behavior:
 
 ```
 src/domain/booking/
@@ -628,11 +628,11 @@ src/domain/booking/
   BookingEventHandlers.ts       # ALLA handlers i en fil
 ```
 
-2 filer istallet for 8 — relaterad kod tillsammans.
+2 filer istället för 8 — relaterad kod tillsammans.
 
 **Event Handler Security Guidelines:**
 - Zod-validering av event payload i varje handler
-- Idempotency check (forhindra replay)
+- Idempotency check (förhindra replay)
 - Try-catch + logger.error (en handler som kraschar stoppar inte andra)
 
 ---
@@ -641,37 +641,37 @@ src/domain/booking/
 
 ### Migration Strategy: Branch-by-Abstraction
 
-For att undvika breaking changes under migrering:
+För att undvika breaking changes under migrering:
 
 ```
 1. Skapa NYA klasser (ReviewService, IReviewRepository)
-   utan att radera gamla monstret
+   utan att radera gamla mönstret
 
 2. Migrera EN route i taget:
-   - Route 1 -> anvand ny service + repository
-   - Commit + tester grona
-   - Route 2 -> anvand ny service + repository
-   - Commit + tester grona
+   - Route 1 -> använd ny service + repository
+   - Commit + tester gröna
+   - Route 2 -> använd ny service + repository
+   - Commit + tester gröna
 
-3. Nar ALLA routes for domanen ar migrerade:
+3. När ALLA routes för domänen är migrerade:
    - Verifiera att inga Prisma-anrop finns kvar i routes
    - Radera eventuell gammal kod
    - Merge feature branch till main
 
-4. Om problem uppstar:
-   - Varje route-migrering ar 1 commit
-   - git revert <commit> for att backa en specifik route
-   - git bisect for att hitta var testet gick sonder
+4. Om problem uppstår:
+   - Varje route-migrering är 1 commit
+   - git revert <commit> för att backa en specifik route
+   - git bisect för att hitta var testet gick sönder
 ```
 
 **Branch-strategi:**
 ```bash
-git checkout -b refactor/ddd-light-review    # Per doman
+git checkout -b refactor/ddd-light-review    # Per domän
 # ... migrera alla routes ...
 git checkout main && git merge refactor/ddd-light-review
 ```
 
-### DDD-Light-doman (7 steg)
+### DDD-Light-domän (7 steg)
 
 ```
 Steg 1: Skapa IXxxRepository interface
@@ -683,13 +683,13 @@ Steg 2: Implementera PrismaXxxRepository
 Steg 3: Implementera MockXxxRepository
         -> Commit: "test: add MockReviewRepository"
 
-Steg 4: TDD: Skapa XxxService (om affarsregler finns)
+Steg 4: TDD: Skapa XxxService (om affärsregler finns)
         -> Commit: "feat: add ReviewService with validation"
 
-Steg 5: Migrera route 1 -> tester grona
+Steg 5: Migrera route 1 -> tester gröna
         -> Commit: "refactor: migrate POST /api/reviews to repository"
 
-Steg 6: Migrera route 2 -> tester grona
+Steg 6: Migrera route 2 -> tester gröna
         -> Commit per route
 
 Steg 7: Verifiera
@@ -700,55 +700,55 @@ Steg 7: Verifiera
 
 ### Session Management (Context Window)
 
-**Lardom fran Fas 1:** GroupBooking (8 routes, 19 filer) fyllde context-fonstret.
-Review (3 routes) och Horse (7 routes) klarade sig men var nara gransen med retro + docs.
+**Lärdom från Fas 1:** GroupBooking (8 routes, 19 filer) fyllde context-fönstret.
+Review (3 routes) och Horse (7 routes) klarade sig men var nära gränsen med retro + docs.
 
 **Tumregel:** En session klarar ~5-6 routes + tester ELLER repo + service + tester.
-Retro + docs kraver egen session om migreringen ar stor (6+ routes).
+Retro + docs kräver egen session om migreringen är stor (6+ routes).
 
-**Splitting-strategi for DDD-Light-domaner:**
+**Splitting-strategi för DDD-Light-domäner:**
 
 | Storlek | Routes | Sessioner | Split |
 |---------|--------|-----------|-------|
 | Liten (Review) | 1-3 | 1 | Allt i en session inkl retro |
-| Medel (Horse) | 4-6 | 1-2 | Kan klara en session, splitta om retro ingar |
+| Medel (Horse) | 4-6 | 1-2 | Kan klara en session, splitta om retro ingår |
 | Stor (GroupBooking) | 7+ | 2 | Obligatorisk split |
 
 **Session A: Infrastruktur + Service**
 - Steg 1-4: Interface, Prisma-repo, Mock-repo, Service med TDD
-- Kor tester, commit
-- DoD: Service-tester grona, inga TypeScript-fel
+- Kör tester, commit
+- DoD: Service-tester gröna, inga TypeScript-fel
 
 **Session B: Routes + Retro + Docs**
 - Steg 5-N: Migrera alla routes (en per commit)
 - Steg N+1: Verifiering (full testsvit + typecheck)
 - Retro med agenter (tech-architect + test-lead)
 - Uppdatera CLAUDE.md key learnings
-- Uppdatera DDD-TDD-REFACTORING-PLAN.md (markera klar, lanka retro)
+- Uppdatera DDD-TDD-REFACTORING-PLAN.md (markera klar, länka retro)
 - Commit docs
-- DoD: Alla tester grona, retro sparad, docs uppdaterade
+- DoD: Alla tester gröna, retro sparad, docs uppdaterade
 
-**For sma domaner (1-3 routes):** Allt i en session ar OK.
+**För små domäner (1-3 routes):** Allt i en session är OK.
 
 ---
 
-## Del 5: Sakerhetsriktlinjer
+## Del 5: Säkerhetsriktlinjer
 
 ### IDOR-skydd vid repository-migrering (KRITISKT)
 
-Nar routes migreras till repositories MASTE ownership-checks bevaras.
+När routes migreras till repositories MÅSTE ownership-checks bevaras.
 
-**Repository-metoder MASTE inkludera userId/providerId:**
+**Repository-metoder MÅSTE inkludera userId/providerId:**
 
 ```typescript
-// RATT: Ownership baked in
+// RÄTT: Ownership baked in
 async findById(id: string, userId: string): Promise<Review | null>
 
 // FEL: Saknar ownership-parameter
 async findById(id: string): Promise<Review | null>
 ```
 
-**Tester MASTE verifiera ownership:**
+**Tester MÅSTE verifiera ownership:**
 
 ```typescript
 test("findById returns null for other user's review", async () => {
@@ -759,10 +759,10 @@ test("findById returns null for other user's review", async () => {
 
 ### Sensitive Data Protection i repositories
 
-**ALLTID anvand `select`, aldrig `include`:**
+**ALLTID använd `select`, aldrig `include`:**
 
 ```typescript
-// RATT:
+// RÄTT:
 return await prisma.review.findFirst({
   where: { id, customerId: userId },
   select: {
@@ -773,7 +773,7 @@ return await prisma.review.findFirst({
       select: {
         id: true,
         name: true,
-        // passwordHash UTELAMNAT
+        // passwordHash UTELÄMNAT
       }
     }
   }
@@ -794,10 +794,10 @@ test("findById never exposes passwordHash", async () => {
 
 ### Transaction Safety
 
-Alla operationer som andrar flera entiteter MASTE vara transaktionella:
+Alla operationer som ändrar flera entiteter MÅSTE vara transaktionella:
 
 ```typescript
-// RATT: All-or-nothing
+// RÄTT: All-or-nothing
 return await prisma.$transaction(async (tx) => {
   const booking = await tx.booking.update(...)
   await tx.notification.create(...)
@@ -810,30 +810,30 @@ await prisma.notification.create(...)
 // Om notification failar = inkonsistent state
 ```
 
-### Checklista for varje repository-migrering
+### Checklista för varje repository-migrering
 
 ```markdown
 - [ ] Alla finder-metoder tar userId/providerId som parameter
-- [ ] Ownership verifieras i WHERE-clause (atomart)
-- [ ] `select` anvands (aldrig `include`)
+- [ ] Ownership verifieras i WHERE-clause (atomärt)
+- [ ] `select` används (aldrig `include`)
 - [ ] passwordHash aldrig exponerad (test verifierar)
-- [ ] Flerstegs-operationer anvander $transaction
-- [ ] Unit test for cross-user access (forvantar null/403)
-- [ ] E2E test forsoker hamta annan users data
+- [ ] Flerstegs-operationer använder $transaction
+- [ ] Unit test för cross-user access (förväntar null/403)
+- [ ] E2E test försöker hämta annan users data
 ```
 
 ---
 
 ## Del 6: git bisect
 
-### Nar?
+### När?
 
 | Situation | Bisect? |
 |-----------|---------|
 | Test failar efter refaktorering, oklart var | Ja |
-| Du vet vilken fil du andrade | Nej — git diff |
+| Du vet vilken fil du ändrade | Nej — git diff |
 | Flaky E2E-test | Nej — timing |
-| Bygget sonder efter 10+ commits | Ja |
+| Bygget sönder efter 10+ commits | Ja |
 
 ### Automatiserat exempel
 
@@ -910,22 +910,22 @@ src/
   app/api/                       # Routes — successivt tunnare
 ```
 
-**Totalt Fas 0-4: ~20 nya filer** (ner fran ~35 i v1 tack vare:
+**Totalt Fas 0-4: ~20 nya filer** (ner från ~35 i v1 tack vare:
 RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 
 ---
 
 ## Del 8: Checklista
 
-### DDD-Light-doman
+### DDD-Light-domän
 
 ```markdown
-## [Doman] — DDD-Light
+## [Domän] — DDD-Light
 
-### Forberedelse
-- [ ] Las igenom alla routes
-- [ ] Identifiera affarsregler
-- [ ] Kolla att befintliga tester ar grona
+### Förberedelse
+- [ ] Läs igenom alla routes
+- [ ] Identifiera affärsregler
+- [ ] Kolla att befintliga tester är gröna
 - [ ] Dokumentera nuvarande IDOR-skydd per route
 
 ### Implementation
@@ -933,11 +933,11 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 - [ ] Implementera PrismaXxxRepository (select, aldrig include)
 - [ ] Implementera MockXxxRepository
 - [ ] TDD: Skapa service (om regler finns)
-- [ ] Migrera route 1 -> commit -> gront
-- [ ] Migrera route 2 -> commit -> gront
+- [ ] Migrera route 1 -> commit -> grönt
+- [ ] Migrera route 2 -> commit -> grönt
 - [ ] ...
 
-### Sakerhet (BLOCKERANDE)
+### Säkerhet (BLOCKERANDE)
 - [ ] Alla finder-metoder tar userId/providerId
 - [ ] Test: cross-user access returnerar null
 - [ ] Test: passwordHash aldrig exponerad
@@ -946,15 +946,15 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 ### Verifiering
 - [ ] npm test -- --run
 - [ ] E2E (om det finns)
-- [ ] Inga Prisma-anrop kvar i routes for denna doman
+- [ ] Inga Prisma-anrop kvar i routes för denna domän
 - [ ] API latency: < 20ms regression vs baseline
 ```
 
 ### Session DoD
 
 ```markdown
-- [ ] Alla tester grona innan session avslutas
-- [ ] Commit gjord (inte opushat arbete over sessionsgranser)
+- [ ] Alla tester gröna innan session avslutas
+- [ ] Commit gjord (inte opushat arbete över sessionsgränser)
 - [ ] Om sista sessionen: retro + docs uppdaterade
 ```
 
@@ -963,62 +963,62 @@ RouteOrder uppskjuten, events uppskjutna, event-filer konsoliderade).
 ```markdown
 ## Booking — BookingStatus VO
 
-### Forberedelse
-- [ ] Las BookingService.ts (461 rader)
-- [ ] Identifiera status-overgangar
+### Förberedelse
+- [ ] Läs BookingService.ts (461 rader)
+- [ ] Identifiera status-övergångar
 - [ ] Kolla befintliga tester
 
 ### Implementation
 - [ ] TDD: BookingStatus value object (state machine)
-- [ ] Uppdatera BookingService att anvanda VO
+- [ ] Uppdatera BookingService att använda VO
 - [ ] Skapa BookingServiceFactory (DI)
 
 ### Verifiering
 - [ ] npm test -- --run
 - [ ] E2E
-- [ ] Status-overgangar valideras av VO (inte if-satser)
+- [ ] Status-övergångar valideras av VO (inte if-satser)
 ```
 
 ---
 
 ## Del 9: Prioritetsordning
 
-| Prio | Fas | Doman | Steg | Status |
+| Prio | Fas | Domän | Steg | Status |
 |------|-----|-------|------|--------|
-| 0 | Fas 0 | Forberedelse | Baseline, feature branch | KLAR |
+| 0 | Fas 0 | Förberedelse | Baseline, feature branch | KLAR |
 | 1 | Fas 1.1 | Review (pilot) | Repo + service + migrera 3 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-review-pilot.md) |
 | 2 | Fas 1.2 | Horse | Repo + service + migrera 7 routes | KLAR — [retro](retrospectives/2026-02-01-ddd-light-horse-migration.md) |
 | 3 | Fas 1.3 | GroupBooking | Repo + refaktorera service + migrera routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-groupbooking-migration.md) |
 | 4 | Fas 2 | Booking | BookingStatus VO + factory | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-booking-status-vo.md) |
-| 5 | Fas 3 | Auth | Repo + service + factory (sakerhet) | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-auth-migration.md) |
+| 5 | Fas 3 | Auth | Repo + service + factory (säkerhet) | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-auth-migration.md) |
 | 6 | Fas 4 | Test-coverage | rate-limit, auth-server, logger, auth routes | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-test-coverage.md) |
 | 7 | Fas 5 | Event-infrastruktur | InMemoryEventDispatcher, 3 event-typer, 7 handlers, 3 routes migrerade | KLAR -- [retro](retrospectives/2026-02-01-ddd-light-event-infrastructure.md) |
 
-### Nar uppgradera nasta doman till events?
+### När uppgradera nästa domän till events?
 
-Event-monstret ar nu bevisat for Booking. For att anvanda events i en annan doman:
+Event-mönstret är nu bevisat för Booking. För att använda events i en annan domän:
 
 1. Skapa `XxxEvents.ts` med event-typer + factory-funktioner
 2. Skapa `XxxEventHandlers.ts` med handlers + dispatcher factory
-3. Migrera routes fran manuella sidoeffekter till event dispatch
-4. Kor befintliga tester -- behavior-based tester overlever
+3. Migrera routes från manuella sidoeffekter till event dispatch
+4. Kör befintliga tester -- behavior-based tester överlever
 
-**Trigger for nya domaner:** 3+ sidoeffekter per handelse (notis + email + kalender + ...)
+**Trigger för nya domäner:** 3+ sidoeffekter per händelse (notis + email + kalender + ...)
 
 ---
 
 ## Del 10: Performance
 
-### Baseline (mata INNAN refaktorering)
+### Baseline (mät INNAN refaktorering)
 
 ```bash
 # Enkel latency-check
 curl -w "@curl-format.txt" -X GET http://localhost:3000/api/bookings
 ```
 
-### Forvantat overhead
+### Förväntat overhead
 
-| Andring | Overhead |
+| Ändring | Overhead |
 |---------|----------|
 | Repository-lager (DDD-Light) | ~0.1ms (function call) — NEGLIGIBLE |
 | BookingStatus value object | ~0.1ms — NEGLIGIBLE |
@@ -1027,108 +1027,108 @@ curl -w "@curl-format.txt" -X GET http://localhost:3000/api/bookings
 ### Acceptanskriterium
 
 - Regression < 20ms per fas
-- p95 latency < 200ms for booking-endpoints
+- p95 latency < 200ms för booking-endpoints
 
 ---
 
 ## Ordlista
 
-| Term | Forklaring |
+| Term | Förklaring |
 |------|-----------|
-| **Repository** | Abstraktionslager mellan doman och databas. Interface + implementation. |
-| **Domain Service** | Klass med affarsregler. Vet inget om HTTP. |
+| **Repository** | Abstraktionslager mellan domän och databas. Interface + implementation. |
+| **Domain Service** | Klass med affärsregler. Vet inget om HTTP. |
 | **Value Object** | Immutable objekt som validerar sig vid skapande. |
 | **Aggregat** | Klass med beteende som skyddar sina regler. Genererar events. (Framtida) |
-| **Domain Event** | Beskriver nagot som hant. Genereras av aggregat, hanteras av handlers. (Framtida) |
-| **State Machine** | Giltiga tillstandsovergangar (pending -> confirmed -> completed). |
+| **Domain Event** | Beskriver något som hänt. Genereras av aggregat, hanteras av handlers. (Framtida) |
+| **State Machine** | Giltiga tillståndsövergångar (pending -> confirmed -> completed). |
 | **Result<T, E>** | Returtyp som tvingar hantering av success och error. |
 | **Factory Pattern** | Funktion som skapar fullt konfigurerade objekt (DI utan framework). |
 | **Branch-by-Abstraction** | Migrationsstrategi: ny kod + gammal kod lever parallellt tills migrering klar. |
-| **Bisect** | Git-kommando: binarsoker commits for att hitta var en bugg uppstod. |
-| **TDD** | Test forst -> implementera -> refaktorera. |
-| **IDOR** | Insecure Direct Object Reference — nar en anvandare kan komma at andras data. |
+| **Bisect** | Git-kommando: binärsöker commits för att hitta var en bugg uppstod. |
+| **TDD** | Test först -> implementera -> refaktorera. |
+| **IDOR** | Insecure Direct Object Reference — när en användare kan komma åt andras data. |
 
 ---
 
 ## Del 11: Slutsummering
 
-> **Alla 8 faser (0-5) ar genomforda.** Planen ar 100% avklarad per 2026-02-01.
+> **Alla 8 faser (0-5) är genomförda.** Planen är 100% avklarad per 2026-02-01.
 
 ### Vad som byggdes
 
-| Fas | Doman | Resultat |
+| Fas | Domän | Resultat |
 |-----|-------|----------|
-| 0 | Forberedelse | Baseline, feature branch, alla tester grona |
+| 0 | Förberedelse | Baseline, feature branch, alla tester gröna |
 | 1.1 | Review | IReviewRepository + PrismaReviewRepository + MockReviewRepository + ReviewService (14 tester) |
 | 1.2 | Horse | IHorseRepository + PrismaHorseRepository + MockHorseRepository + HorseService (91 tester) |
 | 1.3 | GroupBooking | IGroupBookingRepository + PrismaGroupBookingRepository + MockGroupBookingRepository + GroupBookingService refaktorerad (25 tester, 95% coverage) |
 | 2 | Booking | BookingStatus value object (state machine) + BookingServiceFactory (DI) |
-| 3 | Auth | IAuthRepository (specialized) + PrismaAuthRepository + MockAuthRepository + AuthService (21 tester) + sakerhetsfixar (include -> select) |
-| 4 | Test-coverage | Tester for rate-limit, auth-server, logger, auth routes. Hittade produktionsbuggar (saknad try-catch, rate limit efter JSON-parsing) |
+| 3 | Auth | IAuthRepository (specialized) + PrismaAuthRepository + MockAuthRepository + AuthService (21 tester) + säkerhetsfixar (include -> select) |
+| 4 | Test-coverage | Tester för rate-limit, auth-server, logger, auth routes. Hittade produktionsbuggar (saknad try-catch, rate limit efter JSON-parsing) |
 | 5 | Event-infrastruktur | IDomainEvent, IEventHandler, IEventDispatcher, InMemoryEventDispatcher + 3 event-typer + 7 handlers + 3 routes migrerade |
 
 ### Nyckeltal
 
-| Metric | Varde |
+| Metric | Värde |
 |--------|-------|
-| Domaner migrerade till DDD-Light | 6 (Review, Horse, GroupBooking, Booking, Auth, Provider/Service) |
-| Domaner pa Prisma direkt (medvetet val) | 3 (Notification, Availability, RouteOrder) |
-| Nya tester tillagda | 150+ (over alla faser) |
+| Domäner migrerade till DDD-Light | 6 (Review, Horse, GroupBooking, Booking, Auth, Provider/Service) |
+| Domäner på Prisma direkt (medvetet val) | 3 (Notification, Availability, RouteOrder) |
+| Nya tester tillagda | 150+ (över alla faser) |
 | Retrospektiv dokumenterade | 7 (en per fas + event-infrastruktur) |
-| Sakerhetsbuggarna hittade via migrering | 2 (include -> select i verify-email, rate limit ordering i register) |
+| Säkerhetsbuggar hittade via migrering | 2 (include -> select i verify-email, rate limit ordering i register) |
 
 ### Bevisade patterns
 
-1. **Repository + Service + Factory** — standard DDD-Light-stack for alla karndomaner
-2. **Value Object for state machines** — BookingStatus validerar overgangar typsaker
-3. **Behavior-based route-tester** — overlever refactoring utan andringar
-4. **MockRepository med seedable data** — snabbare och mer forutsagbart an Prisma-mocks
-5. **Factory Pattern for DI** — `createXxxService()` i routes OCH callbacks (t.ex. NextAuth)
-6. **Event dispatch fran routes** — pragmatisk losning utan full aggregat-omskrivning
+1. **Repository + Service + Factory** — standard DDD-Light-stack för alla kärndomäner
+2. **Value Object för state machines** — BookingStatus validerar övergångar typsäkert
+3. **Behavior-based route-tester** — överlever refactoring utan ändringar
+4. **MockRepository med seedable data** — snabbare och mer förutsägbart än Prisma-mocks
+5. **Factory Pattern för DI** — `createXxxService()` i routes OCH callbacks (t.ex. NextAuth)
+6. **Event dispatch från routes** — pragmatisk lösning utan full aggregat-omskrivning
 7. **Per-handler error isolation** — en handlers fel blockerar inte andra
 
 ### Vad som INTE gjordes (medvetet)
 
-| Vad | Varfor |
+| Vad | Varför |
 |-----|--------|
-| RouteOrder DDD-Light | Lagt ROI — mestadels CRUD, inga affarsregler |
-| Fullstandigt Booking-aggregat | Service-lagret fungerar. Uppgradera forst nar aggregatet ger tydligt mervarande |
-| Strikt DDD for nagon doman | Inget behov annu — DDD-Light + events racker |
+| RouteOrder DDD-Light | Lågt ROI — mestadels CRUD, inga affärsregler |
+| Fullständigt Booking-aggregat | Service-lagret fungerar. Uppgradera först när aggregatet ger tydligt mervärde |
+| Strikt DDD för någon domän | Inget behov ännu — DDD-Light + events räcker |
 
-### Nar uppgradera vidare?
+### När uppgradera vidare?
 
-Event-monstret ar bevisat. Anvand det pa fler domaner nar triggern uppfylls:
+Event-mönstret är bevisat. Använd det på fler domäner när triggern uppfylls:
 
-- **3+ sidoeffekter per handelse** i en doman -> lagg till events
-- **DDD-Light service nar 300+ rader** -> dela upp eller uppgradera
-- **Status-overgangar utan value object** -> skapa VO (bevisat monster)
-- **Booking behover fullstandigt aggregat** -> forst nar service-lagret begransar (inte hypotetiskt)
+- **3+ sidoeffekter per händelse** i en domän -> lägg till events
+- **DDD-Light service når 300+ rader** -> dela upp eller uppgradera
+- **Status-övergångar utan value object** -> skapa VO (bevisat mönster)
+- **Booking behöver fullständigt aggregat** -> först när service-lagret begränsar (inte hypotetiskt)
 
 ---
 
 *Skapat: 2026-02-01*
 *v3: 2026-02-01 — Slutsummering tillagd, alla faser avklarade*
-*Niva: Hybrid (DDD-Light for karndomaner, uppgradering till strikt DDD nar motiverat)*
+*Nivå: Hybrid (DDD-Light för kärndomäner, uppgradering till strikt DDD när motiverat)*
 *Solo-utvecklare + Claude Code*
 
-### Andringslogg
+### Ändringslogg
 
-**v1 (2026-02-01):** Ursprunglig plan — strikt DDD for Booking, DDD-Light for ovriga.
+**v1 (2026-02-01):** Ursprunglig plan — strikt DDD för Booking, DDD-Light för övriga.
 
 **v2 (2026-02-01):** Omarbetad efter team-review:
-- Inverterad prioritering (enklast forst, Booking sist)
+- Inverterad prioritering (enklast först, Booking sist)
 - Booking nedskalad till DDD-Light + BookingStatus VO (strikt DDD uppskjuten)
-- RouteOrder uppskjuten (lagt ROI)
-- Auth uppgraderad till DDD-Light (sakerhetskritisk)
-- Sakerhetsriktlinjer tillagda (IDOR, select, transactions)
+- RouteOrder uppskjuten (lågt ROI)
+- Auth uppgraderad till DDD-Light (säkerhetskritisk)
+- Säkerhetsriktlinjer tillagda (IDOR, select, transactions)
 - Migration strategy (Branch-by-Abstraction) tillagd
-- EventDispatcher: Factory Pattern for serverless-kompatibilitet
-- Event-filer konsoliderade (2 istallet for 8)
-- BookingServiceFactory for DI
+- EventDispatcher: Factory Pattern för serverless-kompatibilitet
+- Event-filer konsoliderade (2 istället för 8)
+- BookingServiceFactory för DI
 - Performance baseline tillagd
 - Faktafel fixade (BookingService 100%, Horse 7 routes, encryption tester finns)
 
 **v3 (2026-02-01):** Slutsummering:
 - Alla 8 faser (0-5) markerade KLAR
 - Nyckeltal, bevisade patterns och uppgraderingskriterier dokumenterade
-- Medvetna utelamnanden dokumenterade (RouteOrder, strikt DDD)
+- Medvetna utelämnanden dokumenterade (RouteOrder, strikt DDD)
