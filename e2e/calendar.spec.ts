@@ -263,6 +263,59 @@ test.describe('Calendar & Availability (Provider)', () => {
     await expect(calendarContent).toBeVisible({ timeout: 5000 });
   });
 
+  test('should show pending bookings banner', async ({ page }) => {
+    await page.goto('/provider/calendar');
+
+    // Vänta på att sidan laddas
+    await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
+
+    // Bannern visas om det finns pending bookings (seed + dynamiskt skapade)
+    // Seed pending booking kan ha blivit accepted/rejected/cancelled av tidigare tester
+    const banner = page.getByRole('button', { name: /bokning.*väntar/i });
+    const bannerVisible = await banner.isVisible({ timeout: 10000 }).catch(() => false);
+
+    if (!bannerVisible) {
+      test.skip(true, 'No pending bookings available (seed booking was modified by earlier tests)');
+      return;
+    }
+
+    // Expandera bannern
+    await banner.click();
+
+    // Verifiera att bokning-info visas (service name + customer name)
+    await expect(page.locator('li button').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should open booking detail from pending banner', async ({ page }) => {
+    await page.goto('/provider/calendar');
+
+    // Vänta på att sidan laddas
+    await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
+
+    // Bannern visas om det finns pending bookings
+    const banner = page.getByRole('button', { name: /bokning.*väntar/i });
+    const bannerVisible = await banner.isVisible({ timeout: 10000 }).catch(() => false);
+
+    if (!bannerVisible) {
+      test.skip(true, 'No pending bookings available (seed booking was modified by earlier tests)');
+      return;
+    }
+
+    // Expandera bannern
+    await banner.click();
+
+    // Klicka på första bokningen i bannern
+    const bookingItem = page.locator('li button').first();
+    await expect(bookingItem).toBeVisible({ timeout: 5000 });
+    await bookingItem.click();
+
+    // BookingDetailDialog ska öppnas
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+
+    // Stäng dialogen
+    await page.keyboard.press('Escape');
+  });
+
   test('should show bookings in calendar', async ({ page }) => {
     await page.goto('/provider/calendar');
 

@@ -444,7 +444,14 @@ export default function ProviderCalendarPage() {
         onOpenChange={setDialogOpen}
         onStatusUpdate={handleStatusUpdate}
         onReviewSuccess={() => mutateBookings()}
-        onNotesUpdate={() => mutateBookings()}
+        onNotesUpdate={(bookingId, notes) => {
+          // Update selectedBooking immediately so dialog shows fresh notes
+          // (SWR mutate is async and selectedBooking is a frozen snapshot)
+          if (selectedBooking && selectedBooking.id === bookingId) {
+            setSelectedBooking({ ...selectedBooking, providerNotes: notes })
+          }
+          mutateBookings()
+        }}
       />
 
       <AvailabilityEditDialog

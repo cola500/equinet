@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { test as setup } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
-import { assertSafeDatabase, futureDate } from './e2e-utils'
+import { assertSafeDatabase, futureDate, pastDate } from './e2e-utils'
 
 const prisma = new PrismaClient()
 
@@ -12,11 +12,11 @@ const prisma = new PrismaClient()
  * Steps:
  * 1. Environment safety check
  * 2. Upsert users (customer + provider)
- * 3. Upsert provider profile + services
+ * 3. Upsert provider profile + services (with recommendedIntervalWeeks)
  * 4. Seed availability for ALL providers
  * 5. Reset + seed route orders (4 customer-initiated + 1 provider-announced)
- * 6. Reset + seed bookings (1 pending + 1 confirmed)
- * 7. Upsert horse for test customer
+ * 6. Upsert horse for test customer
+ * 7. Reset + seed bookings (1 pending + 1 confirmed + 1 completed)
  *
  * All seed data uses 'E2E seed data' markers for identification.
  * Idempotent: upsert for users/providers/services, delete+recreate for route orders/bookings.
@@ -32,6 +32,7 @@ setup('seed E2E test data', async () => {
   try {
     const res = await fetch('http://localhost:3000/api/test/reset-rate-limit', {
       method: 'POST',
+      signal: AbortSignal.timeout(5000),
     })
     if (res.ok) {
       console.log('  Rate limits reset OK')
@@ -104,6 +105,7 @@ setup('seed E2E test data', async () => {
       description: 'Grundlaggande hovslagning for alla hastar',
       price: 800,
       durationMinutes: 60,
+      recommendedIntervalWeeks: 8,
     })
 
     const service2 = await upsertService(prisma, provider.id, {
@@ -227,7 +229,30 @@ setup('seed E2E test data', async () => {
     })
     console.log('  Route orders: 4 customer-initiated + 1 provider-announced')
 
-    // 6. Reset + seed bookings
+    // 6. Upsert horse for test customer (BEFORE bookings -- needed for horseId on completed booking)
+    let horse = await prisma.horse.findFirst({
+      where: { ownerId: customer.id, name: 'E2E Blansen' },
+    })
+
+    if (!horse) {
+      horse = await prisma.horse.create({
+        data: {
+          ownerId: customer.id,
+          name: 'E2E Blansen',
+          breed: 'Svenskt varmblod',
+          birthYear: 2018,
+          color: 'Brun',
+          gender: 'mare',
+        },
+      })
+    }
+    console.log('  Horse: E2E Blansen')
+
+    // 7. Reset + seed bookings
+    // Delete existing E2E seed customer reviews first (FK to booking)
+    await prisma.customerReview.deleteMany({
+      where: { booking: { customerNotes: 'E2E seed data' } },
+    })
     // Delete existing E2E seed bookings
     await prisma.booking.deleteMany({
       where: { customerNotes: 'E2E seed data' },
@@ -262,26 +287,40 @@ setup('seed E2E test data', async () => {
         status: 'confirmed',
       },
     })
-    console.log('  Bookings: 1 pending + 1 confirmed')
 
-    // 7. Upsert horse for test customer
-    const existingHorse = await prisma.horse.findFirst({
-      where: { ownerId: customer.id, name: 'E2E Blansen' },
+    // 1x confirmed booking (21 days from now) - dedicated for provider-notes tests
+    // Separated from the 14-day booking because booking.spec.ts cancel test
+    // may cancel that one before provider-notes tests run.
+    await prisma.booking.create({
+      data: {
+        customerId: customer.id,
+        providerId: provider.id,
+        serviceId: service1.id,
+        bookingDate: futureDate(21),
+        startTime: '10:00',
+        endTime: '11:00',
+        horseName: 'E2E Storm',
+        customerNotes: 'E2E seed data',
+        status: 'confirmed',
+      },
     })
 
-    if (!existingHorse) {
-      await prisma.horse.create({
-        data: {
-          ownerId: customer.id,
-          name: 'E2E Blansen',
-          breed: 'Svenskt varmblod',
-          birthYear: 2018,
-          color: 'Brun',
-          gender: 'mare',
-        },
-      })
-    }
-    console.log('  Horse: E2E Blansen')
+    // 1x completed booking (90 days ago) - for customer registry, reviews, due-for-service
+    await prisma.booking.create({
+      data: {
+        customerId: customer.id,
+        providerId: provider.id,
+        serviceId: service1.id,
+        horseId: horse.id,
+        bookingDate: pastDate(90),
+        startTime: '10:00',
+        endTime: '11:00',
+        horseName: 'E2E Blansen',
+        customerNotes: 'E2E seed data',
+        status: 'completed',
+      },
+    })
+    console.log('  Bookings: 1 pending + 2 confirmed + 1 completed')
 
     console.log('E2E seed complete!')
   } catch (error) {
@@ -296,13 +335,31 @@ setup('seed E2E test data', async () => {
 async function upsertService(
   prisma: PrismaClient,
   providerId: string,
-  data: { name: string; description: string; price: number; durationMinutes: number }
+  data: {
+    name: string
+    description: string
+    price: number
+    durationMinutes: number
+    recommendedIntervalWeeks?: number
+  }
 ) {
   const existing = await prisma.service.findFirst({
     where: { providerId, name: data.name },
   })
 
-  if (existing) return existing
+  if (existing) {
+    // Update recommendedIntervalWeeks if specified and different
+    if (
+      data.recommendedIntervalWeeks !== undefined &&
+      existing.recommendedIntervalWeeks !== data.recommendedIntervalWeeks
+    ) {
+      return prisma.service.update({
+        where: { id: existing.id },
+        data: { recommendedIntervalWeeks: data.recommendedIntervalWeeks },
+      })
+    }
+    return existing
+  }
 
   return prisma.service.create({
     data: { providerId, isActive: true, ...data },

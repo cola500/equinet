@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { test as base } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
-import { cleanupDynamicTestData } from './setup/cleanup-utils'
 
 // Singleton pattern to avoid connection leaks
 const globalForPrisma = globalThis as unknown as {
@@ -16,20 +15,17 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 export { prisma }
 
 /**
- * Custom test fixture med afterEach cleanup
- * Sprint 2: Aktiverar global-hooks funktionalitet
+ * Custom test fixture
+ *
+ * Cleanup sker i cleanup.setup.ts (global teardown) -- INTE per test.
+ * Per-test cleanup orsakade MaxClientsInSessionMode (13+ queries x 25 tester).
  *
  * Importera denna istället för @playwright/test i alla spec-filer:
  * import { test, expect } from './fixtures'
  */
 export const test = base.extend<object, object>({
-  // Auto-run afterEach cleanup för varje test
   page: async ({ page }, use) => {
-    // Use the page normally
     await use(page)
-
-    // Cleanup dynamic test data (always runs, not affected by E2E_CLEANUP)
-    await cleanupDynamicTestData(prisma)
   },
 })
 

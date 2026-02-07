@@ -25,6 +25,24 @@ const SEED_HORSE_NAME = 'E2E Blansen'
  */
 export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void> {
   try {
+    // 0. CustomerReview + HorseServiceInterval (FK to Booking/Horse -- delete before those)
+    await prisma.customerReview.deleteMany({
+      where: {
+        OR: [
+          { provider: { user: dynamicUserFilter } },
+          { customer: dynamicUserFilter },
+        ],
+      },
+    })
+    await prisma.horseServiceInterval.deleteMany({
+      where: {
+        OR: [
+          { provider: { user: dynamicUserFilter } },
+          { horse: { owner: dynamicUserFilter } },
+        ],
+      },
+    })
+
     // 0a. Ghost users (from E2E auth tests)
     await prisma.booking.deleteMany({
       where: { customer: { email: { endsWith: '@ghost.equinet.se' } } },
