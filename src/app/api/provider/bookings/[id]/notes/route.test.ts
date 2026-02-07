@@ -219,16 +219,16 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
     mockUpdateProviderNotesWithAuth.mockResolvedValue({
       ...mockBooking,
       status: 'completed',
-      providerNotes: 'Genomford behandling',
+      providerNotes: 'Genomförd behandling',
     })
 
     const response = await PUT(
-      createRequest({ providerNotes: 'Genomford behandling' }),
+      createRequest({ providerNotes: 'Genomförd behandling' }),
       { params }
     )
     expect(response.status).toBe(200)
     const data = await response.json()
-    expect(data.providerNotes).toBe('Genomford behandling')
+    expect(data.providerNotes).toBe('Genomförd behandling')
   })
 
   it('returns 200 when clearing notes with null', async () => {
