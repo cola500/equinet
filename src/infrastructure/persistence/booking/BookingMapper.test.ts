@@ -21,6 +21,7 @@ describe('BookingMapper', () => {
     horseName: 'Thunder',
     horseInfo: null,
     customerNotes: 'Test booking',
+    providerNotes: null,
     cancellationMessage: null,
     travelTimeMinutes: null,
     isManualBooking: false,

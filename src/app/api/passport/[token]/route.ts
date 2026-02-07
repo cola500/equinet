@@ -99,6 +99,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       providerName: b.provider.businessName,
       status: b.status,
       notes: b.customerNotes,
+      providerNotes: null, // Public view - no provider notes
     }))
 
     const timelineNotes: TimelineNote[] = notes.map((n) => ({

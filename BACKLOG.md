@@ -1,6 +1,6 @@
 # Equinet - Produktbacklog
 
-**Senast uppdaterad:** 2026-02-05
+**Senast uppdaterad:** 2026-02-06
 **Nuvarande version:** v0.2.0+
 **Produktagare:** Johan Lindengard
 
@@ -22,7 +22,10 @@
 **Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad pa hastprofil (foto) och leverantorsprofil (profilbild)
 **Bokforing:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
 **Manuell bokning:** Provider kan skapa bokningar at kunder (ghost user-pattern), kundsok begransad till egna kunder, hast-dropdown, steg-for-steg dialog, "M"-indikator i kalender, audit trail
-**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1213+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
+**Kundregister:** Samlad kundlista for leverantorer (harledd fran bokningar), filter, sok, hastar per kund
+**Aterbesoksplanering:** "Dags for besok"-vy med statusbadges (forsenad/inom 2v/ej aktuell), individuella aterbesoksintervall per hast (override av tjanstens default via HorseServiceInterval)
+**Leverantorsanteckningar:** providerNotes pa bokningar, UI i bokningsdetalj och hastjournal (bara synligt for leverantoren, integritetsskyddat)
+**Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1289+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs
 
 ---
 
@@ -104,6 +107,7 @@ Framtida kostnader: Swish/Stripe (~2.9% + $0.30/transaktion), Twilio SMS ($0.01/
 ## Nästa steg
 
 - **Fas 3 klar:** Dataexport, hastpass, bilduppladdning, Fortnox-integration -- alla implementerade
+- **Fas 4 klar:** Kundregister, aterbesoksplanering, leverantorsanteckningar -- alla implementerade
 - **Nasta fas:** Fortnox sandbox-verifiering, Supabase Storage bucket-setup, svenska tecken-audit
 - **Fore produktion:** Betalningsintegration (Swish/Stripe), push-notifikationer, E2E for nya features
 - **Tier 1 polish:** F-1.3 drag-and-drop, F-4.2 koordinat-precision

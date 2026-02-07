@@ -9,6 +9,7 @@ export interface TimelineBooking {
   providerName: string
   status: string
   notes: string | null
+  providerNotes: string | null
 }
 
 export interface TimelineNote {

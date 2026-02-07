@@ -33,6 +33,7 @@ interface TimelineItem {
   providerName?: string
   status?: string
   notes?: string | null
+  providerNotes?: string | null
   category?: string
   content?: string | null
   authorName?: string
@@ -437,6 +438,11 @@ function ProviderTimelineCard({ item }: { item: TimelineItem }) {
               <p className="font-medium">{item.title}</p>
               {item.type === "booking" && item.providerName && (
                 <p className="text-sm text-gray-600">{item.providerName}</p>
+              )}
+              {item.type === "booking" && item.providerNotes && (
+                <p className="text-sm text-gray-700 mt-1 bg-blue-50 p-2 rounded">
+                  {item.providerNotes}
+                </p>
               )}
               {item.content && (
                 <p className="text-sm text-gray-600 mt-1">{item.content}</p>

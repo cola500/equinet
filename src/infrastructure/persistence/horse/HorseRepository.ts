@@ -241,6 +241,7 @@ export class HorseRepository implements IHorseRepository {
         bookingDate: true,
         status: true,
         customerNotes: true,
+        providerNotes: true,
         service: { select: { name: true } },
         provider: { select: { businessName: true } },
       },

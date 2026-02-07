@@ -183,7 +183,7 @@ const booking = await bookingRepository.findById(id)
 const booking = await prisma.booking.findUnique({ where: { id } })
 ```
 
-**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`
+**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`, `Horse`
 **Stöddomäner** (Prisma OK): `AvailabilityException`, `AvailabilitySchedule`
 
 ### Domain Service Pattern
@@ -315,6 +315,10 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Serverless-begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
 - **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta, färre tester, enklare UI. Lägg till redigering senare vid behov.
 - **Befintliga DDD-patterns skalar bra**: Nya domäner (t.ex. CustomerReview) byggs snabbt genom att följa Review-mallen.
+- **Query + Map-dedup for aggregeringar**: Kundlistan bygger rika vyer fran Booking-tabellen utan nya tabeller -- smart query + Map-baserad deduplicering i JS.
+- **Junction-tabell for N:M overrides**: `HorseServiceInterval(horseId, providerId)` for per-hast override. Ateranvandbart monster for overridebara relationer.
+- **Runtime-beraknad status**: Due-for-service (overdue/upcoming/ok) beraknas i API, inte DB. Alltid aktuell, ingen synkronisering.
+- **Kontrollera ALLA select-block vid nytt falt**: providerNotes missades forst i passport-route. Vid nytt falt pa befintlig modell -- sok i hela kodbasen efter alla select/mapping/query som ror modellen.
 
 ---
 
@@ -383,4 +387,4 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-02-05
+**Senast uppdaterad**: 2026-02-06

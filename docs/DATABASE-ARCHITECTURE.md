@@ -2,7 +2,7 @@
 
 > Hur databasen fungerar idag och vad som behövs för production readiness.
 
-**Senast uppdaterad:** 2026-02-04
+**Senast uppdaterad:** 2026-02-06
 **Status:** Supabase PostgreSQL, single database för dev/prod
 
 ---
@@ -43,7 +43,7 @@
 ┌─────────────────┐
 │   Supabase      │
 │   PostgreSQL    │
-│   (21 tabeller) │
+│   (22 tabeller) │
 └─────────────────┘
 ```
 
@@ -104,7 +104,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### Databasschema
 
-**21 tabeller** med index optimerade för vanliga queries:
+**22 tabeller** med index optimerade för vanliga queries:
 
 | Tabell | Kritiska Index | Syfte |
 |--------|----------------|-------|
@@ -116,6 +116,7 @@ const prismaWithExtensions = basePrisma.$extends({
 | Payment | bookingId, status+paidAt | Betalningar |
 | AvailabilityException | providerId+date | Undantag från öppettider |
 | Review | providerId+createdAt | Recensioner |
+| HorseServiceInterval | horseId+providerId (unique) | Aterbesoksintervall per hast och leverantor |
 | (+ 13 andra) | ... | ... |
 
 **Viktiga patterns:**
@@ -126,7 +127,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### RLS Security Model
 
-**Status:** Aktiverat på alla 21 tabeller + `_prisma_migrations` sedan 2026-02-04
+**Status:** Aktiverat på alla 22 tabeller + `_prisma_migrations` sedan 2026-02-04
 
 ```sql
 -- Migration: 20260204120000_enable_rls

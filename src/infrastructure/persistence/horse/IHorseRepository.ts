@@ -111,6 +111,7 @@ export interface TimelineBookingData {
   bookingDate: Date
   status: string
   customerNotes: string | null
+  providerNotes: string | null
   service: { name: string }
   provider: { businessName: string }
 }

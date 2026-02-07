@@ -23,6 +23,7 @@ export interface Booking {
   horseName?: string
   horseInfo?: string
   notes?: string
+  providerNotes?: string
   /** Message from whoever cancelled the booking */
   cancellationMessage?: string
   /** Calculated travel time to this booking (minutes) */
@@ -104,6 +105,7 @@ export interface BookingWithRelations {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  providerNotes?: string
   cancellationMessage?: string
   isManualBooking?: boolean
   createdByProviderId?: string
@@ -271,6 +273,20 @@ export interface IBookingRepository extends IRepository<Booking> {
     status: Booking['status'],
     authContext: { providerId?: string; customerId?: string },
     cancellationMessage?: string
+  ): Promise<BookingWithRelations | null>
+
+  /**
+   * Update provider notes with atomic authorization check
+   *
+   * @param id - Booking ID
+   * @param providerNotes - Notes text, or null to clear
+   * @param providerId - Provider ID for IDOR protection
+   * @returns Updated booking with relations, or null if not found/unauthorized
+   */
+  updateProviderNotesWithAuth(
+    id: string,
+    providerNotes: string | null,
+    providerId: string
   ): Promise<BookingWithRelations | null>
 
   /**

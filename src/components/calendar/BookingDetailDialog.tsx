@@ -33,6 +33,7 @@ interface BookingDetailDialogProps {
   onOpenChange: (open: boolean) => void
   onStatusUpdate?: (bookingId: string, status: string, cancellationMessage?: string) => void
   onReviewSuccess?: () => void
+  onNotesUpdate?: (bookingId: string, providerNotes: string | null) => void
 }
 
 function getStatusLabel(status: string, isPaid: boolean): string {
@@ -69,11 +70,15 @@ export function BookingDetailDialog({
   onOpenChange,
   onStatusUpdate,
   onReviewSuccess,
+  onNotesUpdate,
 }: BookingDetailDialogProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [providerNotes, setProviderNotes] = useState("")
+  const [isEditingNotes, setIsEditingNotes] = useState(false)
+  const [isSavingNotes, setIsSavingNotes] = useState(false)
 
   if (!booking) return null
 
@@ -211,6 +216,106 @@ export function BookingDetailDialog({
               </p>
             </div>
           )}
+
+          {/* Leverantorsanteckningar */}
+          {["confirmed", "completed"].includes(booking.status) ? (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-gray-700">
+                Dina anteckningar
+              </h4>
+              {isEditingNotes ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={providerNotes}
+                    onChange={(e) => setProviderNotes(e.target.value)}
+                    maxLength={2000}
+                    placeholder="Skriv anteckningar om behandlingen..."
+                    rows={3}
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      {providerNotes.length}/2000
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditingNotes(false)}
+                        disabled={isSavingNotes}
+                      >
+                        Avbryt
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          setIsSavingNotes(true)
+                          try {
+                            const res = await fetch(
+                              `/api/provider/bookings/${booking.id}/notes`,
+                              {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  providerNotes: providerNotes.trim() || null,
+                                }),
+                              }
+                            )
+                            if (res.ok) {
+                              setIsEditingNotes(false)
+                              onNotesUpdate?.(
+                                booking.id,
+                                providerNotes.trim() || null
+                              )
+                            }
+                          } finally {
+                            setIsSavingNotes(false)
+                          }
+                        }}
+                        disabled={isSavingNotes}
+                      >
+                        {isSavingNotes ? "Sparar..." : "Spara"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : booking.providerNotes ? (
+                <div
+                  className="p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition-colors"
+                  onClick={() => {
+                    setProviderNotes(booking.providerNotes || "")
+                    setIsEditingNotes(true)
+                  }}
+                >
+                  <p className="text-sm text-gray-800">
+                    {booking.providerNotes}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Klicka for att redigera
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setProviderNotes("")
+                    setIsEditingNotes(true)
+                  }}
+                >
+                  Lagg till anteckning
+                </Button>
+              )}
+            </div>
+          ) : booking.providerNotes ? (
+            <div className="p-3 bg-blue-50 rounded">
+              <h4 className="font-semibold text-sm text-gray-700 mb-1">
+                Dina anteckningar
+              </h4>
+              <p className="text-sm text-gray-800">
+                {booking.providerNotes}
+              </p>
+            </div>
+          ) : null}
 
           {/* Action-knappar */}
           {onStatusUpdate && booking.status === "pending" && (

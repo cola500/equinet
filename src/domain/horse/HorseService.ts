@@ -266,6 +266,7 @@ export class HorseService {
       providerName: b.provider.businessName,
       status: b.status,
       notes: b.customerNotes,
+      providerNotes: isProviderWithAccess ? b.providerNotes : null,
     }))
 
     const timelineNotes: TimelineNote[] = notes.map((n) => ({
@@ -301,7 +302,7 @@ export class HorseService {
     const bookings = await this.repo.getExportBookings(horseId)
     const notes = await this.repo.getExportNotes(horseId)
 
-    // Build timeline
+    // Build timeline (export = owner view, no providerNotes)
     const timelineBookings: TimelineBooking[] = bookings.map((b) => ({
       type: 'booking' as const,
       id: b.id,
@@ -310,6 +311,7 @@ export class HorseService {
       providerName: b.provider.businessName,
       status: b.status,
       notes: b.customerNotes,
+      providerNotes: null,
     }))
 
     const timelineNotes: TimelineNote[] = notes.map((n) => ({

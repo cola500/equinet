@@ -127,7 +127,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1277 unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (1289 unit/integration) + Playwright (66 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -280,9 +280,10 @@ Se `prisma/schema.prisma` för fullständig definition.
 - Profilkompletteringsindikator
 - **Recensioner & betyg**: Se och svara på kundrecensioner, genomsnittligt betyg, recensera kunder efter genomförda bokningar
 - **Kompetenser & Verifiering**: Lägg till kompetenser (utbildning, organisation, certifikat, erfarenhet, licens) med utfärdare, år, beskrivning och bilder (max 5 per post). Redigera/ta bort pending/rejected poster. Badge på profil vid godkännande
-- **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin)
+- **Hästhälsotidslinje (read-only)**: Se medicinsk historik för hästar med bokningar (veterinär, hovslagare, medicin). Leverantörsanteckningar (providerNotes) syns i tidslinjen för leverantören
 - **Kundregister**: Samlad lista över alla kunder (härledd från bokningar) med antal bokningar, hästar, senaste besök. Filter (aktiva/inaktiva) och fritextsök
 - **Besöksplanering ("Dags för besök")**: Översikt över hästar som behöver återbesök, sorterade efter angelägenhet (försenad/inom 2 veckor/ej aktuell). Individuella återbesöksintervall per häst som override:ar tjänstens default
+- **Leverantörsanteckningar**: Skriv anteckningar på bokningar (synliga bara för leverantören i bokningsdetalj och hästjournal, integritetsskyddat mot kund och publika vyer)
 - **Grupprequests**: Se öppna grupprequests, matcha och skapa bokningar för alla deltagare
 - **Rutt-planering**:
   - Visa tillgängliga flexibla beställningar sorterade efter avstånd
@@ -390,7 +391,7 @@ Se `prisma/schema.prisma` för fullständig definition.
 
 ## 🧪 Testning
 
-**1340+ tester** (66 E2E + 1277 unit/integration) med **70% coverage**.
+**1355+ tester** (66 E2E + 1289 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -415,7 +416,7 @@ npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 - **Unit Tests**: sanitize, booking utils, date-utils, geocoding, slot calculator, hooks (useAuth, useRetry, useWeekAvailability)
 - **Domain Tests**: BookingService, TravelTimeService, NotificationService, ReminderService, GroupBookingService, CustomerReviewService, PaymentGateway, AccountingGateway, InvoiceMapper, TimeSlot, Location, Entity, ValueObject, Result, Guard, DomainError
 - **Repository Tests**: BookingMapper, MockBookingRepository, ProviderRepository, ServiceRepository
-- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, customer-reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron, provider/customers, provider/horses/interval, provider/due-for-service)
+- **Integration Tests**: API routes (auth, verify-email, bookings, horses, horse-notes, horse-timeline, horse-export, horse-passport, services, providers, availability-exceptions, availability-schedule, routes, announcements, reviews, customer-reviews, notifications, verification-requests, admin-verifications, group-bookings, export/my-data, passport, upload, integrations/fortnox, cron, provider/customers, provider/horses/interval, provider/due-for-service, provider/bookings/notes)
 - **E2E Tests (66)**: Authentication, booking flow, provider flow, route planning, announcements, calendar, payment, flexible booking, security headers
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
@@ -555,6 +556,7 @@ Se [NFR.md](./NFR.md) för fullständiga Non-Functional Requirements.
 - ✅ Kundregister för leverantörer (samlad kundlista, filter, sök, hästöversikt)
 - ✅ Återbesöksintervall per häst (override av tjänstens default, leverantörsspecifikt)
 - ✅ Besöksplanering ("Dags för besök"-vy med statusbadges, filtrering, sortering)
+- ✅ Leverantörsanteckningar på bokningar (integritetsskyddat, synligt i hästjournal)
 
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar

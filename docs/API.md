@@ -103,11 +103,14 @@ Hämta bokningar för inloggad användare.
     "horseName": "Blansen",
     "horseInfo": "Lugn häst",
     "customerNotes": "Ring vid ankomst",
+    "providerNotes": "Behandlingen gick bra",
     "service": { ... },
     "provider": { ... }
   }
 ]
 ```
+
+> **Obs:** `providerNotes` inkluderas bara i provider-vy. Kunder ser inte detta falt.
 
 ---
 
@@ -485,7 +488,8 @@ Kombinerad tidslinje: bokningar (completed) + anteckningar, sorterade kronologis
     "title": "Massage",
     "providerName": "Sara Hästmassage",
     "status": "completed",
-    "notes": "Stel i ryggen"
+    "notes": "Stel i ryggen",
+    "providerNotes": "Behandlade rygg och nacke"
   },
   {
     "type": "note",
@@ -498,6 +502,191 @@ Kombinerad tidslinje: bokningar (completed) + anteckningar, sorterade kronologis
   }
 ]
 ```
+
+---
+
+## Provider: Kundregister
+
+### GET /api/provider/customers
+
+Hamta leverantorens kundregister (harledd fran bokningar).
+
+**Auth:** Required (provider)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `status` | string | `active` (senaste 6 man) eller `inactive` (aldre). Default: alla |
+| `search` | string | Fritextsokning i namn |
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "customerId": "uuid",
+    "customerName": "Anna Svensson",
+    "customerEmail": "anna@example.com",
+    "customerPhone": "0701234567",
+    "bookingCount": 5,
+    "lastBookingDate": "2026-01-20T00:00:00.000Z",
+    "horses": [
+      { "id": "uuid", "name": "Blansen" }
+    ]
+  }
+]
+```
+
+**Errors:**
+- `403` - Inte provider
+- `429` - Rate limit
+
+> **Integritetsskydd:** Bara kunder med completed bokningar for denna provider visas. Data aggregeras fran Booking-tabellen utan ny tabell.
+
+---
+
+## Provider: Aterbesoksintervall
+
+### GET /api/provider/horses/[horseId]/interval
+
+Hamta aterbesoksintervall for en hast (provider-specifikt override).
+
+**Auth:** Required (provider med bokning for hasten)
+
+**Response:** `200 OK`
+```json
+{
+  "horseId": "uuid",
+  "providerId": "uuid",
+  "intervalWeeks": 8
+}
+```
+
+**Errors:**
+- `403` - Inte provider
+- `404` - Inget intervall satt, eller saknar bokningsrelation med hasten
+
+---
+
+### PUT /api/provider/horses/[horseId]/interval
+
+Satt eller uppdatera aterbesoksintervall (upsert).
+
+**Auth:** Required (provider med bokning for hasten)
+
+**Request Body:**
+```json
+{
+  "intervalWeeks": 8
+}
+```
+
+**Validering:**
+- `intervalWeeks`: heltal, 1-52
+
+**Response:** `200 OK`
+```json
+{
+  "horseId": "uuid",
+  "providerId": "uuid",
+  "intervalWeeks": 8
+}
+```
+
+**Errors:**
+- `400` - Valideringsfel (utanfor 1-52)
+- `403` - Inte provider eller saknar bokningsrelation
+- `429` - Rate limit
+
+---
+
+### DELETE /api/provider/horses/[horseId]/interval
+
+Ta bort aterbesoksintervall (aterstall till tjanstens default).
+
+**Auth:** Required (provider med bokning for hasten)
+
+**Response:** `200 OK`
+```json
+{ "message": "Interval removed" }
+```
+
+**Errors:**
+- `403` - Inte provider
+- `404` - Inget intervall att ta bort
+
+---
+
+## Provider: Besoksplanering
+
+### GET /api/provider/due-for-service
+
+Hamta hastar som behover aterbesok, sorterade efter angelagenhet.
+
+**Auth:** Required (provider)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `status` | string | `overdue`, `upcoming`, `ok`. Default: alla |
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "horseId": "uuid",
+    "horseName": "Blansen",
+    "ownerName": "Anna Svensson",
+    "lastServiceDate": "2026-01-01T00:00:00.000Z",
+    "serviceName": "Hovverkare",
+    "intervalWeeks": 8,
+    "dueDate": "2026-02-26T00:00:00.000Z",
+    "status": "overdue" | "upcoming" | "ok",
+    "isOverride": true
+  }
+]
+```
+
+**Statusberakning (runtime):**
+- `overdue`: dueDate har passerat
+- `upcoming`: dueDate inom 2 veckor
+- `ok`: dueDate mer an 2 veckor bort
+
+**Errors:**
+- `403` - Inte provider
+- `429` - Rate limit
+
+---
+
+## Provider: Leverantorsanteckningar
+
+### PUT /api/provider/bookings/[id]/notes
+
+Uppdatera leverantorsanteckningar pa en bokning.
+
+**Auth:** Required (provider, maste aga bokningen)
+
+**Request Body:**
+```json
+{
+  "providerNotes": "Behandlingen gick bra, behover uppfoljning om 8 veckor" | null
+}
+```
+
+**Validering:**
+- `providerNotes`: string (max 2000 tecken) eller null (rensar anteckning)
+- Bokningen maste ha status `confirmed` eller `completed`
+- `.strict()` -- inga extra falt tillats
+
+**Response:** `200 OK` -- uppdaterad bokning
+
+**Errors:**
+- `400` - Valideringsfel, felaktig status (pending/cancelled)
+- `404` - Bokning finns inte **eller saknar behorighet** (IDOR-skydd)
+- `429` - Rate limit
+
+> **Integritetsskydd:** `providerNotes` visas BARA for leverantoren i timeline och bokningsdetaljer. Agaren och publika vyer (hastpass) ser INTE leverantorsanteckningar.
+
+> **Sakerhet:** `updateProviderNotesWithAuth` anvander atomart WHERE (`id + providerId`) for IDOR-skydd.
 
 ---
 
@@ -1654,4 +1843,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-02-02 (Manuell bokning, kundsok, kundhast-endpoints)*
+*Senast uppdaterad: 2026-02-06 (Kundregister, aterbesoksplanering, leverantorsanteckningar)*

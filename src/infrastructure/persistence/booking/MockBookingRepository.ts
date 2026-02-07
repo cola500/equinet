@@ -326,6 +326,40 @@ export class MockBookingRepository
   // AUTH-AWARE COMMAND METHODS
   // ==========================================
 
+  async updateProviderNotesWithAuth(
+    id: string,
+    providerNotes: string | null,
+    providerId: string
+  ): Promise<BookingWithRelations | null> {
+    const booking = this.bookings.get(id)
+    if (!booking) return null
+    if (booking.providerId !== providerId) return null
+
+    const updated = { ...booking, providerNotes: providerNotes ?? undefined, updatedAt: new Date() }
+    this.bookings.set(id, updated)
+
+    return {
+      ...updated,
+      customerNotes: updated.notes,
+      providerNotes: providerNotes ?? undefined,
+      customer: {
+        firstName: 'Mock',
+        lastName: 'Customer',
+        email: `customer-${updated.customerId}@example.com`,
+        phone: '+46701234567',
+      },
+      service: {
+        name: 'Mock Service',
+        price: 500,
+        durationMinutes: 60,
+      },
+      provider: {
+        businessName: 'Mock Provider AB',
+        user: { firstName: 'Mock', lastName: 'Provider' },
+      },
+    }
+  }
+
   async updateStatusWithAuth(
     id: string,
     status: Booking['status'],

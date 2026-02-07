@@ -255,6 +255,7 @@ export class PrismaBookingRepository
             horseName: true,
             horseInfo: true,
             customerNotes: true,
+            providerNotes: true,
             isManualBooking: true,
             createdByProviderId: true,
             createdAt: true,
@@ -352,6 +353,7 @@ export class PrismaBookingRepository
         horseName: true,
         horseInfo: true,
         customerNotes: true,
+        providerNotes: true,
         cancellationMessage: true,
         isManualBooking: true,
         createdByProviderId: true,
@@ -541,6 +543,7 @@ export class PrismaBookingRepository
           horseName: true,
           horseInfo: true,
           customerNotes: true,
+          providerNotes: true,
           cancellationMessage: true,
           createdAt: true,
           updatedAt: true,
@@ -581,6 +584,75 @@ export class PrismaBookingRepository
         return null
       }
       console.error(`Failed to update booking ${id}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Update provider notes with atomic authorization check
+   *
+   * Uses WHERE clause with both id AND providerId for IDOR prevention.
+   * Returns null if booking not found or user not authorized.
+   */
+  async updateProviderNotesWithAuth(
+    id: string,
+    providerNotes: string | null,
+    providerId: string
+  ): Promise<BookingWithRelations | null> {
+    try {
+      const updated = await prisma.booking.update({
+        where: { id, providerId },
+        data: { providerNotes },
+        select: {
+          id: true,
+          customerId: true,
+          providerId: true,
+          serviceId: true,
+          bookingDate: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          horseId: true,
+          horseName: true,
+          horseInfo: true,
+          customerNotes: true,
+          providerNotes: true,
+          cancellationMessage: true,
+          isManualBooking: true,
+          createdByProviderId: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          service: {
+            select: {
+              name: true,
+              price: true,
+              durationMinutes: true,
+            },
+          },
+          horse: {
+            select: {
+              id: true,
+              name: true,
+              breed: true,
+              gender: true,
+            },
+          },
+        },
+      })
+
+      return updated as BookingWithRelations
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        return null
+      }
       throw error
     }
   }

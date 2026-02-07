@@ -180,8 +180,8 @@ export class MockHorseRepository implements IHorseRepository {
     return Array.from(this.bookings.values())
       .filter((b) => b.horseId === horseId && b.status === 'completed')
       .sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime())
-      .map(({ id, bookingDate, status, customerNotes, service, provider }) => ({
-        id, bookingDate, status, customerNotes, service, provider,
+      .map(({ id, bookingDate, status, customerNotes, providerNotes, service, provider }) => ({
+        id, bookingDate, status, customerNotes, providerNotes: providerNotes ?? null, service, provider,
       }))
   }
 

@@ -123,6 +123,7 @@ export interface CalendarBooking {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  providerNotes?: string | null
   isManualBooking?: boolean
   service: CalendarService
   customer: CalendarCustomer

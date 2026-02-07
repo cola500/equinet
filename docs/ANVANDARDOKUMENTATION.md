@@ -401,6 +401,16 @@ Under **Bokningar** ser du alla inkommande och befintliga bokningar.
 - Tjänst, datum, tid
 - Hästinformation och eventuella kundkommentarer
 
+**Leverantörsanteckningar:**
+
+På bekräftade och genomförda bokningar kan du skriva egna anteckningar -- till exempel vad du observerade, vilken behandling du gav, eller vad som bör följas upp nästa gång.
+
+- Klicka på en bokning i kalendern för att öppna bokningsdetaljen
+- Skriv din anteckning i textfältet "Leverantörsanteckningar"
+- Klicka **Spara** (eller **Rensa** för att ta bort)
+
+**Integritetsskydd:** Dina anteckningar är bara synliga för dig. Kunden ser dem inte, och de visas inte i hästpasset eller andra publika vyer. Anteckningarna visas även i hästens hälsotidslinje (se nedan) så att du kan se dina tidigare observationer inför nästa besök.
+
 ---
 
 ### Manuell bokning
@@ -650,6 +660,7 @@ Som leverantör kan du se en begränsad hälsotidslinje för hästar som är kop
 - Hovvårdshistorik
 - Skadehistorik
 - Medicineringshistorik
+- Dina egna leverantörsanteckningar (kopplade till respektive bokning)
 
 **Du ser inte:** Ägarens privata anteckningar (kategorin "Övrigt").
 
