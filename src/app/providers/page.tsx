@@ -72,14 +72,11 @@ export default function ProvidersPage() {
   const [searchPlaceName, setSearchPlaceName] = useState<string | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
 
-  useEffect(() => {
-    fetchProviders()
-  }, [])
-
   // Debounce search - sök automatiskt efter 500ms av inaktivitet
+  // Initial load (tom sökning) hämtar direkt, sökningar debouncar
   useEffect(() => {
-    // Show searching indicator immediately
-    if (search || city) {
+    const hasFilters = search || city
+    if (hasFilters) {
       setIsSearching(true)
     }
 
@@ -87,10 +84,12 @@ export default function ProvidersPage() {
       ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }
       : undefined
 
+    const delay = hasFilters ? 500 : 0
+
     const timer = setTimeout(() => {
       fetchProviders(search, city, geo)
       setIsSearching(false)
-    }, 500)
+    }, delay)
 
     return () => {
       clearTimeout(timer)
