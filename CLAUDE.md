@@ -315,6 +315,11 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Definiera error-kontrakt före implementation**: Bestäm HTTP-status-mappning i förväg.
 - **`select` i repository måste inkludera alla fält UI:n behöver**: Kontrollera vid schema-ändringar.
 - **Serverless-begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
+- **Vercel region MÅSTE matcha Supabase**: `regions: ["fra1"]` i `vercel.json` for `eu-central-2`. Utan detta: ~150ms latens per query istallet for ~5ms.
+- **`connection_limit=1` i serverless**: Varje Vercel-instans hanterar en request. `connection_limit=10` = 10x for hog belastning pa Supabase pooler.
+- **Undvik dubbel-fetch i React**: `useEffect([], [])` + debounce-effect med samma deps triggas bada vid mount. Lat debounce-effecten hantera allt med `delay = hasFilters ? 500 : 0`.
+- **Commit innan deploy**: Deploya ALDRIG till Vercel utan att committa forst. Produktion och git maste vara i synk.
+- **Kor `get_advisors` efter nya tabeller**: RLS missades pa `HorseServiceInterval`. Supabase security linter fangar detta.
 - **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta, färre tester, enklare UI. Lägg till redigering senare vid behov.
 - **Befintliga DDD-patterns skalar bra**: Nya domäner (t.ex. CustomerReview) byggs snabbt genom att följa Review-mallen.
 - **Query + Map-dedup for aggregeringar**: Kundlistan bygger rika vyer fran Booking-tabellen utan nya tabeller -- smart query + Map-baserad deduplicering i JS.
