@@ -127,13 +127,14 @@ describe("useWeekAvailability", () => {
     await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(14))
   })
 
-  it("does not fetch when providerId is empty", () => {
+  it("does not fetch when providerId is empty", async () => {
     const { result } = renderHook(() =>
       useWeekAvailability("", new Date("2026-01-05"))
     )
 
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
     expect(mockFetch).not.toHaveBeenCalled()
-    expect(result.current.isLoading).toBe(false)
     expect(result.current.weekData).toEqual([])
   })
 })

@@ -154,7 +154,7 @@ export function MobileBookingFlow({
           </div>
         </DrawerHeader>
 
-        <div className="overflow-y-auto max-h-[60vh] px-4 pb-4">
+        <div className="overflow-y-auto max-h-[60vh] px-4 pb-4" data-vaul-no-drag>
           {/* Step 1: Select booking type */}
           {step === "selectType" && (
             <div className="space-y-3">

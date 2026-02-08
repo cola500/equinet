@@ -57,7 +57,7 @@ export function useWeekAvailability(
   options?: UseWeekAvailabilityOptions
 ): UseWeekAvailabilityResult {
   const [weekData, setWeekData] = useState<DayAvailability[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Normalize date to string to prevent infinite loops from Date object references
@@ -74,6 +74,7 @@ export function useWeekAvailability(
   const fetchWeekAvailability = useCallback(async () => {
     if (!providerId) {
       setWeekData([])
+      setIsLoading(false)
       return
     }
 
