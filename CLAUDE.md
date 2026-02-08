@@ -326,6 +326,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Junction-tabell for N:M overrides**: `HorseServiceInterval(horseId, providerId)` for per-hast override. Ateranvandbart monster for overridebara relationer.
 - **Runtime-beraknad status**: Due-for-service (overdue/upcoming/ok) beraknas i API, inte DB. Alltid aktuell, ingen synkronisering.
 - **Kontrollera ALLA select-block vid nytt falt**: providerNotes missades forst i passport-route. Vid nytt falt pa befintlig modell -- sok i hela kodbasen efter alla select/mapping/query som ror modellen.
+- **Hook-extrahering för mobil/desktop**: Extrahera logik till hook -> skapa två UI-skal (mobil Drawer + desktop Dialog) -> sidan blir limkod med `isMobile ? <Mobil /> : <Desktop />`. Ger testbar logik, separerade UI-varianter, kraftig radreducering.
+- **ResponsiveDialog-mönster**: `src/components/ui/responsive-dialog.tsx` wrapprar Dialog (desktop) + Drawer (mobil) bakom gemensamt API. Återanvänd för alla modala flöden.
+- **Touch targets min-h-[44px]**: Apple HIG-standard. Lägg till systematiskt på alla interaktiva element i mobil-flöden (knappar, inputs, select, radio).
 
 ---
 
@@ -394,4 +397,4 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-02-06
+**Senast uppdaterad**: 2026-02-08

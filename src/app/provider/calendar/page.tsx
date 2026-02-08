@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
+import { useIsMobile } from "@/hooks/useMediaQuery"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
 import { useServices } from "@/hooks/useServices"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
@@ -18,20 +19,6 @@ import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
-
-// Detektera om vi är på mobil (client-side)
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
-
-  return isMobile
-}
 
 export default function ProviderCalendarPage() {
   const router = useRouter()

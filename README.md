@@ -187,7 +187,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ### Kärnfunktioner
 - Autentisering (rollval, email-verifiering, sessions)
-- Bokning (fast tid + flexibla beställningar)
+- Bokning (fast tid + flexibla beställningar, mobil-först med stegvis Drawer)
 - Leverantörshantering (profil, tjänster, öppettider, kalender)
 - Hästregister med hälsotidslinje och hästpass
 
