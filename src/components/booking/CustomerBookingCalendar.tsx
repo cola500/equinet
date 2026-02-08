@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { addWeeks, subWeeks, startOfWeek } from "date-fns"
+import { addWeeks, subWeeks, startOfWeek, format } from "date-fns"
 import { CalendarHeader } from "@/components/calendar/CalendarHeader"
 import { DayColumn } from "./DayColumn"
 import {
@@ -193,7 +193,10 @@ function MobileDayView({
   selectedSlot,
   onSlotSelect,
 }: MobileDayViewProps) {
-  const [activeDay, setActiveDay] = useState(0)
+  // Default to today (or first future day) instead of always Monday
+  const todayStr = format(new Date(), "yyyy-MM-dd")
+  const defaultDay = days.findIndex((d) => d.date >= todayStr)
+  const [activeDay, setActiveDay] = useState(defaultDay >= 0 ? defaultDay : 0)
 
   if (days.length === 0) return null
 
