@@ -75,7 +75,7 @@ describe("GET /api/providers/[id]/availability-exceptions/[date]", () => {
 
     expect(response.status).toBe(404)
     const data = await response.json()
-    expect(data.error).toBe("Exception not found")
+    expect(data.error).toBe("Undantag hittades inte")
   })
 
   it("should return 400 for invalid date format", async () => {
@@ -88,7 +88,7 @@ describe("GET /api/providers/[id]/availability-exceptions/[date]", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toContain("Invalid date format")
+    expect(data.error).toContain("Ogiltigt datumformat")
   })
 
   it("should return 400 for date with wrong separator", async () => {
@@ -145,7 +145,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
     expect(response.status).toBe(200)
     const data = await response.json()
-    expect(data.message).toBe("Exception deleted")
+    expect(data.message).toBe("Undantag borttaget")
     expect(data.date).toBe("2026-01-27")
   })
 
@@ -174,7 +174,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
     expect(response.status).toBe(404)
     const data = await response.json()
-    expect(data.error).toBe("Exception not found")
+    expect(data.error).toBe("Undantag hittades inte")
   })
 
   it("should return 400 for invalid date format", async () => {
@@ -193,12 +193,12 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toContain("Invalid date format")
+    expect(data.error).toContain("Ogiltigt datumformat")
   })
 
   it("should return 401 if not authenticated", async () => {
     vi.mocked(authServer.auth).mockRejectedValue(
-      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     )
 
     const request = new Request(
@@ -267,7 +267,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
     expect(response.status).toBe(429)
     const data = await response.json()
-    expect(data.error).toContain("Too many requests")
+    expect(data.error).toContain("För många förfrågningar")
   })
 
   it("should call delete with correct parameters", async () => {

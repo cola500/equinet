@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     const providerId = session.user.providerId
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json()
     } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 
     // Validate
@@ -99,14 +99,14 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error creating customer review", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to create customer review" },
+      { error: "Kunde inte skapa kundrecension" },
       { status: 500 }
     )
   }
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     const repository = new CustomerReviewRepository()
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Error fetching customer reviews", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch customer reviews" },
+      { error: "Kunde inte hämta kundrecensioner" },
       { status: 500 }
     )
   }

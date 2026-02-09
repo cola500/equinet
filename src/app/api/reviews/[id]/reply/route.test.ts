@@ -98,7 +98,7 @@ describe('POST /api/reviews/[id]/reply', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 404 when review not found', async () => {
@@ -148,7 +148,7 @@ describe('POST /api/reviews/[id]/reply', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 409 when reply already exists', async () => {

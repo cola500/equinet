@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -128,14 +128,14 @@ export async function POST(request: NextRequest) {
 
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: err.issues },
+        { error: "Valideringsfel", details: err.issues },
         { status: 400 }
       )
     }
 
     logger.error("Failed to create group booking", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to create group booking" },
+      { error: "Kunde inte skapa gruppbokning" },
       { status: 500 }
     )
   }
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Failed to fetch group bookings", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to fetch group bookings" },
+      { error: "Kunde inte hämta gruppbokningar" },
       { status: 500 }
     )
   }

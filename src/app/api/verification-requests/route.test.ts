@@ -223,7 +223,7 @@ describe("POST /api/verification-requests", () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe("Validation error")
+    expect(data.error).toBe("Valideringsfel")
   })
 
   it("should return 400 when title is missing", async () => {

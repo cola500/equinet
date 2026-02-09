@@ -124,6 +124,6 @@ describe('GET /api/providers/[id]/reviews', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 })

@@ -28,17 +28,17 @@ export async function PUT(
     // 1. Auth
     const session = await auth()
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
     }
 
     // 2. Rate limiting
     const isAllowed = await rateLimiters.api(session.user.id)
     if (!isAllowed) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     // 3. Get provider
@@ -55,7 +55,7 @@ export async function PUT(
     } catch {
       logger.warn("Invalid JSON in provider notes request")
       return NextResponse.json(
-        { error: "Invalid request body" },
+        { error: "Ogiltig JSON" },
         { status: 400 }
       )
     }
@@ -97,7 +97,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
@@ -107,7 +107,7 @@ export async function PUT(
       error instanceof Error ? error : new Error(String(error))
     )
     return NextResponse.json(
-      { error: "Internal error" },
+      { error: "Internt serverfel" },
       { status: 500 }
     )
   }

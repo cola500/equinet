@@ -52,7 +52,7 @@ export async function GET(
     const queryResult = querySchema.safeParse({ from, to })
     if (!queryResult.success) {
       return NextResponse.json(
-        { error: "Invalid query parameters", details: queryResult.error.issues },
+        { error: "Ogiltiga frågeparametrar", details: queryResult.error.issues },
         { status: 400 }
       )
     }
@@ -65,7 +65,7 @@ export async function GET(
 
     if (!provider) {
       return NextResponse.json(
-        { error: "Provider not found" },
+        { error: "Leverantör hittades inte" },
         { status: 404 }
       )
     }
@@ -101,7 +101,7 @@ export async function GET(
     return NextResponse.json(formattedExceptions)
   } catch (error) {
     logger.error("Error fetching availability exceptions", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internal error", { status: 500 })
+    return new Response("Internt serverfel", { status: 500 })
   }
 }
 
@@ -129,7 +129,7 @@ export async function POST(
     const isAllowed = await rateLimiters.profileUpdate(session.user.id)
     if (!isAllowed) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait before making more changes." },
+        { error: "För många förfrågningar. Vänta en stund innan du gör fler ändringar." },
         { status: 429 }
       )
     }
@@ -155,7 +155,7 @@ export async function POST(
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -166,7 +166,7 @@ export async function POST(
     // If not closed, require both startTime and endTime
     if (!validated.isClosed && (!validated.startTime || !validated.endTime)) {
       return NextResponse.json(
-        { error: "startTime and endTime required when not closed" },
+        { error: "startTime och endTime krävs när dagen inte är stängd" },
         { status: 400 }
       )
     }
@@ -215,7 +215,7 @@ export async function POST(
     if (error instanceof z.ZodError) {
       logger.warn("Zod validation error", { issues: JSON.stringify(error.issues) })
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }

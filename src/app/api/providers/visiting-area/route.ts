@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logger.error("Error fetching providers by visiting area", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch providers" },
+      { error: "Kunde inte hämta leverantörer" },
       { status: 500 }
     )
   }

@@ -41,7 +41,7 @@ export async function GET(
     return NextResponse.json(availability)
   } catch (error) {
     logger.error("Error fetching availability schedule", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internal error", { status: 500 })
+    return new Response("Internt serverfel", { status: 500 })
   }
 }
 
@@ -59,7 +59,7 @@ export async function PUT(
 
     // Provider check
     if (session.user.userType !== "provider") {
-      return new Response("Only providers can update availability", { status: 403 })
+      return new Response("Bara leverantörer kan uppdatera tillgänglighet", { status: 403 })
     }
 
     const { id: providerId } = await params
@@ -71,7 +71,7 @@ export async function PUT(
     })
 
     if (!provider || provider.userId !== session.user.id) {
-      return new Response("Forbidden - not your provider profile", { status: 403 })
+      return new Response("Åtkomst nekad - inte din leverantörsprofil", { status: 403 })
     }
 
     // Parse request body with error handling
@@ -81,7 +81,7 @@ export async function PUT(
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -134,14 +134,14 @@ export async function PUT(
     if (error instanceof z.ZodError) {
       logger.warn("Zod validation error", { issues: JSON.stringify(error.issues) })
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
     logger.error("Error updating availability schedule", error instanceof Error ? error : new Error(String(error)))
     // Return more detailed error for debugging
     return NextResponse.json(
-      { error: "Internal error", details: error instanceof Error ? error.message : "Unknown error" },
+      { error: "Internt serverfel", details: error instanceof Error ? error.message : "Okänt fel" },
       { status: 500 }
     )
   }

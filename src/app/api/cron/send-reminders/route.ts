@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const expectedSecret = process.env.CRON_SECRET
 
   if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 
   try {
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       error instanceof Error ? error : new Error(String(error))
     )
     return NextResponse.json(
-      { error: "Failed to process reminders" },
+      { error: "Kunde inte bearbeta påminnelser" },
       { status: 500 }
     )
   }

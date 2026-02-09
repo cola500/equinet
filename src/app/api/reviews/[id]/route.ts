@@ -21,7 +21,7 @@ export async function PUT(
     const { id: reviewId } = await params
 
     if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Parse JSON
@@ -29,7 +29,7 @@ export async function PUT(
     try {
       body = await request.json()
     } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 
     const validated = updateReviewSchema.parse(body)
@@ -45,9 +45,9 @@ export async function PUT(
       // Could be "not found" or "not authorized" - check which
       const exists = await reviewRepo.exists(reviewId)
       if (!exists) {
-        return NextResponse.json({ error: "Review not found" }, { status: 404 })
+        return NextResponse.json({ error: "Omdöme hittades inte" }, { status: 404 })
       }
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
+      return NextResponse.json({ error: "Ej behörig" }, { status: 403 })
     }
 
     return NextResponse.json(updated)
@@ -58,14 +58,14 @@ export async function PUT(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error updating review", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to update review" },
+      { error: "Kunde inte uppdatera omdöme" },
       { status: 500 }
     )
   }
@@ -81,7 +81,7 @@ export async function DELETE(
     const { id: reviewId } = await params
 
     if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Atomic delete with authorization (IDOR-safe)
@@ -91,9 +91,9 @@ export async function DELETE(
       // Could be "not found" or "not authorized" - check which
       const exists = await reviewRepo.exists(reviewId)
       if (!exists) {
-        return NextResponse.json({ error: "Review not found" }, { status: 404 })
+        return NextResponse.json({ error: "Omdöme hittades inte" }, { status: 404 })
       }
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
+      return NextResponse.json({ error: "Ej behörig" }, { status: 403 })
     }
 
     return new Response(null, { status: 204 })
@@ -104,7 +104,7 @@ export async function DELETE(
 
     logger.error("Error deleting review", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to delete review" },
+      { error: "Kunde inte ta bort omdöme" },
       { status: 500 }
     )
   }

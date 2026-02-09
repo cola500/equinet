@@ -391,7 +391,7 @@ describe('GET /api/providers', () => {
 
       // Assert
       expect(response.status).toBe(400)
-      expect(data.error).toContain('latitude, longitude, and radiusKm')
+      expect(data.error).toContain('latitud, longitud och radie')
     })
 
     it('should return 400 when radiusKm is invalid', async () => {
@@ -406,7 +406,7 @@ describe('GET /api/providers', () => {
 
       // Assert
       expect(response.status).toBe(400)
-      expect(data.error).toContain('radiusKm must be positive')
+      expect(data.error).toContain('Radien måste vara ett positivt tal')
     })
 
     it('should skip providers without coordinates when geo-filtering', async () => {

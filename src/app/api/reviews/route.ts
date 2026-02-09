@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Parse JSON
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json()
     } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 
     // Validate
@@ -108,14 +108,14 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error creating review", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to create review" },
+      { error: "Kunde inte skapa omdöme" },
       { status: 500 }
     )
   }

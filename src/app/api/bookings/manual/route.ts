@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid JSON", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
@@ -181,6 +181,6 @@ export async function POST(request: NextRequest) {
     }
 
     logger.error("Unexpected error during manual booking", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
+    return NextResponse.json({ error: "Kunde inte skapa bokning" }, { status: 500 })
   }
 }

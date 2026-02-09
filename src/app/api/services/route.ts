@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Use repository to find provider
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Error fetching services", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch services" },
+      { error: "Kunde inte hämta tjänster" },
       { status: 500 }
     )
   }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Rate limiting - 10 service creations per hour per provider
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -120,14 +120,14 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error creating service", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to create service" },
+      { error: "Kunde inte skapa tjänst" },
       { status: 500 }
     )
   }

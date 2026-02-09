@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
       return NextResponse.json(
-        { error: 'Invalid coordinates' },
+        { error: 'Ogiltiga koordinater' },
         { status: 400 }
       )
     }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
       return NextResponse.json(
-        { error: 'No route found' },
+        { error: 'Ingen rutt hittades' },
         { status: 404 }
       )
     }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logger.error("Routing proxy error", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: error.message || 'Internt serverfel' },
       { status: 500 }
     )
   }

@@ -114,7 +114,7 @@ describe('GET /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return 404 when provider is not active', async () => {
@@ -131,7 +131,7 @@ describe('GET /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return provider with empty services array if no active services', async () => {
@@ -331,7 +331,7 @@ describe('PUT /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toContain('geocode')
+    expect(data.error).toContain('geokoda')
   })
 
   it('should return 401 if not authenticated', async () => {
@@ -351,7 +351,7 @@ describe('PUT /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 404 if user does not own provider profile', async () => {
@@ -376,7 +376,7 @@ describe('PUT /api/providers/[id]', () => {
 
     // Assert - Returns 404 (not 403) for security best practice
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return 404 if provider not found', async () => {
@@ -400,7 +400,7 @@ describe('PUT /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return 400 for invalid JSON body', async () => {
@@ -427,7 +427,7 @@ describe('PUT /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid JSON')
+    expect(data.error).toBe('Ogiltig JSON')
   })
 
   it('should return 400 for validation errors', async () => {
@@ -457,6 +457,6 @@ describe('PUT /api/providers/[id]', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 })

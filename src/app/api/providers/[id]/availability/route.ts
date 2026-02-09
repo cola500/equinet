@@ -65,7 +65,7 @@ export async function GET(
 
     if (!date) {
       return NextResponse.json(
-        { error: "Date parameter is required" },
+        { error: "Datumparameter krävs" },
         { status: 400 }
       )
     }
@@ -83,7 +83,7 @@ export async function GET(
 
     if (!provider) {
       return NextResponse.json(
-        { error: "Provider not found" },
+        { error: "Leverantör hittades inte" },
         { status: 404 }
       )
     }
@@ -275,7 +275,7 @@ export async function GET(
   } catch (error) {
     logger.error("Error fetching availability", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch availability" },
+      { error: "Kunde inte hämta tillgänglighet" },
       { status: 500 }
     )
   }

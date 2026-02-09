@@ -56,7 +56,7 @@ export async function PATCH(
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }

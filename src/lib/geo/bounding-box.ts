@@ -12,7 +12,7 @@
 import { z } from "zod"
 
 const EARTH_RADIUS_KM = 6371
-const MAX_RADIUS_KM = 100
+const MAX_RADIUS_KM = 200
 
 /**
  * Bounding box coordinates

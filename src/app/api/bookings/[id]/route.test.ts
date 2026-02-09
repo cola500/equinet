@@ -234,7 +234,7 @@ describe('PUT /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 404 when provider profile not found', async () => {
@@ -273,7 +273,7 @@ describe('PUT /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid request body')
+    expect(data.error).toBe('Ogiltig JSON')
   })
 
   it('should save cancellationMessage when status is cancelled', async () => {
@@ -371,7 +371,7 @@ describe('PUT /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should work without cancellationMessage (backwards compatible)', async () => {
@@ -481,7 +481,7 @@ describe('DELETE /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toContain('not found')
+    expect(data.error).toContain('hittades inte')
   })
 
   it('should return 404 when not authorized', async () => {
@@ -501,7 +501,7 @@ describe('DELETE /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toContain('not found')
+    expect(data.error).toContain('hittades inte')
   })
 
   it('should return 404 when provider profile not found', async () => {

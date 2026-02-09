@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     const provider = await prisma.provider.findUnique({
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Error fetching provider profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch provider profile" },
+      { error: "Kunde inte hämta leverantörsprofil" },
       { status: 500 }
     )
   }
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
     const session = await auth()
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Parse request body with error handling
@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest) {
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -122,7 +122,7 @@ export async function PUT(request: NextRequest) {
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
@@ -175,7 +175,7 @@ export async function PUT(request: NextRequest) {
     // Generic error fallback
     logger.error("Unexpected error updating provider profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to update provider profile" },
+      { error: "Kunde inte uppdatera leverantörsprofil" },
       { status: 500 }
     )
   }

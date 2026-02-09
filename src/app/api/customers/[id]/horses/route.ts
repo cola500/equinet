@@ -37,7 +37,7 @@ export async function GET(
     const providerRepo = new ProviderRepository()
     const provider = await providerRepo.findByUserId(session.user.id)
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Verify provider has a booking relationship with customer (IDOR protection)
@@ -48,7 +48,7 @@ export async function GET(
 
     if (!hasRelation) {
       return NextResponse.json(
-        { error: "Forbidden" },
+        { error: "Åtkomst nekad" },
         { status: 403 }
       )
     }

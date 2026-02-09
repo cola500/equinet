@@ -101,7 +101,7 @@ describe('PUT /api/reviews/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Review not found')
+    expect(data.error).toBe('Omdöme hittades inte')
   })
 
   it('should return 403 when customer does not own the review', async () => {
@@ -122,7 +122,7 @@ describe('PUT /api/reviews/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toBe('Not authorized')
+    expect(data.error).toBe('Ej behörig')
   })
 
   it('should return 400 for invalid rating', async () => {
@@ -135,7 +135,7 @@ describe('PUT /api/reviews/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for comment exceeding 500 characters', async () => {
@@ -151,7 +151,7 @@ describe('PUT /api/reviews/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 })
 
@@ -203,7 +203,7 @@ describe('DELETE /api/reviews/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Review not found')
+    expect(data.error).toBe('Omdöme hittades inte')
   })
 
   it('should return 403 when customer does not own the review', async () => {
@@ -224,6 +224,6 @@ describe('DELETE /api/reviews/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toBe('Not authorized')
+    expect(data.error).toBe('Ej behörig')
   })
 })

@@ -84,7 +84,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid JSON", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }

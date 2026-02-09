@@ -19,7 +19,7 @@ export async function GET(
     // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json(
-        { error: "Invalid date format. Use YYYY-MM-DD" },
+        { error: "Ogiltigt datumformat. Använd ÅÅÅÅ-MM-DD" },
         { status: 400 }
       )
     }
@@ -35,7 +35,7 @@ export async function GET(
 
     if (!exception) {
       return NextResponse.json(
-        { error: "Exception not found" },
+        { error: "Undantag hittades inte" },
         { status: 404 }
       )
     }
@@ -46,7 +46,7 @@ export async function GET(
     })
   } catch (error) {
     logger.error("Error fetching availability exception", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internal error", { status: 500 })
+    return new Response("Internt serverfel", { status: 500 })
   }
 }
 
@@ -64,14 +64,14 @@ export async function DELETE(
 
     // Provider check
     if (session.user.userType !== "provider") {
-      return new Response("Only providers can delete availability exceptions", { status: 403 })
+      return new Response("Bara leverantörer kan ta bort tillgänglighetsundantag", { status: 403 })
     }
 
     // Rate limiting
     const isAllowed = await rateLimiters.profileUpdate(session.user.id)
     if (!isAllowed) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait before making more changes." },
+        { error: "För många förfrågningar. Vänta en stund innan du gör fler ändringar." },
         { status: 429 }
       )
     }
@@ -81,7 +81,7 @@ export async function DELETE(
     // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json(
-        { error: "Invalid date format. Use YYYY-MM-DD" },
+        { error: "Ogiltigt datumformat. Använd ÅÅÅÅ-MM-DD" },
         { status: 400 }
       )
     }
@@ -93,7 +93,7 @@ export async function DELETE(
     })
 
     if (!provider || provider.userId !== session.user.id) {
-      return new Response("Forbidden - not your provider profile", { status: 403 })
+      return new Response("Åtkomst nekad - inte din leverantörsprofil", { status: 403 })
     }
 
     // Delete exception
@@ -107,7 +107,7 @@ export async function DELETE(
     })
 
     return NextResponse.json({
-      message: "Exception deleted",
+      message: "Undantag borttaget",
       date: deleted.date.toISOString().split("T")[0],
     })
   } catch (error) {
@@ -124,12 +124,12 @@ export async function DELETE(
       error.code === "P2025"
     ) {
       return NextResponse.json(
-        { error: "Exception not found" },
+        { error: "Undantag hittades inte" },
         { status: 404 }
       )
     }
 
     logger.error("Error deleting availability exception", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internal error", { status: 500 })
+    return new Response("Internt serverfel", { status: 500 })
   }
 }

@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Failed to fetch bookings", error as Error, {})
     return NextResponse.json(
-      { error: "Failed to fetch bookings" },
+      { error: "Kunde inte hämta bokningar" },
       { status: 500 }
     )
   }
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
     // Zod validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
@@ -254,6 +254,6 @@ export async function POST(request: NextRequest) {
     }
 
     logger.error("Unexpected error during booking", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
+    return NextResponse.json({ error: "Kunde inte skapa bokning" }, { status: 500 })
   }
 }

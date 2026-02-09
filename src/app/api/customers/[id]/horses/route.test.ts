@@ -79,7 +79,7 @@ describe('GET /api/customers/:id/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toBe('Forbidden')
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 403 for non-provider users', async () => {

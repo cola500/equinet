@@ -97,7 +97,7 @@ describe('PUT /api/services/[id]', () => {
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response when not authenticated
     vi.mocked(auth).mockRejectedValue(
-      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     )
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -113,7 +113,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 401 when user is not a provider', async () => {
@@ -135,7 +135,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 404 when provider profile not found', async () => {
@@ -246,7 +246,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid JSON body', async () => {
@@ -274,7 +274,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid request body')
+    expect(data.error).toBe('Ogiltig JSON')
   })
 })
 
@@ -317,7 +317,7 @@ describe('DELETE /api/services/[id]', () => {
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response when not authenticated
     vi.mocked(auth).mockRejectedValue(
-      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     )
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -332,7 +332,7 @@ describe('DELETE /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 401 when user is not a provider', async () => {
@@ -353,7 +353,7 @@ describe('DELETE /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 404 when provider profile not found', async () => {

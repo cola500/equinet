@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     if (!address) {
       return NextResponse.json(
-        { error: "Address parameter is required" },
+        { error: "Adressparameter krävs" },
         { status: 400 }
       )
     }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     if (!result) {
       return NextResponse.json(
-        { error: "Could not geocode address" },
+        { error: "Kunde inte geokoda adressen" },
         { status: 404 }
       )
     }
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logger.error("Error in geocode endpoint", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to geocode address" },
+      { error: "Kunde inte geokoda adressen" },
       { status: 500 }
     )
   }

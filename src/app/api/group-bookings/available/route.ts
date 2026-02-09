@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Failed to fetch available group bookings", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to fetch available group bookings" },
+      { error: "Kunde inte hämta tillgängliga gruppbokningar" },
       { status: 500 }
     )
   }

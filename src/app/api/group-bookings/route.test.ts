@@ -137,7 +137,7 @@ describe('POST /api/group-bookings', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 when dateFrom is in the past', async () => {
@@ -163,7 +163,7 @@ describe('POST /api/group-bookings', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 when date span exceeds 30 days', async () => {
@@ -189,7 +189,7 @@ describe('POST /api/group-bookings', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 when maxParticipants is out of range', async () => {
@@ -213,7 +213,7 @@ describe('POST /api/group-bookings', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid JSON', async () => {
@@ -230,7 +230,7 @@ describe('POST /api/group-bookings', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid request body')
+    expect(data.error).toBe('Ogiltig JSON')
   })
 })
 

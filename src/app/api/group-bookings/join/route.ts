@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid request body" },
+        { error: "Ogiltig JSON" },
         { status: 400 }
       )
     }
@@ -72,14 +72,14 @@ export async function POST(request: NextRequest) {
 
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: err.issues },
+        { error: "Valideringsfel", details: err.issues },
         { status: 400 }
       )
     }
 
     logger.error("Failed to join group booking", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to join group booking" },
+      { error: "Kunde inte gå med i gruppbokning" },
       { status: 500 }
     )
   }

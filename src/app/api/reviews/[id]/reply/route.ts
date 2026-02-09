@@ -33,7 +33,7 @@ export async function POST(
     const { id: reviewId } = await params
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Parse JSON
@@ -41,7 +41,7 @@ export async function POST(
     try {
       body = await request.json()
     } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 
     const validated = replySchema.parse(body)
@@ -53,7 +53,7 @@ export async function POST(
     })
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     const reviewService = new ReviewService({
@@ -83,14 +83,14 @@ export async function POST(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error adding reply", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to add reply" },
+      { error: "Kunde inte lägga till svar" },
       { status: 500 }
     )
   }
@@ -106,7 +106,7 @@ export async function DELETE(
     const { id: reviewId } = await params
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Find the provider for the current user
@@ -116,7 +116,7 @@ export async function DELETE(
     })
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     const reviewService = new ReviewService({
@@ -145,7 +145,7 @@ export async function DELETE(
 
     logger.error("Error deleting reply", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to delete reply" },
+      { error: "Kunde inte ta bort svar" },
       { status: 500 }
     )
   }

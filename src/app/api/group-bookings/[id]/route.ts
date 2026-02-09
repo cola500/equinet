@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     logger.error("Failed to fetch group booking", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to fetch group booking" },
+      { error: "Kunde inte hämta gruppbokning" },
       { status: 500 }
     )
   }
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid request body" },
+        { error: "Ogiltig JSON" },
         { status: 400 }
       )
     }
@@ -99,14 +99,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: err.issues },
+        { error: "Valideringsfel", details: err.issues },
         { status: 400 }
       )
     }
 
     logger.error("Failed to update group booking", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to update group booking" },
+      { error: "Kunde inte uppdatera gruppbokning" },
       { status: 500 }
     )
   }

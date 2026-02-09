@@ -157,7 +157,12 @@ export default function ProvidersPage() {
         // API returns { data: Provider[], pagination: {...} }
         setProviders(result.data)
       } else {
-        setError("Kunde inte hämta leverantörer")
+        try {
+          const errorData = await response.json()
+          setError(errorData.error || "Kunde inte hämta leverantörer")
+        } catch {
+          setError("Kunde inte hämta leverantörer")
+        }
       }
     } catch (error) {
       console.error("Error fetching providers:", error)
@@ -530,19 +535,7 @@ export default function ProvidersPage() {
                   )}
                   {userLocation && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
-                      {searchPlaceName ? `Plats: ${searchPlaceName}` : "Min position"}
-                      <button
-                        type="button"
-                        onClick={clearLocation}
-                        className="hover:text-orange-900"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  {userLocation && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
-                      Inom {radiusKm} km
+                      {searchPlaceName ? searchPlaceName : "Min position"}, inom {radiusKm} km
                       <button
                         type="button"
                         onClick={clearLocation}

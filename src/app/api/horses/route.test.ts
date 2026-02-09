@@ -97,7 +97,7 @@ describe('GET /api/horses', () => {
 
   it('should return 401 when not authenticated', async () => {
     const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
+      JSON.stringify({ error: 'Ej inloggad' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )
     vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
@@ -107,7 +107,7 @@ describe('GET /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return empty array when customer has no horses', async () => {
@@ -211,7 +211,7 @@ describe('POST /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 when name is empty string', async () => {
@@ -226,7 +226,7 @@ describe('POST /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 when birthYear is in the future', async () => {
@@ -244,7 +244,7 @@ describe('POST /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 when gender is invalid', async () => {
@@ -262,7 +262,7 @@ describe('POST /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid JSON body', async () => {
@@ -277,12 +277,12 @@ describe('POST /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid JSON')
+    expect(data.error).toBe('Ogiltig JSON')
   })
 
   it('should return 401 when not authenticated', async () => {
     const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
+      JSON.stringify({ error: 'Ej inloggad' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )
     vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
@@ -296,7 +296,7 @@ describe('POST /api/horses', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should pass ownerId from session to service', async () => {

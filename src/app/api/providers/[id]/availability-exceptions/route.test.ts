@@ -137,7 +137,7 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toBe("Invalid query parameters")
+    expect(data.error).toBe("Ogiltiga frågeparametrar")
   })
 
   it("should return 400 for invalid to date format", async () => {
@@ -150,7 +150,7 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toBe("Invalid query parameters")
+    expect(data.error).toBe("Ogiltiga frågeparametrar")
   })
 
   it("should return 404 if provider not found", async () => {
@@ -165,7 +165,7 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(404)
     const data = await response.json()
-    expect(data.error).toBe("Provider not found")
+    expect(data.error).toBe("Leverantör hittades inte")
   })
 })
 
@@ -300,7 +300,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toContain("startTime and endTime required")
+    expect(data.error).toContain("startTime och endTime krävs")
   })
 
   it("should return 400 for invalid date format", async () => {
@@ -330,7 +330,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toBe("Validation error")
+    expect(data.error).toBe("Valideringsfel")
   })
 
   it("should return 400 for invalid time format", async () => {
@@ -387,12 +387,12 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toBe("Invalid request body")
+    expect(data.error).toBe("Ogiltig JSON")
   })
 
   it("should return 401 if not authenticated", async () => {
     vi.mocked(authServer.auth).mockRejectedValue(
-      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     )
 
     const request = new Request(
@@ -489,7 +489,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     expect(response.status).toBe(429)
     const data = await response.json()
-    expect(data.error).toContain("Too many requests")
+    expect(data.error).toContain("För många förfrågningar")
   })
 
   it("should trim whitespace from reason field", async () => {
@@ -804,7 +804,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
       expect(response.status).toBe(400)
       const data = await response.json()
-      expect(data.error).toBe("Validation error")
+      expect(data.error).toBe("Valideringsfel")
     })
 
     it("should validate longitude range (-180 to 180)", async () => {
@@ -836,7 +836,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
       expect(response.status).toBe(400)
       const data = await response.json()
-      expect(data.error).toBe("Validation error")
+      expect(data.error).toBe("Valideringsfel")
     })
 
     it("should trim whitespace from location field", async () => {

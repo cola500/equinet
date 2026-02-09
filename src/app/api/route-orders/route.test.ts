@@ -341,7 +341,7 @@ describe('POST /api/route-orders', () => {
 
       // Assert
       expect(response.status).toBe(403)
-      expect(data.error).toContain('providers')
+      expect(data.error).toContain('leverantörer')
     })
 
     it('should return 404 when provider profile not found', async () => {
@@ -371,7 +371,7 @@ describe('POST /api/route-orders', () => {
 
       // Assert
       expect(response.status).toBe(404)
-      expect(data.error).toContain('Provider')
+      expect(data.error).toContain('Leverantörsprofil')
     })
 
     it('should include specialInstructions when provided', async () => {
@@ -534,7 +534,7 @@ describe('GET /api/route-orders', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toContain('Provider')
+    expect(data.error).toContain('Leverantörsprofil')
   })
 
   it('should return 400 for invalid query parameters', async () => {
@@ -553,6 +553,6 @@ describe('GET /api/route-orders', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toContain('Invalid')
+    expect(data.error).toContain('Ogiltiga')
   })
 })

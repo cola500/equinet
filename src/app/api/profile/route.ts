@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     logger.error("Error fetching profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch profile" },
+      { error: "Kunde inte hämta profil" },
       { status: 500 }
     )
   }
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest) {
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -110,14 +110,14 @@ export async function PUT(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error updating profile", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to update profile" },
+      { error: "Kunde inte uppdatera profil" },
       { status: 500 }
     )
   }

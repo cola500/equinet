@@ -60,7 +60,7 @@ export async function GET(
 
     if (!routeOrder) {
       return NextResponse.json(
-        { error: "Route order not found" },
+        { error: "Ruttorder hittades inte" },
         { status: 404 }
       )
     }
@@ -69,7 +69,7 @@ export async function GET(
   } catch (error) {
     logger.error("Error fetching route order", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch route order" },
+      { error: "Kunde inte hämta ruttorder" },
       { status: 500 }
     )
   }
@@ -96,7 +96,7 @@ export async function PATCH(
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { error: "Invalid JSON" },
+        { error: "Ogiltig JSON" },
         { status: 400 }
       )
     }
@@ -115,7 +115,7 @@ export async function PATCH(
 
       if (!provider) {
         return NextResponse.json(
-          { error: "Provider profile not found" },
+          { error: "Leverantörsprofil hittades inte" },
           { status: 404 }
         )
       }

@@ -20,7 +20,7 @@ export async function GET(
 
     if (!provider) {
       return NextResponse.json(
-        { error: "Provider not found" },
+        { error: "Leverantör hittades inte" },
         { status: 404 }
       )
     }
@@ -29,7 +29,7 @@ export async function GET(
   } catch (error) {
     logger.error("Error fetching provider", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch provider" },
+      { error: "Kunde inte hämta leverantör" },
       { status: 500 }
     )
   }
@@ -55,7 +55,7 @@ export async function PUT(
     // 1. Authentication check
     const session = await auth()
     if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     const { id } = await params
@@ -68,7 +68,7 @@ export async function PUT(
 
     if (!existingProvider) {
       // Returns 404 for both "not found" and "not authorized" (security best practice)
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // 3. Parse and validate request body
@@ -76,7 +76,7 @@ export async function PUT(
     try {
       body = await request.json()
     } catch (jsonError) {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 
     const validated = updateProviderSchema.parse(body)
@@ -108,7 +108,7 @@ export async function PUT(
           longitude = geocoded.longitude
         } else {
           return NextResponse.json(
-            { error: "Could not geocode address. Please check address format." },
+            { error: "Kunde inte geokoda adressen. Kontrollera adressformatet." },
             { status: 400 }
           )
         }
@@ -127,7 +127,7 @@ export async function PUT(
     )
 
     if (!updatedProvider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Invalidate provider cache after update (async, don't block response)
@@ -139,14 +139,14 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error updating provider", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to update provider" },
+      { error: "Kunde inte uppdatera leverantör" },
       { status: 500 }
     )
   }

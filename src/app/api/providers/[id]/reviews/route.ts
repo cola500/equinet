@@ -17,7 +17,7 @@ export async function GET(
     })
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Parse pagination params
@@ -72,7 +72,7 @@ export async function GET(
   } catch (error) {
     logger.error("Error fetching provider reviews", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch reviews" },
+      { error: "Kunde inte hämta omdömen" },
       { status: 500 }
     )
   }

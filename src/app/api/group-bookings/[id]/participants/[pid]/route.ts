@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     logger.error("Failed to remove participant", err instanceof Error ? err : new Error(String(err)))
     return NextResponse.json(
-      { error: "Failed to remove participant" },
+      { error: "Kunde inte ta bort deltagare" },
       { status: 500 }
     )
   }

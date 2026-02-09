@@ -25,7 +25,7 @@ export async function PUT(
     const session = await auth()
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Use repositories instead of direct Prisma access
@@ -45,7 +45,7 @@ export async function PUT(
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -69,14 +69,14 @@ export async function PUT(
     if (error instanceof z.ZodError) {
       logger.warn("Validation error", { issues: JSON.stringify(error.issues) })
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error updating service", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to update service" },
+      { error: "Kunde inte uppdatera tjänst" },
       { status: 500 }
     )
   }
@@ -93,7 +93,7 @@ export async function DELETE(
     const session = await auth()
 
     if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Use repositories instead of direct Prisma access
@@ -122,7 +122,7 @@ export async function DELETE(
 
     logger.error("Error deleting service", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to delete service" },
+      { error: "Kunde inte ta bort tjänst" },
       { status: 500 }
     )
   }

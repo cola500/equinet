@@ -445,7 +445,7 @@ describe('POST /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   describe('Automatic endTime calculation (US-1)', () => {

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -167,7 +167,7 @@ async function handleProviderAnnouncement(body: any, session: any) {
   // Only providers can create announcements
   if (session.user.userType !== "provider") {
     return NextResponse.json(
-      { error: "Only providers can create announcements" },
+      { error: "Bara leverantörer kan skapa meddelanden" },
       { status: 403 }
     )
   }
@@ -183,7 +183,7 @@ async function handleProviderAnnouncement(body: any, session: any) {
 
   if (!provider) {
     return NextResponse.json(
-      { error: "Provider profile not found" },
+      { error: "Leverantörsprofil hittades inte" },
       { status: 404 }
     )
   }
@@ -310,7 +310,7 @@ export async function GET(request: Request) {
 
       if (!provider) {
         return NextResponse.json(
-          { error: "Provider profile not found" },
+          { error: "Leverantörsprofil hittades inte" },
           { status: 404 }
         )
       }
@@ -401,7 +401,7 @@ export async function GET(request: Request) {
 
     // Invalid request
     return NextResponse.json(
-      { error: "Invalid request parameters" },
+      { error: "Ogiltiga frågeparametrar" },
       { status: 400 }
     )
 

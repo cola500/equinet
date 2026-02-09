@@ -83,7 +83,7 @@ describe('GET /api/services', () => {
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response for unauthenticated users
     const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
+      JSON.stringify({ error: 'Ej inloggad' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )
     vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
@@ -96,7 +96,7 @@ describe('GET /api/services', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 401 when user is not a provider', async () => {
@@ -113,7 +113,7 @@ describe('GET /api/services', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 404 when provider not found', async () => {
@@ -190,7 +190,7 @@ describe('POST /api/services', () => {
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response for unauthenticated users
     const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
+      JSON.stringify({ error: 'Ej inloggad' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )
     vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
@@ -210,7 +210,7 @@ describe('POST /api/services', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 400 for invalid data - missing name', async () => {
@@ -239,7 +239,7 @@ describe('POST /api/services', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid data - negative price', async () => {
@@ -269,7 +269,7 @@ describe('POST /api/services', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid data - zero duration', async () => {
@@ -299,7 +299,7 @@ describe('POST /api/services', () => {
 
     // Assert
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 429 when rate limited', async () => {

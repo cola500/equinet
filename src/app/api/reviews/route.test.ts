@@ -154,7 +154,7 @@ describe('POST /api/reviews', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 400 for invalid rating (too low)', async () => {
@@ -171,7 +171,7 @@ describe('POST /api/reviews', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for invalid rating (too high)', async () => {
@@ -188,7 +188,7 @@ describe('POST /api/reviews', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 400 for comment exceeding 500 characters', async () => {
@@ -209,7 +209,7 @@ describe('POST /api/reviews', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should return 404 when booking not found', async () => {
@@ -304,6 +304,6 @@ describe('POST /api/reviews', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Invalid JSON')
+    expect(data.error).toBe('Ogiltig JSON')
   })
 })

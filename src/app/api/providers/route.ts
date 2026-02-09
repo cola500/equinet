@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
     if (latitudeParam || longitudeParam || radiusKmParam) {
       if (!latitudeParam || !longitudeParam || !radiusKmParam) {
         return NextResponse.json(
-          { error: 'Geo-filtering requires latitude, longitude, and radiusKm' },
+          { error: 'Platsfiltrering kräver latitud, longitud och radie' },
           { status: 400 }
         )
       }
@@ -184,30 +184,30 @@ export async function GET(request: NextRequest) {
       // Validate coordinates
       if (isNaN(latitude) || latitude < -90 || latitude > 90) {
         return NextResponse.json(
-          { error: 'Invalid latitude (must be between -90 and 90)' },
+          { error: 'Ogiltig latitud (måste vara mellan -90 och 90)' },
           { status: 400 }
         )
       }
 
       if (isNaN(longitude) || longitude < -180 || longitude > 180) {
         return NextResponse.json(
-          { error: 'Invalid longitude (must be between -180 and 180)' },
+          { error: 'Ogiltig longitud (måste vara mellan -180 och 180)' },
           { status: 400 }
         )
       }
 
-      // Validate and clamp radius (security: max 100km)
+      // Validate and clamp radius
       const maxRadius = getMaxRadiusKm()
       if (isNaN(radiusKm) || radiusKm <= 0) {
         return NextResponse.json(
-          { error: 'radiusKm must be positive' },
+          { error: 'Radien måste vara ett positivt tal' },
           { status: 400 }
         )
       }
 
       if (radiusKm > maxRadius) {
         return NextResponse.json(
-          { error: `radiusKm cannot exceed ${maxRadius}km` },
+          { error: `Radien kan inte överstiga ${maxRadius} km` },
           { status: 400 }
         )
       }
@@ -326,7 +326,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logger.error("Error fetching providers", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to fetch providers" },
+      { error: "Kunde inte hämta leverantörer" },
       { status: 500 }
     )
   }

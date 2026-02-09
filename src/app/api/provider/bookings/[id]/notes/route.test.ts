@@ -108,7 +108,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
     const response = await PUT(createInvalidJsonRequest(), { params })
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toContain('Invalid')
+    expect(data.error).toContain('Ogiltig')
   })
 
   it('returns 400 for Zod validation error (too long)', async () => {
@@ -123,7 +123,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
     )
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('returns 400 for unexpected fields (strict mode)', async () => {

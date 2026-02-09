@@ -38,7 +38,7 @@ export async function PUT(
     } catch (jsonError) {
       logger.warn("Invalid JSON in request body", { error: String(jsonError) })
       return NextResponse.json(
-        { error: "Invalid request body", details: "Request body must be valid JSON" },
+        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
         { status: 400 }
       )
     }
@@ -133,14 +133,14 @@ export async function PUT(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        { error: "Valideringsfel", details: error.issues },
         { status: 400 }
       )
     }
 
     logger.error("Error updating booking", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to update booking" },
+      { error: "Kunde inte uppdatera bokning" },
       { status: 500 }
     )
   }
@@ -176,7 +176,7 @@ export async function DELETE(
 
     if (!deleted) {
       return NextResponse.json(
-        { error: "Booking not found or you don't have permission to delete it" },
+        { error: "Bokningen hittades inte eller så saknar du behörighet att ta bort den" },
         { status: 404 }
       )
     }
@@ -189,7 +189,7 @@ export async function DELETE(
 
     logger.error("Error deleting booking", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: "Failed to delete booking" },
+      { error: "Kunde inte ta bort bokning" },
       { status: 500 }
     )
   }

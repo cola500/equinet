@@ -354,7 +354,7 @@ describe('POST /api/bookings/manual', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation error')
+    expect(data.error).toBe('Valideringsfel')
   })
 
   it('should use providerId from session, not from body (IDOR protection)', async () => {
