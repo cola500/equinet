@@ -49,6 +49,22 @@ export function futureDate(days: number): Date {
   return date
 }
 
+/**
+ * Returns a date N days in the future, guaranteed to be a weekday (Mon-Fri).
+ * If the result lands on Saturday, it shifts to Monday (+2).
+ * If Sunday, it shifts to Monday (+1).
+ * Use this for bookings that depend on provider availability (typically Mon-Fri).
+ */
+export function futureWeekday(days: number): Date {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  const dow = date.getDay()
+  if (dow === 0) date.setDate(date.getDate() + 1) // Sun -> Mon
+  if (dow === 6) date.setDate(date.getDate() + 2) // Sat -> Mon
+  date.setHours(10, 0, 0, 0)
+  return date
+}
+
 /** Returns a date N days in the past */
 export function pastDate(days: number): Date {
   const date = new Date()

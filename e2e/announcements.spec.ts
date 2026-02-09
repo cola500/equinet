@@ -1,17 +1,35 @@
 import { test, expect } from './fixtures';
-import { seedProviderAnnouncement, seedRouteOrders, cleanupSpecData } from './setup/seed-helpers';
+import { seedProviderAnnouncement, seedRouteOrders, seedBooking, cleanupSpecData } from './setup/seed-helpers';
 
 const SPEC_TAG = 'announcements';
+const SPEC_TAG_CUST = 'announcements-cust';
 
 test.describe('Route Announcements Flow', () => {
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG);
-    await seedProviderAnnouncement(SPEC_TAG);
+    await cleanupSpecData(SPEC_TAG_CUST);
+
+    // Announcement 1: for provider management tests (confirm/cancel)
+    const announcement = await seedProviderAnnouncement(SPEC_TAG);
+
+    // Pending booking linked to announcement (for "bekräfta" test)
+    await seedBooking({
+      specTag: SPEC_TAG,
+      status: 'pending',
+      daysFromNow: 10,
+      routeOrderId: announcement.id,
+      horseName: 'E2E AnnBooking',
+    });
+
+    // Announcement 2: for customer tests (survives cancel of announcement 1)
+    await seedProviderAnnouncement(SPEC_TAG_CUST);
+
     await seedRouteOrders(SPEC_TAG, 2);
   });
 
   test.afterAll(async () => {
     await cleanupSpecData(SPEC_TAG);
+    await cleanupSpecData(SPEC_TAG_CUST);
   });
 
   test.describe('Public Announcements Page', () => {
@@ -282,38 +300,44 @@ test.describe('Route Announcements Flow', () => {
       await page.goto('/provider/announcements');
       await page.waitForTimeout(2000);
 
-      // Navigate to announcement details
-      const detailsButton = page.getByRole('button', { name: /visa detaljer/i }).first();
-      const hasAnnouncements = await detailsButton.isVisible().catch(() => false);
+      // Try each announcement's detail page to find one with pending bookings
+      const detailsButtons = page.getByRole('button', { name: /visa detaljer/i });
+      const buttonCount = await detailsButtons.count();
 
-      if (!hasAnnouncements) {
+      if (buttonCount === 0) {
         test.skip(true, 'No announcements available for confirm booking');
         return;
       }
 
-      await detailsButton.click();
-      await page.waitForTimeout(2000);
+      let foundConfirmButton = false;
+      for (let i = 0; i < buttonCount; i++) {
+        await page.goto('/provider/announcements');
+        await page.waitForTimeout(1500);
 
-      // Look for confirm button (only visible for pending bookings)
-      const confirmButton = page.getByRole('button', { name: /bekräfta/i }).first();
-      const hasConfirmButton = await confirmButton.isVisible().catch(() => false);
+        await detailsButtons.nth(i).click();
+        await page.waitForTimeout(2000);
 
-      if (!hasConfirmButton) {
-        test.skip(true, 'No pending bookings to confirm');
-        return;
+        // Look for confirm button (only visible for pending bookings)
+        const confirmButton = page.getByRole('button', { name: /bekräfta/i }).first();
+        const hasConfirmButton = await confirmButton.isVisible().catch(() => false);
+
+        if (hasConfirmButton) {
+          foundConfirmButton = true;
+
+          // Click confirm
+          await confirmButton.click();
+          await page.waitForTimeout(2000);
+
+          // Verify success toast or status change
+          const successVisible = await page.getByText(/bokning bekräftad|bekräftad/i).isVisible().catch(() => false);
+          console.log('Confirm button clicked, success toast visible:', successVisible);
+          break;
+        }
       }
 
-      // Click confirm
-      await confirmButton.click();
-
-      // Wait for status update
-      await page.waitForTimeout(2000);
-
-      // Verify success toast or status change
-      const successVisible = await page.getByText(/bokning bekräftad|bekräftad/i).isVisible().catch(() => false);
-
-      // Test passes if confirm was clicked without error
-      console.log('Confirm button clicked, success toast visible:', successVisible);
+      if (!foundConfirmButton) {
+        test.skip(true, 'No pending bookings to confirm on any announcement');
+      }
     });
 
     test('should cancel announcement', async ({ page }) => {

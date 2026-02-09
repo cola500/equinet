@@ -19,12 +19,25 @@ test.describe('Customer Reviews (Provider)', () => {
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG);
     const base = await getBaseEntities();
+
+    // Booking 1: for "submit review" test (test 2)
     await seedBooking({
       specTag: SPEC_TAG,
       status: 'completed',
       daysFromNow: -90,
-      horseName: 'E2E Blansen',
+      horseName: 'E2E ReviewSubmit',
       horseId: base.horseId,
+    });
+
+    // Booking 2: for "require rating" test (test 3) - different time to stay unique
+    await seedBooking({
+      specTag: SPEC_TAG,
+      status: 'completed',
+      daysFromNow: -85,
+      horseName: 'E2E ReviewValidation',
+      horseId: base.horseId,
+      startTime: '12:00',
+      endTime: '13:00',
     });
   });
 
@@ -59,8 +72,8 @@ test.describe('Customer Reviews (Provider)', () => {
   test('should show review button for completed booking', async ({ page }) => {
     await navigateToCompletedBookings(page);
 
-    // Find the completed booking card
-    const completedCard = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ });
+    // Find the first completed booking card
+    const completedCard = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ }).first();
     await expect(completedCard).toBeVisible();
 
     // "Recensera kund" button should be visible
@@ -70,8 +83,8 @@ test.describe('Customer Reviews (Provider)', () => {
   test('should submit review with rating and comment', async ({ page }) => {
     await navigateToCompletedBookings(page);
 
-    // Find completed booking and click "Recensera kund"
-    const completedCard = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ });
+    // Find the first completed booking with an unsubmitted review
+    const completedCard = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ }).first();
     const reviewBtn = completedCard.getByRole('button', { name: /Recensera kund/i });
 
     // Skip if review already exists (button won't be visible)
@@ -112,13 +125,24 @@ test.describe('Customer Reviews (Provider)', () => {
   test('should require rating', async ({ page }) => {
     await navigateToCompletedBookings(page);
 
-    // Find completed booking and try to open review dialog
-    const completedCard = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ });
-    const reviewBtn = completedCard.getByRole('button', { name: /Recensera kund/i });
+    // Find a completed booking that still has the review button (not yet reviewed)
+    const completedCards = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ });
+    const cardCount = await completedCards.count();
 
-    const reviewBtnVisible = await reviewBtn.isVisible({ timeout: 3000 }).catch(() => false);
-    if (!reviewBtnVisible) {
-      test.skip(true, 'Review already submitted (button not visible)');
+    // Look through cards to find one with review button
+    let reviewBtn = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = completedCards.nth(i);
+      const btn = card.getByRole('button', { name: /Recensera kund/i });
+      const visible = await btn.isVisible({ timeout: 2000 }).catch(() => false);
+      if (visible) {
+        reviewBtn = btn;
+        break;
+      }
+    }
+
+    if (!reviewBtn) {
+      test.skip(true, 'No unreviewd completed bookings available');
       return;
     }
 
@@ -138,35 +162,40 @@ test.describe('Customer Reviews (Provider)', () => {
   test('should show existing review', async ({ page }) => {
     await navigateToCompletedBookings(page);
 
-    // Find the completed booking card
-    const completedCard = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ });
-    await expect(completedCard).toBeVisible();
+    // Find completed booking cards and look for one with a review
+    const completedCards = page.locator('[data-testid="booking-item"]').filter({ hasText: /Genomförd/ });
+    const cardCount = await completedCards.count();
 
-    // If review was submitted (test 2 ran before), "Din recension:" should be visible
-    const hasReview = await completedCard.getByText(/Din recension:/i).isVisible({ timeout: 5000 }).catch(() => false);
+    let reviewedCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = completedCards.nth(i);
+      const hasReview = await card.getByText(/Din recension:/i).isVisible({ timeout: 2000 }).catch(() => false);
+      if (hasReview) {
+        reviewedCard = card;
+        break;
+      }
+    }
 
-    if (hasReview) {
-      // "Din recension:" text should be visible
-      await expect(completedCard.getByText(/Din recension:/i)).toBeVisible();
-
+    if (reviewedCard) {
+      // Verify review is shown
+      await expect(reviewedCard.getByText(/Din recension:/i)).toBeVisible();
       // "Recensera kund" button should NOT be visible
-      await expect(completedCard.getByRole('button', { name: /Recensera kund/i })).not.toBeVisible();
+      await expect(reviewedCard.getByRole('button', { name: /Recensera kund/i })).not.toBeVisible();
     } else {
-      // Review not yet submitted -- this test depends on test 2 running first
-      // If running in isolation, submit a review first
-      const reviewBtn = completedCard.getByRole('button', { name: /Recensera kund/i });
+      // No review found -- submit one inline on the first card
+      const firstCard = completedCards.first();
+      const reviewBtn = firstCard.getByRole('button', { name: /Recensera kund/i });
       const reviewBtnVisible = await reviewBtn.isVisible({ timeout: 3000 }).catch(() => false);
 
       if (reviewBtnVisible) {
-        // Submit review inline
         await reviewBtn.click();
         await page.getByRole('button', { name: '4 av 5 stjärnor' }).click();
         await page.getByRole('button', { name: /Skicka recension/i }).click();
         await expect(page.getByRole('heading', { name: /Recensera kund/i })).not.toBeVisible({ timeout: 10000 });
 
-        // Now verify the review shows
-        await expect(completedCard.getByText(/Din recension:/i)).toBeVisible({ timeout: 5000 });
-        await expect(completedCard.getByRole('button', { name: /Recensera kund/i })).not.toBeVisible();
+        // Verify the review shows
+        await expect(firstCard.getByText(/Din recension:/i)).toBeVisible({ timeout: 5000 });
+        await expect(firstCard.getByRole('button', { name: /Recensera kund/i })).not.toBeVisible();
       }
     }
   });

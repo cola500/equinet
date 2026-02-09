@@ -8,7 +8,7 @@
  * Uses the singleton prisma from fixtures.ts -- NEVER call $disconnect().
  */
 import { prisma } from '../fixtures'
-import { futureDate, pastDate } from './e2e-utils'
+import { futureDate, futureWeekday, pastDate } from './e2e-utils'
 
 // ─── Base entities (seeded once globally) ───────────────────────────
 
@@ -83,6 +83,7 @@ interface SeedBookingOpts {
   serviceId?: string // defaults to service1 (Hovslagning Standard)
   startTime?: string // defaults to '10:00'
   endTime?: string   // defaults to '11:00'
+  routeOrderId?: string // optional: link booking to a route order (flexible/announcement)
 }
 
 /**
@@ -92,7 +93,7 @@ interface SeedBookingOpts {
 export async function seedBooking(opts: SeedBookingOpts) {
   const base = await getBaseEntities()
   const bookingDate =
-    opts.daysFromNow >= 0 ? futureDate(opts.daysFromNow) : pastDate(Math.abs(opts.daysFromNow))
+    opts.daysFromNow >= 0 ? futureWeekday(opts.daysFromNow) : pastDate(Math.abs(opts.daysFromNow))
 
   return prisma.booking.create({
     data: {
@@ -106,6 +107,7 @@ export async function seedBooking(opts: SeedBookingOpts) {
       horseId: opts.horseId ?? null,
       customerNotes: `E2E-spec:${opts.specTag}`,
       status: opts.status,
+      routeOrderId: opts.routeOrderId ?? null,
     },
   })
 }
@@ -136,8 +138,8 @@ export async function seedRouteOrders(specTag: string, count: number) {
         latitude: loc.lat,
         longitude: loc.lng,
         numberOfHorses: loc.horses,
-        dateFrom: futureDate(3),
-        dateTo: futureDate(14),
+        dateFrom: futureWeekday(3),
+        dateTo: futureWeekday(14),
         priority: 'normal',
         specialInstructions: `E2E-spec:${specTag}`,
         contactPhone: '0701234567',
@@ -166,16 +168,50 @@ export async function seedProviderAnnouncement(specTag: string) {
       latitude: 57.7089,
       longitude: 11.9746,
       numberOfHorses: 0,
-      dateFrom: futureDate(7),
-      dateTo: futureDate(21),
+      dateFrom: futureWeekday(7),
+      dateTo: futureWeekday(21),
       priority: 'normal',
       specialInstructions: `E2E-spec:${specTag}`,
-      status: 'pending',
+      status: 'open', // Must be 'open' to appear in public announcements page
       services: {
         connect: [{ id: base.service1Id }, { id: base.service2Id }],
       },
     },
   })
+}
+
+/**
+ * Seed a Route with RouteStops directly in DB (for tests that need an existing route).
+ * Creates its own route orders tagged with `E2E-spec:<specTag>-route`.
+ */
+export async function seedRoute(specTag: string) {
+  const base = await getBaseEntities()
+  const routeTag = `${specTag}-route`
+  const orders = await seedRouteOrders(routeTag, 2)
+
+  const route = await prisma.route.create({
+    data: {
+      providerId: base.providerId,
+      routeName: `E2E Testrutt ${specTag}`,
+      routeDate: futureWeekday(5),
+      startTime: '09:00',
+      status: 'planned',
+    },
+  })
+
+  for (let i = 0; i < orders.length; i++) {
+    await prisma.routeStop.create({
+      data: {
+        routeId: route.id,
+        routeOrderId: orders[i].id,
+        stopOrder: i + 1,
+        address: orders[i].address,
+        status: 'pending',
+      },
+    })
+  }
+
+  return route
 }
 
 // ─── Cleanup ────────────────────────────────────────────────────────
@@ -197,15 +233,22 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
   })
 
   // 3. RouteStop (FK -> Route, RouteOrder)
+  // First collect routeIds so we can delete the parent Routes after
+  const taggedRouteStops = await prisma.routeStop.findMany({
+    where: { routeOrder: { specialInstructions: marker } },
+    select: { routeId: true },
+  })
   await prisma.routeStop.deleteMany({
     where: { routeOrder: { specialInstructions: marker } },
   })
 
-  // 4. Routes created during tests (by the test provider, recent ones)
-  // We can't tag routes directly, but route stops reference route orders.
-  // Routes without stops (orphaned by step 3) are cleaned by global cleanup.
+  // 4. Routes whose stops referenced our tagged route orders
+  const routeIds = [...new Set(taggedRouteStops.map(s => s.routeId).filter(Boolean))] as string[]
+  if (routeIds.length > 0) {
+    await prisma.route.deleteMany({ where: { id: { in: routeIds } } })
+  }
 
-  // 5. Disconnect services from provider-announced route orders before deleting
+  // 5. Disconnect services from provider-announced route orders before deleting them
   const taggedOrders = await prisma.routeOrder.findMany({
     where: { specialInstructions: marker },
     select: { id: true },
@@ -217,7 +260,7 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
     })
   }
 
-  // 6. RouteOrder
+  // 6. RouteOrders
   await prisma.routeOrder.deleteMany({
     where: { specialInstructions: marker },
   })

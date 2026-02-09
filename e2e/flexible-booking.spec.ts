@@ -1,12 +1,24 @@
 import { test, expect } from './fixtures';
-import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
+import { seedBooking, seedRouteOrders, cleanupSpecData } from './setup/seed-helpers';
 
 const SPEC_TAG = 'flexible';
 
 test.describe('Flexible Booking Flow (Customer)', () => {
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG);
+
+    // Regular confirmed booking (for mixed list tests)
     await seedBooking({ specTag: SPEC_TAG, status: 'confirmed', daysFromNow: 14, horseName: 'E2E FlexBooking' });
+
+    // Seed a flexible booking (route order + linked booking) for test 4-6
+    const flexOrders = await seedRouteOrders(SPEC_TAG, 1);
+    await seedBooking({
+      specTag: SPEC_TAG,
+      status: 'pending',
+      daysFromNow: 10,
+      routeOrderId: flexOrders[0].id,
+      horseName: 'E2E FlexSeeded',
+    });
   });
 
   test.afterAll(async () => {
