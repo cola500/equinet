@@ -332,6 +332,11 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Felmeddelanden ALLTID på svenska**: `NextResponse.json({ error: "..." })` ska vara på svenska. Logger-meddelanden (`logger.error(...)`) förblir på engelska (för utvecklare). Ordlista: "Ej inloggad", "Åtkomst nekad", "Ogiltig JSON", "Valideringsfel", "Internt serverfel", "Kunde inte X".
 - **UI/API-gränsvalidering**: När UI erbjuder värden (t.ex. radie 25/50/100/200km), verifiera att API:et accepterar hela spannet. `MAX_RADIUS_KM` höjdes 100->200 efter bugg.
 - **Geocoding != substring-sökning**: Debounce-auto-sök funkar för text-matchning men inte geocoding (partiella ortnamn ger fel resultat). Behåll Enter/klick-trigger för geocoding.
+- **E2E futureWeekday()**: `futureDate()` kan landa på helger -- leverantören har mån-fre. Använd `futureWeekday()` från `e2e/setup/e2e-utils.ts` för alla seedade framtida bokningar.
+- **E2E annons-status**: `seedProviderAnnouncement()` måste ha `status: 'open'` (inte `pending`). Public announcements-API:t filtrerar på `status: 'open'`.
+- **E2E shadcn-selektorer**: `.border.rounded-lg` matchar INTE längre shadcn Cards. Använd `[data-slot="card"]` eller semantiska selektorer (`getByRole`, `getByText`).
+- **E2E iterate-pattern**: När UI har flera matchande element, iterera `cards.nth(i)` istället för `.first()` -- hitta rätt element baserat på state (t.ex. orecenserad bokning).
+- **E2E Route stop tvåstegsflöde**: pending -> "Påbörja besök" -> in_progress -> "Markera som klar" -> completed. Tester måste hantera båda stegen.
 
 ---
 
