@@ -329,6 +329,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Hook-extrahering för mobil/desktop**: Extrahera logik till hook -> skapa två UI-skal (mobil Drawer + desktop Dialog) -> sidan blir limkod med `isMobile ? <Mobil /> : <Desktop />`. Ger testbar logik, separerade UI-varianter, kraftig radreducering.
 - **ResponsiveDialog-mönster**: `src/components/ui/responsive-dialog.tsx` wrapprar Dialog (desktop) + Drawer (mobil) bakom gemensamt API. Återanvänd för alla modala flöden.
 - **Touch targets min-h-[44px]**: Apple HIG-standard. Lägg till systematiskt på alla interaktiva element i mobil-flöden (knappar, inputs, select, radio).
+- **Felmeddelanden ALLTID på svenska**: `NextResponse.json({ error: "..." })` ska vara på svenska. Logger-meddelanden (`logger.error(...)`) förblir på engelska (för utvecklare). Ordlista: "Ej inloggad", "Åtkomst nekad", "Ogiltig JSON", "Valideringsfel", "Internt serverfel", "Kunde inte X".
+- **UI/API-gränsvalidering**: När UI erbjuder värden (t.ex. radie 25/50/100/200km), verifiera att API:et accepterar hela spannet. `MAX_RADIUS_KM` höjdes 100->200 efter bugg.
+- **Geocoding != substring-sökning**: Debounce-auto-sök funkar för text-matchning men inte geocoding (partiella ortnamn ger fel resultat). Behåll Enter/klick-trigger för geocoding.
 
 ---
 
