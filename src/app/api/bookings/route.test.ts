@@ -52,6 +52,9 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findUnique: vi.fn(),
     },
+    availabilityException: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }))
@@ -233,6 +236,8 @@ describe('POST /api/bookings', () => {
     // Default mock for existing bookings (for travel time validation)
     // Returns empty array - no existing bookings
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
+    // Default: no availability exception (day is open)
+    vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue(null)
   })
 
   it('should create booking for authenticated customer', async () => {
@@ -1107,5 +1112,48 @@ describe('POST /api/bookings', () => {
       expect(response.status).toBe(201)
       expect(data.routeOrderId).toBe(TEST_UUIDS.routeOrder)
     })
+  })
+
+  it('should return 400 when provider has closed the day', async () => {
+    const mockSession = {
+      user: {
+        id: TEST_UUIDS.customer,
+        userType: 'customer',
+      },
+    }
+
+    vi.mocked(auth).mockResolvedValue(mockSession as any)
+    vi.mocked(prisma.service.findUnique).mockResolvedValue({
+      id: TEST_UUIDS.service,
+      name: 'Hovslagning',
+      providerId: TEST_UUIDS.provider,
+      durationMinutes: 60,
+      isActive: true,
+    } as any)
+
+    // Provider has closed this day
+    vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue({
+      isClosed: true,
+      reason: 'Semester',
+      startTime: null,
+      endTime: null,
+    } as any)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_ISO,
+        startTime: '10:00',
+        endTime: '11:00',
+      }),
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toContain('Semester')
   })
 })

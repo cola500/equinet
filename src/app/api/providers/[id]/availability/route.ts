@@ -92,6 +92,31 @@ export async function GET(
     const bookingDate = new Date(date)
     const dayOfWeek = (bookingDate.getDay() + 6) % 7
 
+    // Check for availability exception (closed day / alternative hours)
+    const exception = await prisma.availabilityException.findUnique({
+      where: { providerId_date: { providerId, date: bookingDate } },
+      select: {
+        isClosed: true,
+        reason: true,
+        startTime: true,
+        endTime: true,
+      },
+    })
+
+    // If provider has explicitly closed this day, return immediately
+    if (exception?.isClosed) {
+      return NextResponse.json({
+        date,
+        dayOfWeek,
+        isClosed: true,
+        closedReason: exception.reason || null,
+        openingTime: null,
+        closingTime: null,
+        slots: [],
+        bookedSlots: [],
+      })
+    }
+
     // Get availability schedule for this day of week
     const availability = await prisma.availability.findFirst({
       where: {
@@ -101,7 +126,7 @@ export async function GET(
       },
     })
 
-    // If provider is closed this day, return that info
+    // If provider is closed this day (no weekly schedule), return that info
     if (!availability || availability.isClosed) {
       return NextResponse.json({
         date,
@@ -113,6 +138,10 @@ export async function GET(
         bookedSlots: [],
       })
     }
+
+    // Use exception's alternative hours if available, otherwise weekly schedule
+    const openingTime = (exception?.startTime) || availability.startTime
+    const closingTime = (exception?.endTime) || availability.endTime
 
     // Get all confirmed/pending bookings for the provider on that date
     // Include customer location for travel time calculation
@@ -175,8 +204,8 @@ export async function GET(
     }
 
     // Generate slots with availability status
-    const openingMinutes = timeToMinutes(availability.startTime)
-    const closingMinutes = timeToMinutes(availability.endTime)
+    const openingMinutes = timeToMinutes(openingTime)
+    const closingMinutes = timeToMinutes(closingTime)
     const slots: SlotWithReason[] = []
 
     // Get current time for past slot filtering
@@ -262,8 +291,8 @@ export async function GET(
       date,
       dayOfWeek,
       isClosed: false,
-      openingTime: availability.startTime,
-      closingTime: availability.endTime,
+      openingTime,
+      closingTime,
       slots,
       // Keep bookedSlots for backwards compatibility
       bookedSlots: bookings.map((b) => ({

@@ -45,6 +45,9 @@ vi.mock('@/lib/prisma', () => ({
     notification: {
       create: vi.fn(),
     },
+    availabilityException: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }))
@@ -98,6 +101,9 @@ describe('POST /api/bookings/manual', () => {
       longitude: 11.9746,
       address: 'Test',
     } as any)
+
+    // Default: no availability exception (day is open)
+    vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue(null)
   })
 
   function makeRequest(body: Record<string, unknown>) {
@@ -396,5 +402,27 @@ describe('POST /api/bookings/manual', () => {
     // Should succeed with session providerId, not attacker's
     expect(response.status).toBe(201)
     expect(data.providerId).toBe(TEST_UUIDS.provider)
+  })
+
+  it('should return 400 when provider has closed the day', async () => {
+    vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue({
+      isClosed: true,
+      reason: 'Sjuk',
+      startTime: null,
+      endTime: null,
+    } as any)
+
+    const request = makeRequest({
+      serviceId: TEST_UUIDS.service,
+      bookingDate: FUTURE_DATE_STR,
+      startTime: '10:00',
+      customerId: TEST_UUIDS.customer,
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toContain('Sjuk')
   })
 })

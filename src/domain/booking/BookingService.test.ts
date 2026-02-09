@@ -1074,4 +1074,120 @@ describe('BookingService', () => {
       expect(mapBookingErrorToStatus({ type: 'INVALID_CUSTOMER_DATA', message: 'test' } as any)).toBe(400)
     })
   })
+
+  describe('closed day validation', () => {
+    it('should fail when provider has closed the day (isClosed=true with reason)', async () => {
+      const mockGetAvailabilityException = vi.fn().mockResolvedValue({
+        isClosed: true,
+        reason: 'Semester',
+      })
+
+      const svc = new BookingService({
+        ...deps,
+        getAvailabilityException: mockGetAvailabilityException,
+      })
+
+      const result = await svc.createBooking(validDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('PROVIDER_CLOSED')
+      expect(result.error.message).toContain('Semester')
+      expect(mockGetAvailabilityException).toHaveBeenCalledWith('provider-1', validDTO.bookingDate)
+    })
+
+    it('should fail with generic message when isClosed=true without reason', async () => {
+      const mockGetAvailabilityException = vi.fn().mockResolvedValue({
+        isClosed: true,
+        reason: null,
+      })
+
+      const svc = new BookingService({
+        ...deps,
+        getAvailabilityException: mockGetAvailabilityException,
+      })
+
+      const result = await svc.createBooking(validDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('PROVIDER_CLOSED')
+      expect(result.error.message).toBe('Leverantören är stängd detta datum')
+    })
+
+    it('should pass when exception exists but isClosed=false (alternative hours)', async () => {
+      const mockGetAvailabilityException = vi.fn().mockResolvedValue({
+        isClosed: false,
+        startTime: '10:00',
+        endTime: '14:00',
+      })
+
+      const svc = new BookingService({
+        ...deps,
+        getAvailabilityException: mockGetAvailabilityException,
+      })
+
+      const result = await svc.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should pass when no exception exists (null)', async () => {
+      const mockGetAvailabilityException = vi.fn().mockResolvedValue(null)
+
+      const svc = new BookingService({
+        ...deps,
+        getAvailabilityException: mockGetAvailabilityException,
+      })
+
+      const result = await svc.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should skip validation when getAvailabilityException dep is not provided (backwards compat)', async () => {
+      // Default deps without getAvailabilityException
+      const result = await service.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should fail for createManualBooking when day is closed', async () => {
+      const mockGetAvailabilityException = vi.fn().mockResolvedValue({
+        isClosed: true,
+        reason: 'Sjuk',
+      })
+
+      const svc = new BookingService({
+        ...deps,
+        getAvailabilityException: mockGetAvailabilityException,
+        createGhostUser: vi.fn().mockResolvedValue('ghost-user-123'),
+      })
+
+      const manualDTO: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerId: 'customer-1',
+      }
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('PROVIDER_CLOSED')
+      expect(result.error.message).toContain('Sjuk')
+    })
+  })
+
+  describe('mapBookingErrorToStatus - PROVIDER_CLOSED', () => {
+    it('should return 400 for PROVIDER_CLOSED', () => {
+      expect(mapBookingErrorToStatus({ type: 'PROVIDER_CLOSED', message: 'Stängd' })).toBe(400)
+    })
+  })
+
+  describe('mapBookingErrorToMessage - PROVIDER_CLOSED', () => {
+    it('should return the error message for PROVIDER_CLOSED', () => {
+      expect(mapBookingErrorToMessage({ type: 'PROVIDER_CLOSED', message: 'Semester' }))
+        .toBe('Semester')
+    })
+  })
 })

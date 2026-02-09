@@ -110,6 +110,7 @@ export type BookingError =
   | { type: 'BOOKING_NOT_FOUND' }
   | { type: 'INVALID_CUSTOMER_DATA'; message: string }
   | { type: 'GHOST_USER_CREATION_FAILED'; message: string }
+  | { type: 'PROVIDER_CLOSED'; message: string }
 
 /**
  * Route order info for validation
@@ -122,6 +123,16 @@ export interface RouteOrderInfo {
 }
 
 /**
+ * Availability exception info for closed-day validation
+ */
+export interface AvailabilityExceptionInfo {
+  isClosed: boolean
+  reason?: string | null
+  startTime?: string | null
+  endTime?: string | null
+}
+
+/**
  * Dependencies for BookingService
  *
  * Using interfaces for dependency injection and testability.
@@ -131,6 +142,8 @@ export interface BookingServiceDeps {
   getService: (id: string) => Promise<ServiceInfo | null>
   getProvider: (id: string) => Promise<ProviderInfo | null>
   getRouteOrder?: (id: string) => Promise<RouteOrderInfo | null>
+  /** Check if provider has an availability exception for a date */
+  getAvailabilityException?: (providerId: string, date: Date) => Promise<AvailabilityExceptionInfo | null>
   /** Get customer location for travel time calculation */
   getCustomerLocation?: (customerId: string) => Promise<CustomerLocationInfo | null>
   /** Travel time service instance (optional - for travel time validation) */
@@ -199,17 +212,23 @@ export class BookingService {
       return Result.fail({ type: 'SELF_BOOKING' })
     }
 
-    // 4. Calculate end time if not provided
+    // 4. Check if provider has closed this day
+    const closedDayCheck = await this.validateClosedDay(dto.providerId, dto.bookingDate)
+    if (closedDayCheck.isFailure) {
+      return Result.fail(closedDayCheck.error)
+    }
+
+    // 5. Calculate end time if not provided
     const endTime = dto.endTime || this.calculateEndTime(dto.startTime, service.durationMinutes)
 
-    // 5. Validate times using TimeSlot value object
+    // 6. Validate times using TimeSlot value object
     const timeSlotResult = TimeSlot.create(dto.startTime, endTime)
 
     if (timeSlotResult.isFailure) {
       return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
     }
 
-    // 6. Validate route order if provided
+    // 7. Validate route order if provided
     if (dto.routeOrderId && this.deps.getRouteOrder) {
       const routeOrderValidation = await this.validateRouteOrder(
         dto.routeOrderId,
@@ -222,7 +241,7 @@ export class BookingService {
       }
     }
 
-    // 7. Validate travel time if service is configured
+    // 8. Validate travel time if service is configured
     let travelTimeMinutes: number | undefined
     if (this.deps.travelTimeService && this.deps.getCustomerLocation) {
       const travelValidation = await this.validateTravelTime(
@@ -241,7 +260,7 @@ export class BookingService {
       travelTimeMinutes = travelValidation.value
     }
 
-    // 8. Create booking with atomic overlap check
+    // 9. Create booking with atomic overlap check
     const bookingData: CreateBookingData = {
       customerId: dto.customerId,
       providerId: dto.providerId,
@@ -385,7 +404,13 @@ export class BookingService {
       return Result.fail({ type: 'INACTIVE_PROVIDER' })
     }
 
-    // 4. Resolve customer ID (existing or ghost user)
+    // 4. Check if provider has closed this day
+    const closedDayCheck = await this.validateClosedDay(dto.providerId, dto.bookingDate)
+    if (closedDayCheck.isFailure) {
+      return Result.fail(closedDayCheck.error)
+    }
+
+    // 5. Resolve customer ID (existing or ghost user)
     let customerId = dto.customerId
     if (!customerId && dto.customerName && this.deps.createGhostUser) {
       try {
@@ -458,6 +483,34 @@ export class BookingService {
     const endMins = endMinutes % 60
 
     return `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`
+  }
+
+  /**
+   * Validate that the provider has not closed the day via AvailabilityException
+   */
+  private async validateClosedDay(
+    providerId: string,
+    bookingDate: Date
+  ): Promise<Result<void, BookingError>> {
+    if (!this.deps.getAvailabilityException) {
+      return Result.ok(undefined)
+    }
+
+    const exception = await this.deps.getAvailabilityException(providerId, bookingDate)
+
+    if (!exception) {
+      return Result.ok(undefined)
+    }
+
+    if (exception.isClosed) {
+      const message = exception.reason
+        ? `Leverantören är stängd detta datum: ${exception.reason}`
+        : 'Leverantören är stängd detta datum'
+      return Result.fail({ type: 'PROVIDER_CLOSED', message })
+    }
+
+    // Exception exists but isClosed=false means alternative hours -- allow booking
+    return Result.ok(undefined)
   }
 
   /**
@@ -652,6 +705,7 @@ export function mapBookingErrorToStatus(error: BookingError): number {
     case 'INVALID_ROUTE_ORDER':
     case 'INVALID_STATUS_TRANSITION':
     case 'INVALID_CUSTOMER_DATA':
+    case 'PROVIDER_CLOSED':
       return 400
     case 'GHOST_USER_CREATION_FAILED':
       return 500
@@ -694,6 +748,8 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return error.message
     case 'GHOST_USER_CREATION_FAILED':
       return error.message
+    case 'PROVIDER_CLOSED':
+      return error.message
     default:
       return 'Ett fel uppstod vid bokning'
   }
@@ -728,6 +784,17 @@ export function createBookingService(): BookingService {
           isActive: true,
           latitude: true,
           longitude: true,
+        },
+      })
+    },
+    getAvailabilityException: async (providerId, date) => {
+      return prisma.availabilityException.findUnique({
+        where: { providerId_date: { providerId, date } },
+        select: {
+          isClosed: true,
+          reason: true,
+          startTime: true,
+          endTime: true,
         },
       })
     },
