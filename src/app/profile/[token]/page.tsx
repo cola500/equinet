@@ -197,7 +197,7 @@ export default function ProfilePage() {
         </Card>
 
         {/* Timeline */}
-        <h2 className="text-xl font-semibold mb-4">Vardhistorik</h2>
+        <h2 className="text-xl font-semibold mb-4">Vårdhistorik</h2>
 
         {timeline.length === 0 ? (
           <Card>
