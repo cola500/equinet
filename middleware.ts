@@ -72,7 +72,7 @@ export const config = {
     "/api/routes/:path*",
     "/api/route-orders/:path*",
     "/api/services/:path*",
-    "/api/profile/:path*",
+    // NOTE: /api/profile/:path* is intentionally NOT here -- it's a public route (shared horse profile)
     "/api/provider/:path*",
 
     // Frontend routes that require auth
