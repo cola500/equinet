@@ -150,7 +150,7 @@ export default function CreateGroupBookingPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="dateFrom">Från datum *</Label>
                   <Input
@@ -209,7 +209,7 @@ export default function CreateGroupBookingPage() {
                 />
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving ? "Skapar..." : "Skapa grupprequest"}
                 </Button>

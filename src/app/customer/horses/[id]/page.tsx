@@ -23,14 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog"
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { SharePassportDialog } from "./SharePassportDialog"
@@ -213,7 +212,7 @@ export default function HorseDetailPage() {
       {horse && (
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-4">
                 <ImageUpload
                   bucket="horses"
@@ -221,7 +220,7 @@ export default function HorseDetailPage() {
                   currentUrl={horse.photoUrl}
                   onUploaded={(url) => setHorse({ ...horse, photoUrl: url })}
                   variant="square"
-                  className="w-32 flex-shrink-0"
+                  className="w-20 sm:w-32 flex-shrink-0"
                 />
                 <div>
                   <CardTitle className="text-2xl">{horse.name}</CardTitle>
@@ -252,102 +251,106 @@ export default function HorseDetailPage() {
       )}
 
       {/* Timeline controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h2 className="text-xl font-semibold">Historik</h2>
-        <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Lägg till anteckning</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Ny anteckning</DialogTitle>
-              <DialogDescription>
-                Lägg till en anteckning i hästens hälsohistorik.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAddNote} className="space-y-4">
-              <div>
-                <Label htmlFor="note-category">Kategori *</Label>
-                <Select
-                  value={noteForm.category}
-                  onValueChange={(value) =>
-                    setNoteForm({ ...noteForm, category: value })
-                  }
-                >
-                  <SelectTrigger id="note-category">
-                    <SelectValue placeholder="Välj kategori..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORY_OPTIONS.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="note-title">Titel *</Label>
-                <Input
-                  id="note-title"
-                  value={noteForm.title}
-                  onChange={(e) =>
-                    setNoteForm({ ...noteForm, title: e.target.value })
-                  }
-                  placeholder="T.ex. Vaccination - influensa"
-                  required
-                  maxLength={200}
-                />
-              </div>
-              <div>
-                <Label htmlFor="note-content">Beskrivning</Label>
-                <Textarea
-                  id="note-content"
-                  value={noteForm.content}
-                  onChange={(e) =>
-                    setNoteForm({ ...noteForm, content: e.target.value })
-                  }
-                  placeholder="Valfri beskrivning..."
-                  rows={3}
-                  maxLength={2000}
-                />
-              </div>
-              <div>
-                <Label htmlFor="note-date">Datum *</Label>
-                <Input
-                  id="note-date"
-                  type="date"
-                  value={noteForm.noteDate}
-                  onChange={(e) =>
-                    setNoteForm({ ...noteForm, noteDate: e.target.value })
-                  }
-                  max={new Date().toISOString().split("T")[0]}
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  disabled={
-                    isSaving ||
-                    !noteForm.category ||
-                    !noteForm.title.trim() ||
-                    !noteForm.noteDate
-                  }
-                >
-                  {isSaving ? "Sparar..." : "Lägg till"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => setNoteDialogOpen(true)}
+        >
+          Lägg till anteckning
+        </Button>
       </div>
+
+      <ResponsiveDialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Ny anteckning</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Lägg till en anteckning i hästens hälsohistorik.
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <form onSubmit={handleAddNote} className="space-y-4">
+            <div>
+              <Label htmlFor="note-category">Kategori *</Label>
+              <Select
+                value={noteForm.category}
+                onValueChange={(value) =>
+                  setNoteForm({ ...noteForm, category: value })
+                }
+              >
+                <SelectTrigger id="note-category">
+                  <SelectValue placeholder="Välj kategori..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="note-title">Titel *</Label>
+              <Input
+                id="note-title"
+                value={noteForm.title}
+                onChange={(e) =>
+                  setNoteForm({ ...noteForm, title: e.target.value })
+                }
+                placeholder="T.ex. Vaccination - influensa"
+                required
+                maxLength={200}
+              />
+            </div>
+            <div>
+              <Label htmlFor="note-content">Beskrivning</Label>
+              <Textarea
+                id="note-content"
+                value={noteForm.content}
+                onChange={(e) =>
+                  setNoteForm({ ...noteForm, content: e.target.value })
+                }
+                placeholder="Valfri beskrivning..."
+                rows={3}
+                maxLength={2000}
+              />
+            </div>
+            <div>
+              <Label htmlFor="note-date">Datum *</Label>
+              <Input
+                id="note-date"
+                type="date"
+                value={noteForm.noteDate}
+                onChange={(e) =>
+                  setNoteForm({ ...noteForm, noteDate: e.target.value })
+                }
+                max={new Date().toISOString().split("T")[0]}
+                required
+              />
+            </div>
+            <ResponsiveDialogFooter>
+              <Button
+                type="submit"
+                disabled={
+                  isSaving ||
+                  !noteForm.category ||
+                  !noteForm.title.trim() ||
+                  !noteForm.noteDate
+                }
+              >
+                {isSaving ? "Sparar..." : "Lägg till"}
+              </Button>
+            </ResponsiveDialogFooter>
+          </form>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       {/* Category filter chips */}
       <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setActiveFilter(null)}
-          className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+          className={`px-3 py-1 touch-target rounded-full text-sm border transition-colors ${
             activeFilter === null
               ? "bg-green-600 text-white border-green-600"
               : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
@@ -361,7 +364,7 @@ export default function HorseDetailPage() {
             onClick={() =>
               setActiveFilter(activeFilter === cat.value ? null : cat.value)
             }
-            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+            className={`px-3 py-1 touch-target rounded-full text-sm border transition-colors ${
               activeFilter === cat.value
                 ? "bg-green-600 text-white border-green-600"
                 : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
@@ -421,7 +424,7 @@ function TimelineCard({ item }: { item: TimelineItem }) {
         <div className="absolute left-2.5 top-4 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="font-medium">{item.title}</p>
                 <p className="text-sm text-gray-600">{item.providerName}</p>
@@ -429,7 +432,7 @@ function TimelineCard({ item }: { item: TimelineItem }) {
                   <p className="text-sm text-gray-500 mt-1">{item.notes}</p>
                 )}
               </div>
-              <div className="text-right">
+              <div className="sm:text-right">
                 <p className="text-sm text-gray-500">{dateStr}</p>
                 <Badge variant="outline" className="mt-1 bg-green-50 text-green-700 border-green-200">
                   Bokning
@@ -461,7 +464,7 @@ function TimelineCard({ item }: { item: TimelineItem }) {
       />
       <Card>
         <CardContent className="py-4">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="font-medium">{item.title}</p>
               {item.content && (
@@ -473,7 +476,7 @@ function TimelineCard({ item }: { item: TimelineItem }) {
                 </p>
               )}
             </div>
-            <div className="text-right">
+            <div className="sm:text-right">
               <p className="text-sm text-gray-500">{dateStr}</p>
               {cat && (
                 <Badge variant="outline" className={`mt-1 ${cat.color}`}>

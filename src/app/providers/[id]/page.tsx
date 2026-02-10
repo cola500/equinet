@@ -254,7 +254,7 @@ export default function ProviderDetailPage() {
           {/* Back Link */}
           <Link
             href="/providers"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6 min-h-[44px]"
+            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6 touch-target"
           >
             <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -418,7 +418,7 @@ export default function ProviderDetailPage() {
                     </div>
                     <Button
                       onClick={() => handleBookService(service)}
-                      className="w-full min-h-[44px]"
+                      className="w-full"
                     >
                       Boka denna tjänst
                     </Button>

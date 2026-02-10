@@ -328,7 +328,7 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Kontrollera ALLA select-block vid nytt falt**: providerNotes missades forst i passport-route. Vid nytt falt pa befintlig modell -- sok i hela kodbasen efter alla select/mapping/query som ror modellen.
 - **Hook-extrahering för mobil/desktop**: Extrahera logik till hook -> skapa två UI-skal (mobil Drawer + desktop Dialog) -> sidan blir limkod med `isMobile ? <Mobil /> : <Desktop />`. Ger testbar logik, separerade UI-varianter, kraftig radreducering.
 - **ResponsiveDialog-mönster**: `src/components/ui/responsive-dialog.tsx` wrapprar Dialog (desktop) + Drawer (mobil) bakom gemensamt API. Återanvänd för alla modala flöden.
-- **Touch targets min-h-[44px]**: Apple HIG-standard. Lägg till systematiskt på alla interaktiva element i mobil-flöden (knappar, inputs, select, radio).
+- **Touch targets centraliserade**: `min-h-[44px] sm:min-h-0` inbakat i Button (default/lg), Input, SelectTrigger. `size="sm"` knappar får INTE automatiska touch targets -- lägg till manuellt vid behov. Nativa element (button, select, span, a): använd `touch-target` CSS utility.
 - **Felmeddelanden ALLTID på svenska**: `NextResponse.json({ error: "..." })` ska vara på svenska. Logger-meddelanden (`logger.error(...)`) förblir på engelska (för utvecklare). Ordlista: "Ej inloggad", "Åtkomst nekad", "Ogiltig JSON", "Valideringsfel", "Internt serverfel", "Kunde inte X".
 - **UI/API-gränsvalidering**: När UI erbjuder värden (t.ex. radie 25/50/100/200km), verifiera att API:et accepterar hela spannet. `MAX_RADIUS_KM` höjdes 100->200 efter bugg.
 - **Geocoding != substring-sökning**: Debounce-auto-sök funkar för text-matchning men inte geocoding (partiella ortnamn ger fel resultat). Behåll Enter/klick-trigger för geocoding.
@@ -337,6 +337,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **E2E shadcn-selektorer**: `.border.rounded-lg` matchar INTE längre shadcn Cards. Använd `[data-slot="card"]` eller semantiska selektorer (`getByRole`, `getByText`).
 - **E2E iterate-pattern**: När UI har flera matchande element, iterera `cards.nth(i)` istället för `.first()` -- hitta rätt element baserat på state (t.ex. orecenserad bokning).
 - **E2E Route stop tvåstegsflöde**: pending -> "Påbörja besök" -> in_progress -> "Markera som klar" -> completed. Tester måste hantera båda stegen.
+- **ResponsiveAlertDialog**: `src/components/ui/responsive-alert-dialog.tsx` -- samma mönster som `responsive-dialog.tsx`. Använd för alla bekräftelsedialoger (avboka, ta bort, lämna).
+- **AlertDialog ur .map()**: Rendera ALDRIG AlertDialog med AlertDialogTrigger inuti `.map()`. Använd kontrollerad state (`itemToDelete`) + en enda dialog utanför loopen. Bättre DOM-prestanda och mobilkompatibelt.
+- **Mobil touch target-pattern**: `min-h-[44px] sm:min-h-0` på knappar/inputs + `flex-col gap-2 sm:flex-row` för knapp-stacking + `grid-cols-1 sm:grid-cols-2` för formulär-grid.
 
 ---
 

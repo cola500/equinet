@@ -54,7 +54,7 @@ export function TimeSlotButton({
       title={!isAvailable && unavailableReason ? reasonLabels[unavailableReason] : undefined}
       className={cn(
         "w-full px-2 py-1.5 text-sm rounded-md transition-all",
-        "min-h-[44px] min-w-[44px]", // Touch target
+        "touch-target min-w-[44px]", // Touch target
         isAvailable
           ? "bg-green-100 hover:bg-green-200 text-green-800 cursor-pointer"
           : `${unavailableStyle} cursor-not-allowed`,

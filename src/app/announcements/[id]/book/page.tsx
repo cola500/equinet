@@ -285,7 +285,7 @@ export default function BookAnnouncementPage() {
                         id="service"
                         value={formData.serviceId}
                         onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
-                        className="w-full p-2 border rounded-md"
+                        className="w-full p-2 touch-target border rounded-md"
                         required
                       >
                         <option value="">Välj en tjänst...</option>
@@ -387,9 +387,9 @@ export default function BookAnnouncementPage() {
                     </div>
 
                     {/* Submit Buttons */}
-                    <div className="flex justify-end gap-2 pt-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end pt-4">
                       <Link href="/announcements">
-                        <Button type="button" variant="outline" disabled={isSubmitting}>
+                        <Button type="button" variant="outline" className="w-full sm:w-auto" disabled={isSubmitting}>
                           Avbryt
                         </Button>
                       </Link>

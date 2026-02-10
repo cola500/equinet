@@ -24,25 +24,23 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog"
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
@@ -80,6 +78,7 @@ export default function CustomerHorsesPage() {
   const { horses, isLoading, mutate: mutateHorses } = useSWRHorses()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingHorse, setEditingHorse] = useState<Horse | null>(null)
+  const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null)
   const [formData, setFormData] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -203,29 +202,33 @@ export default function CustomerHorsesPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 className="text-3xl font-bold">Mina hästar</h1>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Lägg till häst</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Lägg till häst</DialogTitle>
-              <DialogDescription>
-                Fyll i information om din häst. Namn är obligatoriskt, resten är valfritt.
-              </DialogDescription>
-            </DialogHeader>
-            <HorseForm
-              formData={formData}
-              setFormData={setFormData}
-              onSubmit={handleAdd}
-              isSaving={isSaving}
-              submitLabel="Lägg till"
-            />
-          </DialogContent>
-        </Dialog>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => setAddDialogOpen(true)}
+        >
+          Lägg till häst
+        </Button>
       </div>
+
+      <ResponsiveDialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Lägg till häst</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Fyll i information om din häst. Namn är obligatoriskt, resten är valfritt.
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <HorseForm
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleAdd}
+            isSaving={isSaving}
+            submitLabel="Lägg till"
+          />
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       {isLoading ? (
         <div className="text-center py-12">
@@ -282,44 +285,28 @@ export default function CustomerHorsesPage() {
                     {horse.specialNeeds}
                   </p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Link href={`/customer/horses/${horse.id}`}>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0">
                       Se historik
                     </Button>
                   </Link>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="min-h-[44px] sm:min-h-0"
                     onClick={() => openEditDialog(horse)}
                   >
                     Redigera
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                        Ta bort
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Ta bort {horse.name}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Hästen tas bort från din lista men befintliga bokningar
-                          påverkas inte. Du kan lägga till hästen igen senare.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(horse)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Ta bort
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px] sm:min-h-0 text-red-600 hover:text-red-700"
+                    onClick={() => setHorseToDelete(horse)}
+                  >
+                    Ta bort
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -328,7 +315,7 @@ export default function CustomerHorsesPage() {
       )}
 
       {/* Edit dialog */}
-      <Dialog
+      <ResponsiveDialog
         open={editingHorse !== null}
         onOpenChange={(open) => {
           if (!open) {
@@ -337,13 +324,13 @@ export default function CustomerHorsesPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Redigera {editingHorse?.name}</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Redigera {editingHorse?.name}</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Uppdatera information om din häst.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <HorseForm
             formData={formData}
             setFormData={setFormData}
@@ -351,8 +338,33 @@ export default function CustomerHorsesPage() {
             isSaving={isSaving}
             submitLabel="Spara ändringar"
           />
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+
+      {/* Delete confirmation dialog */}
+      <ResponsiveAlertDialog
+        open={!!horseToDelete}
+        onOpenChange={(open) => { if (!open) setHorseToDelete(null) }}
+      >
+        <ResponsiveAlertDialogContent>
+          <ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogTitle>Ta bort {horseToDelete?.name}?</ResponsiveAlertDialogTitle>
+            <ResponsiveAlertDialogDescription>
+              Hästen tas bort från din lista men befintliga bokningar
+              påverkas inte. Du kan lägga till hästen igen senare.
+            </ResponsiveAlertDialogDescription>
+          </ResponsiveAlertDialogHeader>
+          <ResponsiveAlertDialogFooter>
+            <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
+            <ResponsiveAlertDialogAction
+              onClick={() => { if (horseToDelete) handleDelete(horseToDelete) }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Ta bort
+            </ResponsiveAlertDialogAction>
+          </ResponsiveAlertDialogFooter>
+        </ResponsiveAlertDialogContent>
+      </ResponsiveAlertDialog>
     </CustomerLayout>
   )
 }
@@ -381,7 +393,7 @@ function HorseForm({ formData, setFormData, onSubmit, isSaving, submitLabel }: H
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="horse-breed">Ras</Label>
           <Input
@@ -402,7 +414,7 @@ function HorseForm({ formData, setFormData, onSubmit, isSaving, submitLabel }: H
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="horse-birthYear">Födelseår</Label>
           <Input
@@ -444,11 +456,11 @@ function HorseForm({ formData, setFormData, onSubmit, isSaving, submitLabel }: H
         />
       </div>
 
-      <DialogFooter>
+      <ResponsiveDialogFooter>
         <Button type="submit" disabled={isSaving || !formData.name.trim()}>
           {isSaving ? "Sparar..." : submitLabel}
         </Button>
-      </DialogFooter>
+      </ResponsiveDialogFooter>
     </form>
   )
 }

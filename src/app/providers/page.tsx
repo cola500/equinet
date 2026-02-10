@@ -298,7 +298,7 @@ export default function ProvidersPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl md:text-4xl font-bold mb-2">Hitta tjänsteleverantörer</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2">Hitta tjänsteleverantörer</h1>
           <p className="text-gray-600 mb-8">
             Bläddra bland professionella hovslagare, veterinärer och andra hästtjänster
           </p>
@@ -312,7 +312,7 @@ export default function ProvidersPage() {
                     placeholder="Sök efter företagsnamn..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full h-11"
+                    className="w-full"
                   />
                   {isSearching && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -325,13 +325,13 @@ export default function ProvidersPage() {
                     placeholder="Filtrera på ort..."
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full md:w-40 lg:w-48 h-11"
+                    className="w-full md:w-40 lg:w-48"
                   />
                   <Input
                     placeholder="Besöker område..."
                     value={visitingArea}
                     onChange={(e) => setVisitingArea(e.target.value)}
-                    className="w-full md:w-40 lg:w-48 h-11"
+                    className="w-full md:w-40 lg:w-48"
                   />
                 </div>
                 {(search || city || visitingArea || userLocation) && (
@@ -340,7 +340,7 @@ export default function ProvidersPage() {
                     variant="outline"
                     onClick={handleClearFilters}
                     data-testid="clear-filters-button"
-                    className="h-11 w-full md:w-auto"
+                    className="w-full md:w-auto"
                   >
                     Rensa
                   </Button>
@@ -401,6 +401,7 @@ export default function ProvidersPage() {
                     onClick={requestLocation}
                     variant="outline"
                     size="sm"
+                    className="min-h-[44px] sm:min-h-0"
                     disabled={locationLoading}
                   >
                     {locationLoading ? (
@@ -457,7 +458,7 @@ export default function ProvidersPage() {
                     <select
                       value={radiusKm}
                       onChange={(e) => handleRadiusChange(Number(e.target.value))}
-                      className="border rounded-md px-3 py-2 text-sm bg-white"
+                      className="border rounded-md px-3 py-2 touch-target text-sm bg-white"
                     >
                       <option value={25}>25 km</option>
                       <option value={50}>50 km</option>
@@ -483,7 +484,7 @@ export default function ProvidersPage() {
                 <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
                   <span>Aktiva filter:</span>
                   {search && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-green-100 text-green-800 rounded-full">
                       Sökning: &quot;{search}&quot;
                       <button
                         type="button"
@@ -501,7 +502,7 @@ export default function ProvidersPage() {
                     </span>
                   )}
                   {city && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-blue-100 text-blue-800 rounded-full">
                       Ort: &quot;{city}&quot;
                       <button
                         type="button"
@@ -519,7 +520,7 @@ export default function ProvidersPage() {
                     </span>
                   )}
                   {visitingArea && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-purple-100 text-purple-800 rounded-full">
                       Besöker: &quot;{visitingArea}&quot;
                       <button
                         type="button"
@@ -534,7 +535,7 @@ export default function ProvidersPage() {
                     </span>
                   )}
                   {userLocation && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-orange-100 text-orange-800 rounded-full">
                       {searchPlaceName ? searchPlaceName : "Min position"}, inom {radiusKm} km
                       <button
                         type="button"

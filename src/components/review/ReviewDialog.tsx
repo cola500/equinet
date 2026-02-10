@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog"
 import { StarRating } from "./StarRating"
 import { toast } from "sonner"
 
@@ -85,16 +86,16 @@ export function ReviewDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-md">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>
             {isEditing ? "Redigera recension" : "Lämna recension"}
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             {serviceName} hos {providerName}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Star Rating */}
@@ -131,7 +132,7 @@ export function ReviewDialog({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2">
+          <ResponsiveDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -140,16 +141,19 @@ export function ReviewDialog({
             >
               Avbryt
             </Button>
-            <Button type="submit" disabled={isSubmitting || rating === 0}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || rating === 0}
+            >
               {isSubmitting
                 ? "Sparar..."
                 : isEditing
                   ? "Uppdatera"
                   : "Skicka recension"}
             </Button>
-          </div>
+          </ResponsiveDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }

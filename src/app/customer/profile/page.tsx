@@ -242,7 +242,7 @@ export default function CustomerProfilePage() {
                     </div>
                   )}
                   <div className="pt-4">
-                    <Button onClick={() => setIsEditing(true)}>
+                    <Button className="w-full sm:w-auto" onClick={() => setIsEditing(true)}>
                       Redigera profil
                     </Button>
                   </div>
@@ -329,7 +329,7 @@ export default function CustomerProfilePage() {
                     />
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       type="button"
                       variant="outline"
@@ -354,7 +354,7 @@ export default function CustomerProfilePage() {
                     </div>
                   )}
 
-                  <div className="flex gap-2 pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row pt-4">
                     <Button type="submit">Spara ändringar</Button>
                     <Button
                       type="button"

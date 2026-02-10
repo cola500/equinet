@@ -3,13 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
@@ -80,67 +79,67 @@ export function SharePassportDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Dela hastpass
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Dela hastpass for {horseName}</DialogTitle>
-          <DialogDescription>
-            Skapa en delbar lank till hastens uppgifter och vardhistorik. Lanken
-            ar giltig i 30 dagar och kan delas med veterinar, hovslagare eller
-            andra som behover se hastens historik.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => setOpen(true)}>
+        Dela hastpass
+      </Button>
+      <ResponsiveDialog open={open} onOpenChange={handleClose}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Dela hastpass for {horseName}</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Skapa en delbar lank till hastens uppgifter och vardhistorik. Lanken
+              ar giltig i 30 dagar och kan delas med veterinar, hovslagare eller
+              andra som behover se hastens historik.
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
-        {!passportUrl ? (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Den delade sidan visar:
-            </p>
-            <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-              <li>Hastens grundinfo (namn, ras, alder, farg)</li>
-              <li>Genomforda bokningar</li>
-              <li>Veterinar-, hovslagare- och medicinanteckningar</li>
-            </ul>
-            <p className="text-sm text-amber-600">
-              Privata anteckningar (allman, skada) visas inte.
-            </p>
-            <Button
-              onClick={handleCreatePassport}
-              disabled={isCreating}
-              className="w-full"
-            >
-              {isCreating ? "Skapar lank..." : "Skapa delbar lank"}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Delbar lank
-              </label>
-              <div className="flex gap-2">
-                <Input value={passportUrl} readOnly className="font-mono text-sm" />
-                <Button onClick={handleCopy} variant="outline">
-                  Kopiera
-                </Button>
-              </div>
-            </div>
-            {expiresAt && (
-              <p className="text-sm text-gray-500">
-                Lanken ar giltig till {formatDate(expiresAt)}.
+          {!passportUrl ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Den delade sidan visar:
               </p>
-            )}
-            <p className="text-sm text-gray-500">
-              Du kan skapa nya lankar nar du vill. Varje lank ar oberoende.
-            </p>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+              <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                <li>Hastens grundinfo (namn, ras, alder, farg)</li>
+                <li>Genomforda bokningar</li>
+                <li>Veterinar-, hovslagare- och medicinanteckningar</li>
+              </ul>
+              <p className="text-sm text-amber-600">
+                Privata anteckningar (allman, skada) visas inte.
+              </p>
+              <Button
+                onClick={handleCreatePassport}
+                disabled={isCreating}
+                className="w-full"
+              >
+                {isCreating ? "Skapar lank..." : "Skapa delbar lank"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Delbar lank
+                </label>
+                <div className="flex gap-2">
+                  <Input value={passportUrl} readOnly className="font-mono text-sm" />
+                  <Button onClick={handleCopy} variant="outline">
+                    Kopiera
+                  </Button>
+                </div>
+              </div>
+              {expiresAt && (
+                <p className="text-sm text-gray-500">
+                  Lanken ar giltig till {formatDate(expiresAt)}.
+                </p>
+              )}
+              <p className="text-sm text-gray-500">
+                Du kan skapa nya lankar nar du vill. Varje lank ar oberoende.
+              </p>
+            </div>
+          )}
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+    </>
   )
 }

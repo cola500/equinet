@@ -185,7 +185,7 @@ export function MobileBookingFlow({
                   <Link href={`/announcements/${nearbyRoute.id}/book`}>
                     <Button
                       type="button"
-                      className="w-full mt-3 bg-green-600 hover:bg-green-700 min-h-[44px]"
+                      className="w-full mt-3 bg-green-600 hover:bg-green-700"
                     >
                       Boka på rutten
                     </Button>
@@ -199,7 +199,7 @@ export function MobileBookingFlow({
                   setIsFlexibleBooking(false)
                   handleNext()
                 }}
-                className="w-full p-4 rounded-lg border-2 border-blue-200 hover:border-blue-400 bg-white text-left transition-colors min-h-[44px]"
+                className="w-full p-4 rounded-lg border-2 border-blue-200 hover:border-blue-400 bg-white text-left transition-colors touch-target"
                 data-testid="select-fixed-time"
               >
                 <p className="font-semibold text-blue-800">Fast tid</p>
@@ -214,7 +214,7 @@ export function MobileBookingFlow({
                   setIsFlexibleBooking(true)
                   handleNext()
                 }}
-                className="w-full p-4 rounded-lg border-2 border-purple-200 hover:border-purple-400 bg-white text-left transition-colors min-h-[44px]"
+                className="w-full p-4 rounded-lg border-2 border-purple-200 hover:border-purple-400 bg-white text-left transition-colors touch-target"
                 data-testid="select-flexible-time"
               >
                 <p className="font-semibold text-purple-800">Flexibel tid</p>
@@ -267,7 +267,7 @@ export function MobileBookingFlow({
                   }
                   min={format(new Date(), "yyyy-MM-dd")}
                   required
-                  className="min-h-[44px]"
+
                 />
               </div>
               <div className="space-y-2">
@@ -281,7 +281,7 @@ export function MobileBookingFlow({
                   }
                   min={flexibleForm.dateFrom}
                   required
-                  className="min-h-[44px]"
+
                 />
                 <p className="text-xs text-gray-600">
                   Leverantören kan besöka dig när som helst under denna period
@@ -295,13 +295,13 @@ export function MobileBookingFlow({
                     setFlexibleForm({ ...flexibleForm, priority: value })
                   }
                 >
-                  <div className="flex items-center space-x-2 min-h-[44px]">
+                  <div className="flex items-center space-x-2 touch-target">
                     <RadioGroupItem value="normal" id="priority-normal-mobile" data-testid="priority-normal" />
                     <Label htmlFor="priority-normal-mobile" className="font-normal cursor-pointer">
                       Normal - Inom den valda perioden
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 min-h-[44px]">
+                  <div className="flex items-center space-x-2 touch-target">
                     <RadioGroupItem value="urgent" id="priority-urgent-mobile" data-testid="priority-urgent" />
                     <Label htmlFor="priority-urgent-mobile" className="font-normal cursor-pointer">
                       Akut - Inom 48 timmar
@@ -320,7 +320,7 @@ export function MobileBookingFlow({
                     setFlexibleForm({ ...flexibleForm, numberOfHorses: parseInt(e.target.value) || 1 })
                   }
                   required
-                  className="min-h-[44px]"
+
                 />
               </div>
               <div className="space-y-2">
@@ -334,7 +334,7 @@ export function MobileBookingFlow({
                   }
                   placeholder="070-123 45 67"
                   required
-                  className="min-h-[44px]"
+
                 />
               </div>
               <div className="space-y-2">
@@ -395,7 +395,7 @@ export function MobileBookingFlow({
                         }
                       }}
                     >
-                      <SelectTrigger id="horse-select-mobile" className="min-h-[44px]">
+                      <SelectTrigger id="horse-select-mobile">
                         <SelectValue placeholder="Välj häst..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -424,7 +424,7 @@ export function MobileBookingFlow({
                       setBookingForm({ ...bookingForm, horseName: e.target.value })
                     }
                     placeholder="Hästens namn"
-                    className="min-h-[44px]"
+  
                   />
                 )}
                 {customerHorses.length > 0 && !bookingForm.horseId && (
@@ -435,7 +435,7 @@ export function MobileBookingFlow({
                       setBookingForm({ ...bookingForm, horseName: e.target.value })
                     }
                     placeholder="Hästens namn"
-                    className="min-h-[44px]"
+  
                   />
                 )}
               </div>
@@ -470,7 +470,7 @@ export function MobileBookingFlow({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="w-full min-h-[44px]"
+              className="w-full"
             >
               Avbryt
             </Button>
@@ -479,14 +479,14 @@ export function MobileBookingFlow({
               <Button
                 variant="outline"
                 onClick={handleBack}
-                className="flex-1 min-h-[44px]"
+                className="flex-1"
               >
                 Tillbaka
               </Button>
               {isFlexibleBooking ? (
                 <Button
                   onClick={() => onSubmit()}
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1"
                 >
                   Skicka förfrågan
                 </Button>
@@ -494,7 +494,7 @@ export function MobileBookingFlow({
                 <Button
                   onClick={handleNext}
                   disabled={!canGoNext()}
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1"
                 >
                   Fortsätt
                 </Button>
@@ -505,14 +505,14 @@ export function MobileBookingFlow({
               <Button
                 variant="outline"
                 onClick={handleBack}
-                className="flex-1 min-h-[44px]"
+                className="flex-1"
               >
                 Tillbaka
               </Button>
               <Button
                 onClick={() => onSubmit()}
                 disabled={!canSubmit}
-                className="flex-1 min-h-[44px]"
+                className="flex-1"
               >
                 Skicka bokningsförfrågan
               </Button>

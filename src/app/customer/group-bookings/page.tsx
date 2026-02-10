@@ -112,10 +112,10 @@ export default function CustomerGroupBookingsPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 className="text-3xl font-bold">Gruppbokningar</h1>
         <Link href="/customer/group-bookings/new">
-          <Button>Skapa grupprequest</Button>
+          <Button className="w-full sm:w-auto">Skapa grupprequest</Button>
         </Link>
       </div>
 

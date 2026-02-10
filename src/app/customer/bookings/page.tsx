@@ -11,15 +11,15 @@ import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { Badge } from "@/components/ui/badge"
 import { ReviewDialog } from "@/components/review/ReviewDialog"
@@ -281,21 +281,21 @@ export default function CustomerBookingsPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Mina bokningar</h1>
           <p className="text-gray-600 mt-1">Hantera dina bokningar</p>
         </div>
         <Link href="/providers">
-          <Button>Boka ny tjänst</Button>
+          <Button className="w-full sm:w-auto">Boka ny tjänst</Button>
         </Link>
       </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-2 sm:gap-4 mb-6">
           <button
             onClick={() => setFilter("upcoming")}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 touch-target rounded-lg ${
               filter === "upcoming"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -305,7 +305,7 @@ export default function CustomerBookingsPage() {
           </button>
           <button
             onClick={() => setFilter("past")}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 touch-target rounded-lg ${
               filter === "past"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -315,7 +315,7 @@ export default function CustomerBookingsPage() {
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 touch-target rounded-lg ${
               filter === "all"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -571,7 +571,7 @@ export default function CustomerBookingsPage() {
                   {/* Payment and action buttons for fixed bookings */}
                   {booking.type === "fixed" && (
                     <div className="mt-4 pt-4 border-t">
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                         {/* Payment status and actions */}
                         {booking.payment?.status === "succeeded" ? (
                           <div className="flex items-center gap-2">
@@ -598,6 +598,7 @@ export default function CustomerBookingsPage() {
                           <Button
                             variant="default"
                             size="sm"
+                            className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
                             onClick={() => handlePayment(booking.id)}
                             disabled={payingBookingId === booking.id}
                           >
@@ -618,6 +619,7 @@ export default function CustomerBookingsPage() {
                           <Button
                             variant="destructive"
                             size="sm"
+                            className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
                             onClick={() => setBookingToCancel({ id: booking.id, type: "fixed" })}
                           >
                             Avboka
@@ -641,7 +643,7 @@ export default function CustomerBookingsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 px-2 text-gray-500"
+                                className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-gray-500"
                                 onClick={() => setReviewBooking(booking)}
                               >
                                 Redigera
@@ -649,7 +651,7 @@ export default function CustomerBookingsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 px-2 text-red-500 hover:text-red-600"
+                                className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-red-500 hover:text-red-600"
                                 onClick={() => handleDeleteReview(booking.review!.id)}
                                 disabled={deletingReviewId === booking.review.id}
                               >
@@ -673,6 +675,7 @@ export default function CustomerBookingsPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
                           onClick={() => setReviewBooking(booking)}
                         >
                           Lämna recension
@@ -687,6 +690,7 @@ export default function CustomerBookingsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
                         onClick={() => setBookingToCancel({ id: booking.id, type: "flexible" })}
                       >
                         Avboka denna bokning
@@ -716,28 +720,28 @@ export default function CustomerBookingsPage() {
       )}
 
       {/* Cancel Confirmation Dialog */}
-      <AlertDialog open={!!bookingToCancel} onOpenChange={() => setBookingToCancel(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Avboka bokning?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <ResponsiveAlertDialog open={!!bookingToCancel} onOpenChange={() => setBookingToCancel(null)}>
+        <ResponsiveAlertDialogContent>
+          <ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogTitle>Avboka bokning?</ResponsiveAlertDialogTitle>
+            <ResponsiveAlertDialogDescription>
               Är du säker på att du vill avboka denna bokning? Leverantören kommer att meddelas om avbokningen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCancelling}>
+            </ResponsiveAlertDialogDescription>
+          </ResponsiveAlertDialogHeader>
+          <ResponsiveAlertDialogFooter>
+            <ResponsiveAlertDialogCancel disabled={isCancelling}>
               Nej, behåll bokningen
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </ResponsiveAlertDialogCancel>
+            <ResponsiveAlertDialogAction
               onClick={handleCancelBooking}
               disabled={isCancelling}
               className="bg-red-600 hover:bg-red-700"
             >
               {isCancelling ? "Avbokar..." : "Ja, avboka"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </ResponsiveAlertDialogAction>
+          </ResponsiveAlertDialogFooter>
+        </ResponsiveAlertDialogContent>
+      </ResponsiveAlertDialog>
     </CustomerLayout>
   )
 }

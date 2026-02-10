@@ -113,7 +113,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Notifikationer</h1>
             <p className="text-gray-600 mt-1">
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="shrink-0 h-8 w-8 p-0 text-gray-400 hover:text-green-600"
+                        className="shrink-0 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 sm:min-h-0 sm:min-w-0 p-0 text-gray-400 hover:text-green-600"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleMarkAsRead(notification.id)

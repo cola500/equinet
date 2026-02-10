@@ -210,7 +210,7 @@ export default function ProviderBookingsPage() {
         <div className="flex flex-wrap gap-2 md:gap-4 mb-6">
           <button
             onClick={() => setFilter("pending")}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base min-h-[44px] ${
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
               filter === "pending"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -220,7 +220,7 @@ export default function ProviderBookingsPage() {
           </button>
           <button
             onClick={() => setFilter("confirmed")}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base min-h-[44px] ${
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
               filter === "confirmed"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
@@ -230,7 +230,7 @@ export default function ProviderBookingsPage() {
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base min-h-[44px] ${
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
               filter === "all"
                 ? "bg-green-600 text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"

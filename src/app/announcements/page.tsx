@@ -124,7 +124,7 @@ export default function AnnouncementsPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Planerade rutter</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2">Planerade rutter</h1>
           <p className="text-gray-600 mb-8">
             Hitta leverantörer som besöker din kommun och boka direkt
           </p>
@@ -157,9 +157,9 @@ export default function AnnouncementsPage() {
 
               {/* Action buttons */}
               <div className="flex flex-wrap gap-2 items-center">
-                <Button onClick={handleSearch} size="sm">Sök</Button>
+                <Button onClick={handleSearch} size="sm" className="min-h-[44px] sm:min-h-0">Sök</Button>
                 {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={handleClearFilters}>
+                  <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={handleClearFilters}>
                     Rensa filter
                   </Button>
                 )}
@@ -274,7 +274,7 @@ export default function AnnouncementsPage() {
               {announcements.map((announcement) => (
                 <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start">
                       <div className="flex-1">
                         <CardTitle className="text-xl">
                           {announcement.provider.businessName}
@@ -284,7 +284,7 @@ export default function AnnouncementsPage() {
                           {formatDate(announcement.dateFrom)} - {formatDate(announcement.dateTo)}
                         </CardDescription>
                       </div>
-                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium self-start">
                         Öppen för bokningar
                       </span>
                     </div>
@@ -370,7 +370,7 @@ export default function AnnouncementsPage() {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex flex-col gap-2 sm:flex-row pt-2">
                       <Link
                         href={`/providers/${announcement.provider.id}`}
                         className="flex-1"

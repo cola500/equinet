@@ -13,16 +13,15 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 
@@ -90,6 +89,9 @@ export default function GroupBookingDetailPage({
   const [groupBooking, setGroupBooking] = useState<GroupBookingDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCopied, setIsCopied] = useState(false)
+  const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null)
+  const [participantToLeave, setParticipantToLeave] = useState<Participant | null>(null)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isCustomer) {
@@ -240,7 +242,7 @@ export default function GroupBookingDetailPage({
             <CardTitle className="text-base">Detaljer</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Adress:</span>
                 <p className="font-medium">{groupBooking.address}</p>
@@ -334,56 +336,24 @@ export default function GroupBookingDetailPage({
                   {/* Actions */}
                   <div>
                     {isCreator && p.userId !== user?.id && isOpen && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-600">
-                            Ta bort
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Ta bort {p.user.firstName}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Deltagaren tas bort från grupprequesten. De kan gå med igen om de vill.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleRemoveParticipant(p.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Ta bort
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-[44px] sm:min-h-0 text-red-600"
+                        onClick={() => setParticipantToRemove(p)}
+                      >
+                        Ta bort
+                      </Button>
                     )}
                     {!isCreator && p.userId === user?.id && isOpen && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-600">
-                            Lämna
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Lämna grupprequesten?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Du kan gå med igen via inbjudningskoden om du ändrar dig.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleLeave(p.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Lämna
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-[44px] sm:min-h-0 text-red-600"
+                        onClick={() => setParticipantToLeave(p)}
+                      >
+                        Lämna
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -393,7 +363,7 @@ export default function GroupBookingDetailPage({
         </Card>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <Button
             variant="outline"
             onClick={() => router.push("/customer/group-bookings")}
@@ -401,32 +371,84 @@ export default function GroupBookingDetailPage({
             Tillbaka
           </Button>
           {isCreator && isOpen && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="text-red-600 border-red-200">
-                  Avbryt grupprequest
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Avbryt grupprequesten?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Alla deltagare kommer att meddelas. Denna åtgärd kan inte ångras.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Behåll</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleCancel}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Avbryt grupprequest
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200"
+              onClick={() => setShowCancelDialog(true)}
+            >
+              Avbryt grupprequest
+            </Button>
           )}
         </div>
+
+        {/* Remove participant dialog */}
+        <ResponsiveAlertDialog
+          open={!!participantToRemove}
+          onOpenChange={(open) => { if (!open) setParticipantToRemove(null) }}
+        >
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Ta bort {participantToRemove?.user.firstName}?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Deltagaren tas bort från grupprequesten. De kan gå med igen om de vill.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={() => { if (participantToRemove) handleRemoveParticipant(participantToRemove.id) }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Ta bort
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
+
+        {/* Leave group dialog */}
+        <ResponsiveAlertDialog
+          open={!!participantToLeave}
+          onOpenChange={(open) => { if (!open) setParticipantToLeave(null) }}
+        >
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Lämna grupprequesten?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Du kan gå med igen via inbjudningskoden om du ändrar dig.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={() => { if (participantToLeave) handleLeave(participantToLeave.id) }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Lämna
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
+
+        {/* Cancel group booking dialog */}
+        <ResponsiveAlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Avbryt grupprequesten?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Alla deltagare kommer att meddelas. Denna åtgärd kan inte ångras.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel>Behåll</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={handleCancel}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Avbryt grupprequest
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
       </div>
     </CustomerLayout>
   )

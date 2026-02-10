@@ -112,6 +112,13 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@utility touch-target {
+  min-height: 44px;
+  @media (min-width: 640px) {
+    min-height: 0;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
