@@ -2,32 +2,54 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+  Search,
+  CalendarDays,
+  PawPrint,
+  MapPin,
+  Users,
+  HelpCircle,
+  User,
+  Shield,
+} from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
+import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
+
+const customerTabs: TabItem[] = [
+  { href: "/providers", label: "Sök", icon: Search, matchPrefix: "/providers" },
+  { href: "/customer/bookings", label: "Bokningar", icon: CalendarDays },
+  { href: "/customer/horses", label: "Hästar", icon: PawPrint },
+]
+
+const customerMoreItems: MoreMenuItem[] = [
+  { href: "/announcements", label: "Planerade rutter", icon: MapPin, matchPrefix: "/announcements" },
+  { href: "/customer/group-bookings", label: "Gruppförfrågningar", icon: Users, matchPrefix: "/customer/group-bookings" },
+  { href: "/customer/faq", label: "Vanliga frågor", icon: HelpCircle },
+  { href: "/customer/profile", label: "Min profil", icon: User },
+]
+
+const allNavItems = [
+  { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
+  { href: "/customer/bookings", label: "Mina bokningar" },
+  { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
+  { href: "/customer/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/customer/group-bookings" },
+  { href: "/customer/horses", label: "Mina hästar" },
+  { href: "/customer/faq", label: "Vanliga frågor" },
+  { href: "/customer/profile", label: "Min profil" },
+]
 
 export function CustomerNav() {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
   const { isAdmin } = useAuth()
 
   const navItems = [
-    { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
-    { href: "/customer/bookings", label: "Mina bokningar" },
-    { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
-    { href: "/customer/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/customer/group-bookings" },
-    { href: "/customer/horses", label: "Mina hästar" },
-    { href: "/customer/faq", label: "Vanliga frågor" },
-    { href: "/customer/profile", label: "Min profil" },
+    ...allNavItems,
     ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", matchPrefix: "/admin" }] : []),
+  ]
+
+  const moreItems: MoreMenuItem[] = [
+    ...customerMoreItems,
+    ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", icon: Shield, matchPrefix: "/admin" }] : []),
   ]
 
   const isActive = (item: typeof navItems[0]) => {
@@ -37,15 +59,8 @@ export function CustomerNav() {
     return pathname === item.href
   }
 
-  const linkClasses = (item: typeof navItems[0], isMobile = false) => {
+  const linkClasses = (item: typeof navItems[0]) => {
     const active = isActive(item)
-    if (isMobile) {
-      return `block py-3 px-4 text-base ${
-        active
-          ? "bg-green-50 text-green-600 font-medium border-l-4 border-green-600"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-      }`
-    }
     return `py-3 ${
       active
         ? "border-b-2 border-green-600 text-green-600 font-medium"
@@ -54,55 +69,27 @@ export function CustomerNav() {
   }
 
   return (
-    <nav className="bg-white border-b">
-      <div className="container mx-auto px-4">
-        {/* Desktop navigation */}
-        <div className="hidden md:flex gap-6">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item) ? "page" : undefined}
-              className={linkClasses(item)}
-            >
-              {item.label}
-            </Link>
-          ))}
+    <>
+      {/* Desktop navigation */}
+      <nav className="bg-white border-b hidden md:block">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item) ? "page" : undefined}
+                className={linkClasses(item)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
+      </nav>
 
-        {/* Mobile navigation */}
-        <div className="md:hidden flex items-center py-2">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-11 w-11">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Öppna meny</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <SheetHeader className="border-b p-4">
-                <SheetTitle>Navigation</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col py-2">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={isActive(item) ? "page" : undefined}
-                    className={linkClasses(item, true)}
-                    onClick={() => setOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <span className="ml-2 text-sm font-medium text-gray-600">
-            {navItems.find((item) => isActive(item))?.label || "Navigation"}
-          </span>
-        </div>
-      </div>
-    </nav>
+      {/* Mobile bottom tab bar */}
+      <BottomTabBar tabs={customerTabs} moreItems={moreItems} />
+    </>
   )
 }

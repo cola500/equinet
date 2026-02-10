@@ -2,43 +2,54 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+  LayoutDashboard,
+  CalendarDays,
+  ClipboardList,
+  Wrench,
+  Route,
+  Megaphone,
+  Users,
+  Clock,
+  UserPlus,
+  Star,
+  User,
+} from "lucide-react"
+import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 
-// Groups for mobile dividers (flat list used for desktop)
-const navGroups = [
-  [
-    { href: "/provider/dashboard", label: "Översikt" },
-    { href: "/provider/calendar", label: "Kalender" },
-    { href: "/provider/bookings", label: "Bokningar" },
-  ],
-  [
-    { href: "/provider/services", label: "Mina tjänster" },
-    { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route" },
-    { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },
-  ],
-  [
-    { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
-    { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service" },
-    { href: "/provider/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/provider/group-bookings" },
-    { href: "/provider/reviews", label: "Recensioner" },
-    { href: "/provider/profile", label: "Min profil" },
-  ],
+const providerTabs: TabItem[] = [
+  { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
+  { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
+  { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList },
 ]
 
-const navItems = navGroups.flat()
+const providerMoreItems: MoreMenuItem[] = [
+  { href: "/provider/services", label: "Mina tjänster", icon: Wrench },
+  { href: "/provider/route-planning", label: "Ruttplanering", icon: Route, matchPrefix: "/provider/route" },
+  { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements" },
+  { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
+  { href: "/provider/due-for-service", label: "Besöksplanering", icon: Clock, matchPrefix: "/provider/due-for-service" },
+  { href: "/provider/group-bookings", label: "Gruppförfrågningar", icon: UserPlus, matchPrefix: "/provider/group-bookings" },
+  { href: "/provider/reviews", label: "Recensioner", icon: Star },
+  { href: "/provider/profile", label: "Min profil", icon: User },
+]
+
+const navItems = [
+  { href: "/provider/dashboard", label: "Översikt" },
+  { href: "/provider/calendar", label: "Kalender" },
+  { href: "/provider/bookings", label: "Bokningar" },
+  { href: "/provider/services", label: "Mina tjänster" },
+  { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route" },
+  { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },
+  { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
+  { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service" },
+  { href: "/provider/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/provider/group-bookings" },
+  { href: "/provider/reviews", label: "Recensioner" },
+  { href: "/provider/profile", label: "Min profil" },
+]
 
 export function ProviderNav() {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
 
   const isActive = (item: typeof navItems[0]) => {
     if (item.matchPrefix) {
@@ -47,15 +58,8 @@ export function ProviderNav() {
     return pathname === item.href
   }
 
-  const linkClasses = (item: typeof navItems[0], isMobile = false) => {
+  const linkClasses = (item: typeof navItems[0]) => {
     const active = isActive(item)
-    if (isMobile) {
-      return `block py-3 px-4 text-base ${
-        active
-          ? "bg-green-50 text-green-600 font-medium border-l-4 border-green-600"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-      }`
-    }
     return `py-3 ${
       active
         ? "border-b-2 border-green-600 text-green-600 font-medium"
@@ -64,60 +68,26 @@ export function ProviderNav() {
   }
 
   return (
-    <nav className="bg-white border-b">
-      <div className="container mx-auto px-4">
-        {/* Desktop navigation */}
-        <div className="hidden md:flex gap-6">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={linkClasses(item)}
-            >
-              {item.label}
-            </Link>
-          ))}
+    <>
+      {/* Desktop navigation */}
+      <nav className="bg-white border-b hidden md:block">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={linkClasses(item)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
+      </nav>
 
-        {/* Mobile navigation */}
-        <div className="md:hidden flex items-center py-2">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-11 w-11">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Öppna meny</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <SheetHeader className="border-b p-4">
-                <SheetTitle>Navigation</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col py-2">
-                {navGroups.map((group, groupIndex) => (
-                  <div key={groupIndex}>
-                    {groupIndex > 0 && (
-                      <div className="border-b border-gray-200 my-1" />
-                    )}
-                    {group.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={linkClasses(item, true)}
-                        onClick={() => setOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <span className="ml-2 text-sm font-medium text-gray-600">
-            {navItems.find((item) => isActive(item))?.label || "Navigation"}
-          </span>
-        </div>
-      </div>
-    </nav>
+      {/* Mobile bottom tab bar */}
+      <BottomTabBar tabs={providerTabs} moreItems={providerMoreItems} />
+    </>
   )
 }
