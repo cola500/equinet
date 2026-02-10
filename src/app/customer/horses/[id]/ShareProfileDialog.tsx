@@ -35,7 +35,7 @@ export function ShareProfileDialog({
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || "Kunde inte skapa delbar lank")
+        throw new Error(data.error || "Kunde inte skapa delbar länk")
       }
 
       const data = await response.json()
@@ -43,7 +43,7 @@ export function ShareProfileDialog({
       setExpiresAt(data.expiresAt)
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Kunde inte skapa delbar lank"
+        error instanceof Error ? error.message : "Kunde inte skapa delbar länk"
       )
     } finally {
       setIsCreating(false)
@@ -54,10 +54,10 @@ export function ShareProfileDialog({
     if (!profileUrl) return
     try {
       await navigator.clipboard.writeText(profileUrl)
-      toast.success("Lanken kopierad!")
+      toast.success("Länken kopierad!")
     } catch {
       // Fallback for browsers without clipboard API
-      toast.error("Kunde inte kopiera. Markera lanken och kopiera manuellt.")
+      toast.error("Kunde inte kopiera. Markera länken och kopiera manuellt.")
     }
   }
 
@@ -81,16 +81,16 @@ export function ShareProfileDialog({
   return (
     <>
       <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => setOpen(true)}>
-        Dela hastprofil
+        Dela hästprofil
       </Button>
       <ResponsiveDialog open={open} onOpenChange={handleClose}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Dela hastprofil for {horseName}</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Dela hästprofil för {horseName}</ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
-              Skapa en delbar lank till hastens uppgifter och vardhistorik. Lanken
-              ar giltig i 30 dagar och kan delas med veterinar, hovslagare eller
-              andra som behover se hastens historik.
+              Skapa en delbar länk till hästens uppgifter och vårdhistorik. Länken
+              är giltig i 30 dagar och kan delas med veterinär, hovslagare eller
+              andra som behöver se hästens historik.
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
 
@@ -100,27 +100,27 @@ export function ShareProfileDialog({
                 Den delade sidan visar:
               </p>
               <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                <li>Hastens grundinfo (namn, ras, alder, farg)</li>
+                <li>Hästens grundinfo (namn, ras, ålder, färg)</li>
                 <li>Registreringsnummer (UELN) och chipnummer</li>
-                <li>Genomforda bokningar</li>
-                <li>Veterinar-, hovslagare- och medicinanteckningar</li>
+                <li>Genomförda bokningar</li>
+                <li>Veterinär-, hovslagare- och medicinanteckningar</li>
               </ul>
               <p className="text-sm text-amber-600">
-                Privata anteckningar (allman, skada) visas inte.
+                Privata anteckningar (allmän, skada) visas inte.
               </p>
               <Button
                 onClick={handleCreateProfile}
                 disabled={isCreating}
                 className="w-full"
               >
-                {isCreating ? "Skapar lank..." : "Skapa delbar lank"}
+                {isCreating ? "Skapar länk..." : "Skapa delbar länk"}
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">
-                  Delbar lank
+                  Delbar länk
                 </label>
                 <div className="flex gap-2">
                   <Input value={profileUrl} readOnly className="font-mono text-sm" />
@@ -131,11 +131,11 @@ export function ShareProfileDialog({
               </div>
               {expiresAt && (
                 <p className="text-sm text-gray-500">
-                  Lanken ar giltig till {formatDate(expiresAt)}.
+                  Länken är giltig till {formatDate(expiresAt)}.
                 </p>
               )}
               <p className="text-sm text-gray-500">
-                Du kan skapa nya lankar nar du vill. Varje lank ar oberoende.
+                Du kan skapa nya länkar när du vill. Varje länk är oberoende.
               </p>
             </div>
           )}

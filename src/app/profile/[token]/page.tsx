@@ -73,13 +73,13 @@ export default function ProfilePage() {
         const response = await fetch(`/api/profile/${token}`)
         if (!response.ok) {
           const body = await response.json()
-          setError(body.error || "Hastprofilen hittades inte")
+          setError(body.error || "Hästprofilen hittades inte")
           return
         }
         const profileData = await response.json()
         setData(profileData)
       } catch {
-        setError("Kunde inte ladda hastprofilen")
+        setError("Kunde inte ladda hästprofilen")
       } finally {
         setIsLoading(false)
       }
@@ -95,7 +95,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Laddar hastprofil...</p>
+          <p className="mt-4 text-gray-600">Laddar hästprofil...</p>
         </div>
       </div>
     )
@@ -107,7 +107,7 @@ export default function ProfilePage() {
         <Card className="max-w-md mx-auto">
           <CardContent className="py-12 text-center">
             <p className="text-lg font-medium text-gray-900 mb-2">
-              Hastprofil inte tillganglig
+              Hästprofil inte tillgänglig
             </p>
             <p className="text-gray-600">{error}</p>
           </CardContent>
@@ -130,9 +130,9 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8 print:mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">Hastprofil</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Hästprofil</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Delad fran Equinet &middot; Giltig till {expiresDate}
+            Delad från Equinet &middot; Giltig till {expiresDate}
           </p>
         </div>
 
@@ -216,8 +216,8 @@ export default function ProfilePage() {
         {/* Footer */}
         <div className="mt-12 text-center text-xs text-gray-400 print:mt-6">
           <p>
-            Denna hastprofil genererades av Equinet. Informationen ar delad av
-            hastens agare.
+            Denna hästprofil genererades av Equinet. Informationen är delad av
+            hästens ägare.
           </p>
         </div>
       </div>
