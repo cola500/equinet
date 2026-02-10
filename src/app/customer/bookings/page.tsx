@@ -720,28 +720,30 @@ export default function CustomerBookingsPage() {
       )}
 
       {/* Cancel Confirmation Dialog */}
-      <ResponsiveAlertDialog open={!!bookingToCancel} onOpenChange={() => setBookingToCancel(null)}>
-        <ResponsiveAlertDialogContent>
-          <ResponsiveAlertDialogHeader>
-            <ResponsiveAlertDialogTitle>Avboka bokning?</ResponsiveAlertDialogTitle>
-            <ResponsiveAlertDialogDescription>
-              Är du säker på att du vill avboka denna bokning? Leverantören kommer att meddelas om avbokningen.
-            </ResponsiveAlertDialogDescription>
-          </ResponsiveAlertDialogHeader>
-          <ResponsiveAlertDialogFooter>
-            <ResponsiveAlertDialogCancel disabled={isCancelling}>
-              Nej, behåll bokningen
-            </ResponsiveAlertDialogCancel>
-            <ResponsiveAlertDialogAction
-              onClick={handleCancelBooking}
-              disabled={isCancelling}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isCancelling ? "Avbokar..." : "Ja, avboka"}
-            </ResponsiveAlertDialogAction>
-          </ResponsiveAlertDialogFooter>
-        </ResponsiveAlertDialogContent>
-      </ResponsiveAlertDialog>
+      {bookingToCancel && (
+        <ResponsiveAlertDialog open={true} onOpenChange={() => setBookingToCancel(null)}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Avboka bokning?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Är du säker på att du vill avboka denna bokning? Leverantören kommer att meddelas om avbokningen.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel disabled={isCancelling} onClick={() => setBookingToCancel(null)}>
+                Nej, behåll bokningen
+              </ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={handleCancelBooking}
+                disabled={isCancelling}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isCancelling ? "Avbokar..." : "Ja, avboka"}
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
+      )}
     </CustomerLayout>
   )
 }

@@ -337,7 +337,8 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **E2E shadcn-selektorer**: `.border.rounded-lg` matchar INTE längre shadcn Cards. Använd `[data-slot="card"]` eller semantiska selektorer (`getByRole`, `getByText`).
 - **E2E iterate-pattern**: När UI har flera matchande element, iterera `cards.nth(i)` istället för `.first()` -- hitta rätt element baserat på state (t.ex. orecenserad bokning).
 - **E2E Route stop tvåstegsflöde**: pending -> "Påbörja besök" -> in_progress -> "Markera som klar" -> completed. Tester måste hantera båda stegen.
-- **ResponsiveAlertDialog**: `src/components/ui/responsive-alert-dialog.tsx` -- samma mönster som `responsive-dialog.tsx`. Använd för alla bekräftelsedialoger (avboka, ta bort, lämna).
+- **ResponsiveAlertDialog**: `src/components/ui/responsive-alert-dialog.tsx` -- samma mönster som `responsive-dialog.tsx`. Använd för alla bekräftelsedialoger (avboka, ta bort, lämna). **KRITISKT: ALDRIG always-mounted** (`open={!!state}`). Använd ALLTID villkorad rendering (`{state && <Dialog open={true}>}`). Always-mounted kraschar på mobil vid hydration-switch mellan AlertDialog och Drawer.
+- **ResponsiveAlertDialogCancel behöver explicit onClick**: På mobil renderas Cancel som vanlig Button (inte Radix AlertDialogCancel), så auto-close fungerar inte. Lägg alltid till `onClick={() => setState(null)}`.
 - **AlertDialog ur .map()**: Rendera ALDRIG AlertDialog med AlertDialogTrigger inuti `.map()`. Använd kontrollerad state (`itemToDelete`) + en enda dialog utanför loopen. Bättre DOM-prestanda och mobilkompatibelt.
 - **Mobil touch target-pattern**: `min-h-[44px] sm:min-h-0` på knappar/inputs + `flex-col gap-2 sm:flex-row` för knapp-stacking + `grid-cols-1 sm:grid-cols-2` för formulär-grid.
 

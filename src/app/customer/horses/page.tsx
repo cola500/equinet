@@ -342,29 +342,31 @@ export default function CustomerHorsesPage() {
       </ResponsiveDialog>
 
       {/* Delete confirmation dialog */}
-      <ResponsiveAlertDialog
-        open={!!horseToDelete}
-        onOpenChange={(open) => { if (!open) setHorseToDelete(null) }}
-      >
-        <ResponsiveAlertDialogContent>
-          <ResponsiveAlertDialogHeader>
-            <ResponsiveAlertDialogTitle>Ta bort {horseToDelete?.name}?</ResponsiveAlertDialogTitle>
-            <ResponsiveAlertDialogDescription>
-              Hästen tas bort från din lista men befintliga bokningar
-              påverkas inte. Du kan lägga till hästen igen senare.
-            </ResponsiveAlertDialogDescription>
-          </ResponsiveAlertDialogHeader>
-          <ResponsiveAlertDialogFooter>
-            <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
-            <ResponsiveAlertDialogAction
-              onClick={() => { if (horseToDelete) handleDelete(horseToDelete) }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Ta bort
-            </ResponsiveAlertDialogAction>
-          </ResponsiveAlertDialogFooter>
-        </ResponsiveAlertDialogContent>
-      </ResponsiveAlertDialog>
+      {horseToDelete && (
+        <ResponsiveAlertDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setHorseToDelete(null) }}
+        >
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Ta bort {horseToDelete.name}?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Hästen tas bort från din lista men befintliga bokningar
+                påverkas inte. Du kan lägga till hästen igen senare.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel onClick={() => setHorseToDelete(null)}>Avbryt</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={() => handleDelete(horseToDelete)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Ta bort
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
+      )}
     </CustomerLayout>
   )
 }
