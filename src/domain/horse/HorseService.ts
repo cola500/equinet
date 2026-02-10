@@ -2,7 +2,7 @@
  * HorseService - Domain service for Horse aggregate
  *
  * Contains business rules for horse management, notes, timeline access control,
- * export, and passport token generation.
+ * export, and profile token generation.
  * Uses Result pattern for explicit error handling.
  */
 import { Result } from '@/domain/shared'
@@ -48,7 +48,7 @@ export interface HorseServiceDeps {
 // Categories visible to providers (privacy: exclude general/injury)
 const PROVIDER_VISIBLE_CATEGORIES = ['veterinary', 'farrier', 'medication']
 
-const PASSPORT_EXPIRY_DAYS = 30
+const PROFILE_EXPIRY_DAYS = 30
 
 export interface TimelineResult {
   timeline: TimelineItem[]
@@ -62,13 +62,15 @@ export interface ExportResult {
     color: string | null
     gender: string | null
     specialNeeds: string | null
+    registrationNumber: string | null
+    microchipNumber: string | null
   }
   bookings: any[]
   notes: TimelineNoteData[]
   timeline: TimelineItem[]
 }
 
-export interface PassportResult {
+export interface ProfileResult {
   token: string
   expiresAt: Date
 }
@@ -334,6 +336,8 @@ export class HorseService {
         color: horse.color,
         gender: horse.gender,
         specialNeeds: horse.specialNeeds,
+        registrationNumber: horse.registrationNumber,
+        microchipNumber: horse.microchipNumber,
       },
       bookings,
       notes,
@@ -342,13 +346,13 @@ export class HorseService {
   }
 
   // ==========================================
-  // PASSPORT
+  // PROFILE TOKEN
   // ==========================================
 
-  async createPassportToken(
+  async createProfileToken(
     horseId: string,
     ownerId: string
-  ): Promise<Result<PassportResult, HorseError>> {
+  ): Promise<Result<ProfileResult, HorseError>> {
     const horse = await this.repo.findByIdForOwner(horseId, ownerId)
     if (!horse) {
       return Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
@@ -356,9 +360,9 @@ export class HorseService {
 
     const token = randomBytes(32).toString('hex')
     const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + PASSPORT_EXPIRY_DAYS)
+    expiresAt.setDate(expiresAt.getDate() + PROFILE_EXPIRY_DAYS)
 
-    await this.repo.createPassportToken(horseId, token, expiresAt)
+    await this.repo.createProfileToken(horseId, token, expiresAt)
 
     return Result.ok({ token, expiresAt })
   }

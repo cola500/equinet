@@ -20,6 +20,8 @@ interface HorseInfo {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  registrationNumber: string | null
+  microchipNumber: string | null
 }
 
 interface TimelineItem {
@@ -35,7 +37,7 @@ interface TimelineItem {
   authorName?: string
 }
 
-interface PassportData {
+interface ProfileData {
   horse: HorseInfo
   timeline: TimelineItem[]
   expiresAt: string
@@ -57,34 +59,34 @@ const CATEGORY_OPTIONS: Record<string, { label: string; color: string }> = {
 
 // --- Page ---
 
-export default function PassportPage() {
+export default function ProfilePage() {
   const params = useParams()
   const token = params.token as string
 
-  const [data, setData] = useState<PassportData | null>(null)
+  const [data, setData] = useState<ProfileData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchPassport() {
+    async function fetchProfile() {
       try {
-        const response = await fetch(`/api/passport/${token}`)
+        const response = await fetch(`/api/profile/${token}`)
         if (!response.ok) {
           const body = await response.json()
-          setError(body.error || "Hastpasset hittades inte")
+          setError(body.error || "Hastprofilen hittades inte")
           return
         }
-        const passportData = await response.json()
-        setData(passportData)
+        const profileData = await response.json()
+        setData(profileData)
       } catch {
-        setError("Kunde inte ladda hastpasset")
+        setError("Kunde inte ladda hastprofilen")
       } finally {
         setIsLoading(false)
       }
     }
 
     if (token) {
-      fetchPassport()
+      fetchProfile()
     }
   }, [token])
 
@@ -93,7 +95,7 @@ export default function PassportPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Laddar hastpass...</p>
+          <p className="mt-4 text-gray-600">Laddar hastprofil...</p>
         </div>
       </div>
     )
@@ -105,7 +107,7 @@ export default function PassportPage() {
         <Card className="max-w-md mx-auto">
           <CardContent className="py-12 text-center">
             <p className="text-lg font-medium text-gray-900 mb-2">
-              Hastpass inte tillgangligt
+              Hastprofil inte tillganglig
             </p>
             <p className="text-gray-600">{error}</p>
           </CardContent>
@@ -128,7 +130,7 @@ export default function PassportPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8 print:mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">Hastpass</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Hastprofil</h1>
           <p className="text-gray-500 text-sm mt-1">
             Delad fran Equinet &middot; Giltig till {expiresDate}
           </p>
@@ -170,6 +172,18 @@ export default function PassportPage() {
                   </span>
                 </div>
               )}
+              {horse.registrationNumber && (
+                <div>
+                  <span className="text-gray-500">UELN:</span>{" "}
+                  <span className="font-medium font-mono">{horse.registrationNumber}</span>
+                </div>
+              )}
+              {horse.microchipNumber && (
+                <div>
+                  <span className="text-gray-500">Chipnummer:</span>{" "}
+                  <span className="font-medium font-mono">{horse.microchipNumber}</span>
+                </div>
+              )}
               {horse.specialNeeds && (
                 <div className="col-span-2 bg-amber-50 p-3 rounded">
                   <span className="text-amber-800 font-medium">
@@ -194,7 +208,7 @@ export default function PassportPage() {
         ) : (
           <div className="space-y-3">
             {timeline.map((item) => (
-              <PassportTimelineCard key={`${item.type}-${item.id}`} item={item} />
+              <ProfileTimelineCard key={`${item.type}-${item.id}`} item={item} />
             ))}
           </div>
         )}
@@ -202,7 +216,7 @@ export default function PassportPage() {
         {/* Footer */}
         <div className="mt-12 text-center text-xs text-gray-400 print:mt-6">
           <p>
-            Detta hastpass genererades av Equinet. Informationen ar delad av
+            Denna hastprofil genererades av Equinet. Informationen ar delad av
             hastens agare.
           </p>
         </div>
@@ -211,9 +225,9 @@ export default function PassportPage() {
   )
 }
 
-// --- Timeline card for passport ---
+// --- Timeline card for profile ---
 
-function PassportTimelineCard({ item }: { item: TimelineItem }) {
+function ProfileTimelineCard({ item }: { item: TimelineItem }) {
   const date = new Date(item.date)
   const dateStr = date.toLocaleDateString("sv-SE", {
     year: "numeric",

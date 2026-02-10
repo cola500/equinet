@@ -341,6 +341,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **ResponsiveAlertDialogCancel behöver explicit onClick**: På mobil renderas Cancel som vanlig Button (inte Radix AlertDialogCancel), så auto-close fungerar inte. Lägg alltid till `onClick={() => setState(null)}`.
 - **AlertDialog ur .map()**: Rendera ALDRIG AlertDialog med AlertDialogTrigger inuti `.map()`. Använd kontrollerad state (`itemToDelete`) + en enda dialog utanför loopen. Bättre DOM-prestanda och mobilkompatibelt.
 - **Mobil touch target-pattern**: `min-h-[44px] sm:min-h-0` på knappar/inputs + `flex-col gap-2 sm:flex-row` för knapp-stacking + `grid-cols-1 sm:grid-cols-2` för formulär-grid.
+- **Rename Next.js route-mappar**: `git mv` (bevarar historik) + custom SQL migration (`ALTER TABLE RENAME TO` -- Prisma auto-detekterar inte rename). Uppdatera bottom-up: Interface -> Repo -> Service -> Route. Verifiera med `grep` att noll kvarvarande referenser finns.
+- **Hästprofil (f.d. hästpass)**: `/api/horses/[id]/profile` (skapa delbar länk) + `/api/profile/[token]` (publik sida). Ersätter alla `/passport/`-routes. `HorseProfileToken`-tabell (f.d. `HorsePassportToken`).
+- **Horse registrationNumber + microchipNumber**: UELN (Unique Equine Life Number) + mikrochip-ID. Nullable, max 15 tecken. Synliga överallt: ägare, leverantörer, delad profil, CSV-export.
 
 ---
 

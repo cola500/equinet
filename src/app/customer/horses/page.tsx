@@ -53,6 +53,8 @@ interface Horse {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  registrationNumber: string | null
+  microchipNumber: string | null
   photoUrl: string | null
   createdAt: string
 }
@@ -70,6 +72,8 @@ const emptyForm = {
   color: "",
   gender: "",
   specialNeeds: "",
+  registrationNumber: "",
+  microchipNumber: "",
 }
 
 export default function CustomerHorsesPage() {
@@ -99,6 +103,8 @@ export default function CustomerHorsesPage() {
       if (formData.color) body.color = formData.color
       if (formData.gender) body.gender = formData.gender
       if (formData.specialNeeds) body.specialNeeds = formData.specialNeeds
+      if (formData.registrationNumber) body.registrationNumber = formData.registrationNumber
+      if (formData.microchipNumber) body.microchipNumber = formData.microchipNumber
 
       const response = await fetch("/api/horses", {
         method: "POST",
@@ -135,6 +141,8 @@ export default function CustomerHorsesPage() {
       body.color = formData.color || null
       body.gender = formData.gender || null
       body.specialNeeds = formData.specialNeeds || null
+      body.registrationNumber = formData.registrationNumber || null
+      body.microchipNumber = formData.microchipNumber || null
 
       const response = await fetch(`/api/horses/${editingHorse.id}`, {
         method: "PUT",
@@ -186,6 +194,8 @@ export default function CustomerHorsesPage() {
       color: horse.color || "",
       gender: horse.gender || "",
       specialNeeds: horse.specialNeeds || "",
+      registrationNumber: horse.registrationNumber || "",
+      microchipNumber: horse.microchipNumber || "",
     })
   }
 
@@ -444,6 +454,29 @@ function HorseForm({ formData, setFormData, onSubmit, isSaving, submitLabel }: H
               <SelectItem value="stallion">Hingst</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="horse-registrationNumber">Registreringsnummer (UELN)</Label>
+          <Input
+            id="horse-registrationNumber"
+            value={formData.registrationNumber}
+            onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+            placeholder="T.ex. 752009876543210"
+            maxLength={15}
+          />
+        </div>
+        <div>
+          <Label htmlFor="horse-microchipNumber">Chipnummer</Label>
+          <Input
+            id="horse-microchipNumber"
+            value={formData.microchipNumber}
+            onChange={(e) => setFormData({ ...formData, microchipNumber: e.target.value })}
+            placeholder="T.ex. 752093100012345"
+            maxLength={15}
+          />
         </div>
       </div>
 

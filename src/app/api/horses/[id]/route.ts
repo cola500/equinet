@@ -22,6 +22,8 @@ const horseUpdateSchema = z.object({
     message: "Kön måste vara mare, gelding eller stallion",
   }).nullable().optional(),
   specialNeeds: z.string().max(1000, "Specialbehov för lång text (max 1000 tecken)").nullable().optional(),
+  registrationNumber: z.string().max(15, "Registreringsnummer för långt (max 15 tecken)").nullable().optional(),
+  microchipNumber: z.string().max(15, "Chipnummer för långt (max 15 tecken)").nullable().optional(),
 }).strict()
 
 type RouteContext = { params: Promise<{ id: string }> }

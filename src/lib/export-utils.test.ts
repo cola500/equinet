@@ -217,6 +217,8 @@ describe("flattenHorses", () => {
         color: "Brun",
         gender: "gelding",
         specialNeeds: "Känsliga hovar",
+        registrationNumber: "752009876543210",
+        microchipNumber: "752093100012345",
         createdAt: new Date("2026-01-05"),
       },
     ]
@@ -230,6 +232,8 @@ describe("flattenHorses", () => {
       color: "Brun",
       gender: "gelding",
       specialNeeds: "Känsliga hovar",
+      registrationNumber: "752009876543210",
+      microchipNumber: "752093100012345",
       createdAt: "2026-01-05",
     })
   })
@@ -244,6 +248,8 @@ describe("flattenHorses", () => {
         color: null,
         gender: "mare",
         specialNeeds: null,
+        registrationNumber: null,
+        microchipNumber: null,
         createdAt: new Date("2026-01-05"),
       },
     ]
@@ -253,6 +259,8 @@ describe("flattenHorses", () => {
     expect(flat[0].birthYear).toBe("")
     expect(flat[0].color).toBe("")
     expect(flat[0].specialNeeds).toBe("")
+    expect(flat[0].registrationNumber).toBe("")
+    expect(flat[0].microchipNumber).toBe("")
   })
 
   it("should return empty array for empty input", () => {

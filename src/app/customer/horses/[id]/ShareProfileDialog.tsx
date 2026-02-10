@@ -12,24 +12,24 @@ import {
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
-interface SharePassportDialogProps {
+interface ShareProfileDialogProps {
   horseId: string
   horseName: string
 }
 
-export function SharePassportDialog({
+export function ShareProfileDialog({
   horseId,
   horseName,
-}: SharePassportDialogProps) {
+}: ShareProfileDialogProps) {
   const [open, setOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
-  const [passportUrl, setPassportUrl] = useState<string | null>(null)
+  const [profileUrl, setProfileUrl] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
 
-  const handleCreatePassport = async () => {
+  const handleCreateProfile = async () => {
     setIsCreating(true)
     try {
-      const response = await fetch(`/api/horses/${horseId}/passport`, {
+      const response = await fetch(`/api/horses/${horseId}/profile`, {
         method: "POST",
       })
 
@@ -39,7 +39,7 @@ export function SharePassportDialog({
       }
 
       const data = await response.json()
-      setPassportUrl(data.url)
+      setProfileUrl(data.url)
       setExpiresAt(data.expiresAt)
     } catch (error) {
       toast.error(
@@ -51,9 +51,9 @@ export function SharePassportDialog({
   }
 
   const handleCopy = async () => {
-    if (!passportUrl) return
+    if (!profileUrl) return
     try {
-      await navigator.clipboard.writeText(passportUrl)
+      await navigator.clipboard.writeText(profileUrl)
       toast.success("Lanken kopierad!")
     } catch {
       // Fallback for browsers without clipboard API
@@ -65,7 +65,7 @@ export function SharePassportDialog({
     setOpen(isOpen)
     if (!isOpen) {
       // Reset state when closing
-      setPassportUrl(null)
+      setProfileUrl(null)
       setExpiresAt(null)
     }
   }
@@ -81,12 +81,12 @@ export function SharePassportDialog({
   return (
     <>
       <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => setOpen(true)}>
-        Dela hastpass
+        Dela hastprofil
       </Button>
       <ResponsiveDialog open={open} onOpenChange={handleClose}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Dela hastpass for {horseName}</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Dela hastprofil for {horseName}</ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
               Skapa en delbar lank till hastens uppgifter och vardhistorik. Lanken
               ar giltig i 30 dagar och kan delas med veterinar, hovslagare eller
@@ -94,13 +94,14 @@ export function SharePassportDialog({
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
 
-          {!passportUrl ? (
+          {!profileUrl ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
                 Den delade sidan visar:
               </p>
               <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
                 <li>Hastens grundinfo (namn, ras, alder, farg)</li>
+                <li>Registreringsnummer (UELN) och chipnummer</li>
                 <li>Genomforda bokningar</li>
                 <li>Veterinar-, hovslagare- och medicinanteckningar</li>
               </ul>
@@ -108,7 +109,7 @@ export function SharePassportDialog({
                 Privata anteckningar (allman, skada) visas inte.
               </p>
               <Button
-                onClick={handleCreatePassport}
+                onClick={handleCreateProfile}
                 disabled={isCreating}
                 className="w-full"
               >
@@ -122,7 +123,7 @@ export function SharePassportDialog({
                   Delbar lank
                 </label>
                 <div className="flex gap-2">
-                  <Input value={passportUrl} readOnly className="font-mono text-sm" />
+                  <Input value={profileUrl} readOnly className="font-mono text-sm" />
                   <Button onClick={handleCopy} variant="outline">
                     Kopiera
                   </Button>

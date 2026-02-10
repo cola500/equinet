@@ -15,7 +15,7 @@ vi.mock("@/lib/logger", () => ({
 
 // Mock service factory
 const mockService = {
-  createPassportToken: vi.fn(),
+  createProfileToken: vi.fn(),
 }
 
 vi.mock("@/domain/horse/HorseService", () => ({
@@ -28,18 +28,18 @@ const mockSession = {
 
 const makeContext = (id: string) => ({ params: Promise.resolve({ id }) })
 
-describe("POST /api/horses/[id]/passport", () => {
+describe("POST /api/horses/[id]/profile", () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it("should create passport token for owned horse", async () => {
+  it("should create profile token for owned horse", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    mockService.createPassportToken.mockResolvedValue(Result.ok({
+    mockService.createProfileToken.mockResolvedValue(Result.ok({
       token: "abc123def456",
       expiresAt: new Date("2026-03-01"),
     }))
 
     const request = new NextRequest(
-      "http://localhost:3000/api/horses/horse-1/passport",
+      "http://localhost:3000/api/horses/horse-1/profile",
       { method: "POST" }
     )
     const response = await POST(request, makeContext("horse-1"))
@@ -47,7 +47,7 @@ describe("POST /api/horses/[id]/passport", () => {
 
     expect(response.status).toBe(201)
     expect(data.token).toBeDefined()
-    expect(data.url).toContain("/passport/")
+    expect(data.url).toContain("/profile/")
     expect(data.expiresAt).toBeDefined()
   })
 
@@ -56,13 +56,13 @@ describe("POST /api/horses/[id]/passport", () => {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 30)
 
-    mockService.createPassportToken.mockResolvedValue(Result.ok({
+    mockService.createProfileToken.mockResolvedValue(Result.ok({
       token: "test-token",
       expiresAt,
     }))
 
     const request = new NextRequest(
-      "http://localhost:3000/api/horses/horse-1/passport",
+      "http://localhost:3000/api/horses/horse-1/profile",
       { method: "POST" }
     )
     const response = await POST(request, makeContext("horse-1"))
@@ -78,12 +78,12 @@ describe("POST /api/horses/[id]/passport", () => {
 
   it("should return 404 for non-owned horse (IDOR protection)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
-    mockService.createPassportToken.mockResolvedValue(
+    mockService.createProfileToken.mockResolvedValue(
       Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
     )
 
     const request = new NextRequest(
-      "http://localhost:3000/api/horses/other-horse/passport",
+      "http://localhost:3000/api/horses/other-horse/profile",
       { method: "POST" }
     )
     const response = await POST(request, makeContext("other-horse"))
@@ -100,7 +100,7 @@ describe("POST /api/horses/[id]/passport", () => {
     )
 
     const request = new NextRequest(
-      "http://localhost:3000/api/horses/horse-1/passport",
+      "http://localhost:3000/api/horses/horse-1/profile",
       { method: "POST" }
     )
     const response = await POST(request, makeContext("horse-1"))

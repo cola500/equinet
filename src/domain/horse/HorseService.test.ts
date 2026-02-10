@@ -16,6 +16,8 @@ const makeHorse = (overrides: Partial<Horse> = {}): Horse => ({
   color: 'Brun',
   gender: 'gelding',
   specialNeeds: null,
+  registrationNumber: null,
+  microchipNumber: null,
   photoUrl: null,
   isActive: true,
   createdAt: new Date(),
@@ -456,14 +458,14 @@ describe('HorseService', () => {
   })
 
   // ==========================================
-  // PASSPORT
+  // PROFILE TOKEN
   // ==========================================
 
-  describe('createPassportToken', () => {
-    it('should create passport token for owner', async () => {
+  describe('createProfileToken', () => {
+    it('should create profile token for owner', async () => {
       repo.seedHorses([makeHorse()])
 
-      const result = await service.createPassportToken('horse-1', 'owner-1')
+      const result = await service.createProfileToken('horse-1', 'owner-1')
 
       expect(result.isSuccess).toBe(true)
       expect(result.value.token).toBeDefined()
@@ -474,7 +476,7 @@ describe('HorseService', () => {
     it('should set 30 day expiry', async () => {
       repo.seedHorses([makeHorse()])
 
-      const result = await service.createPassportToken('horse-1', 'owner-1')
+      const result = await service.createProfileToken('horse-1', 'owner-1')
 
       expect(result.isSuccess).toBe(true)
       const now = Date.now()
@@ -487,7 +489,7 @@ describe('HorseService', () => {
     it('should fail if not owner', async () => {
       repo.seedHorses([makeHorse()])
 
-      const result = await service.createPassportToken('horse-1', 'attacker')
+      const result = await service.createProfileToken('horse-1', 'attacker')
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('HORSE_NOT_FOUND')

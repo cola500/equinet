@@ -1,7 +1,7 @@
 /**
  * IHorseRepository - Repository interface for Horse aggregate
  *
- * Defines data access operations for horses, notes, timeline, and passport.
+ * Defines data access operations for horses, notes, timeline, and profile tokens.
  * Domain layer depends on this interface, not the implementation.
  */
 
@@ -18,6 +18,8 @@ export interface Horse {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  registrationNumber: string | null
+  microchipNumber: string | null
   photoUrl: string | null
   isActive: boolean
   createdAt: Date
@@ -55,7 +57,7 @@ export interface HorseNoteWithAuthor extends HorseNote {
   author: { firstName: string; lastName: string }
 }
 
-export interface PassportToken {
+export interface ProfileToken {
   id: string
   horseId: string
   token: string
@@ -75,6 +77,8 @@ export interface CreateHorseData {
   color?: string
   gender?: string
   specialNeeds?: string
+  registrationNumber?: string
+  microchipNumber?: string
 }
 
 export interface UpdateHorseData {
@@ -84,6 +88,8 @@ export interface UpdateHorseData {
   color?: string | null
   gender?: string | null
   specialNeeds?: string | null
+  registrationNumber?: string | null
+  microchipNumber?: string | null
 }
 
 export interface CreateNoteData {
@@ -199,8 +205,8 @@ export interface IHorseRepository {
   hasProviderBookingForHorse(horseId: string, userId: string): Promise<boolean>
 
   // ==========================================
-  // PASSPORT
+  // PROFILE TOKEN
   // ==========================================
 
-  createPassportToken(horseId: string, token: string, expiresAt: Date): Promise<PassportToken>
+  createProfileToken(horseId: string, token: string, expiresAt: Date): Promise<ProfileToken>
 }

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/responsive-dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
-import { SharePassportDialog } from "./SharePassportDialog"
+import { ShareProfileDialog } from "./ShareProfileDialog"
 import { ImageUpload } from "@/components/ui/image-upload"
 
 // --- Types ---
@@ -45,6 +45,8 @@ interface Horse {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  registrationNumber: string | null
+  microchipNumber: string | null
   photoUrl: string | null
 }
 
@@ -234,9 +236,19 @@ export default function HorseDetailPage() {
                       .filter(Boolean)
                       .join(" · ") || "Ingen extra info"}
                   </p>
+                  {(horse.registrationNumber || horse.microchipNumber) && (
+                    <p className="text-sm text-gray-500 mt-1 font-mono">
+                      {[
+                        horse.registrationNumber && `UELN: ${horse.registrationNumber}`,
+                        horse.microchipNumber && `Chip: ${horse.microchipNumber}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
                 </div>
               </div>
-              <SharePassportDialog horseId={horse.id} horseName={horse.name} />
+              <ShareProfileDialog horseId={horse.id} horseName={horse.name} />
             </div>
           </CardHeader>
           {horse.specialNeeds && (

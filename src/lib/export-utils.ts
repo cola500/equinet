@@ -166,6 +166,8 @@ export interface FlatHorse {
   color: string
   gender: string
   specialNeeds: string
+  registrationNumber: string
+  microchipNumber: string
   createdAt: string
 }
 
@@ -178,6 +180,8 @@ export function flattenHorses(
     color?: string | null
     gender?: string | null
     specialNeeds?: string | null
+    registrationNumber?: string | null
+    microchipNumber?: string | null
     createdAt: Date | string
   }>
 ): FlatHorse[] {
@@ -188,6 +192,8 @@ export function flattenHorses(
     color: h.color || "",
     gender: h.gender || "",
     specialNeeds: h.specialNeeds || "",
+    registrationNumber: h.registrationNumber || "",
+    microchipNumber: h.microchipNumber || "",
     createdAt: formatDate(h.createdAt),
   }))
 }

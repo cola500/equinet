@@ -6,10 +6,10 @@ import { mergeTimeline, TimelineBooking, TimelineNote } from "@/lib/timeline"
 
 type RouteContext = { params: Promise<{ token: string }> }
 
-// Categories visible in public passport (privacy: exclude general/injury)
+// Categories visible in public profile (privacy: exclude general/injury)
 const PUBLIC_VISIBLE_CATEGORIES = ["veterinary", "farrier", "medication"]
 
-// GET /api/passport/[token] - Public horse passport (no auth required)
+// GET /api/profile/[token] - Public horse profile (no auth required)
 export async function GET(request: NextRequest, context: RouteContext) {
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.api(clientIp)
@@ -24,37 +24,37 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { token } = await context.params
 
     // Find token with horse data
-    const passportToken = await prisma.horsePassportToken.findUnique({
+    const profileToken = await prisma.horseProfileToken.findUnique({
       where: { token },
       include: {
         horse: true,
       },
     })
 
-    if (!passportToken) {
+    if (!profileToken) {
       return NextResponse.json(
-        { error: "Hästpasset hittades inte" },
+        { error: "Hästprofilen hittades inte" },
         { status: 404 }
       )
     }
 
     // Check expiry
-    if (new Date() > passportToken.expiresAt) {
+    if (new Date() > profileToken.expiresAt) {
       return NextResponse.json(
-        { error: "Hästpasslänken är utgången. Be ägaren skapa en ny." },
+        { error: "Profillänken har gått ut. Be ägaren skapa en ny." },
         { status: 404 }
       )
     }
 
     // Check if horse is still active
-    if (!passportToken.horse.isActive) {
+    if (!profileToken.horse.isActive) {
       return NextResponse.json(
         { error: "Hästen hittades inte" },
         { status: 404 }
       )
     }
 
-    const horse = passportToken.horse
+    const horse = profileToken.horse
 
     // Fetch completed bookings for timeline
     const bookings = await prisma.booking.findMany({
@@ -118,9 +118,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const currentYear = new Date().getFullYear()
     const age = horse.birthYear ? currentYear - horse.birthYear : null
 
-    logger.info("Passport viewed", {
+    logger.info("Horse profile viewed", {
       horseId: horse.id,
-      tokenId: passportToken.id,
+      tokenId: profileToken.id,
     })
 
     return NextResponse.json({
@@ -132,14 +132,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
         color: horse.color,
         gender: horse.gender,
         specialNeeds: horse.specialNeeds,
+        registrationNumber: horse.registrationNumber,
+        microchipNumber: horse.microchipNumber,
       },
       timeline,
-      expiresAt: passportToken.expiresAt.toISOString(),
+      expiresAt: profileToken.expiresAt.toISOString(),
     })
   } catch (error) {
-    logger.error("Failed to fetch passport data", error as Error)
+    logger.error("Failed to fetch profile data", error as Error)
     return NextResponse.json(
-      { error: "Kunde inte hämta hästpassdata" },
+      { error: "Kunde inte hämta profildata" },
       { status: 500 }
     )
   }

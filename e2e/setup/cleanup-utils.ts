@@ -79,7 +79,7 @@ export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void
       where: { horse: testHorseFilter },
       data: { horseId: null },
     })
-    // HorseNote + HorsePassportToken have onDelete: Cascade, deleted automatically
+    // HorseNote + HorseProfileToken have onDelete: Cascade, deleted automatically
     await prisma.horse.deleteMany({
       where: testHorseFilter,
     })

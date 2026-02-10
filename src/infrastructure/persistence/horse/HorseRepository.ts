@@ -19,7 +19,7 @@ import type {
   TimelineBookingData,
   TimelineNoteData,
   ExportBookingData,
-  PassportToken,
+  ProfileToken,
 } from './IHorseRepository'
 
 // -----------------------------------------------------------
@@ -35,6 +35,8 @@ const horseSelect = {
   color: true,
   gender: true,
   specialNeeds: true,
+  registrationNumber: true,
+  microchipNumber: true,
   photoUrl: true,
   isActive: true,
   createdAt: true,
@@ -117,6 +119,8 @@ export class HorseRepository implements IHorseRepository {
         color: data.color,
         gender: data.gender,
         specialNeeds: data.specialNeeds,
+        registrationNumber: data.registrationNumber,
+        microchipNumber: data.microchipNumber,
       },
       select: horseSelect,
     })
@@ -324,11 +328,11 @@ export class HorseRepository implements IHorseRepository {
   }
 
   // ==========================================
-  // PASSPORT
+  // PROFILE TOKEN
   // ==========================================
 
-  async createPassportToken(horseId: string, token: string, expiresAt: Date): Promise<PassportToken> {
-    return prisma.horsePassportToken.create({
+  async createProfileToken(horseId: string, token: string, expiresAt: Date): Promise<ProfileToken> {
+    return prisma.horseProfileToken.create({
       data: { horseId, token, expiresAt },
     })
   }

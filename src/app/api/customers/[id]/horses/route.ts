@@ -62,6 +62,8 @@ export async function GET(
         breed: true,
         birthYear: true,
         gender: true,
+        registrationNumber: true,
+        microchipNumber: true,
       },
       orderBy: { name: 'asc' },
     })

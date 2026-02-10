@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
         color: true,
         gender: true,
         specialNeeds: true,
+        registrationNumber: true,
+        microchipNumber: true,
         createdAt: true,
       },
     })

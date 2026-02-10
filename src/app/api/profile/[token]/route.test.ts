@@ -5,7 +5,7 @@ import { NextRequest } from "next/server"
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    horsePassportToken: { findUnique: vi.fn() },
+    horseProfileToken: { findUnique: vi.fn() },
     booking: { findMany: vi.fn() },
     horseNote: { findMany: vi.fn() },
   },
@@ -34,6 +34,8 @@ const validToken = {
     color: "Brun",
     gender: "gelding",
     specialNeeds: null,
+    registrationNumber: "752009876543210",
+    microchipNumber: "752093100012345",
     isActive: true,
   },
 }
@@ -66,15 +68,15 @@ const mockNotes = [
   },
 ]
 
-describe("GET /api/passport/[token]", () => {
+describe("GET /api/profile/[token]", () => {
   beforeEach(() => vi.clearAllMocks())
 
   it("should return horse data for valid token (no auth required)", async () => {
-    vi.mocked(prisma.horsePassportToken.findUnique).mockResolvedValue(validToken as any)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as any)
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue(mockNotes as any)
 
-    const request = new NextRequest("http://localhost:3000/api/passport/abc123")
+    const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     const response = await GET(request, makeContext("abc123"))
     const data = await response.json()
 
@@ -85,32 +87,46 @@ describe("GET /api/passport/[token]", () => {
     expect(data.timeline.length).toBeGreaterThan(0)
   })
 
-  it("should return 404 for expired token", async () => {
-    vi.mocked(prisma.horsePassportToken.findUnique).mockResolvedValue(expiredToken as any)
+  it("should include registrationNumber and microchipNumber in response", async () => {
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
+    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
 
-    const request = new NextRequest("http://localhost:3000/api/passport/abc123")
+    const request = new NextRequest("http://localhost:3000/api/profile/abc123")
+    const response = await GET(request, makeContext("abc123"))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.horse.registrationNumber).toBe("752009876543210")
+    expect(data.horse.microchipNumber).toBe("752093100012345")
+  })
+
+  it("should return 404 for expired token", async () => {
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(expiredToken as any)
+
+    const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     const response = await GET(request, makeContext("abc123"))
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toContain("utgången")
+    expect(data.error).toContain("gått ut")
   })
 
   it("should return 404 for non-existent token", async () => {
-    vi.mocked(prisma.horsePassportToken.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(null)
 
-    const request = new NextRequest("http://localhost:3000/api/passport/invalid")
+    const request = new NextRequest("http://localhost:3000/api/profile/invalid")
     const response = await GET(request, makeContext("invalid"))
 
     expect(response.status).toBe(404)
   })
 
   it("should not expose private notes (general, injury)", async () => {
-    vi.mocked(prisma.horsePassportToken.findUnique).mockResolvedValue(validToken as any)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as any)
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue(mockNotes as any)
 
-    const request = new NextRequest("http://localhost:3000/api/passport/abc123")
+    const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     await GET(request, makeContext("abc123"))
 
     // Verify notes are fetched with privacy filter
@@ -128,11 +144,11 @@ describe("GET /api/passport/[token]", () => {
       ...validToken,
       horse: { ...validToken.horse, isActive: false },
     }
-    vi.mocked(prisma.horsePassportToken.findUnique).mockResolvedValue(
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(
       inactiveHorseToken as any
     )
 
-    const request = new NextRequest("http://localhost:3000/api/passport/abc123")
+    const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     const response = await GET(request, makeContext("abc123"))
 
     expect(response.status).toBe(404)

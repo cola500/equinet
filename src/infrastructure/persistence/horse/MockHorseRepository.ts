@@ -18,14 +18,14 @@ import type {
   TimelineBookingData,
   TimelineNoteData,
   ExportBookingData,
-  PassportToken,
+  ProfileToken,
 } from './IHorseRepository'
 
 export class MockHorseRepository implements IHorseRepository {
   private horses: Map<string, Horse> = new Map()
   private notes: Map<string, HorseNote> = new Map()
   private bookings: Map<string, TimelineBookingData & { horseId: string; startTime?: string; endTime?: string; horse?: { name: string } }> = new Map()
-  private passportTokens: Map<string, PassportToken> = new Map()
+  private profileTokens: Map<string, ProfileToken> = new Map()
 
   // Seedable relation data
   private authorNames: Map<string, { firstName: string; lastName: string }> = new Map()
@@ -79,6 +79,8 @@ export class MockHorseRepository implements IHorseRepository {
       color: data.color ?? null,
       gender: data.gender ?? null,
       specialNeeds: data.specialNeeds ?? null,
+      registrationNumber: data.registrationNumber ?? null,
+      microchipNumber: data.microchipNumber ?? null,
       photoUrl: null,
       isActive: true,
       createdAt: new Date(),
@@ -104,6 +106,8 @@ export class MockHorseRepository implements IHorseRepository {
     if (data.color !== undefined) updated.color = data.color ?? null
     if (data.gender !== undefined) updated.gender = data.gender ?? null
     if (data.specialNeeds !== undefined) updated.specialNeeds = data.specialNeeds ?? null
+    if (data.registrationNumber !== undefined) updated.registrationNumber = data.registrationNumber ?? null
+    if (data.microchipNumber !== undefined) updated.microchipNumber = data.microchipNumber ?? null
 
     this.horses.set(id, updated)
     return updated
@@ -236,19 +240,19 @@ export class MockHorseRepository implements IHorseRepository {
   }
 
   // ==========================================
-  // PASSPORT
+  // PROFILE TOKEN
   // ==========================================
 
-  async createPassportToken(horseId: string, token: string, expiresAt: Date): Promise<PassportToken> {
-    const passportToken: PassportToken = {
+  async createProfileToken(horseId: string, token: string, expiresAt: Date): Promise<ProfileToken> {
+    const profileToken: ProfileToken = {
       id: `pt-${Date.now()}`,
       horseId,
       token,
       expiresAt,
       createdAt: new Date(),
     }
-    this.passportTokens.set(token, passportToken)
-    return passportToken
+    this.profileTokens.set(token, profileToken)
+    return profileToken
   }
 
   // ==========================================
@@ -259,7 +263,7 @@ export class MockHorseRepository implements IHorseRepository {
     this.horses.clear()
     this.notes.clear()
     this.bookings.clear()
-    this.passportTokens.clear()
+    this.profileTokens.clear()
     this.authorNames.clear()
     this.providerBookings.clear()
   }

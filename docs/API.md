@@ -1751,16 +1751,16 @@ Exportera hästdata med fullständig tidslinje.
 
 ---
 
-## Hästpass (delbar länk)
+## Hästprofil (delbar länk)
 
-### POST /api/horses/:id/passport
+### POST /api/horses/:id/profile
 
-Skapa en delbar hästpass-länk (30 dagars expiry).
+Skapa en delbar hästprofil-länk (30 dagars expiry).
 
 **Auth:** Required (ägare)
 **Response:** `201` `{ token, url, expiresAt }`
 
-### GET /api/passport/:token
+### GET /api/profile/:token
 
 Hämta hästdata via publik token (ingen auth).
 

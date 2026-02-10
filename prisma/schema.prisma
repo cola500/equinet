@@ -218,6 +218,8 @@ model Horse {
   color        String?  // Färg (t.ex. "Fux", "Brun", "Skimmel")
   gender       String?  // "mare" | "gelding" | "stallion" (sto/valack/hingst)
   specialNeeds String?  // Medicinska behov, allergier, temperament etc.
+  registrationNumber String?  // UELN (Unique Equine Life Number)
+  microchipNumber    String?  // Mikrochip-ID (ISO 11784/11785)
   photoUrl     String?  // URL to horse photo (Supabase Storage)
 
   isActive     Boolean  @default(true) // Soft delete
@@ -227,13 +229,13 @@ model Horse {
   bookings     Booking[]
   notes        HorseNote[]
   groupBookingParticipants GroupBookingParticipant[]
-  passportTokens HorsePassportToken[]
+  profileTokens HorseProfileToken[]
   serviceIntervals HorseServiceInterval[]
 
   @@index([ownerId, isActive])
 }
 
-model HorsePassportToken {
+model HorseProfileToken {
   id        String   @id @default(cuid())
   horseId   String
   horse     Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)

@@ -8,6 +8,8 @@ interface HorseData {
   color: string | null
   gender: string | null
   specialNeeds: string | null
+  registrationNumber: string | null
+  microchipNumber: string | null
   photoUrl: string | null
   createdAt: string
 }

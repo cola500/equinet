@@ -21,6 +21,8 @@ const horseCreateSchema = z.object({
     message: "Kön måste vara mare, gelding eller stallion",
   }).optional(),
   specialNeeds: z.string().max(1000, "Specialbehov för lång text (max 1000 tecken)").optional(),
+  registrationNumber: z.string().max(15, "Registreringsnummer för långt (max 15 tecken)").optional(),
+  microchipNumber: z.string().max(15, "Chipnummer för långt (max 15 tecken)").optional(),
 }).strict()
 
 // GET - List horses for authenticated user

@@ -50,7 +50,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
       let csvContent = `# Häst: ${horse.name}\n`
       csvContent += `# Ras: ${horse.breed || "-"}\n`
-      csvContent += `# Födelseår: ${horse.birthYear || "-"}\n\n`
+      csvContent += `# Födelseår: ${horse.birthYear || "-"}\n`
+      csvContent += `# UELN: ${horse.registrationNumber || "-"}\n`
+      csvContent += `# Chipnummer: ${horse.microchipNumber || "-"}\n\n`
       csvContent += "# Bokningar\n"
       csvContent += objectsToCsv(flatBookings as unknown as Record<string, unknown>[])
       csvContent += "\n\n# Anteckningar\n"
