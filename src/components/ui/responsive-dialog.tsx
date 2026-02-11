@@ -19,6 +19,12 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 
+const MobileContext = React.createContext(false)
+
+function useMobileContext() {
+  return React.useContext(MobileContext)
+}
+
 interface ResponsiveDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -30,16 +36,20 @@ function ResponsiveDialog({ open, onOpenChange, children }: ResponsiveDialogProp
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        {children}
-      </Drawer>
+      <MobileContext.Provider value={true}>
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          {children}
+        </Drawer>
+      </MobileContext.Provider>
     )
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {children}
-    </Dialog>
+    <MobileContext.Provider value={false}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {children}
+      </Dialog>
+    </MobileContext.Provider>
   )
 }
 
@@ -49,7 +59,7 @@ interface ResponsiveDialogContentProps {
 }
 
 function ResponsiveDialogContent({ children, className }: ResponsiveDialogContentProps) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return (
@@ -69,7 +79,7 @@ function ResponsiveDialogContent({ children, className }: ResponsiveDialogConten
 }
 
 function ResponsiveDialogHeader({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerHeader className={className}>{children}</DrawerHeader>
@@ -78,7 +88,7 @@ function ResponsiveDialogHeader({ children, className }: { children: React.React
 }
 
 function ResponsiveDialogTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerTitle className={className}>{children}</DrawerTitle>
@@ -87,7 +97,7 @@ function ResponsiveDialogTitle({ children, className }: { children: React.ReactN
 }
 
 function ResponsiveDialogDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerDescription className={className}>{children}</DrawerDescription>
@@ -96,7 +106,7 @@ function ResponsiveDialogDescription({ children, className }: { children: React.
 }
 
 function ResponsiveDialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerFooter className={className}>{children}</DrawerFooter>

@@ -23,6 +23,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
+const MobileContext = React.createContext(false)
+
+function useMobileContext() {
+  return React.useContext(MobileContext)
+}
+
 interface ResponsiveAlertDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -34,21 +40,25 @@ function ResponsiveAlertDialog({ open, onOpenChange, children }: ResponsiveAlert
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        {children}
-      </Drawer>
+      <MobileContext.Provider value={true}>
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          {children}
+        </Drawer>
+      </MobileContext.Provider>
     )
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      {children}
-    </AlertDialog>
+    <MobileContext.Provider value={false}>
+      <AlertDialog open={open} onOpenChange={onOpenChange}>
+        {children}
+      </AlertDialog>
+    </MobileContext.Provider>
   )
 }
 
 function ResponsiveAlertDialogContent({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return (
@@ -68,7 +78,7 @@ function ResponsiveAlertDialogContent({ children, className }: { children: React
 }
 
 function ResponsiveAlertDialogHeader({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerHeader className={className}>{children}</DrawerHeader>
@@ -77,7 +87,7 @@ function ResponsiveAlertDialogHeader({ children, className }: { children: React.
 }
 
 function ResponsiveAlertDialogTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerTitle className={className}>{children}</DrawerTitle>
@@ -86,7 +96,7 @@ function ResponsiveAlertDialogTitle({ children, className }: { children: React.R
 }
 
 function ResponsiveAlertDialogDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerDescription className={className}>{children}</DrawerDescription>
@@ -95,7 +105,7 @@ function ResponsiveAlertDialogDescription({ children, className }: { children: R
 }
 
 function ResponsiveAlertDialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return <DrawerFooter className={className}>{children}</DrawerFooter>
@@ -114,7 +124,7 @@ function ResponsiveAlertDialogAction({
   onClick?: () => void
   disabled?: boolean
 }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return (
@@ -146,7 +156,7 @@ function ResponsiveAlertDialogCancel({
   onClick?: () => void
   disabled?: boolean
 }) {
-  const isMobile = useIsMobile()
+  const isMobile = useMobileContext()
 
   if (isMobile) {
     return (

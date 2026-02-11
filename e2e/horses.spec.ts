@@ -93,11 +93,6 @@ test.describe('Horse Registry (Customer)', () => {
   });
 
   test('should delete a horse with confirmation', async ({ page }) => {
-    // TODO: Fix ResponsiveAlertDialog hydration mismatch on mobile
-    // Root cause: independent useIsMobile() hooks in parent vs children
-    // can have different values during mount, causing AlertDialogContent
-    // to render inside Drawer context (crash: "DialogPortal must be used within Dialog")
-    test.skip(test.info().project.name === 'mobile', 'ResponsiveAlertDialog hydration mismatch on mobile');
     // Säkerställ att det finns minst en häst
     const deleteButtons = page.getByRole('button', { name: /ta bort/i });
     const deleteCount = await deleteButtons.count();
@@ -118,18 +113,15 @@ test.describe('Horse Registry (Customer)', () => {
     // Klicka "Ta bort" på första hästen
     await deleteButtonsBefore.first().click();
 
-    // AlertDialog ska visas med bekräftelse
-    const alertDialog = page.getByRole('alertdialog');
-    await expect(alertDialog).toBeVisible({ timeout: 5000 });
+    // Bekräftelsedialog ska visas (alertdialog på desktop, drawer på mobil)
+    await expect(page.getByText(/bokningar påverkas inte/i)).toBeVisible({ timeout: 5000 });
 
-    // Verifiera varningstext om att bokningar inte påverkas
-    await expect(page.getByText(/bokningar påverkas inte/i)).toBeVisible();
+    // Bekräfta borttagning (hitta "Ta bort"-knappen i bekräftelsedialogens footer)
+    const confirmButton = page.getByRole('button', { name: /^ta bort$/i }).last();
+    await confirmButton.click();
 
-    // Bekräfta borttagning
-    await alertDialog.getByRole('button', { name: /ta bort/i }).click();
-
-    // Vänta på att dialogen stängs
-    await expect(alertDialog).toBeHidden({ timeout: 10000 });
+    // Vänta på att bekräftelsedialogens text försvinner
+    await expect(page.getByText(/bokningar påverkas inte/i)).toBeHidden({ timeout: 10000 });
 
     // Verifiera att antalet hästar minskat (vänta på att sidan uppdateras)
     await expect(async () => {

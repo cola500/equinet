@@ -149,6 +149,7 @@ export default function GroupBookingDetailPage({
       })
       if (response.ok) {
         toast.success("Grupprequest avbruten")
+        setShowCancelDialog(false)
         fetchDetail()
       } else {
         toast.error("Kunde inte avbryta")
@@ -166,6 +167,7 @@ export default function GroupBookingDetailPage({
       )
       if (response.ok) {
         toast.success("Du har lämnat grupprequesten")
+        setParticipantToLeave(null)
         fetchDetail()
       } else {
         toast.error("Kunde inte lämna grupprequesten")
@@ -183,6 +185,7 @@ export default function GroupBookingDetailPage({
       )
       if (response.ok) {
         toast.success("Deltagaren har tagits bort")
+        setParticipantToRemove(null)
         fetchDetail()
       } else {
         toast.error("Kunde inte ta bort deltagaren")

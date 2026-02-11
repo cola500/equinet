@@ -61,9 +61,6 @@ test.describe('Route Planning Flow (Provider)', () => {
   });
 
   test('should select multiple orders and create route', async ({ page }) => {
-    // TODO: Route detail page crashes when customer is null on routeOrder
-    // Bug in src/app/provider/routes/[id]/page.tsx:238 - missing null check
-    test.skip(test.info().project.name === 'mobile', 'Route detail page crashes on null customer (data issue)');
     await page.goto('/provider/route-planning');
     await expect(page.getByRole('heading', { name: /rutt-planering/i })).toBeVisible({ timeout: 10000 });
 

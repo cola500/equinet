@@ -178,6 +178,7 @@ export default function CustomerHorsesPage() {
       }
 
       toast.success(`${horse.name} har tagits bort`)
+      setHorseToDelete(null)
       mutateHorses()
     } catch (error) {
       console.error("Error deleting horse:", error)

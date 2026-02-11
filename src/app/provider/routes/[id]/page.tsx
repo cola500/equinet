@@ -30,7 +30,7 @@ interface RouteStop {
       firstName: string
       lastName: string
       phone?: string
-    }
+    } | null
   }
 }
 
@@ -235,7 +235,9 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
             <CardContent className="space-y-3">
               <div>
                 <p className="text-lg font-medium">
-                  Stopp #{currentStop.stopOrder} - {currentStop.routeOrder.customer.firstName} {currentStop.routeOrder.customer.lastName}
+                  Stopp #{currentStop.stopOrder} - {currentStop.routeOrder.customer
+                    ? `${currentStop.routeOrder.customer.firstName} ${currentStop.routeOrder.customer.lastName}`
+                    : "Ingen kund"}
                 </p>
                 <p className="text-gray-700">{currentStop.routeOrder.address}</p>
               </div>
@@ -263,7 +265,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                   <p className="font-medium">💬 {currentStop.routeOrder.specialInstructions}</p>
                 </div>
               )}
-              {currentStop.routeOrder.customer.phone && (
+              {currentStop.routeOrder.customer?.phone && (
                 <div>
                   <p className="text-sm text-gray-600">Kontakt:</p>
                   <p className="font-medium">📞 {currentStop.routeOrder.customer.phone}</p>
@@ -314,7 +316,9 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">#{stop.stopOrder}</Badge>
                     <span className="font-medium">
-                      {stop.routeOrder.customer.firstName} {stop.routeOrder.customer.lastName}
+                      {stop.routeOrder.customer
+                        ? `${stop.routeOrder.customer.firstName} ${stop.routeOrder.customer.lastName}`
+                        : "Ingen kund"}
                     </span>
                   </div>
                   {getStopStatusBadge(stop.status)}
