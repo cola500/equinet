@@ -28,6 +28,7 @@ class EmailService {
   }
 
   private get isConfigured(): boolean {
+    if (process.env.DISABLE_EMAILS === 'true') return false
     return !!this.apiKey && this.apiKey !== "your-resend-api-key"
   }
 

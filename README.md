@@ -38,6 +38,7 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
    - `DATABASE_URL`: PostgreSQL connection string (Supabase)
    - `NEXTAUTH_SECRET`: Secret för NextAuth (generera med kommandot ovan)
    - `NEXTAUTH_URL`: App URL (default: `http://localhost:3000`)
+   - `DISABLE_EMAILS`: Sätt till `"true"` för att stänga av e-post (loggar till konsolen istället)
 
    > **Supabase Setup:** Skapa ett gratis projekt på [supabase.com](https://supabase.com),
    > gå till Project Settings → Database → Connection string → Session Pooler (IPv4).
