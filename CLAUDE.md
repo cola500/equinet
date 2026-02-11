@@ -345,6 +345,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Hästprofil (f.d. hästpass)**: `/api/horses/[id]/profile` (skapa delbar länk) + `/api/profile/[token]` (publik sida). Ersätter alla `/passport/`-routes. `HorseProfileToken`-tabell (f.d. `HorsePassportToken`).
 - **Horse registrationNumber + microchipNumber**: UELN (Unique Equine Life Number) + mikrochip-ID. Nullable, max 15 tecken. Synliga överallt: ägare, leverantörer, delad profil, CSV-export.
 - **Prisma-migration MÅSTE köras på Supabase separat**: Vercel deploy uppdaterar bara koden, INTE databasen. Efter `git push` med schemaändringar: kör `apply_migration` via Supabase MCP eller `prisma migrate deploy`. Annars får Prisma-klienten "column does not exist"-fel i produktion. **Checklista vid schemaändring**: (1) commit + push, (2) kör migration på Supabase, (3) verifiera med `execute_sql`.
+- **E2E mobil viewport**: `playwright.config.ts` har `mobile` projekt (Pixel 7, Chromium). Kör med `--project=mobile`. Desktop-nav (`hidden md:block`) orsakar strict mode violations -- använd `getByRole('heading', { exact: true })` eller exakta textmatchningar. Skip-pattern: `test.skip(test.info().project.name === 'mobile', 'reason')`.
+- **iPhone-device kräver WebKit**: `devices['iPhone 14']` använder WebKit (kräver `npx playwright install webkit`). Pixel 7 använder Chromium -- enklare, testar samma viewport-beteende.
+- **Kör ALDRIG desktop+mobil E2E samtidigt**: Delar dev-server (`workers: 1`) -- resurskonflikter ger falska failures. Playwright hanterar detta automatiskt vid `npm run test:e2e`.
 
 ---
 
