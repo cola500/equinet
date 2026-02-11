@@ -22,7 +22,7 @@
 **Bilduppladdning:** Supabase Storage-integration, drag-and-drop, client-side komprimering, IDOR-skydd, inkopplad på hästprofil (foto) och leverantörsprofil (profilbild)
 **Bokföring:** IAccountingGateway (Fortnox), OAuth 2.0, token-kryptering (AES-256-GCM), faktura-synk, MockAccountingGateway
 **Manuell bokning:** Provider kan skapa bokningar åt kunder (ghost user-pattern), kundsök begränsad till egna kunder, häst-dropdown, steg-för-steg dialog, "M"-indikator i kalender, audit trail
-**Kundregister:** Samlad kundlista för leverantörer (härledd från bokningar), filter, sök, hästar per kund
+**Kundregister:** Samlad kundlista för leverantörer (härledd från bokningar), filter, sök, hästar per kund, privata kundanteckningar (skapa/redigera/ta bort, XSS-sanitering, inline edit)
 **Återbesöksplanering:** "Dags för besök"-vy med statusbadges (försenad/inom 2v/ej aktuell), individuella återbesöksintervall per häst (override av tjänstens default via HorseServiceInterval)
 **Leverantörsanteckningar:** providerNotes på bokningar, UI i bokningsdetalj och hästjournal (bara synligt för leverantören, integritetsskyddat)
 **Teknisk:** Next.js 16, NextAuth v5, PostgreSQL (Supabase), Prisma, rate limiting (Upstash Redis), email-notifikationer, DDD-Light, 1289+ tester (70% coverage), CI/CD, Sentry, Vercel Cron Jobs

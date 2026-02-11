@@ -17,6 +17,7 @@ const noteSelect = {
   customerId: true,
   content: true,
   createdAt: true,
+  updatedAt: true,
 } satisfies Prisma.ProviderCustomerNoteSelect
 
 export class PrismaProviderCustomerNoteRepository implements IProviderCustomerNoteRepository {
@@ -37,6 +38,20 @@ export class PrismaProviderCustomerNoteRepository implements IProviderCustomerNo
       },
       select: noteSelect,
     })
+  }
+
+  async updateWithAuth(id: string, providerId: string, content: string): Promise<ProviderCustomerNote | null> {
+    try {
+      // Atomic: WHERE { id, providerId } ensures IDOR protection
+      return await prisma.providerCustomerNote.update({
+        where: { id, providerId },
+        data: { content },
+        select: noteSelect,
+      })
+    } catch {
+      // Record not found or not owned
+      return null
+    }
   }
 
   async deleteWithAuth(id: string, providerId: string): Promise<boolean> {

@@ -318,6 +318,108 @@ Hämta en kunds aktiva hästar.
 
 ---
 
+### GET /api/provider/customers/[customerId]/notes
+
+Hämta leverantörens privata anteckningar om en kund (journal).
+
+**Auth:** Required (provider-only, måste ha completed booking med kunden)
+
+**Response:** `200 OK`
+```json
+{
+  "notes": [
+    {
+      "id": "uuid",
+      "providerId": "uuid",
+      "customerId": "uuid",
+      "content": "Behöver extra tid vid besök",
+      "createdAt": "2026-02-10T14:30:00.000Z",
+      "updatedAt": "2026-02-10T14:30:00.000Z"
+    }
+  ]
+}
+```
+
+**Errors:**
+- `403` - Inte provider, eller saknar completed booking med kunden
+- `429` - Rate limit
+
+---
+
+### POST /api/provider/customers/[customerId]/notes
+
+Skapa en ny anteckning om en kund.
+
+**Auth:** Required (provider-only, måste ha completed booking med kunden)
+
+**Request Body:**
+```json
+{
+  "content": "Kunden behöver extra tid vid besök"
+}
+```
+
+| Fält | Typ | Validering |
+|------|-----|------------|
+| `content` | string | Min 1, max 2000 tecken. Saniteras (XSS + multiline). `.strict()` |
+
+**Response:** `201 Created` med den skapade anteckningen.
+
+**Errors:**
+- `400` - Ogiltig JSON, valideringsfel, tomt innehåll efter sanitering
+- `403` - Inte provider, eller saknar completed booking
+- `429` - Rate limit
+
+> **Säkerhet:** `providerId` tas från session (aldrig request body). `customerId` från URL-parameter. Content saniteras med `stripXss()` + `sanitizeMultilineString()`.
+
+---
+
+### PUT /api/provider/customers/[customerId]/notes/[noteId]
+
+Redigera en befintlig anteckning.
+
+**Auth:** Required (provider-only, atomär ägarskapscheck)
+
+**Request Body:**
+```json
+{
+  "content": "Uppdaterad text"
+}
+```
+
+| Fält | Typ | Validering |
+|------|-----|------------|
+| `content` | string | Min 1, max 2000 tecken. Saniteras (XSS + multiline). `.strict()` |
+
+**Response:** `200 OK` med den uppdaterade anteckningen (inkl. `updatedAt`).
+
+**Errors:**
+- `400` - Ogiltig JSON, valideringsfel, tomt innehåll efter sanitering
+- `403` - Inte provider
+- `404` - Anteckningen hittades inte (eller tillhör annan provider)
+- `429` - Rate limit
+
+> **Säkerhet:** Atomär WHERE `{ id, providerId }` förhindrar IDOR. Content saniteras med `stripXss()` + `sanitizeMultilineString()`.
+
+---
+
+### DELETE /api/provider/customers/[customerId]/notes/[noteId]
+
+Ta bort en anteckning.
+
+**Auth:** Required (provider-only, atomär ägarskapscheck)
+
+**Response:** `204 No Content`
+
+**Errors:**
+- `403` - Inte provider
+- `404` - Anteckningen hittades inte (eller tillhör annan provider)
+- `429` - Rate limit
+
+> **Säkerhet:** Atomär WHERE `{ id, providerId }` förhindrar IDOR.
+
+---
+
 ## Horses
 
 Hästregister -- kundens hästar (CRUD). Alla endpoints kräver autentisering.

@@ -28,6 +28,7 @@ import {
   StickyNote,
   Plus,
   Trash2,
+  Pencil,
   Loader2,
 } from "lucide-react"
 
@@ -53,6 +54,7 @@ interface CustomerNote {
   customerId: string
   content: string
   createdAt: string
+  updatedAt: string
 }
 
 type StatusFilter = "all" | "active" | "inactive"
@@ -74,6 +76,11 @@ export default function ProviderCustomersPage() {
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [noteToDelete, setNoteToDelete] = useState<CustomerNote | null>(null)
   const [isDeletingNote, setIsDeletingNote] = useState(false)
+
+  // Edit state
+  const [editingNote, setEditingNote] = useState<CustomerNote | null>(null)
+  const [editNoteContent, setEditNoteContent] = useState("")
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isProvider) {
@@ -133,10 +140,12 @@ export default function ProviderCustomersPage() {
       fetchNotes(newExpanded)
     }
 
-    // Reset add-note form when collapsing
+    // Reset forms when collapsing
     if (!newExpanded) {
       setIsAddingNote(null)
       setNewNoteContent("")
+      setEditingNote(null)
+      setEditNoteContent("")
     }
   }
 
@@ -169,6 +178,41 @@ export default function ProviderCustomersPage() {
     }
   }
 
+  const handleEditNote = async (note: CustomerNote) => {
+    if (!editNoteContent.trim() || isSavingEdit) return
+
+    setIsSavingEdit(true)
+    try {
+      const response = await fetch(
+        `/api/provider/customers/${note.customerId}/notes/${note.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: editNoteContent.trim() }),
+        }
+      )
+
+      if (response.ok) {
+        const updatedNote = await response.json()
+        setCustomerNotes((prev) => {
+          const updated = new Map(prev)
+          const existing = updated.get(note.customerId) || []
+          updated.set(
+            note.customerId,
+            existing.map((n) => (n.id === note.id ? updatedNote : n))
+          )
+          return updated
+        })
+        setEditingNote(null)
+        setEditNoteContent("")
+      }
+    } catch (error) {
+      console.error("Failed to update note:", error)
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
   const handleDeleteNote = async (note: CustomerNote) => {
     setIsDeletingNote(true)
     try {
@@ -194,6 +238,10 @@ export default function ProviderCustomersPage() {
       setIsDeletingNote(false)
       setNoteToDelete(null)
     }
+  }
+
+  const isEdited = (note: CustomerNote) => {
+    return note.updatedAt && note.createdAt !== note.updatedAt
   }
 
   const formatDate = (dateStr: string) => {
@@ -392,6 +440,7 @@ export default function ProviderCustomersPage() {
                           onClick={() => {
                             setIsAddingNote(customer.id)
                             setNewNoteContent("")
+                            setEditingNote(null)
                           }}
                           className="h-7 text-xs text-green-600 hover:text-green-700"
                         >
@@ -449,21 +498,75 @@ export default function ProviderCustomersPage() {
                             key={note.id}
                             className="bg-white rounded-md p-3 border text-sm"
                           >
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <span className="text-xs text-gray-400">
-                                {formatDateTime(note.createdAt)}
-                              </span>
-                              <button
-                                onClick={() => setNoteToDelete(note)}
-                                className="text-gray-300 hover:text-red-500 transition-colors shrink-0 min-h-[44px] sm:min-h-0 flex items-center"
-                                aria-label="Ta bort anteckning"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                            <p className="text-gray-700 whitespace-pre-line">
-                              {note.content}
-                            </p>
+                            {editingNote?.id === note.id ? (
+                              /* Inline edit form */
+                              <div>
+                                <Textarea
+                                  value={editNoteContent}
+                                  onChange={(e) => setEditNoteContent(e.target.value)}
+                                  rows={3}
+                                  maxLength={2000}
+                                  className="mb-2 text-sm resize-none"
+                                />
+                                <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingNote(null)
+                                      setEditNoteContent("")
+                                    }}
+                                  >
+                                    Avbryt
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleEditNote(note)}
+                                    disabled={!editNoteContent.trim() || isSavingEdit}
+                                  >
+                                    {isSavingEdit && (
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    )}
+                                    Spara
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              /* Display mode */
+                              <>
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <span className="text-xs text-gray-400">
+                                    {formatDateTime(note.createdAt)}
+                                    {isEdited(note) && (
+                                      <span className="ml-1 text-gray-400">(redigerad)</span>
+                                    )}
+                                  </span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      onClick={() => {
+                                        setEditingNote(note)
+                                        setEditNoteContent(note.content)
+                                        setIsAddingNote(null)
+                                      }}
+                                      className="text-gray-300 hover:text-blue-500 transition-colors min-h-[44px] sm:min-h-0 flex items-center"
+                                      aria-label="Redigera anteckning"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => setNoteToDelete(note)}
+                                      className="text-gray-300 hover:text-red-500 transition-colors min-h-[44px] sm:min-h-0 flex items-center"
+                                      aria-label="Ta bort anteckning"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <p className="text-gray-700 whitespace-pre-line">
+                                  {note.content}
+                                </p>
+                              </>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -350,6 +350,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **E2E mobil viewport**: `playwright.config.ts` har `mobile` projekt (Pixel 7, Chromium). Kör med `--project=mobile`. Desktop-nav (`hidden md:block`) orsakar strict mode violations -- använd `getByRole('heading', { exact: true })` eller exakta textmatchningar. Skip-pattern: `test.skip(test.info().project.name === 'mobile', 'reason')`.
 - **iPhone-device kräver WebKit**: `devices['iPhone 14']` använder WebKit (kräver `npx playwright install webkit`). Pixel 7 använder Chromium -- enklare, testar samma viewport-beteende.
 - **Kör ALDRIG desktop+mobil E2E samtidigt**: Delar dev-server (`workers: 1`) -- resurskonflikter ger falska failures. Playwright hanterar detta automatiskt vid `npm run test:e2e`.
+- **updateWithAuth-mönster**: Samma som `deleteWithAuth` -- atomic `WHERE { id, providerId }`. Returnerar uppdaterat objekt (eller null). Återanvänd för alla modifierande operationer på provider-ägda resurser.
+- **Prisma migrate med befintliga rader**: `NOT NULL` utan default failar om tabellen har data. Fix: `--create-only`, ändra SQL till `ADD COLUMN ... DEFAULT now()`, kör `migrate dev` igen. Prisma genererar automatiskt en extra migration som droppar default.
+- **Inline edit i listor**: State `editingItem | null` + `editContent`. Klick på Pencil sätter state, formuläret ersätter texten inline. Edit och add bör vara ömsesidigt uteslutande.
 
 ---
 

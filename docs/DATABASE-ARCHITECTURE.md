@@ -117,6 +117,7 @@ const prismaWithExtensions = basePrisma.$extends({
 | AvailabilityException | providerId+date | Undantag från öppettider |
 | Review | providerId+createdAt | Recensioner |
 | HorseServiceInterval | horseId+providerId (unique) | Återbesöksintervall per häst och leverantör |
+| ProviderCustomerNote | providerId+customerId+createdAt | Leverantörens privata kundanteckningar (journal) |
 | (+ 13 andra) | ... | ... |
 
 **Viktiga patterns:**

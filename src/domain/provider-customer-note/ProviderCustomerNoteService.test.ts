@@ -73,6 +73,87 @@ describe('ProviderCustomerNoteService', () => {
   })
 
   // -----------------------------------------------------------
+  // updateNote
+  // -----------------------------------------------------------
+  describe('updateNote', () => {
+    it('should update note content', async () => {
+      const now = new Date()
+      noteRepo.seed([{
+        id: 'note-1',
+        providerId: 'provider-1',
+        customerId: 'customer-1',
+        content: 'Original text',
+        createdAt: now,
+        updatedAt: now,
+      }])
+
+      const result = await service.updateNote({
+        noteId: 'note-1',
+        providerId: 'provider-1',
+        content: 'Uppdaterad text',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.content).toBe('Uppdaterad text')
+      expect(result.value.id).toBe('note-1')
+    })
+
+    it('should fail if content is empty after sanitization', async () => {
+      const now = new Date()
+      noteRepo.seed([{
+        id: 'note-1',
+        providerId: 'provider-1',
+        customerId: 'customer-1',
+        content: 'Original text',
+        createdAt: now,
+        updatedAt: now,
+      }])
+
+      const result = await service.updateNote({
+        noteId: 'note-1',
+        providerId: 'provider-1',
+        content: '   ',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('EMPTY_CONTENT')
+    })
+
+    it('should fail if note not found or not owned', async () => {
+      const result = await service.updateNote({
+        noteId: 'nonexistent',
+        providerId: 'provider-1',
+        content: 'New content',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('NOT_FOUND')
+    })
+
+    it('should sanitize XSS in updated content', async () => {
+      const now = new Date()
+      noteRepo.seed([{
+        id: 'note-1',
+        providerId: 'provider-1',
+        customerId: 'customer-1',
+        content: 'Original',
+        createdAt: now,
+        updatedAt: now,
+      }])
+
+      const result = await service.updateNote({
+        noteId: 'note-1',
+        providerId: 'provider-1',
+        content: '<script>alert("xss")</script>Clean text',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.content).not.toContain('<script>')
+      expect(result.value.content).toContain('Clean text')
+    })
+  })
+
+  // -----------------------------------------------------------
   // deleteNote
   // -----------------------------------------------------------
   describe('deleteNote', () => {
@@ -87,13 +168,14 @@ describe('ProviderCustomerNoteService', () => {
     })
 
     it('should fail if note belongs to another provider', async () => {
-      // Seed a note owned by a different provider
+      const now = new Date()
       noteRepo.seed([{
         id: 'note-1',
         providerId: 'other-provider',
         customerId: 'customer-1',
         content: 'Some note',
-        createdAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       }])
 
       const result = await service.deleteNote({
@@ -106,12 +188,14 @@ describe('ProviderCustomerNoteService', () => {
     })
 
     it('should delete note owned by the provider', async () => {
+      const now = new Date()
       noteRepo.seed([{
         id: 'note-1',
         providerId: 'provider-1',
         customerId: 'customer-1',
         content: 'Will be deleted',
-        createdAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       }])
 
       const result = await service.deleteNote({

@@ -2,7 +2,6 @@
  * IProviderCustomerNoteRepository - Repository interface for ProviderCustomerNote
  *
  * Provider's private journal notes about customers.
- * Immutable: create + delete only, no edits.
  */
 
 // Core entity (maps to Prisma schema)
@@ -12,6 +11,7 @@ export interface ProviderCustomerNote {
   customerId: string
   content: string
   createdAt: Date
+  updatedAt: Date
 }
 
 // Data needed to create a note
@@ -31,6 +31,12 @@ export interface IProviderCustomerNoteRepository {
    * Create a new note
    */
   create(data: CreateProviderCustomerNoteData): Promise<ProviderCustomerNote>
+
+  /**
+   * Update a note's content -- only if it belongs to the given provider (IDOR protection)
+   * Returns the updated note or null if not found/not owned
+   */
+  updateWithAuth(id: string, providerId: string, content: string): Promise<ProviderCustomerNote | null>
 
   /**
    * Delete a note -- only if it belongs to the given provider (IDOR protection)

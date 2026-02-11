@@ -585,7 +585,7 @@ model HorseServiceInterval {
   @@index([horseId])
 }
 
-// Provider's private notes about a customer (journal/log, immutable)
+// Provider's private notes about a customer (journal/log)
 model ProviderCustomerNote {
   id         String   @id @default(uuid())
   providerId String
@@ -594,6 +594,7 @@ model ProviderCustomerNote {
   customer   User     @relation("CustomerNotesReceived", fields: [customerId], references: [id])
   content    String
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([providerId, customerId, createdAt])
   @@index([customerId])

@@ -4,7 +4,6 @@
  * Business rules:
  * - Provider must have at least one completed booking with the customer
  * - Content is sanitized (XSS stripped, multiline preserved)
- * - Immutable: create + delete only
  */
 import { Result } from '@/domain/shared'
 import { sanitizeMultilineString } from '@/lib/sanitize'
@@ -26,6 +25,12 @@ export interface ProviderCustomerNoteServiceDeps {
 export interface CreateNoteInput {
   providerId: string
   customerId: string
+  content: string
+}
+
+export interface UpdateNoteInput {
+  noteId: string
+  providerId: string
   content: string
 }
 
@@ -82,6 +87,28 @@ export class ProviderCustomerNoteService {
       customerId: input.customerId,
       content: sanitized,
     })
+
+    return Result.ok(note)
+  }
+
+  async updateNote(input: UpdateNoteInput): Promise<Result<ProviderCustomerNote, NoteError>> {
+    // 1. Sanitize content
+    const sanitized = sanitizeMultilineString(stripXss(input.content))
+    if (!sanitized) {
+      return Result.fail({
+        type: 'EMPTY_CONTENT',
+        message: 'Note content cannot be empty',
+      })
+    }
+
+    // 2. Atomic update: updateWithAuth checks ownership in WHERE clause
+    const note = await this.noteRepo.updateWithAuth(input.noteId, input.providerId, sanitized)
+    if (!note) {
+      return Result.fail({
+        type: 'NOT_FOUND',
+        message: 'Note not found or not owned by this provider',
+      })
+    }
 
     return Result.ok(note)
   }
