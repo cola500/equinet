@@ -72,8 +72,10 @@ test.describe('Customer Registry (Provider)', () => {
     // Email ska vara synlig
     await expect(page.getByText('test@example.com')).toBeVisible();
 
-    // Booking count ska finnas (minst 1 bokning)
-    await expect(page.getByText(/\d+ bokning/).first()).toBeVisible();
+    // Booking count ska finnas (minst 1 bokning) -- hidden on mobile (hidden sm:block)
+    if (test.info().project.name !== 'mobile') {
+      await expect(page.getByText(/\d+ bokning/).first()).toBeVisible();
+    }
   });
 
   test('should search customers', async ({ page }) => {

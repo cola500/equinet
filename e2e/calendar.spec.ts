@@ -36,6 +36,7 @@ test.describe('Calendar & Availability (Provider)', () => {
   });
 
   test('should display calendar page with weekly view', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile shows day view instead of week view');
     await page.goto('/provider/calendar');
 
     // Verifiera att sidan laddas korrekt
@@ -54,6 +55,7 @@ test.describe('Calendar & Availability (Provider)', () => {
   });
 
   test('should navigate between weeks', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile shows day view instead of week view');
     await page.goto('/provider/calendar');
 
     // Vänta på att sidan laddas
@@ -87,6 +89,7 @@ test.describe('Calendar & Availability (Provider)', () => {
   });
 
   test('should open availability edit dialog for a day', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile calendar layout differs from desktop week view');
     await page.goto('/provider/calendar');
 
     // Vänta på att sidan laddas
@@ -124,6 +127,7 @@ test.describe('Calendar & Availability (Provider)', () => {
   });
 
   test('should update opening hours for a day', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile calendar layout differs from desktop week view');
     await page.goto('/provider/calendar');
 
     // Vänta på att sidan laddas
@@ -175,6 +179,7 @@ test.describe('Calendar & Availability (Provider)', () => {
   });
 
   test('should toggle day closed status', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile calendar layout differs from desktop week view');
     await page.goto('/provider/calendar');
 
     // Vänta på sidan

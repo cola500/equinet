@@ -170,7 +170,7 @@ test.describe('Route Announcements Flow', () => {
       await expect(page.getByRole('heading', { name: /skapa rutt-annons/i })).toBeVisible({ timeout: 10000 });
 
       // Verify new form elements exist
-      await expect(page.getByText(/tjänster/i).first()).toBeVisible();
+      await expect(page.getByText('Tjänster *')).toBeVisible();
       await expect(page.getByPlaceholder(/sök kommun/i)).toBeVisible();
       await expect(page.getByLabel(/från datum/i)).toBeVisible();
       await expect(page.getByLabel(/till datum/i)).toBeVisible();
@@ -257,7 +257,7 @@ test.describe('Route Announcements Flow', () => {
       await expect(page).toHaveURL(/\/provider\/announcements\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
       // Verify details page content
-      await expect(page.getByText(/bokningar/i)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole('heading', { name: 'Bokningar', exact: true })).toBeVisible({ timeout: 5000 });
 
       // Verify back link exists
       await expect(page.getByText(/tillbaka till annonser/i)).toBeVisible();

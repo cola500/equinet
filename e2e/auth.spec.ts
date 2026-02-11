@@ -7,8 +7,8 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should register a new customer', async ({ page }) => {
-    // Klicka på "Kom igång"
-    await page.getByRole('link', { name: /kom igång/i }).click();
+    // Klicka på "Kom igång" (desktop) / "Börja" (mobil)
+    await page.getByRole('link', { name: /kom igång|börja/i }).click();
 
     // Välj "Hästägare" (customer)
     await page.click('[data-testid="user-type-customer"]');
@@ -37,8 +37,8 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should register a new provider', async ({ page }) => {
-    // Klicka på "Kom igång"
-    await page.getByRole('link', { name: /kom igång/i }).click();
+    // Klicka på "Kom igång" (desktop) / "Börja" (mobil)
+    await page.getByRole('link', { name: /kom igång|börja/i }).click();
 
     // Fyll i grundläggande info FÖRST (innan vi väljer provider-typ)
     await page.getByLabel(/förnamn/i).fill('Leverantör');

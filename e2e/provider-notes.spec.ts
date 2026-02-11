@@ -76,6 +76,7 @@ test.describe('Provider Notes', () => {
   }
 
   test('should add note on confirmed booking', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Depends on calendar week view (mobile shows day view)');
     await openConfirmedBookingDialog(page);
 
     // Notes section should be visible for confirmed booking
@@ -105,6 +106,7 @@ test.describe('Provider Notes', () => {
   });
 
   test('should edit existing note', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Depends on calendar week view (mobile shows day view)');
     await openConfirmedBookingDialog(page);
 
     // If there's already a note from the previous test, we should see "Klicka för att redigera"
@@ -162,6 +164,7 @@ test.describe('Provider Notes', () => {
   });
 
   test('should show character counter', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Depends on calendar week view (mobile shows day view)');
     await openConfirmedBookingDialog(page);
 
     // Open the notes editing area

@@ -134,6 +134,7 @@ test.describe('Booking Flow (Customer)', () => {
   });
 
   test('should complete full booking flow', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile uses MobileBookingFlow with step-by-step Drawer');
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
 
@@ -222,6 +223,7 @@ test.describe('Booking Flow (Customer)', () => {
   });
 
   test('should prevent double booking', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile uses MobileBookingFlow with step-by-step Drawer');
     // Detta test verifierar att bokningsformuläret fungerar korrekt med validering
 
     await page.goto('/providers');

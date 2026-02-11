@@ -65,12 +65,19 @@ export default defineConfig({
       name: 'setup',
       testMatch: /seed-e2e\.setup\.ts/,
     },
-    // Main test project with dependency on setup
+    // Desktop (default)
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      dependencies: ['setup'], // Run setup project before these tests
-      teardown: 'cleanup', // Run cleanup after all chromium tests
+      dependencies: ['setup'],
+      teardown: 'cleanup',
+    },
+    // Mobile viewport (Pixel 7: 412x915, Chromium-based)
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 7'] },
+      dependencies: ['setup'],
+      teardown: 'cleanup',
     },
     // Cleanup project that runs after all tests
     {

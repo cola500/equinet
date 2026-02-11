@@ -37,6 +37,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
   });
 
   test('should toggle between fixed and flexible booking', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile booking flow uses different UI (MobileBookingFlow)');
     // Gå till leverantörsgalleriet
     await page.goto('/providers');
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
@@ -93,6 +94,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
   });
 
   test('should create flexible booking with normal priority', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile booking flow uses different UI (MobileBookingFlow)');
     await page.goto('/providers');
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
 
@@ -167,6 +169,7 @@ test.describe('Flexible Booking Flow (Customer)', () => {
   });
 
   test('should create flexible booking with urgent priority', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile booking flow uses different UI (MobileBookingFlow)');
     await page.goto('/providers');
     await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
 
