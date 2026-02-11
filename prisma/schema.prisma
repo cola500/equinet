@@ -48,6 +48,7 @@ model User {
   customerReviewsReceived   CustomerReview[] @relation("CustomerReviewsReceived")
   horses                    Horse[]
   horseNotes                HorseNote[] @relation("HorseNoteAuthor")
+  customerNotesReceived     ProviderCustomerNote[] @relation("CustomerNotesReceived")
   groupBookingRequests      GroupBookingRequest[]
   groupBookingParticipations GroupBookingParticipant[]
   uploads                   Upload[]
@@ -95,6 +96,7 @@ model Provider {
   fortnoxConnection      FortnoxConnection?
   manualBookings         Booking[] @relation("ManualBookings")
   horseServiceIntervals  HorseServiceInterval[]
+  customerNotes          ProviderCustomerNote[] @relation("ProviderCustomerNotes")
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -581,4 +583,18 @@ model HorseServiceInterval {
   @@unique([horseId, providerId])
   @@index([providerId])
   @@index([horseId])
+}
+
+// Provider's private notes about a customer (journal/log, immutable)
+model ProviderCustomerNote {
+  id         String   @id @default(uuid())
+  providerId String
+  provider   Provider @relation("ProviderCustomerNotes", fields: [providerId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   User     @relation("CustomerNotesReceived", fields: [customerId], references: [id])
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@index([providerId, customerId, createdAt])
+  @@index([customerId])
 }

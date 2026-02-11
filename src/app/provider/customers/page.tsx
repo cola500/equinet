@@ -1,13 +1,35 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
-import { Search, ChevronDown, ChevronUp, User, PawPrint } from "lucide-react"
+import {
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogAction,
+} from "@/components/ui/responsive-alert-dialog"
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  User,
+  PawPrint,
+  StickyNote,
+  Plus,
+  Trash2,
+  Loader2,
+} from "lucide-react"
 
 interface CustomerHorse {
   id: string
@@ -25,6 +47,14 @@ interface Customer {
   horses: CustomerHorse[]
 }
 
+interface CustomerNote {
+  id: string
+  providerId: string
+  customerId: string
+  content: string
+  createdAt: string
+}
+
 type StatusFilter = "all" | "active" | "inactive"
 
 export default function ProviderCustomersPage() {
@@ -35,6 +65,15 @@ export default function ProviderCustomersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null)
+
+  // Notes state
+  const [customerNotes, setCustomerNotes] = useState<Map<string, CustomerNote[]>>(new Map())
+  const [notesLoading, setNotesLoading] = useState<string | null>(null)
+  const [isAddingNote, setIsAddingNote] = useState<string | null>(null)
+  const [newNoteContent, setNewNoteContent] = useState("")
+  const [isSavingNote, setIsSavingNote] = useState(false)
+  const [noteToDelete, setNoteToDelete] = useState<CustomerNote | null>(null)
+  const [isDeletingNote, setIsDeletingNote] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isProvider) {
@@ -67,8 +106,94 @@ export default function ProviderCustomersPage() {
     }
   }
 
+  const fetchNotes = useCallback(async (customerId: string) => {
+    // Skip if already loaded
+    if (customerNotes.has(customerId)) return
+
+    setNotesLoading(customerId)
+    try {
+      const response = await fetch(`/api/provider/customers/${customerId}/notes`)
+      if (response.ok) {
+        const data = await response.json()
+        setCustomerNotes((prev) => new Map(prev).set(customerId, data.notes))
+      }
+    } catch (error) {
+      console.error("Failed to fetch notes:", error)
+    } finally {
+      setNotesLoading(null)
+    }
+  }, [customerNotes])
+
   const toggleExpand = (customerId: string) => {
-    setExpandedCustomer((prev) => (prev === customerId ? null : customerId))
+    const newExpanded = expandedCustomer === customerId ? null : customerId
+    setExpandedCustomer(newExpanded)
+
+    // Lazy-load notes when expanding
+    if (newExpanded) {
+      fetchNotes(newExpanded)
+    }
+
+    // Reset add-note form when collapsing
+    if (!newExpanded) {
+      setIsAddingNote(null)
+      setNewNoteContent("")
+    }
+  }
+
+  const handleAddNote = async (customerId: string) => {
+    if (!newNoteContent.trim() || isSavingNote) return
+
+    setIsSavingNote(true)
+    try {
+      const response = await fetch(`/api/provider/customers/${customerId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newNoteContent.trim() }),
+      })
+
+      if (response.ok) {
+        const note = await response.json()
+        setCustomerNotes((prev) => {
+          const updated = new Map(prev)
+          const existing = updated.get(customerId) || []
+          updated.set(customerId, [note, ...existing])
+          return updated
+        })
+        setIsAddingNote(null)
+        setNewNoteContent("")
+      }
+    } catch (error) {
+      console.error("Failed to create note:", error)
+    } finally {
+      setIsSavingNote(false)
+    }
+  }
+
+  const handleDeleteNote = async (note: CustomerNote) => {
+    setIsDeletingNote(true)
+    try {
+      const response = await fetch(
+        `/api/provider/customers/${note.customerId}/notes/${note.id}`,
+        { method: "DELETE" }
+      )
+
+      if (response.ok || response.status === 204) {
+        setCustomerNotes((prev) => {
+          const updated = new Map(prev)
+          const existing = updated.get(note.customerId) || []
+          updated.set(
+            note.customerId,
+            existing.filter((n) => n.id !== note.id)
+          )
+          return updated
+        })
+      }
+    } catch (error) {
+      console.error("Failed to delete note:", error)
+    } finally {
+      setIsDeletingNote(false)
+      setNoteToDelete(null)
+    }
   }
 
   const formatDate = (dateStr: string) => {
@@ -76,6 +201,16 @@ export default function ProviderCustomersPage() {
       year: "numeric",
       month: "short",
       day: "numeric",
+    })
+  }
+
+  const formatDateTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString("sv-SE", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     })
   }
 
@@ -140,7 +275,7 @@ export default function ProviderCustomersPage() {
           <CardContent className="py-12 text-center text-gray-500">
             {searchQuery || statusFilter !== "all"
               ? "Inga kunder matchar din sökning."
-              : "Du har inga kunder an. Kunder dyker upp har efter avslutade bokningar."}
+              : "Du har inga kunder än. Kunder dyker upp här efter avslutade bokningar."}
           </CardContent>
         </Card>
       ) : (
@@ -219,7 +354,7 @@ export default function ProviderCustomersPage() {
                   </div>
 
                   {customer.horses.length > 0 && (
-                    <div>
+                    <div className="mb-4">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
                         Hästar
                       </p>
@@ -237,11 +372,141 @@ export default function ProviderCustomersPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Notes section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                        <StickyNote className="h-3 w-3" />
+                        Anteckningar
+                        {customerNotes.has(customer.id) && (
+                          <span className="text-gray-400">
+                            ({customerNotes.get(customer.id)!.length})
+                          </span>
+                        )}
+                      </p>
+                      {isAddingNote !== customer.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsAddingNote(customer.id)
+                            setNewNoteContent("")
+                          }}
+                          className="h-7 text-xs text-green-600 hover:text-green-700"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Ny anteckning
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Add note form */}
+                    {isAddingNote === customer.id && (
+                      <div className="mb-3 bg-white rounded-md p-3 border">
+                        <Textarea
+                          placeholder="Skriv en anteckning..."
+                          value={newNoteContent}
+                          onChange={(e) => setNewNoteContent(e.target.value)}
+                          rows={3}
+                          maxLength={2000}
+                          className="mb-2 text-sm resize-none"
+                        />
+                        <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsAddingNote(null)
+                              setNewNoteContent("")
+                            }}
+                          >
+                            Avbryt
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddNote(customer.id)}
+                            disabled={!newNoteContent.trim() || isSavingNote}
+                          >
+                            {isSavingNote && (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            )}
+                            Spara
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notes list */}
+                    {notesLoading === customer.id ? (
+                      <div className="text-center py-3">
+                        <Loader2 className="h-4 w-4 animate-spin mx-auto text-gray-400" />
+                      </div>
+                    ) : (customerNotes.get(customer.id) || []).length > 0 ? (
+                      <div className="space-y-2">
+                        {(customerNotes.get(customer.id) || []).map((note) => (
+                          <div
+                            key={note.id}
+                            className="bg-white rounded-md p-3 border text-sm"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="text-xs text-gray-400">
+                                {formatDateTime(note.createdAt)}
+                              </span>
+                              <button
+                                onClick={() => setNoteToDelete(note)}
+                                className="text-gray-300 hover:text-red-500 transition-colors shrink-0 min-h-[44px] sm:min-h-0 flex items-center"
+                                aria-label="Ta bort anteckning"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            <p className="text-gray-700 whitespace-pre-line">
+                              {note.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">
+                        Inga anteckningar ännu
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Delete note confirmation */}
+      {noteToDelete && (
+        <ResponsiveAlertDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setNoteToDelete(null) }}
+        >
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Ta bort anteckning?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Anteckningen tas bort permanent och kan inte återställas.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel onClick={() => setNoteToDelete(null)}>
+                Avbryt
+              </ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={() => handleDeleteNote(noteToDelete)}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isDeletingNote}
+              >
+                {isDeletingNote ? "Tar bort..." : "Ta bort"}
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
       )}
     </ProviderLayout>
   )

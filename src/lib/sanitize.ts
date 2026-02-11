@@ -142,6 +142,25 @@ export function sanitizeBoolean(input: any): boolean {
 }
 
 /**
+ * Sanitize multiline string input -- same as sanitizeString but preserves newlines.
+ * Use for text areas where line breaks are meaningful (notes, descriptions).
+ */
+export function sanitizeMultilineString(input: string): string {
+  if (typeof input !== "string") return ""
+
+  return input
+    .trim()
+    // Remove null bytes
+    .replace(/\0/g, "")
+    // Remove control characters except \n and \t
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    // Collapse horizontal whitespace (spaces, tabs) but NOT newlines
+    .replace(/[^\S\n]+/g, " ")
+    // Max 2 consecutive newlines (prevents whitespace spam)
+    .replace(/\n{3,}/g, "\n\n")
+}
+
+/**
  * Remove potential XSS from text content
  * More aggressive than sanitizeString - use for untrusted HTML
  */

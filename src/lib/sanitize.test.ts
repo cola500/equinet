@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import {
   sanitizeString,
+  sanitizeMultilineString,
   sanitizeEmail,
   sanitizePhone,
   sanitizeSearchQuery,
@@ -41,6 +42,48 @@ describe("sanitizeString", () => {
 
   it("should trim whitespace", () => {
     expect(sanitizeString("  Hello World  ")).toBe("Hello World")
+  })
+})
+
+describe("sanitizeMultilineString", () => {
+  it("should preserve single newlines", () => {
+    expect(sanitizeMultilineString("Line 1\nLine 2")).toBe("Line 1\nLine 2")
+  })
+
+  it("should preserve double newlines (paragraph breaks)", () => {
+    expect(sanitizeMultilineString("Para 1\n\nPara 2")).toBe("Para 1\n\nPara 2")
+  })
+
+  it("should collapse 3+ consecutive newlines to 2", () => {
+    expect(sanitizeMultilineString("A\n\n\n\nB")).toBe("A\n\nB")
+  })
+
+  it("should collapse horizontal whitespace to single space", () => {
+    expect(sanitizeMultilineString("Hello    World")).toBe("Hello World")
+  })
+
+  it("should not collapse newlines into spaces", () => {
+    expect(sanitizeMultilineString("Hello\nWorld")).toBe("Hello\nWorld")
+  })
+
+  it("should remove null bytes", () => {
+    expect(sanitizeMultilineString("Hello\x00World")).toBe("HelloWorld")
+  })
+
+  it("should remove control characters", () => {
+    expect(sanitizeMultilineString("Hello\x01\x02World")).toBe("HelloWorld")
+  })
+
+  it("should trim leading and trailing whitespace", () => {
+    expect(sanitizeMultilineString("  Hello\nWorld  ")).toBe("Hello\nWorld")
+  })
+
+  it("should allow Swedish characters", () => {
+    expect(sanitizeMultilineString("Åsa\nÖberg\nÄrligt")).toBe("Åsa\nÖberg\nÄrligt")
+  })
+
+  it("should handle empty string", () => {
+    expect(sanitizeMultilineString("")).toBe("")
   })
 })
 
