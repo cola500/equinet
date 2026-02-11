@@ -275,9 +275,18 @@ test.describe('Calendar & Availability (Provider)', () => {
     // Vänta på sidan
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Verifiera att färgförklaringen visas (unika etiketter som bara finns i legenden)
-    await expect(page.getByText('Stängt (veckoschema)')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('Ledig/undantag')).toBeVisible();
+    const isMobile = test.info().project.name === 'mobile';
+
+    if (isMobile) {
+      // Mobile legend is collapsed in <details> -- expand it
+      await page.getByText('Visa färgförklaring').click();
+      await expect(page.getByText('Bekräftad')).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText('Betald')).toBeVisible();
+    } else {
+      // Desktop legend is always visible
+      await expect(page.getByText('Stängt (veckoschema)')).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText('Ledig/undantag')).toBeVisible();
+    }
   });
 
   test('should show pending bookings banner', async ({ page }) => {

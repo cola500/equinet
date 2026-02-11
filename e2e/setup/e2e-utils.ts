@@ -3,7 +3,7 @@
  */
 
 /** Emails that should NEVER be deleted during cleanup */
-export const KEEP_EMAILS = ['test@example.com', 'provider@example.com'] as const
+export const KEEP_EMAILS = ['test@example.com', 'provider@example.com', 'admin@example.com'] as const
 
 /**
  * Assert that we're not running against a production database.

@@ -26,6 +26,9 @@ const SEED_HORSE_NAME = 'E2E Blansen'
 export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void> {
   try {
     // 0pre. Clean up any leftover per-spec tagged data (E2E-spec:*)
+    await prisma.review.deleteMany({
+      where: { booking: { customerNotes: { startsWith: 'E2E-spec:' } } },
+    })
     await prisma.customerReview.deleteMany({
       where: { booking: { customerNotes: { startsWith: 'E2E-spec:' } } },
     })
@@ -58,6 +61,9 @@ export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void
     })
 
     // 0a. Ghost users (from E2E auth tests)
+    await prisma.notification.deleteMany({
+      where: { user: { email: { endsWith: '@ghost.equinet.se' } } },
+    })
     await prisma.booking.deleteMany({
       where: { customer: { email: { endsWith: '@ghost.equinet.se' } } },
     })
@@ -167,6 +173,16 @@ export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void
     // 8. Providers (FK to User)
     await prisma.provider.deleteMany({
       where: { user: dynamicUserFilter },
+    })
+
+    // 8a. Notifications (FK to User)
+    await prisma.notification.deleteMany({
+      where: { user: dynamicUserFilter },
+    })
+
+    // 8b. ProviderCustomerNote (FK to User via customer)
+    await prisma.providerCustomerNote.deleteMany({
+      where: { customer: dynamicUserFilter },
     })
 
     // 9. Users (root)

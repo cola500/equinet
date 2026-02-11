@@ -16,6 +16,7 @@ interface BaseEntities {
   customerId: string
   providerId: string
   providerUserId: string
+  adminUserId: string
   service1Id: string // Hovslagning Standard
   service2Id: string // Ridlektion
   horseId: string    // E2E Blansen
@@ -37,6 +38,11 @@ export async function getBaseEntities(): Promise<BaseEntities> {
 
   const providerUser = await prisma.user.findUniqueOrThrow({
     where: { email: 'provider@example.com' },
+    select: { id: true },
+  })
+
+  const adminUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'admin@example.com' },
     select: { id: true },
   })
 
@@ -64,6 +70,7 @@ export async function getBaseEntities(): Promise<BaseEntities> {
     customerId: customer.id,
     providerId: provider.id,
     providerUserId: providerUser.id,
+    adminUserId: adminUser.id,
     service1Id: service1.id,
     service2Id: service2.id,
     horseId: horse.id,
@@ -222,17 +229,22 @@ export async function seedRoute(specTag: string) {
 export async function cleanupSpecData(specTag: string): Promise<void> {
   const marker = `E2E-spec:${specTag}`
 
-  // 1. CustomerReview (FK -> Booking)
+  // 1. Review (FK -> Booking) -- provider reviews of customers
+  await prisma.review.deleteMany({
+    where: { booking: { customerNotes: marker } },
+  })
+
+  // 2. CustomerReview (FK -> Booking)
   await prisma.customerReview.deleteMany({
     where: { booking: { customerNotes: marker } },
   })
 
-  // 2. Bookings (may reference routeOrders via routeOrderId)
+  // 3. Bookings (may reference routeOrders via routeOrderId)
   await prisma.booking.deleteMany({
     where: { customerNotes: marker },
   })
 
-  // 3. RouteStop (FK -> Route, RouteOrder)
+  // 4. RouteStop (FK -> Route, RouteOrder)
   // First collect routeIds so we can delete the parent Routes after
   const taggedRouteStops = await prisma.routeStop.findMany({
     where: { routeOrder: { specialInstructions: marker } },
@@ -242,13 +254,13 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
     where: { routeOrder: { specialInstructions: marker } },
   })
 
-  // 4. Routes whose stops referenced our tagged route orders
+  // 5. Routes whose stops referenced our tagged route orders
   const routeIds = [...new Set(taggedRouteStops.map(s => s.routeId).filter(Boolean))] as string[]
   if (routeIds.length > 0) {
     await prisma.route.deleteMany({ where: { id: { in: routeIds } } })
   }
 
-  // 5. Disconnect services from provider-announced route orders before deleting them
+  // 6. Disconnect services from provider-announced route orders before deleting them
   const taggedOrders = await prisma.routeOrder.findMany({
     where: { specialInstructions: marker },
     select: { id: true },
@@ -260,7 +272,7 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
     })
   }
 
-  // 6. RouteOrders
+  // 7. RouteOrders
   await prisma.routeOrder.deleteMany({
     where: { specialInstructions: marker },
   })

@@ -176,12 +176,10 @@ test.describe('Route Announcements Flow', () => {
       await expect(page.getByLabel(/till datum/i)).toBeVisible();
       await expect(page.getByLabel(/övrig information/i)).toBeVisible();
 
-      // Verify services are loaded (either checkboxes or empty state)
-      await page.waitForTimeout(2000);
-      const hasServices = await page.locator('label:has([role="checkbox"])').count() > 0;
-      const noServices = await page.getByText(/inga aktiva tjänster/i).isVisible().catch(() => false);
-
-      expect(hasServices || noServices).toBeTruthy();
+      // Wait for services to load (either checkboxes or empty state)
+      const checkbox = page.locator('[role="checkbox"]').first();
+      const noServices = page.getByText(/inga aktiva tjänster/i);
+      await expect(checkbox.or(noServices)).toBeVisible({ timeout: 15000 });
     });
 
     test('should create new announcement with services and municipality', async ({ page }) => {

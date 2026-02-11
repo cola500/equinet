@@ -1,24 +1,30 @@
 import { test, expect } from './fixtures';
-import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
+import { prisma } from './fixtures';
+import { seedBooking, getBaseEntities, cleanupSpecData } from './setup/seed-helpers';
 
 const SPEC_TAG = 'provider-notes';
 
 /**
  * E2E Tests for Provider Notes
  *
- * Tests:
+ * Tests (Calendar - BookingDetailDialog):
  * - Add a note on a confirmed booking (via calendar -> BookingDetailDialog)
  * - Edit an existing note
  * - Pending bookings should not show notes section
  * - Character counter shows {length}/2000
  *
- * Provider notes are only accessible via BookingDetailDialog in the calendar view.
+ * Tests (Customer Registry - inline edit):
+ * - Edit an existing note inline (pencil icon)
+ * - Show "(redigerad)" label after editing
+ * - Cancel inline edit without saving
+ *
+ * Provider notes are accessible via BookingDetailDialog (calendar) and Customer Registry.
  */
 
 test.describe('Provider Notes', () => {
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG);
-    await seedBooking({ specTag: SPEC_TAG, status: 'confirmed', daysFromNow: 10, horseName: 'E2E NotesConfirmed', startTime: '14:00', endTime: '15:00' });
+    await seedBooking({ specTag: SPEC_TAG, status: 'confirmed', daysFromNow: 3, horseName: 'E2E NotesConfirmed', startTime: '10:00', endTime: '11:00' });
     await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 7, horseName: 'E2E NotesPending' });
   });
 
@@ -52,11 +58,12 @@ test.describe('Provider Notes', () => {
     for (let week = 0; week < 5; week++) {
       if (week > 0) {
         await page.getByRole('button', { name: /nästa/i }).click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(2000);
       }
 
       const greenBooking = page.locator(bookingBlockSelector).first();
-      const found = await greenBooking.isVisible({ timeout: 2000 }).catch(() => false);
+      const found = await greenBooking.isVisible({ timeout: 5000 }).catch(() => false);
 
       if (found) {
         await greenBooking.click();
@@ -191,5 +198,130 @@ test.describe('Provider Notes', () => {
 
     // Cancel to avoid side effects
     await page.getByRole('button', { name: /avbryt/i }).click();
+  });
+});
+
+// ─── Customer Registry inline edit tests ──────────────────────────
+
+const EDIT_SPEC_TAG = 'provider-notes-edit';
+
+test.describe('Provider Notes - Customer Registry Inline Edit', () => {
+  let noteId: string;
+
+  test.beforeAll(async () => {
+    await cleanupSpecData(EDIT_SPEC_TAG);
+    const base = await getBaseEntities();
+
+    // Seed a completed booking so the customer appears in the registry
+    await seedBooking({
+      specTag: EDIT_SPEC_TAG,
+      status: 'completed',
+      daysFromNow: -30,
+      horseName: 'E2E Blansen',
+      horseId: base.horseId,
+    });
+
+    // Create a note via Prisma for the edit tests
+    const note = await prisma.providerCustomerNote.create({
+      data: {
+        providerId: base.providerId,
+        customerId: base.customerId,
+        content: 'Original anteckning for E2E edit test',
+      },
+    });
+    noteId = note.id;
+  });
+
+  test.afterAll(async () => {
+    // Clean up the note
+    await prisma.providerCustomerNote.delete({ where: { id: noteId } }).catch(() => {});
+    await cleanupSpecData(EDIT_SPEC_TAG);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Customer registry note editing not optimized for mobile viewport');
+
+    // Login as provider
+    await page.goto('/login');
+    await page.getByLabel(/email/i).fill('provider@example.com');
+    await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!');
+    await page.getByRole('button', { name: /logga in/i }).click();
+    await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 10000 });
+  });
+
+  /** Helper: Navigate to customers page and expand Test Testsson to see notes */
+  async function expandCustomerNotes(page: import('@playwright/test').Page) {
+    await page.goto('/provider/customers');
+    await expect(page.getByRole('heading', { name: /kunder/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Laddar kunder/i)).not.toBeVisible({ timeout: 10000 });
+
+    // Click on Test Testsson to expand
+    await page.getByText('Test Testsson').first().click();
+
+    // Wait for expanded content with notes section
+    await expect(page.getByText('Anteckningar')).toBeVisible({ timeout: 5000 });
+  }
+
+  test('should edit an existing note inline', async ({ page }) => {
+    await expandCustomerNotes(page);
+
+    // Find our seeded note
+    await expect(page.getByText('Original anteckning for E2E edit test')).toBeVisible({ timeout: 5000 });
+
+    // Click pencil icon to edit
+    await page.getByLabel('Redigera anteckning').first().click();
+
+    // Edit textarea should appear (no placeholder -- uses value prop)
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 5000 });
+    await expect(textarea).toHaveValue('Original anteckning for E2E edit test');
+
+    // Update the text
+    const updatedText = `Redigerad anteckning ${Date.now()}`;
+    await textarea.clear();
+    await textarea.fill(updatedText);
+
+    // Save
+    await page.getByRole('button', { name: /^Spara$/i }).click();
+
+    // Updated text should be visible
+    await expect(page.getByText(updatedText)).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should show "(redigerad)" label after editing', async ({ page }) => {
+    await expandCustomerNotes(page);
+
+    // The note was edited in the previous test -- "(redigerad)" should be visible
+    await expect(page.getByText('(redigerad)')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should cancel inline edit without saving', async ({ page }) => {
+    await expandCustomerNotes(page);
+
+    // Click pencil to start editing
+    await page.getByLabel('Redigera anteckning').first().click();
+
+    // Edit textarea should appear (no placeholder -- uses value prop)
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 5000 });
+
+    // Get current content
+    const originalValue = await textarea.inputValue();
+
+    // Modify the text
+    await textarea.clear();
+    await textarea.fill('This should not be saved');
+
+    // Click cancel
+    await page.getByRole('button', { name: /avbryt/i }).click();
+
+    // Textarea should disappear
+    await expect(textarea).not.toBeVisible({ timeout: 5000 });
+
+    // Original text should still be visible (not "This should not be saved")
+    await expect(page.getByText('This should not be saved')).not.toBeVisible();
+    if (originalValue) {
+      await expect(page.getByText(originalValue)).toBeVisible();
+    }
   });
 });

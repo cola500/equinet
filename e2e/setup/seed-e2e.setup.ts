@@ -78,6 +78,24 @@ setup('seed E2E test data', async () => {
     })
     console.log('  User: provider@example.com')
 
+    const adminPassword = await bcrypt.hash('AdminPass123!', 10)
+    await prisma.user.upsert({
+      where: { email: 'admin@example.com' },
+      update: { isAdmin: true, emailVerified: true, emailVerifiedAt: new Date() },
+      create: {
+        email: 'admin@example.com',
+        passwordHash: adminPassword,
+        firstName: 'Admin',
+        lastName: 'Testsson',
+        phone: '0701112233',
+        userType: 'customer',
+        isAdmin: true,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+      },
+    })
+    console.log('  User: admin@example.com (admin)')
+
     // 3. Upsert provider profile
     const provider = await prisma.provider.upsert({
       where: { userId: providerUser.id },

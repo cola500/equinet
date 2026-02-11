@@ -81,9 +81,9 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
     // Wait for data to load (loading spinner gone)
     await expect(page.getByText(/laddar grupprequests/i)).not.toBeVisible({ timeout: 10000 });
 
-    // Verify both requests appear
-    await expect(page.getByText('E2E Stall Alpha')).toBeVisible();
-    await expect(page.getByText('E2E Stall Beta')).toBeVisible();
+    // Verify both requests appear (use .first() -- text can appear in multiple card elements)
+    await expect(page.getByText('E2E Stall Alpha').first()).toBeVisible();
+    await expect(page.getByText('E2E Stall Beta').first()).toBeVisible();
   });
 
   test('should display geo filter UI elements', async ({ page }) => {
