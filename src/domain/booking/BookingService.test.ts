@@ -1190,4 +1190,81 @@ describe('BookingService', () => {
         .toBe('Semester')
     })
   })
+
+  describe('acceptingNewCustomers validation', () => {
+    it('should allow booking when acceptingNewCustomers is true (default)', async () => {
+      mockGetProvider.mockResolvedValue({ ...validProvider, acceptingNewCustomers: true })
+
+      const result = await service.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should allow existing customer when acceptingNewCustomers is false', async () => {
+      const mockHasCompletedBookingWith = vi.fn().mockResolvedValue(true)
+      mockGetProvider.mockResolvedValue({ ...validProvider, acceptingNewCustomers: false })
+
+      const svc = new BookingService({
+        ...deps,
+        hasCompletedBookingWith: mockHasCompletedBookingWith,
+      })
+
+      const result = await svc.createBooking(validDTO)
+
+      expect(result.isSuccess).toBe(true)
+      expect(mockHasCompletedBookingWith).toHaveBeenCalledWith('provider-1', 'customer-1')
+    })
+
+    it('should reject new customer when acceptingNewCustomers is false', async () => {
+      const mockHasCompletedBookingWith = vi.fn().mockResolvedValue(false)
+      mockGetProvider.mockResolvedValue({ ...validProvider, acceptingNewCustomers: false })
+
+      const svc = new BookingService({
+        ...deps,
+        hasCompletedBookingWith: mockHasCompletedBookingWith,
+      })
+
+      const result = await svc.createBooking(validDTO)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('NEW_CUSTOMER_NOT_ACCEPTED')
+    })
+
+    it('should NOT check acceptingNewCustomers for createManualBooking', async () => {
+      const mockHasCompletedBookingWith = vi.fn()
+      mockGetProvider.mockResolvedValue({ ...validProvider, acceptingNewCustomers: false })
+
+      const svc = new BookingService({
+        ...deps,
+        hasCompletedBookingWith: mockHasCompletedBookingWith,
+        createGhostUser: vi.fn().mockResolvedValue('ghost-user-123'),
+      })
+
+      const manualDTO: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerId: 'customer-1',
+      }
+
+      const result = await svc.createManualBooking(manualDTO)
+
+      expect(result.isSuccess).toBe(true)
+      expect(mockHasCompletedBookingWith).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('mapBookingErrorToStatus - NEW_CUSTOMER_NOT_ACCEPTED', () => {
+    it('should return 403 for NEW_CUSTOMER_NOT_ACCEPTED', () => {
+      expect(mapBookingErrorToStatus({ type: 'NEW_CUSTOMER_NOT_ACCEPTED' })).toBe(403)
+    })
+  })
+
+  describe('mapBookingErrorToMessage - NEW_CUSTOMER_NOT_ACCEPTED', () => {
+    it('should return Swedish message for NEW_CUSTOMER_NOT_ACCEPTED', () => {
+      expect(mapBookingErrorToMessage({ type: 'NEW_CUSTOMER_NOT_ACCEPTED' }))
+        .toBe('Denna leverantör tar för närvarande inte emot nya kunder')
+    })
+  })
 })

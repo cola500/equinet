@@ -1482,9 +1482,14 @@ Uppdatera inloggad providers profil.
   "address": "Storgatan 1",
   "city": "Göteborg",
   "postalCode": "41234",
-  "serviceArea": "Västra Götaland"
+  "serviceArea": "Västra Götaland",
+  "acceptingNewCustomers": false
 }
 ```
+
+| Fält | Typ | Beskrivning |
+|------|-----|-------------|
+| `acceptingNewCustomers` | boolean (optional) | Stäng/öppna för nya kunder. Default `true`. När `false` kan bara kunder med minst 1 slutförd bokning boka nya tider. |
 
 **Response:** `200 OK`
 

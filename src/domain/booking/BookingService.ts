@@ -80,6 +80,7 @@ export interface ProviderInfo {
   id: string
   userId: string
   isActive: boolean
+  acceptingNewCustomers?: boolean
   /** Provider's home location (fallback for travel time calculation) */
   latitude?: number | null
   longitude?: number | null
@@ -111,6 +112,7 @@ export type BookingError =
   | { type: 'INVALID_CUSTOMER_DATA'; message: string }
   | { type: 'GHOST_USER_CREATION_FAILED'; message: string }
   | { type: 'PROVIDER_CLOSED'; message: string }
+  | { type: 'NEW_CUSTOMER_NOT_ACCEPTED' }
 
 /**
  * Route order info for validation
@@ -150,6 +152,8 @@ export interface BookingServiceDeps {
   travelTimeService?: TravelTimeService
   /** Create ghost user for manual bookings (optional - only needed for manual booking flow) */
   createGhostUser?: (data: { name: string; phone?: string; email?: string }) => Promise<string>
+  /** Check if customer has at least one completed booking with provider */
+  hasCompletedBookingWith?: (providerId: string, customerId: string) => Promise<boolean>
 }
 
 /**
@@ -210,6 +214,16 @@ export class BookingService {
     // 3. Prevent self-booking
     if (provider.userId === dto.customerId) {
       return Result.fail({ type: 'SELF_BOOKING' })
+    }
+
+    // 3b. Check if provider accepts new customers
+    if (provider.acceptingNewCustomers === false) {
+      const isExistingCustomer = this.deps.hasCompletedBookingWith
+        ? await this.deps.hasCompletedBookingWith(dto.providerId, dto.customerId)
+        : false
+      if (!isExistingCustomer) {
+        return Result.fail({ type: 'NEW_CUSTOMER_NOT_ACCEPTED' })
+      }
     }
 
     // 4. Check if provider has closed this day
@@ -709,6 +723,8 @@ export function mapBookingErrorToStatus(error: BookingError): number {
       return 400
     case 'GHOST_USER_CREATION_FAILED':
       return 500
+    case 'NEW_CUSTOMER_NOT_ACCEPTED':
+      return 403
     case 'BOOKING_NOT_FOUND':
       return 404
     case 'OVERLAP':
@@ -750,6 +766,8 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return error.message
     case 'PROVIDER_CLOSED':
       return error.message
+    case 'NEW_CUSTOMER_NOT_ACCEPTED':
+      return 'Denna leverantör tar för närvarande inte emot nya kunder'
     default:
       return 'Ett fel uppstod vid bokning'
   }
@@ -782,6 +800,7 @@ export function createBookingService(): BookingService {
           id: true,
           userId: true,
           isActive: true,
+          acceptingNewCustomers: true,
           latitude: true,
           longitude: true,
         },
@@ -827,6 +846,12 @@ export function createBookingService(): BookingService {
           address: true,
         },
       })
+    },
+    hasCompletedBookingWith: async (providerId, customerId) => {
+      const count = await prisma.booking.count({
+        where: { providerId, customerId, status: 'completed' },
+      })
+      return count > 0
     },
     travelTimeService: new TravelTimeService(),
     createGhostUser: async (data) => {

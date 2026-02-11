@@ -105,6 +105,7 @@ export interface ProviderWithFullDetails extends Provider {
   longitude?: number | null
   serviceAreaKm?: number | null
   profileImageUrl?: string | null
+  acceptingNewCustomers: boolean
   isVerified: boolean
   verifiedAt?: Date | null
   address?: string | null

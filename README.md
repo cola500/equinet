@@ -196,6 +196,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Kundregister och besöksplanering ("Dags för besök")
 - Leverantörsanteckningar (integritetsskyddat)
 - Kompetenser och verifiering (admin-granskning)
+- Stäng för nya kunder (befintliga kunder kan fortfarande boka)
 
 ### Samarbete och kommunikation
 - Recensioner och betyg (båda riktningar)

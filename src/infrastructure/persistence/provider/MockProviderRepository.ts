@@ -111,6 +111,7 @@ export class MockProviderRepository implements IProviderRepository {
       longitude: null,
       serviceAreaKm: null,
       profileImageUrl: null,
+      acceptingNewCustomers: true,
       isVerified: false,
       verifiedAt: null,
       address: null,

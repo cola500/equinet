@@ -59,6 +59,7 @@ interface Provider {
   city?: string
   address?: string
   profileImageUrl?: string | null
+  acceptingNewCustomers?: boolean
   services: Service[]
   availability: Availability[]
   verifications?: Verification[]
@@ -305,6 +306,32 @@ export default function ProviderDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Not accepting new customers banner */}
+          {provider.acceptingNewCustomers === false && (
+            <Card className="mb-8 border-amber-200 bg-amber-50">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-sm text-amber-800">
+                    Denna leverantör tar för närvarande bara emot bokningar från befintliga kunder
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Opening Hours */}
           {provider.availability && provider.availability.length > 0 && (

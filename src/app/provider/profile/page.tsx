@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
 
 interface ProviderProfile {
@@ -27,6 +28,7 @@ interface ProviderProfile {
   longitude?: number | null
   serviceAreaKm?: number | null
   profileImageUrl?: string | null
+  acceptingNewCustomers: boolean
   user: {
     firstName: string
     lastName: string
@@ -612,6 +614,53 @@ export default function ProviderProfilePage() {
               )}
             </CardContent>
           </Card>
+
+      {/* Booking Settings Card */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Bokningsinställningar</CardTitle>
+          <CardDescription>
+            Hantera vilka som kan boka dina tjänster
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="accepting-new-customers" className="text-sm font-medium">
+                Ta emot nya kunder
+              </Label>
+              <p className="text-xs text-gray-500">
+                När avaktiverad kan bara kunder som redan har genomförda bokningar hos dig boka nya tider
+              </p>
+            </div>
+            <Switch
+              id="accepting-new-customers"
+              checked={profile.acceptingNewCustomers}
+              onCheckedChange={async (checked) => {
+                try {
+                  const response = await fetch("/api/provider/profile", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      businessName: profile.businessName,
+                      acceptingNewCustomers: checked,
+                    }),
+                  })
+                  if (!response.ok) throw new Error("Failed to update")
+                  mutateProfile()
+                  toast.success(
+                    checked
+                      ? "Du tar nu emot nya kunder"
+                      : "Du tar nu bara emot befintliga kunder"
+                  )
+                } catch {
+                  toast.error("Kunde inte uppdatera inställningen")
+                }
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Availability Schedule Card */}
       {profile && <AvailabilitySchedule providerId={profile.id} />}

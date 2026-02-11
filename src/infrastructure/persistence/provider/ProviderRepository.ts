@@ -218,6 +218,7 @@ export class ProviderRepository implements IProviderRepository {
         serviceAreaKm: true,
         profileImageUrl: true,
         isActive: true,
+        acceptingNewCustomers: true,
         isVerified: true,
         verifiedAt: true,
         createdAt: true,

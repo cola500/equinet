@@ -16,6 +16,7 @@ const providerProfileSchema = z.object({
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
   serviceAreaKm: z.number().min(1).max(500).optional().nullable(),
+  acceptingNewCustomers: z.boolean().optional(),
 }).strict()
 
 // GET - Fetch current provider profile

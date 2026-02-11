@@ -109,7 +109,7 @@ const prismaWithExtensions = basePrisma.$extends({
 | Tabell | Kritiska Index | Syfte |
 |--------|----------------|-------|
 | User | email, latitude/longitude | Användarkonton |
-| Provider | isActive, city, businessName, lat/long | Leverantörsprofiler |
+| Provider | isActive, acceptingNewCustomers, city, businessName, lat/long | Leverantörsprofiler |
 | Service | providerId+isActive | Tjänster |
 | Booking | providerId+date+status, customerId, horseId | Bokningar |
 | Horse | ownerId+isActive | Hästregister |

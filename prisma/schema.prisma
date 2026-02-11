@@ -77,6 +77,7 @@ model Provider {
   serviceArea     String? // DEPRECATED: JSON array av områden (keep for backward compatibility)
   profileImageUrl String?
   isActive        Boolean  @default(true)
+  acceptingNewCustomers Boolean @default(true)
 
   // Verification
   isVerified      Boolean   @default(false)
