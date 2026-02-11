@@ -22,6 +22,22 @@ export default auth((req) => {
   }
 
   const userType = session.user.userType
+  const isAdmin = session.user.isAdmin === true
+
+  // Admin-only routes
+  const adminPaths = ["/admin", "/api/admin"]
+  if (adminPaths.some(p => path.startsWith(p))) {
+    if (!isAdmin) {
+      if (path.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: "Åtkomst nekad" },
+          { status: 403 }
+        )
+      }
+      return NextResponse.redirect(new URL('/', nextUrl))
+    }
+    return NextResponse.next()
+  }
 
   // Provider-only routes
   const providerOnlyPaths = [
@@ -74,10 +90,12 @@ export const config = {
     "/api/services/:path*",
     // NOTE: /api/profile/:path* is intentionally NOT here -- it's a public route (shared horse profile)
     "/api/provider/:path*",
+    "/api/admin/:path*",
 
     // Frontend routes that require auth
     "/provider/:path*",
     "/customer/:path*",
     "/dashboard/:path*",
+    "/admin/:path*",
   ],
 }

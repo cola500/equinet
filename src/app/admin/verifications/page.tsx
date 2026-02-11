@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -128,19 +128,19 @@ export default function AdminVerificationsPage() {
 
   if (authLoading) {
     return (
-      <CustomerLayout>
+      <AdminLayout>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
             <p className="mt-4 text-gray-600">Laddar...</p>
           </div>
         </div>
-      </CustomerLayout>
+      </AdminLayout>
     )
   }
 
   return (
-    <CustomerLayout>
+    <AdminLayout>
       <h1 className="text-3xl font-bold mb-2">Verifieringsansökningar</h1>
       <p className="text-gray-600 mb-8">
         Granska och godkänn eller avvisa leverantörers verifieringsansökningar.
@@ -266,6 +266,6 @@ export default function AdminVerificationsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </CustomerLayout>
+    </AdminLayout>
   )
 }

@@ -885,6 +885,134 @@ Ta bort en pending/rejected verifieringsansökan. Tar även bort tillhörande bi
 
 ## Admin
 
+Alla admin-endpoints kräver `isAdmin=true`. Skyddas av både middleware (redirect/403) och per-route `requireAdmin()`.
+
+### GET /api/admin/stats
+
+Dashboard-KPIs: användare, bokningar, leverantörer, intäkter.
+
+**Auth:** Required (admin)
+
+**Response:** `200 OK`
+```json
+{
+  "users": { "total": 100, "customers": 70, "providers": 30, "newThisMonth": 12 },
+  "bookings": { "total": 500, "pending": 10, "confirmed": 20, "completed": 400, "cancelled": 70, "completedThisMonth": 50 },
+  "providers": { "total": 30, "active": 25, "verified": 20, "pendingVerifications": 3 },
+  "revenue": { "totalCompleted": 150000, "thisMonth": 25000 }
+}
+```
+
+---
+
+### GET /api/admin/users
+
+Paginerad användarlista med sök och filter.
+
+**Auth:** Required (admin)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `search` | string | Sök i namn/e-post (case-insensitive) |
+| `type` | string | `customer` eller `provider` |
+| `page` | number | Sida (default 1) |
+| `limit` | number | Antal per sida (default 20, max 100) |
+
+**Response:** `200 OK`
+```json
+{
+  "users": [{ "id": "uuid", "email": "...", "firstName": "...", "lastName": "...", "userType": "customer", "isAdmin": false, "createdAt": "...", "emailVerified": "...", "provider": null }],
+  "total": 100, "page": 1, "totalPages": 5
+}
+```
+
+---
+
+### GET /api/admin/bookings
+
+Paginerad bokningslista med status- och datumfilter.
+
+**Auth:** Required (admin)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `status` | string | `pending`, `confirmed`, `completed`, `cancelled` |
+| `from` | string | Från-datum (YYYY-MM-DD) |
+| `to` | string | Till-datum (YYYY-MM-DD) |
+| `page` | number | Sida (default 1) |
+| `limit` | number | Antal per sida (default 20, max 100) |
+
+**Response:** `200 OK`
+```json
+{
+  "bookings": [{ "id": "uuid", "bookingDate": "...", "startTime": "10:00", "endTime": "11:00", "status": "confirmed", "isManualBooking": false, "customerName": "Anna Svensson", "providerBusinessName": "Hästkliniken", "serviceName": "Hovvård" }],
+  "total": 500, "page": 1, "totalPages": 25
+}
+```
+
+---
+
+### GET /api/admin/providers
+
+Paginerad leverantörslista med statistik.
+
+**Auth:** Required (admin)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `verified` | string | `true` eller `false` |
+| `active` | string | `true` eller `false` |
+| `page` | number | Sida (default 1) |
+| `limit` | number | Antal per sida (default 20, max 100) |
+
+**Response:** `200 OK`
+```json
+{
+  "providers": [{ "id": "uuid", "businessName": "...", "city": "...", "isVerified": true, "isActive": true, "createdAt": "...", "bookingCount": 15, "serviceCount": 3, "averageRating": 4.5, "hasFortnox": true }],
+  "total": 30, "page": 1, "totalPages": 2
+}
+```
+
+---
+
+### GET /api/admin/integrations
+
+Fortnox-kopplingar och betalningsöversikt.
+
+**Auth:** Required (admin)
+
+**Response:** `200 OK`
+```json
+{
+  "fortnox": {
+    "connections": [{ "providerId": "uuid", "businessName": "...", "connectedAt": "...", "tokenExpiresAt": "..." }],
+    "totalConnected": 1
+  },
+  "payments": { "total": 100, "succeeded": 80, "pending": 10, "failed": 10, "totalRevenue": 50000 }
+}
+```
+
+---
+
+### GET /api/admin/system
+
+Systemhälsa: databas + cron-status.
+
+**Auth:** Required (admin)
+
+**Response:** `200 OK`
+```json
+{
+  "database": { "healthy": true, "responseTimeMs": 5 },
+  "cron": { "lastReminderRun": "2026-02-10T08:00:00Z", "remindersCount": 42 }
+}
+```
+
+---
+
 ### GET /api/admin/verification-requests
 
 Lista alla väntande verifieringsansökningar med provider-info, utfärdare, år och bilder.

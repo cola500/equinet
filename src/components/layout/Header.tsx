@@ -67,7 +67,7 @@ export function Header() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild className="py-3 px-4">
-                      <Link href="/admin/verifications">
+                      <Link href="/admin">
                         Admin
                       </Link>
                     </DropdownMenuItem>

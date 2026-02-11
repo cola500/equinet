@@ -353,6 +353,8 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **updateWithAuth-mönster**: Samma som `deleteWithAuth` -- atomic `WHERE { id, providerId }`. Returnerar uppdaterat objekt (eller null). Återanvänd för alla modifierande operationer på provider-ägda resurser.
 - **Prisma migrate med befintliga rader**: `NOT NULL` utan default failar om tabellen har data. Fix: `--create-only`, ändra SQL till `ADD COLUMN ... DEFAULT now()`, kör `migrate dev` igen. Prisma genererar automatiskt en extra migration som droppar default.
 - **Inline edit i listor**: State `editingItem | null` + `editContent`. Klick på Pencil sätter state, formuläret ersätter texten inline. Edit och add bör vara ömsesidigt uteslutande.
+- **requireAdmin()-pattern**: `src/lib/admin-auth.ts` kastar Response (401/403) istället för att returnera boolean. Routes fångar i catch: `if (error instanceof Response) return error`. En rad per route istället för 8 rader duplicerad admin-check.
+- **Admin-routes i middleware**: `/admin/:path*` och `/api/admin/:path*` i middleware matcher + `isAdmin`-check. Defense in depth: middleware *plus* per-route `requireAdmin()`. Icke-admin sidor -> redirect till `/`, API -> 403.
 
 ---
 
