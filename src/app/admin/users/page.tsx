@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { Suspense, useEffect, useState, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,6 +63,14 @@ interface PendingAction {
 }
 
 export default function AdminUsersPage() {
+  return (
+    <Suspense fallback={<AdminLayout><div className="p-6 text-gray-500">Laddar...</div></AdminLayout>}>
+      <AdminUsersContent />
+    </Suspense>
+  )
+}
+
+function AdminUsersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [data, setData] = useState<UsersResponse | null>(null)
