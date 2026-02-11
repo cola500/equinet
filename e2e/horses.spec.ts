@@ -116,9 +116,13 @@ test.describe('Horse Registry (Customer)', () => {
     // Bekräftelsedialog ska visas (alertdialog på desktop, drawer på mobil)
     await expect(page.getByText(/bokningar påverkas inte/i)).toBeVisible({ timeout: 5000 });
 
-    // Bekräfta borttagning (hitta "Ta bort"-knappen i bekräftelsedialogens footer)
+    // Bekräfta borttagning -- vänta på nätverksanrop för att vara säker
+    const deletePromise = page.waitForResponse(
+      (resp) => resp.url().includes('/api/horses/') && resp.request().method() === 'DELETE'
+    );
     const confirmButton = page.getByRole('button', { name: /^ta bort$/i }).last();
     await confirmButton.click();
+    await deletePromise;
 
     // Vänta på att bekräftelsedialogens text försvinner
     await expect(page.getByText(/bokningar påverkas inte/i)).toBeHidden({ timeout: 10000 });

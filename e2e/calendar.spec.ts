@@ -275,10 +275,9 @@ test.describe('Calendar & Availability (Provider)', () => {
     // Vänta på sidan
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Verifiera att färgförklaring eller kalender-celler finns
-    // Kalendern bör visa olika färger för öppet/stängt/undantag
-    const calendarContent = page.locator('.grid, [class*="calendar"], [class*="week"]').first();
-    await expect(calendarContent).toBeVisible({ timeout: 5000 });
+    // Verifiera att färgförklaringen visas (unika etiketter som bara finns i legenden)
+    await expect(page.getByText('Stängt (veckoschema)')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Ledig/undantag')).toBeVisible();
   });
 
   test('should show pending bookings banner', async ({ page }) => {
