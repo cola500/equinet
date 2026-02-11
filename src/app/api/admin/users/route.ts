@@ -22,24 +22,67 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
     const type = searchParams.get("type") || ""
+    const verified = searchParams.get("verified")
+    const active = searchParams.get("active")
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)))
+
+    const isProviderFilter = type === "provider"
 
     const where: Record<string, unknown> = {}
 
     if (search) {
-      where.OR = [
+      const searchConditions = [
         { email: { contains: search, mode: "insensitive" } },
         { firstName: { contains: search, mode: "insensitive" } },
         { lastName: { contains: search, mode: "insensitive" } },
       ]
+      if (isProviderFilter) {
+        searchConditions.push({
+          provider: { businessName: { contains: search, mode: "insensitive" } },
+        } as any)
+      }
+      where.OR = searchConditions
     }
 
     if (type === "customer" || type === "provider") {
       where.userType = type
     }
 
-    const [users, total] = await Promise.all([
+    // Provider-specifika filter
+    if (isProviderFilter) {
+      const providerFilter: Record<string, unknown> = {}
+      if (verified === "true") providerFilter.isVerified = true
+      if (verified === "false") providerFilter.isVerified = false
+      if (active === "true") providerFilter.isActive = true
+      if (active === "false") providerFilter.isActive = false
+      if (Object.keys(providerFilter).length > 0) {
+        where.provider = providerFilter
+      }
+    }
+
+    // Utökad provider-select vid provider-filter
+    const providerSelect = isProviderFilter
+      ? {
+          select: {
+            businessName: true,
+            isVerified: true,
+            isActive: true,
+            city: true,
+            _count: { select: { bookings: true, services: true } },
+            reviews: { select: { rating: true } },
+            fortnoxConnection: { select: { id: true } },
+          },
+        }
+      : {
+          select: {
+            businessName: true,
+            isVerified: true,
+            isActive: true,
+          },
+        }
+
+    const [usersRaw, total] = await Promise.all([
       prisma.user.findMany({
         where,
         select: {
@@ -51,13 +94,7 @@ export async function GET(request: NextRequest) {
           isAdmin: true,
           createdAt: true,
           emailVerified: true,
-          provider: {
-            select: {
-              businessName: true,
-              isVerified: true,
-              isActive: true,
-            },
-          },
+          provider: providerSelect,
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
@@ -65,6 +102,31 @@ export async function GET(request: NextRequest) {
       }),
       prisma.user.count({ where }),
     ])
+
+    // Mappa utökad provider-data
+    const users = usersRaw.map((user: any) => {
+      if (!isProviderFilter || !user.provider) return user
+
+      const p = user.provider
+      const avgRating =
+        p.reviews?.length > 0
+          ? p.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / p.reviews.length
+          : null
+
+      return {
+        ...user,
+        provider: {
+          businessName: p.businessName,
+          isVerified: p.isVerified,
+          isActive: p.isActive,
+          city: p.city,
+          bookingCount: p._count.bookings,
+          serviceCount: p._count.services,
+          averageRating: avgRating,
+          hasFortnox: !!p.fortnoxConnection,
+        },
+      }
+    })
 
     return NextResponse.json({
       users,

@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star } from "lucide-react"
 
 interface AdminUser {
   id: string
@@ -22,6 +23,11 @@ interface AdminUser {
     businessName: string
     isVerified: boolean
     isActive: boolean
+    city?: string | null
+    bookingCount?: number
+    serviceCount?: number
+    averageRating?: number | null
+    hasFortnox?: boolean
   } | null
 }
 
@@ -33,17 +39,25 @@ interface UsersResponse {
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [data, setData] = useState<UsersResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [type, setType] = useState("all")
+  const [type, setType] = useState(searchParams.get("type") || "all")
+  const [verified, setVerified] = useState("all")
+  const [active, setActive] = useState("all")
   const [page, setPage] = useState(1)
+
+  const isProviderView = type === "provider"
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams()
     if (search) params.set("search", search)
     if (type !== "all") params.set("type", type)
+    if (isProviderView && verified !== "all") params.set("verified", verified)
+    if (isProviderView && active !== "all") params.set("active", active)
     params.set("page", String(page))
     params.set("limit", "20")
 
@@ -57,7 +71,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, type, page])
+  }, [search, type, verified, active, page, isProviderView])
 
   useEffect(() => {
     fetchUsers()
@@ -70,7 +84,22 @@ export default function AdminUsersPage() {
 
   const handleTypeChange = (value: string) => {
     setType(value)
+    setVerified("all")
+    setActive("all")
     setPage(1)
+    // Uppdatera URL så att ?type=provider fungerar som deep link
+    if (value !== "all") {
+      router.replace(`/admin/users?type=${value}`, { scroll: false })
+    } else {
+      router.replace("/admin/users", { scroll: false })
+    }
+  }
+
+  const formatName = (user: AdminUser) => {
+    if (user.firstName || user.lastName) {
+      return `${user.firstName || ""} ${user.lastName || ""}`.trim()
+    }
+    return "-"
   }
 
   return (
@@ -81,7 +110,7 @@ export default function AdminUsersPage() {
         {/* Filter */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
-            placeholder="Sök på namn eller e-post..."
+            placeholder={isProviderView ? "Sök på namn, e-post eller företag..." : "Sök på namn eller e-post..."}
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             className="sm:max-w-xs"
@@ -96,77 +125,48 @@ export default function AdminUsersPage() {
               <SelectItem value="provider">Leverantörer</SelectItem>
             </SelectContent>
           </Select>
+          {isProviderView && (
+            <>
+              <Select value={verified} onValueChange={(v) => { setVerified(v); setPage(1) }}>
+                <SelectTrigger className="sm:w-[180px]">
+                  <SelectValue placeholder="Verifiering" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla</SelectItem>
+                  <SelectItem value="true">Verifierade</SelectItem>
+                  <SelectItem value="false">Ej verifierade</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={active} onValueChange={(v) => { setActive(v); setPage(1) }}>
+                <SelectTrigger className="sm:w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla</SelectItem>
+                  <SelectItem value="true">Aktiva</SelectItem>
+                  <SelectItem value="false">Inaktiva</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </div>
 
         {/* Tabell */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              {data ? `${data.total} användare` : "Laddar..."}
+              {data ? `${data.total} ${isProviderView ? "leverantörer" : "användare"}` : "Laddar..."}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p className="text-gray-500">Laddar...</p>
             ) : data?.users.length === 0 ? (
-              <p className="text-gray-500">Inga användare hittades</p>
+              <p className="text-gray-500">Inga {isProviderView ? "leverantörer" : "användare"} hittades</p>
+            ) : isProviderView ? (
+              <ProviderTable users={data?.users || []} />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left">
-                      <th className="pb-2 font-medium text-gray-500">Namn</th>
-                      <th className="pb-2 font-medium text-gray-500">E-post</th>
-                      <th className="pb-2 font-medium text-gray-500">Typ</th>
-                      <th className="pb-2 font-medium text-gray-500">Status</th>
-                      <th className="pb-2 font-medium text-gray-500">Registrerad</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data?.users.map((user) => (
-                      <tr key={user.id} className="border-b last:border-0">
-                        <td className="py-3">
-                          {user.firstName || user.lastName
-                            ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-                            : "-"}
-                          {user.isAdmin && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              Admin
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="py-3 text-gray-600">{user.email}</td>
-                        <td className="py-3">
-                          {user.userType === "provider" ? (
-                            <Badge variant="outline">
-                              {user.provider?.businessName || "Leverantör"}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline">Kund</Badge>
-                          )}
-                        </td>
-                        <td className="py-3">
-                          {user.emailVerified ? (
-                            <Badge className="bg-green-100 text-green-700">
-                              Verifierad
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Ej verifierad</Badge>
-                          )}
-                          {user.provider && !user.provider.isActive && (
-                            <Badge variant="destructive" className="ml-1">
-                              Inaktiv
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="py-3 text-gray-500">
-                          {new Date(user.createdAt).toLocaleDateString("sv-SE")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <GeneralTable users={data?.users || []} formatName={formatName} />
             )}
 
             {/* Pagination */}
@@ -199,5 +199,131 @@ export default function AdminUsersPage() {
         </Card>
       </div>
     </AdminLayout>
+  )
+}
+
+function GeneralTable({ users, formatName }: { users: AdminUser[]; formatName: (u: AdminUser) => string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="pb-2 font-medium text-gray-500">Namn</th>
+            <th className="pb-2 font-medium text-gray-500">E-post</th>
+            <th className="pb-2 font-medium text-gray-500">Typ</th>
+            <th className="pb-2 font-medium text-gray-500">E-post verifierad</th>
+            <th className="pb-2 font-medium text-gray-500">Registrerad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id} className="border-b last:border-0">
+              <td className="py-3">
+                {formatName(user)}
+                {user.isAdmin && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Admin
+                  </Badge>
+                )}
+              </td>
+              <td className="py-3 text-gray-600">{user.email}</td>
+              <td className="py-3">
+                {user.userType === "provider" ? (
+                  <Badge variant="outline">Leverantör</Badge>
+                ) : (
+                  <Badge variant="outline">Kund</Badge>
+                )}
+              </td>
+              <td className="py-3">
+                {user.emailVerified ? (
+                  <Badge className="bg-green-100 text-green-700">Ja</Badge>
+                ) : (
+                  <Badge variant="secondary">Nej</Badge>
+                )}
+              </td>
+              <td className="py-3 text-gray-500">
+                {new Date(user.createdAt).toLocaleDateString("sv-SE")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function ProviderTable({ users }: { users: AdminUser[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="pb-2 font-medium text-gray-500">Leverantör</th>
+            <th className="pb-2 font-medium text-gray-500">Ort</th>
+            <th className="pb-2 font-medium text-gray-500">Status</th>
+            <th className="pb-2 font-medium text-gray-500">Betyg</th>
+            <th className="pb-2 font-medium text-gray-500">Aktivitet</th>
+            <th className="pb-2 font-medium text-gray-500">Registrerad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => {
+            const name = user.firstName || user.lastName
+              ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+              : null
+            return (
+              <tr key={user.id} className="border-b last:border-0">
+                <td className="py-3">
+                  <div className="font-medium">
+                    {user.provider?.businessName || "-"}
+                    {user.isAdmin && (
+                      <Badge variant="secondary" className="ml-2 text-xs">Admin</Badge>
+                    )}
+                  </div>
+                  {name && <div className="text-xs text-gray-500">{name}</div>}
+                  <div className="text-xs text-gray-400">{user.email}</div>
+                </td>
+                <td className="py-3 text-gray-600">
+                  {user.provider?.city || "-"}
+                </td>
+                <td className="py-3">
+                  <div className="flex gap-1 flex-wrap">
+                    {user.provider?.isVerified ? (
+                      <Badge className="bg-green-100 text-green-700">Verifierad</Badge>
+                    ) : (
+                      <Badge variant="secondary">Ej verifierad</Badge>
+                    )}
+                    {user.provider && !user.provider.isActive && (
+                      <Badge variant="destructive">Inaktiv</Badge>
+                    )}
+                  </div>
+                </td>
+                <td className="py-3">
+                  {user.provider?.averageRating != null ? (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span>{user.provider.averageRating.toFixed(1)}</span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
+                <td className="py-3">
+                  <div className="text-gray-600">
+                    {user.provider?.bookingCount ?? 0} bokn. / {user.provider?.serviceCount ?? 0} tj.
+                  </div>
+                  {user.provider?.hasFortnox && (
+                    <Badge variant="outline" className="text-xs mt-1">Fortnox</Badge>
+                  )}
+                </td>
+                <td className="py-3 text-gray-500">
+                  {new Date(user.createdAt).toLocaleDateString("sv-SE")}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }

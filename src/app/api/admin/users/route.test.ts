@@ -160,4 +160,142 @@ describe("GET /api/admin/users", () => {
 
     expect(response.status).toBe(429)
   })
+
+  it("should include extended provider data when type=provider", async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      {
+        id: "user-p1",
+        email: "lev@test.se",
+        firstName: "Erik",
+        lastName: "Johansson",
+        userType: "provider",
+        isAdmin: false,
+        createdAt: new Date("2026-01-10"),
+        emailVerified: new Date("2026-01-10"),
+        provider: {
+          businessName: "Hästkliniken",
+          isVerified: true,
+          isActive: true,
+          city: "Stockholm",
+          _count: { bookings: 15, services: 3 },
+          reviews: [{ rating: 5 }, { rating: 4 }],
+          fortnoxConnection: { id: "fc-1" },
+        },
+      },
+    ] as any)
+    vi.mocked(prisma.user.count).mockResolvedValue(1)
+
+    const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider")
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.users[0].provider).toMatchObject({
+      businessName: "Hästkliniken",
+      isVerified: true,
+      isActive: true,
+      city: "Stockholm",
+      bookingCount: 15,
+      serviceCount: 3,
+      averageRating: 4.5,
+      hasFortnox: true,
+    })
+  })
+
+  it("should handle provider with no reviews (null averageRating)", async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      {
+        id: "user-p2",
+        email: "ny@test.se",
+        firstName: "Ny",
+        lastName: "Leverantör",
+        userType: "provider",
+        isAdmin: false,
+        createdAt: new Date("2026-02-01"),
+        emailVerified: null,
+        provider: {
+          businessName: "Ny Klinik",
+          isVerified: false,
+          isActive: true,
+          city: null,
+          _count: { bookings: 0, services: 0 },
+          reviews: [],
+          fortnoxConnection: null,
+        },
+      },
+    ] as any)
+    vi.mocked(prisma.user.count).mockResolvedValue(1)
+
+    const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider")
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(data.users[0].provider).toMatchObject({
+      businessName: "Ny Klinik",
+      city: null,
+      bookingCount: 0,
+      serviceCount: 0,
+      averageRating: null,
+      hasFortnox: false,
+    })
+  })
+
+  it("should filter providers by verified status", async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValue([])
+    vi.mocked(prisma.user.count).mockResolvedValue(0)
+
+    const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider&verified=true")
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userType: "provider",
+          provider: expect.objectContaining({ isVerified: true }),
+        }),
+      })
+    )
+  })
+
+  it("should filter providers by active status", async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValue([])
+    vi.mocked(prisma.user.count).mockResolvedValue(0)
+
+    const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider&active=false")
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userType: "provider",
+          provider: expect.objectContaining({ isActive: false }),
+        }),
+      })
+    )
+  })
+
+  it("should search by businessName when type=provider", async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValue([])
+    vi.mocked(prisma.user.count).mockResolvedValue(0)
+
+    const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider&search=häst")
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              provider: expect.objectContaining({
+                businessName: expect.objectContaining({ contains: "häst" }),
+              }),
+            }),
+          ]),
+        }),
+      })
+    )
+  })
 })
