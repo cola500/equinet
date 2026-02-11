@@ -61,6 +61,7 @@ export default function AdminBookingsPage() {
 
     try {
       const res = await fetch(`/api/admin/bookings?${params}`)
+      if (!res.ok) throw new Error("Fetch failed")
       const json = await res.json()
       setData(json)
     } catch {

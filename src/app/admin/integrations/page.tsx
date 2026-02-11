@@ -32,7 +32,10 @@ export default function AdminIntegrationsPage() {
 
   useEffect(() => {
     fetch("/api/admin/integrations")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Fetch failed")
+        return res.json()
+      })
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false))

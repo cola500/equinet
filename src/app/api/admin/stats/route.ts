@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       prisma.booking.count({ where: { status: "completed" } }),
       prisma.booking.count({ where: { status: "cancelled" } }),
       prisma.booking.count({
-        where: { status: "completed", completedAt: { gte: startOfMonth } },
+        where: { status: "completed", updatedAt: { gte: startOfMonth } },
       }),
       prisma.provider.count(),
       prisma.provider.count({ where: { isActive: true } }),

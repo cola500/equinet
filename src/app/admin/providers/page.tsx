@@ -45,6 +45,7 @@ export default function AdminProvidersPage() {
 
     try {
       const res = await fetch(`/api/admin/providers?${params}`)
+      if (!res.ok) throw new Error("Fetch failed")
       const json = await res.json()
       setData(json)
     } catch {
