@@ -8,7 +8,23 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Star } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { ChevronLeft, ChevronRight, Star, MoreHorizontal } from "lucide-react"
 
 interface AdminUser {
   id: string
@@ -17,6 +33,7 @@ interface AdminUser {
   lastName: string | null
   userType: string
   isAdmin: boolean
+  isBlocked: boolean
   createdAt: string
   emailVerified: string | null
   provider: {
@@ -38,6 +55,13 @@ interface UsersResponse {
   totalPages: number
 }
 
+interface PendingAction {
+  userId: string
+  userName: string
+  action: "toggleBlocked" | "toggleAdmin"
+  currentValue: boolean
+}
+
 export default function AdminUsersPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -48,6 +72,8 @@ export default function AdminUsersPage() {
   const [verified, setVerified] = useState("all")
   const [active, setActive] = useState("all")
   const [page, setPage] = useState(1)
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
   const isProviderView = type === "provider"
 
@@ -87,11 +113,36 @@ export default function AdminUsersPage() {
     setVerified("all")
     setActive("all")
     setPage(1)
-    // Uppdatera URL så att ?type=provider fungerar som deep link
     if (value !== "all") {
       router.replace(`/admin/users?type=${value}`, { scroll: false })
     } else {
       router.replace("/admin/users", { scroll: false })
+    }
+  }
+
+  const handleAction = async () => {
+    if (!pendingAction) return
+    setActionLoading(true)
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: pendingAction.userId,
+          action: pendingAction.action,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || "Något gick fel")
+        return
+      }
+      await fetchUsers()
+    } catch {
+      alert("Något gick fel")
+    } finally {
+      setActionLoading(false)
+      setPendingAction(null)
     }
   }
 
@@ -164,9 +215,9 @@ export default function AdminUsersPage() {
             ) : data?.users.length === 0 ? (
               <p className="text-gray-500">Inga {isProviderView ? "leverantörer" : "användare"} hittades</p>
             ) : isProviderView ? (
-              <ProviderTable users={data?.users || []} />
+              <ProviderTable users={data?.users || []} onAction={setPendingAction} formatName={formatName} />
             ) : (
-              <GeneralTable users={data?.users || []} formatName={formatName} />
+              <GeneralTable users={data?.users || []} formatName={formatName} onAction={setPendingAction} />
             )}
 
             {/* Pagination */}
@@ -198,11 +249,89 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bekräftelsedialog */}
+      {pendingAction && (
+        <AlertDialog open={true} onOpenChange={() => setPendingAction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Bekräfta åtgärd</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingAction.action === "toggleBlocked" && !pendingAction.currentValue && (
+                  <>Är du säker på att du vill blockera <strong>{pendingAction.userName}</strong>? Användaren kommer inte kunna logga in.</>
+                )}
+                {pendingAction.action === "toggleBlocked" && pendingAction.currentValue && (
+                  <>Är du säker på att du vill avblockera <strong>{pendingAction.userName}</strong>?</>
+                )}
+                {pendingAction.action === "toggleAdmin" && !pendingAction.currentValue && (
+                  <>Är du säker på att du vill göra <strong>{pendingAction.userName}</strong> till admin?</>
+                )}
+                {pendingAction.action === "toggleAdmin" && pendingAction.currentValue && (
+                  <>Är du säker på att du vill ta bort admin-behörighet från <strong>{pendingAction.userName}</strong>?</>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Avbryt</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleAction}
+                disabled={actionLoading}
+                className={pendingAction.action === "toggleBlocked" && !pendingAction.currentValue ? "bg-red-600 hover:bg-red-700" : ""}
+              >
+                {actionLoading ? "Sparar..." : "Bekräfta"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </AdminLayout>
   )
 }
 
-function GeneralTable({ users, formatName }: { users: AdminUser[]; formatName: (u: AdminUser) => string }) {
+function UserActionsMenu({ user, formatName, onAction }: {
+  user: AdminUser
+  formatName: (u: AdminUser) => string
+  onAction: (action: PendingAction) => void
+}) {
+  const name = formatName(user)
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => onAction({
+            userId: user.id,
+            userName: name,
+            action: "toggleBlocked",
+            currentValue: user.isBlocked,
+          })}
+        >
+          {user.isBlocked ? "Avblockera" : "Blockera"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onAction({
+            userId: user.id,
+            userName: name,
+            action: "toggleAdmin",
+            currentValue: user.isAdmin,
+          })}
+        >
+          {user.isAdmin ? "Ta bort admin" : "Gör admin"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function GeneralTable({ users, formatName, onAction }: {
+  users: AdminUser[]
+  formatName: (u: AdminUser) => string
+  onAction: (action: PendingAction) => void
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -213,6 +342,7 @@ function GeneralTable({ users, formatName }: { users: AdminUser[]; formatName: (
             <th className="pb-2 font-medium text-gray-500">Typ</th>
             <th className="pb-2 font-medium text-gray-500">E-post verifierad</th>
             <th className="pb-2 font-medium text-gray-500">Registrerad</th>
+            <th className="pb-2 font-medium text-gray-500 w-10"></th>
           </tr>
         </thead>
         <tbody>
@@ -223,6 +353,11 @@ function GeneralTable({ users, formatName }: { users: AdminUser[]; formatName: (
                 {user.isAdmin && (
                   <Badge variant="secondary" className="ml-2 text-xs">
                     Admin
+                  </Badge>
+                )}
+                {user.isBlocked && (
+                  <Badge variant="destructive" className="ml-2 text-xs">
+                    Blockerad
                   </Badge>
                 )}
               </td>
@@ -244,6 +379,9 @@ function GeneralTable({ users, formatName }: { users: AdminUser[]; formatName: (
               <td className="py-3 text-gray-500">
                 {new Date(user.createdAt).toLocaleDateString("sv-SE")}
               </td>
+              <td className="py-3">
+                <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -252,7 +390,11 @@ function GeneralTable({ users, formatName }: { users: AdminUser[]; formatName: (
   )
 }
 
-function ProviderTable({ users }: { users: AdminUser[] }) {
+function ProviderTable({ users, onAction, formatName }: {
+  users: AdminUser[]
+  onAction: (action: PendingAction) => void
+  formatName: (u: AdminUser) => string
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -264,6 +406,7 @@ function ProviderTable({ users }: { users: AdminUser[] }) {
             <th className="pb-2 font-medium text-gray-500">Betyg</th>
             <th className="pb-2 font-medium text-gray-500">Aktivitet</th>
             <th className="pb-2 font-medium text-gray-500">Registrerad</th>
+            <th className="pb-2 font-medium text-gray-500 w-10"></th>
           </tr>
         </thead>
         <tbody>
@@ -278,6 +421,9 @@ function ProviderTable({ users }: { users: AdminUser[] }) {
                     {user.provider?.businessName || "-"}
                     {user.isAdmin && (
                       <Badge variant="secondary" className="ml-2 text-xs">Admin</Badge>
+                    )}
+                    {user.isBlocked && (
+                      <Badge variant="destructive" className="ml-2 text-xs">Blockerad</Badge>
                     )}
                   </div>
                   {name && <div className="text-xs text-gray-500">{name}</div>}
@@ -318,6 +464,9 @@ function ProviderTable({ users }: { users: AdminUser[] }) {
                 </td>
                 <td className="py-3 text-gray-500">
                   {new Date(user.createdAt).toLocaleDateString("sv-SE")}
+                </td>
+                <td className="py-3">
+                  <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
                 </td>
               </tr>
             )

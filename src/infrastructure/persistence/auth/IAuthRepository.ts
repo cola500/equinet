@@ -30,6 +30,7 @@ export interface AuthUserWithCredentials {
   lastName: string
   userType: string
   isAdmin: boolean
+  isBlocked: boolean
   passwordHash: string
   emailVerified: boolean
   provider: { id: string } | null

@@ -23,6 +23,9 @@ model User {
   // Admin flag
   isAdmin      Boolean  @default(false)
 
+  // Blocked by admin
+  isBlocked    Boolean  @default(false)
+
   // Manual customer (created by provider, cannot log in)
   isManualCustomer Boolean @default(false)
 

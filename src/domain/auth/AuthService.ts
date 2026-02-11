@@ -67,6 +67,7 @@ export type AuthErrorType =
   | 'TOKEN_EXPIRED'
   | 'INVALID_CREDENTIALS'
   | 'EMAIL_NOT_VERIFIED'
+  | 'ACCOUNT_BLOCKED'
 
 export interface AuthError {
   type: AuthErrorType
@@ -242,7 +243,15 @@ export class AuthService {
       })
     }
 
-    // 3. Check email verification
+    // 3. Check if account is blocked
+    if (user.isBlocked) {
+      return Result.fail({
+        type: 'ACCOUNT_BLOCKED',
+        message: 'Ditt konto har blockerats',
+      })
+    }
+
+    // 4. Check email verification
     if (!user.emailVerified) {
       return Result.fail({
         type: 'EMAIL_NOT_VERIFIED',
@@ -250,7 +259,7 @@ export class AuthService {
       })
     }
 
-    // 4. Return safe user info
+    // 5. Return safe user info
     return Result.ok({
       id: user.id,
       email: user.email,

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/admin-auth"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { z } from "zod"
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
           lastName: true,
           userType: true,
           isAdmin: true,
+          isBlocked: true,
           createdAt: true,
           emailVerified: true,
           provider: providerSelect,
@@ -139,6 +141,130 @@ export async function GET(request: NextRequest) {
       return error
     }
     logger.error("Failed to fetch admin users", error as Error)
+    return NextResponse.json(
+      { error: "Internt serverfel" },
+      { status: 500 }
+    )
+  }
+}
+
+// ============================================================
+// PATCH -- Admin actions (block/unblock, toggle admin)
+// ============================================================
+
+const patchSchema = z.object({
+  userId: z.string().uuid(),
+  action: z.enum(["toggleBlocked", "toggleAdmin"]),
+}).strict()
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const ip = getClientIP(request)
+    const allowed = await rateLimiters.api(ip)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar" },
+        { status: 429 }
+      )
+    }
+
+    const session = await auth()
+    const admin = await requireAdmin(session)
+
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
+    }
+
+    const parsed = patchSchema.parse(body)
+    const { userId, action } = parsed
+
+    // Self-block protection
+    if (action === "toggleBlocked" && userId === admin.id) {
+      return NextResponse.json(
+        { error: "Du kan inte blockera dig själv" },
+        { status: 400 }
+      )
+    }
+
+    // Look up target user
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isBlocked: true, isAdmin: true },
+    })
+
+    if (!targetUser) {
+      return NextResponse.json(
+        { error: "Användaren hittades inte" },
+        { status: 404 }
+      )
+    }
+
+    // Self-admin removal protection
+    if (action === "toggleAdmin" && userId === admin.id && targetUser.isAdmin) {
+      return NextResponse.json(
+        { error: "Du kan inte ta bort din egen admin-behörighet" },
+        { status: 400 }
+      )
+    }
+
+    if (action === "toggleBlocked") {
+      const newValue = !targetUser.isBlocked
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { isBlocked: newValue },
+        select: { id: true, isBlocked: true },
+      })
+
+      // Create notification when blocking
+      if (newValue) {
+        await prisma.notification.create({
+          data: {
+            userId,
+            type: "account_blocked",
+            message: "Ditt konto har blockerats av en administratör",
+          },
+        })
+      }
+
+      logger.security(`Admin ${action}: user ${userId} isBlocked=${newValue}`, "high", {
+        adminId: admin.id,
+        targetUserId: userId,
+      })
+
+      return NextResponse.json(updated)
+    }
+
+    if (action === "toggleAdmin") {
+      const newValue = !targetUser.isAdmin
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { isAdmin: newValue },
+        select: { id: true, isAdmin: true },
+      })
+
+      logger.security(`Admin ${action}: user ${userId} isAdmin=${newValue}`, "high", {
+        adminId: admin.id,
+        targetUserId: userId,
+      })
+
+      return NextResponse.json(updated)
+    }
+
+    return NextResponse.json({ error: "Ogiltig åtgärd" }, { status: 400 })
+  } catch (error) {
+    if (error instanceof Response) {
+      return error
+    }
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Valideringsfel", details: error.issues },
+        { status: 400 }
+      )
+    }
+    logger.error("Failed to perform admin user action", error as Error)
     return NextResponse.json(
       { error: "Internt serverfel" },
       { status: 500 }

@@ -7,9 +7,11 @@ import {
   LayoutDashboard,
   Users,
   CalendarDays,
+  Star,
   ShieldCheck,
   Plug,
   Activity,
+  Bell,
   Menu,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
@@ -19,9 +21,11 @@ const navItems = [
   { href: "/admin", label: "Översikt", icon: LayoutDashboard },
   { href: "/admin/users", label: "Användare", icon: Users },
   { href: "/admin/bookings", label: "Bokningar", icon: CalendarDays },
+  { href: "/admin/reviews", label: "Recensioner", icon: Star },
   { href: "/admin/verifications", label: "Verifieringar", icon: ShieldCheck },
   { href: "/admin/integrations", label: "Integrationer", icon: Plug },
   { href: "/admin/system", label: "System", icon: Activity },
+  { href: "/admin/notifications", label: "Notifikationer", icon: Bell },
 ]
 
 export function AdminNav() {

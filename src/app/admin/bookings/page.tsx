@@ -5,8 +5,19 @@ import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface AdminBooking {
@@ -49,6 +60,9 @@ export default function AdminBookingsPage() {
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [page, setPage] = useState(1)
+  const [cancelBooking, setCancelBooking] = useState<AdminBooking | null>(null)
+  const [cancelReason, setCancelReason] = useState("")
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -74,6 +88,37 @@ export default function AdminBookingsPage() {
   useEffect(() => {
     fetchBookings()
   }, [fetchBookings])
+
+  const handleCancel = async () => {
+    if (!cancelBooking || !cancelReason.trim()) return
+    setCancelLoading(true)
+    try {
+      const res = await fetch("/api/admin/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: cancelBooking.id,
+          action: "cancel",
+          reason: cancelReason.trim(),
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || "Något gick fel")
+        return
+      }
+      await fetchBookings()
+    } catch {
+      alert("Något gick fel")
+    } finally {
+      setCancelLoading(false)
+      setCancelBooking(null)
+      setCancelReason("")
+    }
+  }
+
+  const canCancel = (booking: AdminBooking) =>
+    booking.status === "pending" || booking.status === "confirmed"
 
   return (
     <AdminLayout>
@@ -131,6 +176,7 @@ export default function AdminBookingsPage() {
                       <th className="pb-2 font-medium text-gray-500">Leverantör</th>
                       <th className="pb-2 font-medium text-gray-500">Tjänst</th>
                       <th className="pb-2 font-medium text-gray-500">Status</th>
+                      <th className="pb-2 font-medium text-gray-500 w-24"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -153,6 +199,18 @@ export default function AdminBookingsPage() {
                             <Badge variant="outline" className="ml-1 text-xs">
                               Manuell
                             </Badge>
+                          )}
+                        </td>
+                        <td className="py-3">
+                          {canCancel(booking) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => setCancelBooking(booking)}
+                            >
+                              Avboka
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -190,6 +248,44 @@ export default function AdminBookingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Avbokningsdialog */}
+      {cancelBooking && (
+        <AlertDialog open={true} onOpenChange={() => { setCancelBooking(null); setCancelReason("") }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Avboka bokning</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div>
+                  <p className="mb-2">
+                    Avboka bokning för <strong>{cancelBooking.customerName}</strong> hos{" "}
+                    <strong>{cancelBooking.providerBusinessName}</strong> den{" "}
+                    {new Date(cancelBooking.bookingDate).toLocaleDateString("sv-SE")}?
+                  </p>
+                  <p className="mb-2 text-sm">Både kund och leverantör kommer att notifieras.</p>
+                  <Textarea
+                    placeholder="Ange anledning till avbokning..."
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    className="mt-2"
+                    rows={3}
+                  />
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Avbryt</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleCancel}
+                disabled={cancelLoading || !cancelReason.trim()}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {cancelLoading ? "Avbokar..." : "Avboka"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </AdminLayout>
   )
 }

@@ -324,6 +324,24 @@ describe('AuthService', () => {
       expect(result.error.type).toBe('EMAIL_NOT_VERIFIED')
     })
 
+    it('should fail if account is blocked', async () => {
+      authRepo.seedUser({
+        id: 'user-blocked',
+        email: 'blocked@example.com',
+        firstName: 'Blocked',
+        lastName: 'User',
+        userType: 'customer',
+        passwordHash: 'hashed:Password123!',
+        emailVerified: true,
+        isBlocked: true,
+      })
+
+      const result = await service.verifyCredentials('blocked@example.com', 'Password123!')
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('ACCOUNT_BLOCKED')
+    })
+
     it('should include providerId for providers', async () => {
       authRepo.seedUser({
         id: 'user-3',

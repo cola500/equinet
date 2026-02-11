@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GET } from "./route"
+import { GET, PATCH } from "./route"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
@@ -14,6 +14,10 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       findMany: vi.fn(),
       count: vi.fn(),
+      update: vi.fn(),
+    },
+    notification: {
+      create: vi.fn(),
     },
   },
 }))
@@ -297,5 +301,145 @@ describe("GET /api/admin/users", () => {
         }),
       })
     )
+  })
+})
+
+// ============================================================
+// PATCH /api/admin/users -- Admin actions (block/admin toggle)
+// ============================================================
+
+// Valid UUID v4 test IDs (position 13=4, position 19=a)
+const ADMIN_UUID = "a0000000-0000-4000-a000-000000000001"
+const USER_UUID = "a0000000-0000-4000-a000-000000000002"
+const USER2_UUID = "a0000000-0000-4000-a000-000000000003"
+const NONEXISTENT_UUID = "a0000000-0000-4000-a000-000000000099"
+
+const mockAdminSessionPatch = {
+  user: { id: ADMIN_UUID, email: "admin@test.se" },
+} as any
+
+describe("PATCH /api/admin/users", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(auth).mockResolvedValue(mockAdminSessionPatch)
+    // requireAdmin lookup
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: ADMIN_UUID,
+      isAdmin: true,
+    } as any)
+  })
+
+  function makePatchRequest(body: Record<string, unknown>) {
+    return new NextRequest("http://localhost:3000/api/admin/users", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+    })
+  }
+
+  it("should toggle isBlocked on a user", async () => {
+    vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ id: ADMIN_UUID, isAdmin: true } as any)
+      .mockResolvedValueOnce({ id: USER_UUID, isBlocked: false, isAdmin: false } as any)
+    vi.mocked(prisma.user.update).mockResolvedValue({
+      id: USER_UUID,
+      isBlocked: true,
+    } as any)
+    vi.mocked(prisma.notification.create).mockResolvedValue({} as any)
+
+    const response = await PATCH(makePatchRequest({ userId: USER_UUID, action: "toggleBlocked" }))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.isBlocked).toBe(true)
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: USER_UUID },
+        data: { isBlocked: true },
+      })
+    )
+  })
+
+  it("should toggle isAdmin on a user", async () => {
+    vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ id: ADMIN_UUID, isAdmin: true } as any)
+      .mockResolvedValueOnce({ id: USER2_UUID, isBlocked: false, isAdmin: false } as any)
+    vi.mocked(prisma.user.update).mockResolvedValue({
+      id: USER2_UUID,
+      isAdmin: true,
+    } as any)
+
+    const response = await PATCH(makePatchRequest({ userId: USER2_UUID, action: "toggleAdmin" }))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.isAdmin).toBe(true)
+  })
+
+  it("should not allow blocking yourself", async () => {
+    vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ id: ADMIN_UUID, isAdmin: true } as any)
+
+    const response = await PATCH(makePatchRequest({ userId: ADMIN_UUID, action: "toggleBlocked" }))
+
+    expect(response.status).toBe(400)
+    const data = await response.json()
+    expect(data.error).toMatch(/dig själv/)
+  })
+
+  it("should not allow removing own admin", async () => {
+    vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ id: ADMIN_UUID, isAdmin: true } as any)
+      .mockResolvedValueOnce({ id: ADMIN_UUID, isBlocked: false, isAdmin: true } as any)
+
+    const response = await PATCH(makePatchRequest({ userId: ADMIN_UUID, action: "toggleAdmin" }))
+
+    expect(response.status).toBe(400)
+    const data = await response.json()
+    expect(data.error).toMatch(/egen admin/)
+  })
+
+  it("should return 404 for non-existent userId", async () => {
+    vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ id: ADMIN_UUID, isAdmin: true } as any)
+      .mockResolvedValueOnce(null)
+
+    const response = await PATCH(makePatchRequest({ userId: NONEXISTENT_UUID, action: "toggleBlocked" }))
+
+    expect(response.status).toBe(404)
+  })
+
+  it("should return 400 for invalid action (Zod)", async () => {
+    const response = await PATCH(makePatchRequest({ userId: USER_UUID, action: "deleteUser" }))
+
+    expect(response.status).toBe(400)
+  })
+
+  it("should return 403 for non-admin users", async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: ADMIN_UUID,
+      isAdmin: false,
+    } as any)
+
+    const response = await PATCH(makePatchRequest({ userId: USER_UUID, action: "toggleBlocked" }))
+
+    expect(response.status).toBe(403)
+  })
+
+  it("should return 401 when not logged in", async () => {
+    vi.mocked(auth).mockResolvedValue(null)
+
+    const response = await PATCH(makePatchRequest({ userId: USER_UUID, action: "toggleBlocked" }))
+
+    expect(response.status).toBe(401)
+  })
+
+  it("should return 429 when rate limited", async () => {
+    const { rateLimiters } = await import("@/lib/rate-limit")
+    vi.mocked(rateLimiters.api).mockResolvedValueOnce(false)
+
+    const response = await PATCH(makePatchRequest({ userId: USER_UUID, action: "toggleBlocked" }))
+
+    expect(response.status).toBe(429)
   })
 })
