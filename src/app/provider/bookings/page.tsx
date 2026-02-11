@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
+import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
   id: string
@@ -75,7 +76,7 @@ export default function ProviderBookingsPage() {
   const { isLoading, isProvider } = useAuth()
   const { bookings: rawBookings, mutate: mutateBookings } = useSWRBookings()
   const bookings = rawBookings as unknown as Booking[]
-  const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("pending")
+  const [filter, setFilter] = useState<BookingFilter>("all")
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
@@ -104,12 +105,7 @@ export default function ProviderBookingsPage() {
       toast.success("Bokning uppdaterad!")
       mutateBookings()
 
-      // Automatically switch to the appropriate filter after status update
-      if (status === "confirmed") {
-        setFilter("confirmed")
-      } else if (status === "completed") {
-        setFilter("all")
-      }
+      // Stay on current filter -- booking moves within the list naturally
     } catch (error) {
       console.error("Error updating booking:", error)
       toast.error("Kunde inte uppdatera bokning")
@@ -161,10 +157,8 @@ export default function ProviderBookingsPage() {
     )
   }
 
-  const filteredBookings = bookings.filter((booking) => {
-    if (filter === "all") return true
-    return booking.status === filter
-  })
+  const filteredBookings = sortBookings(filterBookings(bookings, filter), filter)
+  const counts = countByStatus(bookings)
 
   const getStatusBadge = (booking: Booking) => {
     const isPaid = booking.payment?.status === "succeeded"
@@ -207,37 +201,26 @@ export default function ProviderBookingsPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-2 md:gap-4 mb-6">
-          <button
-            onClick={() => setFilter("pending")}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
-              filter === "pending"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Väntar ({bookings.filter((b) => b.status === "pending").length})
-          </button>
-          <button
-            onClick={() => setFilter("confirmed")}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
-              filter === "confirmed"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Bekräftade ({bookings.filter((b) => b.status === "confirmed").length})
-          </button>
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
-              filter === "all"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Alla ({bookings.length})
-          </button>
+        <div className="flex flex-wrap gap-2 md:gap-3 mb-6">
+          {([
+            { key: "all", label: "Alla" },
+            { key: "pending", label: "Väntar" },
+            { key: "confirmed", label: "Bekräftade" },
+            { key: "completed", label: "Genomförda" },
+            { key: "cancelled", label: "Avbokade" },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
+                filter === key
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {label} ({counts[key]})
+            </button>
+          ))}
         </div>
 
         {/* Bookings List */}
