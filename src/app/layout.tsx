@@ -6,6 +6,7 @@ import SessionProvider from "@/components/providers/SessionProvider";
 import { SWRProvider } from "@/components/providers/SWRProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from "@/components/layout/Footer";
+import { DevBanner } from "@/components/layout/DevBanner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="sv">
       <body className={`${inter.className} antialiased`}>
+        <DevBanner />
         <SessionProvider>
           <SWRProvider>
             <div className="min-h-screen flex flex-col">

@@ -32,7 +32,10 @@
     "release": "standard-version",
     "release:minor": "standard-version --release-as minor",
     "release:major": "standard-version --release-as major",
-    "release:first": "standard-version --first-release"
+    "release:first": "standard-version --first-release",
+    "env:status": "bash scripts/env-status.sh",
+    "migrate:check": "bash scripts/migrate-check.sh",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

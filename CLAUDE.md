@@ -48,6 +48,20 @@ git push --follow-tags origin main
 
 **Commit-typer:** `feat:` -> Minor, `fix:` -> Patch, `BREAKING CHANGE:` -> Major
 
+### Deploy till produktion
+
+```bash
+npm run deploy              # Kör kvalitetscheckar + push + påminnelse om Supabase-migration
+npm run env:status          # Visa vilken databas som är aktiv (lokal/Supabase)
+npm run migrate:check       # Visa migrationer som kan behöva appliceras på Supabase
+```
+
+**Deploy-ordning vid schemaändring:**
+1. `prisma migrate dev --name beskrivning` (lokalt)
+2. `npm run deploy` (push till GitHub -> Vercel auto-deploy)
+3. `apply_migration` via Claude MCP (Supabase)
+4. Verifiera: `/api/health` + Sentry
+
 ---
 
 ## Testing (TDD är Obligatoriskt!)

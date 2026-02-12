@@ -1,6 +1,20 @@
 echo "🔒 Running pre-push quality checks..."
 echo ""
 
+# Kolla om nya migrationer ingår i pushen
+MIGRATION_DIFF=$(git diff --name-only @{push}..HEAD 2>/dev/null | grep "prisma/migrations.*\.sql$" || echo "")
+if [[ -n "$MIGRATION_DIFF" ]]; then
+  echo ""
+  echo "=========================================="
+  echo "  NYA MIGRATIONER DETEKTERADE"
+  echo "=========================================="
+  echo "$MIGRATION_DIFF" | sed 's/^/  /'
+  echo ""
+  echo "  Kör apply_migration på Supabase efter push!"
+  echo "=========================================="
+  echo ""
+fi
+
 # Check for missing Swedish characters (å, ä, ö)
 echo "🇸🇪 Checking Swedish characters..."
 npm run check:swedish || {
