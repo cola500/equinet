@@ -18,6 +18,8 @@ interface SendResult {
   error?: string
 }
 
+import { getRuntimeSetting } from "@/lib/settings/runtime-settings"
+
 class EmailService {
   private apiKey: string | undefined
   private fromEmail: string
@@ -29,6 +31,7 @@ class EmailService {
 
   private get isConfigured(): boolean {
     if (process.env.DISABLE_EMAILS === 'true') return false
+    if (getRuntimeSetting('disable_emails') === 'true') return false
     return !!this.apiKey && this.apiKey !== "your-resend-api-key"
   }
 

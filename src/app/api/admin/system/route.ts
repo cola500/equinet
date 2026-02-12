@@ -52,6 +52,9 @@ export async function GET(request: NextRequest) {
         lastReminderRun: lastReminder?.createdAt ?? null,
         remindersCount,
       },
+      email: {
+        disabledByEnv: process.env.DISABLE_EMAILS === "true",
+      },
     })
   } catch (error) {
     if (error instanceof Response) {
