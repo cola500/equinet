@@ -359,6 +359,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Admin-routes i middleware**: `/admin/:path*` och `/api/admin/:path*` i middleware matcher + `isAdmin`-check. Defense in depth: middleware *plus* per-route `requireAdmin()`. Icke-admin sidor -> redirect till `/`, API -> 403.
 - **Konsolidera admin-vyer**: Använd en gemensam sida med `?type=`-filter istället för separata sidor per entitetstyp. API-routen anpassar `select`/`where` baserat på typ-param. `/admin/users?type=provider` ersatte `/admin/providers`.
 - **Flerradsceller i tabeller**: Gruppera relaterad info (företag + namn + e-post) i en cell med `font-medium` + `text-xs text-gray-500` + `text-xs text-gray-400`. Reducerar kolumner utan dataförlust.
+- **In-memory runtime settings**: `src/lib/settings/runtime-settings.ts` -- synkron `Record<string, string>` modul. Nollställs vid serveromstart. Admin API (`/api/admin/settings`) med ALLOWED_KEYS whitelist. Använd för runtime-toggles som inte behöver persisteras.
+- **Next.js `.env.local` trumfar `.env`**: Vercel CLI skapar `.env.local` automatiskt. Vid byte av DATABASE_URL: uppdatera BÅDA filerna. Prioritetsordning: `.env.local` > `.env`.
+- **Lokal PostgreSQL (Docker Compose)**: `docker-compose.yml` med `postgres:17-alpine`. `npm run db:up/db:down/db:nuke`. Matcha alltid PG-version med produktion. Alla migrationer appliceras utan ändring.
 
 ---
 

@@ -8,6 +8,7 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
 
 - **Node.js**: v20 eller senare
 - **npm**: v10 eller senare
+- **Docker Desktop**: För lokal PostgreSQL (rekommenderat)
 - **Git**: För version control
 
 ### Initial Setup
@@ -35,21 +36,22 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
    ```
 
    **Viktiga environment variables:**
-   - `DATABASE_URL`: PostgreSQL connection string (Supabase)
+   - `DATABASE_URL`: PostgreSQL connection string (lokal Docker eller Supabase)
    - `NEXTAUTH_SECRET`: Secret för NextAuth (generera med kommandot ovan)
    - `NEXTAUTH_URL`: App URL (default: `http://localhost:3000`)
-   - `DISABLE_EMAILS`: Sätt till `"true"` för att stänga av e-post (loggar till konsolen istället)
 
-   > **Supabase Setup:** Skapa ett gratis projekt på [supabase.com](https://supabase.com),
-   > gå till Project Settings → Database → Connection string → Session Pooler (IPv4).
+   > `.env.example` har lokal Docker-DB som default. För Supabase: avkommentera alternativ 2.
 
-4. **Skapa och seeda databasen**
+4. **Starta lokal databas och seeda**
    ```bash
-   # Skapa databas från schema (kör migrationer)
-   npx prisma migrate dev
+   # Starta PostgreSQL i Docker
+   npm run db:up
 
-   # Seeda med testdata (valfritt för utveckling)
-   npx tsx prisma/seed-test-users.ts
+   # Kör migrationer + generera Prisma Client
+   npm run setup
+
+   # Seeda med testdata
+   npm run db:seed
    ```
 
 5. **Starta utvecklingsservern**
@@ -87,6 +89,9 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | Kommando | Beskrivning |
 |----------|-------------|
 | `npm run dev` | Utvecklingsserver (port 3000) |
+| `npm run db:up` | Starta lokal PostgreSQL (Docker) |
+| `npm run db:down` | Stoppa lokal PostgreSQL (data bevaras) |
+| `npm run db:nuke` | Radera lokal databas helt |
 | `npm run db:studio` | Prisma Studio för databasinspektering |
 | `npm run db:reset` | Återställ databas (raderar all data!) |
 | `npm test` | Unit/integration tester (watch mode) |
@@ -120,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1289 unit/integration) + Playwright (66 E2E) = 70% coverage
+- **Testning**: Vitest (1500 unit/integration) + Playwright (95 E2E) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
