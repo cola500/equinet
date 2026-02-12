@@ -61,10 +61,24 @@ export async function getBaseEntities(): Promise<BaseEntities> {
     select: { id: true },
   })
 
-  const horse = await prisma.horse.findFirstOrThrow({
+  // Horse may have been renamed/deleted by horses.spec.ts -- re-create if missing
+  let horse = await prisma.horse.findFirst({
     where: { ownerId: customer.id, name: 'E2E Blansen' },
     select: { id: true },
   })
+  if (!horse) {
+    horse = await prisma.horse.create({
+      data: {
+        ownerId: customer.id,
+        name: 'E2E Blansen',
+        breed: 'Svenskt varmblod',
+        birthYear: 2018,
+        color: 'Brun',
+        gender: 'mare',
+      },
+      select: { id: true },
+    })
+  }
 
   _cached = {
     customerId: customer.id,

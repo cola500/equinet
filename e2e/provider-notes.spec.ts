@@ -291,7 +291,16 @@ test.describe('Provider Notes - Customer Registry Inline Edit', () => {
   test('should show "(redigerad)" label after editing', async ({ page }) => {
     await expandCustomerNotes(page);
 
-    // The note was edited in the previous test -- "(redigerad)" should be visible
+    // Edit a note within this test to make it self-contained (no dependency on previous test)
+    await page.getByLabel('Redigera anteckning').first().click();
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 5000 });
+    const updatedText = `Redigerad for label test ${Date.now()}`;
+    await textarea.clear();
+    await textarea.fill(updatedText);
+    await page.getByRole('button', { name: /^Spara$/i }).click();
+
+    // After editing, "(redigerad)" label should be visible
     await expect(page.getByText('(redigerad)')).toBeVisible({ timeout: 5000 });
   });
 

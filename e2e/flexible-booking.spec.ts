@@ -26,6 +26,9 @@ test.describe('Flexible Booking Flow (Customer)', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+
     // Logga in som kund först
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');

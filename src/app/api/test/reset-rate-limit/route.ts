@@ -15,9 +15,12 @@ export async function POST() {
   // 1. Clear in-memory fallback state
   clearAllInMemoryRateLimits()
 
-  // 2. Reset Upstash rate limits for common test IPs
+  // 2. Reset Upstash rate limits for common test IPs (all limiter types)
   const testIPs = ['127.0.0.1', '::1', 'unknown']
-  const limiterTypes = ['registration', 'login']
+  const limiterTypes = [
+    'login', 'registration', 'api', 'passwordReset',
+    'booking', 'profileUpdate', 'serviceCreate', 'geocode', 'resendVerification',
+  ]
 
   for (const ip of testIPs) {
     for (const type of limiterTypes) {

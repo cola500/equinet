@@ -219,16 +219,23 @@ test.describe('Provider Flow', () => {
       return;
     }
 
-    // Klicka på "Acceptera" för första bokningen
+    // Räkna antal pending bokningar före
+    const initialCount = await page.locator('[data-testid="booking-item"]').count();
+
+    // Klicka på "Acceptera" och vänta på API-svar
+    const acceptPromise = page.waitForResponse(resp =>
+      resp.url().includes('/api/bookings/') && resp.status() === 200
+    );
     await page.locator('[data-testid="booking-item"]').first()
       .getByRole('button', { name: /acceptera/i }).click();
+    await acceptPromise;
 
-    // Vänta på att sidan refreshar (auto-switch till Bekräftade-tab från koden)
-    await page.waitForTimeout(1500);
+    // Vänta på att pending-listan uppdateras
+    await page.waitForTimeout(1000);
 
-    // Verifiera att vi är på "Bekräftade" tab nu (auto-switched från koden)
-    const confirmedButton = page.getByRole('button', { name: /bekräftade/i });
-    await expect(confirmedButton).toHaveClass(/bg-green-600/);
+    // Verifiera att antalet pending bokningar har minskat (bokningen flyttades till confirmed)
+    const newCount = await page.locator('[data-testid="booking-item"]').count();
+    expect(newCount).toBeLessThan(initialCount);
   });
 
   test('should reject a pending booking', async ({ page }) => {
@@ -253,8 +260,16 @@ test.describe('Provider Flow', () => {
     await page.locator('[data-testid="booking-item"]').first()
       .getByRole('button', { name: /avböj/i }).click();
 
-    // Vänta på att bokningen försvinner från pending
-    await page.waitForTimeout(1500);
+    // Bekräfta i AlertDialogen
+    await expect(page.getByText(/avboka bokning/i)).toBeVisible({ timeout: 5000 });
+    const confirmPromise = page.waitForResponse(resp =>
+      resp.url().includes('/api/bookings/') && resp.status() === 200
+    );
+    await page.getByRole('button', { name: /ja, avboka/i }).click();
+    await confirmPromise;
+
+    // Vänta på att pending-listan uppdateras
+    await page.waitForTimeout(1000);
 
     // Verifiera att antalet pending bokningar har minskat
     const newCount = await page.locator('[data-testid="booking-item"]').count();

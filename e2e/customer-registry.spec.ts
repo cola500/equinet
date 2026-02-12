@@ -31,6 +31,9 @@ test.describe('Customer Registry (Provider)', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+
     // Logga in som provider
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('provider@example.com');

@@ -5,6 +5,9 @@ test.describe('Payment Flow', () => {
   let testBookingId: string | null = null
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+
     // Find the test customer
     const customer = await prisma.user.findUnique({
       where: { email: 'test@example.com' }
