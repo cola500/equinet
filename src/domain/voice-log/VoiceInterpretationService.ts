@@ -114,6 +114,22 @@ function buildSystemPrompt(vocabularyPrompt?: string): string {
   return BASE_SYSTEM_PROMPT + "\n" + vocabularyPrompt
 }
 
+/**
+ * Strip markdown code block wrappers (```json ... ```) that LLMs sometimes add
+ * despite being told to return raw JSON.
+ */
+function stripMarkdownCodeBlock(text: string): string {
+  const trimmed = text.trim()
+  if (trimmed.startsWith("```")) {
+    // Remove opening ``` (with optional language tag) and closing ```
+    return trimmed
+      .replace(/^```(?:json)?\s*\n?/, "")
+      .replace(/\n?```\s*$/, "")
+      .trim()
+  }
+  return trimmed
+}
+
 export class VoiceInterpretationService {
   private apiKey: string | undefined
 
@@ -173,7 +189,8 @@ Transkribering:
         })
       }
 
-      const rawParsed = JSON.parse(content.text)
+      const cleanedText = stripMarkdownCodeBlock(content.text)
+      const rawParsed = JSON.parse(cleanedText)
       const validated = interpretedVoiceLogSchema.safeParse(rawParsed)
 
       if (!validated.success) {

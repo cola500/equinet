@@ -134,6 +134,51 @@ describe("VoiceInterpretationService", () => {
       expect(result.error.type).toBe("INTERPRETATION_FAILED")
     })
 
+    it("handles LLM response wrapped in markdown code block", async () => {
+      const jsonContent = JSON.stringify({
+        bookingId: "booking-1",
+        customerName: "Anna Johansson",
+        horseName: "Stella",
+        markAsCompleted: true,
+        workPerformed: "Verkade alla fyra hovarna",
+        horseObservation: null,
+        horseNoteCategory: "farrier",
+        nextVisitWeeks: 8,
+        confidence: 0.9,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [{ type: "text", text: "```json\n" + jsonContent + "\n```" }],
+      })
+
+      const result = await service.interpret("Klar med Anna", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.bookingId).toBe("booking-1")
+      expect(result.value.workPerformed).toBe("Verkade alla fyra hovarna")
+    })
+
+    it("handles LLM response wrapped in code block without language tag", async () => {
+      const jsonContent = JSON.stringify({
+        bookingId: null,
+        customerName: "Anna",
+        horseName: "Stella",
+        markAsCompleted: false,
+        workPerformed: "Test",
+        horseObservation: null,
+        horseNoteCategory: null,
+        nextVisitWeeks: null,
+        confidence: 0.5,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [{ type: "text", text: "```\n" + jsonContent + "\n```" }],
+      })
+
+      const result = await service.interpret("test", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.customerName).toBe("Anna")
+    })
+
     it("handles invalid JSON from LLM", async () => {
       mockCreate.mockResolvedValue({
         content: [{ type: "text", text: "This is not JSON" }],
