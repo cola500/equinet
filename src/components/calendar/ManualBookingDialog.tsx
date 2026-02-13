@@ -297,7 +297,7 @@ export function ManualBookingDialog({
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="date">Datum</Label>
                 <input
@@ -453,7 +453,7 @@ export function ManualBookingDialog({
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Input
                     placeholder="Telefon"
                     value={customerPhone}
