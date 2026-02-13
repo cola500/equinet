@@ -53,7 +53,7 @@ export function ManualBookingDialog({
 }: ManualBookingDialogProps) {
   // Form state
   const [serviceId, setServiceId] = useState("")
-  const [bookingDate, setBookingDate] = useState("")
+  const [bookingDate, setBookingDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
 
@@ -145,7 +145,7 @@ export function ManualBookingDialog({
   useEffect(() => {
     if (!open) {
       setServiceId("")
-      setBookingDate("")
+      setBookingDate(new Date().toISOString().slice(0, 10))
       setStartTime("")
       setEndTime("")
       setCustomerMode("search")
@@ -306,7 +306,7 @@ export function ManualBookingDialog({
                   value={bookingDate}
                   onChange={(e) => setBookingDate(e.target.value)}
                   onBlur={(e) => setBookingDate(e.target.value)}
-                  className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="mt-1 flex h-10 w-full max-w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
               <div>

@@ -27,10 +27,15 @@ export interface InterpretedData {
   confidence: number
 }
 
+function todayString(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export function useVoiceWorkLog(options?: { onSuccess?: () => void }) {
   const speech = useSpeechRecognition()
 
   const [step, setStep] = useState<VoiceLogStep>("record")
+  const [selectedDate, setSelectedDate] = useState<string>(todayString)
   const [interpreted, setInterpreted] = useState<InterpretedData | null>(null)
   const [availableBookings, setAvailableBookings] = useState<BookingOption[]>([])
   const [isEditing, setIsEditing] = useState(false)
@@ -44,6 +49,7 @@ export function useVoiceWorkLog(options?: { onSuccess?: () => void }) {
   const reset = useCallback(() => {
     speech.clearTranscript()
     setStep("record")
+    setSelectedDate(todayString())
     setInterpreted(null)
     setAvailableBookings([])
     setIsEditing(false)
@@ -65,7 +71,7 @@ export function useVoiceWorkLog(options?: { onSuccess?: () => void }) {
       const response = await fetch("/api/voice-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: speech.transcript.trim() }),
+        body: JSON.stringify({ transcript: speech.transcript.trim(), date: selectedDate }),
       })
 
       if (!response.ok) {
@@ -90,7 +96,7 @@ export function useVoiceWorkLog(options?: { onSuccess?: () => void }) {
       )
       setStep("record")
     }
-  }, [speech.transcript])
+  }, [speech.transcript, selectedDate])
 
   const handleBookingChange = useCallback(
     (bookingId: string) => {
@@ -205,6 +211,8 @@ export function useVoiceWorkLog(options?: { onSuccess?: () => void }) {
 
     // Wizard state
     step,
+    selectedDate,
+    setSelectedDate,
     interpreted,
     availableBookings,
     isEditing,

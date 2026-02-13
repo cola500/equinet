@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import {
   ArrowLeft,
   Mic,
@@ -38,6 +39,8 @@ export default function VoiceLogPage() {
     step,
     interpreted,
     availableBookings,
+    selectedDate,
+    setSelectedDate,
     isEditing,
     editedWork,
     editedObservation,
@@ -94,6 +97,20 @@ export default function VoiceLogPage() {
         {/* Step 1: Record */}
         {(step === "record" || step === "interpret") && (
           <div className="space-y-4">
+            {/* Date picker */}
+            <div>
+              <Label htmlFor="voice-log-date">Datum</Label>
+              <Input
+                id="voice-log-date"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="mt-1 max-w-[200px]"
+                disabled={step === "interpret"}
+              />
+            </div>
+
             {/* Mic button */}
             {isSupported && (
               <div className="flex flex-col items-center gap-3 py-4">
