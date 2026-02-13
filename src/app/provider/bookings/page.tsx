@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
+import { Mic } from "lucide-react"
+import { VoiceWorkLogDialog } from "@/components/voice-log/VoiceWorkLogDialog"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -81,6 +83,7 @@ export default function ProviderBookingsPage() {
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
+  const [showVoiceLog, setShowVoiceLog] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -195,9 +198,19 @@ export default function ProviderBookingsPage() {
 
   return (
     <ProviderLayout>
-      <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold">Bokningar</h1>
-          <p className="text-gray-600 mt-1">Hantera dina kundbokningar</p>
+      <div className="mb-6 md:mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Bokningar</h1>
+            <p className="text-gray-600 mt-1">Hantera dina kundbokningar</p>
+          </div>
+          <Button
+            onClick={() => setShowVoiceLog(true)}
+            variant="outline"
+            className="gap-2"
+          >
+            <Mic className="w-4 h-4" />
+            <span className="hidden sm:inline">Röstlogg</span>
+          </Button>
         </div>
 
         {/* Filter Tabs */}
@@ -442,6 +455,14 @@ export default function ProviderBookingsPage() {
             setReviewBooking(null)
             mutateBookings()
           }}
+        />
+      )}
+      {/* Voice Work Log Dialog */}
+      {showVoiceLog && (
+        <VoiceWorkLogDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setShowVoiceLog(false) }}
+          onSuccess={() => mutateBookings()}
         />
       )}
     </ProviderLayout>
