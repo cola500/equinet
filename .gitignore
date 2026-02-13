@@ -65,6 +65,9 @@ prisma/dev.db
 # Dev uploads (mock Supabase Storage)
 /public/uploads/
 
+# Backups
+/backups/
+
 # Sentry
 .sentryclirc
 sentry.properties

@@ -425,34 +425,36 @@ npx prisma migrate dev --name revert_bad_change
 - 30 dagars retention
 - Restore till valfri tidpunkt
 
-### Manual Backup Script
+### Lokala Backup & Restore-verktyg
+
+Equinet har egna backup/restore-script som kör `pg_dump`/`psql` via den lokala Docker-containern (`equinet-db`). Containern ansluter till Supabase direkt -- inga extra verktyg behövs.
 
 ```bash
-#!/bin/bash
-# scripts/backup-database.sh
+# Skapa backup av produktionsdatabasen (Supabase)
+npm run db:backup
+# -> backups/20260213_143022.sql.gz
 
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="./backups"
-BACKUP_FILE="$BACKUP_DIR/equinet_backup_$DATE.sql"
+# Återställ en backup till lokal Docker-databas
+npm run db:restore
+# -> interaktivt val av backup-fil + bekräftelse
 
-mkdir -p $BACKUP_DIR
-
-# Hämta från Supabase via pg_dump
-pg_dump "$DATABASE_URL" \
-  --no-owner \
-  --no-privileges \
-  --format=plain \
-  > "$BACKUP_FILE"
-
-echo "Backup saved: $BACKUP_FILE"
-
-# Komprimera
-gzip "$BACKUP_FILE"
-echo "Compressed: $BACKUP_FILE.gz"
-
-# Cleanup: behåll bara senaste 30 dagarna
-find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
+# Kolla om lokala migrationer matchar Supabase
+npm run db:drift-check
+# -> "Synkade (14/14)" eller "DRIFT DETECTED"
 ```
+
+**Vad backas upp:**
+- Bara `public` schema (exkluderar Supabase-interna: auth, storage, realtime, vault)
+- Bara data (`--data-only`) -- schema hanteras av Prisma-migrationer
+- Exkluderar `_prisma_migrations` (de appliceras av Prisma)
+
+**Automatisk backup vid deploy:**
+`npm run deploy` detekterar pending migrationer och skapar automatiskt en backup *innan* push. Backupen sparas i `backups/` (gitignored) med auto-cleanup efter 30 dagar.
+
+**Säkerhetskontroller:**
+- `db:backup` skippar localhost (exit 2) -- lokala DB:n behöver inte backas upp
+- `db:restore` blockerar Supabase som target -- restore bara mot lokal databas
+- Drift-check blockerar deploy om Supabase har migrationer som inte finns lokalt
 
 ### Disaster Recovery Plan
 

@@ -376,6 +376,7 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **In-memory runtime settings**: `src/lib/settings/runtime-settings.ts` -- synkron `Record<string, string>` modul. Nollställs vid serveromstart. Admin API (`/api/admin/settings`) med ALLOWED_KEYS whitelist. Använd för runtime-toggles som inte behöver persisteras.
 - **Next.js `.env.local` trumfar `.env`**: Vercel CLI skapar `.env.local` automatiskt. Vid byte av DATABASE_URL: uppdatera BÅDA filerna. Prioritetsordning: `.env.local` > `.env`.
 - **Lokal PostgreSQL (Docker Compose)**: `docker-compose.yml` med `postgres:17-alpine`. `npm run db:up/db:down/db:nuke`. Matcha alltid PG-version med produktion. Alla migrationer appliceras utan ändring.
+- **Automatisk backup vid deploy**: `npm run deploy` detekterar pending migrationer och kör `db:backup` automatiskt. Backups sparas i `backups/` (gitignored, 30 dagars retention). Drift-check (`db:drift-check`) blockerar deploy om Supabase har migrationer som inte finns lokalt.
 
 ---
 

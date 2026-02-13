@@ -94,9 +94,13 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | `npm run db:nuke` | Radera lokal databas helt |
 | `npm run db:studio` | Prisma Studio för databasinspektering |
 | `npm run db:reset` | Återställ databas (raderar all data!) |
+| `npm run db:backup` | Backup av Supabase-data (kräver Docker) |
+| `npm run db:restore` | Återställ backup till lokal databas |
+| `npm run db:drift-check` | Jämför lokala migrationer med Supabase |
 | `npm test` | Unit/integration tester (watch mode) |
 | `npm run test:e2e` | E2E-tester med Playwright |
 | `npm run test:coverage` | Coverage report |
+| `npm run deploy` | Kvalitetscheckar + drift-check + auto-backup + push |
 
 ## Quality Gates
 
