@@ -125,7 +125,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 mt-20 border-t text-center text-gray-600">
-        <p>&copy; 2024 Equinet. Alla rättigheter förbehållna.</p>
+        <p>&copy; 2026 Equinet. Alla rättigheter förbehållna.</p>
       </footer>
     </div>
   )
