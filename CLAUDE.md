@@ -17,6 +17,7 @@
 | Databas-arkitektur | [docs/DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
 | Production Readiness | [NFR.md](NFR.md) |
 | Användarforskning | [docs/user-research/](docs/user-research/) |
+| Röstloggning | [docs/VOICE-WORK-LOGGING.md](docs/VOICE-WORK-LOGGING.md) |
 
 ---
 
@@ -363,6 +364,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Prisma-migration MÅSTE köras på Supabase separat**: Vercel deploy uppdaterar bara koden, INTE databasen. Efter `git push` med schemaändringar: kör `apply_migration` via Supabase MCP eller `prisma migrate deploy`. Annars får Prisma-klienten "column does not exist"-fel i produktion. **Checklista vid schemaändring**: (1) skapa lokal migrationsfil (`mkdir` + `migration.sql`), (2) `apply_migration` på Supabase, (3) `prisma migrate resolve --applied <name>`, (4) verifiera med `execute_sql`. OBS: Hoppa ALDRIG över steg 1 -- utan lokal fil detekterar Prisma "drift" och blockerar `migrate dev`.
 - **acceptingNewCustomers-pattern**: Boolean på Provider (`@default(true)`) + validering i `BookingService.createBooking()` (INTE `createManualBooking()`). Befintlig kund = minst 1 completed booking. Optional dep `hasCompletedBookingWith?` i `BookingServiceDeps` för bakåtkompatibilitet. HTTP 403 för avvisade nya kunder.
 - **Switch med auto-save (utan edit-mode)**: `onCheckedChange` gör direkt `PUT` + toast. Passar för standalone boolean-inställningar. Kräver att `businessName` (required i Zod) skickas med i body.
+- **LLM-output MÅSTE Zod-valideras**: Använd `safeParse()` med `.default()` och `.transform()` istället för `as`-cast. LLM kan returnera fel typer, saknade fält, eller oväntade värden. Validera referens-ID:n mot känd context (prompt injection-skydd).
+- **AI-features kräver extra granskning**: Rate limiting (kostnadsskydd), LLM-output-validering, prompt injection-skydd (bookingId mot context-lista), och graceful degradation (text fallback vid saknat Speech API).
+- **Speech API fallback-pattern**: `isSupported` styr hela UI:t -- dölj mic, byt titel, anpassa placeholder. Textinmatning funkar alltid som primärt gränssnitt.
 - **E2E mobil viewport**: `playwright.config.ts` har `mobile` projekt (Pixel 7, Chromium). Kör med `--project=mobile`. Desktop-nav (`hidden md:block`) orsakar strict mode violations -- använd `getByRole('heading', { exact: true })` eller exakta textmatchningar. Skip-pattern: `test.skip(test.info().project.name === 'mobile', 'reason')`.
 - **iPhone-device kräver WebKit**: `devices['iPhone 14']` använder WebKit (kräver `npx playwright install webkit`). Pixel 7 använder Chromium -- enklare, testar samma viewport-beteende.
 - **Kör ALDRIG desktop+mobil E2E samtidigt**: Delar dev-server (`workers: 1`) -- resurskonflikter ger falska failures. Playwright hanterar detta automatiskt vid `npm run test:e2e`.
@@ -445,4 +449,4 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 ---
 
 **Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-02-08
+**Senast uppdaterad**: 2026-02-13

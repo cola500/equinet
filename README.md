@@ -211,6 +211,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Kompetenser och verifiering (admin-granskning)
 - Stäng för nya kunder (befintliga kunder kan fortfarande boka)
 - Kundrecensioner (leverantör betygsätter kund, 1-5 stjärnor)
+- Röstloggning / arbetslogg (diktera eller skriv, AI tolkar och mappar till bokningar)
 
 ### Admin-gränssnitt
 - Dashboard med KPI-kort (användare, bokningar, leverantörer, intäkter)
@@ -238,7 +239,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**1600+ tester** (115+ E2E desktop + 82+ E2E mobil + 1500+ unit/integration) med **70% coverage**.
+**1600+ tester** (115+ E2E desktop + 82+ E2E mobil + 1600+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

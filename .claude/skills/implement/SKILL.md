@@ -1,0 +1,192 @@
+---
+name: implement
+description: Autonomously implement a plan document with TDD, phase-by-phase verification, and quality gates
+argument-hint: "<path to plan file, e.g. docs/plans/my-feature.md>"
+---
+
+Implement the plan at: **$ARGUMENTS**
+
+Execute the plan autonomously with TDD, incremental verification between phases, and quality gates.
+
+## 0. Pre-flight
+
+Before starting, verify prerequisites:
+
+```bash
+npm run typecheck   # Must be 0 errors before we start
+```
+
+If typecheck fails, STOP and report. Do not implement on a broken baseline.
+
+## 1. Analyze the plan
+
+Read the plan document and extract:
+
+1. **Phases/steps** -- identify the ordered implementation phases
+2. **Files per phase** -- which files will be created or modified
+3. **Dependencies** -- which phases depend on earlier phases
+4. **Migration needs** -- any Prisma schema changes
+5. **E2E impact** -- will existing E2E tests need updates?
+
+Present a brief summary to the user:
+
+```
+Plan: <title>
+Phases: N
+Files: ~M total
+Migrations: yes/no
+E2E impact: yes/no
+
+Phase 1: <description> (N files)
+Phase 2: <description> (N files)
+...
+```
+
+Then proceed to implementation. Do NOT wait for confirmation -- the user approved the plan already.
+
+## 2. Implement phase by phase
+
+For EACH phase, follow this cycle:
+
+### 2a. TDD -- Write tests FIRST
+
+- For API routes: write route.test.ts with behavior-based assertions
+- For domain services: write service.test.ts
+- For UI changes: skip unit tests (verified by typecheck + E2E)
+- Run the new tests -- verify they FAIL (RED):
+
+```bash
+npm run test:run -- --reporter=dot <path-to-test-file> 2>&1 | tail -10
+```
+
+### 2b. Implement
+
+- Write the minimum code to make tests pass
+- Follow existing patterns in the codebase (check CLAUDE.md Key Learnings)
+- ALL Swedish UI strings MUST use correct characters
+
+### 2c. Verify phase (GREEN)
+
+Run tests for the changed files:
+
+```bash
+npm run test:run -- --reporter=dot 2>&1 | tail -10
+```
+
+- If tests FAIL: fix the implementation, do NOT move to next phase
+- If tests PASS: run typecheck:
+
+```bash
+npm run typecheck 2>&1
+```
+
+- If typecheck FAILS: fix type errors before moving on
+- Maximum 3 fix attempts per phase. If still failing after 3, STOP and report what's blocking.
+
+### 2d. Report phase completion
+
+After each phase passes:
+
+```
+Phase N/M complete
+  Files changed: <list>
+  Tests: X passed, Y new
+  Typecheck: 0 errors
+```
+
+Then proceed to next phase.
+
+## 3. Final verification
+
+After ALL phases are complete, run the full quality gate:
+
+### 3a. Full test suite
+
+```bash
+npm run test:run -- --reporter=dot 2>&1 | tail -10
+```
+
+ALL tests must pass. If any regressed, fix them.
+
+### 3b. TypeScript
+
+```bash
+npm run typecheck 2>&1
+```
+
+Must be 0 errors.
+
+### 3c. Swedish character audit
+
+Scan ALL changed/new files for Swedish text missing special characters. Common mistakes:
+
+| Wrong | Correct |
+|-------|---------|
+| andra | andra (not always wrong) / andra |
+| lamna | lamna |
+| atgard | atgard |
+| oppettider | oppettider |
+| oversikt | oversikt |
+| stallning | stallning |
+| tjanst | tjanst |
+| arende | arende |
+| forsta | forsta |
+
+Check:
+- UI strings (labels, placeholders, error messages, toast notifications)
+- Test descriptions
+- Comments in Swedish
+
+If any Swedish text is missing special characters, fix it immediately.
+
+### 3d. Security spot-check (for API routes)
+
+For any new or changed API routes, verify:
+- [ ] Auth check (session) at the top
+- [ ] Rate limiting applied
+- [ ] JSON parsing in try-catch
+- [ ] Zod validation with `.strict()`
+- [ ] providerId/customerId from session (NEVER from request body)
+- [ ] `select` (never `include`) in Prisma queries
+- [ ] Error messages in Swedish
+
+### 3e. console.log check
+
+```bash
+# Check changed files for console.log in API routes
+git diff --name-only | grep "src/app/api/" | head -20
+```
+
+If any API route files changed, verify they use `logger` not `console.*`.
+
+## 4. Summary report
+
+Present a final report:
+
+```
+Implementation complete
+
+Plan: <title>
+Phases completed: N/N
+
+Files changed: X
+Files created: Y
+Tests added: Z
+Total tests: NNNN (all passing)
+Typecheck: 0 errors
+Swedish audit: OK
+Security: OK (or N/A if no API routes)
+
+Changes ready to commit. Run /ship to commit and push.
+```
+
+## Important rules
+
+- **NEVER skip the test-between-phases step** -- this is the whole point of the skill
+- **NEVER continue to next phase if current phase has failing tests**
+- **3 fix attempts max per phase** -- if still failing, stop and ask the user
+- **Follow existing patterns** -- read nearby files before implementing
+- **Migrations**: If the plan includes schema changes, create the migration FIRST before any code that depends on it
+- **E2E tests**: Do NOT run E2E during implementation (too slow). Flag E2E impact in the summary so the user can run them separately.
+- **Do NOT commit** -- leave that to the user (they'll run /ship)
+- **Use todo-lists** to track phase progress so the user can follow along

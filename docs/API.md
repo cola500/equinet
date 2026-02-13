@@ -2281,8 +2281,74 @@ Synka osynkade fakturor. **Auth:** Required (leverantör). `{ synced, failed, to
 | `/api/customers/search` (GET) | 30 requests | Per minut per provider |
 | `/api/customers/[id]/horses` (GET) | 20 requests | Per minut per provider |
 
+| `/api/voice-log` (POST) | 100 requests | Per minut per IP |
+| `/api/voice-log/confirm` (POST) | 100 requests | Per minut per IP |
+
 Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-02-13 (Admin-endpoints, manuell kundregistrering, runtime settings)*
+## Röstloggning (Voice Log)
+
+### POST /api/voice-log
+
+Tolkar en rösttranskribering och matchar mot dagens bokningar.
+
+**Auth:** Provider (403 för icke-providers)
+
+**Request body:**
+```json
+{
+  "transcript": "Klar med Stella hos Anna. Verkade alla fyra.",
+  "date": "2026-02-13"  // optional, default idag
+}
+```
+
+**Response 200:**
+```json
+{
+  "interpretation": {
+    "bookingId": "uuid",
+    "customerName": "Anna Johansson",
+    "horseName": "Stella",
+    "markAsCompleted": true,
+    "workPerformed": "Verkade alla fyra hovarna",
+    "horseObservation": null,
+    "horseNoteCategory": null,
+    "nextVisitWeeks": 8,
+    "confidence": 0.95
+  },
+  "bookings": [...]
+}
+```
+
+### POST /api/voice-log/confirm
+
+Sparar tolkad röstloggning (uppdaterar providerNotes, markerar completed, skapar horse note).
+
+**Auth:** Provider (403 för icke-providers)
+
+**Request body:**
+```json
+{
+  "bookingId": "uuid",
+  "markAsCompleted": true,
+  "workPerformed": "Verkade alla fyra",
+  "horseObservation": "Framhovarna uttorkade",
+  "horseNoteCategory": "farrier",
+  "nextVisitWeeks": 8
+}
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "actions": ["providerNotes", "completed", "horseNote"],
+  "nextVisitWeeks": 8
+}
+```
+
+---
+
+*Senast uppdaterad: 2026-02-13 (Röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*
