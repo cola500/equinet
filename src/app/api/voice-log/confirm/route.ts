@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
             horseId: booking.horseId,
             authorId: session.user.id,
             category: validated.horseNoteCategory,
-            title: `Röstnotering: ${validated.horseNoteCategory}`,
+            title: validated.horseObservation.slice(0, 100),
             content: validated.horseObservation,
             noteDate: new Date(),
           },

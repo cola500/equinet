@@ -248,7 +248,7 @@ export function VoiceWorkLogDialog({
               {/* Horse observation */}
               {(interpreted.horseObservation || isEditing) && (
                 <div>
-                  <Label>Hästnotering</Label>
+                  <Label>Anteckning</Label>
                   {isEditing ? (
                     <Textarea
                       value={editedObservation}

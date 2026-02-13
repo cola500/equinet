@@ -56,7 +56,7 @@ Leverantören ser en preview med:
 - **Matchad bokning** med confidence-badge (Hög / Medel / Låg) och vägledning
 - **Dropdown** med alla dagens bokningar -- kan byta om AI matchade fel (utan nytt API-anrop)
 - **Utfört arbete** -- kan redigeras inline
-- **Hästnotering** -- hälsoobservationer separerade från arbete
+- **Anteckning** -- hälsoobservationer separerade från arbete
 - **Nästa besök** -- förslag i veckor
 
 ### 5. Spara
