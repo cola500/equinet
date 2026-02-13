@@ -9,12 +9,14 @@ const {
   mockUpdateStatus,
   mockBookingFindUnique,
   mockHorseNoteCreate,
+  mockProviderUpdate,
 } = vi.hoisted(() => ({
   mockFindByUserId: vi.fn(),
   mockUpdateProviderNotesWithAuth: vi.fn(),
   mockUpdateStatus: vi.fn(),
   mockBookingFindUnique: vi.fn(),
   mockHorseNoteCreate: vi.fn(),
+  mockProviderUpdate: vi.fn(),
 }))
 
 vi.mock("@/lib/auth-server", () => ({
@@ -28,6 +30,9 @@ vi.mock("@/lib/prisma", () => ({
     },
     horseNote: {
       create: mockHorseNoteCreate,
+    },
+    provider: {
+      update: mockProviderUpdate,
     },
   },
 }))
@@ -347,5 +352,80 @@ describe("POST /api/voice-log/confirm", () => {
 
     expect(response.status).toBe(200)
     expect(mockUpdateProviderNotesWithAuth).not.toHaveBeenCalled()
+  })
+
+  // --- Vocabulary learning ---
+
+  it("saves vocabulary correction when workPerformed is edited", async () => {
+    mockFindByUserId.mockResolvedValue({
+      id: "provider-1",
+      vocabularyTerms: null,
+    })
+
+    const response = await POST(
+      makeRequest(
+        validBody({
+          workPerformed: "Hovkapning på alla fyra",
+          originalWorkPerformed: "Hovbeslag på alla fyra",
+        })
+      )
+    )
+
+    expect(response.status).toBe(200)
+    expect(mockProviderUpdate).toHaveBeenCalledWith({
+      where: { id: "provider-1" },
+      data: {
+        vocabularyTerms: expect.stringContaining("Hovbeslag"),
+      },
+    })
+  })
+
+  it("does not save vocabulary when no original data provided", async () => {
+    const response = await POST(makeRequest(validBody()))
+
+    expect(response.status).toBe(200)
+    expect(mockProviderUpdate).not.toHaveBeenCalled()
+  })
+
+  it("does not save vocabulary when text is unchanged", async () => {
+    const response = await POST(
+      makeRequest(
+        validBody({
+          workPerformed: "Verkade alla fyra",
+          originalWorkPerformed: "Verkade alla fyra",
+        })
+      )
+    )
+
+    expect(response.status).toBe(200)
+    expect(mockProviderUpdate).not.toHaveBeenCalled()
+  })
+
+  it("increases count for existing vocabulary correction", async () => {
+    const existingVocab = JSON.stringify({
+      corrections: [{ from: "Hovbeslag", to: "Hovkapning", count: 2 }],
+    })
+    mockFindByUserId.mockResolvedValue({
+      id: "provider-1",
+      vocabularyTerms: existingVocab,
+    })
+
+    const response = await POST(
+      makeRequest(
+        validBody({
+          workPerformed: "Hovkapning på alla fyra",
+          originalWorkPerformed: "Hovbeslag på alla fyra",
+        })
+      )
+    )
+
+    expect(response.status).toBe(200)
+    expect(mockProviderUpdate).toHaveBeenCalled()
+    const updateCall = mockProviderUpdate.mock.calls[0][0]
+    const savedVocab = JSON.parse(updateCall.data.vocabularyTerms)
+    const correction = savedVocab.corrections.find(
+      (c: any) => c.from === "Hovbeslag"
+    )
+    expect(correction.count).toBe(3)
   })
 })

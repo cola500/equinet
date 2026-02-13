@@ -166,4 +166,70 @@ describe("POST /api/voice-log", () => {
     const response = await POST(makeRequest({ transcript: "test" }))
     expect(response.status).toBe(404)
   })
+
+  it("passes vocabulary prompt to interpretation service", async () => {
+    const vocabJson = JSON.stringify({
+      corrections: [{ from: "hovbeslag", to: "hovkapning", count: 3 }],
+    })
+    mockFindByUserId.mockResolvedValue({
+      id: "provider-1",
+      vocabularyTerms: vocabJson,
+    })
+
+    mockInterpret.mockResolvedValue({
+      isSuccess: true,
+      isFailure: false,
+      value: {
+        bookingId: null,
+        customerName: null,
+        horseName: null,
+        markAsCompleted: false,
+        workPerformed: "Hovkapning",
+        horseObservation: null,
+        horseNoteCategory: null,
+        nextVisitWeeks: null,
+        confidence: 0.5,
+      },
+    })
+
+    await POST(makeRequest({ transcript: "Gjorde hovbeslag" }))
+
+    expect(mockInterpret).toHaveBeenCalledWith(
+      "Gjorde hovbeslag",
+      expect.any(Array),
+      expect.stringContaining("hovbeslag")
+    )
+  })
+
+  it("works when provider has no vocabulary", async () => {
+    mockFindByUserId.mockResolvedValue({
+      id: "provider-1",
+      vocabularyTerms: null,
+    })
+
+    mockInterpret.mockResolvedValue({
+      isSuccess: true,
+      isFailure: false,
+      value: {
+        bookingId: null,
+        customerName: null,
+        horseName: null,
+        markAsCompleted: false,
+        workPerformed: "Test",
+        horseObservation: null,
+        horseNoteCategory: null,
+        nextVisitWeeks: null,
+        confidence: 0.5,
+      },
+    })
+
+    await POST(makeRequest({ transcript: "test" }))
+
+    // Should be called without vocabulary (empty string = no vocab)
+    expect(mockInterpret).toHaveBeenCalledWith(
+      "test",
+      expect.any(Array),
+      ""
+    )
+  })
 })

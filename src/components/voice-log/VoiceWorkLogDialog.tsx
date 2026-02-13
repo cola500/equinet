@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -19,32 +19,8 @@ import {
   ResponsiveDialogDescription,
   ResponsiveDialogFooter,
 } from "@/components/ui/responsive-dialog"
-import { useSpeechRecognition } from "@/hooks/useSpeechRecognition"
-import { toast } from "sonner"
+import { useVoiceWorkLog } from "@/hooks/useVoiceWorkLog"
 import { Mic, MicOff, Send, Loader2, Check, Pencil, Plus } from "lucide-react"
-
-type Step = "record" | "interpret" | "preview" | "saving" | "done"
-
-interface BookingOption {
-  id: string
-  customerName: string
-  horseName: string | null
-  serviceName: string
-  startTime: string
-  status: string
-}
-
-interface InterpretedData {
-  bookingId: string | null
-  customerName: string | null
-  horseName: string | null
-  markAsCompleted: boolean
-  workPerformed: string | null
-  horseObservation: string | null
-  horseNoteCategory: string | null
-  nextVisitWeeks: number | null
-  confidence: number
-}
 
 interface VoiceWorkLogDialogProps {
   open: boolean
@@ -60,150 +36,30 @@ export function VoiceWorkLogDialog({
 }: VoiceWorkLogDialogProps) {
   const {
     transcript,
+    setTranscript,
     isListening,
     isSupported,
-    startListening,
-    stopListening,
-    clearTranscript,
-    setTranscript,
-  } = useSpeechRecognition()
-
-  const [step, setStep] = useState<Step>("record")
-  const [interpreted, setInterpreted] = useState<InterpretedData | null>(null)
-  const [availableBookings, setAvailableBookings] = useState<BookingOption[]>([])
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedWork, setEditedWork] = useState("")
-  const [editedObservation, setEditedObservation] = useState("")
-
-  const reset = useCallback(() => {
-    clearTranscript()
-    setStep("record")
-    setInterpreted(null)
-    setAvailableBookings([])
-    setIsEditing(false)
-    setEditedWork("")
-    setEditedObservation("")
-  }, [clearTranscript])
+    toggleMic,
+    step,
+    interpreted,
+    availableBookings,
+    isEditing,
+    editedWork,
+    editedObservation,
+    setIsEditing,
+    setEditedWork,
+    setEditedObservation,
+    handleInterpret,
+    handleBookingChange,
+    handleConfirm,
+    handleLogNext,
+    reset,
+  } = useVoiceWorkLog({ onSuccess })
 
   const handleClose = useCallback(() => {
-    if (isListening) stopListening()
     reset()
     onOpenChange(false)
-  }, [isListening, stopListening, reset, onOpenChange])
-
-  const handleInterpret = useCallback(async () => {
-    if (!transcript.trim()) {
-      toast.error("Ingen text att tolka. Spela in eller skriv först.")
-      return
-    }
-
-    setStep("interpret")
-
-    try {
-      const response = await fetch("/api/voice-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: transcript.trim() }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Tolkningen misslyckades")
-      }
-
-      const data = await response.json()
-      setInterpreted(data.interpretation)
-      setAvailableBookings(data.bookings || [])
-      setEditedWork(data.interpretation.workPerformed || "")
-      setEditedObservation(data.interpretation.horseObservation || "")
-      setStep("preview")
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Kunde inte tolka röstinspelningen"
-      )
-      setStep("record")
-    }
-  }, [transcript])
-
-  const handleBookingChange = useCallback(
-    (bookingId: string) => {
-      if (!interpreted) return
-      const booking = availableBookings.find((b) => b.id === bookingId)
-      if (booking) {
-        setInterpreted({
-          ...interpreted,
-          bookingId: booking.id,
-          customerName: booking.customerName,
-          horseName: booking.horseName,
-        })
-      }
-    },
-    [interpreted, availableBookings]
-  )
-
-  const handleConfirm = useCallback(async () => {
-    if (!interpreted?.bookingId) {
-      toast.error("Ingen bokning matchad. Välj en bokning och försök igen.")
-      return
-    }
-
-    setStep("saving")
-
-    try {
-      const response = await fetch("/api/voice-log/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: interpreted.bookingId,
-          markAsCompleted: interpreted.markAsCompleted,
-          workPerformed: isEditing ? editedWork : interpreted.workPerformed,
-          horseObservation: isEditing
-            ? editedObservation || null
-            : interpreted.horseObservation,
-          horseNoteCategory: interpreted.horseNoteCategory,
-          nextVisitWeeks: interpreted.nextVisitWeeks,
-        }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Kunde inte spara")
-      }
-
-      const data = await response.json()
-      setStep("done")
-      toast.success("Arbetslogg sparad!")
-
-      if (data.nextVisitWeeks) {
-        toast.info(`Förslag: nästa besök om ${data.nextVisitWeeks} veckor`)
-      }
-
-      onSuccess?.()
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Kunde inte spara"
-      )
-      setStep("preview")
-    }
-  }, [interpreted, isEditing, editedWork, editedObservation, onSuccess])
-
-  const handleLogNext = useCallback(() => {
-    clearTranscript()
-    setStep("record")
-    setInterpreted(null)
-    setIsEditing(false)
-    setEditedWork("")
-    setEditedObservation("")
-    // Keep availableBookings -- same day's bookings
-  }, [clearTranscript])
-
-  const toggleMic = useCallback(() => {
-    if (isListening) {
-      stopListening()
-    } else {
-      startListening()
-    }
-  }, [isListening, startListening, stopListening])
+  }, [reset, onOpenChange])
 
   return (
     <ResponsiveDialog open={open} onOpenChange={handleClose}>
@@ -460,7 +316,7 @@ export function VoiceWorkLogDialog({
           )}
           {step === "preview" && (
             <>
-              <Button variant="outline" onClick={() => { setStep("record"); setInterpreted(null) }}>
+              <Button variant="outline" onClick={handleLogNext}>
                 Tillbaka
               </Button>
               <Button

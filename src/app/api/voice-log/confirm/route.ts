@@ -7,6 +7,11 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { createBookingService } from "@/domain/booking"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import {
+  parseVocabulary,
+  addCorrections,
+  detectSignificantChanges,
+} from "@/domain/voice-log/VocabularyService"
 
 const confirmSchema = z.object({
   bookingId: z.string().uuid("Ogiltigt boknings-ID"),
@@ -15,6 +20,8 @@ const confirmSchema = z.object({
   horseObservation: z.string().max(2000).nullable(),
   horseNoteCategory: z.enum(["farrier", "veterinary", "general", "medication"]).nullable(),
   nextVisitWeeks: z.number().int().min(1).max(52).nullable(),
+  originalWorkPerformed: z.string().max(2000).nullable().optional(),
+  originalHorseObservation: z.string().max(2000).nullable().optional(),
 }).strict()
 
 // POST /api/voice-log/confirm - Save interpreted voice log data
@@ -120,6 +127,36 @@ export async function POST(request: NextRequest) {
           },
         })
         actions.push("horseNote")
+      }
+    }
+
+    // 4. Learn vocabulary from edits (non-blocking)
+    if (validated.originalWorkPerformed && validated.workPerformed &&
+        validated.originalWorkPerformed !== validated.workPerformed) {
+      const workChanges = detectSignificantChanges(
+        validated.originalWorkPerformed,
+        validated.workPerformed
+      )
+
+      let allChanges = [...workChanges]
+
+      if (validated.originalHorseObservation && validated.horseObservation &&
+          validated.originalHorseObservation !== validated.horseObservation) {
+        const obsChanges = detectSignificantChanges(
+          validated.originalHorseObservation,
+          validated.horseObservation
+        )
+        allChanges = [...allChanges, ...obsChanges]
+      }
+
+      if (allChanges.length > 0) {
+        const currentVocab = parseVocabulary(provider.vocabularyTerms ?? null)
+        const updatedVocab = addCorrections(currentVocab, allChanges)
+        await prisma.provider.update({
+          where: { id: provider.id },
+          data: { vocabularyTerms: JSON.stringify(updatedVocab) },
+        })
+        actions.push("vocabulary")
       }
     }
 

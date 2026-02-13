@@ -15,6 +15,7 @@ export interface Provider {
   description: string | null
   city: string | null
   isActive: boolean
+  vocabularyTerms: string | null
   createdAt: Date
   updatedAt: Date
 }

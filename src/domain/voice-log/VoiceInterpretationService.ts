@@ -82,7 +82,7 @@ export interface VoiceInterpretationDeps {
 // Service
 // -----------------------------------------------------------
 
-const SYSTEM_PROMPT = `Du är en assistent för hästtjänsteleverantörer (hovslagare, veterinärer, etc.) i Sverige.
+const BASE_SYSTEM_PROMPT = `Du är en assistent för hästtjänsteleverantörer (hovslagare, veterinärer, etc.) i Sverige.
 Din uppgift är att tolka röstinspelningar från leverantörer som har utfört arbete ute i fält.
 
 Du kommer att få en lista med dagens bokningar som kontext, plus en transkribering av vad leverantören sa.
@@ -109,6 +109,11 @@ Regler:
 - Om du inte kan matcha en bokning, sätt bookingId till null men fyll i resten
 - Svara BARA med JSON, ingen annan text`
 
+function buildSystemPrompt(vocabularyPrompt?: string): string {
+  if (!vocabularyPrompt) return BASE_SYSTEM_PROMPT
+  return BASE_SYSTEM_PROMPT + "\n" + vocabularyPrompt
+}
+
 export class VoiceInterpretationService {
   private apiKey: string | undefined
 
@@ -118,7 +123,8 @@ export class VoiceInterpretationService {
 
   async interpret(
     transcript: string,
-    todaysBookings: BookingContext[]
+    todaysBookings: BookingContext[],
+    vocabularyPrompt?: string
   ): Promise<Result<InterpretedVoiceLog, VoiceLogError>> {
     if (!transcript.trim()) {
       return Result.fail({
@@ -155,7 +161,7 @@ Transkribering:
       const response = await client.messages.create({
         model: "claude-sonnet-4-5-20250929",
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(vocabularyPrompt),
         messages: [{ role: "user", content: userMessage }],
       })
 

@@ -265,6 +265,71 @@ describe("VoiceInterpretationService", () => {
       const callArgs = mockCreate.mock.calls[0][0]
       expect(callArgs.messages[0].content).toContain("Inga bokningar idag")
     })
+
+    it("includes vocabulary prompt when provided", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "booking-1",
+              customerName: "Anna Johansson",
+              horseName: "Stella",
+              markAsCompleted: true,
+              workPerformed: "Hovkapning",
+              horseObservation: null,
+              horseNoteCategory: null,
+              nextVisitWeeks: null,
+              confidence: 0.9,
+            }),
+          },
+        ],
+      })
+
+      const vocabPrompt =
+        '\nLeverantörens anpassade termer (använd dessa vid tolkning):\n- "hovbeslag" ska tolkas som "hovkapning"'
+
+      const result = await service.interpret(
+        "Klar med Anna",
+        SAMPLE_BOOKINGS,
+        vocabPrompt
+      )
+
+      expect(result.isSuccess).toBe(true)
+      // Verify the system prompt includes the vocabulary
+      const callArgs = mockCreate.mock.calls[0][0]
+      expect(callArgs.system).toContain("hovbeslag")
+      expect(callArgs.system).toContain("hovkapning")
+      expect(callArgs.system).toContain("Leverantörens anpassade termer")
+    })
+
+    it("works without vocabulary prompt (backward compatible)", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "booking-1",
+              customerName: "Anna",
+              horseName: "Stella",
+              markAsCompleted: false,
+              workPerformed: "Test",
+              horseObservation: null,
+              horseNoteCategory: null,
+              nextVisitWeeks: null,
+              confidence: 0.8,
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpret("test", SAMPLE_BOOKINGS)
+
+      expect(result.isSuccess).toBe(true)
+      const callArgs = mockCreate.mock.calls[0][0]
+      // System prompt should NOT contain vocabulary section
+      expect(callArgs.system).not.toContain("Leverantörens anpassade termer")
+    })
   })
 
   describe("mapVoiceLogErrorToStatus", () => {

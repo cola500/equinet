@@ -25,7 +25,6 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { Mic } from "lucide-react"
-import { VoiceWorkLogDialog } from "@/components/voice-log/VoiceWorkLogDialog"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -83,7 +82,6 @@ export default function ProviderBookingsPage() {
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
-  const [showVoiceLog, setShowVoiceLog] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -204,7 +202,7 @@ export default function ProviderBookingsPage() {
             <p className="text-gray-600 mt-1">Hantera dina kundbokningar</p>
           </div>
           <Button
-            onClick={() => setShowVoiceLog(true)}
+            onClick={() => router.push("/provider/voice-log")}
             variant="outline"
             className="gap-2"
           >
@@ -455,14 +453,6 @@ export default function ProviderBookingsPage() {
             setReviewBooking(null)
             mutateBookings()
           }}
-        />
-      )}
-      {/* Voice Work Log Dialog */}
-      {showVoiceLog && (
-        <VoiceWorkLogDialog
-          open={true}
-          onOpenChange={(open) => { if (!open) setShowVoiceLog(false) }}
-          onSuccess={() => mutateBookings()}
         />
       )}
     </ProviderLayout>

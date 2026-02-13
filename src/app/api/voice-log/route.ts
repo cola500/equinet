@@ -9,6 +9,7 @@ import {
   mapVoiceLogErrorToStatus,
   type BookingContext,
 } from "@/domain/voice-log/VoiceInterpretationService"
+import { parseVocabulary, formatForPrompt } from "@/domain/voice-log/VocabularyService"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const interpretSchema = z.object({
@@ -109,9 +110,13 @@ export async function POST(request: NextRequest) {
       status: b.status,
     }))
 
+    // Build vocabulary prompt from provider's learned corrections
+    const vocab = parseVocabulary(provider.vocabularyTerms ?? null)
+    const vocabPrompt = formatForPrompt(vocab)
+
     // Interpret
     const service = createVoiceInterpretationService()
-    const result = await service.interpret(validated.transcript, bookingContext)
+    const result = await service.interpret(validated.transcript, bookingContext, vocabPrompt)
 
     if (result.isFailure) {
       return NextResponse.json(

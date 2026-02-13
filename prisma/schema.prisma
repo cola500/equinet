@@ -80,6 +80,9 @@ model Provider {
   isActive        Boolean  @default(true)
   acceptingNewCustomers Boolean @default(true)
 
+  // AI vocabulary for voice work logging (JSON string)
+  vocabularyTerms String?
+
   // Verification
   isVerified      Boolean   @default(false)
   verifiedAt      DateTime?
