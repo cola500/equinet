@@ -1,0 +1,190 @@
+/**
+ * VoiceInterpretationService - Interprets transcribed speech from field workers
+ *
+ * Takes a voice transcript + the provider's current bookings as context,
+ * and uses an LLM to extract structured data that maps to existing models:
+ * - Booking.providerNotes + Booking.status
+ * - HorseNote (category: farrier/veterinary/etc)
+ * - Next visit suggestion
+ */
+import Anthropic from "@anthropic-ai/sdk"
+import { Result } from "@/domain/shared"
+
+// -----------------------------------------------------------
+// Types
+// -----------------------------------------------------------
+
+export interface BookingContext {
+  id: string
+  customerName: string
+  horseName: string | null
+  horseId: string | null
+  serviceName: string
+  startTime: string
+  status: string
+}
+
+export interface InterpretedVoiceLog {
+  /** Matched booking from today's context */
+  bookingId: string | null
+  customerName: string | null
+  horseName: string | null
+
+  /** Should we mark this booking as completed? */
+  markAsCompleted: boolean
+
+  /** Work performed - maps to Booking.providerNotes */
+  workPerformed: string | null
+
+  /** Health observation - maps to HorseNote */
+  horseObservation: string | null
+
+  /** Category for the horse note */
+  horseNoteCategory: "farrier" | "veterinary" | "general" | "medication" | null
+
+  /** Suggestion for next visit in weeks */
+  nextVisitWeeks: number | null
+
+  /** Raw confidence score 0-1 for the booking match */
+  confidence: number
+}
+
+export type VoiceLogErrorType =
+  | "NO_TRANSCRIPT"
+  | "NO_BOOKINGS"
+  | "INTERPRETATION_FAILED"
+  | "API_KEY_MISSING"
+
+export interface VoiceLogError {
+  type: VoiceLogErrorType
+  message: string
+}
+
+export interface VoiceInterpretationDeps {
+  apiKey?: string
+}
+
+// -----------------------------------------------------------
+// Service
+// -----------------------------------------------------------
+
+const SYSTEM_PROMPT = `Du är en assistent för hästtjänsteleverantörer (hovslagare, veterinärer, etc.) i Sverige.
+Din uppgift är att tolka röstinspelningar från leverantörer som har utfört arbete ute i fält.
+
+Du kommer att få en lista med dagens bokningar som kontext, plus en transkribering av vad leverantören sa.
+
+Extrahera följande information och returnera som JSON:
+
+{
+  "bookingId": "ID:t för matchad bokning, eller null om ingen matchning",
+  "customerName": "Kundens namn som nämndes",
+  "horseName": "Hästens namn som nämndes",
+  "markAsCompleted": true/false,
+  "workPerformed": "Kort sammanfattning av utfört arbete",
+  "horseObservation": "Hälsoobservationer om hästen, eller null",
+  "horseNoteCategory": "farrier|veterinary|general|medication, eller null",
+  "nextVisitWeeks": nummer i veckor, eller null,
+  "confidence": 0.0-1.0
+}
+
+Regler:
+- Matcha bokningar baserat på kundnamn och/eller hästnamn
+- "Klar", "färdig", "genomförd" → markAsCompleted: true
+- Hälsoobservationer separeras från utfört arbete
+- horseNoteCategory baseras på tjänstetyp (hovvård → farrier, vaccination → veterinary, etc.)
+- Om du inte kan matcha en bokning, sätt bookingId till null men fyll i resten
+- Svara BARA med JSON, ingen annan text`
+
+export class VoiceInterpretationService {
+  private apiKey: string | undefined
+
+  constructor(deps?: VoiceInterpretationDeps) {
+    this.apiKey = deps?.apiKey || process.env.ANTHROPIC_API_KEY
+  }
+
+  async interpret(
+    transcript: string,
+    todaysBookings: BookingContext[]
+  ): Promise<Result<InterpretedVoiceLog, VoiceLogError>> {
+    if (!transcript.trim()) {
+      return Result.fail({
+        type: "NO_TRANSCRIPT",
+        message: "Ingen transkribering att tolka",
+      })
+    }
+
+    if (!this.apiKey) {
+      return Result.fail({
+        type: "API_KEY_MISSING",
+        message: "Anthropic API-nyckel saknas",
+      })
+    }
+
+    const bookingList = todaysBookings.length > 0
+      ? todaysBookings
+          .map(
+            (b) =>
+              `- ${b.startTime}: ${b.customerName}, häst: ${b.horseName || "ej angiven"}, tjänst: ${b.serviceName}, status: ${b.status} [ID: ${b.id}]`
+          )
+          .join("\n")
+      : "Inga bokningar idag."
+
+    const userMessage = `Dagens bokningar:
+${bookingList}
+
+Transkribering:
+"${transcript}"`
+
+    try {
+      const client = new Anthropic({ apiKey: this.apiKey })
+
+      const response = await client.messages.create({
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userMessage }],
+      })
+
+      const content = response.content[0]
+      if (content.type !== "text") {
+        return Result.fail({
+          type: "INTERPRETATION_FAILED",
+          message: "Oväntat svar från AI",
+        })
+      }
+
+      const parsed = JSON.parse(content.text) as InterpretedVoiceLog
+      return Result.ok(parsed)
+    } catch (error) {
+      return Result.fail({
+        type: "INTERPRETATION_FAILED",
+        message: `Kunde inte tolka röstinspelningen: ${error instanceof Error ? error.message : "Okänt fel"}`,
+      })
+    }
+  }
+}
+
+// -----------------------------------------------------------
+// Error mapping
+// -----------------------------------------------------------
+
+export function mapVoiceLogErrorToStatus(error: VoiceLogError): number {
+  switch (error.type) {
+    case "NO_TRANSCRIPT":
+      return 400
+    case "NO_BOOKINGS":
+      return 400
+    case "API_KEY_MISSING":
+      return 503
+    case "INTERPRETATION_FAILED":
+      return 500
+  }
+}
+
+// -----------------------------------------------------------
+// Factory
+// -----------------------------------------------------------
+
+export function createVoiceInterpretationService(): VoiceInterpretationService {
+  return new VoiceInterpretationService()
+}
