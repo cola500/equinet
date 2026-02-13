@@ -19,12 +19,13 @@
   - [Hälsotidslinje](#hälsotidslinje)
   - [Recensioner](#recensioner)
   - [Gruppbokning](#gruppbokning)
-  - [Hästpass](#hästpass)
+  - [Hästprofil](#hästprofil)
   - [Dataexport](#dataexport)
   - [Notifikationer](#notifikationer)
 - [Guide för leverantörer](#guide-för-leverantörer)
   - [Komma igång som leverantör](#komma-igång-som-leverantör)
   - [Företagsprofil](#företagsprofil)
+  - [Stäng för nya kunder](#stäng-för-nya-kunder)
   - [Hantera tjänster](#hantera-tjänster)
   - [Tillgänglighet och schema](#tillgänglighet-och-schema)
   - [Hantera bokningar](#hantera-bokningar-leverantör)
@@ -33,13 +34,24 @@
   - [Annonsera rutter](#annonsera-rutter)
   - [Genomföra en rutt](#genomföra-en-rutt)
   - [Recensioner och betyg](#recensioner-och-betyg)
+  - [Kundrecensioner](#kundrecensioner)
   - [Kundregister](#kundregister)
+  - [Manuell kundregistrering](#manuell-kundregistrering)
+  - [Kundanteckningar](#kundanteckningar)
   - [Besöksplanering](#besöksplanering)
   - [Kompetenser & Verifiering](#kompetenser--verifiering)
   - [Gruppbokning (leverantör)](#gruppbokning-leverantör)
   - [Bokföring (Fortnox)](#bokföring-fortnox)
   - [Hästens hälsotidslinje](#hästens-hälsotidslinje-leverantör)
   - [Notifikationer](#notifikationer-leverantör)
+- [Guide för administratörer](#guide-för-administratörer)
+  - [Dashboard](#dashboard)
+  - [Användarhantering](#användarhantering)
+  - [Bokningshantering](#bokningshantering)
+  - [Recensionsmoderation](#recensionsmoderation)
+  - [Verifieringsgranskning](#verifieringsgranskning)
+  - [Notifikationer (admin)](#notifikationer-admin)
+  - [Systeminställningar](#systeminställningar)
 
 ---
 
@@ -184,6 +196,8 @@ Under **Mina hästar** kan du registrera och hantera alla dina hästar.
 - Födelseår
 - Färg
 - Kön (sto, valack, hingst)
+- UELN-nummer (Unique Equine Life Number, max 15 tecken)
+- Mikrochip-ID (max 15 tecken)
 - Särskilda behov och medicinsk information
 - Foto (dra och släpp eller klicka för att ladda upp)
 
@@ -253,21 +267,22 @@ Du kan lämna en grupp innan den matchats. Om du är den som skapade gruppen kan
 
 ---
 
-### Hästpass
+### Hästprofil
 
-Du kan skapa en **delbar länk** till din hästs uppgifter och vårdhistorik -- ett digitalt hästpass.
+Du kan skapa en **delbar länk** till din hästs uppgifter och vårdhistorik -- en digital hästprofil.
 
 1. Gå till din häst under **Mina hästar**
-2. Klicka **Dela hästpass**
+2. Klicka **Dela hästprofil**
 3. En unik länk skapas som är giltig i 30 dagar
 4. Dela länken med veterinär, ny ägare eller försäkringsbolag
 
-**Vad visas i hästpasset:**
+**Vad visas i hästprofilen:**
 - Hästens grunduppgifter (namn, ras, födelseår, kön, foto)
+- UELN-nummer och mikrochip-ID (om registrerat)
 - Vårdhistorik: veterinär, hovvård, skador och medicinering
 - Utskriftsvänlig layout
 
-**Integritetsskydd:** Privata anteckningar (kategorin "Övrigt") visas inte i hästpasset. Länken kräver ingen inloggning men upphör automatiskt efter 30 dagar.
+**Integritetsskydd:** Privata anteckningar (kategorin "Övrigt") visas inte i hästprofilen. Länken kräver ingen inloggning men upphör automatiskt efter 30 dagar.
 
 ---
 
@@ -335,6 +350,21 @@ Under **Min profil** fyller du i:
 - **Serviceområde** - hur långt du åker (standard 50 km radie)
 
 Adressen omvandlas automatiskt till GPS-koordinater som används vid ruttplanering och restidsberäkning.
+
+---
+
+### Stäng för nya kunder
+
+Under **Min profil** hittar du en toggle **"Accepterar nya kunder"**.
+
+- **Aktiverad (standard):** Alla kunder kan boka hos dig
+- **Inaktiverad:** Bara befintliga kunder kan boka
+
+**Vem räknas som befintlig kund?** En kund som har minst en genomförd bokning hos dig.
+
+Nya kunder som besöker din profil ser en informationsruta som förklarar att du inte tar emot nya kunder just nu. Befintliga kunder märker ingen skillnad.
+
+Det här är användbart om du har fullt schema och bara vill fokusera på dina återkommande kunder.
 
 ---
 
@@ -501,6 +531,20 @@ Bra omdömen bygger ditt rykte och gör att fler kunder hittar dig. Ta dig tid a
 
 ---
 
+### Kundrecensioner
+
+Som leverantör kan du också betygsätta dina kunder. Det hjälper dig att komma ihåg upplevelser och planera framtida besök.
+
+**Lämna en kundrecension:**
+1. Gå till en genomförd bokning
+2. Klicka **Betygsätt kund**
+3. Ge 1-5 stjärnor
+4. Skriv en valfri kommentar
+
+Kundrecensioner är bara synliga för dig. Kunden ser inte betyget eller kommentaren.
+
+---
+
 ### Kundregister
 
 Under **Kunder** i leverantörsmenyn hittar du en samlad översikt över alla dina kunder.
@@ -519,7 +563,42 @@ Under **Kunder** i leverantörsmenyn hittar du en samlad översikt över alla di
 
 Klicka på en kund för att visa detaljerad information och en lista på kundens hästar.
 
-Kundlistan bygger automatiskt upp sig från genomförda bokningar -- du behöver inte lägga till kunder manuellt.
+Kundlistan bygger automatiskt upp sig från genomförda bokningar, men du kan även lägga till kunder manuellt (se nedan).
+
+---
+
+### Manuell kundregistrering
+
+Du kan lägga till kunder direkt i kundregistret utan att de behöver ha bokat via plattformen.
+
+1. Gå till **Kunder** i leverantörsmenyn
+2. Klicka **Lägg till kund**
+3. Fyll i namn (obligatoriskt), telefon och e-post (valfritt)
+4. Klicka **Spara**
+
+Manuellt tillagda kunder visas i kundregistret med samma funktioner som bokningsgenererade kunder. Du kan ta bort en manuellt tillagd kund via kuvert-ikonen.
+
+---
+
+### Kundanteckningar
+
+Under varje kund i kundregistret kan du skriva privata anteckningar -- en slags journal.
+
+**Skapa anteckning:**
+1. Klicka på en kund i kundregistret
+2. Skriv din anteckning i textfältet
+3. Klicka **Spara**
+
+**Redigera anteckning:**
+- Klicka pennikonen bredvid anteckningen
+- Uppdatera texten
+- Klicka **Spara**
+- Redigerade anteckningar markeras med "(redigerad)"
+
+**Ta bort anteckning:**
+- Klicka papperskorgen bredvid anteckningen
+
+**Integritetsskydd:** Dina anteckningar är bara synliga för dig. Kunden ser dem inte, och de visas inte i hästprofilen eller andra publika vyer.
 
 ---
 
@@ -684,6 +763,101 @@ Notifikationer visas i klockan i menyraden och skickas även via e-post.
 
 ---
 
+## Guide för administratörer
+
+Admin-panelen nås via **/admin** och kräver att din användare har admin-behörighet. Sidan är skyddad med både middleware och per-route kontroller.
+
+---
+
+### Dashboard
+
+Startsidan visar fyra KPI-kort:
+
+- **Användare** -- totalt, kunder, leverantörer, nya denna månad
+- **Bokningar** -- totalt, per status (väntande/bekräftade/genomförda/avbokade), genomförda denna månad
+- **Leverantörer** -- totalt, aktiva, verifierade, väntande verifieringar
+- **Intäkter** -- totalt genomfört belopp, belopp denna månad
+
+---
+
+### Användarhantering
+
+Under **Användare** ser du alla registrerade användare med sök och filter.
+
+**Filtrera på:**
+- Typ (kund / leverantör)
+- Fritextsökning i namn och e-post
+
+**Åtgärder per användare:**
+- **Blockera/avblockera** -- blockerade användare kan inte logga in
+- **Ge/ta bort admin-behörighet** -- du kan inte ta bort din egen admin-behörighet
+
+Leverantörer visas med extra information: företagsnamn, antal bokningar, tjänster, genomsnittsbetyg och Fortnox-koppling.
+
+---
+
+### Bokningshantering
+
+Under **Bokningar** ser du alla bokningar med status- och datumfilter.
+
+**Åtgärder:**
+- **Avboka bokning** -- ange en anledning som skickas till både kund och leverantör. Avbokningsmeddelandet prefixas med "[Admin]".
+
+---
+
+### Recensionsmoderation
+
+Under **Recensioner** ser du alla recensioner (både kund-till-leverantör och leverantör-till-kund).
+
+**Filtrera på:**
+- Typ (kundrecensioner / leverantörsrecensioner)
+- Fritextsökning i kommentarer
+
+**Åtgärder:**
+- **Ta bort recension** -- permanent borttagning (kräver bekräftelse)
+
+---
+
+### Verifieringsgranskning
+
+Under **Verifieringar** granskar du leverantörers kompetensansökningar.
+
+**För varje ansökan ser du:**
+- Leverantörsnamn och företag
+- Kompetenstyp, titel, utfärdare och år
+- Uppladdade bilder (diplom, certifikat, etc.)
+
+**Åtgärder:**
+- **Godkänn** -- kompetensen visas med grön badge på leverantörens profil
+- **Avvisa** -- skriv en kommentar som förklarar varför (leverantören kan redigera och skicka in igen)
+
+---
+
+### Notifikationer (admin)
+
+Under **Notifikationer** kan du skicka meddelanden till användare.
+
+**Målgrupper:**
+- **Alla** -- alla registrerade användare
+- **Kunder** -- bara kunder
+- **Leverantörer** -- bara leverantörer
+
+Ange rubrik och meddelande. Notifikationerna skapas i bulk och visas i användarnas klocka.
+
+---
+
+### Systeminställningar
+
+Under **System** ser du:
+
+- **Systemhälsa** -- databasstatus och svarstid
+- **Cron-status** -- senaste påminnelsekörning
+
+**Utveckling & Test:**
+- **E-post-toggle** -- stäng av skarp e-postutskick (loggar istället). Användbart under utveckling och testning.
+
+---
+
 ## Vanliga frågor
 
 ### Vad kostar det att använda Equinet?
@@ -692,7 +866,7 @@ Plattformen är under utveckling. Prissättning meddelas inför lansering.
 
 ### Kan jag använda Equinet på mobilen?
 
-Ja, Equinet är responsivt och fungerar i alla moderna webbläsare på mobil, surfplatta och dator.
+Ja, Equinet är designat mobil-först och fungerar i alla moderna webbläsare på mobil, surfplatta och dator. Dialoger, formulär och bokningsflöden anpassas automatiskt till mindre skärmar med stegvisa Drawer-vyer och 44px touch targets.
 
 ### Vad händer om leverantören inte svarar på min bokning?
 

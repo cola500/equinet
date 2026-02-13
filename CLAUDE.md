@@ -259,7 +259,7 @@ class BookingService {
 - [ ] Säker (Zod-validering, error handling, ingen XSS/SQL injection)
 - [ ] Unit tests skrivna FÖRST, E2E uppdaterade, coverage >= 70%
 - [ ] Feature branch, alla tester gröna, mergad till main
-- [ ] Docs uppdaterade: README.md, docs/API.md, BACKLOG.md, CLAUDE.md Key Learnings
+- [ ] Docs uppdaterade: README.md, docs/API.md, CLAUDE.md Key Learnings
 
 ---
 

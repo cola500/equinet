@@ -2,13 +2,19 @@
 
 Detta projekt använder **Playwright** för end-to-end-tester som testar hela användarflöden i en riktig webbläsare.
 
-## 🚀 Snabbstart
+## Snabbstart
 
 ### Kör E2E-tester
 
 ```bash
-# Kör alla E2E-tester (headless mode)
+# Kör alla E2E-tester (headless mode, desktop + mobil)
 npm run test:e2e
+
+# Kör bara desktop
+npx playwright test --project=desktop
+
+# Kör bara mobil
+npx playwright test --project=mobile
 
 # Kör med UI (visuellt interface)
 npm run test:e2e:ui
@@ -20,121 +26,131 @@ npm run test:e2e:headed
 npm run test:e2e:debug
 ```
 
-## 📁 Teststruktur
+## Teststruktur
 
 ```
 e2e/
-├── fixtures.ts              # Custom test med afterEach cleanup (IMPORTERA DENNA!)
-├── auth.spec.ts             # Registrering, inloggning, logout
-├── booking.spec.ts          # Sök, boka, avboka
-├── calendar.spec.ts         # Kalender och öppettider
-├── provider.spec.ts         # Leverantörsfunktioner
-├── flexible-booking.spec.ts # Flexibla bokningar
-├── route-planning.spec.ts   # Ruttplanering
-├── announcements.spec.ts    # Utannonsering av rutter
-├── security-headers.spec.ts # Säkerhetshuvuden
+├── fixtures.ts                    # Custom test med Prisma + cleanup
+├── accepting-new-customers.spec.ts # Stäng för nya kunder
+├── admin.spec.ts                  # Admin-gränssnitt
+├── announcements.spec.ts          # Utannonsering av rutter
+├── auth.spec.ts                   # Registrering, inloggning, logout
+├── booking.spec.ts                # Sök, boka, avboka
+├── calendar.spec.ts               # Kalender och öppettider
+├── customer-profile.spec.ts       # Kundprofil
+├── customer-registry.spec.ts      # Kundregister (leverantör)
+├── customer-reviews.spec.ts       # Kundrecensioner
+├── due-for-service.spec.ts        # Besöksplanering
+├── flexible-booking.spec.ts       # Flexibla bokningar
+├── group-bookings.spec.ts         # Gruppbokningar
+├── horses.spec.ts                 # Hästregister
+├── manual-booking.spec.ts         # Manuell bokning
+├── payment.spec.ts                # Betalning
+├── provider-notes.spec.ts         # Leverantörsanteckningar
+├── provider.spec.ts               # Leverantörsfunktioner
+├── route-planning.spec.ts         # Ruttplanering
+├── security-headers.spec.ts       # Säkerhetshuvuden
 └── setup/
-    ├── seed-availability.setup.ts  # Seedar availability före tester
-    └── cleanup.setup.ts            # Cleanup efter alla tester
+    ├── seed-e2e.setup.ts          # Global seed (read-only basdata)
+    ├── seed-helpers.ts            # Per-spec seed helpers
+    ├── e2e-utils.ts               # Hjälpfunktioner (futureWeekday, etc.)
+    └── teardown.setup.ts          # Global cleanup
 ```
 
-**Total: 62 E2E-tester**
+**19 spec-filer** -- 115+ desktop-tester, 82+ mobil-tester (6 respektive 21 skips).
+
+## Viewports
+
+Testerna körs i två Playwright-projekt:
+
+| Projekt | Enhet | Viewport | Browser |
+|---------|-------|----------|---------|
+| `desktop` | Desktop Chrome | 1280x720 | Chromium |
+| `mobile` | Pixel 7 | 412x915 | Chromium |
+
+**OBS:** Kör ALDRIG desktop och mobil samtidigt manuellt -- de delar dev-server och kan ge falska failures. `npm run test:e2e` hanterar detta automatiskt.
+
+## Test Data (Seed)
+
+### Global seed (`seed-e2e.setup.ts`)
+
+Skapar read-only basdata som alla tester förutsätter:
+- Testanvändare (kund + leverantör + admin)
+- Provider-profil med tjänster
+- Häst
+- Tillgänglighetsschema (mån-fre)
+
+### Per-spec seed (`seed-helpers.ts`)
+
+Skapar spec-specifik data som rensas efter testet:
+
+```typescript
+import { seedBooking, seedRouteOrders, seedProviderAnnouncement, seedRoute, cleanupSpecData } from './setup/seed-helpers';
+
+// I beforeAll:
+await seedBooking({ tag: 'my-spec', ... });
+
+// I afterAll:
+await cleanupSpecData('my-spec');
+```
+
+**Marker:** `E2E-spec:<tag>` i customerNotes/specialInstructions. Cleanup hittar och tar bort data via dessa markörer.
+
+### Testanvändare
+- **Kund**: `test@example.com` / `TestPassword123!`
+- **Leverantör**: `provider@example.com` / `ProviderPass123!`
+- **Admin**: `admin@example.com` / `AdminPass123!`
+
+### Environment-variabler
+- `E2E_CLEANUP=false` -- bevarar testdata efter körning (debugging)
+- `E2E_ALLOW_REMOTE_DB=true` -- tillåter E2E mot hostad Supabase-dev
 
 ## Test Isolation med Fixtures
 
 **VIKTIGT:** Alla spec-filer ska importera från `./fixtures` istället för `@playwright/test`:
 
 ```typescript
-// RÄTT - använder fixtures med afterEach cleanup
-import { test, expect } from './fixtures';
+// RÄTT
+import { test, expect, prisma } from './fixtures';
 
-// FEL - ingen automatisk cleanup
+// FEL
 import { test, expect } from '@playwright/test';
 ```
 
-Fixtures.ts ger:
-- Automatisk cleanup efter varje test
-- Tar bort dynamiskt skapad data (users med timestamp i email)
-- Behåller basanvändare (test@example.com, provider@example.com)
+Fixtures ger:
+- `prisma` -- Prisma Client singleton för direkt DB-access i setup/teardown
+- `test` -- Playwright test med rate-limit-reset i beforeAll
 
-## 🧪 Vad testas?
+## Selektorer
 
-### Authentication Flow (auth.spec.ts)
-- ✅ Registrera ny kund
-- ✅ Registrera ny leverantör
-- ✅ Logga in som kund
-- ✅ Felhantering vid felaktig inloggning
-- ✅ Logout
-- ✅ Lösenordskrav-validering
+Prioritetsordning:
+1. **role + name** (bäst): `getByRole('button', { name: /boka/i })`
+2. **data-testid**: `[data-testid="provider-card"]`
+3. **data-slot** (shadcn): `[data-slot="card"]`
+4. **label**: `getByLabel(/e-post/i)`
+5. **text** (sista alternativet): `getByText(/välkommen/i)`
 
-### Booking Flow (booking.spec.ts)
-- ✅ Sök och filtrera leverantörer
-- ✅ Visa leverantörsdetaljer
-- ✅ Komplett bokningsflöde (från sökning till bekräftelse)
-- ✅ Dubbelbokningsskydd
-- ✅ Avboka bokning
-- ✅ Empty state när inga bokningar finns
+**Undvik:**
+- `.border.rounded-lg` -- shadcn Card-klasser ändras mellan versioner, använd `[data-slot="card"]`
+- `getByRole('alertdialog')` -- fungerar inte med mobil Drawer, använd text-selektorer
 
-### Provider Flow (provider.spec.ts)
-- ✅ Visa dashboard med statistik
-- ✅ Skapa ny tjänst
-- ✅ Redigera tjänst
-- ✅ Aktivera/inaktivera tjänst
-- ✅ Ta bort tjänst
-- ✅ Hantera bokningar
-- ✅ Acceptera bokning
-- ✅ Avvisa bokning
-- ✅ Uppdatera leverantörsprofil
-- ✅ Empty states
+### Mobil-specifika selektorer
+- Desktop-nav har `hidden md:block` -- `getByText` hittar dolda element i mobil viewport
+- Använd `getByRole('heading', { exact: true })` för att undvika strict mode violations
+- Bottom tab bar duplicerar nav-text -- var specifik med selektorer
 
-## ⚙️ Konfiguration
-
-E2E-testerna är konfigurerade i `playwright.config.ts`:
-
-- **Browser**: Chromium (Desktop Chrome)
-- **Base URL**: `http://localhost:3000`
-- **Auto-start**: Dev-servern startas automatiskt
-- **Screenshots**: Vid failure
-- **Trace**: Vid retry
-- **Reporter**: HTML (genereras i `playwright-report/`)
-
-## 🎯 Best Practices
-
-### Test Data
-**OBS:** Testerna förutsätter att vissa testanvändare finns i databasen:
-- **Kund**: `test@example.com` / `TestPassword123!`
-- **Leverantör**: `provider@example.com` / `ProviderPass123!`
-
-**Tips:** Skapa dessa användare innan du kör testerna, eller använd `beforeAll()` hooks för att skapa dem automatiskt.
-
-### Selektorer
-Vi använder:
-1. **data-testid** (bäst): `[data-testid="provider-card"]`
-2. **role + name**: `getByRole('button', { name: /boka/i })`
-3. **label**: `getByLabel(/e-post/i)`
-4. **text** (sista alternativet): `getByText(/välkommen/i)`
-
-### Unika Email-adresser
-För registreringstester använder vi `Date.now()` för unika emails:
-```typescript
-const email = `test${Date.now()}@example.com`
-```
-
-## 🐛 Debugging
+## Debugging
 
 ### Kör ett specifikt test
 ```bash
 npx playwright test auth.spec.ts
+npx playwright test booking.spec.ts:215  # Specifik rad
 ```
 
 ### Debug mode
 ```bash
 npm run test:e2e:debug
 ```
-Öppnar Playwright Inspector där du kan:
-- Stega igenom testet
-- Inspektera DOM
-- Se vilka selektorer som används
 
 ### Headed mode (se browsern)
 ```bash
@@ -146,87 +162,55 @@ npm run test:e2e:headed
 npx playwright show-report
 ```
 
-## 📊 Test Coverage
+## Konfiguration
 
-E2E-testerna kompletterar våra unit/integration tests:
+E2E-testerna konfigureras i `playwright.config.ts`:
+
+- **Browser**: Chromium (desktop + mobil)
+- **Base URL**: `http://localhost:3000`
+- **Auto-start**: Dev-servern startas automatiskt
+- **Workers**: 1 (delar dev-server)
+- **Screenshots**: Vid failure
+- **Trace**: Vid retry
+- **Reporter**: HTML
+
+### Timeouts
+- Test: 60 sekunder
+- Action: 15 sekunder
+- Navigation: 30 sekunder
+
+## Test Coverage Pyramid
 
 ```
-        E2E: 23 tests (hela användarflöden)
-            ↑
- Integration: 75 tests (API routes)
-            ↑
-        Unit: 52 tests (utilities, hooks)
+          E2E: 115+ desktop + 82+ mobil (hela användarflöden)
+              ↑
+   Integration: ~500 tests (API routes, domain services)
+              ↑
+          Unit: ~1000 tests (utilities, hooks, repositories)
 ```
 
-**Total**: ~150 tester! 🎉
+**Total**: 1600+ tester
 
-## 🔧 Felsökning
+## Tips
 
-### "Timed out waiting from config.webServer"
-**Problem**: Dev-servern tar för lång tid att starta (särskilt första gången Turbopack kompilerar)
-
-**Lösning**:
-- Timeout är nu 5 minuter i `playwright.config.ts`
-- Första kompileringen kan ta 4-5 minuter
-- Efterföljande körningar är mycket snabbare (30-60 sekunder)
-
-**Rekommendation**: Starta dev-servern manuellt först:
-```bash
-# Terminal 1
-npm run dev  # Vänta tills "Ready in X.Xs"
-
-# Terminal 2
-npm run test:e2e
-```
-
-### "Test timeout of 30000ms exceeded"
-**Problem**: Tester tar för lång tid att köra
-
-**Lösning**:
-- Test timeout är nu 60 sekunder i `playwright.config.ts`
-- Action timeout är 15 sekunder
-- Navigation timeout är 30 sekunder
-
-Om enskilda tester behöver längre tid, öka timeout i testet:
+### Skip-pattern för mobil
 ```typescript
-test('slow test', async ({ page }) => {
-  test.setTimeout(120000); // 2 minuter
+test('kalender dagvy', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile', 'Kalender dagvy funkar inte på mobil');
   // ...
 });
 ```
 
-### "webServer did not start"
-- Kolla att port 3000 inte redan används: `lsof -i :3000`
-- Döda befintliga processer: `pkill -f "next dev"`
-- Kör `npm run dev` manuellt först för att se om det startar
-
-### "element not found"
-- Använd `--headed` mode för att se vad som händer
-- Kolla att testet väntar på rätt element
-- Öka element timeout: `await page.waitForSelector('[data-testid="foo"]', { timeout: 10000 })`
-
-### "database not seeded"
-- Kör seed-scriptet: `npx tsx prisma/seed-test-users.ts`
-- Verifiera i Prisma Studio: `npm run db:studio`
-
-## 📚 Resurser
-
-- [Playwright Docs](https://playwright.dev/docs/intro)
-- [Best Practices](https://playwright.dev/docs/best-practices)
-- [Selectors Guide](https://playwright.dev/docs/selectors)
-- [Test Generators](https://playwright.dev/docs/codegen) - Generera tester automatiskt!
-
-## 🎭 Tips & Tricks
+### futureWeekday() för seedade datum
+```typescript
+import { futureWeekday } from './setup/e2e-utils';
+// Garanterar mån-fre (leverantören har mån-fre schema)
+const date = futureWeekday(7);
+```
 
 ### Generera tester automatiskt
 ```bash
 npx playwright codegen http://localhost:3000
-```
-Öppnar en browser där du kan klicka runt - Playwright genererar testkoden åt dig!
-
-### Uppdatera browser-versioner
-```bash
-npx playwright install chromium
 ```
 
 ### Kör bara misslyckade tester

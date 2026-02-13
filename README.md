@@ -125,7 +125,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1500 unit/integration) + Playwright (95 E2E) = 70% coverage
+- **Testning**: Vitest (1500+ unit/integration) + Playwright (115+ E2E desktop, 82+ mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
@@ -179,15 +179,17 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**22 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
+**25 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
 - **Provider** - Leverantörsprofiler med företagsinformation och verifieringsstatus
 - **Booking** - Bokningar med fast tid (kan kopplas till Horse)
-- **Horse** - Hästregister med namn, ras, födelseår, kön, specialbehov
+- **Horse** - Hästregister med namn, ras, födelseår, kön, UELN, mikrochip, specialbehov
 - **RouteOrder** - Flexibla beställningar utan fast tid
 - **Review / CustomerReview** - Recensioner i båda riktningar
+- **ProviderCustomerNote** - Leverantörens privata kundanteckningar
+- **ProviderCustomer** - Manuellt registrerade kunder
 
 ## Implementerade Funktioner
 
@@ -195,14 +197,25 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Autentisering (rollval, email-verifiering, sessions)
 - Bokning (fast tid + flexibla beställningar, mobil-först med stegvis Drawer)
 - Leverantörshantering (profil, tjänster, öppettider, kalender)
-- Hästregister med hälsotidslinje och hästpass
+- Hästregister med hälsotidslinje och delbar hästprofil (UELN + mikrochip)
+- Mobil-först UI med responsiva dialoger, 44px touch targets och stegvist bokningsflöde
 
 ### Leverantörsverktyg
 - Ruttplanering med kartvy och optimering
-- Kundregister och besöksplanering ("Dags för besök")
-- Leverantörsanteckningar (integritetsskyddat)
+- Kundregister med manuell kundregistrering och privata anteckningar (CRUD)
+- Besöksplanering ("Dags för besök") med statusbadges
 - Kompetenser och verifiering (admin-granskning)
 - Stäng för nya kunder (befintliga kunder kan fortfarande boka)
+- Kundrecensioner (leverantör betygsätter kund, 1-5 stjärnor)
+
+### Admin-gränssnitt
+- Dashboard med KPI-kort (användare, bokningar, leverantörer, intäkter)
+- Användarhantering (sök, filtrera, blockera, ge admin-rättigheter)
+- Bokningshantering (lista, avboka med admin-anledning)
+- Recensionsmoderation (granska, ta bort)
+- Verifieringsgranskning (godkänn/avvisa med kommentar)
+- Bulk-notifikationer (till alla/kunder/leverantörer)
+- Systeminställningar (e-post-toggle, runtime-inställningar)
 
 ### Samarbete och kommunikation
 - Recensioner och betyg (båda riktningar)
@@ -221,7 +234,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**1355+ tester** (66 E2E + 1289 unit/integration) med **70% coverage**.
+**1600+ tester** (115+ E2E desktop + 82+ E2E mobil + 1500+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -232,9 +245,9 @@ npm run test:ui           # Visuellt interface
 npm run test:coverage     # Med coverage
 
 # E2E (Playwright)
-npx tsx prisma/seed-test-users.ts  # Skapa testanvändare först
-npm run test:e2e          # Kör E2E-tester
+npm run test:e2e          # Kör E2E-tester (desktop)
 npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
+# Mobil viewport körs automatiskt som separat Playwright-projekt (Pixel 7, Chromium)
 ```
 
 **Testanvändare:**
@@ -320,10 +333,10 @@ Se [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) för fullständig s
 - **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
 - **Betalningsintegration** - Swish/Stripe via PaymentGateway
 
-Se [BACKLOG.md](./BACKLOG.md) för fullständig feature-lista och prioritering.
+Feature-backlog hanteras i Trello.
 
 ---
 
 **Skapad**: November 2025
-**Version**: v0.2.0+
+**Version**: v0.3.0+
 **Utvecklad med**: Next.js 16, TypeScript, Tailwind CSS, Claude Code

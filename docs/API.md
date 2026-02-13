@@ -642,7 +642,51 @@ Hämta leverantörens kundregister (härledd från bokningar).
 - `403` - Inte provider
 - `429` - Rate limit
 
-> **Integritetsskydd:** Bara kunder med completed bokningar för denna provider visas. Data aggregeras från Booking-tabellen utan ny tabell.
+> **Integritetsskydd:** Bara kunder med completed bokningar för denna provider visas (plus manuellt tillagda kunder).
+
+---
+
+### POST /api/provider/customers
+
+Registrera en kund manuellt i leverantörens kundregister.
+
+**Auth:** Required (provider)
+
+**Request Body:**
+```json
+{
+  "name": "Anna Svensson",
+  "phone": "0701234567",
+  "email": "anna@example.com"
+}
+```
+
+| Fält | Typ | Validering |
+|------|-----|------------|
+| `name` | string | Obligatoriskt, 1-100 tecken |
+| `phone` | string | Valfritt, max 20 tecken |
+| `email` | string | Valfritt, giltig e-postadress |
+
+**Response:** `201 Created` med den skapade kunden.
+
+**Errors:**
+- `400` - Valideringsfel
+- `403` - Inte provider
+- `429` - Rate limit
+
+---
+
+### DELETE /api/provider/customers/[customerId]
+
+Ta bort en manuellt registrerad kund.
+
+**Auth:** Required (provider, måste vara kunden som provider skapat)
+
+**Response:** `200 OK`
+
+**Errors:**
+- `403` - Inte provider, eller kunden skapades inte manuellt
+- `404` - Kund hittades inte
 
 ---
 
@@ -1046,6 +1090,169 @@ Godkänn eller avvisa verifieringsansökan.
 - `400` - Ansökan redan behandlad eller valideringsfel
 - `403` - Ej admin-behörighet
 - `404` - Ansökan hittades inte
+
+---
+
+### PATCH /api/admin/users
+
+Uppdatera en användares admin- eller blockeringsstatus.
+
+**Auth:** Required (admin)
+
+**Request Body:**
+```json
+{
+  "userId": "uuid",
+  "action": "toggleBlocked" | "toggleAdmin"
+}
+```
+
+**Säkerhetscheckar:**
+- Kan inte blockera sig själv
+- Kan inte ta bort sin egen admin-behörighet
+
+**Response:** `200 OK` med uppdaterad användare.
+
+**Errors:**
+- `400` - Kan inte utföra åtgärden på sig själv
+- `403` - Ej admin
+- `404` - Användare hittades inte
+
+---
+
+### PATCH /api/admin/bookings
+
+Avboka en bokning som admin.
+
+**Auth:** Required (admin)
+
+**Request Body:**
+```json
+{
+  "bookingId": "uuid",
+  "action": "cancel",
+  "reason": "Anledning till avbokning"
+}
+```
+
+**Beteende:**
+- Sätter status till `cancelled` med `cancellationMessage` prefixat med `[Admin]`
+- Skapar notifikationer till BÅDE kund och leverantör
+
+**Response:** `200 OK`
+
+**Errors:**
+- `400` - Bokning redan avbokad
+- `403` - Ej admin
+- `404` - Bokning hittades inte
+
+---
+
+### GET /api/admin/reviews
+
+Lista alla recensioner (sammanslaget Review + CustomerReview).
+
+**Auth:** Required (admin)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `type` | string | `review` eller `customer-review` |
+| `search` | string | Sök i kommentarer |
+
+**Response:** `200 OK`
+```json
+{
+  "reviews": [{ "id": "uuid", "type": "review", "rating": 5, "comment": "...", "customerName": "...", "providerName": "...", "createdAt": "..." }]
+}
+```
+
+---
+
+### DELETE /api/admin/reviews
+
+Ta bort en recension (hard delete).
+
+**Auth:** Required (admin)
+
+**Request Body:**
+```json
+{
+  "reviewId": "uuid",
+  "type": "review" | "customer-review"
+}
+```
+
+**Response:** `200 OK`
+
+**Errors:**
+- `404` - Recension hittades inte
+
+---
+
+### POST /api/admin/notifications
+
+Skicka bulk-notifikationer till användare.
+
+**Auth:** Required (admin)
+
+**Request Body:**
+```json
+{
+  "target": "all" | "customers" | "providers",
+  "title": "Rubrik",
+  "message": "Meddelandetext"
+}
+```
+
+**Beteende:** Skapar notifikationer med `createMany()` till alla användare i målgruppen.
+
+**Response:** `200 OK`
+```json
+{
+  "sent": 42
+}
+```
+
+---
+
+### GET /api/admin/settings
+
+Hämta runtime-inställningar.
+
+**Auth:** Required (admin)
+
+**Response:** `200 OK`
+```json
+{
+  "settings": {
+    "DISABLE_EMAILS": "true"
+  }
+}
+```
+
+---
+
+### PATCH /api/admin/settings
+
+Uppdatera en runtime-inställning.
+
+**Auth:** Required (admin)
+
+**Request Body:**
+```json
+{
+  "key": "DISABLE_EMAILS",
+  "value": "true"
+}
+```
+
+**Tillåtna nycklar:** Whitelist-baserat (t.ex. `DISABLE_EMAILS`). Okända nycklar avvisas.
+
+**Response:** `200 OK`
+
+**Errors:**
+- `400` - Ogiltig nyckel
 
 ---
 
@@ -2078,4 +2285,4 @@ Rate limiting använder Redis (Upstash) för serverless-kompatibilitet.
 
 ---
 
-*Senast uppdaterad: 2026-02-06 (Kundregister, återbesöksplanering, leverantörsanteckningar)*
+*Senast uppdaterad: 2026-02-13 (Admin-endpoints, manuell kundregistrering, runtime settings)*

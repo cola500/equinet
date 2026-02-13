@@ -94,7 +94,6 @@ Review the changes and determine which files are relevant. Do NOT update files t
 | File | Update when... | Section to update |
 |------|---------------|-------------------|
 | `docs/API.md` | New or changed API routes | Add endpoint documentation |
-| `BACKLOG.md` | Story completed or new items discovered | Mark done, add new items |
 | `CLAUDE.md` | New patterns, gotchas, or key learnings | "Key Learnings" section at the bottom |
 | `docs/DATABASE-ARCHITECTURE.md` | Schema changes (new tables, fields, relations) | Relevant schema section |
 | `README.md` | New user-facing features | Features list or description |
@@ -103,7 +102,6 @@ Review the changes and determine which files are relevant. Do NOT update files t
 - Schema changed? -> DATABASE-ARCHITECTURE.md
 - New API endpoints? -> API.md
 - New patterns or gotchas discovered? -> CLAUDE.md "Key Learnings"
-- Story from BACKLOG.md completed? -> BACKLOG.md (mark done)
 - New user-visible feature? -> README.md
 
 Read each file before editing to find the exact section to update. Make minimal, targeted edits.
@@ -120,10 +118,6 @@ For each file identified in step 3:
 ### docs/API.md
 - Add new endpoints following the existing format in the file
 - Include method, path, auth requirement, request/response shape
-
-### BACKLOG.md
-- Mark completed stories with [x] or move to "Done" section
-- Add any new backlog items discovered during implementation
 
 ### docs/DATABASE-ARCHITECTURE.md
 - Document new tables, fields, or relations
