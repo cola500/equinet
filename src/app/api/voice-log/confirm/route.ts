@@ -5,7 +5,8 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
-import { createBookingService, mapBookingErrorToStatus, mapBookingErrorToMessage } from "@/domain/booking"
+import { createBookingService } from "@/domain/booking"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const confirmSchema = z.object({
   bookingId: z.string().uuid("Ogiltigt boknings-ID"),
@@ -14,11 +15,21 @@ const confirmSchema = z.object({
   horseObservation: z.string().max(2000).nullable(),
   horseNoteCategory: z.enum(["farrier", "veterinary", "general", "medication"]).nullable(),
   nextVisitWeeks: z.number().int().min(1).max(52).nullable(),
-})
+}).strict()
 
 // POST /api/voice-log/confirm - Save interpreted voice log data
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många anrop. Försök igen om en stund." },
+        { status: 429 }
+      )
+    }
+
     const session = await auth()
 
     if (session.user.userType !== "provider") {
@@ -52,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const actions: string[] = []
 
-    // 1. Update provider notes on booking
+    // 1. Update provider notes on booking (atomic ownership check via WHERE)
     if (validated.workPerformed) {
       const bookingRepo = new PrismaBookingRepository()
       const updated = await bookingRepo.updateProviderNotesWithAuth(
@@ -91,13 +102,13 @@ export async function POST(request: NextRequest) {
 
     // 3. Create horse note if observation provided
     if (validated.horseObservation && validated.horseNoteCategory) {
-      // Find the horse from the booking
+      // Verify booking belongs to this provider (atomic ownership check)
       const booking = await prisma.booking.findUnique({
         where: { id: validated.bookingId },
-        select: { horseId: true, horseName: true },
+        select: { horseId: true, providerId: true },
       })
 
-      if (booking?.horseId) {
+      if (booking?.horseId && booking.providerId === provider.id) {
         await prisma.horseNote.create({
           data: {
             horseId: booking.horseId,

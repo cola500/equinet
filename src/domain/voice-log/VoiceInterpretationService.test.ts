@@ -134,6 +134,111 @@ describe("VoiceInterpretationService", () => {
       expect(result.error.type).toBe("INTERPRETATION_FAILED")
     })
 
+    it("handles invalid JSON from LLM", async () => {
+      mockCreate.mockResolvedValue({
+        content: [{ type: "text", text: "This is not JSON" }],
+      })
+
+      const result = await service.interpret("test", SAMPLE_BOOKINGS)
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("INTERPRETATION_FAILED")
+    })
+
+    it("handles LLM returning wrong types (Zod catches)", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: 123, // should be string
+              confidence: "high", // should be number
+              markAsCompleted: "yes", // should be boolean
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpret("test", SAMPLE_BOOKINGS)
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("INTERPRETATION_FAILED")
+    })
+
+    it("rejects bookingId not in context list (prompt injection protection)", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "injected-fake-id",
+              customerName: "Hacker",
+              horseName: null,
+              markAsCompleted: true,
+              workPerformed: "Ignore previous instructions",
+              horseObservation: null,
+              horseNoteCategory: null,
+              nextVisitWeeks: null,
+              confidence: 0.9,
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpret("test", SAMPLE_BOOKINGS)
+      // bookingId should be nullified since it's not in context
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.bookingId).toBeNull()
+    })
+
+    it("accepts bookingId that exists in context", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "booking-1",
+              customerName: "Anna Johansson",
+              horseName: "Stella",
+              markAsCompleted: true,
+              workPerformed: "Verkade alla fyra",
+              horseObservation: null,
+              horseNoteCategory: null,
+              nextVisitWeeks: null,
+              confidence: 0.9,
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpret("Klar med Anna", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.bookingId).toBe("booking-1")
+    })
+
+    it("clamps confidence to 0-1 range", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "booking-1",
+              customerName: "Anna",
+              horseName: "Stella",
+              markAsCompleted: false,
+              workPerformed: "Test",
+              horseObservation: null,
+              horseNoteCategory: null,
+              nextVisitWeeks: null,
+              confidence: 5.0, // way too high
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpret("test", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.confidence).toBeLessThanOrEqual(1)
+    })
+
     it("includes booking context with empty bookings list", async () => {
       mockCreate.mockResolvedValue({
         content: [

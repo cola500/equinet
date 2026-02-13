@@ -9,15 +9,26 @@ import {
   mapVoiceLogErrorToStatus,
   type BookingContext,
 } from "@/domain/voice-log/VoiceInterpretationService"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const interpretSchema = z.object({
   transcript: z.string().min(1, "Transkribering krävs").max(5000, "Transkribering för lång"),
   date: z.string().optional(),
-})
+}).strict()
 
 // POST /api/voice-log - Interpret a voice transcript
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många anrop. Försök igen om en stund." },
+        { status: 429 }
+      )
+    }
+
     const session = await auth()
 
     if (session.user.userType !== "provider") {

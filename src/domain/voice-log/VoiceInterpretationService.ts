@@ -8,6 +8,7 @@
  * - Next visit suggestion
  */
 import Anthropic from "@anthropic-ai/sdk"
+import { z } from "zod"
 import { Result } from "@/domain/shared"
 
 // -----------------------------------------------------------
@@ -59,6 +60,19 @@ export interface VoiceLogError {
   type: VoiceLogErrorType
   message: string
 }
+
+// Runtime validation schema for LLM output
+const interpretedVoiceLogSchema = z.object({
+  bookingId: z.string().nullable().default(null),
+  customerName: z.string().nullable().default(null),
+  horseName: z.string().nullable().default(null),
+  markAsCompleted: z.boolean().default(false),
+  workPerformed: z.string().nullable().default(null),
+  horseObservation: z.string().nullable().default(null),
+  horseNoteCategory: z.enum(["farrier", "veterinary", "general", "medication"]).nullable().default(null),
+  nextVisitWeeks: z.number().int().min(1).max(52).nullable().default(null),
+  confidence: z.number().default(0).transform((v) => Math.max(0, Math.min(1, v))),
+})
 
 export interface VoiceInterpretationDeps {
   apiKey?: string
@@ -153,8 +167,25 @@ Transkribering:
         })
       }
 
-      const parsed = JSON.parse(content.text) as InterpretedVoiceLog
-      return Result.ok(parsed)
+      const rawParsed = JSON.parse(content.text)
+      const validated = interpretedVoiceLogSchema.safeParse(rawParsed)
+
+      if (!validated.success) {
+        return Result.fail({
+          type: "INTERPRETATION_FAILED",
+          message: "AI-svaret hade ogiltigt format",
+        })
+      }
+
+      const result = validated.data
+
+      // Prompt injection protection: verify bookingId exists in context
+      if (result.bookingId && !todaysBookings.some((b) => b.id === result.bookingId)) {
+        result.bookingId = null
+      }
+
+      // Clamp confidence to 0-1 (Zod schema handles this, but extra safety)
+      return Result.ok(result as InterpretedVoiceLog)
     } catch (error) {
       return Result.fail({
         type: "INTERPRETATION_FAILED",

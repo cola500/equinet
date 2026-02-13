@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogHeader,
@@ -14,9 +21,18 @@ import {
 } from "@/components/ui/responsive-dialog"
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition"
 import { toast } from "sonner"
-import { Mic, MicOff, Send, Loader2, Check, X, Pencil } from "lucide-react"
+import { Mic, MicOff, Send, Loader2, Check, Pencil, Plus } from "lucide-react"
 
 type Step = "record" | "interpret" | "preview" | "saving" | "done"
+
+interface BookingOption {
+  id: string
+  customerName: string
+  horseName: string | null
+  serviceName: string
+  startTime: string
+  status: string
+}
 
 interface InterpretedData {
   bookingId: string | null
@@ -54,6 +70,7 @@ export function VoiceWorkLogDialog({
 
   const [step, setStep] = useState<Step>("record")
   const [interpreted, setInterpreted] = useState<InterpretedData | null>(null)
+  const [availableBookings, setAvailableBookings] = useState<BookingOption[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [editedWork, setEditedWork] = useState("")
   const [editedObservation, setEditedObservation] = useState("")
@@ -62,6 +79,7 @@ export function VoiceWorkLogDialog({
     clearTranscript()
     setStep("record")
     setInterpreted(null)
+    setAvailableBookings([])
     setIsEditing(false)
     setEditedWork("")
     setEditedObservation("")
@@ -95,6 +113,7 @@ export function VoiceWorkLogDialog({
 
       const data = await response.json()
       setInterpreted(data.interpretation)
+      setAvailableBookings(data.bookings || [])
       setEditedWork(data.interpretation.workPerformed || "")
       setEditedObservation(data.interpretation.horseObservation || "")
       setStep("preview")
@@ -106,9 +125,25 @@ export function VoiceWorkLogDialog({
     }
   }, [transcript])
 
+  const handleBookingChange = useCallback(
+    (bookingId: string) => {
+      if (!interpreted) return
+      const booking = availableBookings.find((b) => b.id === bookingId)
+      if (booking) {
+        setInterpreted({
+          ...interpreted,
+          bookingId: booking.id,
+          customerName: booking.customerName,
+          horseName: booking.horseName,
+        })
+      }
+    },
+    [interpreted, availableBookings]
+  )
+
   const handleConfirm = useCallback(async () => {
     if (!interpreted?.bookingId) {
-      toast.error("Ingen bokning matchad. Korrigera och försök igen.")
+      toast.error("Ingen bokning matchad. Välj en bokning och försök igen.")
       return
     }
 
@@ -143,17 +178,24 @@ export function VoiceWorkLogDialog({
         toast.info(`Förslag: nästa besök om ${data.nextVisitWeeks} veckor`)
       }
 
-      setTimeout(() => {
-        handleClose()
-        onSuccess?.()
-      }, 1500)
+      onSuccess?.()
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Kunde inte spara"
       )
       setStep("preview")
     }
-  }, [interpreted, isEditing, editedWork, editedObservation, handleClose, onSuccess])
+  }, [interpreted, isEditing, editedWork, editedObservation, onSuccess])
+
+  const handleLogNext = useCallback(() => {
+    clearTranscript()
+    setStep("record")
+    setInterpreted(null)
+    setIsEditing(false)
+    setEditedWork("")
+    setEditedObservation("")
+    // Keep availableBookings -- same day's bookings
+  }, [clearTranscript])
 
   const toggleMic = useCallback(() => {
     if (isListening) {
@@ -167,9 +209,13 @@ export function VoiceWorkLogDialog({
     <ResponsiveDialog open={open} onOpenChange={handleClose}>
       <ResponsiveDialogContent>
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Röstloggning</ResponsiveDialogTitle>
+          <ResponsiveDialogTitle>
+            {isSupported ? "Röstloggning" : "Arbetslogg"}
+          </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
-            Berätta vad du har gjort — appen tolkar och sparar åt dig.
+            {isSupported
+              ? "Berätta vad du har gjort \u2014 appen tolkar och sparar åt dig."
+              : "Beskriv utfört arbete \u2014 appen tolkar och sparar åt dig."}
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
@@ -177,47 +223,57 @@ export function VoiceWorkLogDialog({
           {/* Step 1: Record */}
           {(step === "record" || step === "interpret") && (
             <>
-              {/* Mic button */}
-              <div className="flex flex-col items-center gap-3">
-                <button
-                  onClick={toggleMic}
-                  disabled={!isSupported || step === "interpret"}
-                  className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
-                    isListening
-                      ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-200"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  aria-label={isListening ? "Stoppa inspelning" : "Starta inspelning"}
-                >
-                  {isListening ? (
-                    <MicOff className="w-8 h-8" />
-                  ) : (
-                    <Mic className="w-8 h-8" />
-                  )}
-                </button>
-                <p className="text-sm text-gray-500">
-                  {!isSupported
-                    ? "Röstinspelning stöds inte i denna webbläsare"
-                    : isListening
+              {/* Mic button -- only shown when speech is supported */}
+              {isSupported && (
+                <div className="flex flex-col items-center gap-3">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    onClick={toggleMic}
+                    disabled={step === "interpret"}
+                    className={`w-20 h-20 rounded-full ${
+                      isListening
+                        ? "bg-red-500 hover:bg-red-600 animate-pulse shadow-lg shadow-red-200"
+                        : "bg-green-600 hover:bg-green-700"
+                    }`}
+                    aria-label={isListening ? "Stoppa inspelning" : "Starta inspelning"}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-8 h-8" />
+                    ) : (
+                      <Mic className="w-8 h-8" />
+                    )}
+                  </Button>
+                  <p className="text-sm text-gray-500" aria-live="polite">
+                    {isListening
                       ? "Lyssnar... Tryck för att stoppa"
                       : "Tryck för att börja prata"}
-                </p>
-              </div>
+                  </p>
+                </div>
+              )}
 
               {/* Transcript text area */}
               <div>
-                <Label htmlFor="voice-transcript">Transkribering</Label>
+                <Label htmlFor="voice-transcript">
+                  {isSupported ? "Transkribering" : "Beskriv utfört arbete"}
+                </Label>
                 <Textarea
                   id="voice-transcript"
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
-                  placeholder="Här dyker texten upp medan du pratar, eller skriv direkt..."
+                  placeholder={
+                    isSupported
+                      ? "Här dyker texten upp medan du pratar, eller skriv direkt..."
+                      : "T.ex. 'Klar med Stella hos Anna. Verkade alla fyra. Framhovarna var uttorkade. Nästa besök om 8 veckor.'"
+                  }
                   rows={4}
                   className="mt-1"
                   disabled={step === "interpret"}
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Du kan redigera texten innan du skickar den.
+                  {isSupported
+                    ? "Du kan redigera texten innan du skickar den."
+                    : "Skriv fritt \u2014 AI tolkar och sorterar informationen."}
                 </p>
               </div>
 
@@ -234,7 +290,7 @@ export function VoiceWorkLogDialog({
           {/* Step 2: Preview */}
           {step === "preview" && interpreted && (
             <div className="space-y-3">
-              {/* Match info */}
+              {/* Match info + booking selector */}
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-sm">Matchad bokning</h4>
@@ -244,14 +300,37 @@ export function VoiceWorkLogDialog({
                     </span>
                   ) : interpreted.confidence >= 0.4 ? (
                     <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">
-                      Medel säkerhet
+                      Medel \u2014 kontrollera valet nedan
                     </span>
                   ) : (
                     <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700">
-                      Låg säkerhet
+                      Låg \u2014 välj rätt bokning nedan
                     </span>
                   )}
                 </div>
+
+                {/* Booking selector dropdown */}
+                {availableBookings.length > 0 && (
+                  <div className="mb-2">
+                    <Select
+                      value={interpreted.bookingId || ""}
+                      onValueChange={handleBookingChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Välj bokning..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableBookings.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.startTime} \u2014 {b.customerName}
+                            {b.horseName ? ` (${b.horseName})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 {interpreted.bookingId ? (
                   <div className="text-sm space-y-1">
                     {interpreted.customerName && (
@@ -274,7 +353,7 @@ export function VoiceWorkLogDialog({
                   </div>
                 ) : (
                   <p className="text-sm text-red-600">
-                    Ingen bokning kunde matchas. Korrigera texten och försök igen.
+                    Ingen bokning kunde matchas. Välj en bokning i listan ovan.
                   </p>
                 )}
               </div>
@@ -390,6 +469,17 @@ export function VoiceWorkLogDialog({
               >
                 <Check className="w-4 h-4 mr-2" />
                 Spara allt
+              </Button>
+            </>
+          )}
+          {step === "done" && (
+            <>
+              <Button variant="outline" onClick={handleClose}>
+                Stäng
+              </Button>
+              <Button onClick={handleLogNext}>
+                <Plus className="w-4 h-4 mr-2" />
+                Logga nästa
               </Button>
             </>
           )}
