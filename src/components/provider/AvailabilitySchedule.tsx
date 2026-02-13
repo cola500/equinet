@@ -121,7 +121,7 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="mt-6">
         <CardHeader>
           <CardTitle>Öppettider</CardTitle>
           <CardDescription>Ange dina öppettider för varje veckodag</CardDescription>
@@ -134,7 +134,7 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
   }
 
   return (
-    <Card>
+    <Card className="mt-6">
       <CardHeader>
         <CardTitle>Öppettider</CardTitle>
         <CardDescription>
