@@ -80,4 +80,30 @@ describe('GET /api/customers/search', () => {
 
     expect(response.status).toBe(400)
   })
+
+  it('should include manually added customers (ghost users) in search results', async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: 'c1', firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: '070-123' },
+      { id: 'c2', firstName: 'Anna', lastName: 'Ghost', email: 'anna-ghost@placeholder.equinet.se', phone: '070-456' },
+    ] as any)
+
+    const request = new NextRequest('http://localhost:3000/api/customers/search?q=anna')
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(2)
+
+    // Verify query includes providerCustomerLinks OR bookings (not just bookings)
+    const findManyCall = vi.mocked(prisma.user.findMany).mock.calls[0][0]
+    const andConditions = findManyCall?.where?.AND as any[]
+
+    // Should have an OR condition that includes both bookings and providerCustomerLinks
+    const providerRelationCondition = andConditions.find((c: any) => c.OR?.some((or: any) => or.providerCustomerLinks))
+    expect(providerRelationCondition).toBeDefined()
+
+    // Should NOT have isManualCustomer: false filter
+    const manualCustomerFilter = andConditions.find((c: any) => c.isManualCustomer === false)
+    expect(manualCustomerFilter).toBeUndefined()
+  })
 })

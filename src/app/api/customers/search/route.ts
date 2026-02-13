@@ -56,14 +56,13 @@ export async function GET(request: NextRequest) {
               { email: { contains: query, mode: 'insensitive' } },
             ],
           },
-          // Only customers who have booked with this provider
+          // Customers who have booked with this provider OR are manually added
           {
-            bookings: {
-              some: { providerId: provider.id },
-            },
+            OR: [
+              { bookings: { some: { providerId: provider.id } } },
+              { providerCustomerLinks: { some: { providerId: provider.id } } },
+            ],
           },
-          // Exclude ghost users (they don't have real accounts)
-          { isManualCustomer: false },
         ],
       },
       select: {
