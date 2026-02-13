@@ -4,23 +4,20 @@ import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import { sanitizeMultilineString, stripXss } from "@/lib/sanitize"
+import { sanitizeString, stripXss } from "@/lib/sanitize"
 import { hasCustomerRelationship } from "@/lib/customer-relationship"
-
-const createNoteSchema = z.object({
-  content: z.string().min(1).max(2000),
-}).strict()
+import { horseCreateSchema } from "@/lib/schemas/horse"
 
 type RouteContext = { params: Promise<{ customerId: string }> }
 
-// GET /api/provider/customers/[customerId]/notes
+// GET /api/provider/customers/[customerId]/horses
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json(
-        { error: "Bara leverantörer kan se kundanteckningar" },
+        { error: "Bara leverantörer kan se kunders hästar" },
         { status: 403 }
       )
     }
@@ -37,7 +34,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { customerId } = await context.params
     const providerId = session.user.providerId
 
-    // Verify customer relationship (booking or manual)
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {
       return NextResponse.json(
@@ -46,42 +42,46 @@ export async function GET(request: NextRequest, context: RouteContext) {
       )
     }
 
-    const notes = await prisma.providerCustomerNote.findMany({
-      where: { providerId, customerId },
+    const horses = await prisma.horse.findMany({
+      where: { ownerId: customerId, isActive: true },
       select: {
         id: true,
-        providerId: true,
-        customerId: true,
-        content: true,
+        name: true,
+        breed: true,
+        birthYear: true,
+        color: true,
+        gender: true,
+        specialNeeds: true,
+        registrationNumber: true,
+        microchipNumber: true,
         createdAt: true,
-        updatedAt: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { name: "asc" },
     })
 
-    return NextResponse.json({ notes })
+    return NextResponse.json({ horses })
   } catch (error) {
     if (error instanceof Response) return error
 
     logger.error(
-      "Failed to fetch customer notes",
+      "Failed to fetch customer horses",
       error instanceof Error ? error : new Error(String(error))
     )
     return NextResponse.json(
-      { error: "Kunde inte hämta anteckningar" },
+      { error: "Kunde inte hämta hästar" },
       { status: 500 }
     )
   }
 }
 
-// POST /api/provider/customers/[customerId]/notes
+// POST /api/provider/customers/[customerId]/horses
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json(
-        { error: "Bara leverantörer kan skapa kundanteckningar" },
+        { error: "Bara leverantörer kan lägga till hästar" },
         { status: 403 }
       )
     }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Validate with Zod
-    const parsed = createNoteSchema.safeParse(body)
+    const parsed = horseCreateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Valideringsfel", details: parsed.error.issues },
@@ -115,7 +115,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { customerId } = await context.params
     const providerId = session.user.providerId
 
-    // Verify customer relationship (booking or manual)
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {
       return NextResponse.json(
@@ -124,41 +123,51 @@ export async function POST(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // Sanitize content
-    const content = sanitizeMultilineString(stripXss(parsed.data.content))
-    if (!content) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: [{ message: "Innehållet kan inte vara tomt" }] },
-        { status: 400 }
-      )
+    // Sanitize fields
+    const data: Record<string, unknown> = {
+      name: sanitizeString(stripXss(parsed.data.name)),
+      ownerId: customerId,
     }
+    if (parsed.data.breed) data.breed = sanitizeString(stripXss(parsed.data.breed))
+    if (parsed.data.birthYear) data.birthYear = parsed.data.birthYear
+    if (parsed.data.color) data.color = sanitizeString(stripXss(parsed.data.color))
+    if (parsed.data.gender) data.gender = parsed.data.gender
+    if (parsed.data.specialNeeds) data.specialNeeds = sanitizeString(stripXss(parsed.data.specialNeeds))
+    if (parsed.data.registrationNumber) data.registrationNumber = sanitizeString(stripXss(parsed.data.registrationNumber))
+    if (parsed.data.microchipNumber) data.microchipNumber = sanitizeString(stripXss(parsed.data.microchipNumber))
 
-    const note = await prisma.providerCustomerNote.create({
-      data: {
-        providerId,
-        customerId,
-        content,
-      },
+    const horse = await prisma.horse.create({
+      data: data as any,
       select: {
         id: true,
-        providerId: true,
-        customerId: true,
-        content: true,
+        name: true,
+        breed: true,
+        birthYear: true,
+        color: true,
+        gender: true,
+        specialNeeds: true,
+        registrationNumber: true,
+        microchipNumber: true,
         createdAt: true,
-        updatedAt: true,
       },
     })
 
-    return NextResponse.json(note, { status: 201 })
+    logger.info("Horse created by provider for customer", {
+      horseId: horse.id,
+      customerId,
+      providerId,
+    })
+
+    return NextResponse.json(horse, { status: 201 })
   } catch (error) {
     if (error instanceof Response) return error
 
     logger.error(
-      "Failed to create customer note",
+      "Failed to create customer horse",
       error instanceof Error ? error : new Error(String(error))
     )
     return NextResponse.json(
-      { error: "Kunde inte skapa anteckning" },
+      { error: "Kunde inte skapa häst" },
       { status: 500 }
     )
   }

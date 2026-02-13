@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import {
   ResponsiveDialog,
@@ -46,6 +47,13 @@ import {
 interface CustomerHorse {
   id: string
   name: string
+  breed?: string | null
+  birthYear?: number | null
+  color?: string | null
+  gender?: string | null
+  specialNeeds?: string | null
+  registrationNumber?: string | null
+  microchipNumber?: string | null
 }
 
 interface Customer {
@@ -103,6 +111,17 @@ export default function ProviderCustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const [isDeletingCustomer, setIsDeletingCustomer] = useState(false)
 
+  // Horse state
+  const [customerHorses, setCustomerHorses] = useState<Map<string, CustomerHorse[]>>(new Map())
+  const [horsesLoading, setHorsesLoading] = useState<string | null>(null)
+  const [showHorseDialog, setShowHorseDialog] = useState<string | null>(null)
+  const [horseToEdit, setHorseToEdit] = useState<CustomerHorse | null>(null)
+  const [horseToDelete, setHorseToDelete] = useState<{ horse: CustomerHorse; customerId: string } | null>(null)
+  const [isDeletingHorse, setIsDeletingHorse] = useState(false)
+  const [isSavingHorse, setIsSavingHorse] = useState(false)
+  const emptyHorseForm = { name: "", breed: "", birthYear: "", color: "", gender: "", specialNeeds: "", registrationNumber: "", microchipNumber: "" }
+  const [horseForm, setHorseForm] = useState(emptyHorseForm)
+
   useEffect(() => {
     if (!authLoading && !isProvider) {
       router.push("/login")
@@ -156,9 +175,10 @@ export default function ProviderCustomersPage() {
     const newExpanded = expandedCustomer === customerId ? null : customerId
     setExpandedCustomer(newExpanded)
 
-    // Lazy-load notes when expanding
+    // Lazy-load notes and horses when expanding
     if (newExpanded) {
       fetchNotes(newExpanded)
+      fetchHorses(newExpanded)
     }
 
     // Reset forms when collapsing
@@ -167,6 +187,9 @@ export default function ProviderCustomersPage() {
       setNewNoteContent("")
       setEditingNote(null)
       setEditNoteContent("")
+      setShowHorseDialog(null)
+      setHorseToEdit(null)
+      setHorseForm(emptyHorseForm)
     }
   }
 
@@ -323,6 +346,110 @@ export default function ProviderCustomersPage() {
     } finally {
       setIsDeletingCustomer(false)
       setCustomerToDelete(null)
+    }
+  }
+
+  const fetchHorses = useCallback(async (customerId: string) => {
+    if (customerHorses.has(customerId)) return
+
+    setHorsesLoading(customerId)
+    try {
+      const response = await fetch(`/api/provider/customers/${customerId}/horses`)
+      if (response.ok) {
+        const data = await response.json()
+        setCustomerHorses((prev) => new Map(prev).set(customerId, data.horses))
+      }
+    } catch (error) {
+      console.error("Failed to fetch horses:", error)
+    } finally {
+      setHorsesLoading(null)
+    }
+  }, [customerHorses])
+
+  const handleSaveHorse = async (customerId: string) => {
+    if (!horseForm.name.trim() || isSavingHorse) return
+
+    setIsSavingHorse(true)
+    try {
+      const body: Record<string, unknown> = { name: horseForm.name.trim() }
+      if (horseForm.breed.trim()) body.breed = horseForm.breed.trim()
+      if (horseForm.birthYear.trim()) body.birthYear = parseInt(horseForm.birthYear, 10)
+      if (horseForm.color.trim()) body.color = horseForm.color.trim()
+      if (horseForm.gender) body.gender = horseForm.gender
+      if (horseForm.specialNeeds.trim()) body.specialNeeds = horseForm.specialNeeds.trim()
+      if (horseForm.registrationNumber.trim()) body.registrationNumber = horseForm.registrationNumber.trim()
+      if (horseForm.microchipNumber.trim()) body.microchipNumber = horseForm.microchipNumber.trim()
+
+      const isEdit = !!horseToEdit
+      const url = isEdit
+        ? `/api/provider/customers/${customerId}/horses/${horseToEdit.id}`
+        : `/api/provider/customers/${customerId}/horses`
+
+      const response = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (response.ok) {
+        const savedHorse = await response.json()
+        setCustomerHorses((prev) => {
+          const updated = new Map(prev)
+          const existing = updated.get(customerId) || []
+          if (isEdit) {
+            updated.set(customerId, existing.map((h) => (h.id === savedHorse.id ? savedHorse : h)))
+          } else {
+            updated.set(customerId, [...existing, savedHorse])
+          }
+          return updated
+        })
+        setShowHorseDialog(null)
+        setHorseToEdit(null)
+        setHorseForm(emptyHorseForm)
+        toast.success(isEdit ? "Hästen har uppdaterats" : "Hästen har lagts till")
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Kunde inte spara häst")
+      }
+    } catch (error) {
+      console.error("Failed to save horse:", error)
+      toast.error("Kunde inte spara häst")
+    } finally {
+      setIsSavingHorse(false)
+    }
+  }
+
+  const handleDeleteHorse = async () => {
+    if (!horseToDelete || isDeletingHorse) return
+
+    setIsDeletingHorse(true)
+    try {
+      const response = await fetch(
+        `/api/provider/customers/${horseToDelete.customerId}/horses/${horseToDelete.horse.id}`,
+        { method: "DELETE" }
+      )
+
+      if (response.ok) {
+        setCustomerHorses((prev) => {
+          const updated = new Map(prev)
+          const existing = updated.get(horseToDelete.customerId) || []
+          updated.set(
+            horseToDelete.customerId,
+            existing.filter((h) => h.id !== horseToDelete.horse.id)
+          )
+          return updated
+        })
+        toast.success("Hästen har tagits bort")
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Kunde inte ta bort häst")
+      }
+    } catch (error) {
+      console.error("Failed to delete horse:", error)
+      toast.error("Kunde inte ta bort häst")
+    } finally {
+      setIsDeletingHorse(false)
+      setHorseToDelete(null)
     }
   }
 
@@ -484,12 +611,17 @@ export default function ProviderCustomersPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {customer.horses.length > 0 && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                          {customer.horses.length}{" "}
-                          {customer.horses.length === 1 ? "häst" : "hästar"}
-                        </span>
-                      )}
+                      {(() => {
+                        const horseCount = customerHorses.has(customer.id)
+                          ? customerHorses.get(customer.id)!.length
+                          : customer.horses.length
+                        return horseCount > 0 ? (
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                            {horseCount}{" "}
+                            {horseCount === 1 ? "häst" : "hästar"}
+                          </span>
+                        ) : null
+                      })()}
                       {expandedCustomer === customer.id ? (
                         <ChevronUp className="h-5 w-5 text-gray-400" />
                       ) : (
@@ -530,25 +662,94 @@ export default function ProviderCustomersPage() {
                     )}
                   </div>
 
-                  {customer.horses.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                  {/* Horses section */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                        <PawPrint className="h-3 w-3" />
                         Hästar
+                        {customerHorses.has(customer.id) && (
+                          <span className="text-gray-400">
+                            ({customerHorses.get(customer.id)!.length})
+                          </span>
+                        )}
                       </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowHorseDialog(customer.id)
+                          setHorseToEdit(null)
+                          setHorseForm(emptyHorseForm)
+                        }}
+                        className="h-7 text-xs text-green-600 hover:text-green-700"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Lägg till häst
+                      </Button>
+                    </div>
+
+                    {horsesLoading === customer.id ? (
+                      <div className="text-center py-3">
+                        <Loader2 className="h-4 w-4 animate-spin mx-auto text-gray-400" />
+                      </div>
+                    ) : (customerHorses.get(customer.id) || []).length > 0 ? (
                       <div className="space-y-2">
-                        {customer.horses.map((horse) => (
-                          <Link
+                        {(customerHorses.get(customer.id) || []).map((horse) => (
+                          <div
                             key={horse.id}
-                            href={`/provider/horse-timeline/${horse.id}`}
-                            className="flex items-center gap-2 text-sm bg-white p-2 rounded-md hover:bg-green-50 hover:text-green-700 transition-colors"
+                            className="flex items-center justify-between bg-white p-2 rounded-md border text-sm"
                           >
-                            <PawPrint className="h-4 w-4 text-gray-400" />
-                            <span>{horse.name}</span>
-                          </Link>
+                            <Link
+                              href={`/provider/horse-timeline/${horse.id}`}
+                              className="flex items-center gap-2 hover:text-green-700 transition-colors min-w-0 flex-1"
+                            >
+                              <PawPrint className="h-4 w-4 text-gray-400 shrink-0" />
+                              <div className="min-w-0">
+                                <span className="font-medium">{horse.name}</span>
+                                {horse.breed && (
+                                  <span className="text-gray-400 ml-1">({horse.breed})</span>
+                                )}
+                              </div>
+                            </Link>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => {
+                                  setHorseToEdit(horse)
+                                  setShowHorseDialog(customer.id)
+                                  setHorseForm({
+                                    name: horse.name,
+                                    breed: horse.breed || "",
+                                    birthYear: horse.birthYear ? String(horse.birthYear) : "",
+                                    color: horse.color || "",
+                                    gender: horse.gender || "",
+                                    specialNeeds: horse.specialNeeds || "",
+                                    registrationNumber: horse.registrationNumber || "",
+                                    microchipNumber: horse.microchipNumber || "",
+                                  })
+                                }}
+                                className="text-gray-300 hover:text-blue-500 transition-colors min-h-[44px] sm:min-h-0 flex items-center"
+                                aria-label="Redigera häst"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setHorseToDelete({ horse, customerId: customer.id })}
+                                className="text-gray-300 hover:text-red-500 transition-colors min-h-[44px] sm:min-h-0 flex items-center"
+                                aria-label="Ta bort häst"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">
+                        Inga hästar registrerade
+                      </p>
+                    )}
+                  </div>
 
                   {/* Notes section */}
                   <div>
@@ -867,6 +1068,178 @@ export default function ProviderCustomersPage() {
                 disabled={isDeletingCustomer}
               >
                 {isDeletingCustomer ? "Tar bort..." : "Ta bort"}
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
+      )}
+      {/* Add/Edit horse dialog */}
+      {showHorseDialog && (
+        <ResponsiveDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowHorseDialog(null)
+              setHorseToEdit(null)
+              setHorseForm(emptyHorseForm)
+            }
+          }}
+        >
+          <ResponsiveDialogContent>
+            <ResponsiveDialogHeader>
+              <ResponsiveDialogTitle>
+                {horseToEdit ? "Redigera häst" : "Lägg till häst"}
+              </ResponsiveDialogTitle>
+              <ResponsiveDialogDescription>
+                {horseToEdit
+                  ? "Uppdatera hästens uppgifter."
+                  : "Registrera en häst åt kunden."}
+              </ResponsiveDialogDescription>
+            </ResponsiveDialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="horseName">Namn *</Label>
+                  <Input
+                    id="horseName"
+                    value={horseForm.name}
+                    onChange={(e) => setHorseForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Blansen"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="horseBreed">Ras</Label>
+                  <Input
+                    id="horseBreed"
+                    value={horseForm.breed}
+                    onChange={(e) => setHorseForm((f) => ({ ...f, breed: e.target.value }))}
+                    placeholder="Islandshäst"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="horseBirthYear">Födelseår</Label>
+                  <Input
+                    id="horseBirthYear"
+                    type="number"
+                    value={horseForm.birthYear}
+                    onChange={(e) => setHorseForm((f) => ({ ...f, birthYear: e.target.value }))}
+                    placeholder="2015"
+                    min={1980}
+                    max={new Date().getFullYear()}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="horseColor">Färg</Label>
+                  <Input
+                    id="horseColor"
+                    value={horseForm.color}
+                    onChange={(e) => setHorseForm((f) => ({ ...f, color: e.target.value }))}
+                    placeholder="Brun"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="horseGender">Kön</Label>
+                  <Select
+                    value={horseForm.gender}
+                    onValueChange={(value) => setHorseForm((f) => ({ ...f, gender: value }))}
+                  >
+                    <SelectTrigger id="horseGender">
+                      <SelectValue placeholder="Välj..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mare">Sto</SelectItem>
+                      <SelectItem value="gelding">Valack</SelectItem>
+                      <SelectItem value="stallion">Hingst</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="horseRegNumber">Reg.nr (UELN)</Label>
+                  <Input
+                    id="horseRegNumber"
+                    value={horseForm.registrationNumber}
+                    onChange={(e) => setHorseForm((f) => ({ ...f, registrationNumber: e.target.value }))}
+                    placeholder="752009000000000"
+                    maxLength={15}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="horseMicrochip">Chipnummer</Label>
+                <Input
+                  id="horseMicrochip"
+                  value={horseForm.microchipNumber}
+                  onChange={(e) => setHorseForm((f) => ({ ...f, microchipNumber: e.target.value }))}
+                  placeholder="752098100000000"
+                  maxLength={15}
+                />
+              </div>
+              <div>
+                <Label htmlFor="horseSpecialNeeds">Specialbehov</Label>
+                <Textarea
+                  id="horseSpecialNeeds"
+                  value={horseForm.specialNeeds}
+                  onChange={(e) => setHorseForm((f) => ({ ...f, specialNeeds: e.target.value }))}
+                  placeholder="T.ex. allergier, rädsla, medicinering..."
+                  rows={2}
+                  maxLength={1000}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            <ResponsiveDialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowHorseDialog(null)
+                  setHorseToEdit(null)
+                  setHorseForm(emptyHorseForm)
+                }}
+              >
+                Avbryt
+              </Button>
+              <Button
+                onClick={() => handleSaveHorse(showHorseDialog)}
+                disabled={!horseForm.name.trim() || isSavingHorse}
+              >
+                {isSavingHorse && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {horseToEdit ? "Spara" : "Lägg till"}
+              </Button>
+            </ResponsiveDialogFooter>
+          </ResponsiveDialogContent>
+        </ResponsiveDialog>
+      )}
+
+      {/* Delete horse confirmation */}
+      {horseToDelete && (
+        <ResponsiveAlertDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setHorseToDelete(null) }}
+        >
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Ta bort häst?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                {horseToDelete.horse.name} tas bort. Detta kan inte ångras.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel onClick={() => setHorseToDelete(null)}>
+                Avbryt
+              </ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={handleDeleteHorse}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isDeletingHorse}
+              >
+                {isDeletingHorse ? "Tar bort..." : "Ta bort"}
               </ResponsiveAlertDialogAction>
             </ResponsiveAlertDialogFooter>
           </ResponsiveAlertDialogContent>
