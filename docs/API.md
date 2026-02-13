@@ -2336,19 +2336,23 @@ Sparar tolkad röstloggning (uppdaterar providerNotes, markerar completed, skapa
   "workPerformed": "Verkade alla fyra",
   "horseObservation": "Framhovarna uttorkade",
   "horseNoteCategory": "farrier",
-  "nextVisitWeeks": 8
+  "nextVisitWeeks": 8,
+  "originalWorkPerformed": "Verkade alla fyra hovarna",
+  "originalHorseObservation": null
 }
 ```
+
+`originalWorkPerformed` och `originalHorseObservation` är valfria. Om de skickas med och skiljer sig från redigerade värden, sparas ordnivå-diff som vokabulär på leverantörens profil (max 50 termer). Vokabulären injiceras i LLM-prompten vid nästa tolkning.
 
 **Response 200:**
 ```json
 {
   "success": true,
-  "actions": ["providerNotes", "completed", "horseNote"],
+  "actions": ["providerNotes", "completed", "horseNote", "vocabulary"],
   "nextVisitWeeks": 8
 }
 ```
 
 ---
 
-*Senast uppdaterad: 2026-02-13 (Röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*
+*Senast uppdaterad: 2026-02-13 (Vokabulärinlärning, röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*
