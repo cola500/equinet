@@ -49,7 +49,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
   return (
     <>
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 bg-white border-t md:hidden"
+        className="fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur-lg border-t md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex items-stretch">
@@ -60,12 +60,21 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-colors ${
-                  active ? "text-green-600" : "text-gray-500"
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-all duration-200 ${
+                  active ? "text-green-700" : "text-gray-400"
                 }`}
               >
-                <Icon className="h-5 w-5" />
-                <span className="text-[10px] leading-tight">{tab.label}</span>
+                {active ? (
+                  <span className="flex flex-col items-center gap-0.5 bg-green-100/80 rounded-full px-3 py-1">
+                    <Icon className="h-[22px] w-[22px]" />
+                    <span className="text-[10px] leading-tight font-medium">{tab.label}</span>
+                  </span>
+                ) : (
+                  <>
+                    <Icon className="h-5 w-5" />
+                    <span className="text-[10px] leading-tight">{tab.label}</span>
+                  </>
+                )}
               </Link>
             )
           })}
@@ -74,12 +83,21 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-colors ${
-              isMoreActive ? "text-green-600" : "text-gray-500"
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-all duration-200 ${
+              isMoreActive ? "text-green-700" : "text-gray-400"
             }`}
           >
-            <MoreHorizontal className="h-5 w-5" />
-            <span className="text-[10px] leading-tight">Mer</span>
+            {isMoreActive ? (
+              <span className="flex flex-col items-center gap-0.5 bg-green-100/80 rounded-full px-3 py-1">
+                <MoreHorizontal className="h-[22px] w-[22px]" />
+                <span className="text-[10px] leading-tight font-medium">Mer</span>
+              </span>
+            ) : (
+              <>
+                <MoreHorizontal className="h-5 w-5" />
+                <span className="text-[10px] leading-tight">Mer</span>
+              </>
+            )}
           </button>
         </div>
       </nav>
@@ -100,7 +118,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-3 min-h-[48px] ${
                       active
-                        ? "text-green-600 bg-green-50 font-medium"
+                        ? "text-green-700 bg-green-50 font-medium"
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >

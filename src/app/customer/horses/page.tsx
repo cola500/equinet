@@ -44,6 +44,7 @@ import {
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 
 interface Horse {
   id: string
@@ -242,10 +243,7 @@ export default function CustomerHorsesPage() {
       </ResponsiveDialog>
 
       {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Laddar hästar...</p>
-        </div>
+        <HorseCardSkeleton count={3} />
       ) : horses.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -263,8 +261,8 @@ export default function CustomerHorsesPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {horses.map((horse) => (
-            <Card key={horse.id}>
+          {horses.map((horse, index) => (
+            <Card key={horse.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
               <CardHeader className="pb-3">
                 <div className="flex items-start gap-3">
                   <ImageUpload

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Bell, Check, CheckCheck } from "lucide-react"
 import { type Notification } from "@/hooks/useNotifications"
 import { formatRelativeTime } from "@/lib/format-utils"
+import { NotificationSkeleton } from "@/components/loading/NotificationSkeleton"
 
 function getNotificationTypeLabel(type: string): string {
   const labels: Record<string, string> = {
@@ -141,10 +142,7 @@ export default function NotificationsPage() {
             </CardContent>
           </Card>
         ) : isLoadingNotifications ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar notifikationer...</p>
-          </div>
+          <NotificationSkeleton count={5} />
         ) : notifications.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
@@ -160,12 +158,13 @@ export default function NotificationsPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {notifications.map((notification) => (
+            {notifications.map((notification, index) => (
               <Card
                 key={notification.id}
-                className={`cursor-pointer transition-colors hover:bg-gray-50 ${
+                className={`animate-fade-in-up cursor-pointer transition-colors hover:bg-gray-50 ${
                   !notification.isRead ? "border-l-4 border-l-green-500 bg-green-50/30" : ""
                 }`}
+                style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => handleNotificationClick(notification)}
               >
                 <CardContent className="py-4 px-5">

@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/useAuth"
 import { Header } from "@/components/layout/Header"
 import { StarRating } from "@/components/review/StarRating"
+import { ProviderCardSkeleton } from "@/components/loading/ProviderCardSkeleton"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
+import { SlidersHorizontal, MapPin } from "lucide-react"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 
@@ -71,6 +79,10 @@ export default function ProvidersPage() {
   const [searchPlace, setSearchPlace] = useState("")
   const [searchPlaceName, setSearchPlaceName] = useState<string | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+
+  // Count active advanced filters (not counting main search)
+  const activeFilterCount = [city, visitingArea, userLocation].filter(Boolean).length
 
   // Debounce search - sök automatiskt efter 500ms av inaktivitet
   // Initial load (tom sökning) hämtar direkt, sökningar debouncar
@@ -306,7 +318,8 @@ export default function ProvidersPage() {
           {/* Search Bar */}
           <div className="mb-8">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+              {/* Main search row */}
+              <div className="flex gap-3">
                 <div className="flex-1 relative">
                   <Input
                     placeholder="Sök efter företagsnamn..."
@@ -320,18 +333,35 @@ export default function ProvidersPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-3 md:gap-4">
+
+                {/* Mobile: Filter button */}
+                <Button
+                  variant="outline"
+                  className="md:hidden relative"
+                  onClick={() => setFilterDrawerOpen(true)}
+                >
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-green-600 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+
+                {/* Desktop: inline advanced filters */}
+                <div className="hidden md:flex gap-4">
                   <Input
                     placeholder="Filtrera på ort..."
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full md:w-40 lg:w-48"
+                    className="w-40 lg:w-48"
                   />
                   <Input
                     placeholder="Besöker område..."
                     value={visitingArea}
                     onChange={(e) => setVisitingArea(e.target.value)}
-                    className="w-full md:w-40 lg:w-48"
+                    className="w-40 lg:w-48"
                   />
                 </div>
                 {(search || city || visitingArea || userLocation) && (
@@ -340,15 +370,15 @@ export default function ProvidersPage() {
                     variant="outline"
                     onClick={handleClearFilters}
                     data-testid="clear-filters-button"
-                    className="w-full md:w-auto"
+                    className="hidden md:flex"
                   >
                     Rensa
                   </Button>
                 )}
               </div>
 
-              {/* Place Search */}
-              <div className="flex flex-col gap-3">
+              {/* Desktop: Place Search (hidden on mobile -- inside drawer) */}
+              <div className="hidden md:flex flex-col gap-3">
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-sm font-medium text-gray-700">Sök i närheten:</span>
                   <div className="flex gap-2 items-center flex-1 min-w-[200px] max-w-md">
@@ -364,101 +394,25 @@ export default function ProvidersPage() {
                       disabled={isGeocoding || !searchPlace.trim()}
                       variant="outline"
                     >
-                      {isGeocoding ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-2 h-4 w-4"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                          </svg>
-                          Söker...
-                        </>
-                      ) : (
-                        "Sök plats"
-                      )}
+                      {isGeocoding ? "Söker..." : "Sök plats"}
                     </Button>
                   </div>
                 </div>
-
-                {/* Location Quick Actions */}
                 <div className="flex flex-wrap gap-2 items-center">
                   <Button
                     onClick={requestLocation}
                     variant="outline"
                     size="sm"
-                    className="min-h-[44px] sm:min-h-0"
                     disabled={locationLoading}
                   >
-                    {locationLoading ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Hämtar position...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          className="mr-2 h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        Använd min position
-                      </>
-                    )}
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {locationLoading ? "Hämtar position..." : "Använd min position"}
                   </Button>
-
                   {userLocation && (
                     <select
                       value={radiusKm}
                       onChange={(e) => handleRadiusChange(Number(e.target.value))}
-                      className="border rounded-md px-3 py-2 touch-target text-sm bg-white"
+                      className="border rounded-md px-3 py-2 text-sm bg-white"
                     >
                       <option value={25}>25 km</option>
                       <option value={50}>50 km</option>
@@ -472,6 +426,15 @@ export default function ProvidersPage() {
               {/* Location Error */}
               {locationError && (
                 <p className="text-sm text-red-600">{locationError}</p>
+              )}
+
+              {/* Result count + active filter chips */}
+              {!isLoading && !isSearching && !error && (
+                <p className="text-sm text-gray-500">
+                  {providers.length === 0
+                    ? "Inga träffar"
+                    : `${providers.length} leverantör${providers.length !== 1 ? "er" : ""}`}
+                </p>
               )}
 
               {isSearching && (
@@ -550,6 +513,99 @@ export default function ProvidersPage() {
               )}
             </div>
           </div>
+
+          {/* Mobile Filter Drawer */}
+          <Drawer open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Filter</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-6 space-y-5">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Filtrera på ort</label>
+                  <Input
+                    placeholder="T.ex. Stockholm, Göteborg..."
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Besöker område</label>
+                  <Input
+                    placeholder="T.ex. Täby, Sollentuna..."
+                    value={visitingArea}
+                    onChange={(e) => setVisitingArea(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Sök i närheten</label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ort eller postnummer..."
+                      value={searchPlace}
+                      onChange={(e) => setSearchPlace(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSearchPlace() }}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleSearchPlace}
+                      disabled={isGeocoding || !searchPlace.trim()}
+                      variant="outline"
+                    >
+                      {isGeocoding ? "Söker..." : "Sök"}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={requestLocation}
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px]"
+                    disabled={locationLoading}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {locationLoading ? "Hämtar..." : "Min position"}
+                  </Button>
+                  {userLocation && (
+                    <select
+                      value={radiusKm}
+                      onChange={(e) => handleRadiusChange(Number(e.target.value))}
+                      className="border rounded-md px-3 py-2 touch-target text-sm bg-white"
+                    >
+                      <option value={25}>25 km</option>
+                      <option value={50}>50 km</option>
+                      <option value={100}>100 km</option>
+                      <option value={200}>200 km</option>
+                    </select>
+                  )}
+                </div>
+                {locationError && (
+                  <p className="text-sm text-red-600">{locationError}</p>
+                )}
+                <div className="flex gap-3 pt-2">
+                  {(city || visitingArea || userLocation) && (
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        handleClearFilters()
+                        setFilterDrawerOpen(false)
+                      }}
+                    >
+                      Rensa filter
+                    </Button>
+                  )}
+                  <Button
+                    className="flex-1"
+                    onClick={() => setFilterDrawerOpen(false)}
+                  >
+                    Visa resultat
+                  </Button>
+                </div>
+              </div>
+            </DrawerContent>
+          </Drawer>
 
           {/* Visiting Providers Section */}
           {visitingArea && visitingProviders.length > 0 && (
@@ -674,10 +730,7 @@ export default function ProvidersPage() {
               </CardContent>
             </Card>
           ) : isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Laddar leverantörer...</p>
-            </div>
+            <ProviderCardSkeleton count={6} />
           ) : providers.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
@@ -723,8 +776,8 @@ export default function ProvidersPage() {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {providers.map((provider) => (
-                <Card key={provider.id} className="hover:shadow-lg transition-shadow" data-testid="provider-card">
+              {providers.map((provider, index) => (
+                <Card key={provider.id} className="animate-fade-in-up hover:shadow-lg transition-shadow" data-testid="provider-card" style={{ animationDelay: `${index * 50}ms` }}>
                   <CardHeader>
                     <CardTitle>{provider.businessName}</CardTitle>
                     <CardDescription>

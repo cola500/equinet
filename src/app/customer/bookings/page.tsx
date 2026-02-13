@@ -24,6 +24,7 @@ import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { Badge } from "@/components/ui/badge"
 import { ReviewDialog } from "@/components/review/ReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
+import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
 
 interface Payment {
   id: string
@@ -279,6 +280,17 @@ export default function CustomerBookingsPage() {
     )
   }
 
+  const getStatusBorderClass = (status: string): string => {
+    const borders: Record<string, string> = {
+      pending: "border-l-4 border-l-yellow-400",
+      confirmed: "border-l-4 border-l-green-500",
+      cancelled: "border-l-4 border-l-red-400",
+      completed: "border-l-4 border-l-blue-400",
+      in_route: "border-l-4 border-l-purple-500",
+    }
+    return borders[status] || ""
+  }
+
   return (
     <CustomerLayout>
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8">
@@ -291,38 +303,21 @@ export default function CustomerBookingsPage() {
         </Link>
       </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 sm:gap-4 mb-6">
-          <button
-            onClick={() => setFilter("upcoming")}
-            className={`px-4 py-2 touch-target rounded-lg ${
-              filter === "upcoming"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Kommande
-          </button>
-          <button
-            onClick={() => setFilter("past")}
-            className={`px-4 py-2 touch-target rounded-lg ${
-              filter === "past"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Tidigare
-          </button>
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 touch-target rounded-lg ${
-              filter === "all"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Alla
-          </button>
+        {/* Filter Tabs -- segment control style */}
+        <div className="inline-flex bg-gray-100 rounded-lg p-1 mb-6">
+          {(["upcoming", "past", "all"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`px-4 py-2 touch-target rounded-md text-sm font-medium transition-all duration-200 ${
+                filter === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {tab === "upcoming" ? "Kommande" : tab === "past" ? "Tidigare" : "Alla"}
+            </button>
+          ))}
         </div>
 
         {/* Bookings List */}
@@ -352,10 +347,7 @@ export default function CustomerBookingsPage() {
             </CardContent>
           </Card>
         ) : isLoadingBookings ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar bokningar...</p>
-          </div>
+          <BookingCardSkeleton count={3} />
         ) : filteredBookings.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
@@ -413,8 +405,8 @@ export default function CustomerBookingsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {filteredBookings.map((booking) => (
-              <Card key={booking.id} data-testid="booking-item">
+            {filteredBookings.map((booking, index) => (
+              <Card key={booking.id} data-testid="booking-item" className={`animate-fade-in-up ${getStatusBorderClass(booking.status)}`} style={{ animationDelay: `${index * 50}ms` }}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
