@@ -14,6 +14,9 @@ vi.mock('@/lib/prisma', () => ({
     booking: {
       count: vi.fn(),
     },
+    providerCustomer: {
+      count: vi.fn(),
+    },
     providerCustomerNote: {
       findMany: vi.fn(),
       create: vi.fn(),
@@ -100,6 +103,7 @@ describe('GET /api/provider/customers/[customerId]/notes', () => {
   it('should return 403 when no completed booking with customer', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
+    vi.mocked(prisma.providerCustomer.count).mockResolvedValue(0)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes'
@@ -109,7 +113,24 @@ describe('GET /api/provider/customers/[customerId]/notes', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toContain('bokning')
+    expect(data.error).toContain('relation')
+  })
+
+  it('should allow notes for manually added customer (no booking)', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(prisma.booking.count).mockResolvedValue(0)
+    vi.mocked(prisma.providerCustomer.count).mockResolvedValue(1)
+    vi.mocked(prisma.providerCustomerNote.findMany).mockResolvedValue([])
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/provider/customers/customer-1/notes'
+    )
+
+    const response = await GET(request, { params: makeParams('customer-1') })
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.notes).toEqual([])
   })
 })
 
@@ -254,9 +275,10 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
     expect(response.status).toBe(400)
   })
 
-  it('should return 403 when no completed booking with customer', async () => {
+  it('should return 403 when no customer relationship exists', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
+    vi.mocked(prisma.providerCustomer.count).mockResolvedValue(0)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes',
@@ -270,7 +292,31 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toContain('bokning')
+    expect(data.error).toContain('relation')
+  })
+
+  it('should allow creating notes for manually added customer', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(prisma.booking.count).mockResolvedValue(0)
+    vi.mocked(prisma.providerCustomer.count).mockResolvedValue(1)
+    vi.mocked(prisma.providerCustomerNote.create).mockResolvedValue({
+      id: 'note-1',
+      providerId: 'provider-1',
+      customerId: 'customer-1',
+      content: 'Manuell kund-anteckning',
+      createdAt: new Date(),
+    } as any)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/provider/customers/customer-1/notes',
+      {
+        method: 'POST',
+        body: JSON.stringify({ content: 'Manuell kund-anteckning' }),
+      }
+    )
+
+    const response = await POST(request, { params: makeParams('customer-1') })
+    expect(response.status).toBe(201)
   })
 
   it('should sanitize content (strip XSS)', async () => {

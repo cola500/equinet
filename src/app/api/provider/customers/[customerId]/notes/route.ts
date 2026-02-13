@@ -12,12 +12,18 @@ const createNoteSchema = z.object({
 
 type RouteContext = { params: Promise<{ customerId: string }> }
 
-// Check that the provider has at least one completed booking with the customer
-async function hasCompletedBooking(providerId: string, customerId: string): Promise<boolean> {
-  const count = await prisma.booking.count({
+// Check that the provider has a relationship with the customer
+// (completed booking OR manually added via ProviderCustomer)
+async function hasCustomerRelationship(providerId: string, customerId: string): Promise<boolean> {
+  const bookingCount = await prisma.booking.count({
     where: { providerId, customerId, status: "completed" },
   })
-  return count > 0
+  if (bookingCount > 0) return true
+
+  const manualCount = await prisma.providerCustomer.count({
+    where: { providerId, customerId },
+  })
+  return manualCount > 0
 }
 
 // GET /api/provider/customers/[customerId]/notes
@@ -44,11 +50,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { customerId } = await context.params
     const providerId = session.user.providerId
 
-    // Verify booking relation
-    const hasRelation = await hasCompletedBooking(providerId, customerId)
+    // Verify customer relationship (booking or manual)
+    const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {
       return NextResponse.json(
-        { error: "Ingen avslutad bokning med denna kund" },
+        { error: "Ingen kundrelation hittades" },
         { status: 403 }
       )
     }
@@ -122,11 +128,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { customerId } = await context.params
     const providerId = session.user.providerId
 
-    // Verify booking relation
-    const hasRelation = await hasCompletedBooking(providerId, customerId)
+    // Verify customer relationship (booking or manual)
+    const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {
       return NextResponse.json(
-        { error: "Ingen avslutad bokning med denna kund" },
+        { error: "Ingen kundrelation hittades" },
         { status: 403 }
       )
     }

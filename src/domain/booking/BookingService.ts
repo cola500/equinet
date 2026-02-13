@@ -855,43 +855,17 @@ export function createBookingService(): BookingService {
     },
     travelTimeService: new TravelTimeService(),
     createGhostUser: async (data) => {
-      const { randomUUID } = await import('crypto')
-      const bcrypt = await import('bcrypt')
-
-      const email = data.email || `manual-${randomUUID()}@ghost.equinet.se`
-
-      const existing = await prisma.user.findUnique({ where: { email } })
-      if (existing) {
-        logger.info("Reusing existing user for manual booking", {
-          existingUserId: existing.id,
-        })
-        return existing.id
-      }
-
       const parts = data.name.trim().split(/\s+/)
       const firstName = parts[0]
       const lastName = parts.slice(1).join(' ') || ''
 
-      const user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash: await bcrypt.hash(randomUUID(), 10),
-          userType: 'customer',
-          firstName,
-          lastName,
-          phone: data.phone,
-          isManualCustomer: true,
-          emailVerified: false,
-        },
+      const { createGhostUser } = await import('@/lib/ghost-user')
+      return createGhostUser({
+        firstName,
+        lastName,
+        phone: data.phone,
+        email: data.email,
       })
-
-      logger.security("Ghost user created", "low", {
-        ghostUserId: user.id,
-        emailType: data.email ? 'real' : 'sentinel',
-        hasPhone: !!data.phone,
-      })
-
-      return user.id
     },
   })
 }
