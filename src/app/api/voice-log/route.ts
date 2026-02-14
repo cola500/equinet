@@ -88,6 +88,8 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            breed: true,
+            specialNeeds: true,
           },
         },
         service: {
@@ -99,6 +101,29 @@ export async function POST(request: NextRequest) {
       orderBy: { startTime: "asc" },
     })
 
+    // Fetch latest provider note for each horse (from previous bookings)
+    const horseIds = bookings
+      .map((b: any) => b.horse?.id)
+      .filter(Boolean) as string[]
+    let previousNotesByHorse: Record<string, string> = {}
+    if (horseIds.length > 0) {
+      const prevBookings = await prisma.booking.findMany({
+        where: {
+          providerId: provider.id,
+          horseId: { in: horseIds },
+          providerNotes: { not: null },
+          bookingDate: { lt: date },
+        },
+        select: { horseId: true, providerNotes: true, bookingDate: true },
+        orderBy: { bookingDate: "desc" },
+      })
+      for (const b of prevBookings) {
+        if (b.horseId && b.providerNotes && !previousNotesByHorse[b.horseId]) {
+          previousNotesByHorse[b.horseId] = b.providerNotes
+        }
+      }
+    }
+
     // Map to context format
     const bookingContext: BookingContext[] = bookings.map((b: any) => ({
       id: b.id,
@@ -108,6 +133,9 @@ export async function POST(request: NextRequest) {
       serviceName: b.service.name,
       startTime: b.startTime,
       status: b.status,
+      horseBreed: b.horse?.breed || null,
+      horseSpecialNeeds: b.horse?.specialNeeds || null,
+      previousNotes: (b.horse?.id && previousNotesByHorse[b.horse.id]) || null,
     }))
 
     // Build vocabulary prompt from provider's learned corrections

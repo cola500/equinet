@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -783,10 +784,10 @@ export default function ProviderCustomersPage() {
                     {/* Add note form */}
                     {isAddingNote === customer.id && (
                       <div className="mb-3 bg-white rounded-md p-3 border">
-                        <Textarea
+                        <VoiceTextarea
                           placeholder="Skriv en anteckning..."
                           value={newNoteContent}
-                          onChange={(e) => setNewNoteContent(e.target.value)}
+                          onChange={(value) => setNewNoteContent(value)}
                           rows={3}
                           maxLength={2000}
                           className="mb-2 text-sm resize-none"
@@ -831,9 +832,9 @@ export default function ProviderCustomersPage() {
                             {editingNote?.id === note.id ? (
                               /* Inline edit form */
                               <div>
-                                <Textarea
+                                <VoiceTextarea
                                   value={editNoteContent}
-                                  onChange={(e) => setEditNoteContent(e.target.value)}
+                                  onChange={(value) => setEditNoteContent(value)}
                                   rows={3}
                                   maxLength={2000}
                                   className="mb-2 text-sm resize-none"
@@ -1182,10 +1183,10 @@ export default function ProviderCustomersPage() {
               </div>
               <div>
                 <Label htmlFor="horseSpecialNeeds">Specialbehov</Label>
-                <Textarea
+                <VoiceTextarea
                   id="horseSpecialNeeds"
                   value={horseForm.specialNeeds}
-                  onChange={(e) => setHorseForm((f) => ({ ...f, specialNeeds: e.target.value }))}
+                  onChange={(value) => setHorseForm((f) => ({ ...f, specialNeeds: value }))}
                   placeholder="T.ex. allergier, rädsla, medicinering..."
                   rows={2}
                   maxLength={1000}

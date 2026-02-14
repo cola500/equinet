@@ -23,6 +23,9 @@ export interface BookingContext {
   serviceName: string
   startTime: string
   status: string
+  horseBreed?: string | null
+  horseSpecialNeeds?: string | null
+  previousNotes?: string | null
 }
 
 export interface InterpretedVoiceLog {
@@ -159,8 +162,15 @@ export class VoiceInterpretationService {
     const bookingList = todaysBookings.length > 0
       ? todaysBookings
           .map(
-            (b) =>
-              `- ${b.startTime}: ${b.customerName}, häst: ${b.horseName || "ej angiven"}, tjänst: ${b.serviceName}, status: ${b.status} [ID: ${b.id}]`
+            (b) => {
+              let line = `- ${b.startTime}: ${b.customerName}, häst: ${b.horseName || "ej angiven"}`
+              if (b.horseBreed) line += ` (${b.horseBreed})`
+              if (b.horseSpecialNeeds) line += ` [OBS: ${b.horseSpecialNeeds}]`
+              line += `, tjänst: ${b.serviceName}, status: ${b.status}`
+              if (b.previousNotes) line += ` [Föreg. notering: ${b.previousNotes.slice(0, 100)}]`
+              line += ` [ID: ${b.id}]`
+              return line
+            }
           )
           .join("\n")
       : "Inga bokningar idag."

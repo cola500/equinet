@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import {
   Dialog,
   DialogContent,
@@ -171,9 +171,9 @@ export default function ProviderReviewsPage() {
             <DialogTitle>Svara på recension</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Textarea
+            <VoiceTextarea
               value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
+              onChange={(value) => setReplyText(value)}
               rows={3}
               maxLength={500}
               placeholder="Skriv ditt svar..."

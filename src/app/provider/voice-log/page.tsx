@@ -7,6 +7,7 @@ import { useVoiceWorkLog } from "@/hooks/useVoiceWorkLog"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -284,9 +285,9 @@ export default function VoiceLogPage() {
                   )}
                 </div>
                 {isEditing ? (
-                  <Textarea
+                  <VoiceTextarea
                     value={editedWork}
-                    onChange={(e) => setEditedWork(e.target.value)}
+                    onChange={(value) => setEditedWork(value)}
                     rows={3}
                     className="mt-1"
                   />
@@ -303,9 +304,9 @@ export default function VoiceLogPage() {
               <div>
                 <Label>Anteckning</Label>
                 {isEditing ? (
-                  <Textarea
+                  <VoiceTextarea
                     value={editedObservation}
-                    onChange={(e) => setEditedObservation(e.target.value)}
+                    onChange={(value) => setEditedObservation(value)}
                     rows={2}
                     className="mt-1"
                     placeholder="Hälsoobservation..."

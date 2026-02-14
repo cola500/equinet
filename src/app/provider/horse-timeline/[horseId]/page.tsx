@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
@@ -282,10 +282,10 @@ export default function ProviderHorseTimelinePage() {
                   </div>
                   <div>
                     <Label htmlFor="interval-notes">Anteckning (valfritt)</Label>
-                    <Textarea
+                    <VoiceTextarea
                       id="interval-notes"
                       value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
+                      onChange={(value) => setEditNotes(value)}
                       maxLength={500}
                       placeholder="T.ex. 'Behöver kortare intervall pga hovproblem'"
                       className="mt-1"

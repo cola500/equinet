@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { CalendarBooking } from "@/types"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
@@ -225,9 +225,9 @@ export function BookingDetailDialog({
               </h4>
               {isEditingNotes ? (
                 <div className="space-y-2">
-                  <Textarea
+                  <VoiceTextarea
                     value={providerNotes}
-                    onChange={(e) => setProviderNotes(e.target.value)}
+                    onChange={(value) => setProviderNotes(value)}
                     maxLength={2000}
                     placeholder="Skriv anteckningar om behandlingen..."
                     rows={3}
@@ -410,11 +410,11 @@ export function BookingDetailDialog({
         </AlertDialogHeader>
         <div className="py-2">
           <Label htmlFor="cancel-message-calendar">Meddelande till kund (valfritt)</Label>
-          <Textarea
+          <VoiceTextarea
             id="cancel-message-calendar"
             placeholder="T.ex. anledning till avbokningen..."
             value={cancellationMessage}
-            onChange={(e) => setCancellationMessage(e.target.value)}
+            onChange={(value) => setCancellationMessage(value)}
             maxLength={500}
             className="mt-1.5"
             rows={3}

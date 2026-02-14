@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
@@ -415,11 +415,11 @@ export default function ProviderBookingsPage() {
           </AlertDialogHeader>
           <div className="py-2">
             <Label htmlFor="cancellation-message">Meddelande till kund (valfritt)</Label>
-            <Textarea
+            <VoiceTextarea
               id="cancellation-message"
               placeholder="T.ex. anledning till avbokningen..."
               value={cancellationMessage}
-              onChange={(e) => setCancellationMessage(e.target.value)}
+              onChange={(value) => setCancellationMessage(value)}
               maxLength={500}
               className="mt-1.5"
               rows={3}
@@ -440,6 +440,15 @@ export default function ProviderBookingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Mobile FAB for voice log */}
+      <button
+        onClick={() => router.push("/provider/voice-log")}
+        className="fixed bottom-20 right-4 md:hidden h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors z-40"
+        aria-label="Öppna röstloggning"
+      >
+        <Mic className="w-6 h-6" />
+      </button>
 
       {/* Customer Review Dialog */}
       {reviewBooking && (

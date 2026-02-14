@@ -27,6 +27,9 @@ const SAMPLE_BOOKINGS: BookingContext[] = [
     serviceName: "Hovvård",
     startTime: "09:00",
     status: "confirmed",
+    horseBreed: "Islandshäst",
+    horseSpecialNeeds: "Känsliga hovar",
+    previousNotes: "Verkade alla fyra, bra resultat",
   },
   {
     id: "booking-2",
@@ -282,6 +285,40 @@ describe("VoiceInterpretationService", () => {
       const result = await service.interpret("test", SAMPLE_BOOKINGS)
       expect(result.isSuccess).toBe(true)
       expect(result.value.confidence).toBeLessThanOrEqual(1)
+    })
+
+    it("includes horse breed, special needs, and previous notes in context", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "booking-1",
+              customerName: "Anna Johansson",
+              horseName: "Stella",
+              markAsCompleted: true,
+              workPerformed: "Verkade alla fyra hovarna",
+              horseObservation: null,
+              horseNoteCategory: "farrier",
+              nextVisitWeeks: 8,
+              confidence: 0.95,
+            }),
+          },
+        ],
+      })
+
+      await service.interpret("Klar med Anna", SAMPLE_BOOKINGS)
+
+      const callArgs = mockCreate.mock.calls[0][0]
+      const userMessage = callArgs.messages[0].content
+
+      // Booking 1 has breed, specialNeeds, and previousNotes
+      expect(userMessage).toContain("Islandshäst")
+      expect(userMessage).toContain("OBS: Känsliga hovar")
+      expect(userMessage).toContain("Föreg. notering: Verkade alla fyra")
+
+      // Booking 2 has no extra context -- should NOT contain these markers for it
+      expect(userMessage).not.toContain("OBS: undefined")
     })
 
     it("includes booking context with empty bookings list", async () => {
