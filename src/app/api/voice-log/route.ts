@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     const horseIds = bookings
       .map((b: any) => b.horse?.id)
       .filter(Boolean) as string[]
-    let previousNotesByHorse: Record<string, string> = {}
+    const previousNotesByHorse: Record<string, string> = {}
     if (horseIds.length > 0) {
       const prevBookings = await prisma.booking.findMany({
         where: {

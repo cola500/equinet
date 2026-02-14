@@ -239,7 +239,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**1600+ tester** (115+ E2E desktop + 82+ E2E mobil + 1600+ unit/integration) med **70% coverage**.
+**1630+ tester** (115+ E2E desktop + 82+ E2E mobil + 1630+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
