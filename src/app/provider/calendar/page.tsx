@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { Suspense, useEffect, useState, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
 import { Mic } from "lucide-react"
@@ -22,6 +22,14 @@ import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBann
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
 
 export default function ProviderCalendarPage() {
+  return (
+    <Suspense>
+      <CalendarContent />
+    </Suspense>
+  )
+}
+
+function CalendarContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
