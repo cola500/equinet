@@ -202,14 +202,6 @@ export default function ProviderBookingsPage() {
             <h1 className="text-2xl md:text-3xl font-bold">Bokningar</h1>
             <p className="text-gray-600 mt-1">Hantera dina kundbokningar</p>
           </div>
-          <Button
-            onClick={() => router.push("/provider/voice-log")}
-            variant="outline"
-            className="gap-2"
-          >
-            <Mic className="w-4 h-4" />
-            <span className="hidden sm:inline">Logga med röst</span>
-          </Button>
         </div>
 
         {/* Filter Tabs */}
@@ -459,11 +451,11 @@ export default function ProviderBookingsPage() {
         <button
           onClick={() => router.push("/provider/voice-log")}
           className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
-          aria-label="Öppna röstloggning"
+          aria-label="Logga utfört arbete"
         >
           <Mic className="w-6 h-6" />
         </button>
-        <span className="text-xs font-medium text-gray-600">Diktera</span>
+        <span className="text-xs font-medium text-gray-600">Logga arbete</span>
       </div>
 
       {/* Customer Review Dialog */}

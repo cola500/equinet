@@ -86,12 +86,12 @@ export default function VoiceLogPage() {
             Tillbaka till bokningar
           </Button>
           <h1 className="text-2xl font-bold">
-            {isSupported ? "Röstloggning" : "Arbetslogg"}
+            Logga utfört arbete
           </h1>
           <p className="text-gray-600 mt-1">
             {isSupported
-              ? "Berätta vad du har gjort \u2014 appen tolkar och sparar åt dig."
-              : "Beskriv utfört arbete \u2014 appen tolkar och sparar åt dig."}
+              ? "Berätta vad du gjorde på besöket \u2014 vi kopplar det till rätt bokning."
+              : "Beskriv vad du gjorde på besöket \u2014 vi kopplar det till rätt bokning."}
           </p>
         </div>
 
