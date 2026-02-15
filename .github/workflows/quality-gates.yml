@@ -45,8 +45,8 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run unit tests
-        run: npm run test:run
+      - name: Run unit tests with coverage
+        run: npx vitest run --coverage --coverage.thresholds.lines=70
 
   # E2E tests
   e2e-tests:
@@ -194,6 +194,30 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      - name: Check Swedish characters
+        run: npm run check:swedish
+
+  # Security audit
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true  # Warn, don't block initially
+
   # Build verification
   build:
     name: Build Check
@@ -242,7 +266,7 @@ jobs:
   quality-gate-passed:
     name: Quality Gate Passed
     runs-on: ubuntu-latest
-    needs: [unit-tests, e2e-tests, type-check, build, lint]
+    needs: [unit-tests, e2e-tests, type-check, build, lint, security-audit]
     if: always()
 
     steps:
@@ -267,5 +291,8 @@ jobs:
           if [[ "${{ needs.lint.result }}" != "success" ]]; then
             echo "❌ Lint check failed"
             exit 1
+          fi
+          if [[ "${{ needs.security-audit.result }}" != "success" ]]; then
+            echo "⚠️ Security audit had issues (non-blocking)"
           fi
           echo "✅ All quality gates passed!"

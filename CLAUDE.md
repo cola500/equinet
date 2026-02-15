@@ -295,9 +295,17 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 
 ---
 
-## Agent-Team
+## Agent-Team (3 agenter)
 
-> Se [docs/AGENTS.md](docs/AGENTS.md) för fullständig guide och quick reference.
+> Se [docs/AGENTS.md](docs/AGENTS.md) för fullständig guide och trigger-kriterier.
+
+```
+Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
+Nya API-routes?              -> security-reviewer (EFTER implementation)
+Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
+```
+
+Övriga kvalitetskontroller (TDD, lint, typecheck, coverage, svenska) hanteras automatiskt av `/implement`, Husky hooks och CI.
 
 ---
 

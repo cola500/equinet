@@ -1,186 +1,95 @@
 # Agent-Team Guide
 
-> Equinet har **7 specialiserade agenter** som tacker alla kritiska områden från MVP till produktion.
+> Equinet har **3 specialiserade agenter** som kompletterar den automatiserade kvalitetspipelinen.
 
 ## Innehåll
 
 1. [Agent-Översikt](#agent-översikt)
-2. [När Använda Vilken Agent](#när-använda-vilken-agent)
-3. [Agent-Kombinationer](#agent-kombinationer-för-olika-uppgifter)
-4. [Best Practices](#best-practices-arbeta-med-agenter)
-5. [Quick Reference](#quick-reference)
-6. [Exempel-Scenarios](#exempel-scenarios)
+2. [Trigger-kriterier](#trigger-kriterier)
+3. [Best Practices](#best-practices)
+4. [Quick Reference](#quick-reference)
 
 ---
 
 ## Agent-Översikt
 
-| Agent | Färg | Ansvar | Använd när |
-|-------|------|--------|------------|
-| **security-reviewer** | Red | Säkerhetsrevision (OWASP, auth, data) | Efter nya API endpoints, före produktion |
-| **cx-ux-reviewer** | Blue | UX/användarupplevelse | Efter UI-implementering, användarresor |
-| **tech-architect** | Purple | Arkitektur & teknisk planering | Nya features, performance-problem |
-| **test-lead** | Cyan | Test-strategi & TDD-workflow | Efter feature-implementation, coverage-gap |
-| **data-architect** | Green | Prisma schema & datamodellering | Nya datamodeller, query-optimering |
-| **quality-gate** | Yellow | DoD-verifiering & release management | Före merge, före release |
-| **performance-guardian** | Orange | Performance & observability | Performance-problem, monitoring-design |
+| Agent | Ansvar | Trigger |
+|-------|--------|---------|
+| **security-reviewer** | Säkerhetsrevision (OWASP, auth, data) | Efter nya/ändrade API-routes |
+| **tech-architect** | Arkitektur, datamodellering, performance | Nya features, schema-design, performance-problem |
+| **cx-ux-reviewer** | UX/användarupplevelse | Efter nya sidor eller UI-flöden |
+
+### Vad täcktes tidigare av borttagna agenter?
+
+| Borttagen agent | Täcks nu av |
+|-----------------|-------------|
+| test-lead | TDD inbyggt i `/implement`-skillen |
+| data-architect | Absorberad i **tech-architect** |
+| quality-gate | Automatiserade hooks (Husky pre-push) + CI |
+| performance-guardian | Absorberad i **tech-architect** |
 
 ---
 
-## När Använda Vilken Agent
+## Trigger-kriterier
 
 ### security-reviewer
 
-- Efter implementerat ny auth-logik eller API-endpoints
+Kör **efter** att nya eller ändrade API-routes är implementerade:
+
+- Nya endpoints i `src/app/api/`
+- Ändrad auth-logik eller session-hantering
+- Kod som hanterar PII eller känslig data
 - Före deploy till produktion
-- När API exponerar känslig user data
-- Efter säkerhetskritisk kod (payment, PII)
 
-### cx-ux-reviewer
-
-- Efter implementerat bokningsformulär eller användarflöde
-- När UX-feedback behövs proaktivt
-- Efter nya UI-komponenter
-- Vid användbarhetsproblem
+`/implement`-skillen triggar automatiskt en påminnelse om security-review när API-routes ändrats.
 
 ### tech-architect
 
-- Nya major features som kräver arkitekturella beslut
-- Performance-problem som påverkar skalning
-- "Ska vi implementera caching nu eller senare?" - Data-driven beslut
-- "Vilken arkitektur för pagination?" - Jämför alternativ
-- **Inte för:** Enkel buggfix, UI-tweaks
+Kör **före** implementation när:
 
-### test-lead
+- Nya major features kräver arkitekturella beslut
+- Nya datamodeller behöver designas (Prisma schema)
+- Performance-problem behöver utredas (queries, caching, skalning)
+- Flera relaterade features ska planeras tillsammans
 
-- Efter feature-implementation - "Är testerna tillräckliga?"
-- Coverage-rapport visar gap - "Vad saknas?"
-- Komplex test-scenario - "Hur testar jag conditional fields?"
-- TDD-planering - "Vilka tester ska jag skriva först?"
+### cx-ux-reviewer
 
-### data-architect
+Kör **efter** implementation när:
 
-- Nya datamodeller - "Hur designar jag schema för länkade bokningar?"
-- Performance-problem - "Vilka indexes behövs?"
-- Query-optimering - "Är detta N+1 problem?"
-- Migration-planering - "SQLite till PostgreSQL, vad krävs?"
+- Nya sidor skapats i `src/app/(protected)/` eller `src/app/(public)/`
+- Nya bokningsflöden eller användarresor implementerats
+- Befintliga UI-flöden ändrats väsentligt
 
-### quality-gate
-
-- Före merge - "Uppfyller vi DoD?"
-- Före release - "Är vi redo för v1.4.0?"
-- Breaking changes - "Vad påverkas?"
-- Pre-push check - "Allt grönt?"
-
-### performance-guardian
-
-- Performance-problem - "Varför är dashboard långsam?"
-- Production-förberedelse - "Hur implementerar vi monitoring?"
-- Skalningsplanering - "Klarar vi 1000 samtidiga användare?"
-- Caching-strategi - "Ska vi cacha provider-listan?"
+`/implement`-skillen flaggar automatiskt när nya sidor skapats.
 
 ---
 
-## Agent-Kombinationer för Olika Uppgifter
-
-### Sprint-Planering
-```
-tech-architect (arkitektur & roadmap)
-+ data-architect (datamodellering)
-+ performance-guardian (skalbarhet)
-```
-
-### Feature-Implementation (TDD-workflow)
-```
-1. test-lead (designa tester FÖRST)
-2. [Implementera feature]
-3. quality-gate (DoD-verifiering)
-4. security-reviewer (om säkerhetskritisk)
-```
-
-### Pre-Merge Checklist
-```
-quality-gate (DoD compliance)
-+ security-reviewer (om säkerhetskritisk kod)
-+ test-lead (coverage-kontroll)
-```
-
-### Performance-Optimering
-```
-performance-guardian (bottleneck-identifiering)
-+ data-architect (query-optimering, indexes)
-+ tech-architect (caching-strategi)
-```
-
-### UX/Design Review
-```
-cx-ux-reviewer (användarupplevelse)
-+ test-lead (E2E-tester för user flows)
-```
-
----
-
-## Best Practices: Arbeta med Agenter
+## Best Practices
 
 ### DO
 
-- **Använd agenter proaktivt** - Inte bara när problem uppstår
-- **Kombinera agenter** - Låt flera agenter granska olika aspekter
-- **Följ rekommendationer** - Agenter är byggda på projekt-specifik kunskap
-- **Dokumentera learnings** - Uppdatera CLAUDE.md med nya insights från agenter
+- **Kör security-reviewer på alla nya API-routes** -- det är den enda agenten som har bevisat värde konsekvent
+- **Kör tech-architect tidigt** -- före implementation, inte efter
+- **Kör cx-ux-reviewer på nya sidor** -- fångar UX-problem innan användare gör det
 
 ### DON'T
 
-- **Skippa quality-gate** - DoD existerar av en anledning
-- **Ignorera security-reviewer** - Säkerhet är kritisk
-- **Vänta med test-lead** - TDD = tests först, inte efteråt
+- **Kör INTE agenter för saker som är automatiserade** -- lint, typecheck, svenska, coverage hanteras av hooks och CI
+- **Kör INTE tech-architect för enkel CRUD** -- den är för arkitekturella beslut
+- **Kör INTE cx-ux-reviewer för backend-ändringar** -- den är för användargränssnitt
 
 ---
 
 ## Quick Reference
 
 ```
-Nya features?        -> tech-architect + data-architect + test-lead
-Performance issue?   -> performance-guardian + data-architect
-Säkerhetsaudit?      -> security-reviewer
-UX-feedback?         -> cx-ux-reviewer
-Coverage-gap?        -> test-lead
-Före merge?          -> quality-gate
-Datamodellering?     -> data-architect
-Hitta kod?           -> Explore (eller Read om du vet fil)
-```
-
----
-
-## Exempel-Scenarios
-
-### Scenario 1: Ny Feature "Payment Integration"
-
-```
-1. tech-architect    -> Analysera arkitektur och tredjepartsberoenden
-2. data-architect    -> Designa schema för transactions och invoices
-3. test-lead         -> Planera test-suite (TDD!)
-4. [Implementera feature med TDD]
-5. security-reviewer -> Granska PCI-compliance och säkerhet
-6. quality-gate      -> Verifiera DoD innan merge
-```
-
-### Scenario 2: "Dashboard är långsam"
-
-```
-1. performance-guardian -> Identifiera bottleneck
-2. data-architect       -> Analysera queries och föreslå indexes
-3. tech-architect       -> Designa caching-strategi om behövs
-4. test-lead            -> Lägg till performance-regression tests
-```
-
-### Scenario 3: "Klar att deploya v1.4.0?"
-
-```
-1. quality-gate         -> Pre-release checklist
-2. security-reviewer    -> Final security audit
-3. performance-guardian -> Verifiera monitoring är redo
-4. test-lead            -> Konfirmera alla tester passerar
+Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
+Nya API-routes?              -> security-reviewer (EFTER implementation)
+Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
+Datamodellering/Prisma?      -> tech-architect
+Performance-problem?         -> tech-architect
+Coverage/tester?             -> Automatiserat (CI + /implement)
+DoD/kvalitetscheck?          -> Automatiserat (Husky + CI)
 ```
 
 ---
@@ -189,4 +98,3 @@ Hitta kod?           -> Explore (eller Read om du vet fil)
 
 - [CLAUDE.md](../CLAUDE.md) - Utvecklingsguide
 - [GOTCHAS.md](GOTCHAS.md) - Vanliga problem och lösningar
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Bidragsguide
