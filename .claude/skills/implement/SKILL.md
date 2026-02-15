@@ -42,7 +42,36 @@ Phase 2: <description> (N files)
 ...
 ```
 
-Then proceed to implementation. Do NOT wait for confirmation -- the user approved the plan already.
+Then proceed to plan validation.
+
+## 1b. Validate plan completeness
+
+Before starting implementation, quickly scan the plan for common quality gaps.
+For each item below, check if the plan addresses it. If not, note it and account
+for it during implementation. This is NOT a gate -- it's a quick sanity check.
+
+### API routes checklist (if plan includes new/changed API routes)
+- [ ] Auth pattern specified (session check)
+- [ ] Rate limiting mentioned
+- [ ] Zod validation with `.strict()`
+- [ ] Where does providerId/customerId come from? (must be session)
+- [ ] Error messages language (must be Swedish)
+
+### Data model checklist (if plan includes schema changes)
+- [ ] Is this a core domain? (Booking, Provider, Service, Review, CustomerReview, Horse) -> needs repository
+- [ ] New fields on existing models? -> check ALL select blocks in codebase
+- [ ] Migration strategy for existing data? (NOT NULL without default fails)
+
+### UI checklist (if plan includes new pages/components)
+- [ ] Swedish strings identified (labels, placeholders, errors, toasts)
+- [ ] Mobile-first considered? (responsive pattern)
+- [ ] Which existing components to reuse? (Dialog, VoiceTextarea, StarRating)
+
+### Missing from plan?
+
+List anything the plan should have addressed but didn't. Add these as
+notes to carry into implementation. If everything looks good, note "Plan covers
+all quality dimensions" and proceed.
 
 ## 2. Implement phase by phase
 
@@ -116,32 +145,33 @@ npm run typecheck 2>&1
 
 Must be 0 errors.
 
+### 3b2. Lint
+
+```bash
+npm run lint 2>&1
+```
+
+Must have 0 errors. Fix any lint issues before proceeding.
+
 ### 3c. Swedish character audit
 
-Scan ALL changed/new files for Swedish text missing special characters. Common mistakes:
+```bash
+npm run check:swedish
+```
 
-| Wrong | Correct |
-|-------|---------|
-| andra | andra (not always wrong) / andra |
-| lamna | lamna |
-| atgard | atgard |
-| oppettider | oppettider |
-| oversikt | oversikt |
-| stallning | stallning |
-| tjanst | tjanst |
-| arende | arende |
-| forsta | forsta |
-
-Check:
-- UI strings (labels, placeholders, error messages, toast notifications)
-- Test descriptions
-- Comments in Swedish
-
-If any Swedish text is missing special characters, fix it immediately.
+If the check fails, fix the Swedish characters and run again.
 
 ### 3d. Security spot-check (for API routes)
 
-For any new or changed API routes, verify:
+First, check if any API routes were created or changed:
+
+```bash
+git diff --name-only | grep "src/app/api/"
+```
+
+If API route files were changed, run the security-check skill on each changed route.
+
+Additionally verify manually:
 - [ ] Auth check (session) at the top
 - [ ] Rate limiting applied
 - [ ] JSON parsing in try-catch
@@ -158,6 +188,17 @@ git diff --name-only | grep "src/app/api/" | head -20
 ```
 
 If any API route files changed, verify they use `logger` not `console.*`.
+
+### 3f. UX review flag
+
+Check if new pages were created:
+
+```bash
+git diff --name-only | grep "src/app/(protected)\|src/app/(public)"
+```
+
+If new pages were created, add to the summary report:
+"UX review recommended -- run cx-ux-reviewer on new pages."
 
 ## 4. Summary report
 
