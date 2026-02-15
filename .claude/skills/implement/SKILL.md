@@ -73,6 +73,54 @@ List anything the plan should have addressed but didn't. Add these as
 notes to carry into implementation. If everything looks good, note "Plan covers
 all quality dimensions" and proceed.
 
+## 1c. Choose implementation strategy
+
+The plan can be implemented with two strategies. Choose based on the feature's characteristics:
+
+### Layer-by-layer (default)
+
+Best for: features with well-understood integration points, pure backend work, or pure UI work.
+
+```
+Phase 1: Schema + migration
+Phase 2: Repository + service + tests
+Phase 3: API route + tests
+Phase 4: UI components
+Phase 5: Integration
+```
+
+### Walking Skeleton (alternative)
+
+Best for: features that touch all three layers (schema + API + UI) AND where integration
+contracts are uncertain (new data shapes, unfamiliar UI patterns, first use of an API).
+
+```
+Phase 1: Thin vertical slice (minimal schema + simple API route + simple UI component, all connected)
+Phase 2: Fill in business logic (repository, service, validation, tests)
+Phase 3: Fill in UI details (mobile, error handling, edge cases, polish)
+```
+
+**Walking Skeleton rules:**
+- Phase 1 uses hardcoded/minimal data -- just enough to prove the layers connect
+- Phase 1 skips tests (it's a spike through the stack, not production code yet)
+- Phase 2 adds TDD as normal -- write tests for the real business logic
+- Phase 3 handles all the edge cases the skeleton ignored
+
+**When to choose Walking Skeleton:**
+- The plan mentions a new data shape that the UI will consume (select-block mismatches found early)
+- The feature involves a UI pattern you haven't used before in this project
+- The plan has 4+ phases and the last phase is "integration" or "connect the pieces"
+- You're unsure if the API response shape will work well for the UI
+
+Note the strategy choice in your summary output:
+```
+Strategy: Walking Skeleton (touches all layers, new data shape)
+```
+or
+```
+Strategy: Layer-by-layer (backend-only change)
+```
+
 ## 2. Implement phase by phase
 
 For EACH phase, follow this cycle:

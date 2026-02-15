@@ -74,6 +74,21 @@ Use this template (based on 21 existing retros in the project):
 ### <Pattern-namn>
 <Beskrivning av monstret och hur det ateranvands>
 
+## 5 Whys (Root-Cause Analysis)
+
+For the 2-3 most significant problems encountered during the session, ask "why?" five
+times to find the root cause. Skip this section if the session had no notable problems.
+
+### Problem: <kort beskrivning>
+1. Varfor? <forsta svaret>
+2. Varfor? <djupare orsak>
+3. Varfor? <annu djupare>
+4. Varfor? <nara grundorsaken>
+5. Varfor? <grundorsak>
+
+**Atgard:** <systemforbattring, inte bara en fix>
+**Status:** Implementerad / Att gora / Parkerad
+
 ## Larandeeffekt
 
 **Nyckelinsikt:** <Viktigaste lardomen fran sessionen>
@@ -84,6 +99,7 @@ Fill in each section based on the analysis from step 1. Be specific:
 - "Vad gick bra" should highlight 2-4 concrete wins (TDD catches, pattern reuse, etc.)
 - "Vad kan forbattras" should be honest about shortcuts or tech debt
 - "Patterns att spara" should document reusable patterns for future sessions
+- "5 Whys" should dig into 2-3 notable problems to find root causes and systemic fixes. Skip if no significant problems occurred. The goal is system improvements (process, tooling, documentation), not just one-off fixes.
 
 ## 3. Assess which docs need updating
 
