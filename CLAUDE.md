@@ -1,6 +1,7 @@
 # CLAUDE.md - Utvecklingsguide för Equinet
 
 > **Hur** vi arbetar i projektet. För **vad** som är byggt, se README.md.
+> Kontextspecifika regler laddas automatiskt via `.claude/rules/` (API, test, E2E, Prisma, UI).
 
 ## Snabbreferens
 
@@ -12,11 +13,8 @@
 | Production Deploy | [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) |
 | Bokningsflöde & Betalning | [docs/SERVICE-BOOKING-FLOW.md](docs/SERVICE-BOOKING-FLOW.md) |
 | Tidigare Retros | [docs/retrospectives/](docs/retrospectives/) |
-| Sprint-historik | [docs/sprints/](docs/sprints/) |
-| Säkerhetsaudit | [docs/SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) |
 | Databas-arkitektur | [docs/DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
 | Production Readiness | [NFR.md](NFR.md) |
-| Användarforskning | [docs/user-research/](docs/user-research/) |
 | Röstloggning | [docs/VOICE-WORK-LOGGING.md](docs/VOICE-WORK-LOGGING.md) |
 
 ---
@@ -47,8 +45,6 @@ npm run release:major        # Force major bump
 git push --follow-tags origin main
 ```
 
-**Commit-typer:** `feat:` -> Minor, `fix:` -> Patch, `BREAKING CHANGE:` -> Major
-
 ### Deploy till produktion
 
 ```bash
@@ -57,17 +53,11 @@ npm run env:status          # Visa vilken databas som är aktiv (lokal/Supabase)
 npm run migrate:check       # Visa migrationer som kan behöva appliceras på Supabase
 ```
 
-**Deploy-ordning vid schemaändring:**
-1. `prisma migrate dev --name beskrivning` (lokalt)
-2. `npm run deploy` (push till GitHub -> Vercel auto-deploy)
-3. `apply_migration` via Claude MCP (Supabase)
-4. Verifiera: `/api/health` + Sentry
+**Deploy-ordning vid schemaändring:** Se `.claude/rules/prisma.md`
 
 ---
 
 ## Testing (TDD är Obligatoriskt!)
-
-### TDD-cykeln
 
 ```
 1. RED:    Skriv test som failar
@@ -75,100 +65,14 @@ npm run migrate:check       # Visa migrationer som kan behöva appliceras på Su
 3. REFACTOR: Förbättra utan att bryta test
 ```
 
-**Claude ska:**
-1. Visa dig testet INNAN implementation
-2. Köra testet (verifiera att det failar)
-3. Implementera
-4. Köra testet igen (verifiera grönt)
-
-### Skriv tester FÖRST för:
-- API routes (högst prioritet!)
-- Domain services och affärslogik
-- Utilities och hooks
-
+**Skriv tester FÖRST för:** API routes, domain services, utilities och hooks.
 **Coverage-mål:** API Routes >= 80%, Utilities >= 90%, Overall >= 70%
 
-### Behavior-Based Testing (API Routes)
-
-Testa **vad** API:et gör, inte **hur** det gör det.
-
-```typescript
-// BAD: Implementation-based
-expect(prisma.provider.findMany).toHaveBeenCalledWith(
-  expect.objectContaining({ include: { services: true } })
-)
-
-// GOOD: Behavior-based
-expect(response.status).toBe(200)
-expect(data[0]).toMatchObject({
-  id: expect.any(String),
-  businessName: expect.any(String),
-})
-
-// MANDATORY: Security assertions
-expect(data[0].user.passwordHash).toBeUndefined()
-```
-
-**Varför?** Tester överlever refactorings, testar API-kontrakt, fångar säkerhetsproblem.
-
----
-
-## Kritiska Patterns
-
-### API Route Pattern
-
-```typescript
-export async function POST(request: Request) {
-  try {
-    // 1. Auth
-    const session = await auth()
-    if (!session) return new Response("Unauthorized", { status: 401 })
-
-    // 2. Parse JSON med error handling
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
-    }
-
-    // 3. Validera med Zod
-    const validated = schema.parse(body)
-
-    // 4. Authorization check (atomärt i WHERE clause!)
-    // 5. Databas-operation
-    const result = await prisma.model.create({ data: validated })
-
-    return NextResponse.json(result)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.issues },
-        { status: 400 }
-      )
-    }
-    console.error("Error:", error)
-    return new Response("Internal error", { status: 500 })
-  }
-}
-```
-
-### Filstruktur
-
-```
-src/app/api/[feature]/
-├── route.ts              # GET, POST
-├── route.test.ts         # Tester
-├── [id]/
-│   ├── route.ts          # GET, PUT, DELETE
-│   └── route.test.ts
-```
+> Se `.claude/rules/testing.md` för behavior-based testing och gotchas.
 
 ---
 
 ## Arkitektur (DDD-Light)
-
-Vi använder Domain-Driven Design pragmatiskt - inte dogmatiskt.
 
 ### Lagerstruktur
 
@@ -191,60 +95,25 @@ src/
 
 ### Repository Pattern (OBLIGATORISKT för kärndomäner)
 
-```typescript
-// RÄTT: Route använder repository
-const booking = await bookingRepository.findById(id)
-
-// FEL: Route använder Prisma direkt för kärndomän
-const booking = await prisma.booking.findUnique({ where: { id } })
-```
-
 **Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`, `Horse`
 **Stöddomäner** (Prisma OK): `AvailabilityException`, `AvailabilitySchedule`
 
-### Domain Service Pattern
-
-Använd när logik:
-- Spänner över flera entiteter
-- Innehåller affärsregler
-- Behöver återanvändas
-
-```typescript
-// src/domain/booking/BookingService.ts
-class BookingService {
-  constructor(
-    private bookingRepo: IBookingRepository,
-    private providerRepo: IProviderRepository
-  ) {}
-
-  async createBooking(dto: CreateBookingDTO): Promise<Result<Booking, BookingError>> {
-    // 1. Validera provider finns
-    // 2. Kolla överlapp
-    // 3. Skapa bokning
-    // 4. Returnera Result (inte throw)
-  }
-}
-```
-
 ### Checklista för ny feature
 
-- [ ] Är det en kärndomän? → Använd repository
-- [ ] Finns affärslogik? → Lägg i domain service
-- [ ] Behövs validering? → Överväg value object
-- [ ] Enkel CRUD? → Prisma direkt är OK
+- [ ] Är det en kärndomän? -> Använd repository
+- [ ] Finns affärslogik? -> Lägg i domain service
+- [ ] Behövs validering? -> Överväg value object
+- [ ] Enkel CRUD? -> Prisma direkt är OK
 
 ---
 
 ## Refactoring Guidelines
 
-### Principer
-
-1. **Start minimal**: Identifiera det specifika problemet. "Kan detta lösas genom att **ta bort kod**?" Inkrementella förbättringar > omskrivningar.
-2. **Respektera befintliga patterns**: Prisma direkt för CRUD, repository för kärndomäner, Server Components default, Zod, shadcn/ui. **Introducera INTE nya patterns** utan diskussion.
-3. **Filgranularitet**: 1 välorganiserad 300-rads fil > 10 x 30-rads filer. Dela upp vid ~400-500 rader. Undantag: återanvändbara React-komponenter med egen state.
-4. **Komponentextrahering**: Extrahera vid 3+ återanvändningar ELLER genuint komplex (100+ rader). Mikro-komponenter (10-20 rader) motiverar sällan egna filer.
+1. **Start minimal**: "Kan detta lösas genom att **ta bort kod**?" Inkrementella förbättringar > omskrivningar.
+2. **Respektera befintliga patterns**: Introducera INTE nya patterns utan diskussion.
+3. **Filgranularitet**: 1 välorganiserad 300-rads fil > 10 x 30-rads filer. Dela upp vid ~400-500 rader.
+4. **Komponentextrahering**: Extrahera vid 3+ återanvändningar ELLER genuint komplex (100+ rader).
 5. **Simple > Complex > Complicated**: Minsta nödvändiga komplexitet.
-6. **Diskutera före större ändringar**: Arkitekturella ändringar, nya beroenden, patterns som påverkar teamet.
 
 ---
 
@@ -260,44 +129,21 @@ class BookingService {
 - [ ] Säker (Zod-validering, error handling, ingen XSS/SQL injection)
 - [ ] Unit tests skrivna FÖRST, E2E uppdaterade, coverage >= 70%
 - [ ] Feature branch, alla tester gröna, mergad till main
-- [ ] Docs uppdaterade: README.md, docs/API.md, CLAUDE.md Key Learnings
-
----
-
-## Production Readiness
-
-> Scorecard & gap-stories: [NFR.md](NFR.md)
-> Deploy-guide: [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md)
-
-### Environment Variables (MANDATORY)
-```bash
-DATABASE_URL="postgresql://..."
-NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="https://..."
-UPSTASH_REDIS_REST_URL="..."
-UPSTASH_REDIS_REST_TOKEN="..."
-NEXT_PUBLIC_SENTRY_DSN="https://..."
-```
-
----
-
-## Debugging (UI -> DB)
-
-**Checklist:** Browser console -> Network tab -> Server terminal -> Prisma Studio
+- [ ] Docs uppdaterade vid behov
 
 ---
 
 ## Säkerhet
 
-**Implementerat:** bcrypt hashing, HTTP-only cookies, CSRF, Prisma (SQL injection), React (XSS), Zod validering, session + ownership checks.
+**Implementerat:** bcrypt, HTTP-only cookies, CSRF, Prisma (SQL injection), React (XSS), Zod, session + ownership checks.
 
-**Checklist nya API routes:** Session check -> Zod validation -> Ownership i WHERE clause -> Error handling (Zod, Prisma, JSON) -> `logger` (INTE `console.*`) -> `rateLimiters`
+> Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
 ---
 
 ## Agent-Team (3 agenter)
 
-> Se [docs/AGENTS.md](docs/AGENTS.md) för fullständig guide och trigger-kriterier.
+> Se [docs/AGENTS.md](docs/AGENTS.md) för fullständig guide.
 
 ```
 Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
@@ -305,96 +151,23 @@ Nya API-routes?              -> security-reviewer (EFTER implementation)
 Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 ```
 
-Övriga kvalitetskontroller (TDD, lint, typecheck, coverage, svenska) hanteras automatiskt av `/implement`, Husky hooks och CI.
-
 ---
 
-## Key Learnings
+## Key Learnings (tvärgående)
 
-### Operationella fällor
-- **TypeScript heap OOM**: Använd `npm run typecheck` (inte `npx tsc --noEmit`). `tsconfig.typecheck.json` exkluderar testfiler + incremental builds.
-- **Prisma Studio zombie-processer**: Stängs inte automatiskt -- ackumuleras och äter DB-connections. Symptom: `MaxClientsInSessionMode`. Fix: `pkill -f "prisma studio"`.
-- **`ignoreBuildErrors: true` i next.config.ts**: MEDVETEN optimering -- ta INTE bort. TypeScript checkas i CI. Utan den: 14+ min build istället för ~50s.
-- **`db:seed:force` invaliderar sessioner**: Raderar alla användare -- aktiva sessioner blir ogiltiga. Logga ut/in efter reseed.
-- **Prisma migration workflow**: Använd `prisma migrate dev` för schemaändringar (INTE `db push`). Baseline migration `0_init` representerar hela schemat. Nya migreringar: `npx prisma migrate dev --name beskrivning`. Committa alltid `prisma/migrations/`.
+> Filspecifika learnings finns i `.claude/rules/`.
 
-### API & Säkerhet
-- **Rate limiting FÖRE request-parsing**: Annars kan angripare spamma utan att trigga rate limit.
-- **Prisma `select` > `include`**: Både performance och säkerhet -- förhindrar PII-exponering (t.ex. passwordHash).
-- **JSON parsing MÅSTE ha try-catch**: Annars 500 istället för 400 vid ogiltig JSON.
-- **`$transaction` kräver `@ts-expect-error`**: Kända TS-inferensproblem med callback-syntax.
-
-### Testing
-- **E2E: undvik `waitForTimeout()`** -- använd explicit waits (`waitFor({ state: 'visible' })`).
-- **E2E: unika identifiers** med `Date.now()` för test isolation.
-- **E2E: `getByRole` > `getByLabel` > `getByPlaceholder`** -- mest robust selektor.
-- **E2E: kör isolerat vid debugging** -- `npx playwright test file.spec.ts:215`.
-- **FormData i vitest**: JSDOM stödjer inte `FormData` + `File` -- mocka `request.formData()` direkt.
-- **Class-baserade mocks för `new`-anrop**: Arrow functions ger "is not a constructor".
-
-### Utvecklingsmönster
+- **TypeScript heap OOM**: Använd `npm run typecheck` (inte `npx tsc --noEmit`).
+- **`ignoreBuildErrors: true` i next.config.ts**: MEDVETEN -- ta INTE bort.
 - **Schema-först**: Prisma-schema -> API -> UI ger typsäkerhet hela vägen.
 - **Factory pattern vid 3+ dependencies**: Obligatoriskt för DI i routes.
-- **Definiera error-kontrakt före implementation**: Bestäm HTTP-status-mappning i förväg.
-- **`select` i repository måste inkludera alla fält UI:n behöver**: Kontrollera vid schema-ändringar.
 - **Serverless-begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
-- **Vercel region MÅSTE matcha Supabase**: `regions: ["fra1"]` i `vercel.json` for `eu-central-2`. Utan detta: ~150ms latens per query istallet for ~5ms.
-- **`connection_limit=1` i serverless**: Varje Vercel-instans hanterar en request. `connection_limit=10` = 10x for hog belastning pa Supabase pooler.
-- **Undvik dubbel-fetch i React**: `useEffect([], [])` + debounce-effect med samma deps triggas bada vid mount. Lat debounce-effecten hantera allt med `delay = hasFilters ? 500 : 0`.
-- **Commit innan deploy**: Deploya ALDRIG till Vercel utan att committa forst. Produktion och git maste vara i synk.
-- **Kor `get_advisors` efter nya tabeller**: RLS missades pa `HorseServiceInterval`. Supabase security linter fangar detta.
-- **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta, färre tester, enklare UI. Lägg till redigering senare vid behov.
-- **Befintliga DDD-patterns skalar bra**: Nya domäner (t.ex. CustomerReview) byggs snabbt genom att följa Review-mallen.
-- **Query + Map-dedup for aggregeringar**: Kundlistan bygger rika vyer fran Booking-tabellen utan nya tabeller -- smart query + Map-baserad deduplicering i JS.
-- **Junction-tabell for N:M overrides**: `HorseServiceInterval(horseId, providerId)` for per-hast override. Ateranvandbart monster for overridebara relationer.
-- **Runtime-beraknad status**: Due-for-service (overdue/upcoming/ok) beraknas i API, inte DB. Alltid aktuell, ingen synkronisering.
-- **Kontrollera ALLA select-block vid nytt falt**: providerNotes missades forst i passport-route. Vid nytt falt pa befintlig modell -- sok i hela kodbasen efter alla select/mapping/query som ror modellen.
-- **Hook-extrahering för mobil/desktop**: Extrahera logik till hook -> skapa två UI-skal (mobil Drawer + desktop Dialog) -> sidan blir limkod med `isMobile ? <Mobil /> : <Desktop />`. Ger testbar logik, separerade UI-varianter, kraftig radreducering.
-- **ResponsiveDialog-mönster**: `src/components/ui/responsive-dialog.tsx` wrapprar Dialog (desktop) + Drawer (mobil) bakom gemensamt API. Återanvänd för alla modala flöden.
-- **Touch targets centraliserade**: `min-h-[44px] sm:min-h-0` inbakat i Button (default/lg), Input, SelectTrigger. `size="sm"` knappar får INTE automatiska touch targets -- lägg till manuellt vid behov. Nativa element (button, select, span, a): använd `touch-target` CSS utility.
-- **Felmeddelanden ALLTID på svenska**: `NextResponse.json({ error: "..." })` ska vara på svenska. Logger-meddelanden (`logger.error(...)`) förblir på engelska (för utvecklare). Ordlista: "Ej inloggad", "Åtkomst nekad", "Ogiltig JSON", "Valideringsfel", "Internt serverfel", "Kunde inte X".
-- **UI/API-gränsvalidering**: När UI erbjuder värden (t.ex. radie 25/50/100/200km), verifiera att API:et accepterar hela spannet. `MAX_RADIUS_KM` höjdes 100->200 efter bugg.
-- **Geocoding != substring-sökning**: Debounce-auto-sök funkar för text-matchning men inte geocoding (partiella ortnamn ger fel resultat). Behåll Enter/klick-trigger för geocoding.
-- **E2E futureWeekday()**: `futureDate()` kan landa på helger -- leverantören har mån-fre. Använd `futureWeekday()` från `e2e/setup/e2e-utils.ts` för alla seedade framtida bokningar.
-- **E2E annons-status**: `seedProviderAnnouncement()` måste ha `status: 'open'` (inte `pending`). Public announcements-API:t filtrerar på `status: 'open'`.
-- **E2E shadcn-selektorer**: `.border.rounded-lg` matchar INTE längre shadcn Cards. Använd `[data-slot="card"]` eller semantiska selektorer (`getByRole`, `getByText`).
-- **E2E iterate-pattern**: När UI har flera matchande element, iterera `cards.nth(i)` istället för `.first()` -- hitta rätt element baserat på state (t.ex. orecenserad bokning).
-- **E2E Route stop tvåstegsflöde**: pending -> "Påbörja besök" -> in_progress -> "Markera som klar" -> completed. Tester måste hantera båda stegen.
-- **ResponsiveAlertDialog**: `src/components/ui/responsive-alert-dialog.tsx` -- samma mönster som `responsive-dialog.tsx`. Använd för alla bekräftelsedialoger (avboka, ta bort, lämna). **KRITISKT: ALDRIG always-mounted** (`open={!!state}`). Använd ALLTID villkorad rendering (`{state && <Dialog open={true}>}`). Always-mounted kraschar på mobil vid hydration-switch mellan AlertDialog och Drawer.
-- **ResponsiveAlertDialog/Dialog använder Context**: Barn-komponenter läser `isMobile` via React Context (inte egna `useIsMobile()`-anrop). Detta förhindrar hydration mismatch där parent=Drawer men child=AlertDialogContent. ALDRIG lägg till oberoende `useIsMobile()` i sub-komponenter.
-- **ResponsiveAlertDialogAction stänger INTE dialogen automatiskt**: På mobil renderas Action som vanlig Button (inte Radix AlertDialogAction). Action handlers MÅSTE explicit stänga dialogen (`setState(null)`) -- annars fungerar desktop men mobil-drawern stannar öppen. Samma gäller Cancel.
-- **ResponsiveAlertDialogCancel behöver explicit onClick**: På mobil renderas Cancel som vanlig Button (inte Radix AlertDialogCancel), så auto-close fungerar inte. Lägg alltid till `onClick={() => setState(null)}`.
-- **AlertDialog ur .map()**: Rendera ALDRIG AlertDialog med AlertDialogTrigger inuti `.map()`. Använd kontrollerad state (`itemToDelete`) + en enda dialog utanför loopen. Bättre DOM-prestanda och mobilkompatibelt.
-- **Mobil touch target-pattern**: `min-h-[44px] sm:min-h-0` på knappar/inputs + `flex-col gap-2 sm:flex-row` för knapp-stacking + `grid-cols-1 sm:grid-cols-2` för formulär-grid.
-- **Rename Next.js route-mappar**: `git mv` (bevarar historik) + custom SQL migration (`ALTER TABLE RENAME TO` -- Prisma auto-detekterar inte rename). Uppdatera bottom-up: Interface -> Repo -> Service -> Route. Verifiera med `grep` att noll kvarvarande referenser finns.
-- **Hästprofil (f.d. hästpass)**: `/api/horses/[id]/profile` (skapa delbar länk) + `/api/profile/[token]` (publik sida). Ersätter alla `/passport/`-routes. `HorseProfileToken`-tabell (f.d. `HorsePassportToken`).
-- **Horse registrationNumber + microchipNumber**: UELN (Unique Equine Life Number) + mikrochip-ID. Nullable, max 15 tecken. Synliga överallt: ägare, leverantörer, delad profil, CSV-export.
-- **Prisma-migration MÅSTE köras på Supabase separat**: Vercel deploy uppdaterar bara koden, INTE databasen. Efter `git push` med schemaändringar: kör `apply_migration` via Supabase MCP eller `prisma migrate deploy`. Annars får Prisma-klienten "column does not exist"-fel i produktion. **Checklista vid schemaändring**: (1) skapa lokal migrationsfil (`mkdir` + `migration.sql`), (2) `apply_migration` på Supabase, (3) `prisma migrate resolve --applied <name>`, (4) verifiera med `execute_sql`. OBS: Hoppa ALDRIG över steg 1 -- utan lokal fil detekterar Prisma "drift" och blockerar `migrate dev`.
-- **acceptingNewCustomers-pattern**: Boolean på Provider (`@default(true)`) + validering i `BookingService.createBooking()` (INTE `createManualBooking()`). Befintlig kund = minst 1 completed booking. Optional dep `hasCompletedBookingWith?` i `BookingServiceDeps` för bakåtkompatibilitet. HTTP 403 för avvisade nya kunder.
-- **Switch med auto-save (utan edit-mode)**: `onCheckedChange` gör direkt `PUT` + toast. Passar för standalone boolean-inställningar. Kräver att `businessName` (required i Zod) skickas med i body.
-- **LLM-output MÅSTE Zod-valideras**: Använd `safeParse()` med `.default()` och `.transform()` istället för `as`-cast. LLM kan returnera fel typer, saknade fält, eller oväntade värden. Validera referens-ID:n mot känd context (prompt injection-skydd).
-- **AI-features kräver extra granskning**: Rate limiting (kostnadsskydd), LLM-output-validering, prompt injection-skydd (bookingId mot context-lista), och graceful degradation (text fallback vid saknat Speech API).
-- **Speech API fallback-pattern**: `isSupported` styr hela UI:t -- dölj mic, byt titel, anpassa placeholder. Textinmatning funkar alltid som primärt gränssnitt.
-- **VoiceTextarea som universal dikteringsyta**: `src/components/ui/voice-textarea.tsx` ersätter `Textarea` överallt där leverantörer skriver fritext. Drop-in-replacement: byt import + ändra `onChange` från `(e) => setValue(e.target.value)` till `(value) => setValue(value)`. Använd på alla nya leverantörs-textfält.
-- **FAB-mönster för mobil**: `fixed bottom-20 right-4 md:hidden h-14 w-14 rounded-full shadow-lg bg-green-600 z-40`. Undviker bottom nav, synlig utan att blocka. Återanvänd för viktiga mobil-genvägar.
-- **Berikad LLM-kontext via DB-join**: Extra `findMany` för relaterad historik (t.ex. senaste notering per häst) ger markant bättre AI-tolkningar. Minimal DB-kostnad, stor kvalitetsökning.
-- **E2E mobil viewport**: `playwright.config.ts` har `mobile` projekt (Pixel 7, Chromium). Kör med `--project=mobile`. Desktop-nav (`hidden md:block`) orsakar strict mode violations -- använd `getByRole('heading', { exact: true })` eller exakta textmatchningar. Skip-pattern: `test.skip(test.info().project.name === 'mobile', 'reason')`.
-- **iPhone-device kräver WebKit**: `devices['iPhone 14']` använder WebKit (kräver `npx playwright install webkit`). Pixel 7 använder Chromium -- enklare, testar samma viewport-beteende.
-- **Kör ALDRIG desktop+mobil E2E samtidigt**: Delar dev-server (`workers: 1`) -- resurskonflikter ger falska failures. Playwright hanterar detta automatiskt vid `npm run test:e2e`.
-- **updateWithAuth-mönster**: Samma som `deleteWithAuth` -- atomic `WHERE { id, providerId }`. Returnerar uppdaterat objekt (eller null). Återanvänd för alla modifierande operationer på provider-ägda resurser.
-- **Prisma migrate med befintliga rader**: `NOT NULL` utan default failar om tabellen har data. Fix: `--create-only`, ändra SQL till `ADD COLUMN ... DEFAULT now()`, kör `migrate dev` igen. Prisma genererar automatiskt en extra migration som droppar default.
-- **Inline edit i listor**: State `editingItem | null` + `editContent`. Klick på Pencil sätter state, formuläret ersätter texten inline. Edit och add bör vara ömsesidigt uteslutande.
-- **requireAdmin()-pattern**: `src/lib/admin-auth.ts` kastar Response (401/403) istället för att returnera boolean. Routes fångar i catch: `if (error instanceof Response) return error`. En rad per route istället för 8 rader duplicerad admin-check.
-- **Admin-routes i middleware**: `/admin/:path*` och `/api/admin/:path*` i middleware matcher + `isAdmin`-check. Defense in depth: middleware *plus* per-route `requireAdmin()`. Icke-admin sidor -> redirect till `/`, API -> 403.
-- **Konsolidera admin-vyer**: Använd en gemensam sida med `?type=`-filter istället för separata sidor per entitetstyp. API-routen anpassar `select`/`where` baserat på typ-param. `/admin/users?type=provider` ersatte `/admin/providers`.
-- **Flerradsceller i tabeller**: Gruppera relaterad info (företag + namn + e-post) i en cell med `font-medium` + `text-xs text-gray-500` + `text-xs text-gray-400`. Reducerar kolumner utan dataförlust.
-- **In-memory runtime settings**: `src/lib/settings/runtime-settings.ts` -- synkron `Record<string, string>` modul. Nollställs vid serveromstart. Admin API (`/api/admin/settings`) med ALLOWED_KEYS whitelist. Använd för runtime-toggles som inte behöver persisteras.
-- **Next.js `.env.local` trumfar `.env`**: Vercel CLI skapar `.env.local` automatiskt. Vid byte av DATABASE_URL: uppdatera BÅDA filerna. Prioritetsordning: `.env.local` > `.env`.
-- **Lokal PostgreSQL (Docker Compose)**: `docker-compose.yml` med `postgres:17-alpine`. `npm run db:up/db:down/db:nuke`. Matcha alltid PG-version med produktion. Alla migrationer appliceras utan ändring.
-- **Automatisk backup vid deploy**: `npm run deploy` detekterar pending migrationer och kör `db:backup` automatiskt. Backups sparas i `backups/` (gitignored, 30 dagars retention). Drift-check (`db:drift-check`) blockerar deploy om Supabase har migrationer som inte finns lokalt.
-- **AI Service-mönster (3 instanser)**: `VoiceInterpretationService` (interpret + interpretQuickNote) och `CustomerInsightService` följer identiskt mönster: constructor `{ apiKey }`, `Result<T, Error>`, Zod-schema med `.default()` + `.transform()`, `stripMarkdownCodeBlock()`, factory + error-mapping. Kopiera detta vid nya AI-features.
-- **POST utan body för AI-generering**: `insights/route.ts` använder POST utan request body -- all data hämtas server-side via URL-param + session. Inga Zod-scheman/JSON-parsing behövs. Enklare och säkrare.
-- **vi.mock() måste inkludera ALLA exports**: När en hel modul mockas med `vi.mock()` blir icke-mockade exports `undefined`. `mapInsightErrorToStatus` var `undefined` i route-test -> 500 istället för 400. Inkludera ALLTID alla använda exports i mock-factory.
+- **Vercel region MÅSTE matcha Supabase**: `regions: ["fra1"]` i `vercel.json` for `eu-central-2`.
+- **`connection_limit=1` i serverless**: Varje Vercel-instans hanterar en request.
+- **Commit innan deploy**: Deploya ALDRIG till Vercel utan att committa först.
+- **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
+- **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta. Lägg till redigering vid behov.
+- **AI Service-mönster**: Kopiera `VoiceInterpretationService`-mönstret vid nya AI-features.
 
 ---
 
@@ -402,65 +175,24 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 **Lokal (Husky pre-push):** `npm run test:run` + `npm run typecheck`
 **CI (GitHub Actions):** Unit tests + coverage, E2E, TypeScript, Build
-**Branch Protection:** Inaktiverat för MVP.
 
 ---
 
 ## Aktuell Sprint: Sprint 2
 
 **Theme:** Fix flakiness -> CI automation -> BookingRepository
-**Duration:** 2 veckor
 **Goal:** 100% E2E pass rate + Automated quality gates + BookingRepository
 
-### Implementation Order
-
-**Phase 1: CRITICAL BLOCKERS** (Dag 1-2)
-- F2-2: Document Environment Setup
-- F2-5: Test Data Management Strategy (BLOCKER)
-
-**Phase 2: CI FOUNDATION** (Dag 2-3)
-- F2-1: Complete E2E in CI
-- F2-4: Automate Pre-merge Gate
-
-**Phase 3: FEATURE DEVELOPMENT** (Dag 4-7)
-- F2-3: BookingRepository Implementation
-
-### Success Criteria
-
-- [ ] 47/47 E2E tests passing (100%)
-- [ ] E2E tests kör i CI
-- [ ] Automated pre-merge gate (Husky)
-- [ ] BookingRepository med 100% coverage
-- [ ] `/api/bookings/*` använder repository
-
-### Known Issues
-
-**E2E Test Flakiness:** booking.spec.ts:16 + route-planning.spec.ts:48
-- Root Cause: State/timing issues mellan tester
-- Fix: Test isolation pattern i F2-5
-
-> Sprint workflow & retrospectives: [docs/retrospectives/](docs/retrospectives/)
-
----
-
-## Design System
-
-- **Färger**: Primary `green-600`, Background `gray-50`, Text `gray-900`/`gray-600`
-- **Komponenter**: shadcn/ui (`npx shadcn@latest add [component]`)
-- **Forms**: React Hook Form + Zod
+> Sprint detaljer: [docs/sprints/](docs/sprints/)
 
 ---
 
 ## Resurser
 
-- **README.md** - Vad som är byggt, roadmap
 - **prisma/schema.prisma** - Databasschema (source of truth)
 - **src/lib/auth.ts** - NextAuth config
-- [Next.js Docs](https://nextjs.org/docs)
-- [Prisma Docs](https://www.prisma.io/docs)
-- [shadcn/ui Docs](https://ui.shadcn.com)
+- [Next.js Docs](https://nextjs.org/docs) | [Prisma Docs](https://www.prisma.io/docs) | [shadcn/ui Docs](https://ui.shadcn.com)
 
 ---
 
-**Skapad av**: Claude Code
-**Senast uppdaterad**: 2026-02-13
+**Senast uppdaterad**: 2026-02-15
