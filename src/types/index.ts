@@ -120,6 +120,7 @@ export interface CalendarBooking {
   startTime: string
   endTime: string
   status: string
+  horseId?: string
   horseName?: string
   horseInfo?: string
   customerNotes?: string

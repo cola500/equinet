@@ -27,6 +27,7 @@ import { CalendarBooking } from "@/types"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
+import Link from "next/link"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null
@@ -166,7 +167,16 @@ export function BookingDetailDialog({
               {booking.horseName && (
                 <div>
                   <span className="text-gray-600">Häst:</span>{" "}
-                  <span className="font-medium">{booking.horseName}</span>
+                  {booking.horseId ? (
+                    <Link
+                      href={`/provider/horse-timeline/${booking.horseId}`}
+                      className="font-medium text-green-700 underline hover:text-green-900"
+                    >
+                      {booking.horseName}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{booking.horseName}</span>
+                  )}
                 </div>
               )}
               {booking.payment?.invoiceNumber && (

@@ -26,6 +26,7 @@ import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
 import { Mic } from "lucide-react"
+import Link from "next/link"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -274,13 +275,29 @@ export default function ProviderBookingsPage() {
                       {(booking.horse || booking.horseName) && (
                         <div className="text-sm">
                           <span className="text-gray-600">Häst:</span>{" "}
-                          <span className="font-medium">
-                            {booking.horse?.name || booking.horseName}
-                          </span>
-                          {booking.horse?.breed && (
-                            <span className="text-gray-500 ml-1">
-                              ({booking.horse.breed})
-                            </span>
+                          {booking.horseId ? (
+                            <Link
+                              href={`/provider/horse-timeline/${booking.horseId}`}
+                              className="font-medium text-green-700 underline hover:text-green-900"
+                            >
+                              {booking.horse?.name || booking.horseName}
+                              {booking.horse?.breed && (
+                                <span className="text-gray-500 ml-1">
+                                  ({booking.horse.breed})
+                                </span>
+                              )}
+                            </Link>
+                          ) : (
+                            <>
+                              <span className="font-medium">
+                                {booking.horse?.name || booking.horseName}
+                              </span>
+                              {booking.horse?.breed && (
+                                <span className="text-gray-500 ml-1">
+                                  ({booking.horse.breed})
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       )}
