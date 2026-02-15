@@ -7,6 +7,7 @@ import { SWRProvider } from "@/components/providers/SWRProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from "@/components/layout/Footer";
 import { DevBanner } from "@/components/layout/DevBanner";
+import { CookieNotice } from "@/components/layout/CookieNotice";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
               <Footer />
             </div>
             <Toaster />
+            <CookieNotice />
           </SWRProvider>
         </SessionProvider>
       </body>
