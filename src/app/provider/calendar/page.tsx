@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
 import { Mic } from "lucide-react"
 import { toast } from "sonner"
@@ -23,6 +23,8 @@ import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types
 
 export default function ProviderCalendarPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
   const { isLoading, isProvider } = useAuth()
   const isMobile = useIsMobile()
   const { bookings: rawBookings, mutate: mutateBookings } = useSWRBookings()
@@ -122,6 +124,22 @@ export default function ProviderCalendarPage() {
     }
   }, [providerId, fetchAvailability, fetchExceptions])
 
+  // Återställ dialog vid tillbaka-navigation (URL -> state)
+  const bookingIdFromUrl = searchParams.get('bookingId')
+  useEffect(() => {
+    if (bookingIdFromUrl && bookings?.length && !dialogOpen) {
+      const booking = bookings.find(b => b.id === bookingIdFromUrl)
+      if (booking) {
+        setSelectedBooking(booking)
+        setDialogOpen(true)
+      }
+    }
+    if (!bookingIdFromUrl && dialogOpen) {
+      setDialogOpen(false)
+      setSelectedBooking(null)
+    }
+  }, [bookingIdFromUrl, bookings]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handlePrevious = () => {
     if (viewMode === "month") {
       setCurrentDate((prev) => subMonths(prev, 1))
@@ -157,6 +175,20 @@ export default function ProviderCalendarPage() {
   const handleBookingClick = (booking: CalendarBooking) => {
     setSelectedBooking(booking)
     setDialogOpen(true)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('bookingId', booking.id)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open)
+    if (!open) {
+      setSelectedBooking(null)
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('bookingId')
+      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname
+      router.replace(newUrl, { scroll: false })
+    }
   }
 
   const handleDayClick = (dayOfWeek: number) => {
@@ -273,7 +305,7 @@ export default function ProviderCalendarPage() {
       }
 
       toast.success("Bokning uppdaterad!")
-      setDialogOpen(false)
+      handleDialogClose(false)
       mutateBookings()
     } catch (error) {
       console.error("Error updating booking:", error)
@@ -441,7 +473,7 @@ export default function ProviderCalendarPage() {
       <BookingDetailDialog
         booking={selectedBooking}
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogClose}
         onStatusUpdate={handleStatusUpdate}
         onReviewSuccess={() => mutateBookings()}
         onNotesUpdate={(bookingId, notes) => {
