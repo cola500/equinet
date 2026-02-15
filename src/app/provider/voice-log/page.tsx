@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import {
-  ArrowLeft,
   Mic,
   MicOff,
   Send,
@@ -76,15 +75,6 @@ export default function VoiceLogPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="mb-2 -ml-2"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Tillbaka
-          </Button>
           <h1 className="text-2xl font-bold">
             Logga utfört arbete
           </h1>
