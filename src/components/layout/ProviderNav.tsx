@@ -14,6 +14,7 @@ import {
   UserPlus,
   Star,
   User,
+  Mic,
 } from "lucide-react"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 
@@ -25,6 +26,7 @@ const providerTabs: TabItem[] = [
 
 const providerMoreItems: MoreMenuItem[] = [
   { href: "/provider/services", label: "Mina tjänster", icon: Wrench },
+  { href: "/provider/voice-log", label: "Röstlogg", icon: Mic, matchPrefix: "/provider/voice-log" },
   { href: "/provider/route-planning", label: "Ruttplanering", icon: Route, matchPrefix: "/provider/route" },
   { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements" },
   { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
@@ -38,6 +40,7 @@ const navItems = [
   { href: "/provider/dashboard", label: "Översikt" },
   { href: "/provider/calendar", label: "Kalender" },
   { href: "/provider/bookings", label: "Bokningar" },
+  { href: "/provider/voice-log", label: "Röstlogg", matchPrefix: "/provider/voice-log" },
   { href: "/provider/services", label: "Mina tjänster" },
   { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route" },
   { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements" },

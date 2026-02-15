@@ -86,7 +86,7 @@ export function VoiceTextarea({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder || (isSupported ? "Skriv eller tryck på mikrofonen för att diktera..." : undefined)}
         rows={rows}
         maxLength={maxLength}
         disabled={disabled}
@@ -107,6 +107,7 @@ export function VoiceTextarea({
               : "text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 shadow-sm bg-white"
           )}
           aria-label={isRecording ? "Stoppa inspelning" : "Starta röstinmatning"}
+          title={isRecording ? "Stoppa inspelning" : "Tryck för att diktera"}
         >
           {isRecording ? (
             <MicOff className="h-5 w-5" />

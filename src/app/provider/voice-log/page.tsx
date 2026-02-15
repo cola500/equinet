@@ -206,15 +206,15 @@ export default function VoiceLogPage() {
                 <h4 className="font-medium">Matchad bokning</h4>
                 {interpreted.confidence >= 0.7 ? (
                   <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">
-                    Hög säkerhet
+                    Rätt bokning hittad
                   </span>
                 ) : interpreted.confidence >= 0.4 ? (
                   <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">
-                    Medel \u2014 kontrollera valet nedan
+                    Kontrollera \u2014 stämmer bokningen?
                   </span>
                 ) : (
                   <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700">
-                    Låg \u2014 välj rätt bokning nedan
+                    Välj bokning \u2014 vi hittade ingen match
                   </span>
                 )}
               </div>

@@ -208,7 +208,7 @@ export default function ProviderBookingsPage() {
             className="gap-2"
           >
             <Mic className="w-4 h-4" />
-            <span className="hidden sm:inline">Röstlogg</span>
+            <span className="hidden sm:inline">Logga med röst</span>
           </Button>
         </div>
 
@@ -455,13 +455,16 @@ export default function ProviderBookingsPage() {
       </AlertDialog>
 
       {/* Mobile FAB for voice log */}
-      <button
-        onClick={() => router.push("/provider/voice-log")}
-        className="fixed bottom-20 right-4 md:hidden h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors z-40"
-        aria-label="Öppna röstloggning"
-      >
-        <Mic className="w-6 h-6" />
-      </button>
+      <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
+        <button
+          onClick={() => router.push("/provider/voice-log")}
+          className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
+          aria-label="Öppna röstloggning"
+        >
+          <Mic className="w-6 h-6" />
+        </button>
+        <span className="text-xs font-medium text-gray-600">Diktera</span>
+      </div>
 
       {/* Customer Review Dialog */}
       {reviewBooking && (

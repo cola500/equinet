@@ -104,12 +104,12 @@ export function QuickNoteButton({
         variant="outline"
         size={variant === "icon" ? "icon" : "sm"}
         onClick={handleMicClick}
-        title="Snabbnotering"
+        title="Diktera en anteckning"
         className={variant === "icon" ? "h-8 w-8" : ""}
       >
         <Mic className="h-4 w-4" />
         {variant === "inline" && (
-          <span className="ml-1">Snabbnotering</span>
+          <span className="ml-1">Diktera anteckning</span>
         )}
       </Button>
     )
