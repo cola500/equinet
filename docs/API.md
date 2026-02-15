@@ -2353,6 +2353,50 @@ Sparar tolkad röstloggning (uppdaterar providerNotes, markerar completed, skapa
 }
 ```
 
+## Kundinsikter (Customer Insights)
+
+### POST /api/provider/customers/[customerId]/insights
+
+Genererar AI-drivna kundinsikter baserat på bokningshistorik, anteckningar, recensioner och hästar.
+
+**Auth:** Provider (403 för icke-providers)
+
+**Request body:** Ingen (all data hämtas server-side)
+
+**Förutsättningar:**
+- Leverantören måste ha en kundrelation med kunden (completed booking eller manuellt tillagd)
+- Rate limit: `rateLimiters.ai` (20/min)
+
+**Response 200:**
+```json
+{
+  "insight": {
+    "frequency": "Regelbunden (var 6:e vecka)",
+    "topServices": ["Hovvård", "Hovbeslag"],
+    "patterns": ["Bokar alltid måndag fm"],
+    "riskFlags": ["2 avbokningar senaste 3 mån"],
+    "vipScore": "medium",
+    "summary": "Regelbunden kund med två hästar.",
+    "confidence": 0.85
+  },
+  "metrics": {
+    "totalBookings": 12,
+    "completedBookings": 10,
+    "cancelledBookings": 2,
+    "totalSpent": 18000,
+    "avgBookingIntervalDays": 42,
+    "lastBookingDate": "2026-01-15",
+    "firstBookingDate": "2025-03-01"
+  }
+}
+```
+
+**Felkoder:**
+- `400` - Kunden har inga genomförda bokningar
+- `403` - Ej provider / ingen kundrelation
+- `429` - Rate limited
+- `503` - AI API-nyckel saknas
+
 ---
 
-*Senast uppdaterad: 2026-02-13 (Vokabulärinlärning, röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*
+*Senast uppdaterad: 2026-02-15 (Kundinsikter, vokabulärinlärning, röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*

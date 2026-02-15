@@ -31,6 +31,7 @@ import {
   ResponsiveAlertDialogAction,
 } from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
+import { CustomerInsightCard } from "@/components/customer/CustomerInsightCard"
 import {
   Search,
   ChevronDown,
@@ -906,6 +907,11 @@ export default function ProviderCustomersPage() {
                         Inga anteckningar ännu
                       </p>
                     )}
+                  </div>
+
+                  {/* Customer Insights */}
+                  <div className="mt-4 pt-4 border-t">
+                    <CustomerInsightCard customerId={customer.id} />
                   </div>
 
                   {/* Delete customer button (only for manually added) */}

@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
+import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
 import { Mic } from "lucide-react"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
@@ -363,6 +364,11 @@ export default function ProviderBookingsPage() {
                       >
                         Markera som genomförd
                       </Button>
+                      <QuickNoteButton
+                        bookingId={booking.id}
+                        variant="inline"
+                        onNoteSaved={() => mutateBookings()}
+                      />
                       <Button
                         onClick={() => {
                           setBookingToCancel(booking.id)
@@ -377,26 +383,33 @@ export default function ProviderBookingsPage() {
                   )}
 
                   {booking.status === "completed" && (
-                    <div className="mt-4 pt-4 border-t">
-                      {booking.customerReview ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Din recension:</span>
-                          <StarRating rating={booking.customerReview.rating} readonly size="sm" />
-                          {booking.customerReview.comment && (
-                            <span className="text-sm text-gray-500 truncate max-w-[200px]">
-                              - {booking.customerReview.comment}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setReviewBooking(booking)}
-                        >
-                          Recensera kund
-                        </Button>
-                      )}
+                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {booking.customerReview ? (
+                          <>
+                            <span className="text-sm text-gray-600">Din recension:</span>
+                            <StarRating rating={booking.customerReview.rating} readonly size="sm" />
+                            {booking.customerReview.comment && (
+                              <span className="text-sm text-gray-500 truncate max-w-[200px]">
+                                - {booking.customerReview.comment}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setReviewBooking(booking)}
+                          >
+                            Recensera kund
+                          </Button>
+                        )}
+                      </div>
+                      <QuickNoteButton
+                        bookingId={booking.id}
+                        variant="icon"
+                        onNoteSaved={() => mutateBookings()}
+                      />
                     </div>
                   )}
                 </CardContent>

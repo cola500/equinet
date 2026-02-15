@@ -112,6 +112,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:resend-verification",
       }),
+      ai: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(20, "1 m"),
+        analytics: true,
+        prefix: "ratelimit:ai",
+      }),
     }
   }
 
@@ -245,6 +251,7 @@ async function checkRateLimit(
     serviceCreate: { max: 100, window: 60 * 60 * 1000 },
     geocode: { max: 100, window: 60 * 1000 },
     resendVerification: { max: 50, window: 15 * 60 * 1000 },
+    ai: { max: 200, window: 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -344,4 +351,9 @@ export const rateLimiters = {
    * Resend verification email: 3 attempts per 15 minutes
    */
   resendVerification: async (identifier: string) => checkRateLimit('resendVerification', identifier),
+
+  /**
+   * AI/LLM calls: 20 requests per minute (cost protection)
+   */
+  ai: async (identifier: string) => checkRateLimit('ai', identifier),
 }

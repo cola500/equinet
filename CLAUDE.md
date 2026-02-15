@@ -384,6 +384,9 @@ NEXT_PUBLIC_SENTRY_DSN="https://..."
 - **Next.js `.env.local` trumfar `.env`**: Vercel CLI skapar `.env.local` automatiskt. Vid byte av DATABASE_URL: uppdatera BÅDA filerna. Prioritetsordning: `.env.local` > `.env`.
 - **Lokal PostgreSQL (Docker Compose)**: `docker-compose.yml` med `postgres:17-alpine`. `npm run db:up/db:down/db:nuke`. Matcha alltid PG-version med produktion. Alla migrationer appliceras utan ändring.
 - **Automatisk backup vid deploy**: `npm run deploy` detekterar pending migrationer och kör `db:backup` automatiskt. Backups sparas i `backups/` (gitignored, 30 dagars retention). Drift-check (`db:drift-check`) blockerar deploy om Supabase har migrationer som inte finns lokalt.
+- **AI Service-mönster (3 instanser)**: `VoiceInterpretationService` (interpret + interpretQuickNote) och `CustomerInsightService` följer identiskt mönster: constructor `{ apiKey }`, `Result<T, Error>`, Zod-schema med `.default()` + `.transform()`, `stripMarkdownCodeBlock()`, factory + error-mapping. Kopiera detta vid nya AI-features.
+- **POST utan body för AI-generering**: `insights/route.ts` använder POST utan request body -- all data hämtas server-side via URL-param + session. Inga Zod-scheman/JSON-parsing behövs. Enklare och säkrare.
+- **vi.mock() måste inkludera ALLA exports**: När en hel modul mockas med `vi.mock()` blir icke-mockade exports `undefined`. `mapInsightErrorToStatus` var `undefined` i route-test -> 500 istället för 400. Inkludera ALLTID alla använda exports i mock-factory.
 
 ---
 

@@ -26,6 +26,7 @@ import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { CalendarBooking } from "@/types"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
+import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null
@@ -220,9 +221,20 @@ export function BookingDetailDialog({
           {/* Leverantorsanteckningar */}
           {["confirmed", "completed"].includes(booking.status) ? (
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-gray-700">
-                Dina anteckningar
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm text-gray-700">
+                  Dina anteckningar
+                </h4>
+                {!isEditingNotes && (
+                  <QuickNoteButton
+                    bookingId={booking.id}
+                    variant="icon"
+                    onNoteSaved={(cleanedText) => {
+                      onNotesUpdate?.(booking.id, cleanedText)
+                    }}
+                  />
+                )}
+              </div>
               {isEditingNotes ? (
                 <div className="space-y-2">
                   <VoiceTextarea
