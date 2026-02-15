@@ -22,10 +22,10 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
+    const isAllowed = await rateLimiters.ai(clientIp)
     if (!isAllowed) {
       return NextResponse.json(
-        { error: "För många anrop. Försök igen om en stund." },
+        { error: "För många AI-förfrågningar. Försök igen om en stund." },
         { status: 429 }
       )
     }

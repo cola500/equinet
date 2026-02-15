@@ -187,7 +187,7 @@ Transkribering:
       const response = await client.messages.create({
         model: "claude-sonnet-4-5-20250929",
         max_tokens: 1024,
-        system: buildSystemPrompt(vocabularyPrompt),
+        system: [{ type: "text" as const, text: buildSystemPrompt(vocabularyPrompt), cache_control: { type: "ephemeral" as const } }],
         messages: [{ role: "user", content: userMessage }],
       })
 
@@ -226,7 +226,126 @@ Transkribering:
       })
     }
   }
+
+  async interpretQuickNote(
+    transcript: string,
+    context: QuickNoteContext
+  ): Promise<Result<InterpretedQuickNote, VoiceLogError>> {
+    if (!transcript.trim()) {
+      return Result.fail({
+        type: "NO_TRANSCRIPT",
+        message: "Ingen transkribering att tolka",
+      })
+    }
+
+    if (!this.apiKey) {
+      return Result.fail({
+        type: "API_KEY_MISSING",
+        message: "Anthropic API-nyckel saknas",
+      })
+    }
+
+    let contextInfo = `Kund: ${context.customerName}, Häst: ${context.horseName || "ej angiven"}, Tjänst: ${context.serviceType}`
+    if (context.horseBreed) contextInfo += `, Ras: ${context.horseBreed}`
+    if (context.specialNeeds) contextInfo += `, Specialbehov: ${context.specialNeeds}`
+
+    const userMessage = `Kontext: ${contextInfo}\n\nAnteckning:\n"${transcript}"`
+
+    try {
+      const client = new Anthropic({ apiKey: this.apiKey })
+
+      const response = await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 512,
+        system: [{ type: "text" as const, text: QUICK_NOTE_SYSTEM_PROMPT, cache_control: { type: "ephemeral" as const } }],
+        messages: [{ role: "user", content: userMessage }],
+      })
+
+      const content = response.content[0]
+      if (content.type !== "text") {
+        return Result.fail({
+          type: "INTERPRETATION_FAILED",
+          message: "Oväntat svar från AI",
+        })
+      }
+
+      const cleanedText = stripMarkdownCodeBlock(content.text)
+      const rawParsed = JSON.parse(cleanedText)
+      const validated = quickNoteSchema.safeParse(rawParsed)
+
+      if (!validated.success) {
+        return Result.fail({
+          type: "INTERPRETATION_FAILED",
+          message: "AI-svaret hade ogiltigt format",
+        })
+      }
+
+      return Result.ok(validated.data as InterpretedQuickNote)
+    } catch (error) {
+      return Result.fail({
+        type: "INTERPRETATION_FAILED",
+        message: `Kunde inte tolka anteckningen: ${error instanceof Error ? error.message : "Okänt fel"}`,
+      })
+    }
+  }
 }
+
+// -----------------------------------------------------------
+// Quick note types & schema
+// -----------------------------------------------------------
+
+export interface QuickNoteContext {
+  customerName: string
+  horseName: string | null
+  serviceType: string
+  horseBreed?: string | null
+  specialNeeds?: string | null
+}
+
+export interface InterpretedQuickNote {
+  cleanedText: string
+  isHealthRelated: boolean
+  horseNoteCategory: "farrier" | "veterinary" | "general" | "medication" | null
+  suggestedNextWeeks: number | null
+}
+
+const quickNoteSchema = z.object({
+  cleanedText: z.string(),
+  isHealthRelated: z.boolean().default(false),
+  horseNoteCategory: z
+    .enum(["farrier", "veterinary", "general", "medication"])
+    .nullable()
+    .default(null),
+  suggestedNextWeeks: z
+    .number()
+    .int()
+    .min(1)
+    .max(52)
+    .nullable()
+    .default(null),
+})
+
+const QUICK_NOTE_SYSTEM_PROMPT = `Du är en assistent för hästtjänsteleverantörer i Sverige.
+Du får en kort anteckning som leverantören dikterat efter ett besök. Din uppgift:
+
+1. **Städa upp texten**: Gör den grammatiskt korrekt, tydlig och professionell. Behåll alla fakta.
+2. **Klassificera**: Innehåller anteckningen en hälsoobservation om hästen?
+3. **Kategorisera**: Om hälsorelaterad, vilken kategori? (farrier/veterinary/general/medication)
+4. **Uppföljning**: Nämner leverantören när nästa besök bör ske? Ange antal veckor.
+
+Returnera BARA JSON:
+{
+  "cleanedText": "Uppstädad anteckning",
+  "isHealthRelated": true/false,
+  "horseNoteCategory": "farrier"|"veterinary"|"general"|"medication"|null,
+  "suggestedNextWeeks": nummer eller null
+}
+
+Regler:
+- Behåll fakta, ta bort fyllnadsord och upprepningar
+- Hälsoobservationer: skador, sprickor, sjukdomar, medicin, onormalt beteende, korrigeringar
+- Rutinarbete utan observationer = INTE hälsorelaterat
+- Svara BARA med JSON`
 
 // -----------------------------------------------------------
 // Error mapping

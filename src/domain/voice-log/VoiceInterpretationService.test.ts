@@ -321,6 +321,38 @@ describe("VoiceInterpretationService", () => {
       expect(userMessage).not.toContain("OBS: undefined")
     })
 
+    it("sends system prompt with cache_control for prompt caching", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              bookingId: "booking-1",
+              customerName: "Anna",
+              horseName: "Stella",
+              markAsCompleted: false,
+              workPerformed: "Test",
+              horseObservation: null,
+              horseNoteCategory: null,
+              nextVisitWeeks: null,
+              confidence: 0.8,
+            }),
+          },
+        ],
+      })
+
+      await service.interpret("test", SAMPLE_BOOKINGS)
+
+      const callArgs = mockCreate.mock.calls[0][0]
+      expect(callArgs.system).toEqual([
+        expect.objectContaining({
+          type: "text",
+          cache_control: { type: "ephemeral" },
+        }),
+      ])
+      expect(callArgs.system[0].text).toContain("Du är en assistent")
+    })
+
     it("includes booking context with empty bookings list", async () => {
       mockCreate.mockResolvedValue({
         content: [
@@ -380,9 +412,9 @@ describe("VoiceInterpretationService", () => {
       expect(result.isSuccess).toBe(true)
       // Verify the system prompt includes the vocabulary
       const callArgs = mockCreate.mock.calls[0][0]
-      expect(callArgs.system).toContain("hovbeslag")
-      expect(callArgs.system).toContain("hovkapning")
-      expect(callArgs.system).toContain("Leverantörens anpassade termer")
+      expect(callArgs.system[0].text).toContain("hovbeslag")
+      expect(callArgs.system[0].text).toContain("hovkapning")
+      expect(callArgs.system[0].text).toContain("Leverantörens anpassade termer")
     })
 
     it("works without vocabulary prompt (backward compatible)", async () => {
@@ -410,7 +442,221 @@ describe("VoiceInterpretationService", () => {
       expect(result.isSuccess).toBe(true)
       const callArgs = mockCreate.mock.calls[0][0]
       // System prompt should NOT contain vocabulary section
-      expect(callArgs.system).not.toContain("Leverantörens anpassade termer")
+      expect(callArgs.system[0].text).not.toContain("Leverantörens anpassade termer")
+    })
+  })
+
+  describe("interpretQuickNote", () => {
+    it("returns error when transcript is empty", async () => {
+      const result = await service.interpretQuickNote("", {
+        customerName: "Anna",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+      })
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("NO_TRANSCRIPT")
+    })
+
+    it("returns error when API key is missing", async () => {
+      const originalKey = process.env.ANTHROPIC_API_KEY
+      delete process.env.ANTHROPIC_API_KEY
+      const serviceNoKey = new VoiceInterpretationService({ apiKey: undefined })
+
+      const result = await serviceNoKey.interpretQuickNote("test", {
+        customerName: "Anna",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+      })
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("API_KEY_MISSING")
+
+      process.env.ANTHROPIC_API_KEY = originalKey
+    })
+
+    it("cleans up transcript and classifies as health-related", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              cleanedText: "Spricka i höger framhov, korrigerade vinkeln två grader.",
+              isHealthRelated: true,
+              horseNoteCategory: "farrier",
+              suggestedNextWeeks: 6,
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpretQuickNote(
+        "Storm hade en liten spricka i höger framhov, korrigerade vinkeln två grader, kolla om sex veckor",
+        { customerName: "Anna", horseName: "Storm", serviceType: "Hovvård" }
+      )
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.cleanedText).toBe("Spricka i höger framhov, korrigerade vinkeln två grader.")
+      expect(result.value.isHealthRelated).toBe(true)
+      expect(result.value.horseNoteCategory).toBe("farrier")
+      expect(result.value.suggestedNextWeeks).toBe(6)
+    })
+
+    it("handles non-health-related note", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              cleanedText: "Verkade alla fyra, inga anmärkningar.",
+              isHealthRelated: false,
+              horseNoteCategory: null,
+              suggestedNextWeeks: null,
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpretQuickNote(
+        "Verkade alla fyra inga anmärkningar",
+        { customerName: "Erik", horseName: "Blansen", serviceType: "Hovvård" }
+      )
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.isHealthRelated).toBe(false)
+      expect(result.value.horseNoteCategory).toBeNull()
+      expect(result.value.suggestedNextWeeks).toBeNull()
+    })
+
+    it("uses Haiku model for quick notes (cost optimization)", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              cleanedText: "Test",
+              isHealthRelated: false,
+              horseNoteCategory: null,
+              suggestedNextWeeks: null,
+            }),
+          },
+        ],
+      })
+
+      await service.interpretQuickNote("test", {
+        customerName: "Anna",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+      })
+
+      const callArgs = mockCreate.mock.calls[0][0]
+      expect(callArgs.model).toBe("claude-haiku-4-5-20251001")
+    })
+
+    it("includes booking context in prompt", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              cleanedText: "Test",
+              isHealthRelated: false,
+              horseNoteCategory: null,
+              suggestedNextWeeks: null,
+            }),
+          },
+        ],
+      })
+
+      await service.interpretQuickNote("test", {
+        customerName: "Anna Johansson",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+        horseBreed: "Islandshäst",
+        specialNeeds: "Känsliga hovar",
+      })
+
+      const callArgs = mockCreate.mock.calls[0][0]
+      const userMessage = callArgs.messages[0].content
+      expect(userMessage).toContain("Anna Johansson")
+      expect(userMessage).toContain("Stella")
+      expect(userMessage).toContain("Hovvård")
+      expect(userMessage).toContain("Islandshäst")
+      expect(userMessage).toContain("Känsliga hovar")
+    })
+
+    it("handles markdown code block wrapping", async () => {
+      const json = JSON.stringify({
+        cleanedText: "Allt bra.",
+        isHealthRelated: false,
+        horseNoteCategory: null,
+        suggestedNextWeeks: null,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [{ type: "text", text: "```json\n" + json + "\n```" }],
+      })
+
+      const result = await service.interpretQuickNote("allt bra", {
+        customerName: "Erik",
+        horseName: "Blansen",
+        serviceType: "Hovvård",
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.cleanedText).toBe("Allt bra.")
+    })
+
+    it("handles API error gracefully", async () => {
+      mockCreate.mockRejectedValue(new Error("API quota exceeded"))
+
+      const result = await service.interpretQuickNote("test", {
+        customerName: "Anna",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("INTERPRETATION_FAILED")
+    })
+
+    it("handles invalid JSON from LLM", async () => {
+      mockCreate.mockResolvedValue({
+        content: [{ type: "text", text: "not valid json" }],
+      })
+
+      const result = await service.interpretQuickNote("test", {
+        customerName: "Anna",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("INTERPRETATION_FAILED")
+    })
+
+    it("clamps suggestedNextWeeks to valid range via Zod", async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              cleanedText: "Test",
+              isHealthRelated: false,
+              horseNoteCategory: null,
+              suggestedNextWeeks: 100, // out of range
+            }),
+          },
+        ],
+      })
+
+      const result = await service.interpretQuickNote("test", {
+        customerName: "Anna",
+        horseName: "Stella",
+        serviceType: "Hovvård",
+      })
+
+      // Zod should reject out-of-range value
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe("INTERPRETATION_FAILED")
     })
   })
 
