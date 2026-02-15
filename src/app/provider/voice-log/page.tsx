@@ -79,11 +79,11 @@ export default function VoiceLogPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/provider/bookings")}
+            onClick={() => router.back()}
             className="mb-2 -ml-2"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Tillbaka till bokningar
+            Tillbaka
           </Button>
           <h1 className="text-2xl font-bold">
             Logga utfört arbete
@@ -180,7 +180,7 @@ export default function VoiceLogPage() {
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                onClick={() => router.push("/provider/bookings")}
+                onClick={() => router.back()}
                 className="flex-1"
               >
                 Avbryt
@@ -366,10 +366,10 @@ export default function VoiceLogPage() {
             <div className="flex gap-3 w-full max-w-sm">
               <Button
                 variant="outline"
-                onClick={() => router.push("/provider/bookings")}
+                onClick={() => router.back()}
                 className="flex-1"
               >
-                Tillbaka till bokningar
+                Tillbaka
               </Button>
               <Button onClick={handleLogNext} className="flex-1">
                 <Plus className="w-4 h-4 mr-2" />
