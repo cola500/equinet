@@ -8,10 +8,19 @@ import {
   clearRuntimeSettings,
   getRuntimeSetting,
 } from "@/lib/settings/runtime-settings"
+import { setFeatureFlagOverride } from "@/lib/feature-flags"
 
 vi.mock("@/lib/auth-server", () => ({
   auth: vi.fn(),
 }))
+
+vi.mock("@/lib/feature-flags", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/feature-flags")>()
+  return {
+    ...actual,
+    setFeatureFlagOverride: vi.fn().mockResolvedValue(undefined),
+  }
+})
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -137,5 +146,27 @@ describe("PATCH /api/admin/settings", () => {
   it("returns 400 for missing fields", async () => {
     const res = await PATCH(makeRequest("PATCH", { key: "disable_emails" }))
     expect(res.status).toBe(400)
+  })
+
+  it("routes feature flag keys through setFeatureFlagOverride", async () => {
+    const res = await PATCH(
+      makeRequest("PATCH", { key: "feature_voice_logging", value: "false" })
+    )
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.key).toBe("feature_voice_logging")
+    expect(data.value).toBe("false")
+    expect(setFeatureFlagOverride).toHaveBeenCalledWith("voice_logging", "false")
+    // Should NOT use setRuntimeSetting directly for feature flags
+    expect(getRuntimeSetting("feature_voice_logging")).toBeUndefined()
+  })
+
+  it("uses setRuntimeSetting for non-feature keys", async () => {
+    const res = await PATCH(
+      makeRequest("PATCH", { key: "disable_emails", value: "true" })
+    )
+    expect(res.status).toBe(200)
+    expect(setFeatureFlagOverride).not.toHaveBeenCalled()
+    expect(getRuntimeSetting("disable_emails")).toBe("true")
   })
 })

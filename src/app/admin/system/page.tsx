@@ -5,8 +5,9 @@ import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Activity, Database, Clock, Mail } from "lucide-react"
+import { Activity, Database, Clock, Mail, Flag } from "lucide-react"
 import { toast } from "sonner"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 interface SystemData {
   database: {
@@ -26,6 +27,7 @@ interface SettingsData {
   settings: Record<string, string>
   env: {
     emailDisabledByEnv: boolean
+    featureFlagOverrides?: Record<string, boolean>
   }
 }
 
@@ -34,6 +36,7 @@ export default function AdminSystemPage() {
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
+  const [flagToggleLoading, setFlagToggleLoading] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -88,6 +91,57 @@ export default function AdminSystemPage() {
     } finally {
       setEmailToggleLoading(false)
     }
+  }
+
+  async function handleFlagToggle(flagKey: string, enabled: boolean) {
+    setFlagToggleLoading(flagKey)
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: `feature_${flagKey}`,
+          value: enabled ? "true" : "false",
+        }),
+      })
+      if (!res.ok) throw new Error("Failed")
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              settings: {
+                ...prev.settings,
+                [`feature_${flagKey}`]: enabled ? "true" : "false",
+              },
+            }
+          : prev
+      )
+      const flag = FEATURE_FLAGS[flagKey]
+      toast.success(
+        enabled
+          ? `${flag?.label ?? flagKey} aktiverad`
+          : `${flag?.label ?? flagKey} inaktiverad`
+      )
+    } catch {
+      toast.error("Kunde inte ändra inställningen")
+    } finally {
+      setFlagToggleLoading(null)
+    }
+  }
+
+  function isFlagEnabled(flagKey: string): boolean {
+    // Env override takes priority (shown as disabled in UI)
+    const envOverrides = settings?.env?.featureFlagOverrides ?? {}
+    if (flagKey in envOverrides) {
+      return envOverrides[flagKey]
+    }
+    // Runtime setting
+    const runtimeValue = settings?.settings?.[`feature_${flagKey}`]
+    if (runtimeValue !== undefined) {
+      return runtimeValue === "true"
+    }
+    // Default
+    return FEATURE_FLAGS[flagKey]?.defaultEnabled ?? false
   }
 
   return (
@@ -194,6 +248,53 @@ export default function AdminSystemPage() {
                       onCheckedChange={handleEmailToggle}
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Feature Flags */}
+            <Card className="md:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg">Feature Flags</CardTitle>
+                <Flag className="h-5 w-5 text-gray-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.values(FEATURE_FLAGS).map((flag) => {
+                    const envOverrides = settings?.env?.featureFlagOverrides ?? {}
+                    const hasEnvOverride = flag.key in envOverrides
+                    const enabled = isFlagEnabled(flag.key)
+
+                    return (
+                      <div
+                        key={flag.key}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`flag-${flag.key}`}
+                            className="text-sm font-medium"
+                          >
+                            {flag.label}
+                          </label>
+                          <p className="text-xs text-gray-500">
+                            {hasEnvOverride
+                              ? `Styrs av miljövariabel FEATURE_${flag.key.toUpperCase()}`
+                              : flag.description}
+                          </p>
+                        </div>
+                        <Switch
+                          id={`flag-${flag.key}`}
+                          checked={enabled}
+                          disabled={
+                            hasEnvOverride || flagToggleLoading === flag.key
+                          }
+                          onCheckedChange={(checked) =>
+                            handleFlagToggle(flag.key, checked)
+                          }
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
