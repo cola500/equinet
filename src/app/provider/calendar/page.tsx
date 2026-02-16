@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
 import { Mic } from "lucide-react"
 import { toast } from "sonner"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useAuth } from "@/hooks/useAuth"
 import { useIsMobile } from "@/hooks/useMediaQuery"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
@@ -52,6 +53,7 @@ function CalendarContent() {
   const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [manualBookingOpen, setManualBookingOpen] = useState(false)
+  const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
 
   // Sätt dagvy som default på mobil
   useEffect(() => {
@@ -467,16 +469,18 @@ function CalendarContent() {
       </div>
 
       {/* Mobile FAB for voice log */}
-      <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
-        <button
-          onClick={() => router.push("/provider/voice-log")}
-          className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
-          aria-label="Logga utfört arbete"
-        >
-          <Mic className="w-6 h-6" />
-        </button>
-        <span className="text-xs font-medium text-gray-600">Logga arbete</span>
-      </div>
+      {isVoiceLoggingEnabled && (
+        <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
+          <button
+            onClick={() => router.push("/provider/voice-log")}
+            className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
+            aria-label="Logga utfört arbete"
+          >
+            <Mic className="w-6 h-6" />
+          </button>
+          <span className="text-xs font-medium text-gray-600">Logga arbete</span>
+        </div>
+      )}
 
       <BookingDetailDialog
         booking={selectedBooking}

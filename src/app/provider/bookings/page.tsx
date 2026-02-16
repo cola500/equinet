@@ -27,6 +27,7 @@ import { StarRating } from "@/components/review/StarRating"
 import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
 import { Mic } from "lucide-react"
 import Link from "next/link"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -84,6 +85,7 @@ export default function ProviderBookingsPage() {
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
+  const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
 
   useEffect(() => {
     if (!isLoading && !isProvider) {
@@ -464,16 +466,18 @@ export default function ProviderBookingsPage() {
       </AlertDialog>
 
       {/* Mobile FAB for voice log */}
-      <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
-        <button
-          onClick={() => router.push("/provider/voice-log")}
-          className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
-          aria-label="Logga utfört arbete"
-        >
-          <Mic className="w-6 h-6" />
-        </button>
-        <span className="text-xs font-medium text-gray-600">Logga arbete</span>
-      </div>
+      {isVoiceLoggingEnabled && (
+        <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
+          <button
+            onClick={() => router.push("/provider/voice-log")}
+            className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
+            aria-label="Logga utfört arbete"
+          >
+            <Mic className="w-6 h-6" />
+          </button>
+          <span className="text-xs font-medium text-gray-600">Logga arbete</span>
+        </div>
+      )}
 
       {/* Customer Review Dialog */}
       {reviewBooking && (
