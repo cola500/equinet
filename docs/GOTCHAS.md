@@ -655,6 +655,8 @@ await inngest.send({ name: "long.task", data: {...} })
 - Allt lokalt försvinner mellan requests
 - Alla delade resurser måste vara externa (Redis, S3, databas)
 
+**Reellt exempel (2026-02-16):** Feature flag toggles i admin använde `getAllRuntimeSettings()` (in-memory) istället för `getFeatureFlags()` (Redis). Admin visade alla flaggor som PÅ (default) trots att Redis hade `"false"` -- resulterade i att toggles inte kunde slås tillbaka.
+
 **Impact:** In-memory state fungerar lokalt men failar i produktion.
 
 ---
