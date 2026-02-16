@@ -138,6 +138,32 @@ export function WeekCalendar({
     return getNowPosition(h, m)
   }, [nowMinutes])
 
+  // Kontextuell popup vid klick i dagkolumnen
+  const [slotPopup, setSlotPopup] = useState<{
+    date: string
+    time: string
+    topPercent: number
+  } | null>(null)
+
+  // Stäng popup vid navigation (vy-byte, datumändring)
+  useEffect(() => {
+    setSlotPopup(null)
+  }, [currentDate, viewMode])
+
+  // Stäng popup vid klick utanför
+  useEffect(() => {
+    if (!slotPopup) return
+    const handleClickOutside = () => setSlotPopup(null)
+    // setTimeout så att det inte triggas av samma klick som öppnade popupen
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside, { once: true })
+    }, 0)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [slotPopup])
+
   // Onboarding-tips: visas en gång, dismissbar via localStorage
   const CALENDAR_TIP_KEY = "equinet_calendar_click_tip_dismissed"
   const [showTip, setShowTip] = useState(false)
@@ -294,7 +320,8 @@ export function WeekCalendar({
                 if (!onTimeSlotClick) return
                 const rect = e.currentTarget.getBoundingClientRect()
                 const yPercent = ((e.clientY - rect.top) / rect.height) * 100
-                onTimeSlotClick(dateKey, positionToTime(yPercent))
+                const time = positionToTime(yPercent)
+                setSlotPopup({ date: dateKey, time, topPercent: yPercent })
               }}
               className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group ${
                 isClosed
@@ -395,6 +422,29 @@ export function WeekCalendar({
                   />
                 ))}
               </div>
+
+              {/* Kontextuell popup för ny bokning */}
+              {slotPopup?.date === dateKey && (
+                <div
+                  className="absolute left-1 right-1 z-20 bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm"
+                  style={{ top: `${slotPopup.topPercent}%` }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <p className="text-gray-700 mb-1.5">
+                    Ny bokning kl {slotPopup.time}?
+                  </p>
+                  <button
+                    className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTimeSlotClick!(slotPopup.date, slotPopup.time)
+                      setSlotPopup(null)
+                    }}
+                  >
+                    Skapa bokning
+                  </button>
+                </div>
+              )}
             </div>
           )
         })}
