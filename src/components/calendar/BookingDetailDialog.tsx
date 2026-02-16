@@ -205,7 +205,12 @@ export function BookingDetailDialog({
               {booking.customer.phone && (
                 <div>
                   <span className="text-gray-600">Telefon:</span>{" "}
-                  <span className="font-medium">{booking.customer.phone}</span>
+                  <a
+                    href={`tel:${booking.customer.phone}`}
+                    className="font-medium text-green-700 underline hover:text-green-900"
+                  >
+                    {booking.customer.phone}
+                  </a>
                 </div>
               )}
             </div>

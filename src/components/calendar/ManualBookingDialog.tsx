@@ -42,6 +42,8 @@ interface ManualBookingDialogProps {
   services: Service[]
   bookings?: CalendarBooking[]
   onBookingCreated: () => void
+  prefillDate?: string   // YYYY-MM-DD
+  prefillTime?: string   // HH:mm
 }
 
 export function ManualBookingDialog({
@@ -50,11 +52,15 @@ export function ManualBookingDialog({
   services,
   bookings,
   onBookingCreated,
+  prefillDate,
+  prefillTime,
 }: ManualBookingDialogProps) {
   // Form state
   const [serviceId, setServiceId] = useState("")
-  const [bookingDate, setBookingDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [startTime, setStartTime] = useState("")
+  const [bookingDate, setBookingDate] = useState(
+    () => prefillDate || new Date().toISOString().slice(0, 10)
+  )
+  const [startTime, setStartTime] = useState(() => prefillTime || "")
   const [endTime, setEndTime] = useState("")
 
   // Customer state
@@ -145,8 +151,8 @@ export function ManualBookingDialog({
   useEffect(() => {
     if (!open) {
       setServiceId("")
-      setBookingDate(new Date().toISOString().slice(0, 10))
-      setStartTime("")
+      setBookingDate(prefillDate || new Date().toISOString().slice(0, 10))
+      setStartTime(prefillTime || "")
       setEndTime("")
       setCustomerMode("search")
       setSearchQuery("")
@@ -161,7 +167,7 @@ export function ManualBookingDialog({
       setHorseInfo("")
       setCustomerNotes("")
     }
-  }, [open])
+  }, [open, prefillDate, prefillTime])
 
   // Bookings for the selected day (excluding cancelled)
   const dayBookings = useMemo(() => {

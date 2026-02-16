@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   format,
   startOfWeek,
@@ -22,6 +22,7 @@ interface WeekCalendarProps {
   onBookingClick: (booking: CalendarBooking) => void
   onDayClick?: (dayOfWeek: number) => void
   onDateClick?: (date: string) => void // YYYY-MM-DD format
+  onTimeSlotClick?: (date: string, time: string) => void
 }
 
 // Tidsaxel: 08:00 - 18:00
@@ -32,6 +33,23 @@ const END_HOUR = 18
 // Konvertera JS getDay() (0=Söndag) till vårt dayOfWeek (0=Måndag)
 function jsDayToOurDay(jsDay: number): number {
   return jsDay === 0 ? 6 : jsDay - 1
+}
+
+// Beräkna nu-linjens position i procent (null om utanför synligt intervall)
+export function getNowPosition(hours: number, minutes: number): number | null {
+  const totalMinutes = hours * 60 + minutes
+  if (totalMinutes < START_HOUR * 60 || totalMinutes > END_HOUR * 60) return null
+  return ((totalMinutes - START_HOUR * 60) / ((END_HOUR - START_HOUR) * 60)) * 100
+}
+
+// Konvertera Y-position i procent till HH:mm snappat till 15-minutersintervall
+export function positionToTime(yPercent: number): string {
+  const clamped = Math.max(0, Math.min(100, yPercent))
+  const totalMinutes = (clamped / 100) * (END_HOUR - START_HOUR) * 60
+  const snapped = Math.round(totalMinutes / 15) * 15
+  const hours = START_HOUR + Math.floor(snapped / 60)
+  const minutes = snapped % 60
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
 }
 
 // Beräkna position i procent baserat på tid
@@ -54,6 +72,7 @@ export function WeekCalendar({
   onBookingClick,
   onDayClick,
   onDateClick,
+  onTimeSlotClick,
 }: WeekCalendarProps) {
   // Skapa dagar baserat på vy-läge
   const displayDays = useMemo(() => {
@@ -99,8 +118,51 @@ export function WeekCalendar({
     return indexed
   }, [exceptions])
 
+  // Nu-linje: uppdatera varje minut
+  const [nowMinutes, setNowMinutes] = useState(() => {
+    const now = new Date()
+    return now.getHours() * 60 + now.getMinutes()
+  })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+      setNowMinutes(now.getHours() * 60 + now.getMinutes())
+    }, 60_000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const nowPosition = useMemo(() => {
+    const h = Math.floor(nowMinutes / 60)
+    const m = nowMinutes % 60
+    return getNowPosition(h, m)
+  }, [nowMinutes])
+
+  // Onboarding-tips: visas en gång, dismissbar via localStorage
+  const CALENDAR_TIP_KEY = "equinet_calendar_click_tip_dismissed"
+  const [showTip, setShowTip] = useState(false)
+
+  useEffect(() => {
+    if (onTimeSlotClick && typeof window !== "undefined" && !localStorage.getItem(CALENDAR_TIP_KEY)) {
+      setShowTip(true)
+    }
+  }, [onTimeSlotClick])
+
+  const dismissTip = () => {
+    localStorage.setItem(CALENDAR_TIP_KEY, "true")
+    setShowTip(false)
+  }
+
   return (
     <div className="bg-white rounded-lg border overflow-hidden">
+      {/* Onboarding-tips */}
+      {showTip && (
+        <div className="flex items-center justify-between bg-green-50 border-b border-green-200 px-3 py-2 text-sm text-green-800">
+          <span>Tips: Tryck direkt i kalendern för att skapa en bokning</span>
+          <button onClick={dismissTip} className="ml-2 text-green-600 hover:text-green-800 font-medium">OK</button>
+        </div>
+      )}
+
       {/* Header med veckodagar */}
       <div className={`grid ${gridCols} border-b`}>
         <div className="min-w-0 p-2 border-r bg-gray-50" /> {/* Tom cell för tidkolumnen */}
@@ -228,7 +290,13 @@ export function WeekCalendar({
           return (
             <div
               key={day.toISOString()}
-              className={`min-w-0 relative border-r last:border-r-0 ${
+              onClick={(e) => {
+                if (!onTimeSlotClick) return
+                const rect = e.currentTarget.getBoundingClientRect()
+                const yPercent = ((e.clientY - rect.top) / rect.height) * 100
+                onTimeSlotClick(dateKey, positionToTime(yPercent))
+              }}
+              className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group ${
                 isClosed
                   ? hasException
                     ? "bg-orange-100"
@@ -236,6 +304,11 @@ export function WeekCalendar({
                   : ""
               }`}
             >
+              {/* Hover-overlay för klickbar yta */}
+              {!isClosed && onTimeSlotClick && (
+                <div className="absolute inset-0 bg-green-100 opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none z-[1]" />
+              )}
+
               {/* Timlinjer */}
               {HOURS.map((hour) => (
                 <div
@@ -297,6 +370,19 @@ export function WeekCalendar({
               {/* Idag-markering */}
               {isToday(day) && !isClosed && (
                 <div className="absolute inset-0 ring-2 ring-green-400 ring-inset pointer-events-none" />
+              )}
+
+              {/* Nu-linje */}
+              {isToday(day) && nowPosition !== null && (
+                <div
+                  className="absolute left-0 right-0 z-10 pointer-events-none"
+                  style={{ top: `${nowPosition}%` }}
+                >
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
+                    <div className="flex-1 h-px bg-red-500" />
+                  </div>
+                </div>
               )}
 
               {/* Bokningar */}

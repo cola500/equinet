@@ -1,5 +1,6 @@
 "use client"
 
+import { Clock, CheckCircle2, Check, XCircle, CreditCard } from "lucide-react"
 import { CalendarBooking } from "@/types"
 
 interface BookingBlockProps {
@@ -19,19 +20,31 @@ function getTimePosition(time: string): number {
 }
 
 function getStatusStyles(status: string, isPaid: boolean): string {
-  // Om betald, visa alltid mörkgrön
   if (isPaid) {
-    return "bg-emerald-500 border-emerald-600 text-white"
+    return "bg-emerald-100 border-emerald-600 text-emerald-900"
   }
 
   const styles: Record<string, string> = {
-    pending: "bg-yellow-400 border-yellow-500 text-yellow-900",
-    confirmed: "bg-green-400 border-green-500 text-green-900",
-    completed: "bg-blue-400 border-blue-500 text-blue-900",
-    cancelled: "bg-red-400 border-red-500 text-red-900",
+    pending: "bg-yellow-50 border-yellow-500 text-yellow-900",
+    confirmed: "bg-green-50 border-green-600 text-green-900",
+    completed: "bg-blue-50 border-blue-600 text-blue-900",
+    cancelled: "bg-red-50 border-red-500 text-red-900",
   }
 
-  return styles[status] || "bg-gray-400 border-gray-500 text-gray-900"
+  return styles[status] || "bg-gray-100 border-gray-500 text-gray-900"
+}
+
+function getStatusIcon(status: string, isPaid: boolean) {
+  if (isPaid) return <CreditCard className="h-3 w-3 mr-0.5 flex-shrink-0" />
+
+  const icons: Record<string, React.ReactNode> = {
+    pending: <Clock className="h-3 w-3 mr-0.5 flex-shrink-0" />,
+    confirmed: <CheckCircle2 className="h-3 w-3 mr-0.5 flex-shrink-0" />,
+    completed: <Check className="h-3 w-3 mr-0.5 flex-shrink-0" />,
+    cancelled: <XCircle className="h-3 w-3 mr-0.5 flex-shrink-0" />,
+  }
+
+  return icons[status] || null
 }
 
 export function BookingBlock({ booking, onClick }: BookingBlockProps) {
@@ -42,7 +55,7 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
 
   return (
     <button
-      onClick={onClick}
+      onClick={(e) => { e.stopPropagation(); onClick() }}
       className={`absolute left-1 right-1 rounded border-l-4 px-2 py-1 text-left text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${getStatusStyles(
         booking.status,
         isPaid
@@ -50,15 +63,16 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
       style={{
         top: `${topPercent}%`,
         height: `${heightPercent}%`,
-        minHeight: "20px",
+        minHeight: "28px",
       }}
       title={`${booking.service.name} - ${booking.customer.firstName} ${booking.customer.lastName}`}
     >
-      <div className="font-semibold truncate">
+      <div className="font-semibold truncate flex items-center">
+        {getStatusIcon(booking.status, isPaid)}
         {booking.isManualBooking && (
           <span className="inline-block bg-white/30 text-[10px] font-bold rounded px-1 mr-1" title="Manuell bokning">M</span>
         )}
-        {booking.service.name}
+        <span className="truncate">{booking.service.name}</span>
       </div>
       <div className="truncate">
         {booking.startTime}-{booking.endTime}

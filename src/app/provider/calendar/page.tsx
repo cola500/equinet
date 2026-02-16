@@ -53,6 +53,8 @@ function CalendarContent() {
   const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [manualBookingOpen, setManualBookingOpen] = useState(false)
+  const [prefillDate, setPrefillDate] = useState<string | undefined>()
+  const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
 
   // Sätt dagvy som default på mobil
@@ -209,6 +211,12 @@ function CalendarContent() {
   const handleDateClick = (date: string) => {
     setSelectedDate(date)
     setExceptionDialogOpen(true)
+  }
+
+  const handleTimeSlotClick = (date: string, time: string) => {
+    setPrefillDate(date)
+    setPrefillTime(time)
+    setManualBookingOpen(true)
   }
 
   const handleExceptionSave = async (data: {
@@ -397,60 +405,54 @@ function CalendarContent() {
           onBookingClick={handleBookingClick}
           onDayClick={handleDayClick}
           onDateClick={handleDateClick}
+          onTimeSlotClick={handleTimeSlotClick}
         />
       )}
 
       {/* Färgförklaring - under kalendern */}
       <div className="mt-4">
         <p className="text-xs text-gray-500 mb-3">
-          Klicka på en dag för att lägga till undantag (ledighet, semester, etc.)
+          Klicka på en dag för att hantera undantag. Tryck på en tid för att skapa bokning.
         </p>
-        <details className="md:hidden">
-          <summary className="text-sm font-medium text-gray-700 cursor-pointer">
-            Visa färgförklaring
-          </summary>
-          <div className="flex flex-wrap gap-3 mt-2 text-xs">
+        <div className="md:hidden overflow-x-auto pb-2">
+          <div className="flex gap-3 text-xs whitespace-nowrap">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-yellow-400 border-l-2 border-yellow-500" />
+              <div className="w-3 h-3 rounded bg-yellow-50 border-l-2 border-yellow-500" />
               <span>Väntar</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-400 border-l-2 border-green-500" />
+              <div className="w-3 h-3 rounded bg-green-50 border-l-2 border-green-600" />
               <span>Bekräftad</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-blue-400 border-l-2 border-blue-500" />
+              <div className="w-3 h-3 rounded bg-blue-50 border-l-2 border-blue-600" />
               <span>Genomförd</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-emerald-500 border-l-2 border-emerald-600" />
+              <div className="w-3 h-3 rounded bg-emerald-100 border-l-2 border-emerald-600" />
               <span>Betald</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-orange-200 border border-orange-300" />
-              <span>Undantag</span>
-            </div>
           </div>
-        </details>
+        </div>
         <div className="hidden md:flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-yellow-400 border-l-4 border-yellow-500" />
+            <div className="w-4 h-4 rounded bg-yellow-50 border-l-4 border-yellow-500" />
             <span>Väntar på svar</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-400 border-l-4 border-green-500" />
+            <div className="w-4 h-4 rounded bg-green-50 border-l-4 border-green-600" />
             <span>Bekräftad</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-400 border-l-4 border-blue-500" />
+            <div className="w-4 h-4 rounded bg-blue-50 border-l-4 border-blue-600" />
             <span>Genomförd</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-400 border-l-4 border-red-500" />
+            <div className="w-4 h-4 rounded bg-red-50 border-l-4 border-red-500" />
             <span>Avbokad</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-emerald-500 border-l-4 border-emerald-600" />
+            <div className="w-4 h-4 rounded bg-emerald-100 border-l-4 border-emerald-600" />
             <span>Betald</span>
           </div>
           <div className="flex items-center gap-2">
@@ -516,10 +518,15 @@ function CalendarContent() {
 
       <ManualBookingDialog
         open={manualBookingOpen}
-        onOpenChange={setManualBookingOpen}
+        onOpenChange={(open) => {
+          setManualBookingOpen(open)
+          if (!open) { setPrefillDate(undefined); setPrefillTime(undefined) }
+        }}
         services={services}
         bookings={bookings}
         onBookingCreated={() => mutateBookings()}
+        prefillDate={prefillDate}
+        prefillTime={prefillTime}
       />
     </ProviderLayout>
   )
