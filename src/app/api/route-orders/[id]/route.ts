@@ -45,6 +45,17 @@ export async function GET(
           orderBy: {
             stopOrder: "asc",
           },
+          select: {
+            id: true,
+            stopOrder: true,
+            locationName: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            estimatedArrival: true,
+            estimatedDurationMin: true,
+            status: true,
+          },
         },
         bookings: {
           select: {

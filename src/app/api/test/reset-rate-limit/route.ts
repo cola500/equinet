@@ -19,7 +19,7 @@ export async function POST() {
   const testIPs = ['127.0.0.1', '::1', 'unknown']
   const limiterTypes = [
     'login', 'registration', 'api', 'passwordReset',
-    'booking', 'profileUpdate', 'serviceCreate', 'geocode', 'resendVerification', 'ai',
+    'booking', 'profileUpdate', 'serviceCreate', 'geocode', 'resendVerification', 'ai', 'loginIp',
   ]
 
   for (const ip of testIPs) {

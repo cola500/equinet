@@ -31,7 +31,24 @@ export async function GET(request: NextRequest) {
 
     const provider = await prisma.provider.findUnique({
       where: { userId: session.user.id },
-      include: {
+      select: {
+        id: true,
+        businessName: true,
+        description: true,
+        address: true,
+        city: true,
+        postalCode: true,
+        serviceArea: true,
+        latitude: true,
+        longitude: true,
+        serviceAreaKm: true,
+        profileImageUrl: true,
+        isActive: true,
+        acceptingNewCustomers: true,
+        isVerified: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             firstName: true,
@@ -44,7 +61,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantörsprofil hittades inte" }, { status: 404 })
     }
 
     return NextResponse.json(provider)
@@ -94,7 +111,24 @@ export async function PUT(request: NextRequest) {
     const updatedProvider = await prisma.provider.update({
       where: { userId: session.user.id },
       data: validatedData,
-      include: {
+      select: {
+        id: true,
+        businessName: true,
+        description: true,
+        address: true,
+        city: true,
+        postalCode: true,
+        serviceArea: true,
+        latitude: true,
+        longitude: true,
+        serviceAreaKm: true,
+        profileImageUrl: true,
+        isActive: true,
+        acceptingNewCustomers: true,
+        isVerified: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             firstName: true,

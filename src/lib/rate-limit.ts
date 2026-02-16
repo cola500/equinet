@@ -118,6 +118,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:ai",
       }),
+      loginIp: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(30, "15 m"),
+        analytics: true,
+        prefix: "ratelimit:login-ip",
+      }),
     }
   }
 
@@ -252,6 +258,7 @@ async function checkRateLimit(
     geocode: { max: 100, window: 60 * 1000 },
     resendVerification: { max: 50, window: 15 * 60 * 1000 },
     ai: { max: 200, window: 60 * 1000 },
+    loginIp: { max: 200, window: 15 * 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -356,4 +363,9 @@ export const rateLimiters = {
    * AI/LLM calls: 20 requests per minute (cost protection)
    */
   ai: async (identifier: string) => checkRateLimit('ai', identifier),
+
+  /**
+   * Login attempts per IP: 30 attempts per 15 minutes (higher than per-email to handle shared IPs)
+   */
+  loginIp: async (identifier: string) => checkRateLimit('loginIp', identifier),
 }

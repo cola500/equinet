@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { logger } from "@/lib/logger"
+import { escapeHtml } from "@/lib/sanitize"
 
 // GET - Get receipt HTML for a paid booking
 export async function GET(
@@ -62,22 +63,22 @@ export async function GET(
     }
 
     const receiptHtml = generateReceiptHtml({
-      invoiceNumber: booking.payment.invoiceNumber || "N/A",
+      invoiceNumber: escapeHtml(booking.payment.invoiceNumber || "N/A"),
       paidAt: booking.payment.paidAt
         ? format(new Date(booking.payment.paidAt), "d MMMM yyyy HH:mm", { locale: sv })
         : "N/A",
-      customerName: `${booking.customer.firstName} ${booking.customer.lastName}`,
-      customerEmail: booking.customer.email,
-      customerAddress: booking.customer.address || "",
-      providerName: `${booking.provider.user.firstName} ${booking.provider.user.lastName}`,
-      businessName: booking.provider.businessName,
-      serviceName: booking.service.name,
-      serviceDescription: booking.service.description || "",
+      customerName: escapeHtml(`${booking.customer.firstName} ${booking.customer.lastName}`),
+      customerEmail: escapeHtml(booking.customer.email),
+      customerAddress: escapeHtml(booking.customer.address || ""),
+      providerName: escapeHtml(`${booking.provider.user.firstName} ${booking.provider.user.lastName}`),
+      businessName: escapeHtml(booking.provider.businessName),
+      serviceName: escapeHtml(booking.service.name),
+      serviceDescription: escapeHtml(booking.service.description || ""),
       bookingDate: format(new Date(booking.bookingDate), "d MMMM yyyy", { locale: sv }),
-      startTime: booking.startTime,
-      endTime: booking.endTime,
+      startTime: escapeHtml(booking.startTime),
+      endTime: escapeHtml(booking.endTime),
       amount: booking.payment.amount,
-      currency: booking.payment.currency,
+      currency: escapeHtml(booking.payment.currency),
     })
 
     // Return HTML that can be printed or saved as PDF

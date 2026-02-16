@@ -26,6 +26,10 @@ const providerSession = {
   user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
 } as any
 
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+}))
+
 const mockProvider = {
   id: 'provider-1',
   userId: 'user-1',
@@ -55,6 +59,33 @@ describe('GET /api/provider/profile', () => {
     expect(response.status).toBe(200)
     const data = await response.json()
     expect(data.acceptingNewCustomers).toBe(true)
+  })
+
+  it('should use select instead of include to prevent data leakage', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile')
+    await GET(request)
+
+    const call = vi.mocked(prisma.provider.findUnique).mock.calls[0][0]
+    // Must NOT use include without top-level select (would expose vocabularyTerms etc)
+    expect(call).toHaveProperty('select')
+    expect(call.select).toBeDefined()
+    // vocabularyTerms should NOT be selected
+    if (call.select && typeof call.select === 'object') {
+      expect((call.select as any).vocabularyTerms).toBeFalsy()
+    }
+  })
+
+  it('should return 401 for non-provider users', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user-1', userType: 'customer' },
+    } as any)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
   })
 })
 
