@@ -145,6 +145,7 @@ export function WeekCalendar({
     date: string
     time: string
     topPx: number
+    dateLabel: string
   } | null>(null)
 
   // Stäng popup vid navigation (vy-byte, datumändring)
@@ -328,7 +329,8 @@ export function WeekCalendar({
                 const time = positionToTime(yPercent)
                 const gridRect = gridRef.current!.getBoundingClientRect()
                 const topPx = e.clientY - gridRect.top
-                setSlotPopup({ date: dateKey, time, topPx })
+                const dateLabel = format(day, "d MMM", { locale: sv })
+                setSlotPopup({ date: dateKey, time, topPx, dateLabel })
               }}
               className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group ${
                 isClosed
@@ -443,7 +445,7 @@ export function WeekCalendar({
           >
             <div className="bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm max-w-sm mx-auto">
               <p className="text-gray-700 mb-1.5">
-                Ny bokning kl {slotPopup.time}?
+                Ny bokning {slotPopup.dateLabel} kl {slotPopup.time}?
               </p>
               <button
                 className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"

@@ -55,7 +55,13 @@ export function MonthCalendar({
 }: MonthCalendarProps) {
   // Kontextuell popup vid klick på dag
   const popupRef = useRef<HTMLDivElement>(null)
-  const [dayPopup, setDayPopup] = useState<{ date: string; label: string } | null>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
+  const [dayPopup, setDayPopup] = useState<{
+    date: string
+    label: string
+    topPx: number
+    leftPx: number
+  } | null>(null)
 
   // Stäng popup vid navigation
   useEffect(() => {
@@ -126,7 +132,7 @@ export function MonthCalendar({
       </div>
 
       {/* Day grid */}
-      <div className="grid grid-cols-7">
+      <div ref={gridRef} className="relative grid grid-cols-7">
         {calendarDays.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd")
           const inMonth = isSameMonth(day, currentDate)
@@ -160,7 +166,10 @@ export function MonthCalendar({
                 e.stopPropagation()
                 if (onTimeSlotClick) {
                   const label = format(day, "d MMMM", { locale: sv })
-                  setDayPopup({ date: dateKey, label })
+                  const gridRect = gridRef.current!.getBoundingClientRect()
+                  const topPx = e.clientY - gridRect.top
+                  const leftPx = e.clientX - gridRect.left
+                  setDayPopup({ date: dateKey, label, topPx, leftPx })
                 } else {
                   onDateClick?.(dateKey)
                 }
@@ -170,7 +179,12 @@ export function MonthCalendar({
                   e.preventDefault()
                   if (onTimeSlotClick) {
                     const label = format(day, "d MMMM", { locale: sv })
-                    setDayPopup({ date: dateKey, label })
+                    // Fallback: centrera popup på cellen
+                    const cellRect = e.currentTarget.getBoundingClientRect()
+                    const gridRect = gridRef.current!.getBoundingClientRect()
+                    const topPx = cellRect.top - gridRect.top + cellRect.height / 2
+                    const leftPx = cellRect.left - gridRect.left + cellRect.width / 2
+                    setDayPopup({ date: dateKey, label, topPx, leftPx })
                   } else {
                     onDateClick?.(dateKey)
                   }
@@ -238,41 +252,43 @@ export function MonthCalendar({
                 </div>
               )}
 
-              {/* Kontextuell popup */}
-              {dayPopup?.date === dateKey && (
-                <div
-                  ref={popupRef}
-                  className="absolute left-0 right-0 bottom-0 z-30 p-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm">
-                    <p className="text-gray-700 mb-1.5 font-medium">
-                      {dayPopup.label}
-                    </p>
-                    <button
-                      className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
-                      onClick={() => {
-                        onTimeSlotClick!(dayPopup.date, "")
-                        setDayPopup(null)
-                      }}
-                    >
-                      Skapa bokning
-                    </button>
-                    <button
-                      className="w-full mt-1 text-gray-600 hover:text-gray-800 text-xs py-1"
-                      onClick={() => {
-                        onDateClick?.(dayPopup.date)
-                        setDayPopup(null)
-                      }}
-                    >
-                      Ändra tillgänglighet
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )
         })}
+
+        {/* Kontextuell popup -- renderas utanför cellerna */}
+        {dayPopup && (
+          <div
+            ref={popupRef}
+            className="absolute z-30 -translate-x-1/2"
+            style={{ top: `${dayPopup.topPx}px`, left: `${dayPopup.leftPx}px` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white border border-green-300 rounded-lg shadow-lg px-4 py-3 text-sm w-48">
+              <p className="text-gray-700 mb-2 font-medium">
+                {dayPopup.label}
+              </p>
+              <button
+                className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
+                onClick={() => {
+                  onTimeSlotClick!(dayPopup.date, "")
+                  setDayPopup(null)
+                }}
+              >
+                Skapa bokning
+              </button>
+              <button
+                className="w-full mt-1 text-gray-600 hover:text-gray-800 text-xs py-1"
+                onClick={() => {
+                  onDateClick?.(dayPopup.date)
+                  setDayPopup(null)
+                }}
+              >
+                Ändra tillgänglighet
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
