@@ -140,10 +140,11 @@ export function WeekCalendar({
 
   // Kontextuell popup vid klick i dagkolumnen
   const popupRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
   const [slotPopup, setSlotPopup] = useState<{
     date: string
     time: string
-    topPercent: number
+    topPx: number
   } | null>(null)
 
   // Stäng popup vid navigation (vy-byte, datumändring)
@@ -275,7 +276,7 @@ export function WeekCalendar({
       </div>
 
       {/* Kalenderrutnät */}
-      <div className={`grid ${gridCols}`}>
+      <div ref={gridRef} className={`relative grid ${gridCols}`}>
         {/* Tidskolumn */}
         <div className="min-w-0 border-r">
           {HOURS.map((hour) => (
@@ -325,7 +326,9 @@ export function WeekCalendar({
                 const rect = e.currentTarget.getBoundingClientRect()
                 const yPercent = ((e.clientY - rect.top) / rect.height) * 100
                 const time = positionToTime(yPercent)
-                setSlotPopup({ date: dateKey, time, topPercent: yPercent })
+                const gridRect = gridRef.current!.getBoundingClientRect()
+                const topPx = e.clientY - gridRect.top
+                setSlotPopup({ date: dateKey, time, topPx })
               }}
               className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group ${
                 isClosed
@@ -427,31 +430,34 @@ export function WeekCalendar({
                 ))}
               </div>
 
-              {/* Kontextuell popup för ny bokning */}
-              {slotPopup?.date === dateKey && (
-                <div
-                  ref={popupRef}
-                  className="absolute left-1 right-1 z-20 bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm"
-                  style={{ top: `${slotPopup.topPercent}%` }}
-                >
-                  <p className="text-gray-700 mb-1.5">
-                    Ny bokning kl {slotPopup.time}?
-                  </p>
-                  <button
-                    className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onTimeSlotClick!(slotPopup.date, slotPopup.time)
-                      setSlotPopup(null)
-                    }}
-                  >
-                    Skapa bokning
-                  </button>
-                </div>
-              )}
             </div>
           )
         })}
+
+        {/* Kontextuell popup -- renderas utanför gridet för full bredd */}
+        {slotPopup && (
+          <div
+            ref={popupRef}
+            className="absolute left-[60px] right-0 z-20 px-4"
+            style={{ top: `${slotPopup.topPx}px` }}
+          >
+            <div className="bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm max-w-sm mx-auto">
+              <p className="text-gray-700 mb-1.5">
+                Ny bokning kl {slotPopup.time}?
+              </p>
+              <button
+                className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onTimeSlotClick!(slotPopup.date, slotPopup.time)
+                  setSlotPopup(null)
+                }}
+              >
+                Skapa bokning
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

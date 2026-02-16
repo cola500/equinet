@@ -394,6 +394,7 @@ function CalendarContent() {
           exceptions={exceptions}
           onBookingClick={handleBookingClick}
           onDateClick={handleDateClick}
+          onTimeSlotClick={handleTimeSlotClick}
         />
       ) : (
         <WeekCalendar
@@ -412,7 +413,7 @@ function CalendarContent() {
       {/* Färgförklaring - under kalendern */}
       <div className="mt-4">
         <p className="text-xs text-gray-500 mb-3">
-          Klicka på en dag för att hantera undantag. Tryck på en tid för att skapa bokning.
+          Klicka på en dag för att skapa bokning eller hantera tillgänglighet.
         </p>
         <div className="md:hidden overflow-x-auto pb-2">
           <div className="flex gap-3 text-xs whitespace-nowrap">
