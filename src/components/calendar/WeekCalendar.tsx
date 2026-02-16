@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   format,
   startOfWeek,
@@ -139,6 +139,7 @@ export function WeekCalendar({
   }, [nowMinutes])
 
   // Kontextuell popup vid klick i dagkolumnen
+  const popupRef = useRef<HTMLDivElement>(null)
   const [slotPopup, setSlotPopup] = useState<{
     date: string
     time: string
@@ -150,13 +151,16 @@ export function WeekCalendar({
     setSlotPopup(null)
   }, [currentDate, viewMode])
 
-  // Stäng popup vid klick utanför
+  // Stäng popup vid klick utanför (ref-check istället för stopPropagation)
   useEffect(() => {
     if (!slotPopup) return
-    const handleClickOutside = () => setSlotPopup(null)
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popupRef.current?.contains(e.target as Node)) return
+      setSlotPopup(null)
+    }
     // setTimeout så att det inte triggas av samma klick som öppnade popupen
     const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClickOutside, { once: true })
+      document.addEventListener("mousedown", handleClickOutside)
     }, 0)
     return () => {
       clearTimeout(timer)
@@ -426,9 +430,9 @@ export function WeekCalendar({
               {/* Kontextuell popup för ny bokning */}
               {slotPopup?.date === dateKey && (
                 <div
+                  ref={popupRef}
                   className="absolute left-1 right-1 z-20 bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm"
                   style={{ top: `${slotPopup.topPercent}%` }}
-                  onMouseDown={(e) => e.stopPropagation()}
                 >
                   <p className="text-gray-700 mb-1.5">
                     Ny bokning kl {slotPopup.time}?
