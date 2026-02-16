@@ -8,7 +8,7 @@ import {
   getAllRuntimeSettings,
   setRuntimeSetting,
 } from "@/lib/settings/runtime-settings"
-import { FEATURE_FLAGS, setFeatureFlagOverride } from "@/lib/feature-flags"
+import { FEATURE_FLAGS, setFeatureFlagOverride, getFeatureFlags } from "@/lib/feature-flags"
 
 const STATIC_KEYS = ["disable_emails"]
 const FEATURE_FLAG_KEYS = Object.keys(FEATURE_FLAGS).map((k) => `feature_${k}`)
@@ -46,12 +46,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get actual flag states from Redis (not just in-memory)
+    const featureFlagStates = await getFeatureFlags()
+
     return NextResponse.json({
       settings: getAllRuntimeSettings(),
       env: {
         emailDisabledByEnv: process.env.DISABLE_EMAILS === "true",
         featureFlagOverrides: featureFlagEnvOverrides,
       },
+      featureFlagStates,
     })
   } catch (error) {
     if (error instanceof Response) return error

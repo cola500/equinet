@@ -19,6 +19,14 @@ vi.mock("@/lib/feature-flags", async (importOriginal) => {
   return {
     ...actual,
     setFeatureFlagOverride: vi.fn().mockResolvedValue(undefined),
+    getFeatureFlags: vi.fn().mockResolvedValue({
+      voice_logging: true,
+      route_planning: true,
+      route_announcements: true,
+      customer_insights: true,
+      due_for_service: true,
+      group_bookings: false,
+    }),
   }
 })
 
@@ -96,6 +104,19 @@ describe("GET /api/admin/settings", () => {
     const res = await GET(makeRequest("GET"))
     const data = await res.json()
     expect(data.settings).toEqual({})
+  })
+
+  it("returns featureFlagStates from Redis/getFeatureFlags", async () => {
+    const res = await GET(makeRequest("GET"))
+    const data = await res.json()
+    expect(data.featureFlagStates).toEqual({
+      voice_logging: true,
+      route_planning: true,
+      route_announcements: true,
+      customer_insights: true,
+      due_for_service: true,
+      group_bookings: false,
+    })
   })
 })
 

@@ -29,6 +29,7 @@ interface SettingsData {
     emailDisabledByEnv: boolean
     featureFlagOverrides?: Record<string, boolean>
   }
+  featureFlagStates?: Record<string, boolean>
 }
 
 export default function AdminSystemPage() {
@@ -109,9 +110,9 @@ export default function AdminSystemPage() {
         prev
           ? {
               ...prev,
-              settings: {
-                ...prev.settings,
-                [`feature_${flagKey}`]: enabled ? "true" : "false",
+              featureFlagStates: {
+                ...prev.featureFlagStates,
+                [flagKey]: enabled,
               },
             }
           : prev
@@ -130,17 +131,11 @@ export default function AdminSystemPage() {
   }
 
   function isFlagEnabled(flagKey: string): boolean {
-    // Env override takes priority (shown as disabled in UI)
-    const envOverrides = settings?.env?.featureFlagOverrides ?? {}
-    if (flagKey in envOverrides) {
-      return envOverrides[flagKey]
+    // Use actual state from Redis/server (source of truth)
+    if (settings?.featureFlagStates && flagKey in settings.featureFlagStates) {
+      return settings.featureFlagStates[flagKey]
     }
-    // Runtime setting
-    const runtimeValue = settings?.settings?.[`feature_${flagKey}`]
-    if (runtimeValue !== undefined) {
-      return runtimeValue === "true"
-    }
-    // Default
+    // Fallback to default
     return FEATURE_FLAGS[flagKey]?.defaultEnabled ?? false
   }
 

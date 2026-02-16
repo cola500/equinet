@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis"
-import { getRuntimeSetting, setRuntimeSetting } from "./settings/runtime-settings"
+import { getRuntimeSetting, setRuntimeSetting, deleteRuntimeSetting } from "./settings/runtime-settings"
 
 export interface FeatureFlag {
   key: string
@@ -82,6 +82,23 @@ export async function setFeatureFlagOverride(
     await r.set(`${REDIS_PREFIX}${key}`, value)
   } catch {
     // Redis write failed, in-memory fallback already set
+  }
+}
+
+/**
+ * Remove a feature flag override from Redis and in-memory.
+ * After removal the flag reverts to its default value.
+ */
+export async function removeFeatureFlagOverride(key: string): Promise<void> {
+  deleteRuntimeSetting(`feature_${key}`)
+
+  const r = getRedis()
+  if (!r) return
+
+  try {
+    await r.del(`${REDIS_PREFIX}${key}`)
+  } catch {
+    // Redis delete failed, in-memory already cleared
   }
 }
 

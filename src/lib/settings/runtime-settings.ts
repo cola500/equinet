@@ -13,6 +13,10 @@ export function setRuntimeSetting(key: string, value: string): void {
   settings[key] = value
 }
 
+export function deleteRuntimeSetting(key: string): void {
+  delete settings[key]
+}
+
 export function getAllRuntimeSettings(): Record<string, string> {
   return { ...settings }
 }
