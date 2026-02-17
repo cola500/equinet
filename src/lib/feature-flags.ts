@@ -51,6 +51,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Utökad analytics-sida med tjänsteanalys, tidsanalys och kundretention",
     defaultEnabled: true,
   },
+  self_reschedule: {
+    key: "self_reschedule",
+    label: "Självservice-ombokning",
+    description: "Kunder kan boka om sina bokningar utan att kontakta leverantören",
+    defaultEnabled: true,
+  },
 }
 
 const REDIS_PREFIX = "feature_flag:"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { bookingConfirmationEmail, bookingStatusChangeEmail } from "./templates"
+import { bookingConfirmationEmail, bookingStatusChangeEmail, bookingRescheduleEmail } from "./templates"
 import { PREPARATION_CHECKLIST } from "@/lib/preparation-checklist"
 
 const mockBookingData = {
@@ -71,5 +71,60 @@ describe("bookingStatusChangeEmail", () => {
     expect(html).toContain(mockStatusChangeData.serviceName)
     expect(html).toContain(mockStatusChangeData.businessName)
     expect(html).toContain(mockStatusChangeData.statusLabel)
+  })
+})
+
+const mockRescheduleData = {
+  customerName: "Anna Svensson",
+  serviceName: "Hovbeläggning",
+  businessName: "Eriks Hovslagerservice",
+  oldBookingDate: "15 mars 2026",
+  oldStartTime: "10:00",
+  newBookingDate: "17 mars 2026",
+  newStartTime: "14:00",
+  newEndTime: "15:00",
+  bookingUrl: "http://localhost:3000/customer/bookings",
+  requiresApproval: false,
+}
+
+describe("bookingRescheduleEmail", () => {
+  it("includes old and new booking times in HTML", () => {
+    const { html } = bookingRescheduleEmail(mockRescheduleData)
+    expect(html).toContain(mockRescheduleData.oldBookingDate)
+    expect(html).toContain(mockRescheduleData.oldStartTime)
+    expect(html).toContain(mockRescheduleData.newBookingDate)
+    expect(html).toContain(mockRescheduleData.newStartTime)
+    expect(html).toContain(mockRescheduleData.newEndTime)
+  })
+
+  it("includes old and new booking times in plaintext", () => {
+    const { text } = bookingRescheduleEmail(mockRescheduleData)
+    expect(text).toContain(mockRescheduleData.oldBookingDate)
+    expect(text).toContain(mockRescheduleData.oldStartTime)
+    expect(text).toContain(mockRescheduleData.newBookingDate)
+    expect(text).toContain(mockRescheduleData.newStartTime)
+  })
+
+  it("includes customer name and service details", () => {
+    const { html } = bookingRescheduleEmail(mockRescheduleData)
+    expect(html).toContain(mockRescheduleData.customerName)
+    expect(html).toContain(mockRescheduleData.serviceName)
+    expect(html).toContain(mockRescheduleData.businessName)
+  })
+
+  it("shows confirmation message when no approval required", () => {
+    const { html } = bookingRescheduleEmail({ ...mockRescheduleData, requiresApproval: false })
+    expect(html).toContain("bekräftad")
+    expect(html).not.toContain("godkännande")
+  })
+
+  it("shows approval pending message when approval required", () => {
+    const { html } = bookingRescheduleEmail({ ...mockRescheduleData, requiresApproval: true })
+    expect(html).toContain("godkännande")
+  })
+
+  it("includes booking URL", () => {
+    const { html } = bookingRescheduleEmail(mockRescheduleData)
+    expect(html).toContain(mockRescheduleData.bookingUrl)
   })
 })

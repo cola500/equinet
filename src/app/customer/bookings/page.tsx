@@ -26,6 +26,7 @@ import { ReviewDialog } from "@/components/review/ReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
 import { CustomerOnboardingChecklist } from "@/components/customer/CustomerOnboardingChecklist"
+import { RescheduleDialog } from "@/components/booking/RescheduleDialog"
 
 interface Payment {
   id: string
@@ -52,6 +53,7 @@ interface Booking {
     gender?: string | null
   } | null
   customerNotes?: string
+  rescheduleCount: number
   service: {
     name: string
     price: number
@@ -59,6 +61,10 @@ interface Booking {
   }
   provider: {
     businessName: string
+    rescheduleEnabled: boolean
+    rescheduleWindowHours: number
+    maxReschedules: number
+    rescheduleRequiresApproval: boolean
     user: {
       firstName: string
       lastName: string
@@ -130,6 +136,7 @@ export default function CustomerBookingsPage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
+  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -614,6 +621,21 @@ export default function CustomerBookingsPage() {
                           </Button>
                         ) : null}
 
+                        {/* Reschedule button - show for pending/confirmed, not paid, provider allows, under max */}
+                        {(booking.status === "pending" || booking.status === "confirmed") &&
+                          booking.payment?.status !== "succeeded" &&
+                          booking.provider.rescheduleEnabled &&
+                          booking.rescheduleCount < booking.provider.maxReschedules && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
+                            onClick={() => setRescheduleBooking(booking)}
+                          >
+                            Omboka
+                          </Button>
+                        )}
+
                         {/* Cancel button - only show for pending/confirmed bookings that are not paid */}
                         {(booking.status === "pending" || booking.status === "confirmed") &&
                           booking.payment?.status !== "succeeded" && (
@@ -703,6 +725,19 @@ export default function CustomerBookingsPage() {
             ))}
           </div>
         )}
+
+      {/* Reschedule Dialog */}
+      {rescheduleBooking && (
+        <RescheduleDialog
+          booking={rescheduleBooking}
+          open={!!rescheduleBooking}
+          onOpenChange={(open) => { if (!open) setRescheduleBooking(null) }}
+          onSuccess={() => {
+            setRescheduleBooking(null)
+            mutateAll()
+          }}
+        />
+      )}
 
       {/* Review Dialog */}
       {reviewBooking && (

@@ -17,6 +17,10 @@ const providerProfileSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
   serviceAreaKm: z.number().min(1).max(500).optional().nullable(),
   acceptingNewCustomers: z.boolean().optional(),
+  rescheduleEnabled: z.boolean().optional(),
+  rescheduleWindowHours: z.number().int().min(1).max(168).optional(),
+  maxReschedules: z.number().int().min(1).max(10).optional(),
+  rescheduleRequiresApproval: z.boolean().optional(),
 }).strict()
 
 // GET - Fetch current provider profile
@@ -45,6 +49,10 @@ export async function GET(request: NextRequest) {
         profileImageUrl: true,
         isActive: true,
         acceptingNewCustomers: true,
+        rescheduleEnabled: true,
+        rescheduleWindowHours: true,
+        maxReschedules: true,
+        rescheduleRequiresApproval: true,
         isVerified: true,
         verifiedAt: true,
         createdAt: true,
@@ -125,6 +133,10 @@ export async function PUT(request: NextRequest) {
         profileImageUrl: true,
         isActive: true,
         acceptingNewCustomers: true,
+        rescheduleEnabled: true,
+        rescheduleWindowHours: true,
+        maxReschedules: true,
+        rescheduleRequiresApproval: true,
         isVerified: true,
         verifiedAt: true,
         createdAt: true,

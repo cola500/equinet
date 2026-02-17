@@ -160,4 +160,70 @@ describe('PUT /api/provider/profile', () => {
 
     expect(response.status).toBe(400)
   })
+
+  it('should update reschedule settings', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(prisma.provider.update).mockResolvedValue({
+      ...mockProvider,
+      rescheduleEnabled: false,
+      rescheduleWindowHours: 48,
+      maxReschedules: 3,
+      rescheduleRequiresApproval: true,
+    } as any)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: 'Test Hovslagare',
+        rescheduleEnabled: false,
+        rescheduleWindowHours: 48,
+        maxReschedules: 3,
+        rescheduleRequiresApproval: true,
+      }),
+    })
+
+    const response = await PUT(request)
+    expect(response.status).toBe(200)
+
+    expect(vi.mocked(prisma.provider.update)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          rescheduleEnabled: false,
+          rescheduleWindowHours: 48,
+          maxReschedules: 3,
+          rescheduleRequiresApproval: true,
+        }),
+      })
+    )
+  })
+
+  it('should reject rescheduleWindowHours outside valid range', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: 'Test Hovslagare',
+        rescheduleWindowHours: 0,
+      }),
+    })
+
+    const response = await PUT(request)
+    expect(response.status).toBe(400)
+  })
+
+  it('should reject maxReschedules outside valid range', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: 'Test Hovslagare',
+        maxReschedules: 11,
+      }),
+    })
+
+    const response = await PUT(request)
+    expect(response.status).toBe(400)
+  })
 })

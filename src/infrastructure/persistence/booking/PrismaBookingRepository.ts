@@ -256,6 +256,7 @@ export class PrismaBookingRepository
             horseInfo: true,
             customerNotes: true,
             providerNotes: true,
+            rescheduleCount: true,
             isManualBooking: true,
             createdByProviderId: true,
             createdAt: true,
@@ -355,6 +356,7 @@ export class PrismaBookingRepository
         customerNotes: true,
         providerNotes: true,
         cancellationMessage: true,
+        rescheduleCount: true,
         isManualBooking: true,
         createdByProviderId: true,
         createdAt: true,
@@ -436,6 +438,7 @@ export class PrismaBookingRepository
         horseInfo: true,
         customerNotes: true,
         cancellationMessage: true,
+        rescheduleCount: true,
         createdAt: true,
         updatedAt: true,
 
@@ -443,6 +446,10 @@ export class PrismaBookingRepository
         provider: {
           select: {
             businessName: true,
+            rescheduleEnabled: true,
+            rescheduleWindowHours: true,
+            maxReschedules: true,
+            rescheduleRequiresApproval: true,
             user: {
               select: {
                 firstName: true,
@@ -545,6 +552,7 @@ export class PrismaBookingRepository
           customerNotes: true,
           providerNotes: true,
           cancellationMessage: true,
+          rescheduleCount: true,
           createdAt: true,
           updatedAt: true,
 
@@ -618,6 +626,7 @@ export class PrismaBookingRepository
           customerNotes: true,
           providerNotes: true,
           cancellationMessage: true,
+          rescheduleCount: true,
           isManualBooking: true,
           createdByProviderId: true,
           createdAt: true,
@@ -650,6 +659,145 @@ export class PrismaBookingRepository
 
       return updated as BookingWithRelations
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Reschedule a booking with atomic overlap check
+   *
+   * Updates booking date/time and increments rescheduleCount in a serializable transaction.
+   * Excludes the current booking from overlap detection.
+   *
+   * @returns Updated booking with relations, or null if overlap detected
+   */
+  async rescheduleWithOverlapCheck(
+    bookingId: string,
+    customerId: string,
+    data: {
+      bookingDate: Date
+      startTime: string
+      endTime: string
+      providerId: string
+      newStatus?: 'pending' | 'confirmed'
+    }
+  ): Promise<BookingWithRelations | null> {
+    try {
+      // @ts-expect-error - Prisma transaction callback type inference issue
+      const booking = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Check for overlapping bookings (excluding the current booking)
+        const overlappingBookings = await tx.booking.findMany({
+          where: {
+            providerId: data.providerId,
+            bookingDate: data.bookingDate,
+            id: { not: bookingId }, // Exclude current booking
+            status: { in: ['pending', 'confirmed'] },
+            OR: [
+              {
+                AND: [
+                  { startTime: { lte: data.startTime } },
+                  { endTime: { gt: data.startTime } },
+                ],
+              },
+              {
+                AND: [
+                  { startTime: { lt: data.endTime } },
+                  { endTime: { gte: data.endTime } },
+                ],
+              },
+              {
+                AND: [
+                  { startTime: { gte: data.startTime } },
+                  { endTime: { lte: data.endTime } },
+                ],
+              },
+            ],
+          },
+        })
+
+        if (overlappingBookings.length > 0) {
+          throw new Error('BOOKING_OVERLAP')
+        }
+
+        // Update the booking atomically
+        return await tx.booking.update({
+          where: { id: bookingId, customerId },
+          data: {
+            bookingDate: data.bookingDate,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            rescheduleCount: { increment: 1 },
+            ...(data.newStatus && { status: data.newStatus }),
+          },
+          select: {
+            id: true,
+            customerId: true,
+            providerId: true,
+            serviceId: true,
+            bookingDate: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            horseId: true,
+            horseName: true,
+            horseInfo: true,
+            customerNotes: true,
+            providerNotes: true,
+            cancellationMessage: true,
+            rescheduleCount: true,
+            isManualBooking: true,
+            createdByProviderId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+            service: {
+              select: {
+                name: true,
+                price: true,
+                durationMinutes: true,
+              },
+            },
+            provider: {
+              select: {
+                businessName: true,
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
+            horse: {
+              select: {
+                id: true,
+                name: true,
+                breed: true,
+                gender: true,
+              },
+            },
+          },
+        })
+      }, {
+        timeout: 15000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      })
+
+      return booking as unknown as BookingWithRelations
+    } catch (error) {
+      if (error instanceof Error && error.message === 'BOOKING_OVERLAP') {
+        return null
+      }
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }

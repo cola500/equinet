@@ -201,7 +201,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ### Kärnfunktioner
 - Autentisering (rollval, email-verifiering, sessions)
-- Bokning (fast tid + flexibla beställningar, mobil-först med stegvis Drawer)
+- Bokning (fast tid + flexibla beställningar, mobil-först med stegvis Drawer, självservice-ombokning)
 - Leverantörshantering (profil, tjänster, öppettider, kalender)
 - Hästregister med hälsotidslinje och delbar hästprofil (UELN + mikrochip)
 - Mobil-först UI med responsiva dialoger, 44px touch targets och stegvist bokningsflöde
@@ -212,6 +212,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Besöksplanering ("Dags för besök") med statusbadges
 - Kompetenser och verifiering (admin-granskning)
 - Stäng för nya kunder (befintliga kunder kan fortfarande boka)
+- Ombokningsinställningar (tillåt/neka, tidsfönster, max antal, kräv godkännande)
 - Kundrecensioner (leverantör betygsätter kund, 1-5 stjärnor)
 - Röstloggning / arbetslogg (diktera eller skriv, AI tolkar och mappar till bokningar)
 - No-show-spårning (markera ej infunnit, kundvarningar vid 2+)
@@ -247,7 +248,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**1800+ tester** (115+ E2E desktop + 82+ E2E mobil + 1800+ unit/integration) med **70% coverage**.
+**1890+ tester** (115+ E2E desktop + 82+ E2E mobil + 1890+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

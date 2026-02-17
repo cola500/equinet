@@ -10,6 +10,7 @@ export {
   bookingStatusChangeEmail,
   rebookingReminderEmail,
   bookingReminderEmail,
+  bookingRescheduleEmail,
 } from "./templates"
 export {
   sendBookingConfirmationNotification,
@@ -17,6 +18,7 @@ export {
   sendBookingStatusChangeNotification,
   sendRebookingReminderNotification,
   sendBookingReminderNotification,
+  sendBookingRescheduleNotification,
 } from "./notifications"
 export {
   generateUnsubscribeToken,

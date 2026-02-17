@@ -86,6 +86,12 @@ model Provider {
   // AI vocabulary for voice work logging (JSON string)
   vocabularyTerms String?
 
+  // Self-service reschedule settings
+  rescheduleEnabled         Boolean @default(true)
+  rescheduleWindowHours     Int     @default(24)    // Minsta timmar före bokning
+  maxReschedules            Int     @default(2)     // Max per bokning
+  rescheduleRequiresApproval Boolean @default(false) // true = status -> pending
+
   // Verification
   isVerified      Boolean   @default(false)
   verifiedAt      DateTime?
@@ -194,6 +200,9 @@ model Booking {
   horseInfo     String?
   horseId       String?
   horse         Horse?      @relation(fields: [horseId], references: [id])
+
+  // Reschedule tracking
+  rescheduleCount   Int @default(0)
 
   // Beräknad restid till denna bokning (för historik/rapportering)
   travelTimeMinutes Int?

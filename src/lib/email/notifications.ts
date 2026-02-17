@@ -12,6 +12,7 @@ import {
   bookingStatusChangeEmail,
   rebookingReminderEmail,
   bookingReminderEmail,
+  bookingRescheduleEmail,
 } from "./templates"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
@@ -329,6 +330,102 @@ export async function sendBookingReminderNotification(bookingId: string) {
     })
   } catch (error) {
     console.error("Error sending booking reminder:", error)
+    return { success: false, error: String(error) }
+  }
+}
+
+export async function sendBookingRescheduleNotification(
+  bookingId: string,
+  oldBookingDate: string,
+  oldStartTime: string,
+  requiresApproval: boolean
+) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
+        customer: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        service: {
+          select: { name: true },
+        },
+        provider: {
+          select: {
+            businessName: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!booking || !booking.customer.email) {
+      console.warn(`Cannot send reschedule notification: booking ${bookingId} not found or no email`)
+      return { success: false, error: "Booking not found or no email" }
+    }
+
+    // Skip email for ghost users
+    if (booking.customer.email.endsWith("@ghost.equinet.se")) {
+      return { success: true, error: undefined }
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const formattedOldDate = oldBookingDate
+    const formattedNewDate = format(new Date(booking.bookingDate), "d MMMM yyyy", { locale: sv })
+
+    const { html, text } = bookingRescheduleEmail({
+      customerName: `${booking.customer.firstName} ${booking.customer.lastName}`,
+      serviceName: booking.service.name,
+      businessName: booking.provider.businessName,
+      oldBookingDate: formattedOldDate,
+      oldStartTime,
+      newBookingDate: formattedNewDate,
+      newStartTime: booking.startTime,
+      newEndTime: booking.endTime,
+      bookingUrl: `${baseUrl}/customer/bookings`,
+      requiresApproval,
+    })
+
+    // Send to customer
+    await emailService.send({
+      to: booking.customer.email,
+      subject: requiresApproval
+        ? `Ombokning inväntar godkännande - ${booking.service.name}`
+        : `Ombokning bekräftad - ${booking.service.name}`,
+      html,
+      text,
+    })
+
+    // Notify provider
+    if (booking.provider.user.email) {
+      const customerName = `${booking.customer.firstName} ${booking.customer.lastName}`
+      await emailService.send({
+        to: booking.provider.user.email,
+        subject: `Kund har ombokat - ${booking.service.name}`,
+        html: `<p>${customerName} har ombokat sin bokning för ${booking.service.name}.</p>
+<p>Ny tid: ${formattedNewDate} kl ${booking.startTime} - ${booking.endTime}</p>
+<p>Tidigare tid: ${formattedOldDate} kl ${oldStartTime}</p>`,
+        text: `${customerName} har ombokat sin bokning för ${booking.service.name}.\nNy tid: ${formattedNewDate} kl ${booking.startTime} - ${booking.endTime}\nTidigare tid: ${formattedOldDate} kl ${oldStartTime}`,
+      })
+    }
+
+    return { success: true, error: undefined }
+  } catch (error) {
+    console.error("Error sending reschedule notification:", error)
     return { success: false, error: String(error) }
   }
 }

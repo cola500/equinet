@@ -13,6 +13,10 @@ interface ProviderProfileData {
   serviceAreaKm?: number | null
   profileImageUrl?: string | null
   isVerified?: boolean
+  rescheduleEnabled?: boolean
+  rescheduleWindowHours?: number
+  maxReschedules?: number
+  rescheduleRequiresApproval?: boolean
   user: {
     firstName: string
     lastName: string

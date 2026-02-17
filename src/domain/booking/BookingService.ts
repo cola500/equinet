@@ -98,6 +98,16 @@ export interface CustomerLocationInfo {
 /**
  * Booking errors - explicit error types for clear error handling
  */
+/**
+ * DTO for rescheduling a booking
+ */
+export interface RescheduleBookingDTO {
+  bookingId: string
+  customerId: string       // From session
+  newBookingDate: string   // "YYYY-MM-DD"
+  newStartTime: string     // "HH:MM"
+}
+
 export type BookingError =
   | { type: 'INVALID_TIMES'; message: string }
   | { type: 'OVERLAP'; message: string }
@@ -113,6 +123,10 @@ export type BookingError =
   | { type: 'GHOST_USER_CREATION_FAILED'; message: string }
   | { type: 'PROVIDER_CLOSED'; message: string }
   | { type: 'NEW_CUSTOMER_NOT_ACCEPTED' }
+  | { type: 'RESCHEDULE_DISABLED' }
+  | { type: 'RESCHEDULE_WINDOW_PASSED'; hoursRequired: number }
+  | { type: 'MAX_RESCHEDULES_REACHED'; max: number }
+  | { type: 'INACTIVE_SERVICE_FOR_RESCHEDULE' }
 
 /**
  * Route order info for validation
@@ -135,6 +149,16 @@ export interface AvailabilityExceptionInfo {
 }
 
 /**
+ * Provider reschedule settings
+ */
+export interface ProviderRescheduleInfo {
+  rescheduleEnabled: boolean
+  rescheduleWindowHours: number
+  maxReschedules: number
+  rescheduleRequiresApproval: boolean
+}
+
+/**
  * Dependencies for BookingService
  *
  * Using interfaces for dependency injection and testability.
@@ -154,6 +178,8 @@ export interface BookingServiceDeps {
   createGhostUser?: (data: { name: string; phone?: string; email?: string }) => Promise<string>
   /** Check if customer has at least one completed booking with provider */
   hasCompletedBookingWith?: (providerId: string, customerId: string) => Promise<boolean>
+  /** Get provider reschedule settings */
+  getProviderRescheduleSettings?: (providerId: string) => Promise<ProviderRescheduleInfo | null>
 }
 
 /**
@@ -486,6 +512,134 @@ export class BookingService {
   }
 
   /**
+   * Reschedule a booking to a new date/time
+   *
+   * Validates:
+   * 1. Booking exists and belongs to the customer
+   * 2. Status is pending or confirmed (not terminal)
+   * 3. Provider has rescheduleEnabled = true
+   * 4. Current time >= rescheduleWindowHours before booking
+   * 5. rescheduleCount < maxReschedules
+   * 6. New time is in the future
+   * 7. TimeSlot validation (valid format, start < end)
+   * 8. Service still active (for durationMinutes)
+   * 9. No overlap (excluding current booking)
+   * 10. Availability check (not a closed day)
+   */
+  async rescheduleBooking(
+    dto: RescheduleBookingDTO
+  ): Promise<Result<BookingWithRelations, BookingError>> {
+    // 1. Fetch the booking
+    const booking = await this.deps.bookingRepository.findById(dto.bookingId)
+    if (!booking) {
+      return Result.fail({ type: 'BOOKING_NOT_FOUND' })
+    }
+
+    // 2. Verify ownership
+    if (booking.customerId !== dto.customerId) {
+      return Result.fail({ type: 'BOOKING_NOT_FOUND' })
+    }
+
+    // 3. Check status is reschedulable
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      return Result.fail({
+        type: 'INVALID_STATUS_TRANSITION',
+        message: 'Bara bokningar med status väntande eller bekräftad kan bokas om',
+        from: booking.status,
+        to: booking.status,
+      })
+    }
+
+    // 4. Get provider reschedule settings
+    if (!this.deps.getProviderRescheduleSettings) {
+      return Result.fail({ type: 'RESCHEDULE_DISABLED' })
+    }
+    const rescheduleSettings = await this.deps.getProviderRescheduleSettings(booking.providerId)
+    if (!rescheduleSettings || !rescheduleSettings.rescheduleEnabled) {
+      return Result.fail({ type: 'RESCHEDULE_DISABLED' })
+    }
+
+    // 5. Check reschedule window
+    const now = new Date()
+    const bookingDateTime = new Date(booking.bookingDate)
+    const [bookingHours, bookingMinutes] = booking.startTime.split(':').map(Number)
+    bookingDateTime.setHours(bookingHours, bookingMinutes, 0, 0)
+    const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+    if (hoursUntilBooking < rescheduleSettings.rescheduleWindowHours) {
+      return Result.fail({
+        type: 'RESCHEDULE_WINDOW_PASSED',
+        hoursRequired: rescheduleSettings.rescheduleWindowHours,
+      })
+    }
+
+    // 6. Check max reschedules
+    if (booking.rescheduleCount >= rescheduleSettings.maxReschedules) {
+      return Result.fail({
+        type: 'MAX_RESCHEDULES_REACHED',
+        max: rescheduleSettings.maxReschedules,
+      })
+    }
+
+    // 7. Get service for duration calculation
+    const service = await this.deps.getService(booking.serviceId)
+    if (!service || !service.isActive) {
+      return Result.fail({ type: 'INACTIVE_SERVICE_FOR_RESCHEDULE' })
+    }
+
+    // 8. Calculate end time
+    const newEndTime = this.calculateEndTime(dto.newStartTime, service.durationMinutes)
+
+    // 9. Validate new time slot
+    const timeSlotResult = TimeSlot.create(dto.newStartTime, newEndTime)
+    if (timeSlotResult.isFailure) {
+      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
+    }
+
+    // 10. New date must be in the future
+    const newBookingDate = new Date(dto.newBookingDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (newBookingDate < today) {
+      return Result.fail({ type: 'INVALID_TIMES', message: 'Nytt datum måste vara i framtiden' })
+    }
+
+    // 11. Check closed day
+    const closedDayCheck = await this.validateClosedDay(booking.providerId, newBookingDate)
+    if (closedDayCheck.isFailure) {
+      return Result.fail(closedDayCheck.error)
+    }
+
+    // 12. Determine new status
+    let newStatus: 'pending' | 'confirmed' | undefined
+    if (rescheduleSettings.rescheduleRequiresApproval && booking.status === 'confirmed') {
+      newStatus = 'pending'
+    }
+
+    // 13. Reschedule with atomic overlap check
+    const updated = await this.deps.bookingRepository.rescheduleWithOverlapCheck(
+      dto.bookingId,
+      dto.customerId,
+      {
+        bookingDate: newBookingDate,
+        startTime: timeSlotResult.value.startTime,
+        endTime: timeSlotResult.value.endTime,
+        providerId: booking.providerId,
+        newStatus,
+      }
+    )
+
+    if (!updated) {
+      return Result.fail({
+        type: 'OVERLAP',
+        message: 'Leverantören är redan bokad under den valda tiden',
+      })
+    }
+
+    return Result.ok(updated)
+  }
+
+  /**
    * Calculate end time from start time and duration
    */
   private calculateEndTime(startTime: string, durationMinutes: number): string {
@@ -724,12 +878,17 @@ export function mapBookingErrorToStatus(error: BookingError): number {
     case 'GHOST_USER_CREATION_FAILED':
       return 500
     case 'NEW_CUSTOMER_NOT_ACCEPTED':
+    case 'RESCHEDULE_DISABLED':
       return 403
     case 'BOOKING_NOT_FOUND':
       return 404
     case 'OVERLAP':
     case 'INSUFFICIENT_TRAVEL_TIME':
       return 409
+    case 'RESCHEDULE_WINDOW_PASSED':
+    case 'MAX_RESCHEDULES_REACHED':
+    case 'INACTIVE_SERVICE_FOR_RESCHEDULE':
+      return 400
     default:
       return 500
   }
@@ -768,6 +927,14 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return error.message
     case 'NEW_CUSTOMER_NOT_ACCEPTED':
       return 'Denna leverantör tar för närvarande inte emot nya kunder'
+    case 'RESCHEDULE_DISABLED':
+      return 'Ombokning är inte tillåten för denna leverantör'
+    case 'RESCHEDULE_WINDOW_PASSED':
+      return `Ombokning måste ske minst ${error.hoursRequired} timmar före bokningen`
+    case 'MAX_RESCHEDULES_REACHED':
+      return `Max antal ombokningar (${error.max}) har uppnåtts`
+    case 'INACTIVE_SERVICE_FOR_RESCHEDULE':
+      return 'Tjänsten är inte längre tillgänglig'
     default:
       return 'Ett fel uppstod vid bokning'
   }
@@ -852,6 +1019,17 @@ export function createBookingService(): BookingService {
         where: { providerId, customerId, status: 'completed' },
       })
       return count > 0
+    },
+    getProviderRescheduleSettings: async (providerId) => {
+      return prisma.provider.findUnique({
+        where: { id: providerId },
+        select: {
+          rescheduleEnabled: true,
+          rescheduleWindowHours: true,
+          maxReschedules: true,
+          rescheduleRequiresApproval: true,
+        },
+      })
     },
     travelTimeService: new TravelTimeService(),
     createGhostUser: async (data) => {

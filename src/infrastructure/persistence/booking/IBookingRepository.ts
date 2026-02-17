@@ -26,6 +26,8 @@ export interface Booking {
   providerNotes?: string
   /** Message from whoever cancelled the booking */
   cancellationMessage?: string
+  /** Number of times this booking has been rescheduled */
+  rescheduleCount: number
   /** Calculated travel time to this booking (minutes) */
   travelTimeMinutes?: number
   /** Whether this booking was created manually by a provider */
@@ -107,6 +109,7 @@ export interface BookingWithRelations {
   customerNotes?: string
   providerNotes?: string
   cancellationMessage?: string
+  rescheduleCount?: number
   isManualBooking?: boolean
   createdByProviderId?: string
   createdAt: Date
@@ -287,6 +290,26 @@ export interface IBookingRepository extends IRepository<Booking> {
     id: string,
     providerNotes: string | null,
     providerId: string
+  ): Promise<BookingWithRelations | null>
+
+  /**
+   * Reschedule a booking with atomic overlap check
+   *
+   * Updates booking date/time and increments rescheduleCount.
+   * Excludes the current booking from overlap detection.
+   *
+   * @returns Updated booking with relations, or null if overlap detected
+   */
+  rescheduleWithOverlapCheck(
+    bookingId: string,
+    customerId: string,
+    data: {
+      bookingDate: Date
+      startTime: string
+      endTime: string
+      providerId: string
+      newStatus?: 'pending' | 'confirmed'
+    }
   ): Promise<BookingWithRelations | null>
 
   /**

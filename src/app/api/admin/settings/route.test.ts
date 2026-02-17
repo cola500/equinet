@@ -27,6 +27,7 @@ vi.mock("@/lib/feature-flags", async (importOriginal) => {
       due_for_service: true,
       group_bookings: false,
       business_insights: true,
+      self_reschedule: true,
     }),
   }
 })
@@ -118,6 +119,7 @@ describe("GET /api/admin/settings", () => {
       due_for_service: true,
       group_bookings: false,
       business_insights: true,
+      self_reschedule: true,
     })
   })
 })

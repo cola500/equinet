@@ -4,8 +4,10 @@ import {
   BookingServiceDeps,
   CreateBookingDTO,
   CreateManualBookingDTO,
+  RescheduleBookingDTO,
   ServiceInfo,
   ProviderInfo,
+  ProviderRescheduleInfo,
   CustomerLocationInfo,
   mapBookingErrorToStatus,
   mapBookingErrorToMessage,
@@ -1318,6 +1320,379 @@ describe('BookingService', () => {
     it('should return Swedish message for NEW_CUSTOMER_NOT_ACCEPTED', () => {
       expect(mapBookingErrorToMessage({ type: 'NEW_CUSTOMER_NOT_ACCEPTED' }))
         .toBe('Denna leverantör tar för närvarande inte emot nya kunder')
+    })
+  })
+
+  describe('rescheduleBooking', () => {
+    const rescheduleSettings: ProviderRescheduleInfo = {
+      rescheduleEnabled: true,
+      rescheduleWindowHours: 24,
+      maxReschedules: 2,
+      rescheduleRequiresApproval: false,
+    }
+
+    let mockGetProviderRescheduleSettings: ReturnType<typeof vi.fn>
+
+    // Future date to ensure bookings are in the future
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 7)
+    const futureDateStr = futureDate.toISOString().split('T')[0]
+
+    const newFutureDate = new Date()
+    newFutureDate.setDate(newFutureDate.getDate() + 10)
+    const newFutureDateStr = newFutureDate.toISOString().split('T')[0]
+
+    beforeEach(() => {
+      mockGetProviderRescheduleSettings = vi.fn().mockResolvedValue(rescheduleSettings)
+    })
+
+    function createRescheduleService(): BookingService {
+      return new BookingService({
+        ...deps,
+        getProviderRescheduleSettings: mockGetProviderRescheduleSettings,
+      })
+    }
+
+    async function seedBooking(overrides?: Partial<{ status: string; rescheduleCount: number; startTime: string; bookingDate: Date }>): Promise<string> {
+      const booking = {
+        id: 'booking-1',
+        customerId: 'customer-1',
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: overrides?.bookingDate || futureDate,
+        startTime: overrides?.startTime || '10:00',
+        endTime: '11:00',
+        timezone: 'Europe/Stockholm',
+        status: (overrides?.status || 'confirmed') as any,
+        rescheduleCount: overrides?.rescheduleCount ?? 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      await bookingRepository.save(booking)
+      return booking.id
+    }
+
+    it('should reschedule booking successfully', async () => {
+      const svc = createRescheduleService()
+      const bookingId = await seedBooking()
+
+      const result = await svc.rescheduleBooking({
+        bookingId,
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.startTime).toBe('14:00')
+      expect(result.value.endTime).toBe('15:00')
+      expect(result.value.rescheduleCount).toBe(1)
+    })
+
+    it('should fail when booking not found', async () => {
+      const svc = createRescheduleService()
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'non-existent',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('BOOKING_NOT_FOUND')
+    })
+
+    it('should fail when booking does not belong to customer', async () => {
+      const svc = createRescheduleService()
+      await seedBooking()
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'other-customer',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('BOOKING_NOT_FOUND')
+    })
+
+    it('should fail when booking is cancelled', async () => {
+      const svc = createRescheduleService()
+      await seedBooking({ status: 'cancelled' })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should fail when booking is completed', async () => {
+      const svc = createRescheduleService()
+      await seedBooking({ status: 'completed' })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should fail when provider has reschedule disabled', async () => {
+      mockGetProviderRescheduleSettings.mockResolvedValue({
+        ...rescheduleSettings,
+        rescheduleEnabled: false,
+      })
+      const svc = createRescheduleService()
+      await seedBooking()
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('RESCHEDULE_DISABLED')
+    })
+
+    it('should fail when reschedule window has passed', async () => {
+      // Booking is 2 hours from now, window requires 24h
+      const soonDate = new Date()
+      soonDate.setHours(soonDate.getHours() + 2)
+      const svc = createRescheduleService()
+      await seedBooking({
+        bookingDate: soonDate,
+        startTime: `${String(soonDate.getHours()).padStart(2, '0')}:${String(soonDate.getMinutes()).padStart(2, '0')}`,
+      })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('RESCHEDULE_WINDOW_PASSED')
+      if (result.error.type === 'RESCHEDULE_WINDOW_PASSED') {
+        expect(result.error.hoursRequired).toBe(24)
+      }
+    })
+
+    it('should fail when max reschedules reached', async () => {
+      const svc = createRescheduleService()
+      await seedBooking({ rescheduleCount: 2 })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('MAX_RESCHEDULES_REACHED')
+      if (result.error.type === 'MAX_RESCHEDULES_REACHED') {
+        expect(result.error.max).toBe(2)
+      }
+    })
+
+    it('should fail when service is inactive', async () => {
+      mockGetService.mockResolvedValue({ ...validService, isActive: false })
+      const svc = createRescheduleService()
+      await seedBooking()
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INACTIVE_SERVICE_FOR_RESCHEDULE')
+    })
+
+    it('should fail when new date is in the past', async () => {
+      const svc = createRescheduleService()
+      await seedBooking()
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: '2020-01-01',
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_TIMES')
+    })
+
+    it('should fail when new time overlaps with another booking', async () => {
+      const svc = createRescheduleService()
+      await seedBooking()
+
+      // Create another booking at the target time
+      const otherBooking = {
+        id: 'booking-2',
+        customerId: 'customer-2',
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: newFutureDate,
+        startTime: '14:00',
+        endTime: '15:00',
+        timezone: 'Europe/Stockholm',
+        status: 'confirmed' as const,
+        rescheduleCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      await bookingRepository.save(otherBooking)
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('OVERLAP')
+    })
+
+    it('should set status to pending when approval required and booking was confirmed', async () => {
+      mockGetProviderRescheduleSettings.mockResolvedValue({
+        ...rescheduleSettings,
+        rescheduleRequiresApproval: true,
+      })
+      const svc = createRescheduleService()
+      await seedBooking({ status: 'confirmed' })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('pending')
+    })
+
+    it('should keep pending status when approval required and booking was pending', async () => {
+      mockGetProviderRescheduleSettings.mockResolvedValue({
+        ...rescheduleSettings,
+        rescheduleRequiresApproval: true,
+      })
+      const svc = createRescheduleService()
+      await seedBooking({ status: 'pending' })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      // Status should stay as-is (no newStatus set) since it was already pending
+      expect(result.value.status).toBe('pending')
+    })
+
+    it('should allow reschedule for pending bookings', async () => {
+      const svc = createRescheduleService()
+      await seedBooking({ status: 'pending' })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isSuccess).toBe(true)
+    })
+
+    it('should fail when day is closed', async () => {
+      const mockGetAvailabilityException = vi.fn().mockResolvedValue({
+        isClosed: true,
+        reason: 'Semester',
+      })
+
+      const svc = new BookingService({
+        ...deps,
+        getProviderRescheduleSettings: mockGetProviderRescheduleSettings,
+        getAvailabilityException: mockGetAvailabilityException,
+      })
+      await seedBooking()
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('PROVIDER_CLOSED')
+    })
+
+    it('should increment rescheduleCount after successful reschedule', async () => {
+      const svc = createRescheduleService()
+      await seedBooking({ rescheduleCount: 1 })
+
+      const result = await svc.rescheduleBooking({
+        bookingId: 'booking-1',
+        customerId: 'customer-1',
+        newBookingDate: newFutureDateStr,
+        newStartTime: '14:00',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.rescheduleCount).toBe(2)
+    })
+  })
+
+  describe('mapBookingErrorToStatus - reschedule errors', () => {
+    it('should return 403 for RESCHEDULE_DISABLED', () => {
+      expect(mapBookingErrorToStatus({ type: 'RESCHEDULE_DISABLED' })).toBe(403)
+    })
+
+    it('should return 400 for RESCHEDULE_WINDOW_PASSED', () => {
+      expect(mapBookingErrorToStatus({ type: 'RESCHEDULE_WINDOW_PASSED', hoursRequired: 24 })).toBe(400)
+    })
+
+    it('should return 400 for MAX_RESCHEDULES_REACHED', () => {
+      expect(mapBookingErrorToStatus({ type: 'MAX_RESCHEDULES_REACHED', max: 2 })).toBe(400)
+    })
+  })
+
+  describe('mapBookingErrorToMessage - reschedule errors', () => {
+    it('should return Swedish message for RESCHEDULE_DISABLED', () => {
+      expect(mapBookingErrorToMessage({ type: 'RESCHEDULE_DISABLED' }))
+        .toBe('Ombokning är inte tillåten för denna leverantör')
+    })
+
+    it('should include hours in RESCHEDULE_WINDOW_PASSED message', () => {
+      expect(mapBookingErrorToMessage({ type: 'RESCHEDULE_WINDOW_PASSED', hoursRequired: 24 }))
+        .toBe('Ombokning måste ske minst 24 timmar före bokningen')
+    })
+
+    it('should include max in MAX_RESCHEDULES_REACHED message', () => {
+      expect(mapBookingErrorToMessage({ type: 'MAX_RESCHEDULES_REACHED', max: 2 }))
+        .toBe('Max antal ombokningar (2) har uppnåtts')
     })
   })
 })
