@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 interface FortnoxConnection {
   providerId: string
@@ -54,10 +55,13 @@ export default function AdminIntegrationsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  Fortnox
-                  <Badge variant="outline" className="ml-2">
-                    {data.fortnox.totalConnected} anslutna
-                  </Badge>
+                  <span className="inline-flex items-center gap-1.5">
+                    Fortnox
+                    <InfoPopover text="Visar leverantörer som kopplat Fortnox för automatisk fakturering. Utgången token innebär att leverantören behöver återansluta." />
+                    <Badge variant="outline" className="ml-1">
+                      {data.fortnox.totalConnected} anslutna
+                    </Badge>
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -106,7 +110,10 @@ export default function AdminIntegrationsPage() {
             {/* Betalningar */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Betalningar</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-lg">Betalningar</CardTitle>
+                  <InfoPopover text="Lyckade = betalning genomförd. Väntande = betalning påbörjad men inte slutförd. Misslyckade = betalning avvisad eller timeout." />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

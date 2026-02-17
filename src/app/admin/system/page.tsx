@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Activity, Database, Clock, Mail, Flag } from "lucide-react"
+import { InfoPopover } from "@/components/ui/info-popover"
 import { toast } from "sonner"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
 import { FEATURE_FLAGS_CHANGED_EVENT } from "@/components/providers/FeatureFlagProvider"
@@ -153,7 +154,10 @@ export default function AdminSystemPage() {
             {/* Databas */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg">Databas</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-lg">Databas</CardTitle>
+                  <InfoPopover text="Visar hälsostatus och svarstid för databasanslutningen. Normal svarstid är under 100 ms." />
+                </div>
                 <Database className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
@@ -177,7 +181,10 @@ export default function AdminSystemPage() {
             {/* Cron / Påminnelser */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg">Påminnelser</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-lg">Påminnelser</CardTitle>
+                  <InfoPopover text="Cron-jobb som skickar bokningspåminnelser via e-post. Körs automatiskt varje morgon kl 06:00." />
+                </div>
                 <Clock className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
@@ -201,7 +208,10 @@ export default function AdminSystemPage() {
             {/* Applikation */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg">Applikation</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-lg">Applikation</CardTitle>
+                  <InfoPopover text="Visar vilken miljö appen körs i. Production = riktig data, development = testmiljö." />
+                </div>
                 <Activity className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
@@ -226,12 +236,15 @@ export default function AdminSystemPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <label
-                        htmlFor="email-toggle"
-                        className="text-sm font-medium"
-                      >
-                        Pausa e-postutskick
-                      </label>
+                      <div className="flex items-center gap-1">
+                        <label
+                          htmlFor="email-toggle"
+                          className="text-sm font-medium"
+                        >
+                          Pausa e-postutskick
+                        </label>
+                        <InfoPopover text="När aktiverat loggas e-post till konsolen istället för att skickas. Påverkar alla typer av e-post (bokningsbekräftelser, påminnelser, etc)." />
+                      </div>
                       <p className="text-xs text-gray-500">
                         {emailDisabledByEnv
                           ? "Avstängt via miljövariabel (DISABLE_EMAILS)"
@@ -251,7 +264,10 @@ export default function AdminSystemPage() {
             {/* Feature Flags */}
             <Card className="md:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg">Feature Flags</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-lg">Feature Flags</CardTitle>
+                  <InfoPopover text="Styr vilka funktioner som är aktiva. Ändringar träder i kraft direkt. Flaggor styrda av miljövariabel kan inte ändras här." />
+                </div>
                 <Flag className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>

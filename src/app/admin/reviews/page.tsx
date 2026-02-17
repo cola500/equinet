@@ -18,6 +18,7 @@ import {
   ResponsiveAlertDialogTitle,
 } from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight, Star, Trash2 } from "lucide-react"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 interface AdminReview {
   id: string
@@ -112,16 +113,19 @@ export default function AdminReviewsPage() {
 
         {/* Filter */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Select value={type} onValueChange={(v) => { setType(v); setPage(1) }}>
-            <SelectTrigger className="sm:w-[200px]">
-              <SelectValue placeholder="Alla typer" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alla typer</SelectItem>
-              <SelectItem value="review">Kundrecensioner</SelectItem>
-              <SelectItem value="customerReview">Leverantörsrecensioner</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1">
+            <Select value={type} onValueChange={(v) => { setType(v); setPage(1) }}>
+              <SelectTrigger className="sm:w-[200px]">
+                <SelectValue placeholder="Alla typer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alla typer</SelectItem>
+                <SelectItem value="review">Kundrecensioner</SelectItem>
+                <SelectItem value="customerReview">Leverantörsrecensioner</SelectItem>
+              </SelectContent>
+            </Select>
+            <InfoPopover text="Kundrecensioner = kunder betygsätter leverantörer. Leverantörsrecensioner = leverantörer betygsätter kunder (gällande t.ex. punktlighet, häst-hantering)." />
+          </div>
           <Input
             placeholder="Sök i kommentarer..."
             value={search}

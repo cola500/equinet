@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 // --- Types ---
 
@@ -141,7 +142,10 @@ export default function AdminVerificationsPage() {
 
   return (
     <AdminLayout>
-      <h1 className="text-3xl font-bold mb-2">Verifieringsansökningar</h1>
+      <div className="flex items-center gap-2 mb-2">
+        <h1 className="text-3xl font-bold">Verifieringsansökningar</h1>
+        <InfoPopover text="Leverantörer skickar in dokument för att verifiera sin kompetens. Godkännande ger dem en verifierad-badge som syns för kunder." />
+      </div>
       <p className="text-gray-600 mb-8">
         Granska och godkänn eller avvisa leverantörers verifieringsansökningar.
       </p>

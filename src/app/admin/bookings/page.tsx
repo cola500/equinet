@@ -19,6 +19,7 @@ import {
   ResponsiveAlertDialogTitle,
 } from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 interface AdminBooking {
   id: string
@@ -125,7 +126,10 @@ export default function AdminBookingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Bokningar</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Bokningar</h1>
+          <InfoPopover text="Filtrera på status och datumintervall. 'Ej infunna' (no-show) markeras av leverantören när kunden inte dyker upp." />
+        </div>
 
         {/* Filter */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -237,9 +241,12 @@ export default function AdminBookingsPage() {
                             {STATUS_LABELS[booking.status] || booking.status}
                           </Badge>
                           {booking.isManualBooking && (
-                            <Badge variant="outline" className="ml-1 text-xs">
-                              Manuell
-                            </Badge>
+                            <span className="inline-flex items-center gap-0.5 ml-1">
+                              <Badge variant="outline" className="text-xs">
+                                Manuell
+                              </Badge>
+                              <InfoPopover text="Bokningen skapades manuellt av leverantören (t.ex. telefon- eller platsbokning), inte via kundens självbokning." />
+                            </span>
                           )}
                         </td>
                         <td className="py-3">

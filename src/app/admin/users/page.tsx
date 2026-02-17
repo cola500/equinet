@@ -25,6 +25,7 @@ import {
   ResponsiveAlertDialogTitle,
 } from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight, Star, MoreHorizontal } from "lucide-react"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 interface AdminUser {
   id: string
@@ -164,7 +165,10 @@ function AdminUsersContent() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Användare</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Användare</h1>
+          <InfoPopover text="Sök på namn, e-post eller företagsnamn. Leverantörsvyn visar extra filter för verifiering och aktivitet." />
+        </div>
 
         {/* Filter */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -501,8 +505,18 @@ function ProviderTable({ users, onAction, formatName }: {
               <th className="pb-2 font-medium text-gray-500">Leverantör</th>
               <th className="pb-2 font-medium text-gray-500">Ort</th>
               <th className="pb-2 font-medium text-gray-500">Status</th>
-              <th className="pb-2 font-medium text-gray-500">Betyg</th>
-              <th className="pb-2 font-medium text-gray-500">Aktivitet</th>
+              <th className="pb-2 font-medium text-gray-500">
+                <span className="inline-flex items-center gap-1">
+                  Betyg
+                  <InfoPopover text="Genomsnittsbetyg från kundrecensioner (1-5 stjärnor)." />
+                </span>
+              </th>
+              <th className="pb-2 font-medium text-gray-500">
+                <span className="inline-flex items-center gap-1">
+                  Aktivitet
+                  <InfoPopover text="Antal bokningar och publicerade tjänster. Fortnox-badge visas om leverantören har kopplat sitt bokföringssystem." />
+                </span>
+              </th>
               <th className="pb-2 font-medium text-gray-500">Registrerad</th>
               <th className="pb-2 font-medium text-gray-500 w-10"></th>
             </tr>

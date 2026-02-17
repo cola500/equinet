@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, CalendarDays, Store, CreditCard } from "lucide-react"
+import { InfoPopover } from "@/components/ui/info-popover"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 
@@ -62,9 +63,12 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    Användare
-                  </CardTitle>
+                  <div className="flex items-center gap-1">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Användare
+                    </CardTitle>
+                    <InfoPopover text="Totalt antal registrerade användare (kunder och leverantörer). Nya denna månad baserat på registreringsdatum." />
+                  </div>
                   <Users className="h-4 w-4 text-gray-400" />
                 </CardHeader>
                 <CardContent>
@@ -77,9 +81,12 @@ export default function AdminDashboardPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    Bokningar
-                  </CardTitle>
+                  <div className="flex items-center gap-1">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Bokningar
+                    </CardTitle>
+                    <InfoPopover text="Totalt antal bokningar i systemet. Genomförda denna månad inkluderar bokningar med status 'genomförd'." />
+                  </div>
                   <CalendarDays className="h-4 w-4 text-gray-400" />
                 </CardHeader>
                 <CardContent>
@@ -92,9 +99,12 @@ export default function AdminDashboardPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    Leverantörer
-                  </CardTitle>
+                  <div className="flex items-center gap-1">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Leverantörer
+                    </CardTitle>
+                    <InfoPopover text="Verifierade har godkänd legitimation. Väntande-badge visar antal som väntar på granskning." />
+                  </div>
                   <Store className="h-4 w-4 text-gray-400" />
                 </CardHeader>
                 <CardContent>
@@ -116,9 +126,12 @@ export default function AdminDashboardPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    Intäkter
-                  </CardTitle>
+                  <div className="flex items-center gap-1">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Intäkter
+                    </CardTitle>
+                    <InfoPopover text="Baserat på genomförda bokningars pris. Belopp i SEK inklusive moms." />
+                  </div>
                   <CreditCard className="h-4 w-4 text-gray-400" />
                 </CardHeader>
                 <CardContent>
@@ -136,7 +149,10 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Bokningsstatus</CardTitle>
+                  <div className="flex items-center gap-1.5">
+                    <CardTitle className="text-lg">Bokningsstatus</CardTitle>
+                    <InfoPopover text="Väntande = inväntar bekräftelse. Bekräftade = leverantören har accepterat. Genomförda = besöket har ägt rum. Avbokade = avbokade av kund, leverantör eller admin." />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -162,7 +178,10 @@ export default function AdminDashboardPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Användarfördelning</CardTitle>
+                  <div className="flex items-center gap-1.5">
+                    <CardTitle className="text-lg">Användarfördelning</CardTitle>
+                    <InfoPopover text="Aktiva leverantörer har minst en publicerad tjänst och är inte inaktiverade." />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">

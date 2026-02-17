@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Send } from "lucide-react"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 const TARGET_LABELS: Record<string, string> = {
   all: "alla användare",
@@ -80,9 +81,12 @@ export default function AdminNotificationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Mottagare
-              </label>
+              <div className="flex items-center gap-1 mb-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Mottagare
+                </label>
+                <InfoPopover text="Alla användare = kunder + leverantörer. Notifikationen visas i appen och kan inte ångras efter att den skickats." />
+              </div>
               <Select value={target} onValueChange={setTarget}>
                 <SelectTrigger>
                   <SelectValue />
@@ -123,9 +127,12 @@ export default function AdminNotificationsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Länk (valfri)
-              </label>
+              <div className="flex items-center gap-1 mb-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Länk (valfri)
+                </label>
+                <InfoPopover text="Intern sökväg som öppnas när användaren klickar på notifikationen, t.ex. /customer/bookings eller /provider/calendar." />
+              </div>
               <Input
                 placeholder="/customer/bookings"
                 value={linkUrl}
