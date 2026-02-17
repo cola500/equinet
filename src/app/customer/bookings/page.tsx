@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 import { ReviewDialog } from "@/components/review/ReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
+import { CustomerOnboardingChecklist } from "@/components/customer/CustomerOnboardingChecklist"
 
 interface Payment {
   id: string
@@ -302,6 +303,11 @@ export default function CustomerBookingsPage() {
           <Button className="w-full sm:w-auto">Boka ny tjänst</Button>
         </Link>
       </div>
+
+        {/* Onboarding Checklist for new customers */}
+        <div className="mb-8">
+          <CustomerOnboardingChecklist />
+        </div>
 
         {/* Filter Tabs -- segment control style */}
         <div className="inline-flex bg-gray-100 rounded-lg p-1 mb-6">

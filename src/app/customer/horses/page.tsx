@@ -45,6 +45,8 @@ import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
+import { EmptyState } from "@/components/ui/empty-state"
+import { PawPrint } from "lucide-react"
 
 interface Horse {
   id: string
@@ -245,20 +247,12 @@ export default function CustomerHorsesPage() {
       {isLoading ? (
         <HorseCardSkeleton count={3} />
       ) : horses.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-gray-600 mb-4">
-              Du har inga hästar registrerade ännu.
-            </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Lägg till dina hästar för att enkelt välja dem vid bokning
-              och se deras vårdhistorik.
-            </p>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              Lägg till din första häst
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={PawPrint}
+          title="Inga hästar registrerade"
+          description="Lägg till dina hästar för att enkelt välja dem vid bokning och se deras vårdhistorik."
+          action={{ label: "Lägg till din första häst", onClick: () => setAddDialogOpen(true) }}
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {horses.map((horse, index) => (

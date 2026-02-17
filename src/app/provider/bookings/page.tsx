@@ -25,7 +25,8 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
-import { Mic } from "lucide-react"
+import { Calendar, Mic } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
@@ -232,13 +233,13 @@ export default function ProviderBookingsPage() {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-gray-600">
-                Inga bokningar att visa för detta filter.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Calendar}
+            title="Inga bokningar"
+            description={filter === "all"
+              ? "Du har inga bokningar ännu. De dyker upp här när kunder bokar dina tjänster."
+              : "Inga bokningar att visa för detta filter."}
+          />
         ) : (
           <div className="space-y-4">
             {filteredBookings.map((booking) => (

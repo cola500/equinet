@@ -44,7 +44,9 @@ import {
   Pencil,
   Loader2,
   UserPlus,
+  Users,
 } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 
 interface CustomerHorse {
   id: string
@@ -546,25 +548,20 @@ export default function ProviderCustomersPage() {
           <p className="mt-4 text-gray-600">Laddar kunder...</p>
         </div>
       ) : customers.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-gray-500">
-            {searchQuery || statusFilter !== "all"
-              ? "Inga kunder matchar din sökning."
-              : (
-                <div>
-                  <p>Inga kunder ännu.</p>
-                  <Button
-                    variant="link"
-                    className="mt-2 text-green-600"
-                    onClick={() => setShowAddDialog(true)}
-                  >
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    Lägg till din första kund
-                  </Button>
-                </div>
-              )}
-          </CardContent>
-        </Card>
+        searchQuery || statusFilter !== "all" ? (
+          <EmptyState
+            icon={Search}
+            title="Inga träffar"
+            description="Inga kunder matchar din sökning. Prova ett annat sökord eller filter."
+          />
+        ) : (
+          <EmptyState
+            icon={Users}
+            title="Inga kunder ännu"
+            description="Kunder visas här när de bokar dina tjänster, eller lägg till dem manuellt."
+            action={{ label: "Lägg till din första kund", onClick: () => setShowAddDialog(true) }}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {customers.map((customer) => (

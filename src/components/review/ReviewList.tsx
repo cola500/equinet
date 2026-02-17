@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { StarRating } from "./StarRating"
+import { EmptyState } from "@/components/ui/empty-state"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
+import { Star } from "lucide-react"
 
 interface Review {
   id: string
@@ -114,11 +116,11 @@ export function ReviewList({
 
       {/* Review cards */}
       {reviews.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-gray-500">
-            Inga recensioner ännu.
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Star}
+          title="Inga recensioner ännu"
+          description="Recensioner från kunder visas här."
+        />
       ) : (
         <div className="space-y-4">
           {reviews.map((review) => (

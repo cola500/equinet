@@ -14,6 +14,9 @@ import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
 import { StarRating } from "@/components/review/StarRating"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { Wrench, CalendarDays, Users, CalendarRange, Map, Mic } from "lucide-react"
+import { DashboardCharts } from "@/components/provider/DashboardCharts"
 
 export default function ProviderDashboard() {
   const router = useRouter()
@@ -28,6 +31,13 @@ export default function ProviderDashboard() {
     averageRating: number | null
     totalCount: number
   }>({ averageRating: null, totalCount: 0 })
+  const [dashboardStats, setDashboardStats] = useState<{
+    bookingTrend: Array<{ week: string; completed: number; cancelled: number }>
+    revenueTrend: Array<{ month: string; revenue: number }>
+  }>({ bookingTrend: [], revenueTrend: [] })
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
+  const pendingCount = bookings.filter((b: any) => b.status === "pending").length
   const { retry, retryCount, isRetrying, canRetry } = useRetry({
     maxRetries: 3,
     onMaxRetriesReached: () => {
@@ -55,6 +65,7 @@ export default function ProviderDashboard() {
         fetchRoutes(),
         fetchAvailableRouteOrders(),
         fetchReviewStats(),
+        fetchDashboardStats(),
       ])
     } catch (error) {
       console.error("Error fetching data:", error)
@@ -102,6 +113,22 @@ export default function ProviderDashboard() {
     }
   }
 
+  const fetchDashboardStats = async () => {
+    setIsLoadingStats(true)
+    try {
+      const response = await fetch("/api/provider/dashboard/stats")
+      if (response.ok) {
+        const data = await response.json()
+        setDashboardStats(data)
+      }
+    } catch (error) {
+      // Non-critical -- silently ignore
+      console.error("Error fetching dashboard stats:", error)
+    } finally {
+      setIsLoadingStats(false)
+    }
+  }
+
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
@@ -143,47 +170,53 @@ export default function ProviderDashboard() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Stats Cards */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Aktiva tjänster
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {services.filter((s: any) => s.isActive).length}
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/provider/services">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  Aktiva tjänster
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">
+                  {services.filter((s: any) => s.isActive).length}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Kommande bokningar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {bookings.filter((b: any) =>
-                  (b.status === "pending" || b.status === "confirmed") &&
-                  new Date(b.bookingDate) >= new Date()
-                ).length}
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/provider/bookings">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  Kommande bokningar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">
+                  {bookings.filter((b: any) =>
+                    (b.status === "pending" || b.status === "confirmed") &&
+                    new Date(b.bookingDate) >= new Date()
+                  ).length}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Nya förfrågningar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {bookings.filter((b: any) => b.status === "pending").length}
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/provider/bookings">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  Nya förfrågningar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">
+                  {pendingCount}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
           <Link href="/provider/reviews">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
@@ -209,6 +242,15 @@ export default function ProviderDashboard() {
               </CardContent>
             </Card>
           </Link>
+        </div>
+
+        {/* Dashboard Charts */}
+        <div className="mb-8">
+          <DashboardCharts
+            bookingTrend={dashboardStats.bookingTrend}
+            revenueTrend={dashboardStats.revenueTrend}
+            isLoading={isLoadingStats}
+          />
         </div>
 
         {/* Routes Section */}
@@ -279,22 +321,50 @@ export default function ProviderDashboard() {
             <CardDescription>Vanliga åtgärder</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Link href="/provider/services">
                 <Button className="w-full" variant="outline">
+                  <Wrench className="h-4 w-4 mr-2" />
                   Hantera tjänster
                 </Button>
               </Link>
               <Link href="/provider/bookings">
                 <Button className="w-full" variant="outline">
+                  <CalendarDays className="h-4 w-4 mr-2" />
                   Se bokningar
+                  {pendingCount > 0 && (
+                    <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded-full">
+                      {pendingCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+              <Link href="/provider/customers">
+                <Button className="w-full" variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Kundregister
+                </Button>
+              </Link>
+              <Link href="/provider/calendar">
+                <Button className="w-full" variant="outline">
+                  <CalendarRange className="h-4 w-4 mr-2" />
+                  Kalender
                 </Button>
               </Link>
               <Link href="/provider/route-planning">
                 <Button className="w-full" variant="outline">
+                  <Map className="h-4 w-4 mr-2" />
                   Planera rutter
                 </Button>
               </Link>
+              {isVoiceLoggingEnabled && (
+                <Link href="/provider/voice-log">
+                  <Button className="w-full" variant="outline">
+                    <Mic className="h-4 w-4 mr-2" />
+                    Logga arbete
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>
