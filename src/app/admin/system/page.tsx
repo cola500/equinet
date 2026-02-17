@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Activity, Database, Clock, Mail, Flag } from "lucide-react"
 import { toast } from "sonner"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
+import { FEATURE_FLAGS_CHANGED_EVENT } from "@/components/providers/FeatureFlagProvider"
 
 interface SystemData {
   database: {
@@ -45,7 +46,7 @@ export default function AdminSystemPage() {
         if (!res.ok) throw new Error("Fetch failed")
         return res.json()
       }),
-      fetch("/api/admin/settings").then((res) => {
+      fetch("/api/admin/settings", { cache: "no-store" }).then((res) => {
         if (!res.ok) throw new Error("Fetch failed")
         return res.json()
       }),
@@ -117,6 +118,7 @@ export default function AdminSystemPage() {
             }
           : prev
       )
+      window.dispatchEvent(new CustomEvent(FEATURE_FLAGS_CHANGED_EVENT))
       const flag = FEATURE_FLAGS[flagKey]
       toast.success(
         enabled

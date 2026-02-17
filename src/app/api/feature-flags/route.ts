@@ -3,6 +3,8 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { getFeatureFlags } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const ip = getClientIP(request)
@@ -14,7 +16,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ flags: await getFeatureFlags() })
+    return NextResponse.json(
+      { flags: await getFeatureFlags() },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    )
   } catch (error) {
     logger.error("Failed to fetch feature flags", error as Error)
     return NextResponse.json(

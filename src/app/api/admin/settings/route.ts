@@ -10,6 +10,8 @@ import {
 } from "@/lib/settings/runtime-settings"
 import { FEATURE_FLAGS, setFeatureFlagOverride, getFeatureFlags } from "@/lib/feature-flags"
 
+export const dynamic = "force-dynamic"
+
 const STATIC_KEYS = ["disable_emails"]
 const FEATURE_FLAG_KEYS = Object.keys(FEATURE_FLAGS).map((k) => `feature_${k}`)
 const ALL_ALLOWED_KEYS = new Set([...STATIC_KEYS, ...FEATURE_FLAG_KEYS])
@@ -49,14 +51,17 @@ export async function GET(request: NextRequest) {
     // Get actual flag states from Redis (not just in-memory)
     const featureFlagStates = await getFeatureFlags()
 
-    return NextResponse.json({
-      settings: getAllRuntimeSettings(),
-      env: {
-        emailDisabledByEnv: process.env.DISABLE_EMAILS === "true",
-        featureFlagOverrides: featureFlagEnvOverrides,
+    return NextResponse.json(
+      {
+        settings: getAllRuntimeSettings(),
+        env: {
+          emailDisabledByEnv: process.env.DISABLE_EMAILS === "true",
+          featureFlagOverrides: featureFlagEnvOverrides,
+        },
+        featureFlagStates,
       },
-      featureFlagStates,
-    })
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+    )
   } catch (error) {
     if (error instanceof Response) return error
     logger.error("Failed to fetch admin settings", error as Error)

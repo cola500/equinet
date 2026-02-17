@@ -141,7 +141,7 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
     // 2. Redis override (production)
     const redisValue = redisOverrides[key]
     if (redisValue !== null && redisValue !== undefined) {
-      result[key] = redisValue === "true"
+      result[key] = String(redisValue) === "true"
       continue
     }
 
@@ -180,7 +180,7 @@ export async function isFeatureEnabled(key: string): Promise<boolean> {
     try {
       const redisValue = await r.get<string>(`${REDIS_PREFIX}${key}`)
       if (redisValue !== null && redisValue !== undefined) {
-        return redisValue === "true"
+        return String(redisValue) === "true"
       }
     } catch {
       // Redis unavailable, fall through
