@@ -227,6 +227,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Gruppbokning för stallgemenskaper
 - In-app notifikationer + email
 - Automatiska återbesökspåminnelser
+- Bokningspåminnelser 24h före (med opt-out via unsubscribe-länk)
 
 ### Integrationer och säkerhet
 - Betalningsabstraktion (PaymentGateway)

@@ -2399,4 +2399,46 @@ Genererar AI-drivna kundinsikter baserat på bokningshistorik, anteckningar, rec
 
 ---
 
-*Senast uppdaterad: 2026-02-15 (Kundinsikter, vokabulärinlärning, röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*
+## Cron-endpoints
+
+### GET /api/cron/booking-reminders
+
+Skickar e-postpåminnelser 24h före bekräftade bokningar.
+
+**Auth:** `Authorization: Bearer <CRON_SECRET>` (Vercel skickar automatiskt)
+**Schema:** Dagligen 06:00 UTC (07:00 Stockholm)
+
+**Logik:**
+1. Hittar confirmed bokningar inom 22-30h fönster
+2. Filtrerar bort ghost users och kunder med `emailRemindersEnabled=false`
+3. Deduplicerar via Notification-tabellen (`REMINDER_BOOKING_24H`)
+4. Skapar in-app notification + skickar e-post
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "remindersSent": 5,
+  "processedAt": "2026-02-17T06:00:01.234Z"
+}
+```
+
+---
+
+### GET /api/email/unsubscribe
+
+Avregistrerar en användare från bokningspåminnelser via e-postlänk.
+
+**Auth:** HMAC-SHA256 token i query params (ingen inloggning krävs)
+
+**Query params:**
+- `userId` -- användar-ID
+- `token` -- HMAC-SHA256 signatur
+
+**Logik:** Verifierar token, sätter `emailRemindersEnabled=false`, returnerar bekräftelse-HTML.
+
+**Response:** `200 OK` (HTML-sida med bekräftelse) eller `400` vid ogiltig/saknad token.
+
+---
+
+*Senast uppdaterad: 2026-02-17 (Bokningspåminnelser, unsubscribe-endpoint, kundinsikter, vokabulärinlärning, röstloggning, admin-endpoints, manuell kundregistrering, runtime settings)*

@@ -10,6 +10,7 @@ export const NotificationType = {
   PAYMENT_RECEIVED: "payment_received",
   REVIEW_RECEIVED: "review_received",
   REMINDER_REBOOK: "reminder_rebook",
+  REMINDER_BOOKING_24H: "reminder_booking_24h",
   GROUP_BOOKING_JOINED: "group_booking_joined",
   GROUP_BOOKING_LEFT: "group_booking_left",
   GROUP_BOOKING_MATCHED: "group_booking_matched",

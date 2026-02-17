@@ -11,9 +11,11 @@ import {
   paymentConfirmationEmail,
   bookingStatusChangeEmail,
   rebookingReminderEmail,
+  bookingReminderEmail,
 } from "./templates"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
+import { generateUnsubscribeUrl } from "./unsubscribe-token"
 
 const statusLabels: Record<string, string> = {
   pending: "Väntar på bekräftelse",
@@ -261,6 +263,72 @@ export async function sendRebookingReminderNotification(
     })
   } catch (error) {
     console.error("Error sending rebooking reminder:", error)
+    return { success: false, error: String(error) }
+  }
+}
+
+export async function sendBookingReminderNotification(bookingId: string) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
+        customerId: true,
+        customer: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        service: {
+          select: { name: true },
+        },
+        provider: {
+          select: {
+            businessName: true,
+            user: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+    })
+
+    if (!booking || !booking.customer.email) {
+      console.warn(`Cannot send booking reminder: booking ${bookingId} not found or no email`)
+      return { success: false, error: "Booking not found or no email" }
+    }
+
+    // Skip email for ghost users
+    if (booking.customer.email.endsWith("@ghost.equinet.se")) {
+      return { success: true, error: undefined }
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const unsubscribeUrl = generateUnsubscribeUrl(booking.customerId)
+
+    const { html, text } = bookingReminderEmail({
+      customerName: `${booking.customer.firstName} ${booking.customer.lastName}`,
+      serviceName: booking.service.name,
+      providerName: `${booking.provider.user.firstName} ${booking.provider.user.lastName}`,
+      businessName: booking.provider.businessName,
+      bookingDate: format(new Date(booking.bookingDate), "d MMMM yyyy", { locale: sv }),
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      bookingUrl: `${baseUrl}/customer/bookings`,
+      unsubscribeUrl,
+    })
+
+    return await emailService.send({
+      to: booking.customer.email,
+      subject: `Påminnelse: ${booking.service.name} imorgon kl ${booking.startTime}`,
+      html,
+      text,
+    })
+  } catch (error) {
+    console.error("Error sending booking reminder:", error)
     return { success: false, error: String(error) }
   }
 }
