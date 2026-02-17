@@ -14,6 +14,18 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
+import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+
+interface CustomerNavItem {
+  href: string
+  label: string
+  matchPrefix?: string
+  featureFlag?: string
+}
+
+interface CustomerMoreItem extends MoreMenuItem {
+  featureFlag?: string
+}
 
 const customerTabs: TabItem[] = [
   { href: "/providers", label: "Sök", icon: Search, matchPrefix: "/providers" },
@@ -21,18 +33,18 @@ const customerTabs: TabItem[] = [
   { href: "/customer/horses", label: "Hästar", icon: PawPrint },
 ]
 
-const customerMoreItems: MoreMenuItem[] = [
+const customerMoreItems: CustomerMoreItem[] = [
   { href: "/announcements", label: "Planerade rutter", icon: MapPin, matchPrefix: "/announcements" },
-  { href: "/customer/group-bookings", label: "Gruppförfrågningar", icon: Users, matchPrefix: "/customer/group-bookings" },
+  { href: "/customer/group-bookings", label: "Gruppbokningar", icon: Users, matchPrefix: "/customer/group-bookings", featureFlag: "group_bookings" },
   { href: "/customer/faq", label: "Vanliga frågor", icon: HelpCircle },
   { href: "/customer/profile", label: "Min profil", icon: User },
 ]
 
-const allNavItems = [
+const allNavItems: CustomerNavItem[] = [
   { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
   { href: "/customer/bookings", label: "Mina bokningar" },
   { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
-  { href: "/customer/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/customer/group-bookings" },
+  { href: "/customer/group-bookings", label: "Gruppbokningar", matchPrefix: "/customer/group-bookings", featureFlag: "group_bookings" },
   { href: "/customer/horses", label: "Mina hästar" },
   { href: "/customer/faq", label: "Vanliga frågor" },
   { href: "/customer/profile", label: "Min profil" },
@@ -41,14 +53,18 @@ const allNavItems = [
 export function CustomerNav() {
   const pathname = usePathname()
   const { isAdmin } = useAuth()
+  const flags = useFeatureFlags()
+
+  const isVisible = (item: { featureFlag?: string }) =>
+    !item.featureFlag || flags[item.featureFlag]
 
   const navItems = [
-    ...allNavItems,
+    ...allNavItems.filter(isVisible),
     ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", matchPrefix: "/admin" }] : []),
   ]
 
   const moreItems: MoreMenuItem[] = [
-    ...customerMoreItems,
+    ...customerMoreItems.filter(isVisible),
     ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", icon: Shield, matchPrefix: "/admin" }] : []),
   ]
 

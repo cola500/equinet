@@ -43,7 +43,7 @@ const providerMoreItems: MoreItem[] = [
   { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements", featureFlag: "route_announcements" },
   { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
   { href: "/provider/due-for-service", label: "Besöksplanering", icon: Clock, matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service" },
-  { href: "/provider/group-bookings", label: "Gruppförfrågningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
+  { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
   { href: "/provider/reviews", label: "Recensioner", icon: Star },
   { href: "/provider/profile", label: "Min profil", icon: User },
 ]
@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
   { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", featureFlag: "route_announcements" },
   { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
   { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service" },
-  { href: "/provider/group-bookings", label: "Gruppförfrågningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
+  { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
   { href: "/provider/reviews", label: "Recensioner" },
   { href: "/provider/profile", label: "Min profil" },
 ]
