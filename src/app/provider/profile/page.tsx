@@ -52,7 +52,7 @@ interface ProviderProfile {
 
 export default function ProviderProfilePage() {
   const router = useRouter()
-  const { isLoading, isProvider } = useAuth()
+  const { isLoading, isProvider, providerId } = useAuth()
   const { profile: swrProfile, mutate: mutateProfile } = useProviderProfile()
   const profile = swrProfile as ProviderProfile | null
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
@@ -936,7 +936,7 @@ export default function ProviderProfilePage() {
       </Card>
 
       {/* Availability Schedule Card */}
-      {profile && <AvailabilitySchedule providerId={profile.id} />}
+      {providerId && <AvailabilitySchedule providerId={providerId} />}
 
       {/* Verification Link */}
       <Card className="mt-6">

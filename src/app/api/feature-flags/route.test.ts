@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
 import { NextRequest } from "next/server"
 import { clearRuntimeSettings, setRuntimeSetting } from "@/lib/settings/runtime-settings"
+import { _resetFlagCacheForTesting } from "@/lib/feature-flags"
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: {
@@ -14,6 +15,7 @@ describe("GET /api/feature-flags", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     clearRuntimeSettings()
+    _resetFlagCacheForTesting()
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("FEATURE_")) {
         delete process.env[key]

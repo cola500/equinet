@@ -11,9 +11,12 @@ export async function GET(request: NextRequest) {
     const limitParam = request.nextUrl.searchParams.get("limit")
     const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10), 1), 50) : 20
 
-    const notifications = await notificationService.getForUser(session.user.id, { limit })
+    const [notifications, unreadCount] = await Promise.all([
+      notificationService.getForUser(session.user.id, { limit }),
+      notificationService.getUnreadCount(session.user.id),
+    ])
 
-    return NextResponse.json(notifications)
+    return NextResponse.json({ notifications, unreadCount })
   } catch (error) {
     if (error instanceof Response) {
       return error

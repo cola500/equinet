@@ -67,6 +67,10 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
 
 const REDIS_PREFIX = "feature_flag:"
 
+// Server-side cache for getFeatureFlags (30s TTL)
+let flagCache: { flags: Record<string, boolean>; at: number } | null = null
+const FLAG_CACHE_TTL_MS = 30_000
+
 let redis: Redis | null = null
 
 function getRedis(): Redis | null {
@@ -90,6 +94,9 @@ export async function setFeatureFlagOverride(
   key: string,
   value: string
 ): Promise<void> {
+  // Invalidate server-side cache
+  flagCache = null
+
   // Always update in-memory (local cache / dev fallback)
   setRuntimeSetting(`feature_${key}`, value)
 
@@ -108,6 +115,9 @@ export async function setFeatureFlagOverride(
  * After removal the flag reverts to its default value.
  */
 export async function removeFeatureFlagOverride(key: string): Promise<void> {
+  // Invalidate server-side cache
+  flagCache = null
+
   deleteRuntimeSetting(`feature_${key}`)
 
   const r = getRedis()
@@ -127,6 +137,11 @@ export async function removeFeatureFlagOverride(key: string): Promise<void> {
  * Priority: env variable > Redis/runtime override > default
  */
 export async function getFeatureFlags(): Promise<Record<string, boolean>> {
+  // Return cached result if still fresh
+  if (flagCache && Date.now() - flagCache.at < FLAG_CACHE_TTL_MS) {
+    return { ...flagCache.flags }
+  }
+
   const keys = Object.keys(FEATURE_FLAGS)
   const result: Record<string, boolean> = {}
 
@@ -173,6 +188,9 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
     // 4. Default
     result[key] = flag.defaultEnabled
   }
+
+  // Update cache
+  flagCache = { flags: { ...result }, at: Date.now() }
 
   return result
 }
@@ -225,4 +243,9 @@ export function getFeatureFlagDefinitions(): FeatureFlag[] {
 /** Reset cached Redis instance (test helper only) */
 export function _resetRedisForTesting(): void {
   redis = null
+}
+
+/** Reset flag cache (test helper only) */
+export function _resetFlagCacheForTesting(): void {
+  flagCache = null
 }

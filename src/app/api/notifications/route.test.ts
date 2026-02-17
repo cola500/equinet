@@ -8,11 +8,13 @@ vi.mock("@/lib/auth-server", () => ({
 }))
 
 const mockGetForUser = vi.fn()
+const mockGetUnreadCount = vi.fn()
 const mockMarkAllAsRead = vi.fn()
 
 vi.mock("@/domain/notification/NotificationService", () => ({
   notificationService: {
     getForUser: (...args: unknown[]) => mockGetForUser(...args),
+    getUnreadCount: (...args: unknown[]) => mockGetUnreadCount(...args),
     markAllAsRead: (...args: unknown[]) => mockMarkAllAsRead(...args),
   },
 }))
@@ -22,7 +24,7 @@ describe("GET /api/notifications", () => {
     vi.clearAllMocks()
   })
 
-  it("should return notifications for authenticated user", async () => {
+  it("should return notifications and unreadCount for authenticated user", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
     } as any)
@@ -46,6 +48,7 @@ describe("GET /api/notifications", () => {
       },
     ]
     mockGetForUser.mockResolvedValue(mockNotifications)
+    mockGetUnreadCount.mockResolvedValue(1)
 
     const request = new NextRequest("http://localhost:3000/api/notifications")
 
@@ -53,10 +56,12 @@ describe("GET /api/notifications", () => {
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(2)
-    expect(data[0].id).toBe("n1")
-    expect(data[0].type).toBe("booking_confirmed")
+    expect(data.notifications).toHaveLength(2)
+    expect(data.notifications[0].id).toBe("n1")
+    expect(data.notifications[0].type).toBe("booking_confirmed")
+    expect(data.unreadCount).toBe(1)
     expect(mockGetForUser).toHaveBeenCalledWith("user-1", { limit: 20 })
+    expect(mockGetUnreadCount).toHaveBeenCalledWith("user-1")
   })
 
   it("should respect limit query parameter", async () => {
@@ -64,6 +69,7 @@ describe("GET /api/notifications", () => {
       user: { id: "user-1", userType: "customer" },
     } as any)
     mockGetForUser.mockResolvedValue([])
+    mockGetUnreadCount.mockResolvedValue(0)
 
     const request = new NextRequest(
       "http://localhost:3000/api/notifications?limit=5"

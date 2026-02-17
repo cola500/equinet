@@ -21,6 +21,7 @@ describe('useAuth', () => {
     expect(result.current.isLoading).toBe(false)
     expect(result.current.isProvider).toBe(false)
     expect(result.current.isCustomer).toBe(false)
+    expect(result.current.providerId).toBeNull()
   })
 
   it('should return loading state', () => {
@@ -60,6 +61,7 @@ describe('useAuth', () => {
     expect(result.current.isLoading).toBe(false)
     expect(result.current.isCustomer).toBe(true)
     expect(result.current.isProvider).toBe(false)
+    expect(result.current.providerId).toBeNull()
   })
 
   it('should return authenticated provider state', () => {
@@ -87,5 +89,6 @@ describe('useAuth', () => {
     expect(result.current.isLoading).toBe(false)
     expect(result.current.isProvider).toBe(true)
     expect(result.current.isCustomer).toBe(false)
+    expect(result.current.providerId).toBe('p123')
   })
 })
