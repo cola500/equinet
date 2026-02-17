@@ -12,6 +12,16 @@ Execute the plan autonomously with TDD, incremental verification between phases,
 
 Before starting, verify prerequisites:
 
+**Plan file exists:**
+Verify that `$ARGUMENTS` points to an existing file. If it doesn't, STOP and ask the user for the correct path.
+
+**Branch check:**
+```bash
+git branch --show-current
+```
+If on `main`, WARN the user: "You're on the main branch. Consider creating a feature branch first (`git checkout -b feature/<name>`)." Wait for confirmation before proceeding.
+
+**Typecheck baseline:**
 ```bash
 npm run typecheck   # Must be 0 errors before we start
 ```
@@ -103,7 +113,7 @@ Phase 3: Fill in UI details (mobile, error handling, edge cases, polish)
 **Walking Skeleton rules:**
 - Phase 1 uses hardcoded/minimal data -- just enough to prove the layers connect
 - Phase 1 skips tests (it's a spike through the stack, not production code yet)
-- Phase 2 adds TDD as normal -- write tests for the real business logic
+- Phase 2 adds TDD as normal -- write tests for ALL code, including retrofitting tests for Phase 1 code (routes, services, etc.)
 - Phase 3 handles all the edge cases the skeleton ignored
 
 **When to choose Walking Skeleton:**
@@ -133,7 +143,7 @@ For EACH phase, follow this cycle:
 - Run the new tests -- verify they FAIL (RED):
 
 ```bash
-npm run test:run -- --reporter=dot <path-to-test-file> 2>&1 | tail -10
+npm run test:run -- --reporter=dot <path-to-test-file> 2>&1 | tail -30
 ```
 
 ### 2b. Implement
@@ -144,10 +154,10 @@ npm run test:run -- --reporter=dot <path-to-test-file> 2>&1 | tail -10
 
 ### 2c. Verify phase (GREEN)
 
-Run tests for the changed files:
+Run tests for the changed files in this phase (NOT the full suite -- save that for step 3a):
 
 ```bash
-npm run test:run -- --reporter=dot 2>&1 | tail -10
+npm run test:run -- --reporter=dot <path-to-test-file(s)> 2>&1 | tail -30
 ```
 
 - If tests FAIL: fix the implementation, do NOT move to next phase
@@ -177,13 +187,15 @@ Then proceed to next phase.
 
 After ALL phases are complete, run the full quality gate:
 
-### 3a. Full test suite
+### 3a. Full test suite + coverage
 
 ```bash
-npm run test:run -- --reporter=dot 2>&1 | tail -10
+npm run test:run -- --reporter=dot --coverage 2>&1 | tail -30
 ```
 
 ALL tests must pass. If any regressed, fix them.
+Check that coverage thresholds are met (API >= 80%, Utilities >= 90%, Overall >= 70%).
+If coverage is below threshold, add missing tests before proceeding.
 
 ### 3b. TypeScript
 
@@ -214,7 +226,8 @@ If the check fails, fix the Swedish characters and run again.
 First, check if any API routes were created or changed:
 
 ```bash
-git diff --name-only | grep "src/app/api/"
+# Includes both modified tracked files AND new untracked files
+{ git diff --name-only; git ls-files --others --exclude-standard; } | grep "src/app/api/"
 ```
 
 If API route files were changed, run the security-check skill on each changed route.
@@ -231,8 +244,8 @@ Additionally verify manually:
 ### 3e. console.log check
 
 ```bash
-# Check changed files for console.log in API routes
-git diff --name-only | grep "src/app/api/" | head -20
+# Check changed/new files for console.log in API routes
+{ git diff --name-only; git ls-files --others --exclude-standard; } | grep "src/app/api/" | head -20
 ```
 
 If any API route files changed, verify they use `logger` not `console.*`.
@@ -242,7 +255,7 @@ If any API route files changed, verify they use `logger` not `console.*`.
 Check if new pages were created:
 
 ```bash
-git diff --name-only | grep "src/app/(protected)\|src/app/(public)"
+{ git diff --name-only; git ls-files --others --exclude-standard; } | grep "src/app/(protected)\|src/app/(public)"
 ```
 
 If new pages were created, add to the summary report:
