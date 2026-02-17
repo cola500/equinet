@@ -46,7 +46,7 @@ jobs:
         run: npx prisma generate
 
       - name: Run unit tests with coverage
-        run: npx vitest run --coverage --coverage.thresholds.lines=70
+        run: npx vitest run --coverage --coverage.thresholds.lines=70 --coverage.thresholds.branches=60
 
   # E2E tests
   e2e-tests:
@@ -201,6 +201,8 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
