@@ -1,16 +1,16 @@
-# Rost & AI
+# Röst & AI
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
-Rostloggning (diktering av utfort arbete), vokabularinlarning och AI-drivna kundinsikter.
+Röstloggning (diktering av utfört arbete), vokabulärinlärning och AI-drivna kundinsikter.
 
 ---
 
-## Rostloggning
+## Röstloggning
 
 ### POST /api/voice-log
 
-Tolkar en rosttranskribering och matchar mot dagens bokningar.
+Tolkar en rösttranskribering och matchar mot dagens bokningar.
 
 **Auth:** Required (provider)
 
@@ -22,7 +22,7 @@ Tolkar en rosttranskribering och matchar mot dagens bokningar.
 }
 ```
 
-| Falt | Typ | Validering |
+| Fält | Typ | Validering |
 |------|-----|------------|
 | `transcript` | string | Obligatoriskt |
 | `date` | string | Valfritt, default idag. ISO-datumformat. |
@@ -49,7 +49,7 @@ Tolkar en rosttranskribering och matchar mot dagens bokningar.
 
 ### POST /api/voice-log/confirm
 
-Sparar tolkad rostloggning. Uppdaterar providerNotes, markerar completed, skapar horse note, sparar vokabular.
+Sparar tolkad röstloggning. Uppdaterar providerNotes, markerar completed, skapar horse note, sparar vokabulär.
 
 **Auth:** Required (provider)
 
@@ -67,7 +67,7 @@ Sparar tolkad rostloggning. Uppdaterar providerNotes, markerar completed, skapar
 }
 ```
 
-`originalWorkPerformed` och `originalHorseObservation` ar valfria. Om de skickas och skiljer sig fran redigerade varden sparas ordniva-diff som vokabular (max 50 termer, FIFO). Vokabularen injiceras i LLM-prompten vid nasta tolkning.
+`originalWorkPerformed` och `originalHorseObservation` är valfria. Om de skickas och skiljer sig från redigerade värden sparas ordnivå-diff som vokabulär (max 50 termer, FIFO). Vokabulären injiceras i LLM-prompten vid nästa tolkning.
 
 **Response:** `200 OK`
 ```json
@@ -84,22 +84,22 @@ Sparar tolkad rostloggning. Uppdaterar providerNotes, markerar completed, skapar
 
 ### POST /api/provider/customers/[customerId]/insights
 
-Genererar AI-drivna kundinsikter baserat pa bokningshistorik, anteckningar, recensioner och hastar.
+Genererar AI-drivna kundinsikter baserat på bokningshistorik, anteckningar, recensioner och hästar.
 
-**Auth:** Required (provider, maste ha kundrelation)
+**Auth:** Required (provider, måste ha kundrelation)
 
-**Request Body:** Ingen (all data hamtas server-side)
+**Request Body:** Ingen (all data hämtas server-side)
 
 **Response:** `200 OK`
 ```json
 {
   "insight": {
     "frequency": "Regelbunden (var 6:e vecka)",
-    "topServices": ["Hovvard", "Hovbeslag"],
-    "patterns": ["Bokar alltid mandag fm"],
-    "riskFlags": ["2 avbokningar senaste 3 man"],
+    "topServices": ["Hovvård", "Hovbeslag"],
+    "patterns": ["Bokar alltid måndag fm"],
+    "riskFlags": ["2 avbokningar senaste 3 mån"],
     "vipScore": "medium",
-    "summary": "Regelbunden kund med tva hastar.",
+    "summary": "Regelbunden kund med två hästar.",
     "confidence": 0.85
   },
   "metrics": {
@@ -111,7 +111,7 @@ Genererar AI-drivna kundinsikter baserat pa bokningshistorik, anteckningar, rece
 ```
 
 **Felkoder:**
-- `400` -- Kunden har inga genomforda bokningar
+- `400` -- Kunden har inga genomförda bokningar
 - `403` -- Ej provider / ingen kundrelation
 - `429` -- Rate limited (20/min)
 - `503` -- AI API-nyckel saknas

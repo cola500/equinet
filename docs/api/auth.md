@@ -1,6 +1,6 @@
 # Auth & Profil
 
-> Se [API.md](../API.md) for gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
 ## POST /api/auth/register
 
@@ -14,16 +14,16 @@ Registrera ny användare.
   "email": "user@example.com",
   "password": "minst8tecken",
   "firstName": "Johan",
-  "lastName": "Lindengard",
+  "lastName": "Lindengård",
   "phone": "0701234567",
   "userType": "customer" | "provider",
   "businessName": "Hovslagare AB",
   "description": "Beskrivning",
-  "city": "Goteborg"
+  "city": "Göteborg"
 }
 ```
 
-| Falt | Typ | Validering |
+| Fält | Typ | Validering |
 |------|-----|------------|
 | `email` | string | Giltig e-postadress, unik |
 | `password` | string | Min 8 tecken |
@@ -31,33 +31,33 @@ Registrera ny användare.
 | `lastName` | string | Obligatoriskt |
 | `phone` | string | Obligatoriskt |
 | `userType` | string | `customer` eller `provider` |
-| `businessName` | string | Kravs for provider |
-| `description` | string | Valfritt, for provider |
-| `city` | string | Valfritt, for provider |
+| `businessName` | string | Krävs för provider |
+| `description` | string | Valfritt, för provider |
+| `city` | string | Valfritt, för provider |
 
 **Response:** `201 Created`
 ```json
 {
-  "message": "Anvandare skapad",
+  "message": "Användare skapad",
   "user": { "id": "uuid", "email": "...", "firstName": "...", "lastName": "...", "userType": "customer" }
 }
 ```
 
 **Felkoder:**
-- `400` -- Valideringsfel eller anvandare finns redan
+- `400` -- Valideringsfel eller användare finns redan
 - `429` -- Rate limit (5 registreringar/timme per IP)
 
 ---
 
 ## GET/POST /api/auth/[...nextauth]
 
-NextAuth.js endpoints for inloggning, utloggning och session. Se [NextAuth.js dokumentation](https://next-auth.js.org/getting-started/rest-api).
+NextAuth.js endpoints för inloggning, utloggning och session. Se [NextAuth.js dokumentation](https://next-auth.js.org/getting-started/rest-api).
 
 ---
 
 ## GET /api/profile
 
-Hamta inloggad anvandares profil.
+Hämta inloggad användares profil.
 
 **Auth:** Required
 
@@ -67,7 +67,7 @@ Hamta inloggad anvandares profil.
   "id": "uuid",
   "email": "user@example.com",
   "firstName": "Johan",
-  "lastName": "Lindengard",
+  "lastName": "Lindengård",
   "phone": "0701234567",
   "userType": "customer" | "provider"
 }
@@ -77,7 +77,7 @@ Hamta inloggad anvandares profil.
 
 ## PUT /api/profile
 
-Uppdatera inloggad anvandares profil.
+Uppdatera inloggad användares profil.
 
 **Auth:** Required
 
@@ -85,7 +85,7 @@ Uppdatera inloggad anvandares profil.
 ```json
 {
   "firstName": "Johan",
-  "lastName": "Lindengard",
+  "lastName": "Lindengård",
   "phone": "0701234567"
 }
 ```

@@ -1,57 +1,57 @@
-# Leverantorer
+# Leverantörer
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
-Leverantorsprofil, tjanster, tillganglighet, aterbesoksintervall, besoksplanering, verifieringar och integrationer.
+Leverantörsprofil, tjänster, tillgänglighet, återbesöksintervall, besöksplanering, verifieringar och integrationer.
 
 ---
 
-## Sokning & Detaljer
+## Sökning & Detaljer
 
 ### GET /api/providers
 
-Sok aktiva providers med geo-filtrering.
+Sök aktiva providers med geo-filtrering.
 
-**Auth:** Ej kravd (publikt)
+**Auth:** Ej krävd (publikt)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `city` | string | Filtrera pa stad |
-| `search` | string | Sok i namn/beskrivning |
-| `latitude` | number | Latitud for geo-filtrering |
-| `longitude` | number | Longitud for geo-filtrering |
-| `radiusKm` | number | Sokradie i km |
+| `city` | string | Filtrera på stad |
+| `search` | string | Sök i namn/beskrivning |
+| `latitude` | number | Latitud för geo-filtrering |
+| `longitude` | number | Longitud för geo-filtrering |
+| `radiusKm` | number | Sökradie i km |
 
-> Om nagon av latitude/longitude/radiusKm anges maste alla tre anges.
+> Om någon av latitude/longitude/radiusKm anges måste alla tre anges.
 
 **Response:** `200 OK`
 ```json
 [
   {
     "id": "uuid", "businessName": "Hovslagare AB",
-    "description": "Professionell hovslagare", "city": "Goteborg",
+    "description": "Professionell hovslagare", "city": "Göteborg",
     "latitude": 57.7089, "longitude": 11.9746, "serviceAreaKm": 50,
     "isVerified": true, "services": [...],
-    "user": { "firstName": "Johan", "lastName": "Lindengard" }
+    "user": { "firstName": "Johan", "lastName": "Lindengård" }
   }
 ]
 ```
 
 ### GET /api/providers/[id]
 
-Hamta specifik provider med tjanster, tillganglighet och verifieringsstatus.
+Hämta specifik provider med tjänster, tillgänglighet och verifieringsstatus.
 
-**Auth:** Ej kravd (publikt)
+**Auth:** Ej krävd (publikt)
 
 **Response:** `200 OK`
 ```json
 {
   "id": "uuid", "businessName": "Hovslagare AB",
   "isVerified": true, "verifiedAt": "2026-01-30T12:00:00Z",
-  "verifications": [{ "id": "uuid", "type": "education", "title": "Wangens gesallprov" }],
+  "verifications": [{ "id": "uuid", "type": "education", "title": "Wångens gesällprov" }],
   "services": [...], "availability": [...],
-  "user": { "firstName": "Johan", "lastName": "Lindengard", "phone": "0701234567" }
+  "user": { "firstName": "Johan", "lastName": "Lindengård", "phone": "0701234567" }
 }
 ```
 
@@ -59,20 +59,20 @@ Hamta specifik provider med tjanster, tillganglighet och verifieringsstatus.
 
 Uppdatera provider-profil (med automatisk geocoding).
 
-**Auth:** Required (maste aga provider-profilen)
+**Auth:** Required (måste äga provider-profilen)
 
 **Request Body:**
 ```json
 {
   "businessName": "Hovslagare AB", "description": "Beskrivning",
-  "address": "Storgatan 1", "city": "Goteborg", "postalCode": "41234",
+  "address": "Storgatan 1", "city": "Göteborg", "postalCode": "41234",
   "serviceAreaKm": 50, "profileImageUrl": "https://..."
 }
 ```
 
 **Felkoder:**
 - `400` -- Valideringsfel eller kunde inte geocoda adress
-- `404` -- Provider finns inte eller saknar behorighet (atomar auth)
+- `404` -- Provider finns inte eller saknar behörighet (atomär auth)
 
 ---
 
@@ -80,7 +80,7 @@ Uppdatera provider-profil (med automatisk geocoding).
 
 ### GET /api/provider/profile
 
-Hamta inloggad providers profil.
+Hämta inloggad providers profil.
 
 **Auth:** Required (provider)
 
@@ -88,7 +88,7 @@ Hamta inloggad providers profil.
 ```json
 {
   "id": "uuid", "businessName": "Hovslagare AB", "description": "...",
-  "user": { "firstName": "Johan", "lastName": "Lindengard", "email": "...", "phone": "..." }
+  "user": { "firstName": "Johan", "lastName": "Lindengård", "email": "...", "phone": "..." }
 }
 ```
 
@@ -102,24 +102,24 @@ Uppdatera inloggad providers profil.
 ```json
 {
   "businessName": "Hovslagare AB", "description": "Beskrivning",
-  "address": "Storgatan 1", "city": "Goteborg", "postalCode": "41234",
-  "serviceArea": "Vastra Gotaland", "acceptingNewCustomers": false
+  "address": "Storgatan 1", "city": "Göteborg", "postalCode": "41234",
+  "serviceArea": "Västra Götaland", "acceptingNewCustomers": false
 }
 ```
 
-| Falt | Typ | Beskrivning |
+| Fält | Typ | Beskrivning |
 |------|-----|-------------|
-| `acceptingNewCustomers` | boolean (optional) | Stang/oppna for nya kunder. Default `true`. Nar `false` kan bara kunder med minst 1 slutford bokning boka nya tider. |
+| `acceptingNewCustomers` | boolean (optional) | Stäng/öppna för nya kunder. Default `true`. När `false` kan bara kunder med minst 1 slutförd bokning boka nya tider. |
 
 ---
 
-## Tillganglighet
+## Tillgänglighet
 
 ### GET /api/providers/[id]/availability
 
-Hamta tillganglighet for ett specifikt datum.
+Hämta tillgänglighet för ett specifikt datum.
 
-**Auth:** Ej kravd
+**Auth:** Ej krävd
 
 **Query:** `date` (YYYY-MM-DD, obligatoriskt)
 
@@ -134,9 +134,9 @@ Hamta tillganglighet for ett specifikt datum.
 
 ### GET /api/providers/[id]/availability-schedule
 
-Hamta veckans oppettider.
+Hämta veckans öppettider.
 
-**Auth:** Ej kravd
+**Auth:** Ej krävd
 
 **Response:** `200 OK`
 ```json
@@ -145,9 +145,9 @@ Hamta veckans oppettider.
 
 ### PUT /api/providers/[id]/availability-schedule
 
-Uppdatera oppettider.
+Uppdatera öppettider.
 
-**Auth:** Required (maste aga provider-profilen)
+**Auth:** Required (måste äga provider-profilen)
 
 **Request Body:**
 ```json
@@ -156,15 +156,15 @@ Uppdatera oppettider.
 }
 ```
 
-> `dayOfWeek`: 0 = Mandag, 6 = Sondag
+> `dayOfWeek`: 0 = Måndag, 6 = Söndag
 
 ---
 
-## Tjanster (Services)
+## Tjänster (Services)
 
 ### GET /api/services
 
-Hamta providers tjanster.
+Hämta providers tjänster.
 
 **Auth:** Required (provider)
 
@@ -175,7 +175,7 @@ Hamta providers tjanster.
 
 ### POST /api/services
 
-Skapa ny tjanst.
+Skapa ny tjänst.
 
 **Auth:** Required (provider)
 
@@ -186,13 +186,13 @@ Skapa ny tjanst.
 
 **Response:** `201 Created`
 
-**Felkoder:** `429` -- Rate limit (10 tjanster/timme)
+**Felkoder:** `429` -- Rate limit (10 tjänster/timme)
 
 ### PUT /api/services/[id]
 
-Uppdatera tjanst.
+Uppdatera tjänst.
 
-**Auth:** Required (provider, maste aga tjansten)
+**Auth:** Required (provider, måste äga tjänsten)
 
 **Request Body:**
 ```json
@@ -203,19 +203,19 @@ Uppdatera tjanst.
 
 ### DELETE /api/services/[id]
 
-**Auth:** Required (provider, maste aga tjansten)
+**Auth:** Required (provider, måste äga tjänsten)
 
 **Response:** `200 OK` `{ "message": "Service deleted" }`
 
 ---
 
-## Aterbesoksintervall
+## Återbesöksintervall
 
 ### GET /api/provider/horses/[horseId]/interval
 
-Hamta aterbesoksintervall for en hast (provider-specifikt override).
+Hämta återbesöksintervall för en häst (provider-specifikt override).
 
-**Auth:** Required (provider med bokning for hasten)
+**Auth:** Required (provider med bokning för hästen)
 
 **Response:** `200 OK`
 ```json
@@ -224,9 +224,9 @@ Hamta aterbesoksintervall for en hast (provider-specifikt override).
 
 ### PUT /api/provider/horses/[horseId]/interval
 
-Satt eller uppdatera aterbesoksintervall (upsert).
+Sätt eller uppdatera återbesöksintervall (upsert).
 
-**Auth:** Required (provider med bokning for hasten)
+**Auth:** Required (provider med bokning för hästen)
 
 **Request Body:**
 ```json
@@ -239,19 +239,19 @@ Satt eller uppdatera aterbesoksintervall (upsert).
 
 ### DELETE /api/provider/horses/[horseId]/interval
 
-Ta bort aterbesoksintervall (aterstall till tjanstens default).
+Ta bort återbesöksintervall (återställ till tjänstens default).
 
-**Auth:** Required (provider med bokning for hasten)
+**Auth:** Required (provider med bokning för hästen)
 
 **Response:** `200 OK` `{ "message": "Interval removed" }`
 
 ---
 
-## Besoksplanering
+## Besöksplanering
 
 ### GET /api/provider/due-for-service
 
-Hamta hastar som behover aterbesok, sorterade efter angelagenhet.
+Hämta hästar som behöver återbesök, sorterade efter angelägenhet.
 
 **Auth:** Required (provider)
 
@@ -272,46 +272,46 @@ Hamta hastar som behover aterbesok, sorterade efter angelagenhet.
 ]
 ```
 
-**Statusberakning (runtime):**
+**Statusberäkning (runtime):**
 - `overdue`: dueDate har passerat
 - `upcoming`: dueDate inom 2 veckor
-- `ok`: dueDate mer an 2 veckor bort
+- `ok`: dueDate mer än 2 veckor bort
 
 ---
 
-## Leverantorsanteckningar pa bokningar
+## Leverantörsanteckningar på bokningar
 
 ### PUT /api/provider/bookings/[id]/notes
 
-Uppdatera leverantorsanteckningar pa en bokning.
+Uppdatera leverantörsanteckningar på en bokning.
 
-**Auth:** Required (provider, maste aga bokningen)
+**Auth:** Required (provider, måste äga bokningen)
 
 **Request Body:**
 ```json
-{ "providerNotes": "Behandlingen gick bra, behover uppfoljning om 8 veckor" }
+{ "providerNotes": "Behandlingen gick bra, behöver uppföljning om 8 veckor" }
 ```
 
 **Validering:**
 - `providerNotes`: string (max 2000 tecken) eller null (rensar anteckning)
-- Bokningen maste ha status `confirmed` eller `completed`
+- Bokningen måste ha status `confirmed` eller `completed`
 - `.strict()`
 
 **Response:** `200 OK`
 
 **Felkoder:**
 - `400` -- Valideringsfel, felaktig status (pending/cancelled)
-- `404` -- Bokning finns inte eller saknar behorighet (IDOR-skydd)
+- `404` -- Bokning finns inte eller saknar behörighet (IDOR-skydd)
 
-> `providerNotes` visas BARA for leverantoren. Kunder och publika vyer ser INTE detta.
+> `providerNotes` visas BARA för leverantören. Kunder och publika vyer ser INTE detta.
 
 ---
 
-## Verifieringsansokningar
+## Verifieringsansökningar
 
 ### GET /api/verification-requests
 
-Lista providers egna verifieringsansokningar med bilder.
+Lista providers egna verifieringsansökningar med bilder.
 
 **Auth:** Required (provider)
 
@@ -319,8 +319,8 @@ Lista providers egna verifieringsansokningar med bilder.
 ```json
 [
   {
-    "id": "uuid", "type": "education", "title": "Wangens gesallprov",
-    "description": "Godkand hovslagare", "issuer": "Wangen", "year": 2020,
+    "id": "uuid", "type": "education", "title": "Wångens gesällprov",
+    "description": "Godkänd hovslagare", "issuer": "Wången", "year": 2020,
     "status": "pending | approved | rejected", "reviewNote": null,
     "createdAt": "2026-01-30T10:00:00Z",
     "images": [{ "id": "cuid", "url": "https://...", "mimeType": "image/jpeg" }]
@@ -336,33 +336,33 @@ Lista providers egna verifieringsansokningar med bilder.
 ```json
 {
   "type": "education | organization | certificate | experience | license",
-  "title": "Wangens gesallprov",
+  "title": "Wångens gesällprov",
   "description": "Valfri beskrivning (max 1000 tecken)",
-  "issuer": "Wangen (valfritt, max 200 tecken)",
+  "issuer": "Wången (valfritt, max 200 tecken)",
   "year": 2020
 }
 ```
 
-**Begransning:** Max 5 vantande ansokningar per provider.
+**Begränsning:** Max 5 väntande ansökningar per provider.
 
 **Response:** `201 Created`
 
 ### PUT /api/verification-requests/[id]
 
-Redigera pending/rejected ansokan. Rejected atergpr automatiskt till pending.
+Redigera pending/rejected ansökan. Rejected återgår automatiskt till pending.
 
-**Auth:** Required (provider, agare)
+**Auth:** Required (provider, ägare)
 
-**Request Body:** Alla falt valfria.
+**Request Body:** Alla fält valfria.
 
 **Felkoder:**
-- `400` -- Godkanda verifieringar kan inte redigeras
+- `400` -- Godkända verifieringar kan inte redigeras
 
 ### DELETE /api/verification-requests/[id]
 
-Ta bort pending/rejected ansokan. Tar aven bort bilder.
+Ta bort pending/rejected ansökan. Tar även bort bilder.
 
-**Auth:** Required (provider, agare)
+**Auth:** Required (provider, ägare)
 
 **Response:** `204 No Content`
 
@@ -384,7 +384,7 @@ Ladda upp en bild (FormData: file + bucket + entityId).
 ### DELETE /api/upload/[id]
 
 **Auth:** Required (uppladdaren)
-**Verifierings-check:** Kan inte ta bort bilder fran godkanda verifieringar.
+**Verifierings-check:** Kan inte ta bort bilder från godkända verifieringar.
 
 **Response:** `200 OK` `{ "success": true }`
 
@@ -394,7 +394,7 @@ Ladda upp en bild (FormData: file + bucket + entityId).
 
 ### GET /api/integrations/fortnox/connect
 
-Starta Fortnox OAuth-flode. **Auth:** Required (leverantor). Redirect.
+Starta Fortnox OAuth-flöde. **Auth:** Required (leverantör). Redirect.
 
 ### GET /api/integrations/fortnox/callback
 
@@ -402,8 +402,8 @@ OAuth callback. Byter code mot tokens, sparar krypterat. Redirect.
 
 ### POST /api/integrations/fortnox/disconnect
 
-Koppla bort Fortnox. **Auth:** Required (leverantor). `{ "success": true }`
+Koppla bort Fortnox. **Auth:** Required (leverantör). `{ "success": true }`
 
 ### POST /api/integrations/fortnox/sync
 
-Synka osynkade fakturor. **Auth:** Required (leverantor). `{ "synced": 0, "failed": 0, "total": 0 }`
+Synka osynkade fakturor. **Auth:** Required (leverantör). `{ "synced": 0, "failed": 0, "total": 0 }`

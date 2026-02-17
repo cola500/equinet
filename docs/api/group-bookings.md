@@ -1,14 +1,14 @@
 # Gruppbokningar
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
-Stallgemenskaper samordnar leverantorsbesok. En kund skapar en grupprequest, andra hakar pa via invite code, och leverantoren matchar och skapar sekventiella bokningar.
+Stallgemenskaper samordnar leverantörsbesök. En kund skapar en grupprequest, andra hakar på via invite code, och leverantören matchar och skapar sekventiella bokningar.
 
 ---
 
 ## POST /api/group-bookings
 
-Skapa ny grupprequest. Skaparen laggs automatiskt till som forsta deltagare.
+Skapa ny grupprequest. Skaparen läggs automatiskt till som första deltagare.
 
 **Auth:** Required (customer)
 
@@ -17,11 +17,11 @@ Skapa ny grupprequest. Skaparen laggs automatiskt till som forsta deltagare.
 {
   "serviceType": "Hovslagning",
   "locationName": "Sollebrunn Ridklubb",
-  "address": "Stallvagen 1, 441 91 Alingsas",
+  "address": "Stallvägen 1, 441 91 Alingsås",
   "dateFrom": "2026-02-15T00:00:00.000Z",
   "dateTo": "2026-02-28T00:00:00.000Z",
   "maxParticipants": 6,
-  "notes": "Vi har 6 hastar totalt",
+  "notes": "Vi har 6 hästar totalt",
   "latitude": 57.93,
   "longitude": 12.53
 }
@@ -41,25 +41,25 @@ Skapa ny grupprequest. Skaparen laggs automatiskt till som forsta deltagare.
 
 ## GET /api/group-bookings
 
-Hamta alla grupprequests dar anvandaren ar skapare eller deltagare.
+Hämta alla grupprequests där användaren är skapare eller deltagare.
 
 **Auth:** Required (customer)
 
-**Response:** `200 OK` -- Array sorterad nyast forst. Inkluderar deltagare (exkl. cancelled) och deltagarantal.
+**Response:** `200 OK` -- Array sorterad nyast först. Inkluderar deltagare (exkl. cancelled) och deltagarantal.
 
 ---
 
 ## GET /api/group-bookings/[id]
 
-Hamta detaljer for en grupprequest.
+Hämta detaljer för en grupprequest.
 
-**Auth:** Required (skapare, deltagare, matchad provider, eller valfri provider om oppen)
+**Auth:** Required (skapare, deltagare, matchad provider, eller valfri provider om öppen)
 
 **Response:** `200 OK`
 ```json
 {
   "id": "uuid", "creatorId": "uuid", "serviceType": "Hovslagning",
-  "locationName": "Sollebrunn Ridklubb", "address": "Stallvagen 1",
+  "locationName": "Sollebrunn Ridklubb", "address": "Stallvägen 1",
   "dateFrom": "2026-02-15T00:00:00.000Z", "dateTo": "2026-02-28T00:00:00.000Z",
   "maxParticipants": 6, "status": "open", "inviteCode": "ABC12345",
   "participants": [
@@ -83,17 +83,17 @@ Uppdatera grupprequest (bara skaparen).
 { "notes": "Uppdaterad info", "maxParticipants": 8, "status": "cancelled" }
 ```
 
-**Tillatna statusovergangar:** `open` -> `cancelled`, `matched` -> `cancelled`
+**Tillåtna statusövergångar:** `open` -> `cancelled`, `matched` -> `cancelled`
 
 **Felkoder:**
-- `400` -- Ogiltig statusovergang
+- `400` -- Ogiltig statusövergång
 - `403` -- Inte skapare
 
 ---
 
 ## POST /api/group-bookings/join
 
-Ga med i en grupprequest via invite code.
+Gå med i en grupprequest via invite code.
 
 **Auth:** Required (customer)
 
@@ -103,15 +103,15 @@ Ga med i en grupprequest via invite code.
   "inviteCode": "ABC12345",
   "numberOfHorses": 2,
   "horseName": "Blansen",
-  "notes": "Kanslig pa vanster fram"
+  "notes": "Känslig på vänster fram"
 }
 ```
 
 **Validering:**
-- Request maste vara "open"
+- Request måste vara "open"
 - Inte full (deltagare < maxParticipants)
 - Join deadline inte passerad
-- Anvandaren inte redan ansluten
+- Användaren inte redan ansluten
 
 **Response:** `201 Created`
 
@@ -123,17 +123,17 @@ Ga med i en grupprequest via invite code.
 
 ## GET /api/group-bookings/available
 
-Hamta oppna grupprequests (for leverantorer).
+Hämta öppna grupprequests (för leverantörer).
 
 **Auth:** Required (provider)
 
-**Response:** `200 OK` -- Array med oppna grupprequests med framtida datum.
+**Response:** `200 OK` -- Array med öppna grupprequests med framtida datum.
 
 ---
 
 ## POST /api/group-bookings/[id]/match
 
-Leverantoren matchar och skapar individuella bokningar.
+Leverantören matchar och skapar individuella bokningar.
 
 **Auth:** Required (provider)
 
@@ -142,11 +142,11 @@ Leverantoren matchar och skapar individuella bokningar.
 { "serviceId": "uuid", "bookingDate": "2026-02-20T00:00:00.000Z", "startTime": "09:00" }
 ```
 
-**Vad som hander:**
-1. Validerar tjanst (provideragd + aktiv)
+**Vad som händer:**
+1. Validerar tjänst (providerägd + aktiv)
 2. Skapar sekventiella bokningar (09:00-09:45, 09:45-10:30, etc.)
 3. Uppdaterar deltagares status till "booked"
-4. Andrar request-status till "matched"
+4. Ändrar request-status till "matched"
 5. Notifierar alla deltagare
 
 **Response:** `200 OK` `{ "message": "5 bokningar skapade", "bookingsCreated": 5 }`
@@ -155,14 +155,14 @@ Leverantoren matchar och skapar individuella bokningar.
 
 ## DELETE /api/group-bookings/[id]/participants/[pid]
 
-Ta bort deltagare (skaparen kan ta bort andra, deltagare kan lamna).
+Ta bort deltagare (skaparen kan ta bort andra, deltagare kan lämna).
 
-**Auth:** Required (skaparen eller deltagaren sjalv)
+**Auth:** Required (skaparen eller deltagaren själv)
 
 **Beteende:**
 - Soft delete: Markerar participant som "cancelled"
-- Skaparen tar bort nagon -> notifierar borttagen deltagare
-- Deltagare lamnar -> notifierar skaparen
+- Skaparen tar bort någon -> notifierar borttagen deltagare
+- Deltagare lämnar -> notifierar skaparen
 - Inga aktiva deltagare kvar -> avbryter hela requesten
 
 **Response:** `200 OK`

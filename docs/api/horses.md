@@ -1,16 +1,16 @@
-# Hastar
+# Hästar
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
-Hastregister, halsoanteckningar, tidslinje, delbar profil och dataexport. Alla endpoints krav autentisering och agarskap (IDOR-skyddade).
+Hästregister, hälsoanteckningar, tidslinje, delbar profil och dataexport. Alla endpoints kräver autentisering och ägarskap (IDOR-skyddade).
 
 ---
 
-## Hastregister (CRUD)
+## Hästregister (CRUD)
 
 ### GET /api/horses
 
-Hamta inloggad kunds aktiva hastar.
+Hämta inloggad kunds aktiva hästar.
 
 **Auth:** Required (customer)
 
@@ -28,7 +28,7 @@ Hamta inloggad kunds aktiva hastar.
 
 ### POST /api/horses
 
-Skapa ny hast. Namn obligatoriskt, ovrigt valfritt.
+Skapa ny häst. Namn obligatoriskt, övrigt valfritt.
 
 **Auth:** Required (customer)
 
@@ -40,7 +40,7 @@ Skapa ny hast. Namn obligatoriskt, ovrigt valfritt.
   "birthYear": 2018,
   "color": "Brun",
   "gender": "mare | gelding | stallion",
-  "specialNeeds": "Kanslig pa vanster fram"
+  "specialNeeds": "Känslig på vänster fram"
 }
 ```
 
@@ -48,37 +48,37 @@ Skapa ny hast. Namn obligatoriskt, ovrigt valfritt.
 
 ### GET /api/horses/[id]
 
-Hamta hast med bokningshistorik (senaste 20 bokningar).
+Hämta häst med bokningshistorik (senaste 20 bokningar).
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
-**Response:** `200 OK` -- hast-objekt + `bookings[]` med provider/service-info.
+**Response:** `200 OK` -- häst-objekt + `bookings[]` med provider/service-info.
 
 ### PUT /api/horses/[id]
 
-Uppdatera hast (partial updates). Alla falt utom `name` kan sattas till `null`.
+Uppdatera häst (partial updates). Alla fält utom `name` kan sättas till `null`.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
 **Response:** `200 OK`
 
 ### DELETE /api/horses/[id]
 
-Soft delete (`isActive=false`). Hasten forsvinner fran listor men befintliga bokningar behallar kopplingen.
+Soft delete (`isActive=false`). Hästen försvinner från listor men befintliga bokningar behåller kopplingen.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
-**Response:** `200 OK` `{ "message": "Hasten har tagits bort" }`
+**Response:** `200 OK` `{ "message": "Hästen har tagits bort" }`
 
 ---
 
-## Hastanteckningar (Halsohistorik)
+## Hästanteckningar (Hälsohistorik)
 
 ### GET /api/horses/[id]/notes
 
 Lista anteckningar.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
@@ -91,7 +91,7 @@ Lista anteckningar.
   {
     "id": "uuid", "horseId": "uuid", "authorId": "uuid",
     "category": "veterinary", "title": "Vaccination - influensa",
-    "content": "Arlig vaccination genomford",
+    "content": "Årlig vaccination genomförd",
     "noteDate": "2026-01-15T00:00:00.000Z",
     "createdAt": "2026-01-30T10:00:00Z",
     "author": { "firstName": "Anna", "lastName": "Svensson" }
@@ -101,7 +101,7 @@ Lista anteckningar.
 
 ### POST /api/horses/[id]/notes
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
 **Request Body:**
 ```json
@@ -123,9 +123,9 @@ Lista anteckningar.
 
 ### PUT /api/horses/[id]/notes/[noteId]
 
-Partial updates, alla falt valfria.
+Partial updates, alla fält valfria.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
 **Response:** `200 OK`
 
@@ -133,7 +133,7 @@ Partial updates, alla falt valfria.
 
 Hard delete.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
 **Response:** `200 OK` `{ "message": "Anteckningen har tagits bort" }`
 
@@ -145,55 +145,55 @@ Hard delete.
 
 Kombinerad tidslinje: bokningar (completed) + anteckningar, sorterade kronologiskt.
 
-**Auth:** Required (agare ELLER provider med bokning for hasten)
+**Auth:** Required (ägare ELLER provider med bokning för hästen)
 
-**Atkomstniva:**
-- **Agare:** Ser alla kategorier
+**Åtkomstnivå:**
+- **Ägare:** Ser alla kategorier
 - **Provider:** Ser bara `veterinary`, `farrier`, `medication` (integritetsskydd)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `category` | string | Filtrera pa kategori (doljer bokningar vid filtrering) |
+| `category` | string | Filtrera på kategori (döljer bokningar vid filtrering) |
 
 **Response:** `200 OK`
 ```json
 [
   {
     "type": "booking", "id": "uuid", "date": "2026-01-20T00:00:00.000Z",
-    "title": "Massage", "providerName": "Sara Hastmassage",
+    "title": "Massage", "providerName": "Sara Hästmassage",
     "status": "completed", "notes": "Stel i ryggen",
     "providerNotes": "Behandlade rygg och nacke"
   },
   {
     "type": "note", "id": "uuid", "date": "2026-01-15T00:00:00.000Z",
     "title": "Vaccination", "category": "veterinary",
-    "content": "Arlig vaccination genomford", "authorName": "Anna Svensson"
+    "content": "Årlig vaccination genomförd", "authorName": "Anna Svensson"
   }
 ]
 ```
 
 ---
 
-## Delbar hastprofil
+## Delbar hästprofil
 
 ### POST /api/horses/[id]/profile
 
-Skapa delbar hastprofil-lank (30 dagars expiry).
+Skapa delbar hästprofil-länk (30 dagars expiry).
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 
 **Response:** `201 Created` `{ "token": "...", "url": "...", "expiresAt": "..." }`
 
 ### GET /api/profile/[token]
 
-Hamta hastdata via publik token.
+Hämta hästdata via publik token.
 
-**Auth:** Ej kravd
+**Auth:** Ej krävd
 
 **Response:** `200 OK` `{ "horse": {...}, "timeline": [...], "expiresAt": "..." }`
 
-> Bara veterinar-, hovslagare- och medicinanteckningar visas (integritetsskydd).
+> Bara veterinär-, hovslagare- och medicinanteckningar visas (integritetsskydd).
 
 ---
 
@@ -201,7 +201,7 @@ Hamta hastdata via publik token.
 
 ### GET /api/export/my-data
 
-Exportera all anvandardata (GDPR Art 20 portabilitet).
+Exportera all användardata (GDPR Art 20 portabilitet).
 
 **Auth:** Required
 **Query:** `?format=csv` (valfritt, default JSON)
@@ -210,8 +210,8 @@ Exportera all anvandardata (GDPR Art 20 portabilitet).
 
 ### GET /api/horses/[id]/export
 
-Exportera hastdata med fullstandig tidslinje.
+Exportera hästdata med fullständig tidslinje.
 
-**Auth:** Required (agare)
+**Auth:** Required (ägare)
 **Query:** `?format=csv`
 **Response (JSON):** `{ horse, bookings, notes, timeline }`

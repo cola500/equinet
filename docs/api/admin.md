@@ -1,8 +1,8 @@
 # Admin
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
-Alla admin-endpoints krav `isAdmin=true`. Skyddas av bade middleware (redirect/403) och per-route `requireAdmin()`.
+Alla admin-endpoints kräver `isAdmin=true`. Skyddas av både middleware (redirect/403) och per-route `requireAdmin()`.
 
 ---
 
@@ -24,12 +24,12 @@ Dashboard-KPIs.
 
 ## GET /api/admin/users
 
-Paginerad anvandarlista med sok och filter.
+Paginerad användarlista med sök och filter.
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `search` | string | Sok i namn/e-post (case-insensitive) |
+| `search` | string | Sök i namn/e-post (case-insensitive) |
 | `type` | string | `customer` eller `provider` |
 | `page` | number | Sida (default 1) |
 | `limit` | number | Antal per sida (default 20, max 100) |
@@ -46,18 +46,18 @@ Paginerad anvandarlista med sok och filter.
 
 ## PATCH /api/admin/users
 
-Uppdatera en anvandares admin- eller blockeringsstatus.
+Uppdatera en användares admin- eller blockeringsstatus.
 
 **Request Body:**
 ```json
 { "userId": "uuid", "action": "toggleBlocked" | "toggleAdmin" }
 ```
 
-**Sakerhetscheckar:** Kan inte blockera sig sjalv eller ta bort sin egen admin-behorighet.
+**Säkerhetscheckar:** Kan inte blockera sig själv eller ta bort sin egen admin-behörighet.
 
 **Response:** `200 OK`
 
-**Felkoder:** `400` -- Kan inte utfora atgarden pa sig sjalv
+**Felkoder:** `400` -- Kan inte utföra åtgärden på sig själv
 
 ---
 
@@ -69,7 +69,7 @@ Paginerad bokningslista med status- och datumfilter.
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
 | `status` | string | `pending`, `confirmed`, `completed`, `cancelled` |
-| `from` | string | Fran-datum (YYYY-MM-DD) |
+| `from` | string | Från-datum (YYYY-MM-DD) |
 | `to` | string | Till-datum (YYYY-MM-DD) |
 | `page` | number | Sida (default 1) |
 | `limit` | number | Antal per sida (default 20, max 100) |
@@ -77,7 +77,7 @@ Paginerad bokningslista med status- och datumfilter.
 **Response:** `200 OK`
 ```json
 {
-  "bookings": [{ "id": "uuid", "bookingDate": "...", "startTime": "10:00", "endTime": "11:00", "status": "confirmed", "isManualBooking": false, "customerName": "Anna Svensson", "providerBusinessName": "Hastkliniken", "serviceName": "Hovvard" }],
+  "bookings": [{ "id": "uuid", "bookingDate": "...", "startTime": "10:00", "endTime": "11:00", "status": "confirmed", "isManualBooking": false, "customerName": "Anna Svensson", "providerBusinessName": "Hästkliniken", "serviceName": "Hovvård" }],
   "total": 500, "page": 1, "totalPages": 25
 }
 ```
@@ -93,7 +93,7 @@ Avboka en bokning som admin.
 { "bookingId": "uuid", "action": "cancel", "reason": "Anledning till avbokning" }
 ```
 
-Satts status till `cancelled` med `cancellationMessage` prefixat med `[Admin]`. Skapar notifikationer till bade kund och leverantor.
+Sätter status till `cancelled` med `cancellationMessage` prefixat med `[Admin]`. Skapar notifikationer till både kund och leverantör.
 
 **Felkoder:** `400` -- Bokning redan avbokad
 
@@ -101,7 +101,7 @@ Satts status till `cancelled` med `cancellationMessage` prefixat med `[Admin]`. 
 
 ## GET /api/admin/providers
 
-Paginerad leverantorslista med statistik.
+Paginerad leverantörslista med statistik.
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
@@ -123,7 +123,7 @@ Paginerad leverantorslista med statistik.
 
 ## GET /api/admin/integrations
 
-Fortnox-kopplingar och betalningsoversikt.
+Fortnox-kopplingar och betalningsöversikt.
 
 **Response:** `200 OK`
 ```json
@@ -137,7 +137,7 @@ Fortnox-kopplingar och betalningsoversikt.
 
 ## GET /api/admin/system
 
-Systemhalsa: databas + cron-status.
+Systemhälsa: databas + cron-status.
 
 **Response:** `200 OK`
 ```json
@@ -157,7 +157,7 @@ Lista alla recensioner (sammanslagt Review + CustomerReview).
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
 | `type` | string | `review` eller `customer-review` |
-| `search` | string | Sok i kommentarer |
+| `search` | string | Sök i kommentarer |
 
 **Response:** `200 OK`
 ```json
@@ -196,32 +196,32 @@ Skicka bulk-notifikationer.
 
 ### GET /api/admin/verification-requests
 
-Lista alla vantande verifieringsansokningar med provider-info, utfardare, ar och bilder.
+Lista alla väntande verifieringsansökningar med provider-info, utfärdare, år och bilder.
 
 **Response:** `200 OK` -- Array med verifieringar inkl. provider.businessName, issuer, year, images.
 
 ### PUT /api/admin/verification-requests/[id]
 
-Godkann eller avvisa verifieringsansokan.
+Godkänn eller avvisa verifieringsansökan.
 
 **Request Body:**
 ```json
 { "action": "approve | reject", "reviewNote": "Valfri kommentar (max 500 tecken)" }
 ```
 
-**Godkann-flode (atomar transaction):**
+**Godkänn-flöde (atomär transaction):**
 1. Uppdatera ProviderVerification.status -> "approved"
-2. Satt Provider.isVerified -> true, verifiedAt -> now()
+2. Sätt Provider.isVerified -> true, verifiedAt -> now()
 3. Skapa notifikation till providern
 
 **Felkoder:**
-- `400` -- Ansokan redan behandlad
+- `400` -- Ansökan redan behandlad
 
 ---
 
 ## GET /api/admin/settings
 
-Hamta runtime-installningar.
+Hämta runtime-inställningar.
 
 **Response:** `200 OK` `{ "settings": { "DISABLE_EMAILS": "true" } }`
 
@@ -229,14 +229,14 @@ Hamta runtime-installningar.
 
 ## PATCH /api/admin/settings
 
-Uppdatera en runtime-installning.
+Uppdatera en runtime-inställning.
 
 **Request Body:**
 ```json
 { "key": "DISABLE_EMAILS", "value": "true" }
 ```
 
-**Tillatna nycklar:** Whitelist-baserat. Okanda nycklar avvisas.
+**Tillåtna nycklar:** Whitelist-baserat. Okända nycklar avvisas.
 
 ---
 
@@ -244,13 +244,13 @@ Uppdatera en runtime-installning.
 
 ### GET /api/cron/booking-reminders
 
-Skickar e-postpaminnelser 24h fore bekraftade bokningar.
+Skickar e-postpåminnelser 24h före bekräftade bokningar.
 
 **Auth:** `Authorization: Bearer <CRON_SECRET>` (Vercel)
 **Schema:** Dagligen 06:00 UTC
 
 **Logik:**
-1. Hittar confirmed bokningar inom 22-30h fonster
+1. Hittar confirmed bokningar inom 22-30h fönster
 2. Filtrerar bort ghost users och kunder med `emailRemindersEnabled=false`
 3. Deduplicerar via Notification-tabellen (`REMINDER_BOOKING_24H`)
 4. Skapar in-app notification + skickar e-post
@@ -261,9 +261,9 @@ Skickar e-postpaminnelser 24h fore bekraftade bokningar.
 
 ### GET /api/email/unsubscribe
 
-Avregistrerar fran bokningspaminnelser via e-postlank.
+Avregistrerar från bokningspåminnelser via e-postlänk.
 
-**Auth:** HMAC-SHA256 token i query params (ingen inloggning kravs)
+**Auth:** HMAC-SHA256 token i query params (ingen inloggning krävs)
 **Query:** `userId`, `token`
 
-**Response:** `200 OK` (HTML-sida med bekraftelse) eller `400` vid ogiltig token.
+**Response:** `200 OK` (HTML-sida med bekräftelse) eller `400` vid ogiltig token.

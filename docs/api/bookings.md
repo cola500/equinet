@@ -1,10 +1,10 @@
 # Bokningar
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
 ## GET /api/bookings
 
-Hamta bokningar for inloggad anvandare.
+Hämta bokningar för inloggad användare.
 
 **Auth:** Required (customer eller provider)
 
@@ -21,7 +21,7 @@ Hamta bokningar for inloggad anvandare.
     "endTime": "11:00",
     "status": "pending" | "confirmed" | "cancelled" | "completed",
     "horseName": "Blansen",
-    "horseInfo": "Lugn hast",
+    "horseInfo": "Lugn häst",
     "customerNotes": "Ring vid ankomst",
     "providerNotes": "Behandlingen gick bra",
     "service": { ... },
@@ -30,7 +30,7 @@ Hamta bokningar for inloggad anvandare.
 ]
 ```
 
-> `providerNotes` inkluderas bara i provider-vy. Kunder ser inte detta falt.
+> `providerNotes` inkluderas bara i provider-vy. Kunder ser inte detta fält.
 
 ---
 
@@ -49,41 +49,41 @@ Skapa ny bokning.
   "startTime": "10:00",
   "endTime": "11:00",
   "horseName": "Blansen",
-  "horseInfo": "Lugn hast, kraver lugn hantering",
+  "horseInfo": "Lugn häst, kräver lugn hantering",
   "customerNotes": "Ring vid ankomst",
   "routeOrderId": "uuid"
 }
 ```
 
 **Validering:**
-- `bookingDate` maste vara idag eller framtida datum
+- `bookingDate` måste vara idag eller framtida datum
 - `startTime`/`endTime` i format HH:MM (00:00-23:59)
 - Sluttid efter starttid, minst 15 min, max 8 timmar
-- Inom oppettider (08:00-18:00)
+- Inom öppettider (08:00-18:00)
 
 **Response:** `201 Created`
 
 **Felkoder:**
-- `400` -- Valideringsfel, ogiltig tjanst, tjanst/provider inaktiv, sjalvbokning
-- `409` -- Tidskollision eller otillracklig restid
+- `400` -- Valideringsfel, ogiltig tjänst, tjänst/provider inaktiv, självbokning
+- `409` -- Tidskollision eller otillräcklig restid
 
 **409 INSUFFICIENT_TRAVEL_TIME:**
 ```json
 {
-  "error": "Otillracklig restid till foregaende bokning...",
-  "details": "Kravs 70 minuter mellan bokningar, endast 30 minuter tillgangligt.",
+  "error": "Otillräcklig restid till föregående bokning...",
+  "details": "Krävs 70 minuter mellan bokningar, endast 30 minuter tillgängligt.",
   "requiredMinutes": 70,
   "actualMinutes": 30
 }
 ```
 
-> Restid beraknas automatiskt baserat pa geografisk placering. Se [SERVICE-BOOKING-FLOW.md](../SERVICE-BOOKING-FLOW.md#restid-mellan-bokningar).
+> Restid beräknas automatiskt baserat på geografisk placering. Se [SERVICE-BOOKING-FLOW.md](../SERVICE-BOOKING-FLOW.md#restid-mellan-bokningar).
 
 ---
 
 ## POST /api/bookings/manual
 
-Skapa manuell bokning (provider bokar at en kund).
+Skapa manuell bokning (provider bokar åt en kund).
 
 **Auth:** Required (provider-only)
 
@@ -100,25 +100,25 @@ Skapa manuell bokning (provider bokar at en kund).
   "customerEmail": "anna@example.com",
   "horseId": "uuid",
   "horseName": "Blansen",
-  "horseInfo": "Lugn hast",
+  "horseInfo": "Lugn häst",
   "customerNotes": "Ring vid ankomst"
 }
 ```
 
-**Kund-identifiering:** Ange `customerId` (befintlig kund) ELLER `customerName` (skapar ghost user). Minst ett kravs.
+**Kund-identifiering:** Ange `customerId` (befintlig kund) ELLER `customerName` (skapar ghost user). Minst ett krävs.
 
 **Ghost User:** Skapar minimal User-record (`isManualCustomer=true`) med sentinel-email (`manual-{uuid}@ghost.equinet.se`). Kan inte logga in.
 
-**Skillnader fran vanlig bokning:**
-- Status satts till `confirmed` (inte `pending`)
+**Skillnader från vanlig bokning:**
+- Status sätts till `confirmed` (inte `pending`)
 - Self-booking check skippas
 - Travel time validation skippas
-- `isManualBooking=true` och `createdByProviderId` satts automatiskt
+- `isManualBooking=true` och `createdByProviderId` sätts automatiskt
 
 **Response:** `201 Created`
 
 **Felkoder:**
-- `400` -- Valideringsfel, saknar customerId/customerName, ogiltig tjanst
+- `400` -- Valideringsfel, saknar customerId/customerName, ogiltig tjänst
 - `403` -- Inte provider
 - `409` -- Tidskollision
 - `429` -- Rate limit
@@ -129,7 +129,7 @@ Skapa manuell bokning (provider bokar at en kund).
 
 Uppdatera bokningsstatus.
 
-**Auth:** Required (customer eller provider, maste aga bokningen)
+**Auth:** Required (customer eller provider, måste äga bokningen)
 
 **Request Body:**
 ```json
@@ -142,7 +142,7 @@ Uppdatera bokningsstatus.
 
 **Felkoder:**
 - `400` -- Valideringsfel
-- `404` -- Bokning finns inte eller saknar behorighet (atomar auth)
+- `404` -- Bokning finns inte eller saknar behörighet (atomär auth)
 
 ---
 
@@ -150,9 +150,9 @@ Uppdatera bokningsstatus.
 
 Ta bort bokning.
 
-**Auth:** Required (customer eller provider, maste aga bokningen)
+**Auth:** Required (customer eller provider, måste äga bokningen)
 
 **Response:** `200 OK` `{ "message": "Booking deleted" }`
 
 **Felkoder:**
-- `404` -- Bokning finns inte eller saknar behorighet (atomar auth)
+- `404` -- Bokning finns inte eller saknar behörighet (atomär auth)

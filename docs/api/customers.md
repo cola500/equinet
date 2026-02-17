@@ -1,21 +1,21 @@
 # Kunder
 
-> Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
+> Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
 
-Endpoints for providers att hantera sin kunddata. Alla krav provider-session.
+Endpoints för providers att hantera sin kunddata. Alla kräver provider-session.
 
 ---
 
 ## GET /api/customers/search
 
-Sok bland kunder som har bokat med denna provider.
+Sök bland kunder som har bokat med denna provider.
 
 **Auth:** Required (provider-only)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `q` | string | Sokterm (min 2 tecken), **Required** |
+| `q` | string | Sökterm (min 2 tecken), **Required** |
 
 **Response:** `200 OK`
 ```json
@@ -30,10 +30,10 @@ Sok bland kunder som har bokat med denna provider.
 ]
 ```
 
-**Begransningar:** Max 10 resultat. Soker i firstName, lastName, email. Exkluderar ghost users. Bara kunder med minst en bokning med providern.
+**Begränsningar:** Max 10 resultat. Söker i firstName, lastName, email. Exkluderar ghost users. Bara kunder med minst en bokning med providern.
 
 **Felkoder:**
-- `400` -- Sokterm for kort (min 2 tecken)
+- `400` -- Sökterm för kort (min 2 tecken)
 - `403` -- Inte provider
 - `429` -- Rate limit (30/min)
 
@@ -41,9 +41,9 @@ Sok bland kunder som har bokat med denna provider.
 
 ## GET /api/customers/[id]/horses
 
-Hamta en kunds aktiva hastar.
+Hämta en kunds aktiva hästar.
 
-**Auth:** Required (provider-only, maste ha bokningsrelation med kunden)
+**Auth:** Required (provider-only, måste ha bokningsrelation med kunden)
 
 **Response:** `200 OK`
 ```json
@@ -60,15 +60,15 @@ Hamta en kunds aktiva hastar.
 
 ## GET /api/provider/customers
 
-Hamta leverantorens kundregister (harledd fran bokningar).
+Hämta leverantörens kundregister (härledd från bokningar).
 
 **Auth:** Required (provider)
 
 **Query Parameters:**
 | Parameter | Typ | Beskrivning |
 |-----------|-----|-------------|
-| `status` | string | `active` (senaste 6 man) eller `inactive`. Default: alla |
-| `search` | string | Fritextsokning i namn |
+| `status` | string | `active` (senaste 6 mån) eller `inactive`. Default: alla |
+| `search` | string | Fritextsökning i namn |
 
 **Response:** `200 OK`
 ```json
@@ -85,7 +85,7 @@ Hamta leverantorens kundregister (harledd fran bokningar).
 ]
 ```
 
-> Bara kunder med completed bokningar for denna provider visas (plus manuellt tillagda).
+> Bara kunder med completed bokningar för denna provider visas (plus manuellt tillagda).
 
 ---
 
@@ -104,7 +104,7 @@ Registrera en kund manuellt.
 }
 ```
 
-| Falt | Typ | Validering |
+| Fält | Typ | Validering |
 |------|-----|------------|
 | `name` | string | Obligatoriskt, 1-100 tecken |
 | `phone` | string | Valfritt, max 20 tecken |
@@ -118,7 +118,7 @@ Registrera en kund manuellt.
 
 Ta bort en manuellt registrerad kund.
 
-**Auth:** Required (provider, maste vara kunden som provider skapat)
+**Auth:** Required (provider, måste vara kunden som provider skapat)
 
 **Response:** `200 OK`
 
@@ -132,9 +132,9 @@ Ta bort en manuellt registrerad kund.
 
 ### GET /api/provider/customers/[customerId]/notes
 
-Hamta leverantorens privata anteckningar om en kund.
+Hämta leverantörens privata anteckningar om en kund.
 
-**Auth:** Required (provider-only, maste ha completed booking med kunden)
+**Auth:** Required (provider-only, måste ha completed booking med kunden)
 
 **Response:** `200 OK`
 ```json
@@ -144,7 +144,7 @@ Hamta leverantorens privata anteckningar om en kund.
       "id": "uuid",
       "providerId": "uuid",
       "customerId": "uuid",
-      "content": "Behover extra tid vid besok",
+      "content": "Behöver extra tid vid besök",
       "createdAt": "2026-02-10T14:30:00.000Z",
       "updatedAt": "2026-02-10T14:30:00.000Z"
     }
@@ -156,14 +156,14 @@ Hamta leverantorens privata anteckningar om en kund.
 
 Skapa ny anteckning.
 
-**Auth:** Required (provider-only, maste ha completed booking)
+**Auth:** Required (provider-only, måste ha completed booking)
 
 **Request Body:**
 ```json
-{ "content": "Kunden behover extra tid vid besok" }
+{ "content": "Kunden behöver extra tid vid besök" }
 ```
 
-| Falt | Typ | Validering |
+| Fält | Typ | Validering |
 |------|-----|------------|
 | `content` | string | Min 1, max 2000 tecken. Saniteras (XSS + multiline). `.strict()` |
 
@@ -173,20 +173,20 @@ Skapa ny anteckning.
 
 Redigera en befintlig anteckning.
 
-**Auth:** Required (provider-only, atomar agarskapscheck)
+**Auth:** Required (provider-only, atomär ägarskapscheck)
 
 **Request Body:** Samma som POST.
 
 **Response:** `200 OK` (inkl. `updatedAt`)
 
 **Felkoder:**
-- `404` -- Anteckningen hittades inte (eller tillhor annan provider)
+- `404` -- Anteckningen hittades inte (eller tillhör annan provider)
 
 ### DELETE /api/provider/customers/[customerId]/notes/[noteId]
 
-**Auth:** Required (provider-only, atomar agarskapscheck)
+**Auth:** Required (provider-only, atomär ägarskapscheck)
 
 **Response:** `204 No Content`
 
 **Felkoder:**
-- `404` -- Anteckningen hittades inte (eller tillhor annan provider)
+- `404` -- Anteckningen hittades inte (eller tillhör annan provider)
