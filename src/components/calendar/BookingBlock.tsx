@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, CheckCircle2, Check, XCircle, CreditCard, AlertTriangle } from "lucide-react"
+import { Clock, CheckCircle2, Check, XCircle, CreditCard, AlertTriangle, Repeat } from "lucide-react"
 import { CalendarBooking } from "@/types"
 
 interface BookingBlockProps {
@@ -71,6 +71,9 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
     >
       <div className="font-semibold truncate flex items-center">
         {getStatusIcon(booking.status, isPaid)}
+        {booking.bookingSeriesId && (
+          <span title="Återkommande bokning"><Repeat className="h-3 w-3 mr-0.5 flex-shrink-0" /></span>
+        )}
         {booking.isManualBooking && (
           <span className="inline-block bg-white/30 text-[10px] font-bold rounded px-1 mr-1" title="Manuell bokning">M</span>
         )}

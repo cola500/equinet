@@ -36,6 +36,7 @@ describe("GET /api/feature-flags", () => {
       group_bookings: false,
       business_insights: true,
       self_reschedule: true,
+      recurring_bookings: false,
     })
   })
 

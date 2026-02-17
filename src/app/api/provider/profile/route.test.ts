@@ -226,4 +226,64 @@ describe('PUT /api/provider/profile', () => {
     const response = await PUT(request)
     expect(response.status).toBe(400)
   })
+
+  it('should update recurring booking settings', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(prisma.provider.update).mockResolvedValue({
+      ...mockProvider,
+      recurringEnabled: true,
+      maxSeriesOccurrences: 8,
+    } as any)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: 'Test Hovslagare',
+        recurringEnabled: true,
+        maxSeriesOccurrences: 8,
+      }),
+    })
+
+    const response = await PUT(request)
+    expect(response.status).toBe(200)
+
+    expect(vi.mocked(prisma.provider.update)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          recurringEnabled: true,
+          maxSeriesOccurrences: 8,
+        }),
+      })
+    )
+  })
+
+  it('should reject maxSeriesOccurrences below 2', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: 'Test Hovslagare',
+        maxSeriesOccurrences: 1,
+      }),
+    })
+
+    const response = await PUT(request)
+    expect(response.status).toBe(400)
+  })
+
+  it('should reject maxSeriesOccurrences above 52', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        businessName: 'Test Hovslagare',
+        maxSeriesOccurrences: 53,
+      }),
+    })
+
+    const response = await PUT(request)
+    expect(response.status).toBe(400)
+  })
 })

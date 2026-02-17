@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import type { CalendarBooking } from "@/types"
 
 interface Service {
@@ -82,6 +84,12 @@ export function ManualBookingDialog({
   const [customerNotes, setCustomerNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+
+  // Recurring booking state
+  const recurringEnabled = useFeatureFlag("recurring_bookings")
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [intervalWeeks, setIntervalWeeks] = useState(4)
+  const [totalOccurrences, setTotalOccurrences] = useState(4)
 
   // Auto-calculate end time from service duration
   useEffect(() => {
@@ -166,6 +174,9 @@ export function ManualBookingDialog({
       setHorseName("")
       setHorseInfo("")
       setCustomerNotes("")
+      setIsRecurring(false)
+      setIntervalWeeks(4)
+      setTotalOccurrences(4)
     }
   }, [open, prefillDate, prefillTime])
 
@@ -248,27 +259,67 @@ export function ManualBookingDialog({
       }
       if (horseInfo) body.horseInfo = horseInfo
 
-      const response = await fetch("/api/bookings/manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        if (data.details && Array.isArray(data.details)) {
-          // Zod validation errors -- show the first specific message
-          const firstIssue = data.details[0]
-          toast.error(firstIssue.message || data.error || "Kunde inte skapa bokning")
-        } else {
-          toast.error(data.error || "Kunde inte skapa bokning")
+      if (isRecurring) {
+        // Recurring booking - create series via booking-series endpoint
+        const seriesBody: Record<string, unknown> = {
+          providerId: "self", // Signal that provider is creating for themselves
+          serviceId,
+          firstBookingDate: bookingDate,
+          startTime,
+          intervalWeeks,
+          totalOccurrences,
         }
-        return
-      }
+        if (selectedCustomer) {
+          seriesBody.customerId = selectedCustomer.id
+        }
+        if (selectedHorseId) seriesBody.horseId = selectedHorseId
+        else if (horseName) seriesBody.horseName = horseName
+        if (horseInfo) seriesBody.horseInfo = horseInfo
+        if (customerNotes) seriesBody.customerNotes = customerNotes
 
-      toast.success("Bokning skapad!")
-      onOpenChange(false)
-      onBookingCreated()
+        const response = await fetch("/api/booking-series", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(seriesBody),
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          toast.error(data.error || "Kunde inte skapa återkommande bokning")
+          return
+        }
+
+        const data = await response.json()
+        const skipped = data.skippedDates?.length || 0
+        toast.success(
+          `Återkommande bokning skapad! ${data.series.createdCount} av ${data.series.totalOccurrences} bokningar.` +
+          (skipped > 0 ? ` ${skipped} datum hoppades över.` : "")
+        )
+        onOpenChange(false)
+        onBookingCreated()
+      } else {
+        const response = await fetch("/api/bookings/manual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          if (data.details && Array.isArray(data.details)) {
+            // Zod validation errors -- show the first specific message
+            const firstIssue = data.details[0]
+            toast.error(firstIssue.message || data.error || "Kunde inte skapa bokning")
+          } else {
+            toast.error(data.error || "Kunde inte skapa bokning")
+          }
+          return
+        }
+
+        toast.success("Bokning skapad!")
+        onOpenChange(false)
+        onBookingCreated()
+      }
     } catch {
       toast.error("Kunde inte skapa bokning")
     } finally {
@@ -528,6 +579,60 @@ export function ManualBookingDialog({
               className="mt-1"
             />
           </div>
+
+          {/* -- Recurring -- */}
+          {recurringEnabled && (
+            <div className="space-y-3 border-t pt-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="manual-recurring" className="text-sm font-medium">
+                    Gör detta återkommande
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    Skapa flera bokningar med regelbundna intervall
+                  </p>
+                </div>
+                <Switch
+                  id="manual-recurring"
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
+                />
+              </div>
+
+              {isRecurring && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Intervall</Label>
+                    <select
+                      value={intervalWeeks}
+                      onChange={(e) => setIntervalWeeks(parseInt(e.target.value))}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm mt-1"
+                    >
+                      <option value={1}>Varje vecka</option>
+                      <option value={2}>Varannan vecka</option>
+                      <option value={4}>Var 4:e vecka</option>
+                      <option value={6}>Var 6:e vecka</option>
+                      <option value={8}>Var 8:e vecka</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Antal tillfällen</Label>
+                    <select
+                      value={totalOccurrences}
+                      onChange={(e) => setTotalOccurrences(parseInt(e.target.value))}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm mt-1"
+                    >
+                      <option value={2}>2</option>
+                      <option value={4}>4</option>
+                      <option value={6}>6</option>
+                      <option value={8}>8</option>
+                      <option value={12}>12</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* -- Submit -- */}
           <div className="flex gap-2 pt-2 border-t">

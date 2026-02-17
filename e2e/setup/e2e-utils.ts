@@ -72,3 +72,19 @@ export function pastDate(days: number): Date {
   date.setHours(10, 0, 0, 0)
   return date
 }
+
+/**
+ * Generate an HMAC-SHA256 unsubscribe token for E2E tests.
+ * Mirrors the logic in src/lib/email/unsubscribe-token.ts.
+ */
+export function generateUnsubscribeTokenForTest(userId: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createHmac } = require('crypto')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('dotenv').config()
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('dotenv').config({ path: '.env.local', override: true })
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret) throw new Error('NEXTAUTH_SECRET must be set for unsubscribe token tests')
+  return createHmac('sha256', secret).update('unsubscribe:' + userId).digest('hex')
+}

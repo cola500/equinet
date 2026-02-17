@@ -58,6 +58,7 @@ model User {
   groupBookingRequests      GroupBookingRequest[]
   groupBookingParticipations GroupBookingParticipant[]
   uploads                   Upload[]
+  bookingSeries             BookingSeries[]
 
   @@index([latitude, longitude]) // For geo-queries
   providerCustomerLinks ProviderCustomer[]
@@ -92,6 +93,10 @@ model Provider {
   maxReschedules            Int     @default(2)     // Max per bokning
   rescheduleRequiresApproval Boolean @default(false) // true = status -> pending
 
+  // Recurring booking settings
+  recurringEnabled          Boolean @default(true)
+  maxSeriesOccurrences      Int     @default(12)    // Max bokningar per serie
+
   // Verification
   isVerified      Boolean   @default(false)
   verifiedAt      DateTime?
@@ -115,6 +120,7 @@ model Provider {
   horseServiceIntervals  HorseServiceInterval[]
   customerNotes          ProviderCustomerNote[] @relation("ProviderCustomerNotes")
   manualCustomers        ProviderCustomer[]
+  bookingSeries          BookingSeries[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -136,6 +142,7 @@ model Service {
 
   bookings      Booking[]
   announcements RouteOrder[] // Many-to-many: announcements using this service
+  bookingSeries BookingSeries[]
 
   @@index([providerId, isActive])
 }
@@ -201,6 +208,10 @@ model Booking {
   horseId       String?
   horse         Horse?      @relation(fields: [horseId], references: [id])
 
+  // Recurring booking series
+  bookingSeriesId   String?
+  bookingSeries     BookingSeries? @relation(fields: [bookingSeriesId], references: [id], onDelete: SetNull)
+
   // Reschedule tracking
   rescheduleCount   Int @default(0)
 
@@ -228,6 +239,7 @@ model Booking {
   @@index([routeOrderId])
   @@index([horseId])
   @@index([createdByProviderId])
+  @@index([bookingSeriesId])
 }
 
 model Horse {
@@ -254,6 +266,7 @@ model Horse {
   groupBookingParticipants GroupBookingParticipant[]
   profileTokens HorseProfileToken[]
   serviceIntervals HorseServiceInterval[]
+  bookingSeries BookingSeries[]
 
   @@index([ownerId, isActive])
 }
@@ -633,4 +646,30 @@ model ProviderCustomer {
   @@unique([providerId, customerId])
   @@index([providerId, createdAt])
   @@index([customerId])
+}
+
+// Recurring booking series
+model BookingSeries {
+  id               String    @id @default(uuid())
+  customerId       String
+  customer         User      @relation(fields: [customerId], references: [id])
+  providerId       String
+  provider         Provider  @relation(fields: [providerId], references: [id])
+  serviceId        String
+  service          Service   @relation(fields: [serviceId], references: [id])
+  horseId          String?
+  horse            Horse?    @relation(fields: [horseId], references: [id])
+  intervalWeeks    Int
+  totalOccurrences Int
+  createdCount     Int
+  startTime        String    // "HH:MM"
+  status           String    @default("active") // active | cancelled | completed
+  cancelledAt      DateTime?
+  createdAt        DateTime  @default(now())
+
+  bookings         Booking[]
+
+  @@index([customerId])
+  @@index([providerId])
+  @@index([status])
 }

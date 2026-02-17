@@ -213,6 +213,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Kompetenser och verifiering (admin-granskning)
 - Stäng för nya kunder (befintliga kunder kan fortfarande boka)
 - Ombokningsinställningar (tillåt/neka, tidsfönster, max antal, kräv godkännande)
+- Återkommande bokningar (serier med intervall, feature flag-skyddad)
 - Kundrecensioner (leverantör betygsätter kund, 1-5 stjärnor)
 - Röstloggning / arbetslogg (diktera eller skriv, AI tolkar och mappar till bokningar)
 - No-show-spårning (markera ej infunnit, kundvarningar vid 2+)

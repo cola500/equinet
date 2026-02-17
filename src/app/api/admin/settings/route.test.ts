@@ -28,6 +28,7 @@ vi.mock("@/lib/feature-flags", async (importOriginal) => {
       group_bookings: false,
       business_insights: true,
       self_reschedule: true,
+      recurring_bookings: false,
     }),
   }
 })
@@ -120,6 +121,7 @@ describe("GET /api/admin/settings", () => {
       group_bookings: false,
       business_insights: true,
       self_reschedule: true,
+      recurring_bookings: false,
     })
   })
 })

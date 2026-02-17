@@ -21,6 +21,8 @@ const providerProfileSchema = z.object({
   rescheduleWindowHours: z.number().int().min(1).max(168).optional(),
   maxReschedules: z.number().int().min(1).max(10).optional(),
   rescheduleRequiresApproval: z.boolean().optional(),
+  recurringEnabled: z.boolean().optional(),
+  maxSeriesOccurrences: z.number().int().min(2).max(52).optional(),
 }).strict()
 
 // GET - Fetch current provider profile
@@ -53,6 +55,8 @@ export async function GET(request: NextRequest) {
         rescheduleWindowHours: true,
         maxReschedules: true,
         rescheduleRequiresApproval: true,
+        recurringEnabled: true,
+        maxSeriesOccurrences: true,
         isVerified: true,
         verifiedAt: true,
         createdAt: true,
@@ -137,6 +141,8 @@ export async function PUT(request: NextRequest) {
         rescheduleWindowHours: true,
         maxReschedules: true,
         rescheduleRequiresApproval: true,
+        recurringEnabled: true,
+        maxSeriesOccurrences: true,
         isVerified: true,
         verifiedAt: true,
         createdAt: true,

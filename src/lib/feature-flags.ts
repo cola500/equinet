@@ -57,6 +57,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Kunder kan boka om sina bokningar utan att kontakta leverantören",
     defaultEnabled: true,
   },
+  recurring_bookings: {
+    key: "recurring_bookings",
+    label: "Återkommande bokningar",
+    description: "Möjlighet att skapa återkommande bokningsserier",
+    defaultEnabled: false,
+  },
 }
 
 const REDIS_PREFIX = "feature_flag:"
