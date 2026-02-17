@@ -1,6 +1,8 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Info } from "lucide-react"
 import {
   ResponsiveContainer,
   BarChart,
@@ -52,13 +54,37 @@ interface InsightsChartsProps {
   isLoading: boolean
 }
 
+// --- Info Popover ---
+
+function InfoPopover({ text }: { text: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center justify-center rounded-full p-0.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          aria-label="Mer information"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="text-sm text-gray-600 max-w-[280px]">
+        {text}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 // --- KPI Cards ---
 
-function KPICard({ label, value, unit, color, className }: { label: string; value: number | string; unit?: string; color?: string; className?: string }) {
+function KPICard({ label, value, unit, color, className, info }: { label: string; value: number | string; unit?: string; color?: string; className?: string; info?: string }) {
   return (
     <Card className={className}>
       <CardContent className="pt-6">
-        <p className="text-sm text-gray-500">{label}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-sm text-gray-500">{label}</p>
+          {info && <InfoPopover text={info} />}
+        </div>
         <p className={`text-2xl font-bold ${color || "text-gray-900"}`}>
           {value}{unit}
         </p>
@@ -193,11 +219,11 @@ export function InsightsCharts({
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-        <KPICard label="Avbokningsgrad" value={kpis.cancellationRate} unit="%" color={kpis.cancellationRate > 20 ? "text-red-600" : undefined} />
-        <KPICard label="No-show-grad" value={kpis.noShowRate} unit="%" color={kpis.noShowRate > 10 ? "text-amber-600" : undefined} />
-        <KPICard label="Snittbokningsvärde" value={`${kpis.averageBookingValue.toLocaleString("sv-SE")} kr`} />
-        <KPICard label="Unika kunder" value={kpis.uniqueCustomers} />
-        <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" className="col-span-2 sm:col-span-1" />
+        <KPICard label="Avbokningsgrad" value={kpis.cancellationRate} unit="%" color={kpis.cancellationRate > 20 ? "text-red-600" : undefined} info="Andel bokningar som avbokades av totalt antal bokningar i perioden." />
+        <KPICard label="No-show-grad" value={kpis.noShowRate} unit="%" color={kpis.noShowRate > 10 ? "text-amber-600" : undefined} info="Andel bekräftade bokningar där kunden inte dök upp." />
+        <KPICard label="Snittbokningsvärde" value={`${kpis.averageBookingValue.toLocaleString("sv-SE")} kr`} info="Genomsnittligt pris per genomförd bokning i perioden." />
+        <KPICard label="Unika kunder" value={kpis.uniqueCustomers} info="Antal kunder med minst en bokning i perioden." />
+        <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" className="col-span-2 sm:col-span-1" info="Andel bokningar skapade manuellt av dig, jämfört med kundens självbokning." />
       </div>
 
       {/* Charts grid */}
@@ -205,7 +231,10 @@ export function InsightsCharts({
         {/* Service breakdown */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Populäraste tjänster</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-base">Populäraste tjänster</CardTitle>
+              <InfoPopover text="Baserat på genomförda bokningar. Visar antal och intäkt per tjänst." />
+            </div>
             <CardDescription>Genomförda bokningar och intäkt per tjänst</CardDescription>
           </CardHeader>
           <CardContent>
@@ -246,7 +275,10 @@ export function InsightsCharts({
         {/* Time heatmap */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Populäraste tider</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-base">Populäraste tider</CardTitle>
+              <InfoPopover text="Visar alla bokningar (inte bara genomförda). Mörkare färg = fler bokningar." />
+            </div>
             <CardDescription>Antal bokningar per dag och timme</CardDescription>
           </CardHeader>
           <CardContent>
@@ -257,7 +289,10 @@ export function InsightsCharts({
         {/* Customer retention */}
         <Card className="md:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Kundretention</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-base">Kundretention</CardTitle>
+              <InfoPopover text="Ny kund = första bokningen någonsin. Återkommande = hade en bokning innan perioden." />
+            </div>
             <CardDescription>Nya vs återkommande kunder per månad</CardDescription>
           </CardHeader>
           <CardContent>
