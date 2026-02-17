@@ -19,6 +19,7 @@ import { ReviewList } from "@/components/review/ReviewList"
 import { StarRating } from "@/components/review/StarRating"
 import { MobileBookingFlow } from "@/components/booking/MobileBookingFlow"
 import { DesktopBookingDialog } from "@/components/booking/DesktopBookingDialog"
+import { SeriesResultDialog } from "@/components/booking/SeriesResultDialog"
 import type { CustomerHorse } from "@/hooks/useBookingFlow"
 
 interface Service {
@@ -244,6 +245,12 @@ export default function ProviderDetailPage() {
     canSubmit: booking.canSubmit,
     onSlotSelect: booking.handleSlotSelect,
     onSubmit: booking.handleSubmitBooking,
+    isRecurring: booking.isRecurring,
+    setIsRecurring: booking.setIsRecurring,
+    intervalWeeks: booking.intervalWeeks,
+    setIntervalWeeks: booking.setIntervalWeeks,
+    totalOccurrences: booking.totalOccurrences,
+    setTotalOccurrences: booking.setTotalOccurrences,
   }
 
   return (
@@ -489,6 +496,14 @@ export default function ProviderDetailPage() {
       ) : (
         <DesktopBookingDialog {...bookingDialogProps} />
       )}
+
+      {/* Series Result Dialog */}
+      <SeriesResultDialog
+        open={booking.showSeriesResult}
+        onOpenChange={(open) => { if (!open) booking.closeSeriesResult() }}
+        result={booking.seriesResult}
+        onClose={booking.closeSeriesResult}
+      />
     </div>
   )
 }

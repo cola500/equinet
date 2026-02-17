@@ -126,6 +126,7 @@ export interface CalendarBooking {
   customerNotes?: string
   providerNotes?: string | null
   isManualBooking?: boolean
+  bookingSeriesId?: string | null
   service: CalendarService
   customer: CalendarCustomer
   payment?: CalendarPayment | null

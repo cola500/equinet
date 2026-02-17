@@ -86,6 +86,9 @@ Rate limiting via Redis (Upstash) för serverless-kompatibilitet.
 | POST | `/api/bookings/manual` | Provider | Manuell bokning åt kund |
 | PUT | `/api/bookings/[id]` | Session (ägare) | Uppdatera status |
 | DELETE | `/api/bookings/[id]` | Session (ägare) | Ta bort bokning |
+| POST | `/api/booking-series` | Session | Skapa återkommande bokningsserie |
+| GET | `/api/booking-series/[id]` | Session (ägare) | Hämta serie med bokningar |
+| POST | `/api/booking-series/[id]/cancel` | Session (ägare) | Avbryt serie (avbokar framtida) |
 
 ### Kunder -- [detaljer](api/customers.md)
 

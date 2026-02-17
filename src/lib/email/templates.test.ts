@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { bookingConfirmationEmail, bookingStatusChangeEmail, bookingRescheduleEmail } from "./templates"
+import { bookingConfirmationEmail, bookingStatusChangeEmail, bookingRescheduleEmail, bookingSeriesCreatedEmail } from "./templates"
 import { PREPARATION_CHECKLIST } from "@/lib/preparation-checklist"
 
 const mockBookingData = {
@@ -126,5 +126,72 @@ describe("bookingRescheduleEmail", () => {
   it("includes booking URL", () => {
     const { html } = bookingRescheduleEmail(mockRescheduleData)
     expect(html).toContain(mockRescheduleData.bookingUrl)
+  })
+})
+
+describe("bookingSeriesCreatedEmail", () => {
+  const mockSeriesData = {
+    customerName: "Anna Svensson",
+    serviceName: "Hovbeläggning",
+    businessName: "Eriks Hovslagerservice",
+    totalOccurrences: 4,
+    createdCount: 3,
+    intervalWeeks: 6,
+    bookingDates: [
+      { date: "15 mar 2026", time: "10:00" },
+      { date: "26 apr 2026", time: "10:00" },
+      { date: "7 jun 2026", time: "10:00" },
+    ],
+    skippedDates: [
+      { date: "19 jul 2026", reason: "Tiden är upptagen" },
+    ],
+  }
+
+  it("includes customer name and service in HTML", () => {
+    const { html } = bookingSeriesCreatedEmail(mockSeriesData)
+    expect(html).toContain("Anna Svensson")
+    expect(html).toContain("Hovbeläggning")
+    expect(html).toContain("Eriks Hovslagerservice")
+  })
+
+  it("shows created count vs total", () => {
+    const { html } = bookingSeriesCreatedEmail(mockSeriesData)
+    expect(html).toContain("3 av 4")
+  })
+
+  it("includes interval label", () => {
+    const { html } = bookingSeriesCreatedEmail(mockSeriesData)
+    expect(html).toContain("var 6:e vecka")
+  })
+
+  it("shows 'varje vecka' for interval 1", () => {
+    const { html } = bookingSeriesCreatedEmail({ ...mockSeriesData, intervalWeeks: 1 })
+    expect(html).toContain("varje vecka")
+  })
+
+  it("lists all booking dates", () => {
+    const { html } = bookingSeriesCreatedEmail(mockSeriesData)
+    expect(html).toContain("15 mar 2026")
+    expect(html).toContain("26 apr 2026")
+    expect(html).toContain("7 jun 2026")
+  })
+
+  it("shows skipped dates with reasons", () => {
+    const { html } = bookingSeriesCreatedEmail(mockSeriesData)
+    expect(html).toContain("19 jul 2026")
+    expect(html).toContain("Tiden är upptagen")
+  })
+
+  it("omits skipped section when no dates were skipped", () => {
+    const { html } = bookingSeriesCreatedEmail({ ...mockSeriesData, skippedDates: [] })
+    expect(html).not.toContain("Hoppade datum")
+  })
+
+  it("includes plaintext version with all details", () => {
+    const { text } = bookingSeriesCreatedEmail(mockSeriesData)
+    expect(text).toContain("Anna Svensson")
+    expect(text).toContain("Hovbeläggning")
+    expect(text).toContain("3 av 4")
+    expect(text).toContain("15 mar 2026")
   })
 })

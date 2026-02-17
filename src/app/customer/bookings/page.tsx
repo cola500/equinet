@@ -54,6 +54,7 @@ interface Booking {
   } | null
   customerNotes?: string
   rescheduleCount: number
+  bookingSeriesId?: string | null
   service: {
     name: string
     price: number
@@ -428,7 +429,12 @@ export default function CustomerBookingsPage() {
                     <div className="flex items-center gap-2">
                       {booking.type === "fixed" ? (
                         <div>
-                          <CardTitle>{booking.service.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle>{booking.service.name}</CardTitle>
+                            {booking.bookingSeriesId && (
+                              <Badge className="bg-purple-100 text-purple-800" variant="secondary">Återkommande</Badge>
+                            )}
+                          </div>
                           <CardDescription>
                             {booking.provider.businessName}
                           </CardDescription>

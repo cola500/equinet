@@ -38,6 +38,17 @@ export interface SelectedService {
   description?: string
   price: number
   durationMinutes: number
+  recommendedIntervalWeeks?: number | null
+}
+
+export interface SeriesResult {
+  seriesId: string
+  serviceName: string
+  createdCount: number
+  totalOccurrences: number
+  intervalWeeks: number
+  firstBookingDate: string
+  skippedDates: { date: string; reason: string }[]
 }
 
 export interface UseBookingFlowOptions {
@@ -59,6 +70,13 @@ export function useBookingFlow({
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [isFlexibleBooking, setIsFlexibleBooking] = useState(false)
   const [step, setStep] = useState<BookingStep>("selectType")
+
+  // Recurring booking state
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [intervalWeeks, setIntervalWeeks] = useState(4)
+  const [totalOccurrences, setTotalOccurrences] = useState(4)
+  const [seriesResult, setSeriesResult] = useState<SeriesResult | null>(null)
+  const [showSeriesResult, setShowSeriesResult] = useState(false)
 
   const [bookingForm, setBookingForm] = useState<BookingFormState>({
     bookingDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
@@ -89,6 +107,9 @@ export function useBookingFlow({
       customerNotes: "",
     })
     setIsFlexibleBooking(false)
+    setIsRecurring(false)
+    setIntervalWeeks(service.recommendedIntervalWeeks || 4)
+    setTotalOccurrences(4)
     setStep("selectType")
     setIsOpen(true)
   }
@@ -157,6 +178,42 @@ export function useBookingFlow({
         )
         setIsOpen(false)
         router.push("/customer/bookings")
+      } else if (isRecurring) {
+        // Recurring booking - create series
+        const response = await fetch("/api/booking-series", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            providerId,
+            serviceId: selectedService.id,
+            firstBookingDate: bookingForm.bookingDate,
+            startTime: bookingForm.startTime,
+            intervalWeeks,
+            totalOccurrences,
+            horseId: bookingForm.horseId || undefined,
+            horseName: bookingForm.horseName || undefined,
+            horseInfo: bookingForm.horseInfo || undefined,
+            customerNotes: bookingForm.customerNotes || undefined,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || "Kunde inte skapa återkommande bokning")
+        }
+
+        setSeriesResult({
+          seriesId: data.series.id,
+          serviceName: selectedService.name,
+          createdCount: data.series.createdCount,
+          totalOccurrences: data.series.totalOccurrences,
+          intervalWeeks: data.series.intervalWeeks,
+          firstBookingDate: bookingForm.bookingDate,
+          skippedDates: data.skippedDates || [],
+        })
+        setIsOpen(false)
+        setShowSeriesResult(true)
       } else {
         const endTime = calculateEndTime(
           bookingForm.startTime,
@@ -203,6 +260,12 @@ export function useBookingFlow({
 
   const canSubmit = isFlexibleBooking || (!!bookingForm.bookingDate && !!bookingForm.startTime)
 
+  const closeSeriesResult = () => {
+    setShowSeriesResult(false)
+    setSeriesResult(null)
+    router.push("/customer/bookings")
+  }
+
   return {
     // State
     isOpen,
@@ -213,16 +276,27 @@ export function useBookingFlow({
     flexibleForm,
     canSubmit,
 
+    // Recurring state
+    isRecurring,
+    intervalWeeks,
+    totalOccurrences,
+    seriesResult,
+    showSeriesResult,
+
     // Setters
     setIsFlexibleBooking,
     setStep,
     setBookingForm,
     setFlexibleForm,
+    setIsRecurring,
+    setIntervalWeeks,
+    setTotalOccurrences,
 
     // Actions
     openBooking,
     close,
     handleSlotSelect,
     handleSubmitBooking,
+    closeSeriesResult,
   }
 }

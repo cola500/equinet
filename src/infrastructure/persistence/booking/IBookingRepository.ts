@@ -28,6 +28,8 @@ export interface Booking {
   cancellationMessage?: string
   /** Number of times this booking has been rescheduled */
   rescheduleCount: number
+  /** Recurring booking series ID */
+  bookingSeriesId?: string
   /** Calculated travel time to this booking (minutes) */
   travelTimeMinutes?: number
   /** Whether this booking was created manually by a provider */
@@ -63,6 +65,8 @@ export interface CreateBookingData {
   createdByProviderId?: string
   /** Initial status override (default: 'pending', manual bookings use 'confirmed') */
   status?: 'pending' | 'confirmed'
+  /** Recurring booking series ID */
+  bookingSeriesId?: string
 }
 
 /**
@@ -110,6 +114,7 @@ export interface BookingWithRelations {
   providerNotes?: string
   cancellationMessage?: string
   rescheduleCount?: number
+  bookingSeriesId?: string | null
   isManualBooking?: boolean
   createdByProviderId?: string
   createdAt: Date

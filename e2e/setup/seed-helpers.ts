@@ -97,7 +97,7 @@ export async function getBaseEntities(): Promise<BaseEntities> {
 
 interface SeedBookingOpts {
   specTag: string
-  status: 'pending' | 'confirmed' | 'completed'
+  status: 'pending' | 'confirmed' | 'completed' | 'no_show' | 'cancelled'
   daysFromNow: number // positive = future, negative = past
   horseName?: string
   horseId?: string | null
@@ -105,6 +105,7 @@ interface SeedBookingOpts {
   startTime?: string // defaults to '10:00'
   endTime?: string   // defaults to '11:00'
   routeOrderId?: string // optional: link booking to a route order (flexible/announcement)
+  rescheduleCount?: number // defaults to 0
 }
 
 /**
@@ -129,6 +130,7 @@ export async function seedBooking(opts: SeedBookingOpts) {
       customerNotes: `E2E-spec:${opts.specTag}`,
       status: opts.status,
       routeOrderId: opts.routeOrderId ?? null,
+      rescheduleCount: opts.rescheduleCount ?? 0,
     },
   })
 }

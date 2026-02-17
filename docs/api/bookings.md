@@ -156,3 +156,96 @@ Ta bort bokning.
 
 **Felkoder:**
 - `404` -- Bokning finns inte eller saknar behörighet (atomär auth)
+
+---
+
+## POST /api/booking-series
+
+Skapa återkommande bokningsserie. Genererar alla N bokningar direkt. Datum som krockar hoppas över.
+
+**Auth:** Required (customer eller provider)
+**Feature flag:** `recurring_bookings` måste vara aktiverad
+
+**Request Body:**
+```json
+{
+  "providerId": "uuid",
+  "serviceId": "uuid",
+  "firstBookingDate": "2026-03-01",
+  "startTime": "10:00",
+  "intervalWeeks": 4,
+  "totalOccurrences": 6,
+  "horseId": "uuid",
+  "horseName": "Blansen",
+  "horseInfo": "Lugn häst",
+  "customerNotes": "Ring vid ankomst"
+}
+```
+
+**Validering:**
+- `intervalWeeks`: 1-52
+- `totalOccurrences`: 2-52 (begränsas av provider.maxSeriesOccurrences)
+- `firstBookingDate`: YYYY-MM-DD format
+- `startTime`: HH:MM format
+
+**Response:** `201 Created`
+```json
+{
+  "series": {
+    "id": "uuid",
+    "intervalWeeks": 4,
+    "totalOccurrences": 6,
+    "createdCount": 5,
+    "status": "active"
+  },
+  "createdBookings": [...],
+  "skippedDates": [
+    { "date": "2026-05-24", "reason": "Tidskollision" }
+  ]
+}
+```
+
+**Felkoder:**
+- `400` -- Valideringsfel, feature flag av, recurring disabled
+- `401` -- Ej inloggad
+
+---
+
+## GET /api/booking-series/[id]
+
+Hämta bokningsserie med alla tillhörande bokningar.
+
+**Auth:** Required (ägare -- customer eller provider)
+
+**Response:** `200 OK`
+
+**Felkoder:**
+- `401` -- Ej inloggad
+- `404` -- Serie finns inte eller saknar behörighet
+
+---
+
+## POST /api/booking-series/[id]/cancel
+
+Avbryt bokningsserie. Avbokar alla framtida bokningar (pending/confirmed). Genomförda bevaras.
+
+**Auth:** Required (ägare -- customer eller provider)
+
+**Request Body (valfritt):**
+```json
+{
+  "cancellationMessage": "Behöver inte fler besök"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "cancelledBookings": 3,
+  "series": { "status": "cancelled" }
+}
+```
+
+**Felkoder:**
+- `401` -- Ej inloggad
+- `404` -- Serie finns inte eller saknar behörighet
