@@ -168,6 +168,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
 - **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta. Lägg till redigering vid behov.
 - **AI Service-mönster**: Kopiera `VoiceInterpretationService`-mönstret vid nya AI-features.
+- **Polling-providers**: Anvand `setState(fn)` med shallow-compare -- returnera samma referens vid identiska vardet sa React skippar re-render.
+- **SWR for client-side polling**: Ersatt manuell useState/setInterval med `useSWR(key, fetcher, { refreshInterval })` for deduplication och caching.
 
 ---
 

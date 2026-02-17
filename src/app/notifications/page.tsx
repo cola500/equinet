@@ -48,7 +48,7 @@ export default function NotificationsPage() {
         return
       }
       const data = await response.json()
-      setNotifications(data)
+      setNotifications(data.notifications)
     } catch {
       setError("Något gick fel. Kontrollera din internetanslutning.")
     } finally {

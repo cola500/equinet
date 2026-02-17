@@ -12,5 +12,6 @@ export function useAuth() {
     isProvider: session?.user?.userType === "provider",
     isCustomer: session?.user?.userType === "customer",
     isAdmin: session?.user?.isAdmin === true,
+    providerId: session?.user?.providerId ?? null,
   }
 }

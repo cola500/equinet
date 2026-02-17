@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import {
   isFeatureEnabled,
   getFeatureFlags,
   getFeatureFlagDefinitions,
   FEATURE_FLAGS,
   setFeatureFlagOverride,
+  removeFeatureFlagOverride,
   _resetRedisForTesting,
+  _resetFlagCacheForTesting,
 } from "./feature-flags"
 import { clearRuntimeSettings, setRuntimeSetting } from "./settings/runtime-settings"
 
@@ -29,6 +31,7 @@ describe("feature-flags", () => {
     clearRuntimeSettings()
     vi.clearAllMocks()
     _resetRedisForTesting()
+    _resetFlagCacheForTesting()
     // Clear all FEATURE_* env vars
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("FEATURE_")) {
@@ -172,6 +175,73 @@ describe("feature-flags", () => {
       for (const [recordKey, flag] of Object.entries(FEATURE_FLAGS)) {
         expect(flag.key).toBe(recordKey)
       }
+    })
+  })
+
+  describe("getFeatureFlags caching", () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it("caches result for 30 seconds", async () => {
+      // First call sets the cache
+      const flags1 = await getFeatureFlags()
+      expect(flags1.group_bookings).toBe(false)
+
+      // Change runtime setting
+      setRuntimeSetting("feature_group_bookings", "true")
+
+      // Second call within 30s returns cached result
+      const flags2 = await getFeatureFlags()
+      expect(flags2.group_bookings).toBe(false) // Still cached
+
+      // Advance past TTL
+      vi.advanceTimersByTime(31_000)
+
+      // Now should return fresh data
+      const flags3 = await getFeatureFlags()
+      expect(flags3.group_bookings).toBe(true)
+    })
+
+    it("returns fresh data after TTL expires", async () => {
+      await getFeatureFlags()
+
+      vi.advanceTimersByTime(31_000)
+
+      setRuntimeSetting("feature_voice_logging", "false")
+      const flags = await getFeatureFlags()
+      expect(flags.voice_logging).toBe(false)
+    })
+
+    it("invalidates cache on setFeatureFlagOverride", async () => {
+      // Prime the cache
+      const flags1 = await getFeatureFlags()
+      expect(flags1.group_bookings).toBe(false)
+
+      // Set override should invalidate cache
+      await setFeatureFlagOverride("group_bookings", "true")
+
+      // Next call should get fresh data
+      const flags2 = await getFeatureFlags()
+      expect(flags2.group_bookings).toBe(true)
+    })
+
+    it("invalidates cache on removeFeatureFlagOverride", async () => {
+      // Set an override and prime cache
+      await setFeatureFlagOverride("group_bookings", "true")
+      const flags1 = await getFeatureFlags()
+      expect(flags1.group_bookings).toBe(true)
+
+      // Remove override should invalidate cache
+      await removeFeatureFlagOverride("group_bookings")
+
+      // Next call should get fresh data (back to default)
+      const flags2 = await getFeatureFlags()
+      expect(flags2.group_bookings).toBe(false)
     })
   })
 })
