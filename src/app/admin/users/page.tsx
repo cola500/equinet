@@ -15,15 +15,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight, Star, MoreHorizontal } from "lucide-react"
 
 interface AdminUser {
@@ -237,7 +237,7 @@ function AdminUsersContent() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                   >
@@ -245,7 +245,7 @@ function AdminUsersContent() {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                     disabled={page >= data.totalPages}
                   >
@@ -260,11 +260,11 @@ function AdminUsersContent() {
 
       {/* Bekräftelsedialog */}
       {pendingAction && (
-        <AlertDialog open={true} onOpenChange={() => setPendingAction(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Bekräfta åtgärd</AlertDialogTitle>
-              <AlertDialogDescription>
+        <ResponsiveAlertDialog open={true} onOpenChange={() => setPendingAction(null)}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Bekräfta åtgärd</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
                 {pendingAction.action === "toggleBlocked" && !pendingAction.currentValue && (
                   <>Är du säker på att du vill blockera <strong>{pendingAction.userName}</strong>? Användaren kommer inte kunna logga in.</>
                 )}
@@ -277,20 +277,20 @@ function AdminUsersContent() {
                 {pendingAction.action === "toggleAdmin" && pendingAction.currentValue && (
                   <>Är du säker på att du vill ta bort admin-behörighet från <strong>{pendingAction.userName}</strong>?</>
                 )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Avbryt</AlertDialogCancel>
-              <AlertDialogAction
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
                 onClick={handleAction}
                 disabled={actionLoading}
                 className={pendingAction.action === "toggleBlocked" && !pendingAction.currentValue ? "bg-red-600 hover:bg-red-700" : ""}
               >
                 {actionLoading ? "Sparar..." : "Bekräfta"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
       )}
     </AdminLayout>
   )
@@ -341,133 +341,81 @@ function GeneralTable({ users, formatName, onAction }: {
   onAction: (action: PendingAction) => void
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left">
-            <th className="pb-2 font-medium text-gray-500">Namn</th>
-            <th className="pb-2 font-medium text-gray-500">E-post</th>
-            <th className="pb-2 font-medium text-gray-500">Typ</th>
-            <th className="pb-2 font-medium text-gray-500">E-post verifierad</th>
-            <th className="pb-2 font-medium text-gray-500">Registrerad</th>
-            <th className="pb-2 font-medium text-gray-500 w-10"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id} className="border-b last:border-0">
-              <td className="py-3">
-                {formatName(user)}
-                {user.isAdmin && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    Admin
-                  </Badge>
-                )}
-                {user.isBlocked && (
-                  <Badge variant="destructive" className="ml-2 text-xs">
-                    Blockerad
-                  </Badge>
-                )}
-              </td>
-              <td className="py-3 text-gray-600">{user.email}</td>
-              <td className="py-3">
+    <>
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {users.map((user) => (
+          <Card key={user.id}>
+            <CardContent className="pt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{formatName(user)}</span>
+                <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
+              </div>
+              <p className="text-sm text-gray-500">{user.email}</p>
+              <div className="flex gap-2 flex-wrap">
                 {user.userType === "provider" ? (
                   <Badge variant="outline">Leverantör</Badge>
                 ) : (
                   <Badge variant="outline">Kund</Badge>
                 )}
-              </td>
-              <td className="py-3">
                 {user.emailVerified ? (
-                  <Badge className="bg-green-100 text-green-700">Ja</Badge>
+                  <Badge className="bg-green-100 text-green-700">Verifierad</Badge>
                 ) : (
-                  <Badge variant="secondary">Nej</Badge>
+                  <Badge variant="secondary">Ej verifierad</Badge>
                 )}
-              </td>
-              <td className="py-3 text-gray-500">
-                {new Date(user.createdAt).toLocaleDateString("sv-SE")}
-              </td>
-              <td className="py-3">
-                <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
+                {user.isAdmin && <Badge variant="secondary">Admin</Badge>}
+                {user.isBlocked && <Badge variant="destructive">Blockerad</Badge>}
+              </div>
+              <p className="text-xs text-gray-400">
+                Reg: {new Date(user.createdAt).toLocaleDateString("sv-SE")}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-function ProviderTable({ users, onAction, formatName }: {
-  users: AdminUser[]
-  onAction: (action: PendingAction) => void
-  formatName: (u: AdminUser) => string
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left">
-            <th className="pb-2 font-medium text-gray-500">Leverantör</th>
-            <th className="pb-2 font-medium text-gray-500">Ort</th>
-            <th className="pb-2 font-medium text-gray-500">Status</th>
-            <th className="pb-2 font-medium text-gray-500">Betyg</th>
-            <th className="pb-2 font-medium text-gray-500">Aktivitet</th>
-            <th className="pb-2 font-medium text-gray-500">Registrerad</th>
-            <th className="pb-2 font-medium text-gray-500 w-10"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => {
-            const name = user.firstName || user.lastName
-              ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-              : null
-            return (
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left">
+              <th className="pb-2 font-medium text-gray-500">Namn</th>
+              <th className="pb-2 font-medium text-gray-500">E-post</th>
+              <th className="pb-2 font-medium text-gray-500">Typ</th>
+              <th className="pb-2 font-medium text-gray-500">E-post verifierad</th>
+              <th className="pb-2 font-medium text-gray-500">Registrerad</th>
+              <th className="pb-2 font-medium text-gray-500 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
               <tr key={user.id} className="border-b last:border-0">
                 <td className="py-3">
-                  <div className="font-medium">
-                    {user.provider?.businessName || "-"}
-                    {user.isAdmin && (
-                      <Badge variant="secondary" className="ml-2 text-xs">Admin</Badge>
-                    )}
-                    {user.isBlocked && (
-                      <Badge variant="destructive" className="ml-2 text-xs">Blockerad</Badge>
-                    )}
-                  </div>
-                  {name && <div className="text-xs text-gray-500">{name}</div>}
-                  <div className="text-xs text-gray-400">{user.email}</div>
+                  {formatName(user)}
+                  {user.isAdmin && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      Admin
+                    </Badge>
+                  )}
+                  {user.isBlocked && (
+                    <Badge variant="destructive" className="ml-2 text-xs">
+                      Blockerad
+                    </Badge>
+                  )}
                 </td>
-                <td className="py-3 text-gray-600">
-                  {user.provider?.city || "-"}
-                </td>
+                <td className="py-3 text-gray-600">{user.email}</td>
                 <td className="py-3">
-                  <div className="flex gap-1 flex-wrap">
-                    {user.provider?.isVerified ? (
-                      <Badge className="bg-green-100 text-green-700">Verifierad</Badge>
-                    ) : (
-                      <Badge variant="secondary">Ej verifierad</Badge>
-                    )}
-                    {user.provider && !user.provider.isActive && (
-                      <Badge variant="destructive">Inaktiv</Badge>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3">
-                  {user.provider?.averageRating != null ? (
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span>{user.provider.averageRating.toFixed(1)}</span>
-                    </div>
+                  {user.userType === "provider" ? (
+                    <Badge variant="outline">Leverantör</Badge>
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <Badge variant="outline">Kund</Badge>
                   )}
                 </td>
                 <td className="py-3">
-                  <div className="text-gray-600">
-                    {user.provider?.bookingCount ?? 0} bokn. / {user.provider?.serviceCount ?? 0} tj.
-                  </div>
-                  {user.provider?.hasFortnox && (
-                    <Badge variant="outline" className="text-xs mt-1">Fortnox</Badge>
+                  {user.emailVerified ? (
+                    <Badge className="bg-green-100 text-green-700">Ja</Badge>
+                  ) : (
+                    <Badge variant="secondary">Nej</Badge>
                   )}
                 </td>
                 <td className="py-3 text-gray-500">
@@ -477,10 +425,153 @@ function ProviderTable({ users, onAction, formatName }: {
                   <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
                 </td>
               </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+function ProviderTable({ users, onAction, formatName }: {
+  users: AdminUser[]
+  onAction: (action: PendingAction) => void
+  formatName: (u: AdminUser) => string
+}) {
+  return (
+    <>
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {users.map((user) => {
+          const name = user.firstName || user.lastName
+            ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+            : null
+          return (
+            <Card key={user.id}>
+              <CardContent className="pt-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">{user.provider?.businessName || "-"}</span>
+                    {name && <p className="text-xs text-gray-500">{name}</p>}
+                  </div>
+                  <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
+                </div>
+                <p className="text-sm text-gray-500">{user.email}</p>
+                {user.provider?.city && (
+                  <p className="text-sm text-gray-600">{user.provider.city}</p>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  {user.provider?.isVerified ? (
+                    <Badge className="bg-green-100 text-green-700">Verifierad</Badge>
+                  ) : (
+                    <Badge variant="secondary">Ej verifierad</Badge>
+                  )}
+                  {user.provider && !user.provider.isActive && (
+                    <Badge variant="destructive">Inaktiv</Badge>
+                  )}
+                  {user.isAdmin && <Badge variant="secondary">Admin</Badge>}
+                  {user.isBlocked && <Badge variant="destructive">Blockerad</Badge>}
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>{user.provider?.bookingCount ?? 0} bokn. / {user.provider?.serviceCount ?? 0} tj.</span>
+                  {user.provider?.averageRating != null && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span>{user.provider.averageRating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+                {user.provider?.hasFortnox && (
+                  <Badge variant="outline" className="text-xs">Fortnox</Badge>
+                )}
+                <p className="text-xs text-gray-400">
+                  Reg: {new Date(user.createdAt).toLocaleDateString("sv-SE")}
+                </p>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left">
+              <th className="pb-2 font-medium text-gray-500">Leverantör</th>
+              <th className="pb-2 font-medium text-gray-500">Ort</th>
+              <th className="pb-2 font-medium text-gray-500">Status</th>
+              <th className="pb-2 font-medium text-gray-500">Betyg</th>
+              <th className="pb-2 font-medium text-gray-500">Aktivitet</th>
+              <th className="pb-2 font-medium text-gray-500">Registrerad</th>
+              <th className="pb-2 font-medium text-gray-500 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => {
+              const name = user.firstName || user.lastName
+                ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+                : null
+              return (
+                <tr key={user.id} className="border-b last:border-0">
+                  <td className="py-3">
+                    <div className="font-medium">
+                      {user.provider?.businessName || "-"}
+                      {user.isAdmin && (
+                        <Badge variant="secondary" className="ml-2 text-xs">Admin</Badge>
+                      )}
+                      {user.isBlocked && (
+                        <Badge variant="destructive" className="ml-2 text-xs">Blockerad</Badge>
+                      )}
+                    </div>
+                    {name && <div className="text-xs text-gray-500">{name}</div>}
+                    <div className="text-xs text-gray-400">{user.email}</div>
+                  </td>
+                  <td className="py-3 text-gray-600">
+                    {user.provider?.city || "-"}
+                  </td>
+                  <td className="py-3">
+                    <div className="flex gap-1 flex-wrap">
+                      {user.provider?.isVerified ? (
+                        <Badge className="bg-green-100 text-green-700">Verifierad</Badge>
+                      ) : (
+                        <Badge variant="secondary">Ej verifierad</Badge>
+                      )}
+                      {user.provider && !user.provider.isActive && (
+                        <Badge variant="destructive">Inaktiv</Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3">
+                    {user.provider?.averageRating != null ? (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <span>{user.provider.averageRating.toFixed(1)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="py-3">
+                    <div className="text-gray-600">
+                      {user.provider?.bookingCount ?? 0} bokn. / {user.provider?.serviceCount ?? 0} tj.
+                    </div>
+                    {user.provider?.hasFortnox && (
+                      <Badge variant="outline" className="text-xs mt-1">Fortnox</Badge>
+                    )}
+                  </td>
+                  <td className="py-3 text-gray-500">
+                    {new Date(user.createdAt).toLocaleDateString("sv-SE")}
+                  </td>
+                  <td className="py-3">
+                    <UserActionsMenu user={user} formatName={formatName} onAction={onAction} />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

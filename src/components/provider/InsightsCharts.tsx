@@ -54,9 +54,9 @@ interface InsightsChartsProps {
 
 // --- KPI Cards ---
 
-function KPICard({ label, value, unit, color }: { label: string; value: number | string; unit?: string; color?: string }) {
+function KPICard({ label, value, unit, color, className }: { label: string; value: number | string; unit?: string; color?: string; className?: string }) {
   return (
-    <Card>
+    <Card className={className}>
       <CardContent className="pt-6">
         <p className="text-sm text-gray-500">{label}</p>
         <p className={`text-2xl font-bold ${color || "text-gray-900"}`}>
@@ -108,12 +108,12 @@ function TimeHeatmapGrid({ data }: { data: TimeHeatmapItem[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[400px]">
+      <div className="min-w-[320px]">
         {/* Header row */}
-        <div className="grid gap-1" style={{ gridTemplateColumns: `60px repeat(${hourRange.length}, 1fr)` }}>
+        <div className="grid gap-0.5 sm:gap-1" style={{ gridTemplateColumns: `40px repeat(${hourRange.length}, 1fr)` }}>
           <div />
           {hourRange.map((h) => (
-            <div key={h} className="text-xs text-gray-500 text-center">
+            <div key={h} className="text-[10px] sm:text-xs text-gray-500 text-center">
               {String(h).padStart(2, "0")}
             </div>
           ))}
@@ -123,10 +123,10 @@ function TimeHeatmapGrid({ data }: { data: TimeHeatmapItem[] }) {
         {DAY_ORDER.map((day) => (
           <div
             key={day}
-            className="grid gap-1 mt-1"
-            style={{ gridTemplateColumns: `60px repeat(${hourRange.length}, 1fr)` }}
+            className="grid gap-0.5 sm:gap-1 mt-1"
+            style={{ gridTemplateColumns: `40px repeat(${hourRange.length}, 1fr)` }}
           >
-            <div className="text-xs text-gray-600 flex items-center">{day}</div>
+            <div className="text-[10px] sm:text-xs text-gray-600 flex items-center">{day}</div>
             {hourRange.map((h) => {
               const count = lookup.get(`${day}-${h}`) || 0
               return (
@@ -158,7 +158,7 @@ export function InsightsCharts({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <Card key={i} data-testid="kpi-skeleton">
               <CardContent className="pt-6">
@@ -192,12 +192,12 @@ export function InsightsCharts({
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         <KPICard label="Avbokningsgrad" value={kpis.cancellationRate} unit="%" color={kpis.cancellationRate > 20 ? "text-red-600" : undefined} />
         <KPICard label="No-show-grad" value={kpis.noShowRate} unit="%" color={kpis.noShowRate > 10 ? "text-amber-600" : undefined} />
         <KPICard label="Snittbokningsvärde" value={`${kpis.averageBookingValue.toLocaleString("sv-SE")} kr`} />
         <KPICard label="Unika kunder" value={kpis.uniqueCustomers} />
-        <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" />
+        <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" className="col-span-2 sm:col-span-1" />
       </div>
 
       {/* Charts grid */}
@@ -215,10 +215,16 @@ export function InsightsCharts({
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={Math.max(200, serviceBreakdown.length * 50)}>
-                <BarChart data={serviceBreakdown} layout="vertical" margin={{ left: 20 }}>
+                <BarChart data={serviceBreakdown} layout="vertical" margin={{ left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="serviceName" tick={{ fontSize: 12 }} width={120} />
+                  <YAxis
+                    type="category"
+                    dataKey="serviceName"
+                    tick={{ fontSize: 11 }}
+                    width={100}
+                    tickFormatter={(value: string) => value.length > 15 ? `${value.slice(0, 15)}...` : value}
+                  />
                   <Tooltip
                     formatter={(value, name) => {
                       if (name === "revenue") return [`${Number(value).toLocaleString("sv-SE")} kr`, "Intäkt"]

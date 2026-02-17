@@ -9,15 +9,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface AdminBooking {
@@ -169,7 +169,45 @@ export default function AdminBookingsPage() {
             ) : data?.bookings.length === 0 ? (
               <p className="text-gray-500">Inga bokningar hittades</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-3">
+                {data?.bookings.map((booking) => (
+                  <Card key={booking.id}>
+                    <CardContent className="pt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{booking.customerName}</span>
+                        <Badge className={STATUS_COLORS[booking.status] || ""}>
+                          {STATUS_LABELS[booking.status] || booking.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{booking.providerBusinessName}</p>
+                      <p className="text-sm text-gray-500">{booking.serviceName}</p>
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <span>{new Date(booking.bookingDate).toLocaleDateString("sv-SE")}</span>
+                        <span>{booking.startTime}–{booking.endTime}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {booking.isManualBooking && (
+                          <Badge variant="outline" className="text-xs">Manuell</Badge>
+                        )}
+                      </div>
+                      {canCancel(booking) && (
+                        <Button
+                          variant="outline"
+                          className="w-full text-red-600 hover:text-red-700"
+                          onClick={() => setCancelBooking(booking)}
+                        >
+                          Avboka
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left">
@@ -221,6 +259,7 @@ export default function AdminBookingsPage() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
 
             {data && data.totalPages > 1 && (
@@ -231,7 +270,7 @@ export default function AdminBookingsPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                   >
@@ -239,7 +278,7 @@ export default function AdminBookingsPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                     disabled={page >= data.totalPages}
                   >
@@ -254,40 +293,36 @@ export default function AdminBookingsPage() {
 
       {/* Avbokningsdialog */}
       {cancelBooking && (
-        <AlertDialog open={true} onOpenChange={() => { setCancelBooking(null); setCancelReason("") }}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Avboka bokning</AlertDialogTitle>
-              <AlertDialogDescription asChild>
-                <div>
-                  <p className="mb-2">
-                    Avboka bokning för <strong>{cancelBooking.customerName}</strong> hos{" "}
-                    <strong>{cancelBooking.providerBusinessName}</strong> den{" "}
-                    {new Date(cancelBooking.bookingDate).toLocaleDateString("sv-SE")}?
-                  </p>
-                  <p className="mb-2 text-sm">Både kund och leverantör kommer att notifieras.</p>
-                  <Textarea
-                    placeholder="Ange anledning till avbokning..."
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    className="mt-2"
-                    rows={3}
-                  />
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Avbryt</AlertDialogCancel>
-              <AlertDialogAction
+        <ResponsiveAlertDialog open={true} onOpenChange={() => { setCancelBooking(null); setCancelReason("") }}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Avboka bokning</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Avboka bokning för {cancelBooking.customerName} hos{" "}
+                {cancelBooking.providerBusinessName} den{" "}
+                {new Date(cancelBooking.bookingDate).toLocaleDateString("sv-SE")}?
+                Både kund och leverantör kommer att notifieras.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <Textarea
+              placeholder="Ange anledning till avbokning..."
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="mt-2"
+              rows={3}
+            />
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
                 onClick={handleCancel}
                 disabled={cancelLoading || !cancelReason.trim()}
                 className="bg-red-600 hover:bg-red-700"
               >
                 {cancelLoading ? "Avbokar..." : "Avboka"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
       )}
     </AdminLayout>
   )

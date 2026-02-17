@@ -8,15 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight, Star, Trash2 } from "lucide-react"
 
 interface AdminReview {
@@ -143,7 +143,48 @@ export default function AdminReviewsPage() {
             ) : data?.reviews.length === 0 ? (
               <p className="text-gray-500">Inga recensioner hittades</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-3">
+                {data?.reviews.map((review) => (
+                  <Card key={`${review.type}-${review.id}`}>
+                    <CardContent className="pt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {review.type === "review" ? "Kund" : "Leverantör"}
+                          </Badge>
+                          {renderStars(review.rating)}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => setDeleteReview(review)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-gray-700">{review.comment}</p>
+                      )}
+                      {review.reply && (
+                        <p className="text-xs text-gray-500">Svar: {review.reply}</p>
+                      )}
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>{review.customerName}</span>
+                        <span>{review.providerBusinessName}</span>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        {new Date(review.createdAt).toLocaleDateString("sv-SE")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left">
@@ -193,6 +234,7 @@ export default function AdminReviewsPage() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
 
             {data && data.totalPages > 1 && (
@@ -203,7 +245,7 @@ export default function AdminReviewsPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                   >
@@ -211,7 +253,7 @@ export default function AdminReviewsPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                     disabled={page >= data.totalPages}
                   >
@@ -226,27 +268,27 @@ export default function AdminReviewsPage() {
 
       {/* Bekräftelsedialog */}
       {deleteReview && (
-        <AlertDialog open={true} onOpenChange={() => setDeleteReview(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Ta bort recension</AlertDialogTitle>
-              <AlertDialogDescription>
+        <ResponsiveAlertDialog open={true} onOpenChange={() => setDeleteReview(null)}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Ta bort recension</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
                 Är du säker på att du vill ta bort denna recension av{" "}
-                <strong>{deleteReview.customerName}</strong>? Denna åtgärd kan inte ångras.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Avbryt</AlertDialogCancel>
-              <AlertDialogAction
+                {deleteReview.customerName}? Denna åtgärd kan inte ångras.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel>Avbryt</ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
                 onClick={handleDelete}
                 disabled={deleteLoading}
                 className="bg-red-600 hover:bg-red-700"
               >
                 {deleteLoading ? "Tar bort..." : "Ta bort"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
       )}
     </AdminLayout>
   )
