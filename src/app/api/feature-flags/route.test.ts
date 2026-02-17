@@ -34,6 +34,7 @@ describe("GET /api/feature-flags", () => {
       customer_insights: true,
       due_for_service: true,
       group_bookings: false,
+      business_insights: true,
     })
   })
 

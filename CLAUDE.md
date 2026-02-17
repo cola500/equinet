@@ -195,4 +195,4 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 ---
 
-**Senast uppdaterad**: 2026-02-15
+**Senast uppdaterad**: 2026-02-17

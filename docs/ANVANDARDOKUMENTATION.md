@@ -22,6 +22,7 @@
   - [Hästprofil](#hästprofil)
   - [Dataexport](#dataexport)
   - [Notifikationer](#notifikationer)
+  - [Bokningspåminnelser](#bokningspåminnelser)
 - [Guide för leverantörer](#guide-för-leverantörer)
   - [Komma igång som leverantör](#komma-igång-som-leverantör)
   - [Företagsprofil](#företagsprofil)
@@ -30,6 +31,7 @@
   - [Tillgänglighet och schema](#tillgänglighet-och-schema)
   - [Hantera bokningar](#hantera-bokningar-leverantör)
   - [Manuell bokning](#manuell-bokning)
+  - [Röstloggning / Arbetslogg](#röstloggning--arbetslogg)
   - [Ruttplanering](#ruttplanering)
   - [Annonsera rutter](#annonsera-rutter)
   - [Genomföra en rutt](#genomföra-en-rutt)
@@ -38,6 +40,7 @@
   - [Kundregister](#kundregister)
   - [Manuell kundregistrering](#manuell-kundregistrering)
   - [Kundanteckningar](#kundanteckningar)
+  - [Kundinsikter](#kundinsikter)
   - [Besöksplanering](#besöksplanering)
   - [Kompetenser & Verifiering](#kompetenser--verifiering)
   - [Gruppbokning (leverantör)](#gruppbokning-leverantör)
@@ -163,6 +166,7 @@ Under **Mina bokningar** ser du alla dina bokningar med status:
 | Väntar på svar | Leverantören har inte svarat ännu |
 | Bekräftad | Leverantören har accepterat |
 | Genomförd | Tjänsten är utförd |
+| Ej infunnit | Du dök inte upp till bokningen |
 | Avbokad | Bokningen är avbokad |
 
 **Du kan:**
@@ -323,6 +327,27 @@ Notifikationer skickas även via e-post.
 
 ---
 
+### Bokningspåminnelser
+
+Du får automatiskt en påminnelse **24 timmar innan** varje bekräftad bokning.
+
+**Påminnelsen innehåller:**
+- Datum, tid och tjänst
+- Leverantörens namn
+- Förberedelsechecklista (lugn miljö, upplyst, plant underlag, ren häst)
+
+**Hur påminnelserna skickas:**
+- E-post med bokningsdetaljer och checklista
+- In-app-notifikation i klockikonen
+
+**Stänga av påminnelser:**
+- Klicka på **unsubscribe-länken** i påminnelsemailet
+- Eller gå till **Min profil** och inaktivera e-postpåminnelser
+
+Du kan när som helst slå på påminnelser igen via din profil.
+
+---
+
 ## Guide för leverantörer
 
 ### Komma igång som leverantör
@@ -424,6 +449,7 @@ Under **Bokningar** ser du alla inkommande och befintliga bokningar.
 | Väntande | Acceptera eller avböj (med anledning) |
 | Bekräftad | Utför tjänsten, markera sedan som genomförd |
 | Genomförd | Klar - kunden kan nu betala och lämna omdöme |
+| Ej infunnit | Kunden infann sig inte | Markera som ej infunnit |
 | Avbokad | Avbokad av kund eller dig |
 
 **För varje bokning ser du:**
@@ -455,6 +481,31 @@ Du kan skapa bokningar åt kunder direkt från kalendervyn -- till exempel när 
 6. Bekräfta
 
 Manuellt skapade bokningar markeras med ett **M** i kalendern så du kan skilja dem från kundinitierade bokningar. De bekräftas automatiskt (hoppar över "väntar på svar"-steget).
+
+---
+
+### Röstloggning / Arbetslogg
+
+Under **Logga arbete** kan du snabbt dokumentera utfört arbete genom att diktera eller skriva fritt.
+
+**Så fungerar det:**
+1. Gå till **Logga arbete** i leverantörsmenyn (eller tryck på den gröna mikrofon-knappen på mobil)
+2. Diktera med mikrofonen eller skriv i textfältet
+3. AI tolkar din text och föreslår vilken bokning arbetet tillhör
+4. Granska och justera -- AI:n visar en confidence-indikator
+5. Bekräfta för att spara arbetsloggen på bokningen
+
+**Vokabulärinlärning:**
+- Om du korrigerar AI:ns tolkning lär den sig dina termer
+- Nästa gång du loggar arbete använder AI:n din personliga ordlista
+- Max 50 termer sparas (äldsta fasas ut)
+
+**Tips:**
+- Fungerar bäst med korta, koncisa beskrivningar ("Verkade fram, normalställd, klipper lite kil")
+- Du kan logga flera bokningar i rad med "Logga nästa"-flödet
+- Röstinspelning fungerar i Chrome och Safari. I Firefox används textfältet.
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
 
 ---
 
@@ -599,6 +650,25 @@ Under varje kund i kundregistret kan du skriva privata anteckningar -- en slags 
 - Klicka papperskorgen bredvid anteckningen
 
 **Integritetsskydd:** Dina anteckningar är bara synliga för dig. Kunden ser dem inte, och de visas inte i hästprofilen eller andra publika vyer.
+
+---
+
+### Kundinsikter
+
+Under varje kund i kundregistret kan du generera **AI-drivna insikter** som hjälper dig förstå kunden bättre.
+
+**Klicka "Generera insikter" för att se:**
+- **VIP-score** -- hur värdefull kunden är (baserat på frekvens, intäkt, lojalitet)
+- **Besöksfrekvens** -- genomsnittligt intervall mellan bokningar
+- **Riskflaggor** -- varning om kunden visar tecken på att sluta boka (t.ex. ökande intervall, avbokningar)
+- **Mönster** -- insikter om kundens beteende (föredragen dag, tjänst, etc.)
+
+**Viktigt att veta:**
+- Insikterna baseras på bokningshistorik, inte personlig data
+- En confidence-indikator visar hur säkra insikterna är (fler bokningar = mer tillförlitligt)
+- Insikterna genereras on-demand och cachas inte
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
 
 ---
 
@@ -771,12 +841,24 @@ Admin-panelen nås via **/admin** och kräver att din användare har admin-behö
 
 ### Dashboard
 
-Startsidan visar fyra KPI-kort:
+Startsidan visar fyra **klickbara KPI-kort**:
 
 - **Användare** -- totalt, kunder, leverantörer, nya denna månad
 - **Bokningar** -- totalt, per status (väntande/bekräftade/genomförda/avbokade), genomförda denna månad
 - **Leverantörer** -- totalt, aktiva, verifierade, väntande verifieringar
 - **Intäkter** -- totalt genomfört belopp, belopp denna månad
+
+**Trendgrafer:**
+- Bokningar per vecka (senaste 8 veckorna) -- linjediagram med genomförda och avbokade
+- Intäkter per månad (senaste 6 månaderna) -- stapeldiagram
+
+**Onboarding-checklista** (för nya leverantörer):
+- Fyll i företagsprofil
+- Lägg till minst en tjänst
+- Sätt öppettider
+- Verifiera e-postadress
+
+**Snabblänkar** till vanliga åtgärder (ny bokning, lägg till tjänst, etc.)
 
 ---
 
@@ -852,6 +934,17 @@ Under **System** ser du:
 
 - **Systemhälsa** -- databasstatus och svarstid
 - **Cron-status** -- senaste påminnelsekörning
+
+**Feature flags:**
+- **Röstloggning** -- AI-baserad arbetsloggning
+- **Ruttplanering** -- Ruttplaneringsverktyg
+- **Rutt-annonser** -- Publicera ruttannonser
+- **Kundinsikter** -- AI-genererade kundinsikter
+- **Besöksplanering** -- Återbesöksplanering
+- **Gruppbokningar** -- Gruppbokningsfunktionalitet (under utveckling)
+- **Affärsinsikter** -- Utökad analytics-sida
+
+Flaggor kan slås av och på i realtid. Ändringar sparas i Redis och gäller omedelbart.
 
 **Utveckling & Test:**
 - **E-post-toggle** -- stäng av skarp e-postutskick (loggar istället). Användbart under utveckling och testning.

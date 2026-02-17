@@ -13,25 +13,17 @@
 | A2 | Kund-onboarding-checklista (4 steg) | Klart |
 | A3 | Delad EmptyState-komponent (4 vyer) | Klart |
 | A4 | Förbättrade Quick Actions + klickbara KPI-kort | Klart |
+| B1 | Bokningspåminnelser 24h (e-post + in-app, opt-out) | Klart |
+| B3 | Affärsinsikter (tjänsteanalys, tidsanalys, kundretention, KPIs) | Klart |
 | B4 | No-show-spårning (status, UI, kundregister, insikter) | Klart |
 
 ---
 
 ## B-kategori -- Medelstor insats
 
-### B1: Bokningspåminnelser
+### ~~B1: Bokningspåminnelser~~ (Implementerad 2026-02-17)
 
-**Problem:** Kunder glömmer bokningar, vilket leder till no-shows och förlorad intäkt.
-
-**Lösning:** Automatiska påminnelser 24h och 1h före besök via e-post (och eventuellt SMS).
-
-**Branschdata:**
-- Booksy rapporterar 20% färre avbokningar med påminnelser
-- Branschsnittet visar upp till 80% reduktion av no-shows med automatiska påminnelser
-
-**Insats:** Medel -- kräver schemalagd job (cron/Vercel Cron), e-postmallar, opt-out-inställning.
-
-**Beroenden:** E-postsystem måste vara aktiverat i produktion.
+Implementerad i session 30. E-postpåminnelser 24h före bokning med checklista, in-app-notifikation, unsubscribe via HMAC-token, opt-out via profil. Cron kör 06:00 UTC dagligen.
 
 ---
 
@@ -50,19 +42,15 @@
 
 ---
 
-### B3: Affärsinsikter (utökade)
+### ~~B3: Affärsinsikter (utökade)~~ (Implementerad 2026-02-17)
 
-**Problem:** Leverantörer ser bara grundläggande siffror. Saknar insikt i trender, populära tjänster och kundmönster.
-
-**Lösning:** Utökad analytics-sida med:
-- Populäraste tjänster (bokningsfrekvens per tjänst)
-- Bästa tider/dagar (heatmap över bokningar)
-- Kundretention (andel återkommande kunder)
-- Intäktsprognos baserat på bokade jobb
-
-**Insats:** Medel-Stor -- kräver aggregerings-queries, nya UI-komponenter, eventuellt caching.
-
-**Not:** Dashboard-graferna (A1) ger en grundnivå. B3 bygger vidare med djupare analys.
+Implementerad i session 32. Ny sida `/provider/insights` med:
+- KPI-kort (avbokningsgrad, no-show-grad, snittbokningsvärde, unika kunder, manuella bokningar)
+- Populäraste tjänster (horisontell BarChart med intäkt per tjänst)
+- Tidsanalys (heatmap: dag x timme)
+- Kundretention (LineChart: nya vs återkommande kunder per månad)
+- Period-selector (3/6/12 månader)
+- Feature flag: `business_insights`
 
 ---
 
@@ -124,12 +112,10 @@ Implementerad i session 31. 27 filer, 1815 tester. Inkluderar:
 ## Prioriteringsförslag
 
 ```
-Nästa:       B1 (påminnelser) -- störst impact på no-shows
-Sedan:       B3 (affärsinsikter) -- bygger på A1-graferna
-Sedan:       B2 (ombokning) -- stor UX-förbättring, kräver migration
+Nästa:       B2 (ombokning) -- stor UX-förbättring, kräver migration
 Framtida:    C1, C2, C3 -- planera efter feedback
 ```
 
 ---
 
-*Skapad: 2026-02-17, uppdaterad: 2026-02-17 (B4 implementerad)*
+*Skapad: 2026-02-17, uppdaterad: 2026-02-17 (B1, B3, B4 implementerade)*

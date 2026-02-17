@@ -129,8 +129,10 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1500+ unit/integration) + Playwright (115+ E2E desktop, 82+ mobil) = 70% coverage
+- **Testning**: Vitest (1800+ unit/integration) + Playwright (115+ E2E desktop, 82+ mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
+- **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
+- **Grafer**: Recharts (dashboard- och insiktsgrafer)
 - **Arkitektur**: DDD-Light med Repository Pattern
 - **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
 
@@ -212,6 +214,10 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Stäng för nya kunder (befintliga kunder kan fortfarande boka)
 - Kundrecensioner (leverantör betygsätter kund, 1-5 stjärnor)
 - Röstloggning / arbetslogg (diktera eller skriv, AI tolkar och mappar till bokningar)
+- No-show-spårning (markera ej infunnit, kundvarningar vid 2+)
+- AI-drivna kundinsikter (frekvens, VIP-score, riskflaggor)
+- Dashboard med trendgrafer och onboarding-checklista
+- Affärsinsikter (populära tjänster, tidsanalys, kundretention)
 
 ### Admin-gränssnitt
 - Dashboard med KPI-kort (användare, bokningar, leverantörer, intäkter)
@@ -235,12 +241,13 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Bilduppladdning (Supabase Storage)
 - Rate limiting, CSRF, XSS, SQL injection-skydd
 - GDPR-dataexport (JSON/CSV)
+- Redis-backade feature flags med admin-toggle
 
 Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade beskrivningar.
 
 ## Testning
 
-**1630+ tester** (115+ E2E desktop + 82+ E2E mobil + 1630+ unit/integration) med **70% coverage**.
+**1800+ tester** (115+ E2E desktop + 82+ E2E mobil + 1800+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

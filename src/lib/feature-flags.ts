@@ -45,6 +45,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Gruppbokningsfunktionalitet (under utveckling)",
     defaultEnabled: false,
   },
+  business_insights: {
+    key: "business_insights",
+    label: "Affärsinsikter",
+    description: "Utökad analytics-sida med tjänsteanalys, tidsanalys och kundretention",
+    defaultEnabled: true,
+  },
 }
 
 const REDIS_PREFIX = "feature_flag:"
