@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { CustomerInsightCard } from "@/components/customer/CustomerInsightCard"
+import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 import {
   Search,
   ChevronDown,
@@ -87,6 +88,7 @@ type StatusFilter = "all" | "active" | "inactive"
 export default function ProviderCustomersPage() {
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const flags = useFeatureFlags()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -918,9 +920,11 @@ export default function ProviderCustomersPage() {
                   </div>
 
                   {/* Customer Insights */}
-                  <div className="mt-4 pt-4 border-t">
-                    <CustomerInsightCard customerId={customer.id} />
-                  </div>
+                  {flags.customer_insights && (
+                    <div className="mt-4 pt-4 border-t">
+                      <CustomerInsightCard customerId={customer.id} />
+                    </div>
+                  )}
 
                   {/* Delete customer button (only for manually added) */}
                   {customer.isManuallyAdded && (
