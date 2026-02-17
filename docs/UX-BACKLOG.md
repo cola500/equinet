@@ -5,7 +5,7 @@
 
 ---
 
-## Implementerat (A-kategori -- Quick Wins)
+## Implementerat
 
 | # | Feature | Status |
 |---|---------|--------|
@@ -13,6 +13,7 @@
 | A2 | Kund-onboarding-checklista (4 steg) | Klart |
 | A3 | Delad EmptyState-komponent (4 vyer) | Klart |
 | A4 | Förbättrade Quick Actions + klickbara KPI-kort | Klart |
+| B4 | No-show-spårning (status, UI, kundregister, insikter) | Klart |
 
 ---
 
@@ -65,16 +66,14 @@
 
 ---
 
-### B4: No-show-spårning
+### ~~B4: No-show-spårning~~ (Implementerad 2026-02-17)
 
-**Problem:** Leverantörer har ingen överblick över vilka kunder som ofta uteblir.
-
-**Lösning:**
-- Markera bokningar som "no-show" (nytt status)
-- Visa no-show-historik per kund i kundregistret
-- Varningsflagga vid nya bokningar från kunder med hög no-show-frekvens
-
-**Insats:** Medel -- nytt status, UI-indikator, eventuell policy-inställning.
+Implementerad i session 31. 27 filer, 1815 tester. Inkluderar:
+- `no_show`-status i state machine (confirmed -> no_show, terminal)
+- "Ej infunnit"-knapp i bokningslista + kalendervy
+- Orange badge per kund i kundregistret (varning vid 2+)
+- No-show-data i AI-kundinsikter
+- Rate limiting tillagd i bookings/[id] (pre-existing fix)
 
 ---
 
@@ -125,13 +124,12 @@
 ## Prioriteringsförslag
 
 ```
-Sprint 3-4:  B1 (påminnelser) -- störst impact på no-shows
-Sprint 5:    B2 (ombokning) -- stor UX-förbättring
-Sprint 6:    B4 (no-show) -- liten insats, bygger på befintlig data
-Sprint 7-8:  B3 (affärsinsikter) -- bygger på A1-graferna
-Sprint 9+:   C1, C2, C3 -- planera efter feedback
+Nästa:       B1 (påminnelser) -- störst impact på no-shows
+Sedan:       B3 (affärsinsikter) -- bygger på A1-graferna
+Sedan:       B2 (ombokning) -- stor UX-förbättring, kräver migration
+Framtida:    C1, C2, C3 -- planera efter feedback
 ```
 
 ---
 
-*Skapad: 2026-02-17*
+*Skapad: 2026-02-17, uppdaterad: 2026-02-17 (B4 implementerad)*

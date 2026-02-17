@@ -1,7 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
+import { createContext, useContext, useState } from "react"
 
 interface FeatureFlagContextValue {
   flags: Record<string, boolean>
@@ -20,34 +19,7 @@ export function FeatureFlagProvider({
   initialFlags,
   children,
 }: FeatureFlagProviderProps) {
-  const [flags, setFlags] = useState(initialFlags)
-  const pathname = usePathname()
-
-  const fetchFlags = useCallback(() => {
-    fetch("/api/feature-flags")
-      .then((res) => {
-        if (!res.ok) return
-        return res.json()
-      })
-      .then((data) => {
-        if (data?.flags) {
-          setFlags(data.flags)
-        }
-      })
-      .catch(() => {})
-  }, [])
-
-  // Re-fetch on navigation
-  useEffect(() => {
-    fetchFlags()
-  }, [pathname, fetchFlags])
-
-  // Re-fetch when window regains focus
-  useEffect(() => {
-    const handleFocus = () => fetchFlags()
-    window.addEventListener("focus", handleFocus)
-    return () => window.removeEventListener("focus", handleFocus)
-  }, [fetchFlags])
+  const [flags] = useState(initialFlags)
 
   return (
     <FeatureFlagContext.Provider value={{ flags }}>

@@ -6,7 +6,7 @@ import { fetcher } from "@/lib/swr"
 /**
  * Global SWR configuration wrapper.
  *
- * - revalidateOnFocus: refreshes data when the user returns to the tab
+ * - revalidateOnFocus: disabled to prevent visual flicker on tab switch
  * - dedupingInterval: deduplicates identical requests within 5 seconds
  * - errorRetryCount: retries failed requests up to 2 times
  */
@@ -15,7 +15,7 @@ export function SWRProvider({ children }: { children: React.ReactNode }) {
     <SWRConfig
       value={{
         fetcher,
-        revalidateOnFocus: true,
+        revalidateOnFocus: false,
         dedupingInterval: 5000,
         errorRetryCount: 2,
       }}

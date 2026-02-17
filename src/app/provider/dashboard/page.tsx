@@ -51,6 +51,7 @@ export default function ProviderDashboard() {
     }
   }, [isProvider, isLoading, router])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs only on mount/auth change
   useEffect(() => {
     if (isProvider) {
       fetchData()
