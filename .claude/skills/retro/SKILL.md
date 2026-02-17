@@ -109,14 +109,14 @@ Review the changes and determine which files are relevant. Do NOT update files t
 
 | File | Update when... | Section to update |
 |------|---------------|-------------------|
-| `docs/API.md` | New or changed API routes | Add endpoint documentation |
+| `docs/api/*.md` | New or changed API routes | Add endpoint to relevant domain file + index in `docs/API.md` |
 | `CLAUDE.md` | New patterns, gotchas, or key learnings | "Key Learnings" section at the bottom |
 | `docs/DATABASE-ARCHITECTURE.md` | Schema changes (new tables, fields, relations) | Relevant schema section |
 | `README.md` | New user-facing features | Features list or description |
 
 **Decision criteria:**
 - Schema changed? -> DATABASE-ARCHITECTURE.md
-- New API endpoints? -> API.md
+- New API endpoints? -> `docs/api/<domain>.md` + index row in `docs/API.md`
 - New patterns or gotchas discovered? -> CLAUDE.md "Key Learnings"
 - New user-visible feature? -> README.md
 
@@ -131,8 +131,9 @@ For each file identified in step 3:
 - Add new gotchas to "Key Learnings -> Operationella fallor" if discovered
 - Keep entries concise (1-2 lines each)
 
-### docs/API.md
-- Add new endpoints following the existing format in the file
+### docs/api/*.md (API-dokumentation)
+- Add new endpoints to the relevant domain file in `docs/api/` (auth, bookings, customers, horses, providers, admin, group-bookings, routes, voice-and-ai)
+- Add a row to the endpoint-index table in `docs/API.md`
 - Include method, path, auth requirement, request/response shape
 
 ### docs/DATABASE-ARCHITECTURE.md
