@@ -67,6 +67,9 @@ export async function cleanupDynamicTestData(prisma: PrismaClient): Promise<void
     await prisma.booking.deleteMany({
       where: { customer: { email: { endsWith: '@ghost.equinet.se' } } },
     })
+    await prisma.providerCustomerNote.deleteMany({
+      where: { customer: { email: { endsWith: '@ghost.equinet.se' } } },
+    })
     await prisma.user.deleteMany({
       where: { email: { endsWith: '@ghost.equinet.se' } },
     })
