@@ -13,6 +13,7 @@
   - [Hitta leverantörer](#hitta-leverantörer)
   - [Boka en tjänst](#boka-en-tjänst)
   - [Flexibel bokning](#flexibel-bokning)
+  - [Återkommande bokning](#återkommande-bokning)
   - [Hantera bokningar](#hantera-bokningar)
   - [Betalning och kvitto](#betalning-och-kvitto)
   - [Hästregistret](#hästregistret)
@@ -31,6 +32,7 @@
   - [Tillgänglighet och schema](#tillgänglighet-och-schema)
   - [Hantera bokningar](#hantera-bokningar-leverantör)
   - [Manuell bokning](#manuell-bokning)
+  - [Återkommande bokningar (leverantör)](#återkommande-bokningar-leverantör)
   - [Röstloggning / Arbetslogg](#röstloggning--arbetslogg)
   - [Ruttplanering](#ruttplanering)
   - [Annonsera rutter](#annonsera-rutter)
@@ -154,6 +156,42 @@ Om du inte behöver en exakt tid kan du skapa en **flexibel beställning**. Leve
 **Alternativt:** Om en leverantör redan har annonserat en rutt i ditt område kan du ansluta dig direkt till den rutten.
 
 Du får en notifikation när leverantören har planerat in dig i en rutt, inklusive beräknad ankomsttid.
+
+---
+
+### Återkommande bokning
+
+Om du behöver regelbundna besök (t.ex. hovbeläggning var 8:e vecka) kan du skapa en **återkommande bokning** som schemalägger flera tillfällen automatiskt.
+
+**Förutsättning:** Leverantören måste ha aktiverat återkommande bokningar i sina inställningar.
+
+#### Skapa en återkommande bokning
+
+1. Börja boka som vanligt (välj leverantör, tjänst, datum och tid)
+2. Slå på **"Gör detta återkommande"**
+3. Välj **intervall**: varje vecka, varannan vecka, var 4:e, 6:e eller 8:e vecka
+4. Välj **antal tillfällen**: 2, 4, 6, 8 eller 12
+5. Bekräfta bokningen
+
+Systemet skapar alla bokningar i serien automatiskt. Datum som krockar med leverantörens schema (stängt, redan fullbokat, för kort restid) hoppas över -- du ser vilka datum som hoppades över och varför i resultatdialogen.
+
+#### Resultatdialog
+
+Efter att serien skapats visas en sammanfattning:
+
+- Hur många bokningar som skapades (t.ex. "8 av 8 bokningar skapades")
+- Startdatum och intervall
+- Om några datum hoppades över visas de med anledning
+
+#### I bokningslistan
+
+Bokningar som tillhör en serie markeras med en lila **"Återkommande"**-badge i din bokningslista. Varje bokning i serien kan avbokas individuellt utan att påverka övriga bokningar i serien.
+
+#### E-postbekräftelse
+
+Du får en bekräftelse via e-post med en lista över alla skapade datum i serien.
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
 
 ---
 
@@ -481,6 +519,39 @@ Du kan skapa bokningar åt kunder direkt från kalendervyn -- till exempel när 
 6. Bekräfta
 
 Manuellt skapade bokningar markeras med ett **M** i kalendern så du kan skilja dem från kundinitierade bokningar. De bekräftas automatiskt (hoppar över "väntar på svar"-steget).
+
+---
+
+### Återkommande bokningar (leverantör)
+
+Som leverantör bestämmer du om dina kunder ska kunna skapa återkommande bokningar, och hur långa serier de får skapa.
+
+#### Aktivera återkommande bokningar
+
+1. Gå till **Min profil**
+2. Slå på **"Tillåt återkommande bokningar"**
+3. Välj **"Max antal tillfällen per serie"** -- det högsta antal bokningar en kund kan skapa i en serie
+
+**Tillgängliga max-värden:** 4, 6, 8, 12, 24 eller 52 tillfällen.
+
+Inställningen sparas direkt och gäller för alla nya bokningsserier. Befintliga serier påverkas inte.
+
+#### Skapa serie via manuell bokning
+
+Du kan också skapa återkommande bokningar åt kunder via **Ny bokning** i kalendervyn:
+
+1. Fyll i bokningsuppgifterna som vanligt (kund, tjänst, datum, tid)
+2. Slå på **"Gör detta återkommande"**
+3. Välj intervall och antal tillfällen
+4. Bekräfta -- alla bokningar i serien skapas automatiskt
+
+#### Serie i kalendern
+
+Bokningar som tillhör en serie markeras med en **upprepningsikon** i kalendern. Hovra över ikonen för att se "Återkommande bokning".
+
+Varje bokning i serien hanteras individuellt -- du kan bekräfta, genomföra eller avboka enskilda bokningar utan att påverka resten av serien.
+
+**Bakom feature flag:** Funktionen måste vara aktiverad av en administratör under systeminställningar.
 
 ---
 
@@ -943,6 +1014,7 @@ Under **System** ser du:
 - **Besöksplanering** -- Återbesöksplanering
 - **Gruppbokningar** -- Gruppbokningsfunktionalitet (under utveckling)
 - **Affärsinsikter** -- Utökad analytics-sida
+- **Återkommande bokningar** -- Möjlighet att skapa återkommande bokningsserier
 
 Flaggor kan slås av och på i realtid. Ändringar sparas i Redis och gäller omedelbart.
 
@@ -968,6 +1040,10 @@ Bokningen ligger kvar som "Väntar på svar". Du kan avboka och välja en annan 
 ### Hur fungerar de automatiska påminnelserna?
 
 Om leverantören har angett ett rekommenderat återbesöksintervall (t.ex. 8 veckor för hovbeläggning) får du automatiskt en påminnelse via notifikation och e-post när det är dags att boka om. Leverantören kan också sätta ett individuellt intervall för just din häst om den behöver tätare eller glesare besök.
+
+### Vad är återkommande bokningar?
+
+Återkommande bokningar låter dig skapa en serie bokningar med regelbundna intervall (t.ex. hovbeläggning var 8:e vecka). Du väljer intervall och antal tillfällen när du bokar, och systemet skapar alla bokningar automatiskt. Datum som krockar med leverantörens schema hoppas över. Funktionen måste vara aktiverad av leverantören och av en administratör (feature flag). Se [Återkommande bokning](#återkommande-bokning) (hästägare) eller [Återkommande bokningar (leverantör)](#återkommande-bokningar-leverantör) för detaljer.
 
 ### Kan jag exportera min data?
 
