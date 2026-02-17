@@ -44,6 +44,7 @@ const STATUS_LABELS: Record<string, string> = {
   confirmed: "Bekräftad",
   completed: "Genomförd",
   cancelled: "Avbokad",
+  no_show: "Ej infunnit",
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -51,6 +52,7 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: "bg-blue-100 text-blue-800",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
+  no_show: "bg-orange-100 text-orange-800",
 }
 
 export default function AdminBookingsPage() {
@@ -136,6 +138,7 @@ export default function AdminBookingsPage() {
               <SelectItem value="pending">Väntande</SelectItem>
               <SelectItem value="confirmed">Bekräftade</SelectItem>
               <SelectItem value="completed">Genomförda</SelectItem>
+              <SelectItem value="no_show">Ej infunna</SelectItem>
               <SelectItem value="cancelled">Avbokade</SelectItem>
             </SelectContent>
           </Select>

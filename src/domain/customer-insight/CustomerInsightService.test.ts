@@ -67,6 +67,7 @@ const SAMPLE_METRICS: CustomerMetrics = {
   totalBookings: 3,
   completedBookings: 2,
   cancelledBookings: 1,
+  noShowBookings: 0,
   totalSpent: 3000,
   avgBookingIntervalDays: 56,
   lastBookingDate: "2026-01-15",
@@ -91,10 +92,11 @@ describe("CustomerInsightService", () => {
     service = new CustomerInsightService({ apiKey: "test-key" })
   })
 
-  it("returns NO_DATA error when completedBookings is 0", async () => {
+  it("returns NO_DATA error when completedBookings and noShowBookings are both 0", async () => {
     const emptyMetrics: CustomerMetrics = {
       ...SAMPLE_METRICS,
       completedBookings: 0,
+      noShowBookings: 0,
     }
 
     const result = await service.generateInsight(SAMPLE_DATA, emptyMetrics)

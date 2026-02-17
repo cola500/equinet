@@ -675,6 +675,59 @@ describe('BookingService', () => {
       expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
     })
 
+    it('should allow provider to mark confirmed booking as no_show', async () => {
+      const bookingId = await createPendingBooking()
+
+      // Confirm first
+      await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+
+      // Then mark as no_show
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'no_show',
+        providerId: 'provider-1',
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('no_show')
+    })
+
+    it('should NOT allow customer to mark as no_show (provider only)', async () => {
+      const bookingId = await createPendingBooking()
+
+      await service.updateStatus({
+        bookingId,
+        newStatus: 'confirmed',
+        providerId: 'provider-1',
+      })
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'no_show',
+        customerId: 'customer-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
+    it('should NOT allow no_show from pending', async () => {
+      const bookingId = await createPendingBooking()
+
+      const result = await service.updateStatus({
+        bookingId,
+        newStatus: 'no_show',
+        providerId: 'provider-1',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('INVALID_STATUS_TRANSITION')
+    })
+
     it('should fail for invalid status string', async () => {
       const bookingId = await createPendingBooking()
 

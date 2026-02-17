@@ -279,6 +279,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
         totalBookings: 5,
         completedBookings: 4,
         cancelledBookings: 1,
+        noShowBookings: 0,
         totalSpent: 6000,
         avgBookingIntervalDays: 56,
         lastBookingDate: "2026-01-15",

@@ -18,7 +18,7 @@ export interface Booking {
   startTime: string
   endTime: string
   timezone: string
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
   horseId?: string
   horseName?: string
   horseInfo?: string
@@ -73,7 +73,7 @@ export interface BookingWithCustomerLocation {
   id: string
   startTime: string
   endTime: string
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
   customer: {
     latitude: number | null
     longitude: number | null
@@ -100,7 +100,7 @@ export interface BookingWithRelations {
   bookingDate: Date
   startTime: string
   endTime: string
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
   horseId?: string
   horseName?: string
   horseInfo?: string

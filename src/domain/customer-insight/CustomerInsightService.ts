@@ -34,6 +34,7 @@ export interface CustomerMetrics {
   totalBookings: number
   completedBookings: number
   cancelledBookings: number
+  noShowBookings: number
   totalSpent: number
   avgBookingIntervalDays: number | null
   lastBookingDate: string | null
@@ -118,12 +119,12 @@ Analysera kunddatan och returnera en JSON-insikt:
 }
 
 Regler:
-- VIP-score baseras på: antal bokningar, total omsättning, avbokningsfrekvens, recensioner
-  - high: 10+ bokningar, hög omsättning, inga avbokningar
+- VIP-score baseras på: antal bokningar, total omsättning, avboknings-/uteblivandefrekvens, recensioner
+  - high: 10+ bokningar, hög omsättning, inga avbokningar/uteblivanden
   - medium: 3-9 bokningar, regelbunden
-  - low: 1-2 bokningar eller hög avbokningsfrekvens
+  - low: 1-2 bokningar eller hög avboknings-/uteblivandefrekvens
 - Patterns: tidsval, frekvens, säsongsmönster, vilka hästar
-- RiskFlags: hög avbokningsfrekvens, långa intervall, negativa recensioner
+- RiskFlags: hög avbokningsfrekvens, uteblivanden (no-show), långa intervall, negativa recensioner
 - Svara BARA med JSON, ingen annan text
 - Alla texter på svenska`
 
@@ -142,7 +143,7 @@ export class CustomerInsightService {
     data: CustomerDataContext,
     metrics: CustomerMetrics
   ): Promise<Result<CustomerInsight, InsightError>> {
-    if (metrics.completedBookings === 0) {
+    if (metrics.completedBookings === 0 && metrics.noShowBookings === 0) {
       return Result.fail({
         type: "NO_DATA",
         message: "Kunden har inga genomförda bokningar att analysera",
@@ -204,6 +205,7 @@ export class CustomerInsightService {
 - Totala bokningar: ${metrics.totalBookings}
 - Genomförda: ${metrics.completedBookings}
 - Avbokade: ${metrics.cancelledBookings}
+- Uteblivna (no-show): ${metrics.noShowBookings}
 - Total omsättning: ${metrics.totalSpent} kr
 - Genomsnittligt intervall: ${metrics.avgBookingIntervalDays ? `${metrics.avgBookingIntervalDays} dagar` : "N/A"}
 - Första bokning: ${metrics.firstBookingDate || "N/A"}

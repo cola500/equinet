@@ -171,7 +171,7 @@ export interface UpdateStatusDTO {
 }
 
 // Statuses that only providers can set (customers can only cancel)
-const PROVIDER_ONLY_STATUSES = ['confirmed', 'completed']
+const PROVIDER_ONLY_STATUSES = ['confirmed', 'completed', 'no_show']
 
 export class BookingService {
   constructor(private readonly deps: BookingServiceDeps) {}
@@ -370,7 +370,7 @@ export class BookingService {
 
     const updated = await this.deps.bookingRepository.updateStatusWithAuth(
       dto.bookingId,
-      dto.newStatus as 'pending' | 'confirmed' | 'cancelled' | 'completed',
+      dto.newStatus as 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show',
       authContext,
       dto.cancellationMessage
     )

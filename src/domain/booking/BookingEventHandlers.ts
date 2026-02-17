@@ -34,15 +34,17 @@ const STATUS_LABELS: Record<string, string> = {
   confirmed: 'bekraftad',
   cancelled: 'avbokad',
   completed: 'markerad som genomförd',
+  no_show: 'markerad som ej infunnit',
 }
 
 const STATUS_TO_NOTIF_TYPE: Record<string, string> = {
   confirmed: NotificationType.BOOKING_CONFIRMED,
   cancelled: NotificationType.BOOKING_CANCELLED,
   completed: NotificationType.BOOKING_COMPLETED,
+  no_show: NotificationType.BOOKING_NO_SHOW,
 }
 
-const EMAIL_STATUSES = new Set(['confirmed', 'cancelled', 'completed'])
+const EMAIL_STATUSES = new Set(['confirmed', 'cancelled', 'completed', 'no_show'])
 
 // --- Handlers ---
 

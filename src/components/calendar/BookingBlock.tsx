@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, CheckCircle2, Check, XCircle, CreditCard } from "lucide-react"
+import { Clock, CheckCircle2, Check, XCircle, CreditCard, AlertTriangle } from "lucide-react"
 import { CalendarBooking } from "@/types"
 
 interface BookingBlockProps {
@@ -29,6 +29,7 @@ function getStatusStyles(status: string, isPaid: boolean): string {
     confirmed: "bg-green-50 border-green-600 text-green-900",
     completed: "bg-blue-50 border-blue-600 text-blue-900",
     cancelled: "bg-red-50 border-red-500 text-red-900",
+    no_show: "bg-orange-50 border-orange-500 text-orange-900",
   }
 
   return styles[status] || "bg-gray-100 border-gray-500 text-gray-900"
@@ -42,6 +43,7 @@ function getStatusIcon(status: string, isPaid: boolean) {
     confirmed: <CheckCircle2 className="h-3 w-3 mr-0.5 flex-shrink-0" />,
     completed: <Check className="h-3 w-3 mr-0.5 flex-shrink-0" />,
     cancelled: <XCircle className="h-3 w-3 mr-0.5 flex-shrink-0" />,
+    no_show: <AlertTriangle className="h-3 w-3 mr-0.5 flex-shrink-0" />,
   }
 
   return icons[status] || null

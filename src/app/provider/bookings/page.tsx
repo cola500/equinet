@@ -183,6 +183,7 @@ export default function ProviderBookingsPage() {
       confirmed: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
       completed: "bg-blue-100 text-blue-800",
+      no_show: "bg-orange-100 text-orange-800",
     }
 
     const labels = {
@@ -190,6 +191,7 @@ export default function ProviderBookingsPage() {
       confirmed: "Bekräftad",
       cancelled: "Avbokad",
       completed: "Genomförd",
+      no_show: "Ej infunnit",
     }
 
     return (
@@ -215,6 +217,7 @@ export default function ProviderBookingsPage() {
             { key: "pending", label: "Väntar" },
             { key: "confirmed", label: "Bekräftade" },
             { key: "completed", label: "Genomförda" },
+            { key: "no_show", label: "Ej infunna" },
             { key: "cancelled", label: "Avbokade" },
           ] as const).map(({ key, label }) => (
             <button
@@ -369,7 +372,7 @@ export default function ProviderBookingsPage() {
                   )}
 
                   {booking.status === "confirmed" && (
-                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
                       <Button
                         onClick={() => updateBookingStatus(booking.id, "completed")}
                         className="flex-1"
@@ -381,6 +384,13 @@ export default function ProviderBookingsPage() {
                         variant="inline"
                         onNoteSaved={() => mutateBookings()}
                       />
+                      <Button
+                        onClick={() => updateBookingStatus(booking.id, "no_show")}
+                        variant="outline"
+                        className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50"
+                      >
+                        Ej infunnit
+                      </Button>
                       <Button
                         onClick={() => {
                           setBookingToCancel(booking.id)

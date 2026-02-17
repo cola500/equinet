@@ -114,13 +114,14 @@ describe("filterBookings", () => {
     makeBooking("completed", "2026-02-12"),
     makeBooking("cancelled", "2026-02-13"),
     makeBooking("pending", "2026-02-14"),
+    makeBooking("no_show", "2026-02-15"),
   ]
 
-  it("'all' filter excludes cancelled bookings", () => {
+  it("'all' filter excludes cancelled and no_show bookings", () => {
     const filtered = filterBookings(bookings, "all")
 
     expect(filtered).toHaveLength(4)
-    expect(filtered.every((b) => b.status !== "cancelled")).toBe(true)
+    expect(filtered.every((b) => b.status !== "cancelled" && b.status !== "no_show")).toBe(true)
   })
 
   it("'pending' filter returns only pending", () => {
@@ -151,6 +152,13 @@ describe("filterBookings", () => {
     expect(filtered[0].status).toBe("cancelled")
   })
 
+  it("'no_show' filter returns only no_show", () => {
+    const filtered = filterBookings(bookings, "no_show")
+
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].status).toBe("no_show")
+  })
+
   it("returns empty array when no bookings match filter", () => {
     const onlyPending = [makeBooking("pending", "2026-02-10")]
 
@@ -166,6 +174,7 @@ describe("countByStatus", () => {
       makeBooking("confirmed", "2026-02-12"),
       makeBooking("completed", "2026-02-13"),
       makeBooking("cancelled", "2026-02-14"),
+      makeBooking("no_show", "2026-02-15"),
     ]
 
     const counts = countByStatus(bookings)
@@ -174,7 +183,8 @@ describe("countByStatus", () => {
     expect(counts.confirmed).toBe(1)
     expect(counts.completed).toBe(1)
     expect(counts.cancelled).toBe(1)
-    expect(counts.all).toBe(4) // Excludes cancelled
+    expect(counts.no_show).toBe(1)
+    expect(counts.all).toBe(4) // Excludes cancelled and no_show
   })
 
   it("returns zeros for empty array", () => {
@@ -186,19 +196,22 @@ describe("countByStatus", () => {
       confirmed: 0,
       completed: 0,
       cancelled: 0,
+      no_show: 0,
     })
   })
 
-  it("all count excludes cancelled", () => {
+  it("all count excludes cancelled and no_show", () => {
     const bookings = [
       makeBooking("cancelled", "2026-02-10"),
       makeBooking("cancelled", "2026-02-11"),
-      makeBooking("pending", "2026-02-12"),
+      makeBooking("no_show", "2026-02-12"),
+      makeBooking("pending", "2026-02-13"),
     ]
 
     const counts = countByStatus(bookings)
 
     expect(counts.all).toBe(1)
     expect(counts.cancelled).toBe(2)
+    expect(counts.no_show).toBe(1)
   })
 })

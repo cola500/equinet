@@ -67,6 +67,7 @@ interface Customer {
   email: string
   phone: string | null
   bookingCount: number
+  noShowCount: number
   lastBookingDate: string | null
   horses: CustomerHorse[]
   isManuallyAdded?: boolean
@@ -599,6 +600,11 @@ export default function ProviderCustomersPage() {
                             {customer.bookingCount}{" "}
                             {customer.bookingCount === 1 ? "bokning" : "bokningar"}
                           </p>
+                          {customer.noShowCount > 0 && (
+                            <p className={`text-xs font-medium ${customer.noShowCount >= 2 ? "text-orange-700" : "text-orange-500"}`}>
+                              {customer.noShowCount} utebliven{customer.noShowCount !== 1 ? "a" : ""}
+                            </p>
+                          )}
                           {customer.lastBookingDate && (
                             <p className="text-xs text-gray-400">
                               Senast: {formatDate(customer.lastBookingDate)}
@@ -648,6 +654,11 @@ export default function ProviderCustomersPage() {
                         Antal bokningar
                       </p>
                       <p className="text-sm">{customer.bookingCount}</p>
+                      {customer.noShowCount > 0 && (
+                        <p className={`text-xs font-medium mt-0.5 ${customer.noShowCount >= 2 ? "text-orange-700" : "text-orange-500"}`}>
+                          {customer.noShowCount} utebliven{customer.noShowCount !== 1 ? "a" : ""}
+                        </p>
+                      )}
                     </div>
                     {customer.lastBookingDate && (
                       <div>

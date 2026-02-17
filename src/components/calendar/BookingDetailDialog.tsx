@@ -46,6 +46,7 @@ function getStatusLabel(status: string, isPaid: boolean): string {
     confirmed: "Bekräftad",
     completed: "Genomförd",
     cancelled: "Avbokad",
+    no_show: "Ej infunnit",
   }
 
   return labels[status] || status
@@ -61,6 +62,7 @@ function getStatusStyles(status: string, isPaid: boolean): string {
     confirmed: "bg-green-100 text-green-800",
     completed: "bg-blue-100 text-blue-800",
     cancelled: "bg-red-100 text-red-800",
+    no_show: "bg-orange-100 text-orange-800",
   }
 
   return styles[status] || "bg-gray-100 text-gray-800"
@@ -234,7 +236,7 @@ export function BookingDetailDialog({
           )}
 
           {/* Leverantorsanteckningar */}
-          {["confirmed", "completed"].includes(booking.status) ? (
+          {["confirmed", "completed", "no_show"].includes(booking.status) ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-sm text-gray-700">
@@ -364,12 +366,19 @@ export function BookingDetailDialog({
           )}
 
           {onStatusUpdate && booking.status === "confirmed" && (
-            <div className="flex gap-2 pt-2 border-t">
+            <div className="flex flex-wrap gap-2 pt-2 border-t">
               <Button
                 onClick={() => onStatusUpdate(booking.id, "completed")}
                 className="flex-1"
               >
                 Markera som genomförd
+              </Button>
+              <Button
+                onClick={() => onStatusUpdate(booking.id, "no_show")}
+                variant="outline"
+                className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50"
+              >
+                Ej infunnit
               </Button>
               <Button
                 onClick={handleCancelClick}

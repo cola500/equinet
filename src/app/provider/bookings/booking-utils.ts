@@ -3,7 +3,7 @@
  * sorting (pending first) and filtering.
  */
 
-export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled"
+export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
 
 export type BookingFilter = "all" | BookingStatus
 
@@ -42,7 +42,7 @@ export function filterBookings<T extends BookingSortable>(
   filter: BookingFilter
 ): T[] {
   if (filter === "all") {
-    return bookings.filter((b) => b.status !== "cancelled")
+    return bookings.filter((b) => b.status !== "cancelled" && b.status !== "no_show")
   }
   return bookings.filter((b) => b.status === filter)
 }
@@ -53,13 +53,13 @@ export function filterBookings<T extends BookingSortable>(
 export function countByStatus<T extends BookingSortable>(
   bookings: T[]
 ): Record<BookingFilter, number> {
-  const counts = { all: 0, pending: 0, confirmed: 0, completed: 0, cancelled: 0 }
+  const counts = { all: 0, pending: 0, confirmed: 0, completed: 0, cancelled: 0, no_show: 0 }
   for (const b of bookings) {
     const status = b.status as BookingStatus
     if (status in counts) {
       counts[status]++
     }
-    if (status !== "cancelled") {
+    if (status !== "cancelled" && status !== "no_show") {
       counts.all++
     }
   }

@@ -6,6 +6,7 @@ export const NotificationType = {
   BOOKING_CONFIRMED: "booking_confirmed",
   BOOKING_CANCELLED: "booking_cancelled",
   BOOKING_COMPLETED: "booking_completed",
+  BOOKING_NO_SHOW: "booking_no_show",
   PAYMENT_RECEIVED: "payment_received",
   REVIEW_RECEIVED: "review_received",
   REMINDER_REBOOK: "reminder_rebook",

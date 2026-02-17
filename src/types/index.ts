@@ -2,7 +2,7 @@
 
 export type UserType = 'provider' | 'customer'
 
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed'
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
 
 export interface User {
   id: string

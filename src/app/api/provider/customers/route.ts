@@ -21,6 +21,7 @@ interface CustomerSummary {
   email: string
   phone: string | null
   bookingCount: number
+  noShowCount: number
   lastBookingDate: string | null
   horses: { id: string; name: string }[]
   isManuallyAdded?: boolean
@@ -66,16 +67,17 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get("status") || "all"
     const query = request.nextUrl.searchParams.get("q")?.trim().toLowerCase()
 
-    // Fetch all completed bookings for this provider (IDOR protection: providerId filter)
+    // Fetch all completed and no_show bookings for this provider (IDOR protection: providerId filter)
     const bookings = await prisma.booking.findMany({
       where: {
         providerId: provider.id,
-        status: "completed",
+        status: { in: ["completed", "no_show"] },
       },
       select: {
         id: true,
         customerId: true,
         bookingDate: true,
+        status: true,
         customer: {
           select: {
             id: true,
@@ -105,9 +107,11 @@ export async function GET(request: NextRequest) {
 
     for (const booking of bookings) {
       const existing = customerMap.get(booking.customerId)
+      const isNoShow = booking.status === "no_show"
 
       if (existing) {
         existing.bookingCount++
+        if (isNoShow) existing.noShowCount++
         // Update lastBookingDate if this is more recent
         if (!existing.lastBookingDate || booking.bookingDate.toISOString() > existing.lastBookingDate) {
           existing.lastBookingDate = booking.bookingDate.toISOString()
@@ -124,6 +128,7 @@ export async function GET(request: NextRequest) {
           email: booking.customer.email,
           phone: booking.customer.phone,
           bookingCount: 1,
+          noShowCount: isNoShow ? 1 : 0,
           lastBookingDate: booking.bookingDate.toISOString(),
           horses: booking.horse
             ? [{ id: booking.horse.id, name: booking.horse.name }]
@@ -159,6 +164,7 @@ export async function GET(request: NextRequest) {
           email: mc.customer.email,
           phone: mc.customer.phone,
           bookingCount: 0,
+          noShowCount: 0,
           lastBookingDate: null,
           horses: [],
           isManuallyAdded: true,

@@ -207,6 +207,7 @@ interface BookingRow {
 function calculateMetrics(bookings: BookingRow[]): CustomerMetrics {
   const completed = bookings.filter((b) => b.status === "completed")
   const cancelled = bookings.filter((b) => b.status === "cancelled")
+  const noShow = bookings.filter((b) => b.status === "no_show")
   const totalSpent = completed.reduce((sum, b) => sum + b.service.price, 0)
 
   const sortedDates = completed
@@ -230,6 +231,7 @@ function calculateMetrics(bookings: BookingRow[]): CustomerMetrics {
     totalBookings: bookings.length,
     completedBookings: completed.length,
     cancelledBookings: cancelled.length,
+    noShowBookings: noShow.length,
     totalSpent,
     avgBookingIntervalDays: avgInterval,
     lastBookingDate:

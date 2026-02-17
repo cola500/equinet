@@ -263,6 +263,7 @@ export default function CustomerBookingsPage() {
       confirmed: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
       completed: "bg-blue-100 text-blue-800",
+      no_show: "bg-orange-100 text-orange-800",
       in_route: "bg-purple-100 text-purple-800",
     }
 
@@ -271,6 +272,7 @@ export default function CustomerBookingsPage() {
       confirmed: "Bekräftad",
       cancelled: "Avbokad",
       completed: "Genomförd",
+      no_show: "Ej infunnit",
       in_route: "Inplanerad i rutt",
     }
 
@@ -287,6 +289,7 @@ export default function CustomerBookingsPage() {
       confirmed: "border-l-4 border-l-green-500",
       cancelled: "border-l-4 border-l-red-400",
       completed: "border-l-4 border-l-blue-400",
+      no_show: "border-l-4 border-l-orange-400",
       in_route: "border-l-4 border-l-purple-500",
     }
     return borders[status] || ""

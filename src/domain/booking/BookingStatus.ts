@@ -6,22 +6,24 @@
  *
  * State Machine:
  *   pending   -> [confirmed, cancelled]
- *   confirmed -> [completed, cancelled]
+ *   confirmed -> [completed, cancelled, no_show]
  *   cancelled -> []  (terminal)
  *   completed -> []  (terminal)
+ *   no_show   -> []  (terminal)
  */
 import { ValueObject } from '@/domain/shared/base/ValueObject'
 import { Result } from '@/domain/shared/types/Result'
 
-export type StatusValue = 'pending' | 'confirmed' | 'cancelled' | 'completed'
+export type StatusValue = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
 
-const VALID_STATUSES: StatusValue[] = ['pending', 'confirmed', 'cancelled', 'completed']
+const VALID_STATUSES: StatusValue[] = ['pending', 'confirmed', 'cancelled', 'completed', 'no_show']
 
 const TRANSITIONS: Record<StatusValue, StatusValue[]> = {
   pending: ['confirmed', 'cancelled'],
-  confirmed: ['completed', 'cancelled'],
+  confirmed: ['completed', 'cancelled', 'no_show'],
   cancelled: [],
   completed: [],
+  no_show: [],
 }
 
 interface BookingStatusProps {

@@ -20,6 +20,7 @@ const statusLabels: Record<string, string> = {
   confirmed: "Bekräftad",
   cancelled: "Avbokad",
   completed: "Genomförd",
+  no_show: "Ej infunnit",
 }
 
 export async function sendBookingConfirmationNotification(bookingId: string) {

@@ -9,7 +9,7 @@ describe('BookingStatus', () => {
       expect(result.value.value).toBe('pending')
     })
 
-    it.each(['pending', 'confirmed', 'cancelled', 'completed'] as StatusValue[])(
+    it.each(['pending', 'confirmed', 'cancelled', 'completed', 'no_show'] as StatusValue[])(
       'should create from "%s"',
       (status) => {
         const result = BookingStatus.create(status)
@@ -41,6 +41,11 @@ describe('BookingStatus', () => {
       expect(status.isTerminal).toBe(true)
     })
 
+    it('should return true for no_show', () => {
+      const status = BookingStatus.create('no_show').value
+      expect(status.isTerminal).toBe(true)
+    })
+
     it('should return false for pending', () => {
       const status = BookingStatus.create('pending').value
       expect(status.isTerminal).toBe(false)
@@ -58,9 +63,9 @@ describe('BookingStatus', () => {
       expect(status.allowedTransitions).toEqual(['confirmed', 'cancelled'])
     })
 
-    it('should allow confirmed -> completed and cancelled', () => {
+    it('should allow confirmed -> completed, cancelled, and no_show', () => {
       const status = BookingStatus.create('confirmed').value
-      expect(status.allowedTransitions).toEqual(['completed', 'cancelled'])
+      expect(status.allowedTransitions).toEqual(['completed', 'cancelled', 'no_show'])
     })
 
     it('should allow no transitions from cancelled', () => {
@@ -70,6 +75,11 @@ describe('BookingStatus', () => {
 
     it('should allow no transitions from completed', () => {
       const status = BookingStatus.create('completed').value
+      expect(status.allowedTransitions).toEqual([])
+    })
+
+    it('should allow no transitions from no_show', () => {
+      const status = BookingStatus.create('no_show').value
       expect(status.allowedTransitions).toEqual([])
     })
   })
@@ -105,6 +115,12 @@ describe('BookingStatus', () => {
       expect(confirmed.canTransitionTo(cancelled)).toBe(true)
     })
 
+    it('should allow confirmed -> no_show', () => {
+      const confirmed = BookingStatus.create('confirmed').value
+      const noShow = BookingStatus.create('no_show').value
+      expect(confirmed.canTransitionTo(noShow)).toBe(true)
+    })
+
     it('should NOT allow confirmed -> pending', () => {
       const confirmed = BookingStatus.create('confirmed').value
       const pending = BookingStatus.create('pending').value
@@ -114,6 +130,7 @@ describe('BookingStatus', () => {
     it('should NOT allow transitions from terminal states', () => {
       const cancelled = BookingStatus.create('cancelled').value
       const completed = BookingStatus.create('completed').value
+      const noShow = BookingStatus.create('no_show').value
       const pending = BookingStatus.create('pending').value
       const confirmed = BookingStatus.create('confirmed').value
 
@@ -121,6 +138,8 @@ describe('BookingStatus', () => {
       expect(cancelled.canTransitionTo(confirmed)).toBe(false)
       expect(completed.canTransitionTo(pending)).toBe(false)
       expect(completed.canTransitionTo(confirmed)).toBe(false)
+      expect(noShow.canTransitionTo(pending)).toBe(false)
+      expect(noShow.canTransitionTo(confirmed)).toBe(false)
     })
 
     it('should NOT allow transitioning to same state', () => {

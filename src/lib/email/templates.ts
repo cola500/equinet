@@ -291,12 +291,14 @@ export function bookingStatusChangeEmail(data: BookingStatusChangeData): { html:
     confirmed: "#16a34a",
     cancelled: "#dc2626",
     completed: "#2563eb",
+    no_show: "#f59e0b",
   }
 
   const statusBgColors: Record<string, string> = {
     confirmed: "#dcfce7",
     cancelled: "#fee2e2",
     completed: "#dbeafe",
+    no_show: "#fef3c7",
   }
 
   const color = statusColors[data.newStatus] || "#6b7280"

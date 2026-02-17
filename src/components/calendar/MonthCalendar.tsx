@@ -40,6 +40,7 @@ function getBookingDotColor(status: string, isPaid: boolean): string {
     confirmed: "bg-green-400",
     completed: "bg-blue-400",
     cancelled: "bg-red-400",
+    no_show: "bg-orange-400",
   }
   return colors[status] || "bg-gray-400"
 }

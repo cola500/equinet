@@ -507,7 +507,7 @@ export class PrismaBookingRepository
    */
   async updateStatusWithAuth(
     id: string,
-    status: 'pending' | 'confirmed' | 'cancelled' | 'completed',
+    status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show',
     authContext: { providerId?: string; customerId?: string },
     cancellationMessage?: string
   ): Promise<BookingWithRelations | null> {

@@ -6,6 +6,7 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { notificationService } from "@/domain/notification/NotificationService"
 import { customerName } from "@/lib/notification-helpers"
 import { sanitizeString } from "@/lib/sanitize"
@@ -18,7 +19,7 @@ import {
 } from "@/domain/booking"
 
 const updateBookingSchema = z.object({
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  status: z.enum(["pending", "confirmed", "cancelled", "completed", "no_show"]),
   cancellationMessage: z.string().max(500, "Meddelandet får vara max 500 tecken").optional(),
 }).strict()
 
@@ -30,6 +31,16 @@ export async function PUT(
   try {
     const { id } = await params
     const session = await auth()
+
+    // Rate limiting before request parsing
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.booking(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar. Försök igen om en stund." },
+        { status: 429 }
+      )
+    }
 
     // Parse request body with error handling
     let body
@@ -154,6 +165,16 @@ export async function DELETE(
   try {
     const { id } = await params
     const session = await auth()
+
+    // Rate limiting
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.booking(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar. Försök igen om en stund." },
+        { status: 429 }
+      )
+    }
 
     const bookingRepo = new PrismaBookingRepository()
     const providerRepo = new ProviderRepository()
