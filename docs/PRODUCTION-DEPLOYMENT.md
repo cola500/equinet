@@ -177,7 +177,24 @@ SENTRY_PROJECT="equinet"
 
 Nu är allt konfigurerat. Dags att deploya:
 
-### 5.1 Trigger Deployment
+### 5.1 Vid schemaandringar: Migrera FORST!
+
+**KRITISKT:** Om du har andrat `prisma/schema.prisma`, applicera migrationer INNAN deploy:
+
+```bash
+# 1. Kolla pending migrationer
+npm run migrate:check
+
+# 2. Applicera till Supabase (via MCP, SQL Editor, eller CLI)
+# Vercel-koden SELECT:ar ALLA kolumner utan explicit select-block.
+# Om DB saknar kolumner -> 500-fel pa ALLA endpoints.
+
+# 3. Forst EFTER migration: deploya
+```
+
+> Se [GOTCHAS.md #25](GOTCHAS.md#25-deploy-utan-migration--500-fel-i-produktion) for detaljer.
+
+### 5.2 Trigger Deployment
 
 1. Vercel Dashboard → **"Deploy"**
 2. Vänta ~2-3 minuter (first deploy tar längre tid)

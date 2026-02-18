@@ -28,6 +28,7 @@
 22. [Mock-uploads Måste Servas av Next.js](#22-mock-uploads-måste-servas-av-nextjs)
 23. [Vercel env pull Overskrider Lokal Config](#23-vercel-env-pull-overskrider-lokal-config)
 24. [Prisma Migration Workflow (db push -> migrate dev)](#24-prisma-migration-workflow-db-push---migrate-dev)
+25. [Deploy utan Migration = 500-fel i Produktion](#25-deploy-utan-migration--500-fel-i-produktion)
 
 ---
 
@@ -1033,6 +1034,59 @@ git commit -m "feat: add my_field to MyModel"
 - Production deploy: `prisma migrate deploy` (kör bara pending migrations, ingen drift check)
 
 **Impact:** Reversibel migrationshistorik, production-ready deploys, teamkompatibelt.
+
+---
+
+## 25. Deploy utan Migration = 500-fel i Produktion
+
+> **Learning: 2026-02-18** | **Severity: KRITISKT**
+
+**Problem:** Kod deployades till Vercel innan Prisma-migrationer applicerats pa Supabase.
+
+**Symptom:** Hela availability-kalendern returnerade 500. Supabase-loggar visade:
+```
+ERROR: column Provider.rescheduleEnabled does not exist
+```
+
+**Orsak:** Prisma-klienten genereras vid build (`prisma generate`). Om schemat inkluderar nya kolumner men databasen saknar dem, kraschar queries som SELECT:ar alla kolumner (dvs utan explicit `select`-block).
+
+```typescript
+// Denna query SELECT:ar ALLA Provider-kolumner - inklusive nya som inte finns i DB
+const provider = await prisma.provider.findUnique({
+  where: { id: providerId },
+})
+// Kraschar om DB saknar kolumner som Prisma-klienten forvantar sig
+```
+
+**Ratt deploy-ordning vid schemaandring:**
+```bash
+# 1. Applicera migration till Supabase FORST
+#    (via Supabase MCP, SQL Editor, eller prisma migrate deploy)
+
+# 2. SEDAN pusha och deploya till Vercel
+git push origin main
+# Vercel bygger automatiskt med nya schemat
+```
+
+**Verifieringskommandon:**
+```bash
+# Kolla vilka migrationer som ar pending lokalt
+npm run migrate:check
+
+# Kolla vilka migrationer som ar applicerade i Supabase
+# (via Supabase MCP execute_sql)
+SELECT migration_name, finished_at
+FROM _prisma_migrations
+ORDER BY finished_at DESC LIMIT 10;
+```
+
+**Bonus-gotcha:** Misslyckade migrationer (med `finished_at: null`) kan blockera `prisma migrate deploy`. Rensa med:
+```sql
+DELETE FROM _prisma_migrations
+WHERE migration_name = 'namn' AND finished_at IS NULL;
+```
+
+**Impact:** Hela appen kan ga ner om API-routes SELECT:ar kolumner som inte finns i DB.
 
 ---
 
