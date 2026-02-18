@@ -237,6 +237,63 @@ export async function seedRoute(specTag: string) {
   return route
 }
 
+// ─── Booking Series ─────────────────────────────────────────────────
+
+interface SeedBookingSeriesOpts {
+  specTag: string
+  intervalWeeks?: number     // defaults to 2
+  totalOccurrences?: number  // defaults to 3
+  serviceId?: string         // defaults to service1
+}
+
+/**
+ * Create a BookingSeries + N confirmed bookings linked to it.
+ * Bookings are spread across the current/coming weeks and tagged with `E2E-spec:<specTag>`.
+ */
+export async function seedBookingSeries(opts: SeedBookingSeriesOpts) {
+  const base = await getBaseEntities()
+  const interval = opts.intervalWeeks ?? 2
+  const count = opts.totalOccurrences ?? 3
+  const serviceId = opts.serviceId ?? base.service1Id
+
+  // Create the series
+  const series = await prisma.bookingSeries.create({
+    data: {
+      customerId: base.customerId,
+      providerId: base.providerId,
+      serviceId,
+      intervalWeeks: interval,
+      totalOccurrences: count,
+      createdCount: count,
+      startTime: '10:00',
+      status: 'active',
+    },
+  })
+
+  // Create bookings linked to the series
+  const bookingIds: string[] = []
+  for (let i = 0; i < count; i++) {
+    const booking = await prisma.booking.create({
+      data: {
+        customerId: base.customerId,
+        providerId: base.providerId,
+        serviceId,
+        bookingDate: futureWeekday(7 + i * interval * 7),
+        startTime: '10:00',
+        endTime: '11:00',
+        horseName: 'E2E Thunder',
+        customerNotes: `E2E-spec:${opts.specTag}`,
+        status: 'confirmed',
+        bookingSeriesId: series.id,
+        rescheduleCount: 0,
+      },
+    })
+    bookingIds.push(booking.id)
+  }
+
+  return { seriesId: series.id, bookingIds }
+}
+
 // ─── Cleanup ────────────────────────────────────────────────────────
 
 /**
@@ -255,10 +312,29 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
     where: { booking: { customerNotes: marker } },
   })
 
-  // 3. Bookings (may reference routeOrders via routeOrderId)
+  // 3. BookingSeries: collect series IDs BEFORE deleting bookings
+  //    (onDelete: SetNull means deleting bookings sets bookingSeriesId=null)
+  const taggedBookingsWithSeries = await prisma.booking.findMany({
+    where: { customerNotes: marker, bookingSeriesId: { not: null } },
+    select: { bookingSeriesId: true },
+  })
+  const seriesIds = [...new Set(
+    taggedBookingsWithSeries
+      .map(b => b.bookingSeriesId)
+      .filter(Boolean)
+  )] as string[]
+
+  // 4. Bookings (may reference routeOrders via routeOrderId)
   await prisma.booking.deleteMany({
     where: { customerNotes: marker },
   })
+
+  // 5. BookingSeries (now safe to delete since bookings are gone)
+  if (seriesIds.length > 0) {
+    await prisma.bookingSeries.deleteMany({
+      where: { id: { in: seriesIds } },
+    })
+  }
 
   // 4. RouteStop (FK -> Route, RouteOrder)
   // First collect routeIds so we can delete the parent Routes after
