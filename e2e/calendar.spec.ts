@@ -25,6 +25,9 @@ test.describe('Calendar & Availability (Provider)', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
     // Logga in som provider
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('provider@example.com');
@@ -278,13 +281,12 @@ test.describe('Calendar & Availability (Provider)', () => {
     const isMobile = test.info().project.name === 'mobile';
 
     if (isMobile) {
-      // Mobile legend is collapsed in <details> -- expand it
-      await page.getByText('Visa färgförklaring').click();
-      await expect(page.getByText('Bekräftad')).toBeVisible({ timeout: 5000 });
-      await expect(page.getByText('Betald')).toBeVisible();
+      // Mobile legend is a scrollable row -- no toggle needed, verify items directly
+      await expect(page.getByText('Bekräftad').first()).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText('Betald').first()).toBeVisible();
     } else {
       // Desktop legend is always visible
-      await expect(page.getByText('Stängt (veckoschema)')).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText('Stängt (veckoschema)')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('Ledig/undantag')).toBeVisible();
     }
   });

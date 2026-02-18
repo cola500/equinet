@@ -47,6 +47,9 @@ test.describe('Accepting New Customers', () => {
   })
 
   test('should toggle acceptingNewCustomers on provider profile', async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+
     // Login as provider
     await page.goto('/login')
     await page.getByLabel(/email/i).fill('provider@example.com')
@@ -56,7 +59,7 @@ test.describe('Accepting New Customers', () => {
 
     // Go to provider profile
     await page.goto('/provider/profile')
-    await expect(page.getByText('Bokningsinställningar')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Bokningsinställningar', { exact: true })).toBeVisible({ timeout: 10000 })
 
     // Find the switch
     const toggle = page.getByLabel('Ta emot nya kunder')
@@ -78,6 +81,8 @@ test.describe('Accepting New Customers', () => {
   })
 
   test('should show amber banner when provider not accepting new customers', async ({ page }) => {
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+
     // Set provider to not accepting via Prisma
     await prisma.provider.update({
       where: { id: providerId },
@@ -101,6 +106,8 @@ test.describe('Accepting New Customers', () => {
   })
 
   test('should NOT show amber banner when accepting (default)', async ({ page }) => {
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+
     // Set provider to accepting via Prisma
     await prisma.provider.update({
       where: { id: providerId },

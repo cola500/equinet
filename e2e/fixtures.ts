@@ -25,6 +25,10 @@ export { prisma }
  */
 export const test = base.extend<object, object>({
   page: async ({ page }, use) => {
+    // Dismiss cookie notice globally so it doesn't overlap UI elements
+    await page.addInitScript(() => {
+      localStorage.setItem('equinet-cookie-notice-dismissed', 'true')
+    })
     await use(page)
   },
 })

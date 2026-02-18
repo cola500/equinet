@@ -132,6 +132,7 @@ async function setAllFlags(page: import('@playwright/test').Page, value: boolean
 
 /** Restore flags to their code defaults */
 async function restoreDefaults(page: import('@playwright/test').Page) {
+  await resetRateLimit(page)
   for (const flag of TOGGLE_FLAGS) {
     const defaultValue = flag === 'group_bookings' || flag === 'recurring_bookings'
       ? false
@@ -466,6 +467,7 @@ test.describe('Feature Flag Toggle (Admin)', () => {
       test.skip(test.info().project.name === 'mobile', 'Desktop booking dialog test')
 
       await loginAsAdmin(page)
+      await resetRateLimit(page)
       await setFlag(page, 'recurring_bookings', false)
 
       await loginAsCustomer(page)

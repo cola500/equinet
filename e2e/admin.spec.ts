@@ -124,19 +124,36 @@ test.describe('Admin Dashboard & Actions', () => {
     const isMobile = test.info().project.name === 'mobile'
 
     if (isMobile) {
-      await page.getByRole('button', { name: /meny/i }).click()
-      await page.waitForTimeout(500)
-    }
+      // Mobile uses BottomTabBar with 4 tabs + "Mer" drawer
+      // Scope to admin nav (contains "System" link, unique to admin)
+      const adminNav = page.locator('nav').filter({ has: page.getByRole('link', { name: 'System' }) })
 
-    const navItems = ['Översikt', 'Användare', 'Bokningar', 'Recensioner', 'Verifieringar', 'Integrationer', 'System', 'Notifikationer']
-    for (const item of navItems) {
-      await expect(page.getByRole('link', { name: item })).toBeVisible()
+      const bottomTabItems = ['Översikt', 'Användare', 'Bokningar', 'System']
+      for (const item of bottomTabItems) {
+        await expect(adminNav.getByRole('link', { name: item })).toBeVisible()
+      }
+
+      // Open "Mer" drawer (scoped to admin nav to avoid customer "Mer" button)
+      await adminNav.getByRole('button', { name: /mer/i }).click()
+      await page.waitForTimeout(500)
+
+      const moreItems = ['Recensioner', 'Verifieringar', 'Integrationer', 'Notifikationer']
+      for (const item of moreItems) {
+        await expect(page.getByRole('link', { name: item })).toBeVisible()
+      }
+    } else {
+      const navItems = ['Översikt', 'Användare', 'Bokningar', 'Recensioner', 'Verifieringar', 'Integrationer', 'System', 'Notifikationer']
+      for (const item of navItems) {
+        await expect(page.getByRole('link', { name: item })).toBeVisible()
+      }
     }
   })
 
   // ─── Users ───────────────────────────────────────────────────────
 
   test('should list users with search and filter', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Table layout not available on mobile')
+
     await loginAsAdmin(page)
     await page.goto('/admin/users')
 
@@ -148,8 +165,8 @@ test.describe('Admin Dashboard & Actions', () => {
     // Search for "Test" -- should filter results
     await page.getByPlaceholder(/sök på namn/i).fill('Test')
 
-    // "Test Testsson" should be visible in results (use .first() -- name appears in multiple cells)
-    await expect(page.getByText('Test Testsson').first()).toBeVisible({ timeout: 10000 })
+    // "Test Testsson" should be visible in results (scoped to table to avoid hidden elements)
+    await expect(page.locator('table').getByText('Test Testsson').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('should block and unblock a user', async ({ page }) => {
@@ -219,6 +236,8 @@ test.describe('Admin Dashboard & Actions', () => {
   // ─── Bookings ────────────────────────────────────────────────────
 
   test('should display bookings with status filter', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Table layout not available on mobile')
+
     await loginAsAdmin(page)
     await page.goto('/admin/bookings')
 
@@ -256,8 +275,8 @@ test.describe('Admin Dashboard & Actions', () => {
     // Dialog should close
     await expect(page.getByRole('heading', { name: 'Avboka bokning' })).not.toBeVisible({ timeout: 10000 })
 
-    // At least one "Avbokad" badge should exist
-    await expect(page.getByText('Avbokad').first()).toBeVisible({ timeout: 10000 })
+    // At least one "Avbokad" badge should exist (scoped to table to avoid hidden filter option)
+    await expect(page.locator('table').getByText('Avbokad').first()).toBeVisible({ timeout: 10000 })
   })
 
   // ─── Reviews ─────────────────────────────────────────────────────

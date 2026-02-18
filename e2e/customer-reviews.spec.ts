@@ -46,6 +46,9 @@ test.describe('Customer Reviews (Provider)', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
     // Logga in som provider
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('provider@example.com');
@@ -59,7 +62,7 @@ test.describe('Customer Reviews (Provider)', () => {
    */
   async function navigateToCompletedBookings(page: import('@playwright/test').Page) {
     await page.goto('/provider/bookings');
-    await expect(page.getByRole('heading', { name: /bokningar/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Bokningar', exact: true })).toBeVisible({ timeout: 10000 });
 
     // Click "Alla" filter to see completed bookings
     await page.getByRole('button', { name: /alla/i }).click();

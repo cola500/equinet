@@ -2,6 +2,9 @@ import { test, expect } from './fixtures';
 
 test.describe('Customer Profile', () => {
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
     // Logga in som kund
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');

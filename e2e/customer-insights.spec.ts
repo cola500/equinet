@@ -55,6 +55,9 @@ test.describe('Customer Insights (Provider)', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('provider@example.com');
     await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!');
