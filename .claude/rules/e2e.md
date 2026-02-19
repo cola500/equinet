@@ -21,6 +21,11 @@ paths:
 - Kalender-block: `button.absolute.border-l-4[class*="bg-green"]`
 - Mobil viewport: `getByRole('heading', { exact: true })` (desktop-nav doljs med `hidden md:block`)
 
+## Obligatoriska patterns
+
+- **Cookie-consent dismissal**: Hanteras globalt i `e2e/fixtures.ts` via `addInitScript(() => localStorage.setItem('equinet-cookie-notice-dismissed', 'true'))`. Behöver INTE göras per test.
+- **Rate-limit reset**: ALLTID i `beforeEach` -- `await page.request.post('/api/test/reset-rate-limit').catch(() => {})`. Saknad reset är vanligaste orsaken till flaky E2E.
+
 ## Gotchas
 
 - **Undvik `waitForTimeout()`** -- anvand explicit waits (`waitFor({ state: 'visible' })`)

@@ -130,14 +130,24 @@ async function setAllFlags(page: import('@playwright/test').Page, value: boolean
   }
 }
 
+// Default values matching FEATURE_FLAGS.defaultEnabled in src/lib/feature-flags.ts
+const FLAG_DEFAULTS: Record<string, boolean> = {
+  voice_logging: true,
+  route_planning: true,
+  route_announcements: true,
+  customer_insights: true,
+  due_for_service: true,
+  group_bookings: false,
+  business_insights: true,
+  self_reschedule: true,
+  recurring_bookings: false,
+}
+
 /** Restore flags to their code defaults */
 async function restoreDefaults(page: import('@playwright/test').Page) {
   await resetRateLimit(page)
   for (const flag of TOGGLE_FLAGS) {
-    const defaultValue = flag === 'group_bookings' || flag === 'recurring_bookings'
-      ? false
-      : true
-    await setFlag(page, flag, defaultValue)
+    await setFlag(page, flag, FLAG_DEFAULTS[flag] ?? false)
   }
 }
 

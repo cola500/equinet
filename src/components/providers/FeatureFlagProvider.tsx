@@ -31,13 +31,15 @@ export function FeatureFlagProvider({
       const res = await fetch("/api/feature-flags", { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
-        // Only update state if flags actually changed -- avoids unnecessary re-renders
+        // Bidirectional shallow-compare: detects added, removed, and changed flags
         setFlags((current) => {
-          const next = data.flags
-          const changed =
-            Object.keys(next).length !== Object.keys(current).length ||
-            Object.keys(next).some((k) => next[k] !== current[k])
-          return changed ? next : current
+          const next = data.flags as Record<string, boolean>
+          const currentKeys = Object.keys(current)
+          const nextKeys = Object.keys(next)
+          if (currentKeys.length !== nextKeys.length) return next
+          if (nextKeys.some((k) => next[k] !== current[k])) return next
+          if (currentKeys.some((k) => !(k in next))) return next
+          return current
         })
         lastFetchedRef.current = Date.now()
       }

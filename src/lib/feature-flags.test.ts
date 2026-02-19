@@ -7,7 +7,6 @@ import {
   setFeatureFlagOverride,
   removeFeatureFlagOverride,
   _resetRedisForTesting,
-  _resetFlagCacheForTesting,
 } from "./feature-flags"
 import { clearRuntimeSettings, setRuntimeSetting } from "./settings/runtime-settings"
 
@@ -15,6 +14,7 @@ import { clearRuntimeSettings, setRuntimeSetting } from "./settings/runtime-sett
 const mockRedisGet = vi.fn().mockResolvedValue(null)
 const mockRedisSet = vi.fn().mockResolvedValue("OK")
 const mockRedisMget = vi.fn().mockResolvedValue([])
+const mockRedisDel = vi.fn().mockResolvedValue(1)
 
 vi.mock("@upstash/redis", () => {
   return {
@@ -22,6 +22,7 @@ vi.mock("@upstash/redis", () => {
       get = mockRedisGet
       set = mockRedisSet
       mget = mockRedisMget
+      del = mockRedisDel
     },
   }
 })
@@ -31,7 +32,6 @@ describe("feature-flags", () => {
     clearRuntimeSettings()
     vi.clearAllMocks()
     _resetRedisForTesting()
-    _resetFlagCacheForTesting()
     // Clear all FEATURE_* env vars
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("FEATURE_")) {
@@ -86,7 +86,9 @@ describe("feature-flags", () => {
 
       // Runtime says true, Redis says false
       setRuntimeSetting("feature_group_bookings", "true")
-      mockRedisGet.mockResolvedValueOnce("false")
+      const keys = Object.keys(FEATURE_FLAGS)
+      const mgetResult = keys.map((k) => (k === "group_bookings" ? "false" : null))
+      mockRedisMget.mockResolvedValueOnce(mgetResult)
 
       expect(await isFeatureEnabled("group_bookings")).toBe(false)
     })
@@ -96,7 +98,9 @@ describe("feature-flags", () => {
       process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
 
       process.env.FEATURE_GROUP_BOOKINGS = "true"
-      mockRedisGet.mockResolvedValueOnce("false")
+      const keys = Object.keys(FEATURE_FLAGS)
+      const mgetResult = keys.map((k) => (k === "group_bookings" ? "false" : null))
+      mockRedisMget.mockResolvedValueOnce(mgetResult)
 
       expect(await isFeatureEnabled("group_bookings")).toBe(true)
     })
@@ -145,7 +149,7 @@ describe("feature-flags", () => {
   })
 
   describe("setFeatureFlagOverride", () => {
-    it("writes to in-memory runtime settings", async () => {
+    it("writes to in-memory in local dev (no Redis)", async () => {
       await setFeatureFlagOverride("group_bookings", "true")
       expect(await isFeatureEnabled("group_bookings")).toBe(true)
     })
@@ -156,6 +160,41 @@ describe("feature-flags", () => {
 
       await setFeatureFlagOverride("group_bookings", "true")
       expect(mockRedisSet).toHaveBeenCalledWith("feature_flag:group_bookings", "true")
+    })
+
+    it("throws when Redis write fails", async () => {
+      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
+      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
+
+      mockRedisSet.mockRejectedValueOnce(new Error("Redis connection failed"))
+
+      await expect(
+        setFeatureFlagOverride("group_bookings", "true")
+      ).rejects.toThrow("Redis connection failed")
+    })
+
+    it("does NOT write to in-memory when Redis is configured", async () => {
+      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
+      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
+
+      await setFeatureFlagOverride("group_bookings", "true")
+
+      // In-memory should NOT be updated -- verify via runtime settings
+      const { getRuntimeSetting } = await import("./settings/runtime-settings")
+      expect(getRuntimeSetting("feature_group_bookings")).toBeUndefined()
+    })
+  })
+
+  describe("removeFeatureFlagOverride", () => {
+    it("throws when Redis delete fails", async () => {
+      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
+      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
+
+      mockRedisDel.mockRejectedValueOnce(new Error("Redis delete failed"))
+
+      await expect(
+        removeFeatureFlagOverride("group_bookings")
+      ).rejects.toThrow("Redis delete failed")
     })
   })
 
@@ -178,68 +217,24 @@ describe("feature-flags", () => {
     })
   })
 
-  describe("getFeatureFlags caching", () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it("caches result for 30 seconds", async () => {
-      // First call sets the cache
+  describe("getFeatureFlags after overrides", () => {
+    it("reflects override after setFeatureFlagOverride", async () => {
       const flags1 = await getFeatureFlags()
       expect(flags1.group_bookings).toBe(false)
 
-      // Change runtime setting
-      setRuntimeSetting("feature_group_bookings", "true")
-
-      // Second call within 30s returns cached result
-      const flags2 = await getFeatureFlags()
-      expect(flags2.group_bookings).toBe(false) // Still cached
-
-      // Advance past TTL
-      vi.advanceTimersByTime(31_000)
-
-      // Now should return fresh data
-      const flags3 = await getFeatureFlags()
-      expect(flags3.group_bookings).toBe(true)
-    })
-
-    it("returns fresh data after TTL expires", async () => {
-      await getFeatureFlags()
-
-      vi.advanceTimersByTime(31_000)
-
-      setRuntimeSetting("feature_voice_logging", "false")
-      const flags = await getFeatureFlags()
-      expect(flags.voice_logging).toBe(false)
-    })
-
-    it("invalidates cache on setFeatureFlagOverride", async () => {
-      // Prime the cache
-      const flags1 = await getFeatureFlags()
-      expect(flags1.group_bookings).toBe(false)
-
-      // Set override should invalidate cache
       await setFeatureFlagOverride("group_bookings", "true")
 
-      // Next call should get fresh data
       const flags2 = await getFeatureFlags()
       expect(flags2.group_bookings).toBe(true)
     })
 
-    it("invalidates cache on removeFeatureFlagOverride", async () => {
-      // Set an override and prime cache
+    it("reflects removal after removeFeatureFlagOverride", async () => {
       await setFeatureFlagOverride("group_bookings", "true")
       const flags1 = await getFeatureFlags()
       expect(flags1.group_bookings).toBe(true)
 
-      // Remove override should invalidate cache
       await removeFeatureFlagOverride("group_bookings")
 
-      // Next call should get fresh data (back to default)
       const flags2 = await getFeatureFlags()
       expect(flags2.group_bookings).toBe(false)
     })

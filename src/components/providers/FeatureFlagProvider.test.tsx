@@ -202,6 +202,35 @@ describe("FeatureFlagProvider", () => {
     expect(screen.getByTestId("flag-value-counted").textContent).toBe("true")
   })
 
+  it("updates when a flag is removed from API response", async () => {
+    const initialFlags = { voice_logging: true, group_bookings: true }
+
+    // API response no longer includes group_bookings
+    fetchSpy.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ flags: { voice_logging: true } }),
+    })
+
+    render(
+      <FeatureFlagProvider initialFlags={initialFlags}>
+        <RenderCountConsumer flagKey="group_bookings" />
+      </FeatureFlagProvider>
+    )
+
+    expect(screen.getByTestId("flag-value-counted").textContent).toBe("true")
+
+    // Trigger polling
+    await act(async () => {
+      vi.advanceTimersByTime(60_000)
+    })
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    // group_bookings was removed from API response -> should be false now
+    expect(screen.getByTestId("flag-value-counted").textContent).toBe("false")
+    // Should have re-rendered
+    expect(screen.getByTestId("render-count").textContent).toBe("2")
+  })
+
   describe("useFeatureFlag", () => {
     it("returns correct value from initial flags", () => {
       render(

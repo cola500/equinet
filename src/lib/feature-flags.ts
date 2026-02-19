@@ -67,10 +67,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
 
 const REDIS_PREFIX = "feature_flag:"
 
-// Server-side cache for getFeatureFlags (30s TTL)
-let flagCache: { flags: Record<string, boolean>; at: number } | null = null
-const FLAG_CACHE_TTL_MS = 30_000
-
 let redis: Redis | null = null
 
 function getRedis(): Redis | null {
@@ -88,46 +84,40 @@ function getRedis(): Redis | null {
 }
 
 /**
- * Set a feature flag override. Writes to Redis (production) + in-memory (local cache).
+ * Set a feature flag override.
+ * When Redis is configured: writes to Redis only (in-memory is useless in serverless).
+ * When Redis is NOT configured (local dev): writes to in-memory fallback.
+ * Redis errors are propagated so the admin UI can show the failure.
  */
 export async function setFeatureFlagOverride(
   key: string,
   value: string
 ): Promise<void> {
-  // Invalidate server-side cache
-  flagCache = null
-
-  // Always update in-memory (local cache / dev fallback)
-  setRuntimeSetting(`feature_${key}`, value)
-
   const r = getRedis()
-  if (!r) return
-
-  try {
+  if (r) {
     await r.set(`${REDIS_PREFIX}${key}`, value)
-  } catch {
-    // Redis write failed, in-memory fallback already set
+    return
   }
+
+  // Local dev fallback (no Redis configured)
+  setRuntimeSetting(`feature_${key}`, value)
 }
 
 /**
- * Remove a feature flag override from Redis and in-memory.
- * After removal the flag reverts to its default value.
+ * Remove a feature flag override.
+ * When Redis is configured: deletes from Redis only.
+ * When Redis is NOT configured (local dev): deletes from in-memory.
+ * Redis errors are propagated so the admin UI can show the failure.
  */
 export async function removeFeatureFlagOverride(key: string): Promise<void> {
-  // Invalidate server-side cache
-  flagCache = null
-
-  deleteRuntimeSetting(`feature_${key}`)
-
   const r = getRedis()
-  if (!r) return
-
-  try {
+  if (r) {
     await r.del(`${REDIS_PREFIX}${key}`)
-  } catch {
-    // Redis delete failed, in-memory already cleared
+    return
   }
+
+  // Local dev fallback
+  deleteRuntimeSetting(`feature_${key}`)
 }
 
 /**
@@ -137,11 +127,6 @@ export async function removeFeatureFlagOverride(key: string): Promise<void> {
  * Priority: env variable > Redis/runtime override > default
  */
 export async function getFeatureFlags(): Promise<Record<string, boolean>> {
-  // Return cached result if still fresh
-  if (flagCache && Date.now() - flagCache.at < FLAG_CACHE_TTL_MS) {
-    return { ...flagCache.flags }
-  }
-
   const keys = Object.keys(FEATURE_FLAGS)
   const result: Record<string, boolean> = {}
 
@@ -189,48 +174,17 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
     result[key] = flag.defaultEnabled
   }
 
-  // Update cache
-  flagCache = { flags: { ...result }, at: Date.now() }
-
   return result
 }
 
 /**
  * Check if a specific feature flag is enabled.
- * Priority: env variable > Redis > in-memory runtime > default
+ * Delegates to getFeatureFlags for a single code path.
  */
 export async function isFeatureEnabled(key: string): Promise<boolean> {
-  const flag = FEATURE_FLAGS[key]
-  if (!flag) return false
-
-  // 1. Env variable (highest priority)
-  const envKey = `FEATURE_${key.toUpperCase()}`
-  const envValue = process.env[envKey]
-  if (envValue !== undefined) {
-    return envValue === "true"
-  }
-
-  // 2. Redis override (production)
-  const r = getRedis()
-  if (r) {
-    try {
-      const redisValue = await r.get<string>(`${REDIS_PREFIX}${key}`)
-      if (redisValue !== null && redisValue !== undefined) {
-        return String(redisValue) === "true"
-      }
-    } catch {
-      // Redis unavailable, fall through
-    }
-  }
-
-  // 3. In-memory runtime (dev fallback)
-  const runtimeValue = getRuntimeSetting(`feature_${key}`)
-  if (runtimeValue !== undefined) {
-    return runtimeValue === "true"
-  }
-
-  // 4. Default
-  return flag.defaultEnabled
+  if (!FEATURE_FLAGS[key]) return false
+  const flags = await getFeatureFlags()
+  return flags[key] ?? false
 }
 
 /**
@@ -245,7 +199,3 @@ export function _resetRedisForTesting(): void {
   redis = null
 }
 
-/** Reset flag cache (test helper only) */
-export function _resetFlagCacheForTesting(): void {
-  flagCache = null
-}

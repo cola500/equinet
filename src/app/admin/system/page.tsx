@@ -107,7 +107,11 @@ export default function AdminSystemPage() {
           value: enabled ? "true" : "false",
         }),
       })
-      if (!res.ok) throw new Error("Failed")
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Kunde inte ändra inställningen")
+      }
+      // Update state AFTER confirmed write (not optimistically)
       setSettings((prev) =>
         prev
           ? {
@@ -126,8 +130,9 @@ export default function AdminSystemPage() {
           ? `${flag?.label ?? flagKey} aktiverad`
           : `${flag?.label ?? flagKey} inaktiverad`
       )
-    } catch {
-      toast.error("Kunde inte ändra inställningen")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Kunde inte ändra inställningen"
+      toast.error(message)
     } finally {
       setFlagToggleLoading(null)
     }
