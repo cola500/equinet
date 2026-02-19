@@ -87,6 +87,12 @@ export default function NewAnnouncementPage() {
         return
       }
 
+      if (formData.dateTo && formData.dateFrom && new Date(formData.dateTo) < new Date(formData.dateFrom)) {
+        toast.error("Till-datum kan inte vara före från-datum")
+        setIsSubmitting(false)
+        return
+      }
+
       const payload = {
         announcementType: "provider_announced",
         serviceIds: selectedServiceIds,

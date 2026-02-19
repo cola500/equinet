@@ -318,7 +318,7 @@ export default function RouteMapVisualization({
     const missingCoords = allSelected.filter(o => !o.latitude || !o.longitude)
 
     return (
-      <div className="h-[500px] bg-gray-50 rounded-lg flex items-center justify-center text-gray-500">
+      <div className="h-[clamp(280px,40vh,500px)] bg-gray-50 rounded-lg flex items-center justify-center text-gray-500">
         {missingCoords.length > 0
           ? `${missingCoords.length} valda beställningar saknar koordinater för kartvisning`
           : 'Välj beställningar för att visa karta'}
@@ -330,7 +330,7 @@ export default function RouteMapVisualization({
     <div className="relative">
       <div
         ref={mapContainerRef}
-        style={{ height: '500px', width: '100%' }}
+        style={{ height: 'clamp(280px, 40vh, 500px)', width: '100%' }}
         className="rounded-lg border border-gray-200"
       />
 
