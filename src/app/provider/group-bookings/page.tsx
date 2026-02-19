@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { calculateDistance } from "@/lib/geo/distance"
+import { X } from "lucide-react"
 
 interface GroupBookingParticipant {
   id: string
@@ -298,9 +299,10 @@ export default function ProviderGroupBookingsPage() {
               <button
                 type="button"
                 onClick={clearLocation}
-                className="hover:text-orange-900 ml-1"
+                aria-label="Ta bort platsfilter"
+                className="p-1 rounded-full hover:bg-orange-200 ml-1"
               >
-                x
+                <X className="h-3.5 w-3.5" />
               </button>
             </span>
           </div>

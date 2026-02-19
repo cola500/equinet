@@ -16,11 +16,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
 
 export default function CreateGroupBookingPage() {
   const router = useRouter()
   const { isLoading: authLoading, isCustomer } = useAuth()
   const [isSaving, setIsSaving] = useState(false)
+  const [horses, setHorses] = useState<HorseOption[]>([])
 
   const [formData, setFormData] = useState({
     serviceType: "",
@@ -29,6 +31,10 @@ export default function CreateGroupBookingPage() {
     dateFrom: "",
     dateTo: "",
     maxParticipants: "6",
+    joinDeadline: "",
+    horseId: "",
+    horseName: "",
+    horseInfo: "",
     notes: "",
   })
 
@@ -38,20 +44,45 @@ export default function CreateGroupBookingPage() {
     }
   }, [isCustomer, authLoading, router])
 
+  // Fetch customer's horses
+  useEffect(() => {
+    if (authLoading || !isCustomer) return
+    fetch("/api/horses")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setHorses(
+            data.map((h: any) => ({
+              id: h.id,
+              name: h.name,
+              breed: h.breed || null,
+              specialNeeds: h.specialNeeds || null,
+            }))
+          )
+        }
+      })
+      .catch(() => {})
+  }, [authLoading, isCustomer])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
 
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         serviceType: formData.serviceType,
         locationName: formData.locationName,
         address: formData.address,
         dateFrom: new Date(formData.dateFrom).toISOString(),
         dateTo: new Date(formData.dateTo).toISOString(),
         maxParticipants: parseInt(formData.maxParticipants),
-        ...(formData.notes && { notes: formData.notes }),
+        numberOfHorses: 1,
       }
+      if (formData.notes) body.notes = formData.notes
+      if (formData.joinDeadline) body.joinDeadline = new Date(formData.joinDeadline).toISOString()
+      if (formData.horseId) body.horseId = formData.horseId
+      if (formData.horseName) body.horseName = formData.horseName
+      if (formData.horseInfo) body.horseInfo = formData.horseInfo
 
       const response = await fetch("/api/group-bookings", {
         method: "POST",
@@ -122,6 +153,9 @@ export default function CreateGroupBookingPage() {
                   placeholder="T.ex. hovslagning, massagebehandling, tandvård..."
                   required
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Skriv vad för typ av tjänst ni söker. Leverantören väljer sin exakta tjänst vid match.
+                </p>
               </div>
 
               <div>
@@ -193,6 +227,35 @@ export default function CreateGroupBookingPage() {
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   Minst 2, max 20 deltagare.
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium">Din häst</Label>
+                <HorseSelect
+                  horses={horses}
+                  horseId={formData.horseId}
+                  horseName={formData.horseName}
+                  horseInfo={formData.horseInfo}
+                  onHorseChange={({ horseId, horseName, horseInfo }) =>
+                    setFormData((prev) => ({ ...prev, horseId, horseName, horseInfo }))
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="joinDeadline">Sista datum att ansluta (valfritt)</Label>
+                <Input
+                  id="joinDeadline"
+                  type="datetime-local"
+                  value={formData.joinDeadline}
+                  onChange={(e) =>
+                    setFormData({ ...formData, joinDeadline: e.target.value })
+                  }
+                  min={formData.dateFrom ? `${formData.dateFrom}T00:00` : undefined}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Efter detta datum kan inga fler deltagare gå med.
                 </p>
               </div>
 

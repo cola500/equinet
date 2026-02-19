@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { Share2, Copy } from "lucide-react"
 
 interface Participant {
   id: string
@@ -125,16 +126,32 @@ export default function GroupBookingDetailPage({
     }
   }, [isCustomer, fetchDetail])
 
-  const handleCopyInviteLink = async () => {
+  const handleShareInviteLink = async () => {
     if (!groupBooking) return
     const link = `${window.location.origin}/customer/group-bookings/join?code=${groupBooking.inviteCode}`
+
+    // Use Web Share API if available (common on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Gå med i gruppbokning: ${groupBooking.serviceType}`,
+          text: `Anslut till vår grupprequest för ${groupBooking.serviceType} i ${groupBooking.locationName}`,
+          url: link,
+        })
+        return
+      } catch (err) {
+        // User cancelled share - not an error
+        if (err instanceof Error && err.name === "AbortError") return
+      }
+    }
+
+    // Fallback to clipboard
     try {
       await navigator.clipboard.writeText(link)
       setIsCopied(true)
       toast.success("Inbjudningslänk kopierad!")
       setTimeout(() => setIsCopied(false), 2000)
     } catch {
-      // Fallback
       toast.info(`Inbjudningskod: ${groupBooking.inviteCode}`)
     }
   }
@@ -279,6 +296,25 @@ export default function GroupBookingDetailPage({
           </CardContent>
         </Card>
 
+        {/* Matched status info */}
+        {groupBooking.status === "matched" && groupBooking.provider && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="py-4">
+              <p className="text-sm text-blue-800 font-medium">
+                {groupBooking.provider.businessName} har accepterat grupprequesten.
+                Du har fått en bokning i din bokningshistorik.
+              </p>
+              <Button
+                className="mt-3"
+                size="sm"
+                onClick={() => router.push("/customer/bookings")}
+              >
+                Visa mina bokningar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Invite code (only if open) */}
         {isOpen && (
           <Card className="mb-6 border-green-200 bg-green-50">
@@ -291,11 +327,21 @@ export default function GroupBookingDetailPage({
                   </p>
                 </div>
                 <Button
-                  onClick={handleCopyInviteLink}
+                  onClick={handleShareInviteLink}
                   variant="outline"
                   className="border-green-300"
                 >
-                  {isCopied ? "Kopierad!" : "Kopiera länk"}
+                  {isCopied ? (
+                    <>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Kopierad!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Dela länk
+                    </>
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-green-700 mt-2">

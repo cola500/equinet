@@ -41,7 +41,6 @@ function JoinGroupBookingContent() {
 
   const [formData, setFormData] = useState({
     inviteCode: searchParams.get("code") || "",
-    numberOfHorses: "1",
     horseId: "",
     horseName: "",
     horseInfo: "",
@@ -133,7 +132,7 @@ function JoinGroupBookingContent() {
     try {
       const body: Record<string, unknown> = {
         inviteCode: formData.inviteCode.toUpperCase().trim(),
-        numberOfHorses: parseInt(formData.numberOfHorses),
+        numberOfHorses: 1,
       }
       if (formData.horseId) body.horseId = formData.horseId
       if (formData.horseName) body.horseName = formData.horseName
@@ -293,20 +292,6 @@ function JoinGroupBookingContent() {
                   maxLength={20}
                   className="font-mono text-lg tracking-wider"
                   required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="numberOfHorses">Antal hästar</Label>
-                <Input
-                  id="numberOfHorses"
-                  type="number"
-                  value={formData.numberOfHorses}
-                  onChange={(e) =>
-                    setFormData({ ...formData, numberOfHorses: e.target.value })
-                  }
-                  min={1}
-                  max={10}
                 />
               </div>
 

@@ -22,14 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
@@ -215,6 +214,35 @@ export default function ProviderGroupBookingDetailPage({
   )
   const isOpen = groupBooking.status === "open"
 
+  // Calculate time slots for the match dialog preview
+  const selectedService = services.find((s) => s.id === matchForm.serviceId)
+  const timeSlots =
+    selectedService && matchForm.startTime
+      ? (() => {
+          const slots: string[] = []
+          const [hours, minutes] = matchForm.startTime.split(":").map(Number)
+          let currentMinutes = hours * 60 + minutes
+          const participantCount = groupBooking._count.participants
+          for (let i = 0; i < participantCount; i++) {
+            const startH = Math.floor(currentMinutes / 60)
+            const startM = currentMinutes % 60
+            const endMinutes = currentMinutes + selectedService.durationMinutes
+            const endH = Math.floor(endMinutes / 60)
+            const endM = endMinutes % 60
+            slots.push(
+              `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}-${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`
+            )
+            currentMinutes = endMinutes
+          }
+          const endH = Math.floor(currentMinutes / 60)
+          const endM = currentMinutes % 60
+          return {
+            slots,
+            endTime: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          }
+        })()
+      : null
+
   return (
     <ProviderLayout>
       <div className="max-w-3xl mx-auto">
@@ -235,7 +263,7 @@ export default function ProviderGroupBookingDetailPage({
             <CardTitle className="text-base">Detaljer</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Adress:</span>
                 <p className="font-medium">{groupBooking.address}</p>
@@ -307,93 +335,114 @@ export default function ProviderGroupBookingDetailPage({
           </Button>
 
           {isOpen && (
-            <Dialog open={matchDialogOpen} onOpenChange={setMatchDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>Matcha och skapa bokningar</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Matcha grupprequest</DialogTitle>
-                  <DialogDescription>
-                    Välj tjänst, datum och starttid. Individuella bokningar skapas
-                    för alla {groupBooking._count.participants} deltagare i rad.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleMatch} className="space-y-4">
-                  <div>
-                    <Label htmlFor="matchService">Tjänst *</Label>
-                    <Select
-                      value={matchForm.serviceId}
-                      onValueChange={(value) =>
-                        setMatchForm({ ...matchForm, serviceId: value })
-                      }
-                    >
-                      <SelectTrigger id="matchService">
-                        <SelectValue placeholder="Välj tjänst..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {services.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name} ({s.durationMinutes} min, {s.price} kr)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            <>
+              <Button onClick={() => setMatchDialogOpen(true)}>
+                Matcha och skapa bokningar
+              </Button>
+              <ResponsiveAlertDialog
+                open={matchDialogOpen}
+                onOpenChange={setMatchDialogOpen}
+              >
+                <ResponsiveAlertDialogContent>
+                  <ResponsiveAlertDialogHeader>
+                    <ResponsiveAlertDialogTitle>Matcha grupprequest</ResponsiveAlertDialogTitle>
+                    <ResponsiveAlertDialogDescription>
+                      Välj tjänst, datum och starttid. Individuella bokningar skapas
+                      för alla {groupBooking._count.participants} deltagare i rad.
+                    </ResponsiveAlertDialogDescription>
+                  </ResponsiveAlertDialogHeader>
+                  <form onSubmit={handleMatch} className="space-y-4">
+                    <div>
+                      <Label htmlFor="matchService">Tjänst *</Label>
+                      <Select
+                        value={matchForm.serviceId}
+                        onValueChange={(value) =>
+                          setMatchForm({ ...matchForm, serviceId: value })
+                        }
+                      >
+                        <SelectTrigger id="matchService">
+                          <SelectValue placeholder="Välj tjänst..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {services.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name} ({s.durationMinutes} min, {s.price} kr)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="matchDate">Datum *</Label>
-                    <Input
-                      id="matchDate"
-                      type="date"
-                      value={matchForm.bookingDate}
-                      onChange={(e) =>
-                        setMatchForm({
-                          ...matchForm,
-                          bookingDate: e.target.value,
-                        })
-                      }
-                      min={groupBooking.dateFrom.split("T")[0]}
-                      max={groupBooking.dateTo.split("T")[0]}
-                      required
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="matchDate">Datum *</Label>
+                      <Input
+                        id="matchDate"
+                        type="date"
+                        value={matchForm.bookingDate}
+                        onChange={(e) =>
+                          setMatchForm({
+                            ...matchForm,
+                            bookingDate: e.target.value,
+                          })
+                        }
+                        min={groupBooking.dateFrom.split("T")[0]}
+                        max={groupBooking.dateTo.split("T")[0]}
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="matchStartTime">Starttid *</Label>
-                    <Input
-                      id="matchStartTime"
-                      type="time"
-                      value={matchForm.startTime}
-                      onChange={(e) =>
-                        setMatchForm({
-                          ...matchForm,
-                          startTime: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Första bokningen börjar vid denna tid. Efterföljande bokningar
-                      läggs i rad efter tjänstetiden.
-                    </p>
-                  </div>
+                    <div>
+                      <Label htmlFor="matchStartTime">Starttid *</Label>
+                      <Input
+                        id="matchStartTime"
+                        type="time"
+                        value={matchForm.startTime}
+                        onChange={(e) =>
+                          setMatchForm({
+                            ...matchForm,
+                            startTime: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
 
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      disabled={
-                        isMatching || !matchForm.serviceId || !matchForm.bookingDate
-                      }
-                    >
-                      {isMatching
-                        ? "Skapar bokningar..."
-                        : `Skapa ${groupBooking._count.participants} bokningar`}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    {/* Time slot preview */}
+                    {timeSlots && (
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                        <p className="font-medium text-gray-700 mb-1">Tidsöversikt</p>
+                        <p className="text-gray-600">
+                          {timeSlots.slots.join(", ")}
+                        </p>
+                        <p className="text-gray-500 mt-1">
+                          {groupBooking._count.participants} bokningar, klart {timeSlots.endTime}
+                        </p>
+                      </div>
+                    )}
+
+                    <ResponsiveAlertDialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setMatchDialogOpen(false)}
+                      >
+                        Avbryt
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          isMatching || !matchForm.serviceId || !matchForm.bookingDate
+                        }
+                      >
+                        {isMatching
+                          ? "Skapar bokningar..."
+                          : `Skapa ${groupBooking._count.participants} bokningar`}
+                      </Button>
+                    </ResponsiveAlertDialogFooter>
+                  </form>
+                </ResponsiveAlertDialogContent>
+              </ResponsiveAlertDialog>
+            </>
           )}
         </div>
       </div>

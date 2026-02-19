@@ -64,7 +64,7 @@ function formatDate(dateStr: string): string {
 
 export default function CustomerGroupBookingsPage() {
   const router = useRouter()
-  const { isLoading: authLoading, isCustomer } = useAuth()
+  const { isLoading: authLoading, isCustomer, user } = useAuth()
   const [groupBookings, setGroupBookings] = useState<GroupBookingRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -161,7 +161,9 @@ export default function CustomerGroupBookingsPage() {
                       {gb._count.participants} / {gb.maxParticipants} deltagare
                     </span>
                     <span className="text-xs text-gray-400">
-                      Kod: {gb.inviteCode}
+                      {gb.creatorId === user?.id
+                        ? `Kod: ${gb.inviteCode}`
+                        : "Du är anmäld"}
                     </span>
                   </div>
                   {gb.participants.length > 0 && (
