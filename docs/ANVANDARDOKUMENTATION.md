@@ -49,6 +49,8 @@
   - [Bokföring (Fortnox)](#bokföring-fortnox)
   - [Hästens hälsotidslinje](#hästens-hälsotidslinje-leverantör)
   - [Notifikationer](#notifikationer-leverantör)
+  - [Installera Equinet som app](#installera-equinet-som-app)
+  - [Offline-läge](#offline-läge)
 - [Guide för administratörer](#guide-för-administratörer)
   - [Dashboard](#dashboard)
   - [Användarhantering](#användarhantering)
@@ -912,6 +914,46 @@ Notifikationer visas i klockan i menyraden och skickas även via e-post.
 
 ---
 
+### Installera Equinet som app
+
+Du kan installera Equinet på din hemskärm för snabbare åtkomst och offline-stöd. En installerad app öppnas i helskärm utan webbläsarens adressfält.
+
+**Android (Chrome):**
+1. Besök Equinet i Chrome
+2. En blå banner visas med knappen **Installera** -- klicka på den
+3. Bekräfta installationen
+4. Equinet-ikonen visas på din hemskärm
+
+**iPhone/iPad (Safari):**
+1. Besök Equinet i Safari
+2. En blå banner visas med instruktioner
+3. Tryck på **Dela-ikonen** (rutan med uppåtpilen)
+4. Välj **Lägg till på hemskärmen**
+5. Klicka **Lägg till**
+
+Du kan stänga installationsbannern om du inte vill installera. Den visas inte igen efter att du stängt den.
+
+---
+
+### Offline-läge
+
+Om du kör i ett område utan mobilnät kan du fortfarande se dina bokningar, rutter och profilinformation tack vare offline-cachning.
+
+**Så fungerar det:**
+- När du har internetåtkomst sparas dina bokningar, rutter och profildata automatiskt lokalt på enheten
+- Om du tappar nätverket visar Equinet den senast sparade datan
+- En **gul banner** visas längst upp på sidan med texten "Du är offline"
+- När nätverket kommer tillbaka visas en **grön banner** med "Återansluten" i 3 sekunder
+
+**Begränsningar i offline-läge:**
+- Du kan **se** bokningar, rutter och din profil -- men inte göra ändringar
+- Data som är äldre än 4 timmar visas inte (du uppmanas att ansluta igen)
+- Funktioner som kräver nätverksåtkomst (betala, boka, skicka meddelanden) fungerar inte offline
+
+**Bakom feature flag:** Funktionen måste vara aktiverad av en administratör under systeminställningar.
+
+---
+
 ## Guide för administratörer
 
 Admin-panelen nås via **/admin** och kräver att din användare har admin-behörighet. Sidan är skyddad med både middleware och per-route kontroller.
@@ -1024,6 +1066,7 @@ Under **System** ser du:
 - **Affärsinsikter** -- Utökad analytics-sida
 - **Självservice-ombokning** -- Kunder kan boka om sina egna bokningar
 - **Återkommande bokningar** -- Möjlighet att skapa återkommande bokningsserier
+- **Offlineläge** -- PWA-stöd med offline-cachning av bokningar och rutter för leverantörer
 
 Flaggor kan slås av och på i realtid. Ändringar sparas i Redis och gäller omedelbart.
 
@@ -1041,6 +1084,8 @@ Plattformen är under utveckling. Prissättning meddelas inför lansering.
 ### Kan jag använda Equinet på mobilen?
 
 Ja, Equinet är designat mobil-först och fungerar i alla moderna webbläsare på mobil, surfplatta och dator. Dialoger, formulär och bokningsflöden anpassas automatiskt till mindre skärmar med stegvisa Drawer-vyer och 44px touch targets.
+
+Du kan även **installera Equinet som en app** på din hemskärm -- se [Installera Equinet som app](#installera-equinet-som-app) nedan.
 
 ### Vad händer om leverantören inte svarar på min bokning?
 
