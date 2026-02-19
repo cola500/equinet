@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useRef, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,22 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
+import { format } from "date-fns"
+import { sv } from "date-fns/locale"
+
+interface GroupBookingPreview {
+  serviceType: string
+  locationName: string
+  address: string
+  dateFrom: string
+  dateTo: string
+  maxParticipants: number
+  currentParticipants: number
+  joinDeadline: string | null
+  notes: string | null
+  status: string
+}
 
 function JoinGroupBookingContent() {
   const router = useRouter()
@@ -26,9 +42,20 @@ function JoinGroupBookingContent() {
   const [formData, setFormData] = useState({
     inviteCode: searchParams.get("code") || "",
     numberOfHorses: "1",
+    horseId: "",
     horseName: "",
+    horseInfo: "",
     notes: "",
   })
+
+  // Preview state
+  const [preview, setPreview] = useState<GroupBookingPreview | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Customer horses
+  const [horses, setHorses] = useState<HorseOption[]>([])
 
   useEffect(() => {
     if (!authLoading && !isCustomer) {
@@ -36,17 +63,82 @@ function JoinGroupBookingContent() {
     }
   }, [isCustomer, authLoading, router])
 
+  // Fetch customer's horses
+  useEffect(() => {
+    if (authLoading || !isCustomer) return
+    fetch("/api/horses")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setHorses(
+            data.map((h: any) => ({
+              id: h.id,
+              name: h.name,
+              breed: h.breed || null,
+              specialNeeds: h.specialNeeds || null,
+            }))
+          )
+        }
+      })
+      .catch(() => {})
+  }, [authLoading, isCustomer])
+
+  // Debounced preview fetch
+  const fetchPreview = useCallback((code: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    const trimmed = code.trim()
+    if (trimmed.length < 6) {
+      setPreview(null)
+      setPreviewError(null)
+      return
+    }
+
+    setPreviewLoading(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/group-bookings/preview?code=${encodeURIComponent(trimmed)}`
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setPreview(data)
+          setPreviewError(null)
+        } else {
+          const data = await res.json().catch(() => null)
+          setPreview(null)
+          setPreviewError(data?.error || "Kunde inte hämta information")
+        }
+      } catch {
+        setPreview(null)
+        setPreviewError("Kunde inte ansluta till servern")
+      } finally {
+        setPreviewLoading(false)
+      }
+    }, 500)
+  }, [])
+
+  // Trigger preview fetch when invite code changes
+  useEffect(() => {
+    fetchPreview(formData.inviteCode)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [formData.inviteCode, fetchPreview])
+
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsJoining(true)
 
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         inviteCode: formData.inviteCode.toUpperCase().trim(),
         numberOfHorses: parseInt(formData.numberOfHorses),
-        ...(formData.horseName && { horseName: formData.horseName }),
-        ...(formData.notes && { notes: formData.notes }),
       }
+      if (formData.horseId) body.horseId = formData.horseId
+      if (formData.horseName) body.horseName = formData.horseName
+      if (formData.horseInfo) body.horseInfo = formData.horseInfo
+      if (formData.notes) body.notes = formData.notes
 
       const response = await fetch("/api/group-bookings/join", {
         method: "POST",
@@ -83,6 +175,14 @@ function JoinGroupBookingContent() {
     )
   }
 
+  const isDeadlinePassed = preview?.joinDeadline
+    ? new Date(preview.joinDeadline) < new Date()
+    : false
+  const isClosed = preview?.status !== "open"
+  const isFull = preview
+    ? preview.currentParticipants >= preview.maxParticipants
+    : false
+
   return (
     <CustomerLayout>
       <div className="max-w-lg mx-auto">
@@ -90,6 +190,84 @@ function JoinGroupBookingContent() {
         <p className="text-gray-600 mb-8">
           Ange inbjudningskoden du fått från den som skapade grupprequesten.
         </p>
+
+        {/* Preview card */}
+        {(preview || previewLoading || previewError) && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Bokningsinformation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {previewLoading && (
+                <p className="text-sm text-gray-500">Hämtar information...</p>
+              )}
+              {previewError && !previewLoading && (
+                <p className="text-sm text-red-600">{previewError}</p>
+              )}
+              {preview && !previewLoading && (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Tjänst</span>
+                    <span className="font-medium capitalize">{preview.serviceType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Plats</span>
+                    <span className="font-medium">{preview.locationName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Adress</span>
+                    <span className="font-medium">{preview.address}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Datum</span>
+                    <span className="font-medium">
+                      {format(new Date(preview.dateFrom), "d MMM", { locale: sv })}
+                      {" - "}
+                      {format(new Date(preview.dateTo), "d MMM yyyy", { locale: sv })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Deltagare</span>
+                    <span className="font-medium">
+                      {preview.currentParticipants} / {preview.maxParticipants}
+                    </span>
+                  </div>
+                  {preview.joinDeadline && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Deadline</span>
+                      <span className={`font-medium ${isDeadlinePassed ? "text-red-600" : ""}`}>
+                        {format(new Date(preview.joinDeadline), "d MMM yyyy HH:mm", { locale: sv })}
+                      </span>
+                    </div>
+                  )}
+                  {preview.notes && (
+                    <div className="pt-2 border-t">
+                      <span className="text-gray-500">Anteckningar: </span>
+                      <span>{preview.notes}</span>
+                    </div>
+                  )}
+
+                  {/* Warnings */}
+                  {isClosed && (
+                    <p className="text-red-600 bg-red-50 p-2 rounded text-xs font-medium mt-2">
+                      Denna grupprequest är inte längre öppen för nya deltagare.
+                    </p>
+                  )}
+                  {isDeadlinePassed && !isClosed && (
+                    <p className="text-red-600 bg-red-50 p-2 rounded text-xs font-medium mt-2">
+                      Deadline för att ansluta har passerat.
+                    </p>
+                  )}
+                  {isFull && !isClosed && !isDeadlinePassed && (
+                    <p className="text-amber-700 bg-amber-50 p-2 rounded text-xs font-medium mt-2">
+                      Grupprequesten är fullt belagd.
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -132,17 +310,15 @@ function JoinGroupBookingContent() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="horseName">Hästnamn</Label>
-                <Input
-                  id="horseName"
-                  value={formData.horseName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, horseName: e.target.value })
-                  }
-                  placeholder="T.ex. Blansen"
-                />
-              </div>
+              <HorseSelect
+                horses={horses}
+                horseId={formData.horseId}
+                horseName={formData.horseName}
+                horseInfo={formData.horseInfo}
+                onHorseChange={({ horseId, horseName, horseInfo }) =>
+                  setFormData((prev) => ({ ...prev, horseId, horseName, horseInfo }))
+                }
+              />
 
               <div>
                 <Label htmlFor="notes">Anteckningar</Label>

@@ -516,4 +516,76 @@ describe('GroupBookingService', () => {
       expect(result.error.type).toBe('NO_ACTIVE_PARTICIPANTS')
     })
   })
+
+  // -----------------------------------------------------------
+  // GET PREVIEW BY CODE
+  // -----------------------------------------------------------
+
+  describe('getPreviewByCode', () => {
+    it('should return preview for valid invite code', async () => {
+      const joinDeadline = new Date()
+      joinDeadline.setDate(joinDeadline.getDate() + 7)
+
+      repo.seedRequests([
+        makeRequest({
+          joinDeadline,
+          notes: 'Samling vid stall 2',
+        }),
+      ])
+      repo.seedParticipants([
+        makeParticipant(),
+        makeParticipant({ id: 'gbp-2', userId: TEST_UUIDS.joiner }),
+      ])
+
+      const result = await service.getPreviewByCode('ABC12345')
+
+      expect(result.isSuccess).toBe(true)
+      const preview = result.value
+      expect(preview.serviceType).toBe('hovslagning')
+      expect(preview.locationName).toBe('Sollebrunn Ridklubb')
+      expect(preview.address).toBe('Stallvägen 1')
+      expect(preview.dateFrom).toEqual(FUTURE)
+      expect(preview.dateTo).toEqual(FUTURE_END)
+      expect(preview.maxParticipants).toBe(10)
+      expect(preview.currentParticipants).toBe(2)
+      expect(preview.joinDeadline).toEqual(joinDeadline)
+      expect(preview.notes).toBe('Samling vid stall 2')
+      expect(preview.status).toBe('open')
+    })
+
+    it('should fail for unknown invite code', async () => {
+      const result = await service.getPreviewByCode('UNKNOWN1')
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('GROUP_BOOKING_NOT_FOUND')
+    })
+
+    it('should map _count.participants to currentParticipants correctly', async () => {
+      repo.seedRequests([makeRequest({ maxParticipants: 5 })])
+      repo.seedParticipants([makeParticipant()])
+
+      const result = await service.getPreviewByCode('ABC12345')
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.currentParticipants).toBe(1)
+      expect(result.value.maxParticipants).toBe(5)
+    })
+
+    it('should not expose sensitive fields like creatorId or coordinates', async () => {
+      repo.seedRequests([
+        makeRequest({ latitude: 57.8, longitude: 12.3 }),
+      ])
+      repo.seedParticipants([makeParticipant()])
+
+      const result = await service.getPreviewByCode('ABC12345')
+
+      expect(result.isSuccess).toBe(true)
+      const preview = result.value as Record<string, unknown>
+      expect(preview).not.toHaveProperty('creatorId')
+      expect(preview).not.toHaveProperty('providerId')
+      expect(preview).not.toHaveProperty('latitude')
+      expect(preview).not.toHaveProperty('longitude')
+      expect(preview).not.toHaveProperty('inviteCode')
+    })
+  })
 })

@@ -42,6 +42,19 @@ export interface GroupBookingError {
   message: string
 }
 
+export interface GroupBookingPreview {
+  serviceType: string
+  locationName: string
+  address: string
+  dateFrom: Date
+  dateTo: Date
+  maxParticipants: number
+  currentParticipants: number
+  joinDeadline: Date | null
+  notes: string | null
+  status: string
+}
+
 export interface GroupBookingServiceDeps {
   groupBookingRepository: IGroupBookingRepository
   generateInviteCode: () => string
@@ -208,6 +221,35 @@ export class GroupBookingService {
       })
     }
     return Result.ok(result)
+  }
+
+  // -----------------------------------------------------------
+  // GET PREVIEW BY CODE
+  // -----------------------------------------------------------
+
+  async getPreviewByCode(
+    inviteCode: string
+  ): Promise<Result<GroupBookingPreview, GroupBookingError>> {
+    const groupRequest = await this.repo.findByInviteCode(inviteCode)
+    if (!groupRequest) {
+      return Result.fail({
+        type: 'GROUP_BOOKING_NOT_FOUND',
+        message: 'Ogiltig inbjudningskod',
+      })
+    }
+
+    return Result.ok({
+      serviceType: groupRequest.serviceType,
+      locationName: groupRequest.locationName,
+      address: groupRequest.address,
+      dateFrom: groupRequest.dateFrom,
+      dateTo: groupRequest.dateTo,
+      maxParticipants: groupRequest.maxParticipants,
+      currentParticipants: groupRequest._count.participants,
+      joinDeadline: groupRequest.joinDeadline,
+      notes: groupRequest.notes,
+      status: groupRequest.status,
+    })
   }
 
   // -----------------------------------------------------------
