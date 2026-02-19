@@ -69,6 +69,14 @@ export default function RoutePlanningPage() {
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
 
+  // Start location (geolocation with Göteborg fallback)
+  const [startLocation, setStartLocation] = useState<{ lat: number; lon: number }>({
+    lat: 57.7089, lon: 11.9746,
+  })
+
+  // Mobile map toggle
+  const [showMap, setShowMap] = useState(false)
+
   // Route creation form
   const [routeName, setRouteName] = useState("")
   const [routeDate, setRouteDate] = useState("")
@@ -85,6 +93,15 @@ export default function RoutePlanningPage() {
       fetchOrders()
     }
   }, [isProvider, serviceTypeFilter, priorityFilter])
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setStartLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        () => {} // tyst fallback till Göteborg
+      )
+    }
+  }, [])
 
   useEffect(() => {
     // Set default route date to tomorrow
@@ -148,12 +165,6 @@ export default function RoutePlanningPage() {
       // Hämta valda orders
       const selected = orders.filter(o => selectedOrders.has(o.id))
 
-      // DEBUG: Logga original ordning
-      console.log('🔵 ORIGINAL ORDNING (selection order):')
-      selected.forEach((order, index) => {
-        console.log(`  ${index + 1}. ${order.address} (${order.serviceType})`)
-      })
-
       // Konvertera till Location format med index som ID för Modal API
       const locations: Location[] = selected.map((order, index) => ({
         id: index, // Använd array-index som ID för Modal API
@@ -166,38 +177,13 @@ export default function RoutePlanningPage() {
         service: order.serviceType,
       }))
 
-      // Start location (Göteborg centrum för nu)
-      const startLocation: Location = {
-        lat: 57.7089,
-        lon: 11.9746,
-      }
-
       // Anropa Modal API
-      console.log('📡 Anropar Modal API för optimering...')
       const result = await optimizeRoute(startLocation, locations)
-
-      // DEBUG: Logga optimerad ordning
-      console.log('🟢 OPTIMERAD ORDNING (från Modal API):')
-      console.log('  Route array:', result.route)
-      result.route.forEach((index, position) => {
-        const order = selected[index]
-        console.log(`  ${position + 1}. ${order.address} (${order.serviceType})`)
-      })
 
       // Mappa tillbaka från array-index till riktiga order IDs
       const optimizedOrderIds = result.route.map(index => selected[index].id)
 
-      // DEBUG: Jämför ordningar
-      const originalOrder = selected.map((_, i) => i)
-      const hasChanged = !result.route.every((val, idx) => val === originalOrder[idx])
-      console.log(`🔄 Ordningen har ${hasChanged ? 'ÄNDRATS' : 'INTE ändrats'}`)
-      if (hasChanged) {
-        console.log('  Original:', originalOrder)
-        console.log('  Optimerad:', result.route)
-      }
-
       // Beräkna FAKTISK baseline distance med OSRM (istället för Modal API:s fågelväg)
-      console.log('📏 Beräknar faktiska avstånd med OSRM...')
       let actualBaselineDistanceKm = result.baseline_distance_km // Fallback
       let actualOptimizedDistanceKm = result.total_distance_km // Fallback
 
@@ -226,16 +212,8 @@ export default function RoutePlanningPage() {
         actualBaselineDistanceKm = originalRoute.distance / 1000 // meter -> km
         actualOptimizedDistanceKm = optimizedRoute.distance / 1000
 
-        console.log('📊 DISTANSER:')
-        console.log(`  Modal API baseline (fågelväg): ${result.baseline_distance_km.toFixed(2)} km`)
-        console.log(`  OSRM baseline (faktisk väg): ${actualBaselineDistanceKm.toFixed(2)} km`)
-        console.log(`  Modal API optimized: ${result.total_distance_km.toFixed(2)} km`)
-        console.log(`  OSRM optimized (faktisk väg): ${actualOptimizedDistanceKm.toFixed(2)} km`)
-
         // Beräkna VERKLIG förbättring
         const actualImprovement = ((actualBaselineDistanceKm - actualOptimizedDistanceKm) / actualBaselineDistanceKm) * 100
-        console.log(`  Modal API förbättring: ${result.improvement_percent.toFixed(1)}%`)
-        console.log(`  VERKLIG förbättring (OSRM): ${actualImprovement.toFixed(1)}%`)
 
         // Spara resultat med FAKTISKA avstånd
         setOptimizationResult({
@@ -405,15 +383,27 @@ export default function RoutePlanningPage() {
         {selectedOrders.size > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Kartvy</CardTitle>
-              <CardDescription>
-                {optimizationResult
-                  ? `Visar optimerad rutt (${optimizationResult.improvement.toFixed(1)}% kortare)`
-                  : `Visar ${selectedOrders.size} valda beställningar`
-                }
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Kartvy</CardTitle>
+                  <CardDescription>
+                    {optimizationResult
+                      ? `Visar optimerad rutt (${optimizationResult.improvement.toFixed(1)}% kortare)`
+                      : `Visar ${selectedOrders.size} valda beställningar`
+                    }
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden"
+                  onClick={() => setShowMap(!showMap)}
+                >
+                  {showMap ? "Dölj karta" : "Visa karta"}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className={`${showMap ? "block" : "hidden"} md:block`}>
               <RouteMapVisualization
                 orders={orders}
                 selectedOrderIds={Array.from(selectedOrders)}
@@ -440,7 +430,7 @@ export default function RoutePlanningPage() {
                   </div>
                 </div>
                 <CardDescription>
-                  Sorterat efter avstånd från Göteborg centrum
+                  Sorterat efter avstånd från din position
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -535,6 +525,7 @@ export default function RoutePlanningPage() {
                       <span className="text-gray-600">Beräknad tid:</span>
                       <span className="font-medium">{Math.round(totals.duration / 60)}h</span>
                     </div>
+                    <p className="text-xs text-gray-500 pt-1">(ca 1h/häst, exkl körtid)</p>
                   </div>
                 )}
 
@@ -625,6 +616,38 @@ export default function RoutePlanningPage() {
             </Card>
           </div>
         </div>
+
+        {/* Mobile sticky action bar */}
+        {selectedOrders.size > 0 && (
+          <div className="fixed bottom-16 left-0 right-0 bg-white border-t shadow-lg p-4 z-50 md:hidden">
+            <div className="flex items-center justify-between mb-2 text-sm">
+              <span className="text-gray-600">{selectedOrders.size} valda stopp</span>
+              <span className="font-medium">{totals.distance} km</span>
+            </div>
+            <div className="flex gap-2">
+              {selectedOrders.size >= 2 && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleOptimizeRoute}
+                  disabled={isOptimizing}
+                >
+                  {isOptimizing ? "Optimerar..." : "Optimera rutt"}
+                </Button>
+              )}
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  const el = document.getElementById('routeName')
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  el?.focus()
+                }}
+              >
+                Skapa rutt
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </ProviderLayout>
   )

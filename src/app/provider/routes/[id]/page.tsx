@@ -114,7 +114,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
 
   const getStopStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; label: string; icon: string }> = {
-      pending: { variant: "secondary", label: "Väntande", icon: "⏹️" },
+      pending: { variant: "secondary", label: "Kommande", icon: "⏹️" },
       in_progress: { variant: "default", label: "Pågående", icon: "▶️" },
       completed: { variant: "outline", label: "Klar", icon: "✅" },
       problem: { variant: "destructive", label: "Problem", icon: "⚠️" },
@@ -240,6 +240,16 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                     : "Ingen kund"}
                 </p>
                 <p className="text-gray-700">{currentStop.routeOrder.address}</p>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentStop.routeOrder.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-1"
+                >
+                  <Button variant="outline" size="sm" type="button">
+                    Navigera till adressen
+                  </Button>
+                </a>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -323,7 +333,15 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                   </div>
                   {getStopStatusBadge(stop.status)}
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{stop.routeOrder.address}</p>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.routeOrder.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-600 mb-2 block hover:text-blue-600 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {stop.routeOrder.address}
+                </a>
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div>
                     <span className="text-gray-600">Tjänst:</span>{" "}

@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 
@@ -67,10 +78,6 @@ export default function ProviderAnnouncementsPage() {
   }
 
   const handleCancel = async (id: string) => {
-    if (!confirm("Är du säker på att du vill avbryta denna rutt-annons?")) {
-      return
-    }
-
     try {
       const response = await fetch(`/api/route-orders/${id}`, {
         method: "PATCH",
@@ -288,13 +295,28 @@ export default function ProviderAnnouncementsPage() {
                       >
                         Visa detaljer
                       </Button>
-                      <Button
-                        onClick={() => handleCancel(announcement.id)}
-                        variant="destructive"
-                        size="sm"
-                      >
-                        Avbryt rutt
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            Avbryt rutt
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Avbryt rutt-annons?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Kunder som redan sett annonsen kan inte längre boka in sig.
+                              Befintliga bokningar påverkas inte.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Behåll</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleCancel(announcement.id)}>
+                              Avbryt rutt-annons
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   )}
                 </div>

@@ -40,6 +40,8 @@ interface AnnouncementData {
     dateFrom: string
     dateTo: string
     status: string
+    municipality?: string
+    specialInstructions?: string
   }
   bookings: Booking[]
   totalBookings: number
@@ -198,9 +200,17 @@ export default function AnnouncementDetailPage() {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold">{data.announcement.serviceType}</h1>
+            {data.announcement.municipality && (
+              <p className="text-gray-700 font-medium">{data.announcement.municipality}</p>
+            )}
             <p className="text-gray-600 mt-1">
               {formatDate(data.announcement.dateFrom)} - {formatDate(data.announcement.dateTo)}
             </p>
+            {data.announcement.specialInstructions && (
+              <p className="text-sm text-gray-500 mt-2 italic">
+                {data.announcement.specialInstructions}
+              </p>
+            )}
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
             data.announcement.status === "open"
