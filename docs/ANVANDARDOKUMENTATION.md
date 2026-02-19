@@ -617,6 +617,14 @@ Du kan annonsera planerade rutter så att kunder i området kan ansluta sig.
 
 Det här fungerar bra för t.ex. hovslagare som regelbundet besöker samma område - kunderna kan enkelt haka på din planerade tur.
 
+**Kundupplevelsen vid annonserade rutter:**
+- Kunder hittar annonserade rutter under **Lediga tider** i navigationen
+- Filtrering på tjänstetyp (t.ex. skoning, verkning) via dropdown
+- Kalendern gråar ut dagar utanför annonsperioden så kunden ser tillgängliga datum
+- Vid bokning väljer kunden häst via en dropdown (HorseSelect) istället för fritext
+- Tjänster visas med pris direkt på service-chips
+- Bokningar gjorda via en annonserad rutt visas med en "Via rutt"-badge i kundens bokningslista
+
 ---
 
 ### Genomföra en rutt
@@ -1014,6 +1022,7 @@ Under **System** ser du:
 - **Besöksplanering** -- Återbesöksplanering
 - **Gruppbokningar** -- Gruppbokningsfunktionalitet (under utveckling)
 - **Affärsinsikter** -- Utökad analytics-sida
+- **Självservice-ombokning** -- Kunder kan boka om sina egna bokningar
 - **Återkommande bokningar** -- Möjlighet att skapa återkommande bokningsserier
 
 Flaggor kan slås av och på i realtid. Ändringar sparas i Redis och gäller omedelbart.

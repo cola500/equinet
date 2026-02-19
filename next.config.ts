@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withSerwistInit from "@serwist/next";
 
 const nextConfig: NextConfig = {
   // Disable source maps in production for security
@@ -44,6 +45,20 @@ const nextConfig: NextConfig = {
           {
             key: 'Cross-Origin-Resource-Policy',
             value: 'cross-origin', // Allow cross-origin resources
+          },
+        ],
+      },
+      // Service worker must not be cached by the browser
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
           },
         ],
       },
@@ -128,5 +143,12 @@ const sentryWebpackPluginOptions = {
   project: process.env.SENTRY_PROJECT,
 };
 
-// Wrap with Sentry config
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+// Wrap with Serwist (service worker) - disabled in dev to avoid Turbopack issues
+const withSerwist = withSerwistInit({
+  swSrc: "src/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+})
+
+// Wrap with Sentry config (outermost wrapper)
+export default withSentryConfig(withSerwist(nextConfig), sentryWebpackPluginOptions);
