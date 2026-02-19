@@ -6,11 +6,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
+import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
+import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
+import { useHorses } from "@/hooks/useHorses"
 import { CustomerLocation } from "@/hooks/useWeekAvailability"
 
 interface RouteStop {
@@ -47,11 +49,13 @@ export default function BookAnnouncementPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(null)
+  const { horses } = useHorses()
   const [formData, setFormData] = useState({
     serviceId: "",
     bookingDate: "",
     startTime: "09:00",
     endTime: "10:00",
+    horseId: "",
     horseName: "",
     horseInfo: "",
     customerNotes: "",
@@ -137,6 +141,7 @@ export default function BookAnnouncementPage() {
           bookingDate: formData.bookingDate,
           startTime: formData.startTime,
           endTime: formData.endTime,
+          horseId: formData.horseId || undefined,
           horseName: formData.horseName || undefined,
           horseInfo: formData.horseInfo || undefined,
           customerNotes: formData.customerNotes || undefined,
@@ -172,6 +177,12 @@ export default function BookAnnouncementPage() {
     return announcement.provider.services.find((s) => s.id === formData.serviceId)
   }, [announcement, formData.serviceId])
 
+  // Convert horses to HorseOption format for HorseSelect
+  const horseOptions: HorseOption[] = useMemo(
+    () => horses.map((h) => ({ id: h.id, name: h.name, breed: h.breed, specialNeeds: h.specialNeeds })),
+    [horses]
+  )
+
   // Handle slot selection from calendar
   const handleSlotSelect = (date: string, startTime: string, endTime: string) => {
     setFormData((prev) => ({
@@ -184,12 +195,14 @@ export default function BookAnnouncementPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Laddar...</p>
+      <CustomerLayout>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Laddar...</p>
+          </div>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
@@ -198,18 +211,7 @@ export default function BookAnnouncementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="text-2xl font-bold text-green-800">
-            Equinet
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <CustomerLayout>
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
             <Link href="/announcements" className="text-green-600 hover:text-green-700 text-sm">
@@ -306,6 +308,7 @@ export default function BookAnnouncementPage() {
                           serviceDurationMinutes={selectedService.durationMinutes}
                           onSlotSelect={handleSlotSelect}
                           customerLocation={customerLocation || undefined}
+                          dateRange={{ from: announcement.dateFrom, to: announcement.dateTo }}
                         />
                         {formData.bookingDate && formData.startTime && (
                           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
@@ -350,27 +353,17 @@ export default function BookAnnouncementPage() {
                       required
                     />
 
-                    {/* Horse Information */}
-                    <div className="space-y-2">
-                      <Label htmlFor="horseName">Hästens namn (valfritt)</Label>
-                      <Input
-                        id="horseName"
-                        placeholder="t.ex. Thunder"
-                        value={formData.horseName}
-                        onChange={(e) => setFormData({ ...formData, horseName: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="horseInfo">Information om hästen (valfritt)</Label>
-                      <Textarea
-                        id="horseInfo"
-                        placeholder="t.ex. Lugnhäst, 15 år, inga kända problem"
-                        value={formData.horseInfo}
-                        onChange={(e) => setFormData({ ...formData, horseInfo: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
+                    {/* Horse Selection */}
+                    <HorseSelect
+                      horses={horseOptions}
+                      horseId={formData.horseId}
+                      horseName={formData.horseName}
+                      horseInfo={formData.horseInfo}
+                      onHorseChange={({ horseId, horseName, horseInfo }) =>
+                        setFormData((prev) => ({ ...prev, horseId, horseName, horseInfo }))
+                      }
+                      label="Häst (valfritt)"
+                    />
 
                     {/* Customer Notes */}
                     <div className="space-y-2">
@@ -403,7 +396,6 @@ export default function BookAnnouncementPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </CustomerLayout>
   )
 }

@@ -34,7 +34,7 @@ const customerTabs: TabItem[] = [
 ]
 
 const customerMoreItems: CustomerMoreItem[] = [
-  { href: "/announcements", label: "Planerade rutter", icon: MapPin, matchPrefix: "/announcements" },
+  { href: "/announcements", label: "Lediga tider", icon: MapPin, matchPrefix: "/announcements" },
   { href: "/customer/group-bookings", label: "Gruppbokningar", icon: Users, matchPrefix: "/customer/group-bookings", featureFlag: "group_bookings" },
   { href: "/customer/faq", label: "Vanliga frågor", icon: HelpCircle },
   { href: "/customer/profile", label: "Min profil", icon: User },
@@ -43,7 +43,7 @@ const customerMoreItems: CustomerMoreItem[] = [
 const allNavItems: CustomerNavItem[] = [
   { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
   { href: "/customer/bookings", label: "Mina bokningar" },
-  { href: "/announcements", label: "Planerade rutter", matchPrefix: "/announcements" },
+  { href: "/announcements", label: "Lediga tider", matchPrefix: "/announcements" },
   { href: "/customer/group-bookings", label: "Gruppbokningar", matchPrefix: "/customer/group-bookings", featureFlag: "group_bookings" },
   { href: "/customer/horses", label: "Mina hästar" },
   { href: "/customer/faq", label: "Vanliga frågor" },

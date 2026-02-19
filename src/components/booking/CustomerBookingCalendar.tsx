@@ -18,6 +18,7 @@ interface CustomerBookingCalendarProps {
   onSlotSelect: (date: string, startTime: string, endTime: string) => void
   initialDate?: Date
   customerLocation?: CustomerLocation
+  dateRange?: { from: string; to: string }
 }
 
 interface SelectedSlot {
@@ -40,6 +41,7 @@ export function CustomerBookingCalendar({
   onSlotSelect,
   initialDate = new Date(),
   customerLocation,
+  dateRange,
 }: CustomerBookingCalendarProps) {
   const [currentDate, setCurrentDate] = useState(
     startOfWeek(initialDate, { weekStartsOn: 1 })
@@ -60,6 +62,16 @@ export function CustomerBookingCalendar({
     const now = new Date()
 
     return weekData.map((day: DayAvailability) => {
+      // If dateRange is set, mark days outside range as closed
+      if (dateRange && (day.date < dateRange.from || day.date > dateRange.to)) {
+        return {
+          ...day,
+          isClosed: true,
+          closedReason: "outside_range" as const,
+          slots: [] as TimeSlot[],
+        }
+      }
+
       if (day.isClosed || !day.openingTime || !day.closingTime) {
         return {
           ...day,
@@ -100,7 +112,7 @@ export function CustomerBookingCalendar({
         slots,
       }
     })
-  }, [weekData, serviceDurationMinutes])
+  }, [weekData, serviceDurationMinutes, dateRange])
 
   const handlePreviousWeek = () => {
     setCurrentDate((prev) => subWeeks(prev, 1))
@@ -143,8 +155,19 @@ export function CustomerBookingCalendar({
     )
   }
 
+  const formatDateRange = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })
+
   return (
     <div className="space-y-4">
+      {dateRange && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">
+            Leverantören besöker ditt område {formatDateRange(dateRange.from)} - {formatDateRange(dateRange.to)}
+          </p>
+        </div>
+      )}
+
       <CalendarHeader
         currentDate={currentDate}
         onPreviousWeek={handlePreviousWeek}
