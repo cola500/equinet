@@ -68,7 +68,7 @@ const CUSTOMER_FLAG_NAV = [
 const CUSTOMER_ALWAYS_NAV = [
   'Hitta tjänster',
   'Mina bokningar',
-  'Planerade rutter',
+  'Lediga tider',
   'Mina hästar',
   'Vanliga frågor',
   'Min profil',
