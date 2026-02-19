@@ -114,9 +114,14 @@ export default function CustomerGroupBookingsPage() {
     <CustomerLayout>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 className="text-3xl font-bold">Gruppbokningar</h1>
-        <Link href="/customer/group-bookings/new">
-          <Button className="w-full sm:w-auto">Skapa grupprequest</Button>
-        </Link>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/customer/group-bookings/join" className="flex-1 sm:flex-initial">
+            <Button variant="outline" className="w-full sm:w-auto">Gå med med kod</Button>
+          </Link>
+          <Link href="/customer/group-bookings/new" className="flex-1 sm:flex-initial">
+            <Button className="w-full sm:w-auto">Skapa grupprequest</Button>
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (
@@ -136,6 +141,12 @@ export default function CustomerGroupBookingsPage() {
             </p>
             <Link href="/customer/group-bookings/new">
               <Button>Skapa din första grupprequest</Button>
+            </Link>
+            <p className="text-sm text-gray-500 mt-4">
+              Har du fått en kod? Gå med i en befintlig grupprequest.
+            </p>
+            <Link href="/customer/group-bookings/join">
+              <Button variant="outline" className="mt-2">Gå med med kod</Button>
             </Link>
           </CardContent>
         </Card>

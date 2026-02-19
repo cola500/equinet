@@ -212,7 +212,7 @@ export default function ProviderRoutesPage() {
 
                     <Link href={`/provider/routes/${route.id}`}>
                       <Button variant="outline" className="w-full">
-                        {route.status === "planned" ? "Se detaljer" : "Kör rutt"}
+                        {{ planned: "Se detaljer", active: "Kör rutt", completed: "Se historik", cancelled: "Se detaljer" }[route.status] ?? "Se detaljer"}
                       </Button>
                     </Link>
                   </CardContent>
