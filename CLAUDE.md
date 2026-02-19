@@ -179,15 +179,15 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 ## Automated Quality Gates
 
-**Lokal (Husky pre-push):** `npm run test:run` + `npm run typecheck`
+**Lokal (Husky pre-push):** `npm run check:swedish` + `npm run test:run` + `npm run typecheck` + `npm run lint`
 **CI (GitHub Actions):** Unit tests + coverage, E2E, TypeScript, Build
 
 ---
 
 ## Aktuell Sprint: Sprint 2
 
-**Theme:** Fix flakiness -> CI automation -> BookingRepository
-**Goal:** 100% E2E pass rate + Automated quality gates + BookingRepository
+**Theme:** E2E-stabilitet, UX-förbättringar, dokumentation
+**Goal:** 100% E2E pass rate + Ruttplanering/annonsering UX + Dokumentationssynk
 
 > Sprint detaljer: [docs/sprints/](docs/sprints/)
 
@@ -201,4 +201,4 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 ---
 
-**Senast uppdaterad**: 2026-02-18
+**Senast uppdaterad**: 2026-02-19

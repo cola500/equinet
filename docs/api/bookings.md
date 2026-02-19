@@ -24,13 +24,17 @@ Hämta bokningar för inloggad användare.
     "horseInfo": "Lugn häst",
     "customerNotes": "Ring vid ankomst",
     "providerNotes": "Behandlingen gick bra",
+    "routeOrderId": "uuid | null",
     "service": { ... },
-    "provider": { ... }
+    "provider": { ... },
+    "bookingSeries": { "id": "uuid", "intervalWeeks": 4 } | null
   }
 ]
 ```
 
 > `providerNotes` inkluderas bara i provider-vy. Kunder ser inte detta fält.
+> `routeOrderId` sätts om bokningen skapades via en ruttannonsering. Visas som "Via rutt"-badge i kundvyn.
+> `bookingSeries` inkluderas om bokningen tillhör en återkommande serie.
 
 ---
 

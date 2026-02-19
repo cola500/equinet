@@ -129,7 +129,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1800+ unit/integration) + Playwright (115+ E2E desktop, 82+ mobil) = 70% coverage
+- **Testning**: Vitest (1980+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -173,7 +173,7 @@ src/
 
 ### Repository Pattern
 
-Kärndomäner (Booking, Provider, Service) använder repository pattern:
+Kärndomäner (Booking, Provider, Service, CustomerReview, Horse) använder repository pattern:
 
 - **IBookingRepository** - Interface för bokningsoperationer
 - **PrismaBookingRepository** - Prisma-implementation
@@ -185,7 +185,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**25 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
+**26 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
@@ -194,6 +194,8 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - **Horse** - Hästregister med namn, ras, födelseår, kön, UELN, mikrochip, specialbehov
 - **RouteOrder** - Flexibla beställningar utan fast tid
 - **Review / CustomerReview** - Recensioner i båda riktningar
+- **BookingSeries** - Återkommande bokningsserier med intervall
+- **GroupBookingRequest** - Gruppbokningsförfrågningar
 - **ProviderCustomerNote** - Leverantörens privata kundanteckningar
 - **ProviderCustomer** - Manuellt registrerade kunder
 
@@ -207,7 +209,8 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Mobil-först UI med responsiva dialoger, 44px touch targets och stegvist bokningsflöde
 
 ### Leverantörsverktyg
-- Ruttplanering med kartvy och optimering
+- Ruttplanering med kartvy, optimering, Google Maps-navigation och geolokalisering
+- Ruttannonsering med kundvy (tjänstefilter, datumavgränsning, HorseSelect, "Via rutt"-badge)
 - Kundregister med manuell kundregistrering och privata anteckningar (CRUD)
 - Besöksplanering ("Dags för besök") med statusbadges
 - Kompetenser och verifiering (admin-granskning)
@@ -233,6 +236,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 ### Samarbete och kommunikation
 - Recensioner och betyg (båda riktningar)
 - Gruppbokning för stallgemenskaper
+- Ruttannonsering med kundvy (kunder ser lediga tider och bokar sig på annonserade rutter)
 - In-app notifikationer + email
 - Automatiska återbesökspåminnelser
 - Bokningspåminnelser 24h före (med opt-out via unsubscribe-länk)
@@ -249,7 +253,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**1890+ tester** (115+ E2E desktop + 82+ E2E mobil + 1890+ unit/integration) med **70% coverage**.
+**2300+ tester** (325+ E2E desktop + mobil + 1980+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -353,5 +357,5 @@ Feature-backlog hanteras i Trello.
 ---
 
 **Skapad**: November 2025
-**Version**: v0.3.0+
+**Version**: v0.4.0+
 **Utvecklad med**: Next.js 16, TypeScript, Tailwind CSS, Claude Code

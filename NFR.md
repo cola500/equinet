@@ -2,7 +2,7 @@
 
 **Projekt**: Equinet - Bokningsplattform för hästtjänster
 **Version**: v0.3.0+
-**Senast uppdaterad**: 2026-02-07
+**Senast uppdaterad**: 2026-02-19
 **Syfte**: Levande dokument som visar production readiness-status och gap med story-ready acceptance criteria.
 
 **Relaterade dokument:**
@@ -20,9 +20,9 @@
 | Säkerhet & Privacy | 12 | 5 | 71% |
 | Reliability & Availability | 3 | 4 | 43% |
 | Kodkvalitet & Testning | 8 | 3 | 73% |
-| Tillgänglighet | 2 | 5 | 29% |
+| Tillgänglighet | 4 | 3 | 57% |
 | Monitoring & Observability | 3 | 4 | 43% |
-| **Totalt** | **35** | **24** | **59%** |
+| **Totalt** | **37** | **22** | **63%** |
 
 **Prioriterade gap:** P0: 4 st (launch blockers) | P1: 6 st (inom 2 veckor) | P2: 6 st (inom 1 månad)
 
@@ -134,7 +134,7 @@
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 1289+ tester, 101 testfiler (2026-02-07) |
+| Unit/integration-tester | Klart | 1982+ tester, 163 testfiler (2026-02-19) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
@@ -173,14 +173,15 @@
 |------|--------|
 | Semantic HTML | Klart -- button, nav, main |
 | ARIA live regions | Klart -- screen reader-stöd |
+| ARIA labels på formulär | Delvis klart -- MunicipalitySelect, HorseSelect, tjänstefilter |
+| Touch targets >= 44x44px | Klart -- implementerat i bokningsflöde och BottomTabBar |
 
 ### Kvarstår
 
-- ARIA labels på alla form inputs (partial idag)
+- ARIA labels på alla form inputs (delvis implementerat, behöver fullständig audit)
 - Keyboard navigation-testning (tab order, escape för modals)
 - Kontrastverifiering (4.5:1 normal text, 3:1 large text)
 - Screen reader-testning (VoiceOver)
-- Touch targets >= 44x44px
 - Automatiserad tillgänglighetstestning (se NFR-11)
 
 ---
@@ -408,4 +409,4 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 ---
 
 **Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2026-02-07
+**Senast granskad**: 2026-02-19

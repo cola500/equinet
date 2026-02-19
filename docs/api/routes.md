@@ -137,6 +137,26 @@ Sök annonseringar (för kunder).
 | `dateTo` | string | Till datum |
 
 **Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "serviceType": "skoning",
+    "dateFrom": "2026-01-25T00:00:00.000Z",
+    "dateTo": "2026-01-30T00:00:00.000Z",
+    "provider": { "businessName": "...", "firstName": "..." },
+    "routeStops": [
+      { "locationName": "Hästgården", "address": "Stallgatan 5" }
+    ],
+    "services": [
+      { "id": "uuid", "name": "Skoning", "price": 1500, "durationMinutes": 60 }
+    ]
+  }
+]
+```
+
+> `services` inkluderar pris och tidsåtgång, visas som chips i kundvyn.
+> Kunder kan filtrera på `serviceType` och datum (`dateFrom`/`dateTo`). Dagar utanför annonsperioden gråas ut i kalendern.
 
 ---
 
