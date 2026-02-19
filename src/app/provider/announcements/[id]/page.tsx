@@ -8,6 +8,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import {
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 
 interface Booking {
   id: string
@@ -54,6 +64,8 @@ export default function AnnouncementDetailPage() {
   const [data, setData] = useState<AnnouncementData | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   const announcementId = params.id as string
 
@@ -88,6 +100,17 @@ export default function AnnouncementDetailPage() {
       toast.error("Kunde inte hämta annons-detaljer")
     } finally {
       setPageLoading(false)
+    }
+  }
+
+  const handleCancelBooking = async () => {
+    if (!bookingToCancel) return
+    setIsCancelling(true)
+    try {
+      await handleUpdateBookingStatus(bookingToCancel, "cancelled")
+      setBookingToCancel(null)
+    } finally {
+      setIsCancelling(false)
     }
   }
 
@@ -321,7 +344,7 @@ export default function AnnouncementDetailPage() {
                       Bekräfta
                     </Button>
                     <Button
-                      onClick={() => handleUpdateBookingStatus(booking.id, "cancelled")}
+                      onClick={() => setBookingToCancel(booking.id)}
                       variant="outline"
                       size="sm"
                     >
@@ -333,6 +356,31 @@ export default function AnnouncementDetailPage() {
             </Card>
           ))}
         </div>
+      )}
+      {/* Cancel Confirmation Dialog */}
+      {bookingToCancel && (
+        <ResponsiveAlertDialog open={true} onOpenChange={() => setBookingToCancel(null)}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Avboka bokning?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Kunden kommer att meddelas om avbokningen.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel disabled={isCancelling} onClick={() => setBookingToCancel(null)}>
+                Nej, behåll
+              </ResponsiveAlertDialogCancel>
+              <ResponsiveAlertDialogAction
+                onClick={handleCancelBooking}
+                disabled={isCancelling}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isCancelling ? "Avbokar..." : "Ja, avboka"}
+              </ResponsiveAlertDialogAction>
+            </ResponsiveAlertDialogFooter>
+          </ResponsiveAlertDialogContent>
+        </ResponsiveAlertDialog>
       )}
     </ProviderLayout>
   )

@@ -5,8 +5,15 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/hooks/useAuth"
-import { Header } from "@/components/layout/Header"
+import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { MunicipalitySelect } from "@/components/ui/municipality-select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface RouteStop {
   id: string
@@ -20,6 +27,7 @@ interface RouteStop {
 interface AnnouncementService {
   id: string
   name: string
+  price?: number
 }
 
 interface Announcement {
@@ -118,13 +126,9 @@ export default function AnnouncementsPage() {
   const hasActiveFilters = municipality || serviceType
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <CustomerLayout>
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl sm:text-4xl font-bold mb-2">Planerade rutter</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2">Lediga tider i ditt område</h1>
           <p className="text-gray-600 mb-8">
             Hitta leverantörer som besöker din kommun och boka direkt
           </p>
@@ -155,6 +159,36 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
 
+              {/* Service Type Filter */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-gray-700">Tjänstetyp:</span>
+                <div className="max-w-md">
+                  <Select
+                    value={serviceType}
+                    onValueChange={(value) => {
+                      const newValue = value === "__all__" ? "" : value
+                      setServiceType(newValue)
+                      fetchAnnouncements({
+                        municipality: municipality || undefined,
+                        serviceType: newValue || undefined,
+                      })
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Alla tjänstetyper" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Alla tjänstetyper</SelectItem>
+                      <SelectItem value="Hovslagning">Hovslagning</SelectItem>
+                      <SelectItem value="Hovvård">Hovvård</SelectItem>
+                      <SelectItem value="Massage">Massage</SelectItem>
+                      <SelectItem value="Tandvård">Tandvård</SelectItem>
+                      <SelectItem value="Veterinär">Veterinär</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               {/* Action buttons */}
               <div className="flex flex-wrap gap-2 items-center">
                 <Button onClick={handleSearch} size="sm" className="min-h-[44px] sm:min-h-0">Sök</Button>
@@ -174,6 +208,7 @@ export default function AnnouncementsPage() {
                       Kommun: {municipality}
                       <button
                         type="button"
+                        aria-label="Ta bort filter kommun"
                         onClick={() => {
                           setMunicipality("")
                           fetchAnnouncements({
@@ -191,6 +226,7 @@ export default function AnnouncementsPage() {
                       Tjänst: &quot;{serviceType}&quot;
                       <button
                         type="button"
+                        aria-label="Ta bort filter tjänst"
                         onClick={() => {
                           setServiceType("")
                           fetchAnnouncements({
@@ -247,7 +283,7 @@ export default function AnnouncementsPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {hasActiveFilters
                     ? "Inga rutter matchar dina filter"
-                    : "Inga planerade rutter just nu"}
+                    : "Inga lediga tider just nu"}
                 </h3>
                 <p className="text-gray-600 mb-6">
                   {hasActiveFilters
@@ -352,7 +388,7 @@ export default function AnnouncementsPage() {
                               key={service.id}
                               className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"
                             >
-                              {service.name}
+                              {service.name}{service.price ? ` ${service.price} kr` : ""}
                             </span>
                           ))}
                         </div>
@@ -398,7 +434,6 @@ export default function AnnouncementsPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </CustomerLayout>
   )
 }

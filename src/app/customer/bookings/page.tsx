@@ -55,6 +55,7 @@ interface Booking {
   customerNotes?: string
   rescheduleCount: number
   bookingSeriesId?: string | null
+  routeOrderId?: string | null
   service: {
     name: string
     price: number
@@ -433,6 +434,9 @@ export default function CustomerBookingsPage() {
                             <CardTitle>{booking.service.name}</CardTitle>
                             {booking.bookingSeriesId && (
                               <Badge className="bg-purple-100 text-purple-800" variant="secondary">Återkommande</Badge>
+                            )}
+                            {booking.routeOrderId && (
+                              <Badge className="bg-blue-100 text-blue-800" variant="secondary">Via rutt</Badge>
                             )}
                           </div>
                           <CardDescription>

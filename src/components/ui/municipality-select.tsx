@@ -95,7 +95,7 @@ export function MunicipalitySelect({
     if (highlightIndex >= 0 && listRef.current) {
       const items = listRef.current.children
       if (items[highlightIndex]) {
-        items[highlightIndex].scrollIntoView({ block: "nearest" })
+        items[highlightIndex].scrollIntoView?.({ block: "nearest" })
       }
     }
   }, [highlightIndex])
@@ -105,6 +105,11 @@ export function MunicipalitySelect({
       <Input
         id={id}
         type="text"
+        role="combobox"
+        aria-expanded={isOpen && results.length > 0}
+        aria-controls="municipality-listbox"
+        aria-autocomplete="list"
+        aria-activedescendant={highlightIndex >= 0 ? `municipality-option-${highlightIndex}` : undefined}
         value={query}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
@@ -119,11 +124,16 @@ export function MunicipalitySelect({
       {isOpen && results.length > 0 && (
         <ul
           ref={listRef}
+          id="municipality-listbox"
+          role="listbox"
           className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md border bg-white shadow-lg"
         >
           {results.map((municipality, index) => (
             <li
               key={municipality.name}
+              id={`municipality-option-${index}`}
+              role="option"
+              aria-selected={municipality.name === value}
               onClick={() => handleSelect(municipality)}
               className={`cursor-pointer px-3 py-2 text-sm ${
                 index === highlightIndex

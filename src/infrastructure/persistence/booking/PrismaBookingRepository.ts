@@ -360,6 +360,7 @@ export class PrismaBookingRepository
         cancellationMessage: true,
         rescheduleCount: true,
         bookingSeriesId: true,
+        routeOrderId: true,
         isManualBooking: true,
         createdByProviderId: true,
         createdAt: true,
@@ -443,6 +444,7 @@ export class PrismaBookingRepository
         cancellationMessage: true,
         rescheduleCount: true,
         bookingSeriesId: true,
+        routeOrderId: true,
         createdAt: true,
         updatedAt: true,
 
