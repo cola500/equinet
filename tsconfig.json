@@ -42,6 +42,8 @@
     "playwright-report",
     "coverage",
     "dist",
-    "build"
+    "build",
+    "public/sw.js",
+    "src/sw.ts"
   ]
 }

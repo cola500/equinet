@@ -129,7 +129,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (1980+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (2030+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -248,12 +248,13 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Rate limiting, CSRF, XSS, SQL injection-skydd
 - GDPR-dataexport (JSON/CSV)
 - Redis-backade feature flags med admin-toggle
+- Installbar PWA med offline-stöd (Serwist service worker + IndexedDB-cache för leverantörsdata)
 
 Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade beskrivningar.
 
 ## Testning
 
-**2300+ tester** (325+ E2E desktop + mobil + 1980+ unit/integration) med **70% coverage**.
+**2360+ tester** (325+ E2E desktop + mobil + 2030+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

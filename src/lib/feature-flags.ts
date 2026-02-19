@@ -63,6 +63,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Möjlighet att skapa återkommande bokningsserier",
     defaultEnabled: false,
   },
+  offline_mode: {
+    key: "offline_mode",
+    label: "Offlineläge",
+    description: "PWA-stöd med offline-cachning av bokningar och rutter",
+    defaultEnabled: false,
+  },
 }
 
 const REDIS_PREFIX = "feature_flag:"

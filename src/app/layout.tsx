@@ -18,6 +18,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Equinet - Bokningsplattform för hästtjänster",
   description: "Boka hovslagare, veterinärer och andra hästtjänster enkelt",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Equinet",
+  },
 };
 
 export default async function RootLayout({

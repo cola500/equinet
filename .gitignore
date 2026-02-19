@@ -72,3 +72,7 @@ prisma/dev.db
 .sentryclirc
 sentry.properties
 .env*.local
+
+# Generated service worker (built from src/sw.ts)
+public/sw.js
+public/sw.js.map

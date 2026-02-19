@@ -174,6 +174,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **E2E strict selectors**: `getByText('X', { exact: true })` nar delstrangar matchar (t.ex. "Bokningar" vs "Inga bokningar"). Scopa till `page.locator('table')` for att undvika dolda filter-options.
 - **E2E rate-limit reset**: ALLTID `page.request.post('/api/test/reset-rate-limit').catch(() => {})` i `beforeEach` -- saknad reset ar vanligaste orsaken till flaky E2E.
 - **CustomerLayout for alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`). Galler aven `/announcements/`-sidor.
+- **Offline-aware SWR**: Byt global fetcher i `SWRProvider` villkorligt (feature flag). Alla `useSWR`-hooks arver offline-stod automatiskt. Monstret: network-first -> write-through IndexedDB -> catch -> read cache -> throw.
+- **SW tsconfig-isolation**: `src/sw.ts` MASTE exkluderas fran BADA `tsconfig.json` OCH `tsconfig.typecheck.json` (barnets `exclude` overridar foralders).
 
 ---
 

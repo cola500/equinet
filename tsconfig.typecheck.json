@@ -16,6 +16,8 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "e2e/**/*"
+    "e2e/**/*",
+    "public/sw.js",
+    "src/sw.ts"
   ]
 }
