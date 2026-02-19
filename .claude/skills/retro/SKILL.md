@@ -113,12 +113,14 @@ Review the changes and determine which files are relevant. Do NOT update files t
 | `CLAUDE.md` | New patterns, gotchas, or key learnings | "Key Learnings" section at the bottom |
 | `docs/DATABASE-ARCHITECTURE.md` | Schema changes (new tables, fields, relations) | Relevant schema section |
 | `README.md` | New user-facing features | Features list or description |
+| `docs/ANVANDARDOKUMENTATION.md` | New or changed user-facing functionality | Relevant feature section |
 
 **Decision criteria:**
 - Schema changed? -> DATABASE-ARCHITECTURE.md
 - New API endpoints? -> `docs/api/<domain>.md` + index row in `docs/API.md`
 - New patterns or gotchas discovered? -> CLAUDE.md "Key Learnings"
 - New user-visible feature? -> README.md
+- Changed how users interact with a feature? -> docs/ANVANDARDOKUMENTATION.md
 
 Read each file before editing to find the exact section to update. Make minimal, targeted edits.
 
@@ -143,6 +145,11 @@ For each file identified in step 3:
 ### README.md
 - Update features list if a new user-facing feature was added
 - Keep it brief -- one line per feature
+
+### docs/ANVANDARDOKUMENTATION.md
+- Update when user-facing functionality changes (new features, changed flows, new settings)
+- Add new sections or update existing ones to describe the feature from the user's perspective
+- Keep language non-technical -- this is for end users, not developers
 
 ## 5. Update MEMORY.md
 
