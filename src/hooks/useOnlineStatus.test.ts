@@ -1,12 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { renderHook, act } from "@testing-library/react"
-import { useOnlineStatus } from "./useOnlineStatus"
+import {
+  useOnlineStatus,
+  reportConnectivityLoss,
+  reportConnectivityRestored,
+} from "./useOnlineStatus"
 
 describe("useOnlineStatus", () => {
   let originalNavigator: boolean
 
   beforeEach(() => {
     originalNavigator = navigator.onLine
+    // Reset fetch-based state between tests
+    reportConnectivityRestored()
   })
 
   afterEach(() => {
@@ -15,6 +21,7 @@ describe("useOnlineStatus", () => {
       writable: true,
       configurable: true,
     })
+    reportConnectivityRestored()
   })
 
   it("returns true when browser is online", () => {
@@ -102,5 +109,79 @@ describe("useOnlineStatus", () => {
     // This is tested implicitly since the hook defaults to online
     const { result } = renderHook(() => useOnlineStatus())
     expect(typeof result.current).toBe("boolean")
+  })
+
+  describe("fetch-based connectivity detection", () => {
+    it("returns false when reportConnectivityLoss is called even if navigator.onLine is true", () => {
+      Object.defineProperty(navigator, "onLine", {
+        value: true,
+        writable: true,
+        configurable: true,
+      })
+
+      const { result } = renderHook(() => useOnlineStatus())
+      expect(result.current).toBe(true)
+
+      act(() => {
+        reportConnectivityLoss()
+      })
+
+      expect(result.current).toBe(false)
+    })
+
+    it("returns true when reportConnectivityRestored is called after loss", () => {
+      Object.defineProperty(navigator, "onLine", {
+        value: true,
+        writable: true,
+        configurable: true,
+      })
+
+      const { result } = renderHook(() => useOnlineStatus())
+
+      act(() => {
+        reportConnectivityLoss()
+      })
+      expect(result.current).toBe(false)
+
+      act(() => {
+        reportConnectivityRestored()
+      })
+      expect(result.current).toBe(true)
+    })
+
+    it("online event restores connectivity after fetchFailed", () => {
+      Object.defineProperty(navigator, "onLine", {
+        value: true,
+        writable: true,
+        configurable: true,
+      })
+
+      const { result } = renderHook(() => useOnlineStatus())
+
+      act(() => {
+        reportConnectivityLoss()
+      })
+      expect(result.current).toBe(false)
+
+      // Simulate browser online event (network restored)
+      act(() => {
+        window.dispatchEvent(new Event("online"))
+      })
+      expect(result.current).toBe(true)
+    })
+
+    it("subscribes to connectivity-change event", () => {
+      const addSpy = vi.spyOn(window, "addEventListener")
+
+      const { unmount } = renderHook(() => useOnlineStatus())
+
+      expect(addSpy).toHaveBeenCalledWith(
+        "connectivity-change",
+        expect.any(Function)
+      )
+
+      unmount()
+      addSpy.mockRestore()
+    })
   })
 })

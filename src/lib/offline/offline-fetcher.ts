@@ -1,4 +1,8 @@
 import { cacheEndpoint, getCachedEndpoint } from "./cache-manager"
+import {
+  reportConnectivityLoss,
+  reportConnectivityRestored,
+} from "@/hooks/useOnlineStatus"
 
 /** Endpoints whose responses are cached in IndexedDB for offline access */
 export const CACHEABLE_ENDPOINTS = [
@@ -29,6 +33,9 @@ export async function offlineAwareFetcher(url: string): Promise<any> {
     }
     const data = await res.json()
 
+    // Network succeeded -- restore connectivity state (iOS fix)
+    reportConnectivityRestored()
+
     // 2. Write-through to IndexedDB (fire-and-forget)
     if (isCacheable(url)) {
       cacheEndpoint(url, data).catch(() => {
@@ -38,6 +45,11 @@ export async function offlineAwareFetcher(url: string): Promise<any> {
 
     return data
   } catch (networkError) {
+    // Report actual connectivity loss (navigator.onLine is unreliable on iOS)
+    if (networkError instanceof TypeError) {
+      reportConnectivityLoss()
+    }
+
     // 3. Network failed -- try cache fallback
     if (isCacheable(url)) {
       const cached = await getCachedEndpoint(url)

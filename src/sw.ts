@@ -94,11 +94,10 @@ const serwist = new Serwist({
       {
         url: "/~offline",
         matcher({ request }) {
-          // Catch both hard navigation (document) AND client-side navigation (RSC)
-          return (
-            request.destination === "document" ||
-            request.headers.get("RSC") === "1"
-          )
+          // Only catch document requests (hard navigation, refresh).
+          // RSC requests must NOT get HTML fallback -- Next.js can't parse HTML
+          // as RSC protocol, causing a crash. RSC failures propagate to error.tsx.
+          return request.destination === "document"
         },
       },
     ],

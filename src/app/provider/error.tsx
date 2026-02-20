@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { WifiOff, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { useOnlineStatus, reportConnectivityLoss } from "@/hooks/useOnlineStatus"
 import { debugLog } from "@/lib/offline/debug-logger"
 
 export default function ProviderError({
@@ -16,6 +16,16 @@ export default function ProviderError({
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
+    // Detect network errors (iOS: navigator.onLine stays true when network is down)
+    const msg = error.message ?? ""
+    const isNetworkError =
+      msg.includes("fetch") ||
+      msg.includes("Load failed") ||
+      msg.includes("NetworkError")
+    if (isNetworkError) {
+      reportConnectivityLoss()
+    }
+
     if (isOnline) {
       console.error("Provider error:", error)
     }

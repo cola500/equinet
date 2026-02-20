@@ -4,8 +4,10 @@ import userEvent from "@testing-library/user-event"
 
 // Mock useOnlineStatus before importing component
 let mockIsOnline = true
+const mockReportConnectivityLoss = vi.fn()
 vi.mock("@/hooks/useOnlineStatus", () => ({
   useOnlineStatus: () => mockIsOnline,
+  reportConnectivityLoss: (...args: unknown[]) => mockReportConnectivityLoss(...args),
 }))
 
 import ProviderError from "./error"
@@ -91,6 +93,29 @@ describe("ProviderError (error boundary)", () => {
 
       expect(consoleSpy).not.toHaveBeenCalled()
       consoleSpy.mockRestore()
+    })
+  })
+
+  describe("network error detection (iOS fix)", () => {
+    it("calls reportConnectivityLoss when error message contains 'fetch'", () => {
+      const networkError = new Error("Failed to fetch")
+      render(<ProviderError error={networkError} reset={mockReset} />)
+
+      expect(mockReportConnectivityLoss).toHaveBeenCalled()
+    })
+
+    it("calls reportConnectivityLoss when error message contains 'Load failed'", () => {
+      const safariError = new Error("Load failed")
+      render(<ProviderError error={safariError} reset={mockReset} />)
+
+      expect(mockReportConnectivityLoss).toHaveBeenCalled()
+    })
+
+    it("does NOT call reportConnectivityLoss for non-network errors", () => {
+      const normalError = new Error("Something else went wrong")
+      render(<ProviderError error={normalError} reset={mockReset} />)
+
+      expect(mockReportConnectivityLoss).not.toHaveBeenCalled()
     })
   })
 })
