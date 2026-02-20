@@ -2,6 +2,15 @@ import "fake-indexeddb/auto"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { offlineAwareFetcher, CACHEABLE_ENDPOINTS } from "./offline-fetcher"
 import { offlineDb } from "./db"
+import {
+  reportConnectivityLoss,
+  reportConnectivityRestored,
+} from "@/hooks/useOnlineStatus"
+
+vi.mock("@/hooks/useOnlineStatus", () => ({
+  reportConnectivityLoss: vi.fn(),
+  reportConnectivityRestored: vi.fn(),
+}))
 
 // Mock global fetch
 const mockFetch = vi.fn()
@@ -9,12 +18,12 @@ const mockFetch = vi.fn()
 describe("offlineAwareFetcher", () => {
   beforeEach(async () => {
     vi.stubGlobal("fetch", mockFetch)
+    vi.clearAllMocks()
     await offlineDb.bookings.clear()
     await offlineDb.routes.clear()
     await offlineDb.profile.clear()
     await offlineDb.metadata.clear()
     await offlineDb.endpointCache.clear()
-    mockFetch.mockReset()
   })
 
   afterEach(() => {
@@ -198,6 +207,49 @@ describe("offlineAwareFetcher", () => {
       await expect(
         offlineAwareFetcher("/api/admin/settings")
       ).rejects.toThrow()
+    })
+  })
+
+  describe("connectivity reporting", () => {
+    it("calls reportConnectivityRestored on successful fetch", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ data: "ok" }),
+      })
+
+      await offlineAwareFetcher("/api/bookings")
+
+      expect(reportConnectivityRestored).toHaveBeenCalled()
+    })
+
+    it("calls reportConnectivityLoss on TypeError (network failure)", async () => {
+      const now = Date.now()
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "1" }],
+        cachedAt: now,
+      })
+
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      await offlineAwareFetcher("/api/bookings")
+
+      expect(reportConnectivityLoss).toHaveBeenCalled()
+    })
+
+    it("does NOT call reportConnectivityLoss on non-TypeError errors", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+      })
+
+      try {
+        await offlineAwareFetcher("/api/bookings")
+      } catch {
+        // expected
+      }
+
+      expect(reportConnectivityLoss).not.toHaveBeenCalled()
     })
   })
 })

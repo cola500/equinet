@@ -177,6 +177,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Offline-aware SWR**: Byt global fetcher i `SWRProvider` villkorligt (feature flag). Alla `useSWR`-hooks arver offline-stod automatiskt. Monstret: network-first -> write-through IndexedDB -> catch -> read cache -> throw.
 - **SW tsconfig-isolation**: `src/sw.ts` MASTE exkluderas fran BADA `tsconfig.json` OCH `tsconfig.typecheck.json` (barnets `exclude` overridar foralders).
 - **Error boundaries for offline**: `error.tsx` med `useOnlineStatus()` -- offline visar WifiOff-UI, online visar generisk error-UI. Importera ALDRIG layout-komponenter i error.tsx (kraschar error boundary:n ar vi tillbaka pa ruta ett).
+- **useSession vs navigator.onLine race condition**: `useSession()` rapporterar `"unauthenticated"` ~2s FORE `navigator.onLine` andras. Utfor ALDRIG destruktiva operationer (cache-rensning) baserat pa "unauthenticated + online" -- det kan betyda "natverk nere". Lat sessionStorage rensas naturligt vid flik-stangning.
+- **Offline-navigeringsskydd**: Blockera `Link`-klick med `e.preventDefault()` + `toast.error()` nar offline och ej pa aktiv sida. Forhindrar RSC-request som ger cache miss -> `/~offline` -> krasch. Pattern i `BottomTabBar.tsx` och `ProviderNav.tsx`.
 
 ---
 
