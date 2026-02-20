@@ -107,19 +107,12 @@ describe("bug-report", () => {
       expect(entries[0].message).toContain("Buggrapport skapad")
     })
 
-    it("copies report to clipboard", async () => {
-      const writeText = vi.fn().mockResolvedValue(undefined)
-      Object.defineProperty(navigator, "clipboard", {
-        value: { writeText },
-        writable: true,
-        configurable: true,
-      })
-
+    it("returns the generated report text", async () => {
       const input = makeInput()
       const report = await submitBugReport(input)
 
-      expect(writeText).toHaveBeenCalledWith(report)
       expect(report).toContain("=== EQUINET BUGGRAPPORT ===")
+      expect(report).toContain("Knappen fungerar inte")
     })
   })
 })

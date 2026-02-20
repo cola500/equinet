@@ -66,11 +66,5 @@ export async function submitBugReport(input: BugReportInput): Promise<string> {
     description: input.description,
   })
 
-  try {
-    await navigator.clipboard.writeText(report)
-  } catch {
-    // Clipboard may not be available in all contexts
-  }
-
   return report
 }
