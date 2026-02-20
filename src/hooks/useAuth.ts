@@ -1,8 +1,9 @@
 "use client"
 
-import { useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useOnlineStatus } from "./useOnlineStatus"
+
+const SESSION_STORAGE_KEY = "equinet-auth-cache"
 
 interface CachedAuth {
   user: any
@@ -15,34 +16,55 @@ interface CachedAuth {
 export function useAuth() {
   const { data: session, status } = useSession()
   const isOnline = useOnlineStatus()
-  const cachedAuthRef = useRef<CachedAuth | null>(null)
 
-  // When online and authenticated, cache the session data
+  // Cache session to sessionStorage when authenticated
   if (status === "authenticated" && session?.user) {
-    cachedAuthRef.current = {
-      user: session.user,
-      isProvider: session.user.userType === "provider",
-      isCustomer: session.user.userType === "customer",
-      isAdmin: session.user.isAdmin === true,
-      providerId: session.user.providerId ?? null,
+    try {
+      sessionStorage.setItem(
+        SESSION_STORAGE_KEY,
+        JSON.stringify({
+          user: session.user,
+          isProvider: session.user.userType === "provider",
+          isCustomer: session.user.userType === "customer",
+          isAdmin: session.user.isAdmin === true,
+          providerId: session.user.providerId ?? null,
+        })
+      )
+    } catch {
+      /* quota exceeded -- ignore */
     }
   }
 
-  // Offline: return cached session if available
-  if (!isOnline && cachedAuthRef.current) {
-    return {
-      user: cachedAuthRef.current.user,
-      isAuthenticated: true,
-      isLoading: false,
-      isProvider: cachedAuthRef.current.isProvider,
-      isCustomer: cachedAuthRef.current.isCustomer,
-      isAdmin: cachedAuthRef.current.isAdmin,
-      providerId: cachedAuthRef.current.providerId,
+  // Clear cache on explicit logout (unauthenticated while online)
+  if (status === "unauthenticated" && isOnline) {
+    try {
+      sessionStorage.removeItem(SESSION_STORAGE_KEY)
+    } catch {
+      /* ignore */
     }
   }
 
-  // Offline with no cached session: return loading to prevent redirect to login
+  // Offline: try sessionStorage cache
   if (!isOnline && status !== "authenticated") {
+    try {
+      const cached = sessionStorage.getItem(SESSION_STORAGE_KEY)
+      if (cached) {
+        const parsed: CachedAuth = JSON.parse(cached)
+        return {
+          user: parsed.user,
+          isAuthenticated: true,
+          isLoading: false,
+          isProvider: parsed.isProvider,
+          isCustomer: parsed.isCustomer,
+          isAdmin: parsed.isAdmin,
+          providerId: parsed.providerId,
+        }
+      }
+    } catch {
+      /* parse error -- fall through */
+    }
+
+    // No cache at all -- return loading to prevent redirect
     return {
       user: undefined,
       isAuthenticated: false,

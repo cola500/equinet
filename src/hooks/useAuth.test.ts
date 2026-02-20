@@ -13,6 +13,8 @@ vi.mock('./useOnlineStatus', () => ({
 
 import { useOnlineStatus } from './useOnlineStatus'
 
+const SESSION_STORAGE_KEY = 'equinet-auth-cache'
+
 const mockProviderSession = {
   user: {
     id: '456',
@@ -37,6 +39,7 @@ const mockCustomerSession = {
 describe('useAuth', () => {
   beforeEach(() => {
     vi.mocked(useOnlineStatus).mockReturnValue(true)
+    sessionStorage.clear()
   })
 
   afterEach(() => {
@@ -107,7 +110,74 @@ describe('useAuth', () => {
     expect(result.current.providerId).toBe('p123')
   })
 
+  describe('sessionStorage caching', () => {
+    it('should write to sessionStorage when authenticated', () => {
+      vi.mocked(useSession).mockReturnValue({
+        data: mockProviderSession,
+        status: 'authenticated',
+        update: vi.fn(),
+      })
+
+      renderHook(() => useAuth())
+
+      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
+      expect(stored).not.toBeNull()
+      const parsed = JSON.parse(stored!)
+      expect(parsed.user).toEqual(mockProviderSession.user)
+      expect(parsed.isProvider).toBe(true)
+      expect(parsed.isCustomer).toBe(false)
+      expect(parsed.providerId).toBe('p123')
+    })
+
+    it('should clear sessionStorage on explicit logout (unauthenticated + online)', () => {
+      // Seed sessionStorage as if we were previously authenticated
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+        user: mockProviderSession.user,
+        isProvider: true,
+        isCustomer: false,
+        isAdmin: false,
+        providerId: 'p123',
+      }))
+
+      vi.mocked(useOnlineStatus).mockReturnValue(true)
+      vi.mocked(useSession).mockReturnValue({
+        data: null,
+        status: 'unauthenticated',
+        update: vi.fn(),
+      })
+
+      renderHook(() => useAuth())
+
+      expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).toBeNull()
+    })
+  })
+
   describe('offline resilience', () => {
+    it('should return cached session from sessionStorage when offline', () => {
+      // Seed sessionStorage as if a previous render cached it
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+        user: mockProviderSession.user,
+        isProvider: true,
+        isCustomer: false,
+        isAdmin: false,
+        providerId: 'p123',
+      }))
+
+      vi.mocked(useOnlineStatus).mockReturnValue(false)
+      vi.mocked(useSession).mockReturnValue({
+        data: null,
+        status: 'unauthenticated',
+        update: vi.fn(),
+      })
+
+      const { result } = renderHook(() => useAuth())
+
+      expect(result.current.isAuthenticated).toBe(true)
+      expect(result.current.isProvider).toBe(true)
+      expect(result.current.user).toEqual(mockProviderSession.user)
+      expect(result.current.providerId).toBe('p123')
+    })
+
     it('should return cached session when offline and useSession reports unauthenticated', () => {
       // First render: online + authenticated (caches the session)
       vi.mocked(useSession).mockReturnValue({
@@ -130,7 +200,7 @@ describe('useAuth', () => {
 
       rerender()
 
-      // Should still return cached session
+      // Should still return cached session (from sessionStorage)
       expect(result.current.isAuthenticated).toBe(true)
       expect(result.current.isProvider).toBe(true)
       expect(result.current.user).toEqual(mockProviderSession.user)
@@ -226,6 +296,29 @@ describe('useAuth', () => {
       // Should return cached session, not loading
       expect(result.current.isAuthenticated).toBe(true)
       expect(result.current.isProvider).toBe(true)
+    })
+
+    it('should NOT clear sessionStorage when unauthenticated + offline', () => {
+      // Seed sessionStorage
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+        user: mockProviderSession.user,
+        isProvider: true,
+        isCustomer: false,
+        isAdmin: false,
+        providerId: 'p123',
+      }))
+
+      vi.mocked(useOnlineStatus).mockReturnValue(false)
+      vi.mocked(useSession).mockReturnValue({
+        data: null,
+        status: 'unauthenticated',
+        update: vi.fn(),
+      })
+
+      renderHook(() => useAuth())
+
+      // Should NOT clear -- only clear on explicit logout (online)
+      expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).not.toBeNull()
     })
   })
 })

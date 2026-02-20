@@ -1,6 +1,7 @@
 import { defaultCache, PAGES_CACHE_NAME } from "@serwist/next/worker"
 import type { PrecacheEntry, RuntimeCaching } from "serwist"
 import { Serwist, NetworkFirst, ExpirationPlugin } from "serwist"
+import { authSessionMatcher } from "./sw-matchers"
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (PrecacheEntry | string)[]
@@ -24,6 +25,17 @@ const PAGE_TIMEOUT = 3
  * continue to match from defaultCache further down the list.
  */
 const navigationCaching: RuntimeCaching[] = [
+  // Auth session: cache so useSession() works offline
+  {
+    matcher: authSessionMatcher,
+    handler: new NetworkFirst({
+      cacheName: "auth-session",
+      plugins: [
+        new ExpirationPlugin({ maxEntries: 1, maxAgeSeconds: 24 * 60 * 60 }),
+      ],
+      networkTimeoutSeconds: PAGE_TIMEOUT,
+    }),
+  },
   // RSC Prefetch: Next.js Link prefetch -- NetworkFirst with fast timeout
   {
     matcher: ({ request, url: { pathname }, sameOrigin }) =>
