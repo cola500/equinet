@@ -67,7 +67,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     key: "offline_mode",
     label: "Offlineläge",
     description: "PWA-stöd med offline-cachning av bokningar och rutter",
-    defaultEnabled: false,
+    defaultEnabled: true,
   },
 }
 

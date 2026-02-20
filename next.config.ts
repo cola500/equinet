@@ -146,12 +146,14 @@ const sentryWebpackPluginOptions = {
   project: process.env.SENTRY_PROJECT,
 };
 
-// Wrap with Serwist (service worker) - disabled in dev to avoid Turbopack issues
+// Wrap with Serwist (service worker)
+// Active in all environments by default. Opt-out with DISABLE_SW=true.
+// Standard `dev` (Turbopack) should use DISABLE_SW=true; `dev:offline` runs webpack with SW enabled.
 const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
   swSrc: "src/sw.ts",
   swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
+  disable: process.env.DISABLE_SW === "true",
   additionalPrecacheEntries: [{ url: "/~offline", revision }],
 })
 

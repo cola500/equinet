@@ -85,6 +85,55 @@ export async function getCachedProfile(): Promise<any | null> {
   return record.data
 }
 
+// -- Generic endpoint cache --
+
+/** Cache any endpoint response by full URL (including query string) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function cacheEndpoint(url: string, data: any): Promise<void> {
+  const now = Date.now()
+  await offlineDb.endpointCache.put({ url, data, cachedAt: now })
+}
+
+/**
+ * Get cached endpoint response.
+ * 1. Try exact URL match first
+ * 2. If URL has query params and no exact match, fall back to base URL (strip query)
+ * 3. Return null if nothing found or stale
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getCachedEndpoint(url: string): Promise<any | null> {
+  const now = Date.now()
+
+  // Try exact match
+  const exact = await offlineDb.endpointCache.get(url)
+  if (exact && now - exact.cachedAt <= MAX_AGE_MS) {
+    return exact.data
+  }
+
+  // Fallback: strip query and try base URL
+  const qIndex = url.indexOf("?")
+  if (qIndex > 0) {
+    const baseUrl = url.substring(0, qIndex)
+    const base = await offlineDb.endpointCache.get(baseUrl)
+    if (base && now - base.cachedAt <= MAX_AGE_MS) {
+      return base.data
+    }
+  }
+
+  return null
+}
+
+/** Invalidate all cached entries whose URL starts with the given prefix */
+export async function invalidateEndpointCache(urlPrefix: string): Promise<void> {
+  const allEntries = await offlineDb.endpointCache.toArray()
+  const keysToDelete = allEntries
+    .filter((e) => e.url === urlPrefix || e.url.startsWith(urlPrefix + "?"))
+    .map((e) => e.url)
+  if (keysToDelete.length > 0) {
+    await offlineDb.endpointCache.bulkDelete(keysToDelete)
+  }
+}
+
 // -- Cleanup --
 
 export async function clearAllOfflineData(): Promise<void> {
@@ -93,5 +142,6 @@ export async function clearAllOfflineData(): Promise<void> {
     offlineDb.routes.clear(),
     offlineDb.profile.clear(),
     offlineDb.metadata.clear(),
+    offlineDb.endpointCache.clear(),
   ])
 }
