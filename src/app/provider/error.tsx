@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { WifiOff, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { debugLog } from "@/lib/offline/debug-logger"
 
 export default function ProviderError({
   error,
@@ -18,6 +19,10 @@ export default function ProviderError({
     if (isOnline) {
       console.error("Provider error:", error)
     }
+    debugLog("error", "error", `Provider error: ${error.message}`, {
+      digest: error.digest,
+      stack: error.stack?.slice(0, 500),
+    })
   }, [error, isOnline])
 
   if (!isOnline) {
