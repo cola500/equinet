@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Mark all notifications as read
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await auth()
 

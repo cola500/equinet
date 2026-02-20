@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest"
 import {
   calculateAvailableSlots,
-  TimeSlot,
   BookedSlot,
 } from "./slotCalculator"
 

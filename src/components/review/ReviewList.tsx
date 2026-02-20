@@ -49,44 +49,38 @@ export function ReviewList({
   const limit = 10
 
   useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setIsLoading(true)
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+        })
+        const response = await fetch(`/api/providers/${providerId}/reviews?${params}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (page === 1) {
+            setReviews(data.reviews)
+          } else {
+            setReviews((prev) => [...prev, ...data.reviews])
+          }
+          setTotalCount(data.totalCount)
+          setAverageRating(data.averageRating)
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     fetchReviews()
   }, [providerId, page])
 
-  const fetchReviews = async () => {
-    try {
-      setIsLoading(true)
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      })
-      const response = await fetch(`/api/providers/${providerId}/reviews?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (page === 1) {
-          setReviews(data.reviews)
-        } else {
-          setReviews((prev) => [...prev, ...data.reviews])
-        }
-        setTotalCount(data.totalCount)
-        setAverageRating(data.averageRating)
-      }
-    } catch (error) {
-      console.error("Error fetching reviews:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   // Refresh reviews (e.g., after reply)
-  const refresh = () => {
+  const _refresh = () => {
     setPage(1)
-    fetchReviews()
   }
-
-  // Expose refresh for parent
-  useEffect(() => {
-    // Re-fetch when page resets to 1 (after reply/delete)
-  }, [])
 
   const hasMore = reviews.length < totalCount
 

@@ -75,7 +75,7 @@ export async function PUT(
     let body
     try {
       body = await request.json()
-    } catch (jsonError) {
+    } catch (_jsonError) {
       return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
     }
 

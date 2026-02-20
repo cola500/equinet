@@ -107,7 +107,7 @@ export default function ProvidersPage() {
       clearTimeout(timer)
       setIsSearching(false)
     }
-  }, [search, city])
+  }, [search, city, radiusKm, userLocation])
 
   // Fetch providers visiting a specific area
   useEffect(() => {
@@ -184,7 +184,7 @@ export default function ProvidersPage() {
     }
   }
 
-  const handleSearch = (e: React.FormEvent) => {
+  const _handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     const geo = userLocation
       ? { latitude: userLocation.lat, longitude: userLocation.lng, radiusKm }

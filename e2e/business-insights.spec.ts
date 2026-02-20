@@ -158,7 +158,7 @@ test.describe('Business Insights (Provider)', () => {
 
     // Click on the first info popover button (near "Avbokningsgrad")
     // InfoPopover renders a button with an info icon
-    const infoButtons = page.getByRole('button').filter({ has: page.locator('svg') });
+    const _infoButtons = page.getByRole('button').filter({ has: page.locator('svg') });
 
     // Find the info button near the Avbokningsgrad KPI
     // Look for buttons inside the KPI grid area

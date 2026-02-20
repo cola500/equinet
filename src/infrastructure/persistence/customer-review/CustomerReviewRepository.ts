@@ -83,7 +83,7 @@ export class CustomerReviewRepository implements ICustomerReviewRepository {
   async delete(id: string): Promise<void> {
     try {
       await prisma.customerReview.delete({ where: { id } })
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore if not found (per IRepository contract)
     }
   }

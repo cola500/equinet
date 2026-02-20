@@ -98,7 +98,7 @@ export class ServiceRepository implements IServiceRepository {
       await prisma.service.delete({
         where: { id },
       })
-    } catch (error) {
+    } catch (_error) {
       // If service doesn't exist, Prisma throws an error
       // We silently ignore it as per the contract
     }

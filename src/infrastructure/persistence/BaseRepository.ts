@@ -27,8 +27,6 @@
  * }
  * ```
  */
-import { Result } from '@/domain/shared'
-
 /**
  * Generic repository interface for aggregate roots
  */

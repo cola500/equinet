@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 
 // GET - List pending verification requests (admin only)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
 

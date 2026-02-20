@@ -683,7 +683,7 @@ describe('POST /api/provider/customers', () => {
       phone: '070-1234567',
       email: 'anna@test.com',
     }))
-    const data = await response.json()
+    const _data = await response.json()
 
     expect(response.status).toBe(201)
     expect(createGhostUser).toHaveBeenCalledWith({

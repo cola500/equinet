@@ -4,7 +4,7 @@
  * Tests for travel time validation between bookings.
  */
 import { describe, it, expect } from 'vitest'
-import { TravelTimeService, BookingWithLocation, TravelTimeConfig } from './TravelTimeService'
+import { TravelTimeService, BookingWithLocation } from './TravelTimeService'
 import { Location } from '@/domain/shared/Location'
 
 describe('TravelTimeService', () => {

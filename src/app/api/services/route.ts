@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
@@ -16,7 +15,7 @@ const serviceSchema = z.object({
 })
 
 // GET all services for logged-in provider
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()

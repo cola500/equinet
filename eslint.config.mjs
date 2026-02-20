@@ -34,6 +34,8 @@ export default [
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
         },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
@@ -65,6 +67,9 @@ export default [
       "*.config.js",
       "*.config.mjs",
       "next-env.d.ts",
+      "public/sw.js",
+      "public/swe-worker*.js",
+      "public/swe-worker*.js.map",
     ],
   },
 ];

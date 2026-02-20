@@ -4,7 +4,6 @@ import {
   BookingServiceDeps,
   CreateBookingDTO,
   CreateManualBookingDTO,
-  RescheduleBookingDTO,
   ServiceInfo,
   ProviderInfo,
   ProviderRescheduleInfo,
@@ -1336,7 +1335,7 @@ describe('BookingService', () => {
     // Future date to ensure bookings are in the future
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 7)
-    const futureDateStr = futureDate.toISOString().split('T')[0]
+    const _futureDateStr = futureDate.toISOString().split('T')[0]
 
     const newFutureDate = new Date()
     newFutureDate.setDate(newFutureDate.getDate() + 10)

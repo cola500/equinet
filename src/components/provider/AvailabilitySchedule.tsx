@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -35,11 +35,7 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
   const [isSaving, setIsSaving] = useState(false)
   const [schedule, setSchedule] = useState<AvailabilityDay[]>([])
 
-  useEffect(() => {
-    fetchSchedule()
-  }, [providerId])
-
-  const fetchSchedule = async () => {
+  const fetchSchedule = useCallback(async () => {
     try {
       setIsLoading(true)
       const response = await fetch(`/api/providers/${providerId}/availability-schedule`)
@@ -75,7 +71,11 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [providerId])
+
+  useEffect(() => {
+    fetchSchedule()
+  }, [fetchSchedule])
 
   const handleSave = async () => {
     try {

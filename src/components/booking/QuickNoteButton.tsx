@@ -89,7 +89,7 @@ export function QuickNoteButton({
     } finally {
       setIsSaving(false)
     }
-  }, [transcript, bookingId, onNoteSaved, toast, isListening, stopListening])
+  }, [transcript, bookingId, onNoteSaved, isListening, stopListening])
 
   const handleCancel = useCallback(() => {
     setTranscript("")

@@ -174,7 +174,7 @@ describe("POST /api/booking-series", () => {
   })
 
   it("returns 400 for missing required fields", async () => {
-    const { providerId, ...incomplete } = validBody
+    const { providerId: _providerId, ...incomplete } = validBody
     const res = await POST(makeRequest(incomplete))
     expect(res.status).toBe(400)
   })

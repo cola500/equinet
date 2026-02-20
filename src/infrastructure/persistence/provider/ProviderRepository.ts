@@ -178,7 +178,7 @@ export class ProviderRepository implements IProviderRepository {
       await prisma.provider.delete({
         where: { id },
       })
-    } catch (error) {
+    } catch (_error) {
       // If provider doesn't exist, Prisma throws an error
       // We silently ignore it as per the contract
     }

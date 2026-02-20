@@ -65,14 +65,14 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let finalTranscript = ""
-      let interimTranscript = ""
+      let _interimTranscript = ""
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
           finalTranscript += result[0].transcript
         } else {
-          interimTranscript += result[0].transcript
+          _interimTranscript += result[0].transcript
         }
       }
 

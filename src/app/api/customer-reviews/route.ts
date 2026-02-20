@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET - List provider's customer reviews (provider only)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
 

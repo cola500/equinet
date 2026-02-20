@@ -22,7 +22,6 @@ import { PrismaBookingRepository } from '@/infrastructure/persistence/booking/Pr
 import { TravelTimeService, BookingWithLocation } from './TravelTimeService'
 import { BookingStatus } from './BookingStatus'
 import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/logger'
 
 /**
  * DTO for creating a booking

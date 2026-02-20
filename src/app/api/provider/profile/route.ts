@@ -26,7 +26,7 @@ const providerProfileSchema = z.object({
 }).strict()
 
 // GET - Fetch current provider profile
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()

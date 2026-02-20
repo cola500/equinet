@@ -4,7 +4,7 @@ import { logger } from "@/lib/logger"
 import { randomBytes } from "crypto"
 
 // GET /api/integrations/fortnox/connect - Start OAuth flow
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
 

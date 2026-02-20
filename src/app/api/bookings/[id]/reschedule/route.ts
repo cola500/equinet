@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { isFeatureEnabled } from "@/lib/feature-flags"

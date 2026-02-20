@@ -16,7 +16,7 @@ const profileSchema = z.object({
 }).strict()
 
 // GET - Fetch current user profile
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
