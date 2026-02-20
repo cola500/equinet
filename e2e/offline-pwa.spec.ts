@@ -49,6 +49,58 @@ test.describe('Offline PWA', () => {
     })
   })
 
+  test.describe('Offline navigation', () => {
+    // These tests require a production build with an active service worker.
+    // They verify that previously visited pages load from the SW cache
+    // when the network is unavailable, and that unvisited pages show
+    // the offline fallback.
+    //
+    // Note: Playwright's context.setOffline() simulates network loss at the
+    // browser level. The service worker still runs and can serve from cache.
+
+    test.skip(true, 'Requires production build with active service worker')
+
+    test('previously visited page loads from cache when offline', async ({ context, page }) => {
+      // 1. Visit dashboard while online (populates SW runtime cache)
+      await page.goto('/provider/dashboard')
+      await page.waitForLoadState('networkidle')
+
+      // 2. Visit bookings while online (populates SW runtime cache)
+      await page.goto('/provider/bookings')
+      await page.waitForLoadState('networkidle')
+
+      // 3. Go offline
+      await context.setOffline(true)
+
+      // 4. Navigate back to dashboard -- should load from cache within 3s timeout
+      await page.goto('/provider/dashboard', { timeout: 15000 })
+      await expect(page.locator('body')).toBeVisible()
+
+      // 5. Restore network
+      await context.setOffline(false)
+    })
+
+    test('unvisited page shows offline fallback when offline', async ({ context, page }) => {
+      // 1. Visit dashboard to establish service worker
+      await page.goto('/provider/dashboard')
+      await page.waitForLoadState('networkidle')
+
+      // 2. Go offline
+      await context.setOffline(true)
+
+      // 3. Try to navigate to a page never visited (not in cache)
+      await page.goto('/provider/voice-log', { timeout: 15000 }).catch(() => {})
+
+      // Should show the offline fallback page
+      await expect(
+        page.getByText('Ingen internetanslutning')
+      ).toBeVisible({ timeout: 15000 })
+
+      // 4. Restore network
+      await context.setOffline(false)
+    })
+  })
+
   test.describe('Service Worker headers', () => {
     test('sw.js has no-cache headers', async ({ page }) => {
       const response = await page.goto('/sw.js')
