@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useServices } from "@/hooks/useServices"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
 import Link from "next/link"
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ErrorState } from "@/components/ui/error-state"
+import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
@@ -19,8 +20,8 @@ import { Wrench, CalendarDays, Users, CalendarRange, Map, Mic } from "lucide-rea
 import { DashboardCharts } from "@/components/provider/DashboardCharts"
 
 export default function ProviderDashboard() {
-  const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const { services, isLoading: isLoadingServices } = useServices()
   const { bookings, isLoading: isLoadingBookings } = useSWRBookings()
   const [routes, setRoutes] = useState([])
@@ -44,12 +45,6 @@ export default function ProviderDashboard() {
       toast.error('Kunde inte hämta data efter flera försök. Kontakta support om problemet kvarstår.')
     },
   })
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs only on mount/auth change
   useEffect(() => {
@@ -147,7 +142,9 @@ export default function ProviderDashboard() {
     <ProviderLayout>
       <h1 className="text-3xl font-bold mb-8">Välkommen tillbaka!</h1>
 
-        {error ? (
+        {error && !isOnline ? (
+          <OfflineErrorState onRetry={fetchData} />
+        ) : error ? (
           <ErrorState
             title="Kunde inte hämta data"
             description={error}

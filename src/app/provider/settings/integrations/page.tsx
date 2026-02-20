@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
@@ -48,7 +48,6 @@ export default function IntegrationsPage() {
 }
 
 function IntegrationsContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const { isLoading: authLoading, isProvider } = useAuth()
   const [fortnoxStatus, setFortnoxStatus] = useState<FortnoxStatus>({
@@ -57,12 +56,6 @@ function IntegrationsContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
-
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
 
   // Handle OAuth callback results
   useEffect(() => {

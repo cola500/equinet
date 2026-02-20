@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { Card, CardContent } from "@/components/ui/card"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Clock, AlertTriangle, CheckCircle } from "lucide-react"
@@ -45,17 +46,12 @@ const statusConfig = {
 }
 
 export default function DueForServicePage() {
-  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const [items, setItems] = useState<DueForServiceItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [filter, setFilter] = useState<Filter>("all")
-
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
 
   useEffect(() => {
     if (isProvider) {
@@ -65,6 +61,7 @@ export default function DueForServicePage() {
 
   const fetchDueItems = async () => {
     setIsLoading(true)
+    setFetchError(false)
     try {
       const params = new URLSearchParams()
       if (filter !== "all") params.set("filter", filter)
@@ -73,9 +70,12 @@ export default function DueForServicePage() {
       if (response.ok) {
         const data = await response.json()
         setItems(data.items)
+      } else {
+        setFetchError(true)
       }
     } catch (error) {
       console.error("Failed to fetch due-for-service:", error)
+      setFetchError(true)
     } finally {
       setIsLoading(false)
     }
@@ -123,8 +123,14 @@ export default function DueForServicePage() {
         </p>
       </div>
 
+      {fetchError && !isOnline && (
+        <div className="mb-6">
+          <OfflineErrorState onRetry={fetchDueItems} />
+        </div>
+      )}
+
       {/* Summary cards */}
-      {!isLoading && items.length > 0 && (
+      {!isLoading && !fetchError && items.length > 0 && (
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="border-red-200">
             <CardContent className="py-4 flex items-center gap-3">

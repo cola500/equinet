@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 
 interface RouteStop {
   id: string
@@ -51,12 +52,7 @@ export default function ProviderAnnouncementsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
+  const { guardMutation } = useOfflineGuard()
 
   useEffect(() => {
     if (isProvider) {
@@ -78,25 +74,27 @@ export default function ProviderAnnouncementsPage() {
   }
 
   const handleCancel = async (id: string) => {
-    try {
-      const response = await fetch(`/api/route-orders/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "cancelled" }),
-      })
+    await guardMutation(async () => {
+      try {
+        const response = await fetch(`/api/route-orders/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "cancelled" }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Failed to cancel announcement")
+        if (!response.ok) {
+          throw new Error("Failed to cancel announcement")
+        }
+
+        toast.success("Rutt-annons avbruten!")
+        fetchAnnouncements()
+      } catch (error) {
+        console.error("Error cancelling announcement:", error)
+        toast.error("Kunde inte avbryta rutt-annons")
       }
-
-      toast.success("Rutt-annons avbruten!")
-      fetchAnnouncements()
-    } catch (error) {
-      console.error("Error cancelling announcement:", error)
-      toast.error("Kunde inte avbryta rutt-annons")
-    }
+    })
   }
 
   const formatDate = (dateString: string) => {

@@ -70,12 +70,6 @@ export default function AnnouncementDetailPage() {
   const announcementId = params.id as string
 
   useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
-
-  useEffect(() => {
     if (isProvider && announcementId) {
       fetchAnnouncementDetails()
     }

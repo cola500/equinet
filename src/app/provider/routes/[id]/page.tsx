@@ -55,12 +55,6 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
-
-  useEffect(() => {
     if (isProvider) {
       fetchRoute()
     }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { InsightsCharts } from "@/components/provider/InsightsCharts"
@@ -32,7 +31,6 @@ const EMPTY_DATA: InsightsData = {
 }
 
 export default function ProviderInsightsPage() {
-  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
   const [data, setData] = useState<InsightsData>(EMPTY_DATA)
   const [isLoading, setIsLoading] = useState(true)
@@ -45,12 +43,6 @@ export default function ProviderInsightsPage() {
       toast.error("Kunde inte hämta insikter efter flera försök.")
     },
   })
-
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
 
   useEffect(() => {
     if (isProvider) {

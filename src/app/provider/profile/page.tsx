@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
@@ -22,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 
 interface ProviderProfile {
   id: string
@@ -51,7 +51,6 @@ interface ProviderProfile {
 }
 
 export default function ProviderProfilePage() {
-  const router = useRouter()
   const { isLoading, isProvider, providerId } = useAuth()
   const { profile: swrProfile, mutate: mutateProfile } = useProviderProfile()
   const profile = swrProfile as ProviderProfile | null
@@ -76,12 +75,7 @@ export default function ProviderProfilePage() {
     serviceAreaKm: null as number | null,
   })
   const [isGeocoding, setIsGeocoding] = useState(false)
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
+  const { guardMutation } = useOfflineGuard()
 
   // Sync form state when SWR profile data arrives or changes
   useEffect(() => {
@@ -108,65 +102,69 @@ export default function ProviderProfilePage() {
   const handlePersonalSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName: personalData.firstName,
-          lastName: personalData.lastName,
-          phone: personalData.phone || undefined,
-        }),
-      })
+    await guardMutation(async () => {
+      try {
+        const response = await fetch("/api/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: personalData.firstName,
+            lastName: personalData.lastName,
+            phone: personalData.phone || undefined,
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Failed to update personal profile")
+        if (!response.ok) {
+          throw new Error("Failed to update personal profile")
+        }
+
+        setIsEditingPersonal(false)
+        toast.success("Personlig information uppdaterad!")
+        mutateProfile()
+      } catch (error) {
+        console.error("Error updating personal profile:", error)
+        toast.error("Kunde inte uppdatera personlig information")
       }
-
-      setIsEditingPersonal(false)
-      toast.success("Personlig information uppdaterad!")
-      mutateProfile()
-    } catch (error) {
-      console.error("Error updating personal profile:", error)
-      toast.error("Kunde inte uppdatera personlig information")
-    }
+    })
   }
 
   const handleBusinessSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    try {
-      const response = await fetch("/api/provider/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          businessName: businessData.businessName,
-          description: businessData.description || undefined,
-          address: businessData.address || undefined,
-          city: businessData.city || undefined,
-          postalCode: businessData.postalCode || undefined,
-          serviceArea: businessData.serviceArea || undefined,
-          latitude: businessData.latitude,
-          longitude: businessData.longitude,
-          serviceAreaKm: businessData.serviceAreaKm,
-        }),
-      })
+    await guardMutation(async () => {
+      try {
+        const response = await fetch("/api/provider/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            businessName: businessData.businessName,
+            description: businessData.description || undefined,
+            address: businessData.address || undefined,
+            city: businessData.city || undefined,
+            postalCode: businessData.postalCode || undefined,
+            serviceArea: businessData.serviceArea || undefined,
+            latitude: businessData.latitude,
+            longitude: businessData.longitude,
+            serviceAreaKm: businessData.serviceAreaKm,
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Failed to update business profile")
+        if (!response.ok) {
+          throw new Error("Failed to update business profile")
+        }
+
+        setIsEditingBusiness(false)
+        toast.success("Företagsinformation uppdaterad!")
+        mutateProfile()
+      } catch (error) {
+        console.error("Error updating business profile:", error)
+        toast.error("Kunde inte uppdatera företagsinformation")
       }
-
-      setIsEditingBusiness(false)
-      toast.success("Företagsinformation uppdaterad!")
-      mutateProfile()
-    } catch (error) {
-      console.error("Error updating business profile:", error)
-      toast.error("Kunde inte uppdatera företagsinformation")
-    }
+    })
   }
 
   const handlePersonalCancel = () => {
@@ -650,25 +648,27 @@ export default function ProviderProfilePage() {
               id="accepting-new-customers"
               checked={profile.acceptingNewCustomers}
               onCheckedChange={async (checked) => {
-                try {
-                  const response = await fetch("/api/provider/profile", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      businessName: profile.businessName,
-                      acceptingNewCustomers: checked,
-                    }),
-                  })
-                  if (!response.ok) throw new Error("Failed to update")
-                  mutateProfile()
-                  toast.success(
-                    checked
-                      ? "Du tar nu emot nya kunder"
-                      : "Du tar nu bara emot befintliga kunder"
-                  )
-                } catch {
-                  toast.error("Kunde inte uppdatera inställningen")
-                }
+                await guardMutation(async () => {
+                  try {
+                    const response = await fetch("/api/provider/profile", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        businessName: profile.businessName,
+                        acceptingNewCustomers: checked,
+                      }),
+                    })
+                    if (!response.ok) throw new Error("Failed to update")
+                    mutateProfile()
+                    toast.success(
+                      checked
+                        ? "Du tar nu emot nya kunder"
+                        : "Du tar nu bara emot befintliga kunder"
+                    )
+                  } catch {
+                    toast.error("Kunde inte uppdatera inställningen")
+                  }
+                })
               }}
             />
           </div>
@@ -698,25 +698,27 @@ export default function ProviderProfilePage() {
               id="reschedule-enabled"
               checked={profile.rescheduleEnabled}
               onCheckedChange={async (checked) => {
-                try {
-                  const response = await fetch("/api/provider/profile", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      businessName: profile.businessName,
-                      rescheduleEnabled: checked,
-                    }),
-                  })
-                  if (!response.ok) throw new Error("Failed to update")
-                  mutateProfile()
-                  toast.success(
-                    checked
-                      ? "Kunder kan nu omboka"
-                      : "Ombokning är avstängt"
-                  )
-                } catch {
-                  toast.error("Kunde inte uppdatera inställningen")
-                }
+                await guardMutation(async () => {
+                  try {
+                    const response = await fetch("/api/provider/profile", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        businessName: profile.businessName,
+                        rescheduleEnabled: checked,
+                      }),
+                    })
+                    if (!response.ok) throw new Error("Failed to update")
+                    mutateProfile()
+                    toast.success(
+                      checked
+                        ? "Kunder kan nu omboka"
+                        : "Ombokning är avstängt"
+                    )
+                  } catch {
+                    toast.error("Kunde inte uppdatera inställningen")
+                  }
+                })
               }}
             />
           </div>
@@ -734,21 +736,23 @@ export default function ProviderProfilePage() {
                 <Select
                   value={String(profile.rescheduleWindowHours)}
                   onValueChange={async (value) => {
-                    try {
-                      const response = await fetch("/api/provider/profile", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          businessName: profile.businessName,
-                          rescheduleWindowHours: parseInt(value, 10),
-                        }),
-                      })
-                      if (!response.ok) throw new Error("Failed to update")
-                      mutateProfile()
-                      toast.success("Ombokningsfönster uppdaterat")
-                    } catch {
-                      toast.error("Kunde inte uppdatera inställningen")
-                    }
+                    await guardMutation(async () => {
+                      try {
+                        const response = await fetch("/api/provider/profile", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            businessName: profile.businessName,
+                            rescheduleWindowHours: parseInt(value, 10),
+                          }),
+                        })
+                        if (!response.ok) throw new Error("Failed to update")
+                        mutateProfile()
+                        toast.success("Ombokningsfönster uppdaterat")
+                      } catch {
+                        toast.error("Kunde inte uppdatera inställningen")
+                      }
+                    })
                   }}
                 >
                   <SelectTrigger className="w-full sm:w-48">
@@ -775,21 +779,23 @@ export default function ProviderProfilePage() {
                 <Select
                   value={String(profile.maxReschedules)}
                   onValueChange={async (value) => {
-                    try {
-                      const response = await fetch("/api/provider/profile", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          businessName: profile.businessName,
-                          maxReschedules: parseInt(value, 10),
-                        }),
-                      })
-                      if (!response.ok) throw new Error("Failed to update")
-                      mutateProfile()
-                      toast.success("Max ombokningar uppdaterat")
-                    } catch {
-                      toast.error("Kunde inte uppdatera inställningen")
-                    }
+                    await guardMutation(async () => {
+                      try {
+                        const response = await fetch("/api/provider/profile", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            businessName: profile.businessName,
+                            maxReschedules: parseInt(value, 10),
+                          }),
+                        })
+                        if (!response.ok) throw new Error("Failed to update")
+                        mutateProfile()
+                        toast.success("Max ombokningar uppdaterat")
+                      } catch {
+                        toast.error("Kunde inte uppdatera inställningen")
+                      }
+                    })
                   }}
                 >
                   <SelectTrigger className="w-full sm:w-48">
@@ -818,25 +824,27 @@ export default function ProviderProfilePage() {
                   id="reschedule-approval"
                   checked={profile.rescheduleRequiresApproval}
                   onCheckedChange={async (checked) => {
-                    try {
-                      const response = await fetch("/api/provider/profile", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          businessName: profile.businessName,
-                          rescheduleRequiresApproval: checked,
-                        }),
-                      })
-                      if (!response.ok) throw new Error("Failed to update")
-                      mutateProfile()
-                      toast.success(
-                        checked
-                          ? "Godkännande krävs nu för ombokningar"
-                          : "Ombokningar bekräftas direkt"
-                      )
-                    } catch {
-                      toast.error("Kunde inte uppdatera inställningen")
-                    }
+                    await guardMutation(async () => {
+                      try {
+                        const response = await fetch("/api/provider/profile", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            businessName: profile.businessName,
+                            rescheduleRequiresApproval: checked,
+                          }),
+                        })
+                        if (!response.ok) throw new Error("Failed to update")
+                        mutateProfile()
+                        toast.success(
+                          checked
+                            ? "Godkännande krävs nu för ombokningar"
+                            : "Ombokningar bekräftas direkt"
+                        )
+                      } catch {
+                        toast.error("Kunde inte uppdatera inställningen")
+                      }
+                    })
                   }}
                 />
               </div>
@@ -867,25 +875,27 @@ export default function ProviderProfilePage() {
               id="recurring-enabled"
               checked={profile.recurringEnabled}
               onCheckedChange={async (checked) => {
-                try {
-                  const response = await fetch("/api/provider/profile", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      businessName: profile.businessName,
-                      recurringEnabled: checked,
-                    }),
-                  })
-                  if (!response.ok) throw new Error("Failed to update")
-                  mutateProfile()
-                  toast.success(
-                    checked
-                      ? "Återkommande bokningar aktiverade"
-                      : "Återkommande bokningar avaktiverade"
-                  )
-                } catch {
-                  toast.error("Kunde inte uppdatera inställningen")
-                }
+                await guardMutation(async () => {
+                  try {
+                    const response = await fetch("/api/provider/profile", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        businessName: profile.businessName,
+                        recurringEnabled: checked,
+                      }),
+                    })
+                    if (!response.ok) throw new Error("Failed to update")
+                    mutateProfile()
+                    toast.success(
+                      checked
+                        ? "Återkommande bokningar aktiverade"
+                        : "Återkommande bokningar avaktiverade"
+                    )
+                  } catch {
+                    toast.error("Kunde inte uppdatera inställningen")
+                  }
+                })
               }}
             />
           </div>
@@ -901,21 +911,23 @@ export default function ProviderProfilePage() {
               <Select
                 value={String(profile.maxSeriesOccurrences)}
                 onValueChange={async (value) => {
-                  try {
-                    const response = await fetch("/api/provider/profile", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        businessName: profile.businessName,
-                        maxSeriesOccurrences: parseInt(value, 10),
-                      }),
-                    })
-                    if (!response.ok) throw new Error("Failed to update")
-                    mutateProfile()
-                    toast.success("Max tillfällen uppdaterat")
-                  } catch {
-                    toast.error("Kunde inte uppdatera inställningen")
-                  }
+                  await guardMutation(async () => {
+                    try {
+                      const response = await fetch("/api/provider/profile", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          businessName: profile.businessName,
+                          maxSeriesOccurrences: parseInt(value, 10),
+                        }),
+                      })
+                      if (!response.ok) throw new Error("Failed to update")
+                      mutateProfile()
+                      toast.success("Max tillfällen uppdaterat")
+                    } catch {
+                      toast.error("Kunde inte uppdatera inställningen")
+                    }
+                  })
                 }}
               >
                 <SelectTrigger className="w-full sm:w-48">

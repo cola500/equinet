@@ -90,12 +90,6 @@ export default function ProviderHorseTimelinePage() {
   const [editNotes, setEditNotes] = useState<string>("")
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
-
   const fetchTimeline = useCallback(async () => {
     try {
       const url = activeFilter

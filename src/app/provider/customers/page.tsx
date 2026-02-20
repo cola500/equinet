@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -86,11 +87,12 @@ interface CustomerNote {
 type StatusFilter = "all" | "active" | "inactive"
 
 export default function ProviderCustomersPage() {
-  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const flags = useFeatureFlags()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null)
@@ -130,12 +132,6 @@ export default function ProviderCustomersPage() {
   const [horseForm, setHorseForm] = useState(emptyHorseForm)
 
   useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
-
-  useEffect(() => {
     if (isProvider) {
       fetchCustomers()
     }
@@ -143,6 +139,7 @@ export default function ProviderCustomersPage() {
 
   const fetchCustomers = async () => {
     setIsLoading(true)
+    setFetchError(false)
     try {
       const params = new URLSearchParams()
       if (statusFilter !== "all") params.set("status", statusFilter)
@@ -152,9 +149,12 @@ export default function ProviderCustomersPage() {
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers)
+      } else {
+        setFetchError(true)
       }
     } catch (error) {
       console.error("Failed to fetch customers:", error)
+      setFetchError(true)
     } finally {
       setIsLoading(false)
     }
@@ -515,6 +515,12 @@ export default function ProviderCustomersPage() {
           </Button>
         </div>
       </div>
+
+      {fetchError && !isOnline && (
+        <div className="mb-6">
+          <OfflineErrorState onRetry={fetchCustomers} />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">

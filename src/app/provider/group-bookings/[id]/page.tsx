@@ -107,12 +107,6 @@ export default function ProviderGroupBookingDetailPage({
     startTime: "09:00",
   })
 
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
-
   const fetchDetail = useCallback(async () => {
     try {
       const response = await fetch(`/api/group-bookings/${id}`)

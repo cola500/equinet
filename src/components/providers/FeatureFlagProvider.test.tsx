@@ -231,6 +231,71 @@ describe("FeatureFlagProvider", () => {
     expect(screen.getByTestId("render-count").textContent).toBe("2")
   })
 
+  it("does not poll when offline", async () => {
+    // Set offline
+    Object.defineProperty(navigator, "onLine", {
+      value: false,
+      writable: true,
+      configurable: true,
+    })
+
+    render(
+      <FeatureFlagProvider initialFlags={{ voice_logging: true }}>
+        <TestConsumer flagKey="voice_logging" />
+      </FeatureFlagProvider>
+    )
+
+    // Advance past polling interval
+    await act(async () => {
+      vi.advanceTimersByTime(120_000)
+    })
+
+    // Should NOT have fetched since we're offline
+    expect(fetchSpy).not.toHaveBeenCalled()
+
+    // Restore online
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    })
+  })
+
+  it("does not fetch on focus when offline", async () => {
+    // Set offline
+    Object.defineProperty(navigator, "onLine", {
+      value: false,
+      writable: true,
+      configurable: true,
+    })
+
+    render(
+      <FeatureFlagProvider initialFlags={{ voice_logging: false }}>
+        <TestConsumer flagKey="voice_logging" />
+      </FeatureFlagProvider>
+    )
+
+    // Advance past staleness threshold
+    await act(async () => {
+      vi.advanceTimersByTime(31_000)
+    })
+
+    // Trigger focus
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"))
+    })
+
+    // Should NOT fetch since we're offline
+    expect(fetchSpy).not.toHaveBeenCalled()
+
+    // Restore online
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    })
+  })
+
   describe("useFeatureFlag", () => {
     it("returns correct value from initial flags", () => {
       render(

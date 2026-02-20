@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -51,7 +50,6 @@ function formatDate(dateStr: string): string {
 }
 
 export default function ProviderGroupBookingsPage() {
-  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
   const [groupBookings, setGroupBookings] = useState<GroupBookingRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -64,12 +62,6 @@ export default function ProviderGroupBookingsPage() {
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
 
   const fetchAvailable = useCallback(async () => {
     try {
