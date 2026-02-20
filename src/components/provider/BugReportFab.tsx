@@ -30,6 +30,7 @@ export function BugReportFab() {
   const [open, setOpen] = useState(false)
   const [description, setDescription] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [reportText, setReportText] = useState<string | null>(null)
 
   if (!enabled) return null
 
@@ -38,7 +39,7 @@ export function BugReportFab() {
     try {
       const logs = await getDebugLogs({ limit: 50 })
 
-      await submitBugReport({
+      const report = await submitBugReport({
         description: description || "(Ingen beskrivning)",
         userAgent: navigator.userAgent,
         screenWidth: window.innerWidth,
@@ -51,14 +52,37 @@ export function BugReportFab() {
         debugLogs: logs,
       })
 
-      toast.success("Rapport kopierad till urklipp")
-      setDescription("")
-      setOpen(false)
+      // Try native share API (mobile)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Equinet buggrapport",
+            text: report,
+          })
+          toast.success("Rapport delad")
+          setDescription("")
+          setOpen(false)
+          return
+        } catch (err) {
+          // User cancelled share - not an error
+          if (err instanceof Error && err.name === "AbortError") return
+          // Other share error - fall through to textarea
+        }
+      }
+
+      // Fallback: show report in textarea for manual copy
+      setReportText(report)
     } catch {
       toast.error("Kunde inte skapa rapport")
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleClose() {
+    setDescription("")
+    setReportText(null)
+    setOpen(false)
   }
 
   return (
@@ -71,32 +95,53 @@ export function BugReportFab() {
         <Bug className="h-5 w-5" />
       </button>
 
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose() }}>
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>Rapportera fel</DrawerTitle>
             <DrawerDescription>
-              Beskriv vad som gick fel. Rapporten inkluderar automatiskt debug-loggar och enhetsinformation.
+              {reportText
+                ? "Rapporten kunde inte delas automatiskt. Markera texten och kopiera den manuellt."
+                : "Beskriv vad som gick fel. Rapporten inkluderar automatiskt debug-loggar och enhetsinformation."}
             </DrawerDescription>
           </DrawerHeader>
 
           <div className="px-4">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Beskriv problemet..."
-              rows={4}
-              className="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-            />
+            {reportText ? (
+              <textarea
+                readOnly
+                aria-label="Buggrapport"
+                value={reportText}
+                rows={10}
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                className="w-full rounded-md border border-gray-300 bg-gray-50 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              />
+            ) : (
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Beskriv problemet..."
+                rows={4}
+                className="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              />
+            )}
           </div>
 
           <DrawerFooter>
-            <Button onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "Skapar..." : "Skapa rapport"}
-            </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Avbryt</Button>
-            </DrawerClose>
+            {reportText ? (
+              <Button variant="outline" onClick={handleClose}>
+                Stäng
+              </Button>
+            ) : (
+              <>
+                <Button onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? "Skapar..." : "Skapa rapport"}
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline">Avbryt</Button>
+                </DrawerClose>
+              </>
+            )}
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
