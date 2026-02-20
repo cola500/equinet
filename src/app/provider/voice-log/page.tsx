@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useVoiceWorkLog } from "@/hooks/useVoiceWorkLog"
@@ -52,12 +51,6 @@ export default function VoiceLogPage() {
     handleConfirm,
     handleLogNext,
   } = useVoiceWorkLog()
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
 
   if (isLoading || !isProvider) {
     return (

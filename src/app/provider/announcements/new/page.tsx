@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 
 interface ProviderService {
   id: string
@@ -33,12 +34,7 @@ export default function NewAnnouncementPage() {
     dateTo: "",
     specialInstructions: "",
   })
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
+  const { guardMutation } = useOfflineGuard()
 
   // Fetch provider's services
   useEffect(() => {
@@ -72,57 +68,60 @@ export default function NewAnnouncementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
 
-    try {
-      if (selectedServiceIds.length === 0) {
-        toast.error("Välj minst en tjänst")
+    await guardMutation(async () => {
+      setIsSubmitting(true)
+
+      try {
+        if (selectedServiceIds.length === 0) {
+          toast.error("Välj minst en tjänst")
+          setIsSubmitting(false)
+          return
+        }
+
+        if (!formData.municipality) {
+          toast.error("Välj en kommun")
+          setIsSubmitting(false)
+          return
+        }
+
+        if (formData.dateTo && formData.dateFrom && new Date(formData.dateTo) < new Date(formData.dateFrom)) {
+          toast.error("Till-datum kan inte vara före från-datum")
+          setIsSubmitting(false)
+          return
+        }
+
+        const payload = {
+          announcementType: "provider_announced",
+          serviceIds: selectedServiceIds,
+          dateFrom: formData.dateFrom,
+          dateTo: formData.dateTo,
+          municipality: formData.municipality,
+          specialInstructions: formData.specialInstructions || undefined,
+        }
+
+        const response = await fetch("/api/route-orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to create announcement")
+        }
+
+        toast.success("Rutt-annons skapad!")
+        router.push("/provider/announcements")
+      } catch (error) {
+        console.error("Error creating announcement:", error)
+        toast.error(error instanceof Error ? error.message : "Kunde inte skapa rutt-annons")
+      } finally {
         setIsSubmitting(false)
-        return
       }
-
-      if (!formData.municipality) {
-        toast.error("Välj en kommun")
-        setIsSubmitting(false)
-        return
-      }
-
-      if (formData.dateTo && formData.dateFrom && new Date(formData.dateTo) < new Date(formData.dateFrom)) {
-        toast.error("Till-datum kan inte vara före från-datum")
-        setIsSubmitting(false)
-        return
-      }
-
-      const payload = {
-        announcementType: "provider_announced",
-        serviceIds: selectedServiceIds,
-        dateFrom: formData.dateFrom,
-        dateTo: formData.dateTo,
-        municipality: formData.municipality,
-        specialInstructions: formData.specialInstructions || undefined,
-      }
-
-      const response = await fetch("/api/route-orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to create announcement")
-      }
-
-      toast.success("Rutt-annons skapad!")
-      router.push("/provider/announcements")
-    } catch (error) {
-      console.error("Error creating announcement:", error)
-      toast.error(error instanceof Error ? error.message : "Kunde inte skapa rutt-annons")
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   if (isLoading || !isProvider) {

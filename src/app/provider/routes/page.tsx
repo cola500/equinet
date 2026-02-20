@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -31,17 +32,11 @@ interface Route {
 }
 
 export default function ProviderRoutesPage() {
-  const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const [routes, setRoutes] = useState<Route[]>([])
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
 
   useEffect(() => {
     if (isProvider) {
@@ -114,13 +109,15 @@ export default function ProviderRoutesPage() {
           </Link>
         </div>
 
-        {error && (
+        {error && !isOnline ? (
+          <OfflineErrorState onRetry={fetchRoutes} />
+        ) : error ? (
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="pt-6">
               <p className="text-red-600">{error}</p>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {isLoadingRoutes ? (
           <p className="text-gray-500">Laddar rutter...</p>

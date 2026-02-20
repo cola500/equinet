@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Button } from "@/components/ui/button"
@@ -103,7 +102,6 @@ const emptyForm = {
 // --- Page ---
 
 export default function ProviderVerificationPage() {
-  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
 
   const [requests, setRequests] = useState<VerificationRequest[]>([])
@@ -116,12 +114,6 @@ export default function ProviderVerificationPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!authLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, authLoading, router])
 
   const fetchRequests = useCallback(async () => {
     try {

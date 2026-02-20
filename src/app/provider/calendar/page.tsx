@@ -6,6 +6,7 @@ import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek
 import { Mic } from "lucide-react"
 import { toast } from "sonner"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useAuth } from "@/hooks/useAuth"
 import { useIsMobile } from "@/hooks/useMediaQuery"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
@@ -56,6 +57,7 @@ function CalendarContent() {
   const [prefillDate, setPrefillDate] = useState<string | undefined>()
   const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
+  const { guardMutation } = useOfflineGuard()
 
   // Sätt dagvy som default på mobil
   useEffect(() => {
@@ -63,12 +65,6 @@ function CalendarContent() {
       setViewMode("day")
     }
   }, [isMobile])
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
 
   // Hämta öppettider
   const fetchAvailability = useCallback(async () => {
@@ -229,106 +225,114 @@ function CalendarContent() {
     latitude?: number | null
     longitude?: number | null
   }) => {
-    if (!providerId) {
-      toast.error("Kunde inte spara - profilen har inte laddats ännu. Försök igen.")
-      throw new Error("Provider ID not available")
-    }
-
-    const response = await fetch(`/api/providers/${providerId}/availability-exceptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-
-    if (response.ok) {
-      toast.success("Undantag sparat!")
-      fetchExceptions()
-    } else {
-      let errorMessage = "Kunde inte spara undantag"
-      try {
-        const errorData = await response.json()
-        errorMessage = errorData.error || errorMessage
-      } catch {
-        // Non-JSON error response - use default message
+    await guardMutation(async () => {
+      if (!providerId) {
+        toast.error("Kunde inte spara - profilen har inte laddats ännu. Försök igen.")
+        throw new Error("Provider ID not available")
       }
-      toast.error(errorMessage)
-      throw new Error("Failed to save exception")
-    }
+
+      const response = await fetch(`/api/providers/${providerId}/availability-exceptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      if (response.ok) {
+        toast.success("Undantag sparat!")
+        fetchExceptions()
+      } else {
+        let errorMessage = "Kunde inte spara undantag"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // Non-JSON error response - use default message
+        }
+        toast.error(errorMessage)
+        throw new Error("Failed to save exception")
+      }
+    })
   }
 
   const handleExceptionDelete = async (date: string) => {
     if (!providerId) return
 
-    const response = await fetch(
-      `/api/providers/${providerId}/availability-exceptions/${date}`,
-      { method: "DELETE" }
-    )
+    await guardMutation(async () => {
+      const response = await fetch(
+        `/api/providers/${providerId}/availability-exceptions/${date}`,
+        { method: "DELETE" }
+      )
 
-    if (response.ok) {
-      toast.success("Undantag borttaget!")
-      fetchExceptions()
-    } else {
-      toast.error("Kunde inte ta bort undantag")
-      throw new Error("Failed to delete exception")
-    }
+      if (response.ok) {
+        toast.success("Undantag borttaget!")
+        fetchExceptions()
+      } else {
+        toast.error("Kunde inte ta bort undantag")
+        throw new Error("Failed to delete exception")
+      }
+    })
   }
 
   const handleAvailabilitySave = async (updatedDay: AvailabilityDay) => {
     if (!providerId) return
 
-    // Uppdatera lokal state
-    const updatedAvailability = availability.map((day) =>
-      day.dayOfWeek === updatedDay.dayOfWeek ? updatedDay : day
-    )
+    await guardMutation(async () => {
+      // Uppdatera lokal state
+      const updatedAvailability = availability.map((day) =>
+        day.dayOfWeek === updatedDay.dayOfWeek ? updatedDay : day
+      )
 
-    try {
-      const response = await fetch(`/api/providers/${providerId}/availability-schedule`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ schedule: updatedAvailability }),
-      })
+      try {
+        const response = await fetch(`/api/providers/${providerId}/availability-schedule`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ schedule: updatedAvailability }),
+        })
 
-      if (response.ok) {
-        setAvailability(updatedAvailability)
-        toast.success("Öppettider uppdaterade!")
-        setAvailabilityDialogOpen(false)
-      } else {
+        if (response.ok) {
+          setAvailability(updatedAvailability)
+          toast.success("Öppettider uppdaterade!")
+          setAvailabilityDialogOpen(false)
+        } else {
+          toast.error("Kunde inte spara öppettider")
+        }
+      } catch (error) {
+        console.error("Error saving availability:", error)
         toast.error("Kunde inte spara öppettider")
       }
-    } catch (error) {
-      console.error("Error saving availability:", error)
-      toast.error("Kunde inte spara öppettider")
-    }
+    })
   }
 
   const handleStatusUpdate = async (bookingId: string, status: string, cancellationMessage?: string) => {
-    try {
-      const body: { status: string; cancellationMessage?: string } = { status }
-      if (cancellationMessage) {
-        body.cancellationMessage = cancellationMessage
+    await guardMutation(async () => {
+      try {
+        const body: { status: string; cancellationMessage?: string } = { status }
+        if (cancellationMessage) {
+          body.cancellationMessage = cancellationMessage
+        }
+
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to update booking")
+        }
+
+        toast.success("Bokning uppdaterad!")
+        handleDialogClose(false)
+        mutateBookings()
+      } catch (error) {
+        console.error("Error updating booking:", error)
+        toast.error("Kunde inte uppdatera bokning")
       }
-
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update booking")
-      }
-
-      toast.success("Bokning uppdaterad!")
-      handleDialogClose(false)
-      mutateBookings()
-    } catch (error) {
-      console.error("Error updating booking:", error)
-      toast.error("Kunde inte uppdatera bokning")
-    }
+    })
   }
 
   // Filtrera bokningar för aktuell period (vecka eller månad)

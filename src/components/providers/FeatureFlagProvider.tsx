@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 
 export const FEATURE_FLAGS_CHANGED_EVENT = "featureflags-changed"
 
@@ -25,6 +26,7 @@ export function FeatureFlagProvider({
 }: FeatureFlagProviderProps) {
   const [flags, setFlags] = useState(initialFlags)
   const lastFetchedRef = useRef(Date.now())
+  const isOnline = useOnlineStatus()
 
   const refetch = useCallback(async () => {
     try {
@@ -54,12 +56,14 @@ export function FeatureFlagProvider({
     }
   }, [refetch])
 
-  // Re-fetch on window focus (e.g. after admin toggle in another tab) -- only if stale
+  // Re-fetch on window focus (e.g. after admin toggle in another tab) -- only if stale and online
   useEffect(() => {
-    const onFocus = () => refetchIfStale()
+    const onFocus = () => {
+      if (isOnline) refetchIfStale()
+    }
     window.addEventListener("focus", onFocus)
     return () => window.removeEventListener("focus", onFocus)
-  }, [refetchIfStale])
+  }, [refetchIfStale, isOnline])
 
   // Re-fetch on custom event (e.g. admin toggle on same page) -- always
   useEffect(() => {
@@ -68,11 +72,12 @@ export function FeatureFlagProvider({
     return () => window.removeEventListener(FEATURE_FLAGS_CHANGED_EVENT, onChanged)
   }, [refetch])
 
-  // Poll every 60s as a safety net
+  // Poll every 60s as a safety net -- paused when offline
   useEffect(() => {
+    if (!isOnline) return
     const interval = setInterval(refetch, 60_000)
     return () => clearInterval(interval)
-  }, [refetch])
+  }, [refetch, isOnline])
 
   return (
     <FeatureFlagContext.Provider value={{ flags }}>

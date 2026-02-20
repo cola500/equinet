@@ -83,12 +83,6 @@ export default function RoutePlanningPage() {
   const [startTime, setStartTime] = useState("08:00")
 
   useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
-
-  useEffect(() => {
     if (isProvider) {
       fetchOrders()
     }

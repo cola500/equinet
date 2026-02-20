@@ -2,6 +2,7 @@
 
 import { useCallback } from "react"
 import useSWR from "swr"
+import { useOnlineStatus } from "./useOnlineStatus"
 
 export interface Notification {
   id: string
@@ -27,12 +28,13 @@ async function fetcher(url: string): Promise<NotificationsResponse> {
 }
 
 export function useNotifications() {
+  const isOnline = useOnlineStatus()
   const { data, error, isLoading, mutate } = useSWR<NotificationsResponse>(
     "/api/notifications?limit=10",
     fetcher,
     {
-      refreshInterval: POLL_INTERVAL_MS,
-      revalidateOnFocus: true,
+      refreshInterval: isOnline ? POLL_INTERVAL_MS : 0,
+      revalidateOnFocus: isOnline,
     }
   )
 

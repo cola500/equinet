@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useServices } from "@/hooks/useServices"
 import { Button } from "@/components/ui/button"
@@ -13,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 
 interface Service {
   id: string
@@ -35,7 +35,6 @@ const INTERVAL_OPTIONS = [
 ]
 
 export default function ProviderServicesPage() {
-  const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const { services, mutate: mutateServices } = useServices()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -48,61 +47,59 @@ export default function ProviderServicesPage() {
     recommendedIntervalWeeks: "",
   })
 
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
+  const { guardMutation } = useOfflineGuard()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    try {
-      const url = editingService
-        ? `/api/services/${editingService.id}`
-        : "/api/services"
+    await guardMutation(async () => {
+      try {
+        const url = editingService
+          ? `/api/services/${editingService.id}`
+          : "/api/services"
 
-      const method = editingService ? "PUT" : "POST"
+        const method = editingService ? "PUT" : "POST"
 
-      // Build payload - only include isActive when updating
-      const payload: any = {
-        name: formData.name,
-        description: formData.description || undefined,
-        price: parseFloat(formData.price),
-        durationMinutes: parseInt(formData.durationMinutes),
-        recommendedIntervalWeeks: formData.recommendedIntervalWeeks
-          ? parseInt(formData.recommendedIntervalWeeks)
-          : null,
+        // Build payload - only include isActive when updating
+        const payload: any = {
+          name: formData.name,
+          description: formData.description || undefined,
+          price: parseFloat(formData.price),
+          durationMinutes: parseInt(formData.durationMinutes),
+          recommendedIntervalWeeks: formData.recommendedIntervalWeeks
+            ? parseInt(formData.recommendedIntervalWeeks)
+            : null,
+        }
+
+        // Only include isActive when editing (PUT), not when creating (POST)
+        if (editingService) {
+          payload.isActive = editingService.isActive
+        }
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to save service")
+        }
+
+        toast.success(
+          editingService ? "Tjänst uppdaterad!" : "Tjänst skapad!"
+        )
+
+        setIsDialogOpen(false)
+        resetForm()
+        mutateServices()
+      } catch (error) {
+        console.error("Error saving service:", error)
+        toast.error("Kunde inte spara tjänst")
       }
-
-      // Only include isActive when editing (PUT), not when creating (POST)
-      if (editingService) {
-        payload.isActive = editingService.isActive
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to save service")
-      }
-
-      toast.success(
-        editingService ? "Tjänst uppdaterad!" : "Tjänst skapad!"
-      )
-
-      setIsDialogOpen(false)
-      resetForm()
-      mutateServices()
-    } catch (error) {
-      console.error("Error saving service:", error)
-      toast.error("Kunde inte spara tjänst")
-    }
+    })
   }
 
   const handleEdit = (service: Service) => {
@@ -122,61 +119,65 @@ export default function ProviderServicesPage() {
       return
     }
 
-    try {
-      const response = await fetch(`/api/services/${id}`, {
-        method: "DELETE",
-      })
+    await guardMutation(async () => {
+      try {
+        const response = await fetch(`/api/services/${id}`, {
+          method: "DELETE",
+        })
 
-      if (!response.ok) {
-        throw new Error("Failed to delete service")
+        if (!response.ok) {
+          throw new Error("Failed to delete service")
+        }
+
+        toast.success("Tjänst borttagen!")
+        mutateServices()
+      } catch (error) {
+        console.error("Error deleting service:", error)
+        toast.error("Kunde inte ta bort tjänst")
       }
-
-      toast.success("Tjänst borttagen!")
-      mutateServices()
-    } catch (error) {
-      console.error("Error deleting service:", error)
-      toast.error("Kunde inte ta bort tjänst")
-    }
+    })
   }
 
   const toggleActive = async (service: Service) => {
-    try {
-      const payload = {
-        name: service.name,
-        description: service.description || undefined,
-        price: service.price,
-        durationMinutes: service.durationMinutes,
-        isActive: !service.isActive,
-      }
+    await guardMutation(async () => {
+      try {
+        const payload = {
+          name: service.name,
+          description: service.description || undefined,
+          price: service.price,
+          durationMinutes: service.durationMinutes,
+          isActive: !service.isActive,
+        }
 
-      console.log("Toggling service with payload:", payload)
+        console.log("Toggling service with payload:", payload)
 
-      const response = await fetch(`/api/services/${service.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error("API error response:", {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
+        const response = await fetch(`/api/services/${service.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         })
-        throw new Error(`Failed to update service: ${response.status}`)
-      }
 
-      toast.success(
-        service.isActive ? "Tjänst inaktiverad" : "Tjänst aktiverad"
-      )
-      mutateServices()
-    } catch (error) {
-      console.error("Error toggling service:", error)
-      toast.error("Kunde inte uppdatera tjänst")
-    }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error("API error response:", {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          })
+          throw new Error(`Failed to update service: ${response.status}`)
+        }
+
+        toast.success(
+          service.isActive ? "Tjänst inaktiverad" : "Tjänst aktiverad"
+        )
+        mutateServices()
+      } catch (error) {
+        console.error("Error toggling service:", error)
+        toast.error("Kunde inte uppdatera tjänst")
+      }
+    })
   }
 
   const resetForm = () => {

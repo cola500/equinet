@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
@@ -29,6 +29,7 @@ import { Calendar, Mic } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -87,67 +88,66 @@ export default function ProviderBookingsPage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
+  const { guardMutation } = useOfflineGuard()
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status }),
-      })
+    await guardMutation(async () => {
+      try {
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Failed to update booking")
+        if (!response.ok) {
+          throw new Error("Failed to update booking")
+        }
+
+        toast.success("Bokning uppdaterad!")
+        mutateBookings()
+
+        // Stay on current filter -- booking moves within the list naturally
+      } catch (error) {
+        console.error("Error updating booking:", error)
+        toast.error("Kunde inte uppdatera bokning")
       }
-
-      toast.success("Bokning uppdaterad!")
-      mutateBookings()
-
-      // Stay on current filter -- booking moves within the list naturally
-    } catch (error) {
-      console.error("Error updating booking:", error)
-      toast.error("Kunde inte uppdatera bokning")
-    }
+    })
   }
 
   const handleCancelBooking = async () => {
     if (!bookingToCancel) return
 
-    setIsCancelling(true)
-    try {
-      const body: { status: string; cancellationMessage?: string } = { status: "cancelled" }
-      if (cancellationMessage.trim()) {
-        body.cancellationMessage = cancellationMessage.trim()
+    await guardMutation(async () => {
+      setIsCancelling(true)
+      try {
+        const body: { status: string; cancellationMessage?: string } = { status: "cancelled" }
+        if (cancellationMessage.trim()) {
+          body.cancellationMessage = cancellationMessage.trim()
+        }
+
+        const response = await fetch(`/api/bookings/${bookingToCancel}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to cancel booking")
+        }
+
+        toast.success("Bokningen har avbokats")
+        setBookingToCancel(null)
+        setCancellationMessage("")
+        mutateBookings()
+      } catch (error) {
+        console.error("Error cancelling booking:", error)
+        toast.error("Kunde inte avboka bokningen")
+      } finally {
+        setIsCancelling(false)
       }
-
-      const response = await fetch(`/api/bookings/${bookingToCancel}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to cancel booking")
-      }
-
-      toast.success("Bokningen har avbokats")
-      setBookingToCancel(null)
-      setCancellationMessage("")
-      mutateBookings()
-    } catch (error) {
-      console.error("Error cancelling booking:", error)
-      toast.error("Kunde inte avboka bokningen")
-    } finally {
-      setIsCancelling(false)
-    }
+    })
   }
 
   if (isLoading || !isProvider) {

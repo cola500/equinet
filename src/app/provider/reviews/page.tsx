@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
@@ -17,9 +16,9 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ReviewList } from "@/components/review/ReviewList"
 import { StarRating } from "@/components/review/StarRating"
 import { toast } from "sonner"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 
 export default function ProviderReviewsPage() {
-  const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const { providerId, isLoading: isLoadingProfile } = useProviderProfile()
   const [reviewStats, setReviewStats] = useState<{
@@ -31,12 +30,7 @@ export default function ProviderReviewsPage() {
   const [replyText, setReplyText] = useState("")
   const [isSubmittingReply, setIsSubmittingReply] = useState(false)
   const [reviewListKey, setReviewListKey] = useState(0)
-
-  useEffect(() => {
-    if (!isLoading && !isProvider) {
-      router.push("/login")
-    }
-  }, [isProvider, isLoading, router])
+  const { guardMutation } = useOfflineGuard()
 
   useEffect(() => {
     if (providerId) {
@@ -66,43 +60,47 @@ export default function ProviderReviewsPage() {
   const handleSubmitReply = async () => {
     if (!replyingToReview || !replyText.trim()) return
 
-    setIsSubmittingReply(true)
-    try {
-      const response = await fetch(`/api/reviews/${replyingToReview}/reply`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reply: replyText }),
-      })
+    await guardMutation(async () => {
+      setIsSubmittingReply(true)
+      try {
+        const response = await fetch(`/api/reviews/${replyingToReview}/reply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reply: replyText }),
+        })
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Kunde inte skicka svar")
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || "Kunde inte skicka svar")
+        }
+
+        toast.success("Svar skickat!")
+        setReplyingToReview(null)
+        setReplyText("")
+        setReviewListKey((k) => k + 1)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Något gick fel")
+      } finally {
+        setIsSubmittingReply(false)
       }
-
-      toast.success("Svar skickat!")
-      setReplyingToReview(null)
-      setReplyText("")
-      setReviewListKey((k) => k + 1)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Något gick fel")
-    } finally {
-      setIsSubmittingReply(false)
-    }
+    })
   }
 
   const handleDeleteReply = async (reviewId: string) => {
-    try {
-      const response = await fetch(`/api/reviews/${reviewId}/reply`, {
-        method: "DELETE",
-      })
-      if (!response.ok) {
-        throw new Error("Kunde inte ta bort svar")
+    await guardMutation(async () => {
+      try {
+        const response = await fetch(`/api/reviews/${reviewId}/reply`, {
+          method: "DELETE",
+        })
+        if (!response.ok) {
+          throw new Error("Kunde inte ta bort svar")
+        }
+        toast.success("Svar borttaget")
+        setReviewListKey((k) => k + 1)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Något gick fel")
       }
-      toast.success("Svar borttaget")
-      setReviewListKey((k) => k + 1)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Något gick fel")
-    }
+    })
   }
 
   if (isLoading || !isProvider) {
