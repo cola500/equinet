@@ -19,6 +19,8 @@ import {
 } from "lucide-react"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { toast } from "sonner"
 
 interface NavItem {
   href: string
@@ -69,6 +71,7 @@ const navItems: NavItem[] = [
 export function ProviderNav() {
   const pathname = usePathname()
   const flags = useFeatureFlags()
+  const isOnline = useOnlineStatus()
 
   const isVisible = (item: { featureFlag?: string }) =>
     !item.featureFlag || flags[item.featureFlag]
@@ -81,6 +84,13 @@ export function ProviderNav() {
       return pathname?.startsWith(item.matchPrefix)
     }
     return pathname === item.href
+  }
+
+  function handleOfflineClick(e: React.MouseEvent, item: NavItem) {
+    if (!isOnline && !isActive(item)) {
+      e.preventDefault()
+      toast.error("Du är offline. Navigering kräver internetanslutning.")
+    }
   }
 
   const linkClasses = (item: NavItem) => {
@@ -102,6 +112,7 @@ export function ProviderNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(e) => handleOfflineClick(e, item)}
                 className={linkClasses(item)}
               >
                 {item.label}
