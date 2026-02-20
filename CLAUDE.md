@@ -176,6 +176,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **CustomerLayout for alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`). Galler aven `/announcements/`-sidor.
 - **Offline-aware SWR**: Byt global fetcher i `SWRProvider` villkorligt (feature flag). Alla `useSWR`-hooks arver offline-stod automatiskt. Monstret: network-first -> write-through IndexedDB -> catch -> read cache -> throw.
 - **SW tsconfig-isolation**: `src/sw.ts` MASTE exkluderas fran BADA `tsconfig.json` OCH `tsconfig.typecheck.json` (barnets `exclude` overridar foralders).
+- **Error boundaries for offline**: `error.tsx` med `useOnlineStatus()` -- offline visar WifiOff-UI, online visar generisk error-UI. Importera ALDRIG layout-komponenter i error.tsx (kraschar error boundary:n ar vi tillbaka pa ruta ett).
 
 ---
 
