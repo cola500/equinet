@@ -35,14 +35,11 @@ export function useAuth() {
     }
   }
 
-  // Clear cache on explicit logout (unauthenticated while online)
-  if (status === "unauthenticated" && isOnline) {
-    try {
-      sessionStorage.removeItem(SESSION_STORAGE_KEY)
-    } catch {
-      /* ignore */
-    }
-  }
+  // NOTE: We intentionally do NOT clear sessionStorage on "unauthenticated + online".
+  // There's a ~2s race condition where useSession() reports unauthenticated (network error)
+  // BEFORE navigator.onLine changes to false. Clearing here would destroy the cache
+  // we need for offline mode. sessionStorage auto-clears on tab close anyway,
+  // and new logins overwrite the cache (line 21-35 above).
 
   // Offline: try sessionStorage cache
   if (!isOnline && status !== "authenticated") {

@@ -129,7 +129,7 @@ describe('useAuth', () => {
       expect(parsed.providerId).toBe('p123')
     })
 
-    it('should clear sessionStorage on explicit logout (unauthenticated + online)', () => {
+    it('should NOT clear sessionStorage when unauthenticated + online (race condition protection)', () => {
       // Seed sessionStorage as if we were previously authenticated
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
         user: mockProviderSession.user,
@@ -148,7 +148,37 @@ describe('useAuth', () => {
 
       renderHook(() => useAuth())
 
-      expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).toBeNull()
+      // sessionStorage should NOT be cleared -- race condition between
+      // useSession reporting unauthenticated and navigator.onLine changing
+      // means we can't trust "unauthenticated + online" as explicit logout
+      expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).not.toBeNull()
+    })
+
+    it('should overwrite sessionStorage when new user logs in', () => {
+      // Seed sessionStorage with provider session
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+        user: mockProviderSession.user,
+        isProvider: true,
+        isCustomer: false,
+        isAdmin: false,
+        providerId: 'p123',
+      }))
+
+      // New user logs in as customer
+      vi.mocked(useSession).mockReturnValue({
+        data: mockCustomerSession,
+        status: 'authenticated',
+        update: vi.fn(),
+      })
+
+      renderHook(() => useAuth())
+
+      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
+      expect(stored).not.toBeNull()
+      const parsed = JSON.parse(stored!)
+      expect(parsed.user).toEqual(mockCustomerSession.user)
+      expect(parsed.isCustomer).toBe(true)
+      expect(parsed.isProvider).toBe(false)
     })
   })
 

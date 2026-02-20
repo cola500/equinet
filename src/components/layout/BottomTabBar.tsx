@@ -12,6 +12,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { toast } from "sonner"
 
 export interface TabItem {
   href: string
@@ -35,12 +37,20 @@ interface BottomTabBarProps {
 export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
   const pathname = usePathname()
   const [moreOpen, setMoreOpen] = useState(false)
+  const isOnline = useOnlineStatus()
 
   const isActive = (href: string, matchPrefix?: string) => {
     if (matchPrefix) {
       return pathname.startsWith(matchPrefix)
     }
     return pathname === href
+  }
+
+  function handleOfflineClick(e: React.MouseEvent, href: string, matchPrefix?: string) {
+    if (!isOnline && !isActive(href, matchPrefix)) {
+      e.preventDefault()
+      toast.error("Du är offline. Navigering kräver internetanslutning.")
+    }
   }
 
   // Check if any "more" item is active (to highlight the "Mer" tab)
@@ -60,6 +70,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
+                onClick={(e) => handleOfflineClick(e, tab.href, tab.matchPrefix)}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-all duration-200 ${
                   active ? "text-green-700" : "text-gray-400"
                 }`}
@@ -116,6 +127,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
                 <DrawerClose key={item.href} asChild>
                   <Link
                     href={item.href}
+                    onClick={(e) => handleOfflineClick(e, item.href, item.matchPrefix)}
                     className={`flex items-center gap-3 px-4 py-3 min-h-[48px] ${
                       active
                         ? "text-green-700 bg-green-50 font-medium"
