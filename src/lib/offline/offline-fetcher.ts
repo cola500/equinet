@@ -1,11 +1,4 @@
-import {
-  cacheBookings,
-  getCachedBookings,
-  cacheRoutes,
-  getCachedRoutes,
-  cacheProfile,
-  getCachedProfile,
-} from "./cache-manager"
+import { cacheEndpoint, getCachedEndpoint } from "./cache-manager"
 
 /** Endpoints whose responses are cached in IndexedDB for offline access */
 export const CACHEABLE_ENDPOINTS = [
@@ -14,32 +7,8 @@ export const CACHEABLE_ENDPOINTS = [
   "/api/provider/profile",
 ] as const
 
-type CacheableEndpoint = (typeof CACHEABLE_ENDPOINTS)[number]
-
-function isCacheable(url: string): url is CacheableEndpoint {
+function isCacheable(url: string): boolean {
   return CACHEABLE_ENDPOINTS.some((ep) => url === ep || url.startsWith(ep + "?"))
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCacheReader(url: string): (() => Promise<any | null>) | null {
-  if (url === "/api/bookings" || url.startsWith("/api/bookings?"))
-    return getCachedBookings
-  if (url === "/api/routes/my-routes" || url.startsWith("/api/routes/my-routes?"))
-    return getCachedRoutes
-  if (url === "/api/provider/profile" || url.startsWith("/api/provider/profile?"))
-    return getCachedProfile
-  return null
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCacheWriter(url: string): ((data: any) => Promise<void>) | null {
-  if (url === "/api/bookings" || url.startsWith("/api/bookings?"))
-    return cacheBookings
-  if (url === "/api/routes/my-routes" || url.startsWith("/api/routes/my-routes?"))
-    return cacheRoutes
-  if (url === "/api/provider/profile" || url.startsWith("/api/provider/profile?"))
-    return cacheProfile
-  return null
 }
 
 /**
@@ -62,24 +31,18 @@ export async function offlineAwareFetcher(url: string): Promise<any> {
 
     // 2. Write-through to IndexedDB (fire-and-forget)
     if (isCacheable(url)) {
-      const writer = getCacheWriter(url)
-      if (writer) {
-        writer(data).catch(() => {
-          // Silently fail -- cache write is best-effort
-        })
-      }
+      cacheEndpoint(url, data).catch(() => {
+        // Silently fail -- cache write is best-effort
+      })
     }
 
     return data
   } catch (networkError) {
     // 3. Network failed -- try cache fallback
     if (isCacheable(url)) {
-      const reader = getCacheReader(url)
-      if (reader) {
-        const cached = await reader()
-        if (cached !== null) {
-          return cached
-        }
+      const cached = await getCachedEndpoint(url)
+      if (cached !== null) {
+        return cached
       }
     }
 

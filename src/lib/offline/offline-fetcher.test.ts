@@ -13,6 +13,7 @@ describe("offlineAwareFetcher", () => {
     await offlineDb.routes.clear()
     await offlineDb.profile.clear()
     await offlineDb.metadata.clear()
+    await offlineDb.endpointCache.clear()
     mockFetch.mockReset()
   })
 
@@ -40,7 +41,7 @@ describe("offlineAwareFetcher", () => {
       expect(result).toEqual(mockData)
     })
 
-    it("writes cacheable data to IndexedDB", async () => {
+    it("writes cacheable data to IndexedDB endpoint cache", async () => {
       const mockData = [{ id: "1", status: "confirmed" }]
       mockFetch.mockResolvedValue({
         ok: true,
@@ -52,8 +53,25 @@ describe("offlineAwareFetcher", () => {
       // Give fire-and-forget time to complete
       await new Promise((r) => setTimeout(r, 50))
 
-      const meta = await offlineDb.metadata.get("bookings")
-      expect(meta).toBeDefined()
+      const cached = await offlineDb.endpointCache.get("/api/bookings")
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
+    })
+
+    it("caches with full URL including query params", async () => {
+      const mockData = [{ id: "1", status: "pending" }]
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+
+      await offlineAwareFetcher("/api/bookings?status=pending")
+
+      await new Promise((r) => setTimeout(r, 50))
+
+      const cached = await offlineDb.endpointCache.get("/api/bookings?status=pending")
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
     })
 
     it("does NOT cache non-cacheable endpoints", async () => {
@@ -67,8 +85,8 @@ describe("offlineAwareFetcher", () => {
 
       await new Promise((r) => setTimeout(r, 50))
 
-      const meta = await offlineDb.metadata.get("admin/users")
-      expect(meta).toBeUndefined()
+      const cached = await offlineDb.endpointCache.get("/api/admin/users")
+      expect(cached).toBeUndefined()
     })
 
     it("throws on non-OK response without cache", async () => {
@@ -85,33 +103,54 @@ describe("offlineAwareFetcher", () => {
 
   describe("when offline (cache-fallback)", () => {
     it("returns cached bookings when network fails", async () => {
-      // Pre-populate cache
+      // Pre-populate endpoint cache
       const now = Date.now()
-      await offlineDb.bookings.bulkPut([
-        { id: "1", data: { id: "1", status: "cached" }, cachedAt: now },
-      ])
-      await offlineDb.metadata.put({
-        key: "bookings",
-        lastSyncedAt: now,
-        version: 1,
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "1", status: "cached" }],
+        cachedAt: now,
       })
 
-      // Simulate network failure
       mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
 
       const result = await offlineAwareFetcher("/api/bookings")
       expect(result).toEqual([{ id: "1", status: "cached" }])
     })
 
+    it("returns cached data for URL with query params", async () => {
+      const now = Date.now()
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings?status=pending",
+        data: [{ id: "1", status: "pending" }],
+        cachedAt: now,
+      })
+
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      const result = await offlineAwareFetcher("/api/bookings?status=pending")
+      expect(result).toEqual([{ id: "1", status: "pending" }])
+    })
+
+    it("falls back to base URL when exact query match not found", async () => {
+      const now = Date.now()
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "all" }],
+        cachedAt: now,
+      })
+
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      const result = await offlineAwareFetcher("/api/bookings?status=new")
+      expect(result).toEqual([{ id: "all" }])
+    })
+
     it("returns cached routes when network fails", async () => {
       const now = Date.now()
-      await offlineDb.routes.bulkPut([
-        { id: "r1", data: { id: "r1", name: "Route" }, cachedAt: now },
-      ])
-      await offlineDb.metadata.put({
-        key: "routes",
-        lastSyncedAt: now,
-        version: 1,
+      await offlineDb.endpointCache.put({
+        url: "/api/routes/my-routes",
+        data: [{ id: "r1", name: "Route" }],
+        cachedAt: now,
       })
 
       mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
@@ -122,15 +161,10 @@ describe("offlineAwareFetcher", () => {
 
     it("returns cached profile when network fails", async () => {
       const now = Date.now()
-      await offlineDb.profile.put({
-        id: "profile",
+      await offlineDb.endpointCache.put({
+        url: "/api/provider/profile",
         data: { name: "Provider" },
         cachedAt: now,
-      })
-      await offlineDb.metadata.put({
-        key: "profile",
-        lastSyncedAt: now,
-        version: 1,
       })
 
       mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
@@ -146,15 +180,11 @@ describe("offlineAwareFetcher", () => {
     })
 
     it("throws when network fails and cache is stale", async () => {
-      // Pre-populate with stale cache (>4h old)
       const staleTime = Date.now() - 5 * 60 * 60 * 1000
-      await offlineDb.bookings.bulkPut([
-        { id: "1", data: { id: "1" }, cachedAt: staleTime },
-      ])
-      await offlineDb.metadata.put({
-        key: "bookings",
-        lastSyncedAt: staleTime,
-        version: 1,
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "1" }],
+        cachedAt: staleTime,
       })
 
       mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))

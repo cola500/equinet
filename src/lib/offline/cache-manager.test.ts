@@ -8,6 +8,9 @@ import {
   cacheProfile,
   getCachedProfile,
   clearAllOfflineData,
+  cacheEndpoint,
+  getCachedEndpoint,
+  invalidateEndpointCache,
   MAX_AGE_MS,
 } from "./cache-manager"
 import { offlineDb } from "./db"
@@ -18,6 +21,7 @@ describe("cache-manager", () => {
     await offlineDb.routes.clear()
     await offlineDb.profile.clear()
     await offlineDb.metadata.clear()
+    await offlineDb.endpointCache.clear()
     vi.restoreAllMocks()
   })
 
@@ -112,6 +116,64 @@ describe("cache-manager", () => {
 
       const result = await getCachedProfile()
       expect(result).toBeNull()
+    })
+  })
+
+  describe("endpoint cache (generic)", () => {
+    const url = "/api/bookings?status=pending"
+    const data = [{ id: "1", status: "pending" }]
+
+    it("caches and retrieves by exact URL", async () => {
+      await cacheEndpoint(url, data)
+      const result = await getCachedEndpoint(url)
+      expect(result).toEqual(data)
+    })
+
+    it("returns null for different query params", async () => {
+      await cacheEndpoint(url, data)
+      const result = await getCachedEndpoint("/api/bookings?status=confirmed")
+      expect(result).toBeNull()
+    })
+
+    it("falls back to base URL when exact match not found", async () => {
+      const baseData = [{ id: "all" }]
+      await cacheEndpoint("/api/bookings", baseData)
+      const result = await getCachedEndpoint("/api/bookings?status=new")
+      expect(result).toEqual(baseData)
+    })
+
+    it("returns null when cache is stale", async () => {
+      const staleTime = Date.now() - MAX_AGE_MS - 1000
+      vi.spyOn(Date, "now").mockReturnValue(staleTime)
+      await cacheEndpoint(url, data)
+      vi.restoreAllMocks()
+
+      const result = await getCachedEndpoint(url)
+      expect(result).toBeNull()
+    })
+
+    it("returns null when no cache exists", async () => {
+      const result = await getCachedEndpoint("/api/bookings?status=anything")
+      expect(result).toBeNull()
+    })
+
+    it("invalidates cache by URL prefix", async () => {
+      await cacheEndpoint("/api/bookings", [{ id: "base" }])
+      await cacheEndpoint("/api/bookings?status=pending", [{ id: "pending" }])
+      await cacheEndpoint("/api/routes/my-routes", [{ id: "route" }])
+
+      await invalidateEndpointCache("/api/bookings")
+
+      expect(await getCachedEndpoint("/api/bookings")).toBeNull()
+      expect(await getCachedEndpoint("/api/bookings?status=pending")).toBeNull()
+      // Routes should be untouched
+      expect(await getCachedEndpoint("/api/routes/my-routes")).toEqual([{ id: "route" }])
+    })
+
+    it("clearAllOfflineData also clears endpoint cache", async () => {
+      await cacheEndpoint(url, data)
+      await clearAllOfflineData()
+      expect(await getCachedEndpoint(url)).toBeNull()
     })
   })
 

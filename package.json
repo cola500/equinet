@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "DISABLE_SW=true next dev",
+    "dev:offline": "FEATURE_OFFLINE_MODE=true next dev --webpack",
     "build": "prisma generate && next build --webpack",
     "postinstall": "prisma generate",
     "start": "next start",
