@@ -68,10 +68,30 @@ export default function BookAnnouncementPage() {
   }, [authLoading, user, router])
 
   useEffect(() => {
-    if (params.id) {
-      fetchAnnouncement(params.id as string)
+    if (!params.id) return
+
+    const fetchAnnouncement = async (id: string) => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/route-orders/${id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setAnnouncement(data)
+        } else {
+          toast.error("Kunde inte hämta rutt-annons")
+          router.push("/announcements")
+        }
+      } catch (error) {
+        console.error("Error fetching announcement:", error)
+        toast.error("Något gick fel")
+        router.push("/announcements")
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [params.id])
+
+    fetchAnnouncement(params.id as string)
+  }, [params.id, router])
 
   // Fetch customer location for travel time calculation
   useEffect(() => {
@@ -96,26 +116,6 @@ export default function BookAnnouncementPage() {
 
     fetchCustomerLocation()
   }, [user])
-
-  const fetchAnnouncement = async (id: string) => {
-    try {
-      setIsLoading(true)
-      const response = await fetch(`/api/route-orders/${id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAnnouncement(data)
-      } else {
-        toast.error("Kunde inte hämta rutt-annons")
-        router.push("/announcements")
-      }
-    } catch (error) {
-      console.error("Error fetching announcement:", error)
-      toast.error("Något gick fel")
-      router.push("/announcements")
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

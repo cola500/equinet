@@ -85,7 +85,7 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     )
 
     const response = await PUT(request, routeContext)
-    const data = await response.json()
+    const _data = await response.json()
 
     expect(response.status).toBe(200)
     expect(prisma.$transaction).toHaveBeenCalled()

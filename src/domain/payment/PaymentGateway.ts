@@ -31,7 +31,7 @@ export interface IPaymentGateway {
 // Instant success, no external calls. Used for development/demo.
 
 export class MockPaymentGateway implements IPaymentGateway {
-  async initiatePayment(request: PaymentRequest): Promise<PaymentResult> {
+  async initiatePayment(_request: PaymentRequest): Promise<PaymentResult> {
     const providerPaymentId = `mock_pay_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
 
     return {

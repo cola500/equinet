@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { HorseService } from './HorseService'
 import { MockHorseRepository } from '@/infrastructure/persistence/horse/MockHorseRepository'
 import type { Horse, HorseNote } from '@/infrastructure/persistence/horse/IHorseRepository'

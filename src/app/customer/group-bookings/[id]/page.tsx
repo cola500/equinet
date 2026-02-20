@@ -237,7 +237,7 @@ export default function GroupBookingDetailPage({
   }
 
   const isCreator = groupBooking.creatorId === user?.id
-  const myParticipation = groupBooking.participants.find(
+  const _myParticipation = groupBooking.participants.find(
     (p) => p.userId === user?.id
   )
   const isOpen = groupBooking.status === "open"

@@ -35,7 +35,7 @@ vi.mock('@/domain/voice-log/VoiceInterpretationService', () => ({
   },
 }))
 
-const mockBookingFindUnique = vi.fn()
+const _mockBookingFindUnique = vi.fn()
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     booking: { findUnique: vi.fn() },

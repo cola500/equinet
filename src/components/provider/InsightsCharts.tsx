@@ -74,7 +74,7 @@ function KPICard({ label, value, unit, color, className, info }: { label: string
 // --- Heatmap ---
 
 const DAY_ORDER = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"]
-const DAY_INDEX_MAP: Record<string, number> = { "Sön": 0, "Mån": 1, "Tis": 2, "Ons": 3, "Tor": 4, "Fre": 5, "Lör": 6 }
+const _DAY_INDEX_MAP: Record<string, number> = { "Sön": 0, "Mån": 1, "Tis": 2, "Ons": 3, "Tor": 4, "Fre": 5, "Lör": 6 }
 
 function getHeatColor(count: number, max: number): string {
   if (count === 0) return "bg-gray-100"

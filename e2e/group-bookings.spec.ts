@@ -5,7 +5,7 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
 
   let customerId: string;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page: _page }) => {
     // Find the test customer user
     const customer = await prisma.user.findUnique({
       where: { email: 'test@example.com' },

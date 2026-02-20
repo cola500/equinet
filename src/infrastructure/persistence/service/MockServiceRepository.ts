@@ -13,7 +13,7 @@ export class MockServiceRepository implements IServiceRepository {
     return this.services.get(id) || null
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<Service[]> {
+  async findMany(_criteria?: Record<string, any>): Promise<Service[]> {
     // Simple implementation for base interface compatibility
     return Array.from(this.services.values())
   }

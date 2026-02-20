@@ -56,7 +56,7 @@ export function VoiceTextarea({
         onChange(combined)
       }
     }
-  }, [transcript, isRecording, isListening])
+  }, [transcript, isRecording, isListening, onChange, value])
 
   // Handle recording stop (e.g. speech API auto-stops)
   useEffect(() => {

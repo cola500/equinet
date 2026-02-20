@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 
 // POST /api/integrations/fortnox/disconnect - Remove Fortnox connection
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await auth()
 

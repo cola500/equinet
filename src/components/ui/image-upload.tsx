@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import imageCompression from "browser-image-compression"
@@ -17,7 +18,7 @@ interface ImageUploadProps {
   allowPdf?: boolean
 }
 
-const MAX_COMPRESSED_SIZE = 1024 * 1024 // 1MB after compression
+const _MAX_COMPRESSED_SIZE = 1024 * 1024 // 1MB after compression
 
 export function ImageUpload({
   bucket,
@@ -153,14 +154,17 @@ export function ImageUpload({
                 {!isCompact && <p className="text-xs text-gray-500">PDF uppladdad</p>}
               </div>
             ) : (
-              <img
+              <Image
                 src={preview}
                 alt="Forhandsvisning"
+                width={192}
+                height={192}
                 className={`object-cover ${
                   isCompact
                     ? `w-full h-full ${shapeClass}`
                     : "mx-auto max-h-48 rounded"
                 }`}
+                unoptimized
               />
             )}
             {isUploading && (

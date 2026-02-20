@@ -1,6 +1,5 @@
 import { test, expect } from './fixtures';
-import { seedBooking, cleanupSpecData, getBaseEntities } from './setup/seed-helpers';
-import { prisma } from './fixtures';
+import { seedBooking, cleanupSpecData } from './setup/seed-helpers';
 
 const SPEC_TAG = 'noshow';
 

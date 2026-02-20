@@ -22,20 +22,7 @@ class Address extends ValueObject<AddressProps> {
   }
 }
 
-interface TimeSlotProps {
-  startTime: string
-  endTime: string
-}
 
-class TimeSlot extends ValueObject<TimeSlotProps> {
-  get startTime() {
-    return this.props.startTime
-  }
-
-  get endTime() {
-    return this.props.endTime
-  }
-}
 
 describe('ValueObject', () => {
   describe('immutability', () => {

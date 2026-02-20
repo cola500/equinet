@@ -4,7 +4,7 @@ import { notificationService } from "@/domain/notification/NotificationService"
 import { logger } from "@/lib/logger"
 
 // GET - Return unread notification count for badge display
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
 

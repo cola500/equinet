@@ -24,7 +24,7 @@ vi.mock('@/lib/prisma', () => ({
 
 describe('GET /api/providers/[id]/availability-schedule', () => {
   const mockProviderId = 'provider-123'
-  const mockUserId = 'user-123'
+  const _mockUserId = 'user-123'
 
   beforeEach(() => {
     vi.clearAllMocks()

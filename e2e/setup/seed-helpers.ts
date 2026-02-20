@@ -8,7 +8,7 @@
  * Uses the singleton prisma from fixtures.ts -- NEVER call $disconnect().
  */
 import { prisma } from '../fixtures'
-import { futureDate, futureWeekday, pastDate } from './e2e-utils'
+import { futureWeekday, pastDate } from './e2e-utils'
 
 // ─── Base entities (seeded once globally) ───────────────────────────
 

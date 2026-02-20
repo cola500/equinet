@@ -19,7 +19,7 @@ const TEST_UUIDS = {
 const FUTURE_DATE = new Date()
 FUTURE_DATE.setDate(FUTURE_DATE.getDate() + 7)
 const FUTURE_DATE_ISO = FUTURE_DATE.toISOString()
-const FUTURE_DATE_STR = FUTURE_DATE.toISOString().split('T')[0]
+const _FUTURE_DATE_STR = FUTURE_DATE.toISOString().split('T')[0]
 
 // Mock dependencies
 vi.mock('@/lib/auth-server', () => ({

@@ -58,7 +58,7 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   }
 
-  async findAvailableForProvider(userId: string): Promise<{
+  async findAvailableForProvider(_userId: string): Promise<{
     provider: { id: string } | null
     requests: GroupBookingWithParticipants[]
   }> {
@@ -127,7 +127,7 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     if (!request || request.creatorId !== creatorId) return null
 
     const activeParticipants = this.getActiveParticipantsForRequest(id)
-      .map((p) => ({ userId: true as const }))
+      .map((_p) => ({ userId: true as const }))
 
     return { ...request, participants: activeParticipants }
   }

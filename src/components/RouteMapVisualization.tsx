@@ -127,7 +127,7 @@ export default function RouteMapVisualization({
     return () => {
       cancelled = true
     }
-  }, [originalPath])
+  }, [originalPath, routedOriginalPath])
 
   // Fetch optimized path when optimization is done
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function RouteMapVisualization({
     return () => {
       cancelled = true
     }
-  }, [optimizedPath])
+  }, [optimizedPath, routedOptimizedPath])
 
   // Initialize map
   useEffect(() => {
@@ -209,14 +209,14 @@ export default function RouteMapVisualization({
     markersRef.current.forEach(marker => {
       try {
         marker.remove()
-      } catch (e) {
+      } catch (_e) {
         // Ignore errors during removal
       }
     })
     linesRef.current.forEach(line => {
       try {
         line.remove()
-      } catch (e) {
+      } catch (_e) {
         // Ignore errors during removal
       }
     })
@@ -311,7 +311,7 @@ export default function RouteMapVisualization({
       }
     })
 
-  }, [selectedOrders, routedOriginalPath, routedOptimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes, mapReady])
+  }, [selectedOrders, routedOriginalPath, routedOptimizedPath, optimizedPath, optimizedOrderIds, startLocation, isLoadingRoutes, mapReady])
 
   if (selectedOrders.length === 0) {
     const allSelected = orders.filter(o => selectedOrderIds.includes(o.id))

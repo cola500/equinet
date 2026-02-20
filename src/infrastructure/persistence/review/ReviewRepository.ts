@@ -100,7 +100,7 @@ export class ReviewRepository implements IReviewRepository {
   async delete(id: string): Promise<void> {
     try {
       await prisma.review.delete({ where: { id } })
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore if not found (per IRepository contract)
     }
   }

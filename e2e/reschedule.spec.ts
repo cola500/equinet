@@ -19,8 +19,8 @@ const SPEC_TAG = 'reschedule';
  */
 
 test.describe('Reschedule (Customer)', () => {
-  let bookingNormal: string;
-  let bookingMaxed: string;
+  let _bookingNormal: string;
+  let _bookingMaxed: string;
 
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG);
@@ -44,7 +44,7 @@ test.describe('Reschedule (Customer)', () => {
       daysFromNow: 14,
       horseName: 'E2E Reschedule1',
     });
-    bookingNormal = b1.id;
+    _bookingNormal = b1.id;
 
     // Booking 2: confirmed, future -- at max reschedules (rescheduleCount = 2, maxReschedules = 2)
     const b2 = await seedBooking({
@@ -56,7 +56,7 @@ test.describe('Reschedule (Customer)', () => {
       endTime: '13:00',
       rescheduleCount: 2,
     });
-    bookingMaxed = b2.id;
+    _bookingMaxed = b2.id;
   });
 
   test.afterAll(async () => {

@@ -167,7 +167,7 @@ describe('GET /api/route-orders/announcements', () => {
 
     // Act
     const response = await GET(request)
-    const data = await response.json()
+    const _data = await response.json()
 
     // Assert
     expect(response.status).toBe(200)
@@ -199,7 +199,7 @@ describe('GET /api/route-orders/announcements', () => {
     )
 
     // Act
-    const response = await GET(request)
+    const _response = await GET(request)
 
     // Assert
     expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(

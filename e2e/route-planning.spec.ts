@@ -42,7 +42,7 @@ test.describe('Route Planning Flow (Provider)', () => {
     await expect(page.getByText(/prioritet/i)).toBeVisible();
 
     // Kolla om det finns tillgängliga beställningar
-    const loadingText = page.getByText(/laddar beställningar/i);
+    const _loadingText = page.getByText(/laddar beställningar/i);
     const noOrdersText = page.getByText(/inga tillgängliga beställningar/i);
     const hasOrders = await page.locator('.border.rounded-lg.p-4').count() > 0;
 

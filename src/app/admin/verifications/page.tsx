@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
 import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Button } from "@/components/ui/button"
@@ -194,11 +195,14 @@ export default function AdminVerificationsPage() {
                 {ver.images && ver.images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {ver.images.map((img) => (
-                      <img
+                      <Image
                         key={img.id}
                         src={img.url}
                         alt="Verifieringsbild"
+                        width={96}
+                        height={96}
                         className="w-24 h-24 object-cover rounded cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
+                        unoptimized
                         onClick={() => setLightboxImage(img.url)}
                       />
                     ))}
@@ -262,10 +266,13 @@ export default function AdminVerificationsPage() {
             <DialogTitle>Bild</DialogTitle>
           </DialogHeader>
           {lightboxImage && (
-            <img
+            <Image
               src={lightboxImage}
               alt="Verifieringsbild"
+              width={800}
+              height={600}
               className="w-full h-auto rounded"
+              unoptimized
             />
           )}
         </DialogContent>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
 import { useIsMobile } from "@/hooks/useMediaQuery"
 import { useBookingFlow } from "@/hooks/useBookingFlow"
@@ -98,26 +99,45 @@ export default function ProviderDetailPage() {
   })
 
   useEffect(() => {
-    if (params.id) {
-      fetchProvider()
-      fetchReviewSummary()
-    }
-  }, [params.id])
+    if (!params.id) return
 
-  const fetchReviewSummary = async () => {
-    try {
-      const response = await fetch(`/api/providers/${params.id}/reviews?limit=1`)
-      if (response.ok) {
-        const data = await response.json()
-        setReviewSummary({
-          averageRating: data.averageRating,
-          totalCount: data.totalCount,
-        })
+    const fetchProvider = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/providers/${params.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setProvider(data)
+        } else {
+          toast.error("Leverantör hittades inte")
+          router.push("/providers")
+        }
+      } catch (error) {
+        console.error("Error fetching provider:", error)
+        toast.error("Kunde inte hämta leverantör")
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error("Error fetching review summary:", error)
     }
-  }
+
+    const fetchReviewSummary = async () => {
+      try {
+        const response = await fetch(`/api/providers/${params.id}/reviews?limit=1`)
+        if (response.ok) {
+          const data = await response.json()
+          setReviewSummary({
+            averageRating: data.averageRating,
+            totalCount: data.totalCount,
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching review summary:", error)
+      }
+    }
+
+    fetchProvider()
+    fetchReviewSummary()
+  }, [params.id, router])
 
   // Fetch customer's horses
   useEffect(() => {
@@ -177,25 +197,6 @@ export default function ProviderDetailPage() {
 
     fetchLocationAndRoutes()
   }, [isCustomer, params.id])
-
-  const fetchProvider = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch(`/api/providers/${params.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setProvider(data)
-      } else {
-        toast.error("Leverantör hittades inte")
-        router.push("/providers")
-      }
-    } catch (error) {
-      console.error("Error fetching provider:", error)
-      toast.error("Kunde inte hämta leverantör")
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleBookService = (service: Service) => {
     if (!isAuthenticated) {
@@ -276,10 +277,13 @@ export default function ProviderDetailPage() {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   {provider.profileImageUrl && (
-                    <img
+                    <Image
                       src={provider.profileImageUrl}
                       alt={provider.businessName}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                      unoptimized
                     />
                   )}
                   <div>
@@ -401,11 +405,14 @@ export default function ProviderDetailPage() {
                         {ver.images && ver.images.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-3">
                             {ver.images.map((img) => (
-                              <img
+                              <Image
                                 key={img.id}
                                 src={img.url}
                                 alt="Kompetensbevis"
+                                width={64}
+                                height={64}
                                 className="w-16 h-16 object-cover rounded cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
+                                unoptimized
                                 onClick={() => setLightboxImage(img.url)}
                               />
                             ))}
@@ -477,10 +484,13 @@ export default function ProviderDetailPage() {
             <DialogTitle>Bild</DialogTitle>
           </DialogHeader>
           {lightboxImage && (
-            <img
+            <Image
               src={lightboxImage}
               alt="Kompetensbevis"
+              width={800}
+              height={600}
               className="w-full h-auto rounded"
+              unoptimized
             />
           )}
         </DialogContent>
