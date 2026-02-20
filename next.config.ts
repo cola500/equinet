@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
+import { spawnSync } from "node:child_process";
 import { withSentryConfig } from "@sentry/nextjs";
 import withSerwistInit from "@serwist/next";
+
+const revision = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ?? crypto.randomUUID();
 
 const nextConfig: NextConfig = {
   // Disable source maps in production for security
@@ -145,9 +148,11 @@ const sentryWebpackPluginOptions = {
 
 // Wrap with Serwist (service worker) - disabled in dev to avoid Turbopack issues
 const withSerwist = withSerwistInit({
+  cacheOnNavigation: true,
   swSrc: "src/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
+  additionalPrecacheEntries: [{ url: "/~offline", revision }],
 })
 
 // Wrap with Sentry config (outermost wrapper)
