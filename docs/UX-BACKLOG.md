@@ -16,6 +16,8 @@
 | B1 | Bokningspåminnelser 24h (e-post + in-app, opt-out) | Klart |
 | B3 | Affärsinsikter (tjänsteanalys, tidsanalys, kundretention, KPIs) | Klart |
 | B4 | No-show-spårning (status, UI, kundregister, insikter) | Klart |
+| B2 | Självservice-ombokning (feature flag `self_reschedule`) | Klart |
+| C1 | Återkommande bokningar (BookingSeriesService, feature flag `recurring_bookings`) | Klart |
 
 ---
 
@@ -27,18 +29,14 @@ Implementerad i session 30. E-postpåminnelser 24h före bokning med checklista,
 
 ---
 
-### B2: Självservice-ombokning
+### ~~B2: Självservice-ombokning~~ (Implementerad 2026-02-18)
 
-**Problem:** Kunder som vill boka om måste kontakta leverantören manuellt. Tar tid för båda parter.
-
-**Lösning:** Kunder kan boka om sin bokning direkt i appen -- välj ny tid från leverantörens tillgängliga tider.
-
-**Regler:**
-- Ombokning tillåts upp till X timmar innan (konfigurerbart per leverantör)
-- Leverantören kan välja att godkänna ombokning eller låta den ske direkt
-- Max antal ombokningar per bokning (t.ex. 2)
-
-**Insats:** Medel -- ny UI-vy, API-endpoint, bokningshistorik-spårning.
+Implementerad med feature flag `self_reschedule`. Inkluderar:
+- API route `/api/bookings/[id]/reschedule` med ägarskapskontroll
+- Konfigurerbar deadline per leverantör (minsta antal timmar innan)
+- Max antal ombokningar per bokning
+- Kund-UI för att välja ny tid från tillgängliga tider
+- Bokningshistorik-spårning (reschedule count)
 
 ---
 
@@ -67,18 +65,15 @@ Implementerad i session 31. 27 filer, 1815 tester. Inkluderar:
 
 ## C-kategori -- Större insats
 
-### C1: Återkommande bokningar
+### ~~C1: Återkommande bokningar~~ (Implementerad 2026-02-17, session 38)
 
-**Problem:** Kunder med regelbundna besök (t.ex. hovvård var 6:e vecka) måste manuellt boka varje gång.
-
-**Lösning:**
-- Skapa en "serie" -- välj intervall (varje X veckor/månader), antal tillfällen
-- Automatisk generering av bokningar i leverantörens kalender
-- Möjlighet att avboka enskilda tillfällen utan att avbryta serien
-
-**Insats:** Stor -- ny datamodell (BookingSeries), schemalagd generering, komplex avbokning/ombokning-logik.
-
-**Beroenden:** B2 (ombokning) bör finnas först.
+Implementerad i session 38 (mergad commit 3df242c). Feature flag `recurring_bookings`. Inkluderar:
+- `BookingSeries`-modell med intervall (veckor/månader) och antal tillfällen
+- `BookingSeriesService` för skapande och hantering av serier
+- 3 API routes (skapa serie, lista serier, hantera enskilda tillfällen)
+- Provider settings för att aktivera/konfigurera återkommande bokningar
+- Kund- och leverantörs-UI
+- Retro: `docs/retrospectives/2026-02-17-c1-aterkommande-bokningar.md`
 
 ---
 
@@ -112,10 +107,11 @@ Implementerad i session 31. 27 filer, 1815 tester. Inkluderar:
 ## Prioriteringsförslag
 
 ```
-Nästa:       B2 (ombokning) -- stor UX-förbättring, kräver migration
-Framtida:    C1, C2, C3 -- planera efter feedback
+Klart:       B2 (ombokning), C1 (återkommande bokningar)
+Nästa:       C3 (iCal-export) -- snabb win, 1-2 dagars arbete
+Framtida:    C2 (väntlista) -- större projekt, event-driven arkitektur
 ```
 
 ---
 
-*Skapad: 2026-02-17, uppdaterad: 2026-02-17 (B1, B3, B4 implementerade)*
+*Skapad: 2026-02-17, uppdaterad: 2026-02-21 (B2, C1 implementerade)*
