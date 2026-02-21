@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 /**
  * Lightweight connectivity probe for offline detection.
@@ -25,7 +26,17 @@ export async function HEAD() {
  * - 200 OK: All systems operational
  * - 503 Service Unavailable: Database connection failed
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Rate limit before database query
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: "For manga forfragningar. Forsok igen om en minut." },
+      { status: 429 }
+    )
+  }
+
   try {
     // Check database connectivity
     // Using a lightweight query instead of raw SQL for Prisma compatibility
