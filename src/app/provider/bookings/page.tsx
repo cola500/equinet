@@ -30,6 +30,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -91,29 +92,49 @@ export default function ProviderBookingsPage() {
   const { guardMutation } = useOfflineGuard()
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
-    await guardMutation(async () => {
-      try {
-        const response = await fetch(`/api/bookings/${bookingId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status }),
-        })
+    const body = JSON.stringify({ status })
+    await guardMutation(
+      async () => {
+        try {
+          const response = await fetch(`/api/bookings/${bookingId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body,
+          })
 
-        if (!response.ok) {
-          throw new Error("Failed to update booking")
+          if (!response.ok) {
+            throw new Error("Failed to update booking")
+          }
+
+          toast.success("Bokning uppdaterad!")
+          mutateBookings()
+
+          // Stay on current filter -- booking moves within the list naturally
+        } catch (error) {
+          console.error("Error updating booking:", error)
+          toast.error("Kunde inte uppdatera bokning")
         }
-
-        toast.success("Bokning uppdaterad!")
-        mutateBookings()
-
-        // Stay on current filter -- booking moves within the list naturally
-      } catch (error) {
-        console.error("Error updating booking:", error)
-        toast.error("Kunde inte uppdatera bokning")
+      },
+      {
+        method: "PUT",
+        url: `/api/bookings/${bookingId}`,
+        body,
+        entityType: "booking",
+        entityId: bookingId,
+        optimisticUpdate: () => {
+          // Optimistically update the SWR cache
+          mutateBookings(
+            (current) =>
+              current?.map((b) =>
+                b.id === bookingId ? { ...b, status } : b
+              ),
+            { revalidate: false }
+          )
+        },
       }
-    })
+    )
   }
 
   const handleCancelBooking = async () => {
@@ -255,7 +276,10 @@ export default function ProviderBookingsPage() {
                         {booking.customer.firstName} {booking.customer.lastName}
                       </CardDescription>
                     </div>
-                    {getStatusBadge(booking)}
+                    <div className="flex items-center gap-1.5">
+                      <PendingSyncBadge entityId={booking.id} />
+                      {getStatusBadge(booking)}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

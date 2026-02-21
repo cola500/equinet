@@ -10,18 +10,34 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlag: vi.fn(),
 }))
 
+vi.mock("@/hooks/useMutationSync", () => ({
+  useMutationSync: vi.fn(() => ({
+    pendingCount: 0,
+    isSyncing: false,
+    lastSyncResult: null,
+  })),
+}))
+
 import { OfflineBanner } from "./OfflineBanner"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useMutationSync } from "@/hooks/useMutationSync"
 
 const mockUseOnlineStatus = vi.mocked(useOnlineStatus)
 const mockUseFeatureFlag = vi.mocked(useFeatureFlag)
+const mockUseMutationSync = vi.mocked(useMutationSync)
 
 describe("OfflineBanner", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     mockUseFeatureFlag.mockReturnValue(true)
     mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 0,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
   })
 
   afterEach(() => {
@@ -45,9 +61,6 @@ describe("OfflineBanner", () => {
     mockUseOnlineStatus.mockReturnValue(false)
     render(<OfflineBanner />)
     expect(screen.getByText("Du är offline")).toBeInTheDocument()
-    expect(
-      screen.getByText("Visar cachad data. Vissa funktioner kan vara begränsade.")
-    ).toBeInTheDocument()
   })
 
   it("shows offline banner with amber styling", () => {
@@ -88,5 +101,63 @@ describe("OfflineBanner", () => {
     mockUseOnlineStatus.mockReturnValue(false)
     render(<OfflineBanner />)
     expect(screen.getByRole("status")).toBeInTheDocument()
+  })
+
+  // -- New: Pending mutation count --
+
+  it("shows pending count when offline with pending mutations", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 3,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    render(<OfflineBanner />)
+    expect(screen.getByText(/3 ändringar väntar/)).toBeInTheDocument()
+  })
+
+  it("shows syncing state when reconnected and syncing", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    const { rerender } = render(<OfflineBanner />)
+
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 2,
+      isSyncing: true,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    rerender(<OfflineBanner />)
+
+    expect(screen.getByText(/synkar/i)).toBeInTheDocument()
+  })
+
+  it("shows success message after sync completes", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    const { rerender } = render(<OfflineBanner />)
+
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 0,
+      isSyncing: false,
+      lastSyncResult: { synced: 3, failed: 0, conflicts: 0 },
+      triggerSync: vi.fn(),
+    })
+    rerender(<OfflineBanner />)
+
+    expect(screen.getByText(/synkade/i)).toBeInTheDocument()
+  })
+
+  it("shows no pending info when offline with zero pending", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 0,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    render(<OfflineBanner />)
+    expect(screen.queryByText(/ändringar väntar/)).not.toBeInTheDocument()
   })
 })

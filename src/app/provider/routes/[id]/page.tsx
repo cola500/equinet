@@ -10,6 +10,8 @@ import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 
 interface RouteStop {
   id: string
@@ -53,6 +55,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
   const [isLoadingRoute, setIsLoadingRoute] = useState(true)
   const [updatingStopId, setUpdatingStopId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { guardMutation } = useOfflineGuard()
 
   useEffect(() => {
     if (isProvider) {
@@ -81,29 +84,56 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
 
   const updateStopStatus = async (stopId: string, status: string) => {
     setUpdatingStopId(stopId)
+    const body = JSON.stringify({ status })
 
-    try {
-      const response = await fetch(`/api/routes/${resolvedParams.id}/stops/${stopId}`, {
+    await guardMutation(
+      async () => {
+        try {
+          const response = await fetch(`/api/routes/${resolvedParams.id}/stops/${stopId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body,
+          })
+
+          if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || "Kunde inte uppdatera stopp")
+          }
+
+          toast.success(status === "completed" ? "Stopp markerat som klart!" : "Status uppdaterad")
+          await fetchRoute() // Refresh route data
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "Något gick fel"
+          console.error("Error updating stop:", error)
+          toast.error(message)
+        } finally {
+          setUpdatingStopId(null)
+        }
+      },
+      {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+        url: `/api/routes/${resolvedParams.id}/stops/${stopId}`,
+        body,
+        entityType: "route-stop",
+        entityId: stopId,
+        optimisticUpdate: () => {
+          // Optimistically update local state
+          setRoute((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  stops: prev.stops.map((s) =>
+                    s.id === stopId ? { ...s, status } : s
+                  ),
+                }
+              : prev
+          )
+          setUpdatingStopId(null)
         },
-        body: JSON.stringify({ status }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Kunde inte uppdatera stopp")
       }
-
-      toast.success(status === "completed" ? "Stopp markerat som klart!" : "Status uppdaterad")
-      await fetchRoute() // Refresh route data
-    } catch (error: any) {
-      console.error("Error updating stop:", error)
-      toast.error(error.message || "Något gick fel")
-    } finally {
-      setUpdatingStopId(null)
-    }
+    )
   }
 
   const getStopStatusBadge = (status: string) => {
@@ -325,7 +355,10 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                         : "Ingen kund"}
                     </span>
                   </div>
-                  {getStopStatusBadge(stop.status)}
+                  <div className="flex items-center gap-1.5">
+                    <PendingSyncBadge entityId={stop.id} />
+                    {getStopStatusBadge(stop.status)}
+                  </div>
                 </div>
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.routeOrder.address)}`}

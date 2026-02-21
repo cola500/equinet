@@ -143,5 +143,6 @@ export async function clearAllOfflineData(): Promise<void> {
     offlineDb.profile.clear(),
     offlineDb.metadata.clear(),
     offlineDb.endpointCache.clear(),
+    offlineDb.pendingMutations.clear(),
   ])
 }
