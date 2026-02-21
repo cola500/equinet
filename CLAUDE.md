@@ -180,6 +180,10 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **useSession vs navigator.onLine race condition**: `useSession()` rapporterar `"unauthenticated"` ~2s FORE `navigator.onLine` andras. Utfor ALDRIG destruktiva operationer (cache-rensning) baserat pa "unauthenticated + online" -- det kan betyda "natverk nere". Lat sessionStorage rensas naturligt vid flik-stangning.
 - **Offline-navigeringsskydd**: Blockera `Link`-klick med `e.preventDefault()` + `toast.error()` nar offline och ej pa aktiv sida. Forhindrar RSC-request som ger cache miss -> `/~offline` -> krasch. Pattern i `BottomTabBar.tsx` och `ProviderNav.tsx`.
 - **router.replace() triggar RSC-request**: `router.replace()`/`router.push()` i App Router ar INTE lokala URL-uppdateringar -- de triggar natverksanrop. Guard med `if (isOnline)` nar URL-uppdateringen bara ar for deep-linking (inte for att ladda nytt innehall). Pattern i `calendar/page.tsx`.
+- **Sequence over concurrency vid reconnect**: Nar tva system reagerar pa samma `online`-event (SWR revalidation + sync engine), inaktivera det automatiska (`revalidateOnReconnect: false`) och lat sync trigga SWR manuellt via `globalMutate()` EFTER slutford sync. Forhindrar bade request-burst (rate limiting) och context destruction (React ommountering).
+- **Exponentiell backoff for sync-motorn**: `getRetryDelay(attempt, response)` -- 1s/2s/4s default, respekterar `Retry-After`-header. 429 ar aterhamtningsbart (revert till "pending"), 5xx ar permanent ("failed" efter max retries).
+- **Modul-niva guard for async hooks**: `let syncInProgress = false` pa modul-niva istallet for `useRef` -- overlever komponent-ommountering (Suspense, error boundaries). Exportera `_resetSyncGuard()` for tester.
+- **E2E IndexedDB-lasningar: stang anslutningen**: `db.close()` efter `indexedDB.open()` i E2E-tester. Oppen ra-anslutning kan interferera med Dexie:s transaktioner. Krav `mutations.length > 0` i pollning for att undvika tomma snapshots under Dexie-skrivningar.
 
 ---
 
