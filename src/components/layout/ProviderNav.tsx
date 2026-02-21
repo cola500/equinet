@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   CalendarDays,
@@ -69,10 +70,22 @@ const navItems: NavItem[] = [
   { href: "/provider/profile", label: "Min profil" },
 ]
 
+const OFFLINE_SAFE_PATHS = providerTabs
+  .filter((t) => t.offlineSafe)
+  .map((t) => t.href)
+
 export function ProviderNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const flags = useFeatureFlags()
   const isOnline = useOnlineStatus()
+
+  // Prefetch offline-safe tabs so RSC payloads are cached for offline navigation
+  useEffect(() => {
+    if (flags.offline_mode) {
+      OFFLINE_SAFE_PATHS.forEach((path) => router.prefetch(path))
+    }
+  }, [flags.offline_mode, router])
 
   const isVisible = (item: { featureFlag?: string }) =>
     !item.featureFlag || flags[item.featureFlag]
