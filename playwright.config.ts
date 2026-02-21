@@ -84,13 +84,37 @@ export default defineConfig({
       name: 'cleanup',
       testMatch: /.*cleanup\.setup\.ts/,
     },
+    // Offline PWA testing (only when OFFLINE_E2E=true)
+    // Runs only offline-pwa.spec.ts against production build on port 3001
+    ...(process.env.OFFLINE_E2E === 'true'
+      ? [
+          {
+            name: 'offline-chromium',
+            testMatch: /offline-pwa\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3001' },
+          },
+        ]
+      : []),
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 300000, // 5 minutes (first Turbopack build can be slow)
-  },
+  /* Run your local dev server before starting the tests.
+   * When OFFLINE_E2E=true, also start a production build on port 3001. */
+  webServer: [
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 300000, // 5 minutes (first Turbopack build can be slow)
+    },
+    ...(process.env.OFFLINE_E2E === 'true'
+      ? [
+          {
+            command: 'npm run build:pwa && npm run start:pwa',
+            url: 'http://localhost:3001',
+            reuseExistingServer: true,
+            timeout: 300000,
+          },
+        ]
+      : []),
+  ],
 });

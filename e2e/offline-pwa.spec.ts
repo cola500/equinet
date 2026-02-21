@@ -44,21 +44,26 @@ test.describe('Offline PWA', () => {
       await page.goto('/~offline')
       await expect(page.getByText('Ingen internetanslutning')).toBeVisible()
       await expect(
-        page.getByRole('link', { name: 'Tillbaka till Dashboard' })
+        page.getByRole('button', { name: 'Försök igen' })
       ).toBeVisible()
     })
   })
 
   test.describe('Offline navigation', () => {
     // These tests require a production build with an active service worker.
-    // They verify that previously visited pages load from the SW cache
-    // when the network is unavailable, and that unvisited pages show
-    // the offline fallback.
+    // They only run via: npm run test:e2e:offline (sets OFFLINE_E2E=true)
     //
     // Note: Playwright's context.setOffline() simulates network loss at the
     // browser level. The service worker still runs and can serve from cache.
 
-    test.skip(true, 'Requires production build with active service worker')
+    test.skip(!process.env.OFFLINE_E2E, 'Requires production build with active service worker (npm run test:e2e:offline)')
+
+    test.beforeEach(async ({ page }) => {
+      // Navigate first so navigator.serviceWorker API is available (not on about:blank)
+      await page.goto('/')
+      // Wait for service worker to be installed and active
+      await page.evaluate(() => navigator.serviceWorker.ready)
+    })
 
     test('previously visited page loads from cache when offline', async ({ context, page }) => {
       // 1. Visit dashboard while online (populates SW runtime cache)

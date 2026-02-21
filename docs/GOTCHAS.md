@@ -29,6 +29,7 @@
 23. [Vercel env pull Overskrider Lokal Config](#23-vercel-env-pull-overskrider-lokal-config)
 24. [Prisma Migration Workflow (db push -> migrate dev)](#24-prisma-migration-workflow-db-push---migrate-dev)
 25. [Deploy utan Migration = 500-fel i Produktion](#25-deploy-utan-migration--500-fel-i-produktion)
+26. [Lokal Offline/PWA-testning](#26-lokal-offlinepwa-testning)
 
 ---
 
@@ -1087,6 +1088,51 @@ WHERE migration_name = 'namn' AND finished_at IS NULL;
 ```
 
 **Impact:** Hela appen kan ga ner om API-routes SELECT:ar kolumner som inte finns i DB.
+
+---
+
+## 26. Lokal Offline/PWA-testning
+
+> **Learning: 2026-02-21** | **Severity: MEDIUM**
+
+**Problem:** E2E-tester kör mot `npm run dev` med `DISABLE_SW=true` -- service workern är helt inaktiverad. Offline-beteende kunde bara testas manuellt via deploy till Vercel.
+
+**Lösning:** Tre npm-scripts + ett villkorat Playwright-projekt:
+
+```bash
+# Bygg med service worker + offline feature flag
+npm run build:pwa
+
+# Starta prod-build på port 3001
+npm run start:pwa
+
+# Kör offline E2E-tester (bygger + startar automatiskt)
+npm run test:e2e:offline
+```
+
+**Manuell testning i browser:**
+```bash
+npm run build:pwa && npm run start:pwa
+# Öppna http://localhost:3001 i Chrome
+# DevTools > Application > Service Workers > Offline
+```
+
+**Hur det fungerar:**
+- `OFFLINE_E2E=true` aktiverar ett extra Playwright-projekt (`offline-chromium`) och en prod-server på port 3001
+- Vanlig `npm run test:e2e` påverkas inte -- offline-testerna skippas via `test.skip(!process.env.OFFLINE_E2E)`
+- `FEATURE_OFFLINE_MODE=true` sätts vid både build OCH start (Next.js bäddar in env vid build för klient, men server-side läses vid runtime)
+
+**Gotchas:**
+- `next build` tar ~30-60s. `reuseExistingServer: true` undviker ombygge om port 3001 redan är uppe
+- SW måste hinna installera + aktivera innan testet går offline. `navigator.serviceWorker.ready` i `beforeEach` löser detta
+- Offline-testerna behöver inte seed-data (testar navigering och cache, inte datainnehåll)
+
+**Filer:**
+- `package.json` -- scripts: `build:pwa`, `start:pwa`, `test:e2e:offline`
+- `playwright.config.ts` -- `webServer` array + `offline-chromium` projekt (villkorat på `OFFLINE_E2E`)
+- `e2e/offline-pwa.spec.ts` -- `test.skip(!process.env.OFFLINE_E2E)` + `SW.ready` i beforeEach
+
+**Impact:** Offline-testning lokalt istället för deploy-till-Vercel-roundtrip. Snabbare iteration.
 
 ---
 
