@@ -57,7 +57,7 @@ function CalendarContent() {
   const [prefillDate, setPrefillDate] = useState<string | undefined>()
   const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
-  const { guardMutation } = useOfflineGuard()
+  const { isOnline, guardMutation } = useOfflineGuard()
 
   // Sätt dagvy som default på mobil
   useEffect(() => {
@@ -183,19 +183,25 @@ function CalendarContent() {
   const handleBookingClick = (booking: CalendarBooking) => {
     setSelectedBooking(booking)
     setDialogOpen(true)
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('bookingId', booking.id)
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    // Skip URL update offline -- RSC request would fail and trigger error boundary
+    if (isOnline) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('bookingId', booking.id)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
   }
 
   const handleDialogClose = (open: boolean) => {
     setDialogOpen(open)
     if (!open) {
       setSelectedBooking(null)
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('bookingId')
-      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname
-      router.replace(newUrl, { scroll: false })
+      // Skip URL update offline -- RSC request would fail and trigger error boundary
+      if (isOnline) {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('bookingId')
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname
+        router.replace(newUrl, { scroll: false })
+      }
     }
   }
 
