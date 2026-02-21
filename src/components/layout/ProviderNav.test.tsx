@@ -53,17 +53,33 @@ describe("ProviderNav", () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it("should block navigation when offline and show toast", () => {
+  it("should block navigation to non-offlineSafe link when offline", () => {
     vi.mocked(useOnlineStatus).mockReturnValue(false)
 
     render(<ProviderNav />)
 
-    const calendarLink = screen.getByText("Kalender")
-    fireEvent.click(calendarLink)
+    const servicesLink = screen.getByText("Mina tjänster")
+    fireEvent.click(servicesLink)
 
     expect(toast.error).toHaveBeenCalledWith(
       "Du är offline. Navigering kräver internetanslutning."
     )
+  })
+
+  it("should allow navigation to cached tabs (dashboard, kalender, bokningar) when offline", () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+
+    render(<ProviderNav />)
+
+    // Kalender is offlineSafe -- should NOT be blocked
+    const calendarLink = screen.getByText("Kalender")
+    fireEvent.click(calendarLink)
+    expect(toast.error).not.toHaveBeenCalled()
+
+    // Bokningar is offlineSafe -- should NOT be blocked
+    const bookingsLink = screen.getByText("Bokningar")
+    fireEvent.click(bookingsLink)
+    expect(toast.error).not.toHaveBeenCalled()
   })
 
   it("should allow click on active page link when offline", () => {

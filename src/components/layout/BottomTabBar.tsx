@@ -20,6 +20,7 @@ export interface TabItem {
   label: string
   icon: LucideIcon
   matchPrefix?: string
+  offlineSafe?: boolean
 }
 
 export interface MoreMenuItem {
@@ -27,6 +28,7 @@ export interface MoreMenuItem {
   label: string
   icon: LucideIcon
   matchPrefix?: string
+  offlineSafe?: boolean
 }
 
 interface BottomTabBarProps {
@@ -46,8 +48,8 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
     return pathname === href
   }
 
-  function handleOfflineClick(e: React.MouseEvent, href: string, matchPrefix?: string) {
-    if (!isOnline && !isActive(href, matchPrefix)) {
+  function handleOfflineClick(e: React.MouseEvent, href: string, matchPrefix?: string, offlineSafe?: boolean) {
+    if (!isOnline && !offlineSafe && !isActive(href, matchPrefix)) {
       e.preventDefault()
       toast.error("Du är offline. Navigering kräver internetanslutning.")
     }
@@ -70,7 +72,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                onClick={(e) => handleOfflineClick(e, tab.href, tab.matchPrefix)}
+                onClick={(e) => handleOfflineClick(e, tab.href, tab.matchPrefix, tab.offlineSafe)}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-all duration-200 ${
                   active ? "text-green-700" : "text-gray-400"
                 }`}
@@ -127,7 +129,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
                 <DrawerClose key={item.href} asChild>
                   <Link
                     href={item.href}
-                    onClick={(e) => handleOfflineClick(e, item.href, item.matchPrefix)}
+                    onClick={(e) => handleOfflineClick(e, item.href, item.matchPrefix, item.offlineSafe)}
                     className={`flex items-center gap-3 px-4 py-3 min-h-[48px] ${
                       active
                         ? "text-green-700 bg-green-50 font-medium"

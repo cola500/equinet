@@ -27,6 +27,7 @@ interface NavItem {
   label: string
   matchPrefix?: string
   featureFlag?: string
+  offlineSafe?: boolean
 }
 
 interface MoreItem extends MoreMenuItem {
@@ -34,9 +35,9 @@ interface MoreItem extends MoreMenuItem {
 }
 
 const providerTabs: TabItem[] = [
-  { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
-  { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
-  { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList },
+  { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard, offlineSafe: true },
+  { href: "/provider/calendar", label: "Kalender", icon: CalendarDays, offlineSafe: true },
+  { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList, offlineSafe: true },
 ]
 
 const providerMoreItems: MoreItem[] = [
@@ -53,9 +54,9 @@ const providerMoreItems: MoreItem[] = [
 ]
 
 const navItems: NavItem[] = [
-  { href: "/provider/dashboard", label: "Översikt" },
-  { href: "/provider/calendar", label: "Kalender" },
-  { href: "/provider/bookings", label: "Bokningar" },
+  { href: "/provider/dashboard", label: "Översikt", offlineSafe: true },
+  { href: "/provider/calendar", label: "Kalender", offlineSafe: true },
+  { href: "/provider/bookings", label: "Bokningar", offlineSafe: true },
   { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging" },
   { href: "/provider/services", label: "Mina tjänster" },
   { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route", featureFlag: "route_planning" },
@@ -87,7 +88,7 @@ export function ProviderNav() {
   }
 
   function handleOfflineClick(e: React.MouseEvent, item: NavItem) {
-    if (!isOnline && !isActive(item)) {
+    if (!isOnline && !item.offlineSafe && !isActive(item)) {
       e.preventDefault()
       toast.error("Du är offline. Navigering kräver internetanslutning.")
     }
