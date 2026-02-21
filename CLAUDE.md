@@ -14,6 +14,7 @@
 | Bokningsflöde & Betalning | [docs/SERVICE-BOOKING-FLOW.md](docs/SERVICE-BOOKING-FLOW.md) |
 | Tidigare Retros | [docs/retrospectives/](docs/retrospectives/) |
 | Databas-arkitektur | [docs/DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
+| Offline-arkitektur | [docs/OFFLINE-ARCHITECTURE.md](docs/OFFLINE-ARCHITECTURE.md) |
 | Production Readiness | [NFR.md](NFR.md) |
 | Röstloggning | [docs/VOICE-WORK-LOGGING.md](docs/VOICE-WORK-LOGGING.md) |
 

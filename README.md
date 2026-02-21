@@ -129,7 +129,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (2030+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (2235+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -248,13 +248,13 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Rate limiting, CSRF, XSS, SQL injection-skydd
 - GDPR-dataexport (JSON/CSV)
 - Redis-backade feature flags med admin-toggle
-- Installbar PWA med offline-stöd (Serwist service worker + IndexedDB-cache för leverantörsdata)
+- Installbar PWA med offline-stöd (Serwist service worker + IndexedDB-cache + offline mutation queue med automatisk synk vid återanslutning)
 
 Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade beskrivningar.
 
 ## Testning
 
-**2360+ tester** (325+ E2E desktop + mobil + 2030+ unit/integration) med **70% coverage**.
+**2560+ tester** (325+ E2E desktop + mobil + 2235+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -267,6 +267,7 @@ npm run test:coverage     # Med coverage
 # E2E (Playwright)
 npm run test:e2e          # Kör E2E-tester (desktop)
 npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
+npm run test:e2e:offline  # Offline PWA E2E-tester (bygger prod + testar offline-läge)
 # Mobil viewport körs automatiskt som separat Playwright-projekt (Pixel 7, Chromium)
 ```
 
@@ -335,6 +336,7 @@ Se [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) för fullständig s
 - **[docs/GOTCHAS.md](./docs/GOTCHAS.md)** - Vanliga problem och lösningar
 - **[docs/AGENTS.md](./docs/AGENTS.md)** - Agent-team guide för Claude Code
 - **[docs/PRODUCTION-DEPLOYMENT.md](./docs/PRODUCTION-DEPLOYMENT.md)** - Komplett deployment-guide
+- **[docs/OFFLINE-ARCHITECTURE.md](./docs/OFFLINE-ARCHITECTURE.md)** - Offline PWA-arkitektur (service worker, mutation queue, sync engine)
 - **[docs/skalning.md](./docs/skalning.md)** - Skalningsplan för 500 användare
 - **[docs/ANVANDARDOKUMENTATION.md](./docs/ANVANDARDOKUMENTATION.md)** - Detaljerade funktionsbeskrivningar
 

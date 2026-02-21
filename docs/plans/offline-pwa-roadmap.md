@@ -5,64 +5,69 @@
 Fas 1 (installbar PWA + lasbara offline-data for leverantorer) ar implementerad och mergad.
 Denna plan beskriver framtida faser for att bygga ut offline-stodet.
 
-**Implementerat (fas 1):**
+**Implementerat (fas 1 -- session 47, 2026-02-19):**
 - Installbar PWA (manifest, service worker, offline-fallback)
 - IndexedDB-cache for bokningar, rutter och profil (4h staleness)
 - Network-first SWR-fetcher med cache-fallback
 - Offline-banner + install-prompt
 - Feature flag: `offline_mode`
 
----
+**Implementerat (fas 2 -- session 47-52, 2026-02-19 till 2026-02-21):**
+- Mutation queue (FIFO i IndexedDB via Dexie.js) med deduplicering
+- Sync engine med exponentiell backoff (1s/2s/4s), Retry-After-parsing, 429->pending
+- Optimistisk UI med PendingSyncBadge
+- Sekventiell sync-strategi: `revalidateOnReconnect: false` + manuell `globalMutate()` efter sync
+- Modul-niva sync guard (overlever React-ommountering)
+- Stale syncing recovery (`resetStaleSyncingMutations`)
+- Error boundaries for offline-navigering
+- Offline-navigeringsskydd i BottomTabBar + ProviderNav
+- 9 E2E-tester (offline-mutations.spec.ts)
 
-## Fas 2: Offline-mutations (markera bokning klar, uppdatera ruttstopp)
-
-**Mal:** Leverantorer kan utfora vanliga skrivoperationer offline. Andringar kolappar lokalt och synkas nar natverket atervandar.
-
-### Approach
-- **Optimistic UI**: Visa andringen direkt, spara i IndexedDB som "pending mutation"
-- **Mutation queue**: FIFO-ko av operationer som vantar pa natverk
-- **Retry med exponential backoff**: Nar online -> avarbeta kon
-- **Konflikthantering**: Last-write-wins for enkla falt, manuell merge for komplexa
-
-### Operationer att stodja
-| Operation | Endpoint | Komplexitet |
-|-----------|----------|-------------|
-| Markera bokning genomford | `PATCH /api/bookings/:id` | Lag |
-| Uppdatera bokningsanteckning | `PATCH /api/bookings/:id` | Lag |
-| Uppdatera ruttstopp-status | `PATCH /api/routes/:id/stops` | Medel |
-| Logga arbete (text) | `POST /api/voice-log` | Lag |
-
-### Tekniska beslut
-- **Background Sync API** for automatisk retry (Chrome/Edge, ej Safari)
-- **Fallback**: Manuell sync-knapp for Safari/iOS
-- **UI**: "Osparad andring"-badge pa bokningar med pending mutations
-
-### Risker
-- Safari stodjer inte Background Sync -- manuell fallback kravs
-- Konflikthantering: om annan anvandare andrar samma bokning medan provider ar offline
-- Mutation-ordning: beroenden mellan operationer (t.ex. markera klar -> skicka faktura)
+> Se [docs/OFFLINE-ARCHITECTURE.md](../OFFLINE-ARCHITECTURE.md) for fullstandig teknisk guide.
 
 ---
 
-## Fas 3: Background Sync + Konflikthantering
+## Fas 2: Offline-mutations -- KLAR
 
-**Mal:** Robust synkronisering med konfliktdetektering.
+**Implementerad:** Session 47-52 (2026-02-19 till 2026-02-21)
 
-### Approach
+### Implementerade operationer
+| Operation | Endpoint | Status |
+|-----------|----------|--------|
+| Markera bokning genomford | `PATCH /api/bookings/:id` | Klar |
+| Uppdatera bokningsanteckning | `PATCH /api/bookings/:id` | Klar |
+| Uppdatera ruttstopp-status | `PATCH /api/routes/:id/stops` | Klar |
+| Logga arbete (text) | `POST /api/voice-log` | Ej implementerad |
+
+### Tekniska val (avvikelser fran ursprunglig plan)
+- **Ingen Background Sync API** -- anvander istallet `useOnlineStatus` + manuell sync vid ateranslutning (fungerar pa alla plattformar inkl. Safari)
+- **Last-write-wins** -- ingen manuell merge (for enkel MVP, konfliktdetektering planerad i fas 3)
+- **Rate-limit-medvetenhet** -- 429-svar atergar till pending (inte failed), exponentiell backoff med Retry-After-stod
+- **Stale recovery** -- stuck "syncing"-mutations aterstalls till "pending" vid varje sync-runda
+
+---
+
+## Fas 3: Konflikthantering + Sync-status
+
+**Mal:** Robust konfliktdetektering och synkroniseringsoverblick.
+
+> **OBS:** PendingMutation-modellen ar redan implementerad i fas 2. Background Sync (Chrome API) valdes bort till formån for manuell sync via `useOnlineStatus` som fungerar pa alla plattformar.
+
+### Kvar att implementera
 - **Versionsstamplar**: Lagg till `updatedAt` + `version` pa Booking/RouteStop
 - **Optimistic concurrency**: Skicka version med mutation, servern avvisar om stale
 - **Konflikt-UI**: Toast med "Denna bokning har andrats av nagon annan. Vill du skriva over?"
-- **Sync-status-sida**: Visa alla pending/failed mutations for leverantoren
+- **Sync-status-sida**: Visa alla pending/failed mutations for leverantoren med retry/discard-knappar
 
-### Datamodell
+### Befintlig datamodell (implementerad i fas 2)
 ```
 PendingMutation {
-  id: string (UUID)
+  id: string (auto-increment)
   endpoint: string
   method: string
   body: JSON
   createdAt: timestamp
-  status: 'pending' | 'syncing' | 'failed' | 'resolved'
+  status: 'pending' | 'syncing' | 'synced' | 'failed'
   retryCount: number
   errorMessage?: string
 }
@@ -120,15 +125,16 @@ PendingMutation {
 
 ## Prioritering
 
-| Fas | Vardefull for anvandare | Teknisk komplexitet | Rekommendation |
-|-----|------------------------|---------------------|----------------|
-| 2: Offline-mutations | HOG | MEDEL | Nasta steg |
-| 3: Background Sync | MEDEL | HOG | Nar fas 2 ar stabil |
-| 4: Kund-offline | LAG-MEDEL | LAG | Snabb win nar fas 2 ar klar |
+| Fas | Vardefull for anvandare | Teknisk komplexitet | Status |
+|-----|------------------------|---------------------|--------|
+| 1: Installbar PWA + cache | HOG | MEDEL | KLAR (2026-02-19) |
+| 2: Offline-mutations | HOG | MEDEL | KLAR (2026-02-21) |
+| 3: Konflikthantering | MEDEL | HOG | Nasta steg |
+| 4: Kund-offline | LAG-MEDEL | LAG | Snabb win |
 | 5: Smart Pre-fetching | HOG | HOG | Stor UX-forbattring |
 | 6: Offline-kartor | MEDEL | HOG | Nice-to-have |
 
-**Rekommenderad ordning:** 2 -> 4 -> 3 -> 5 -> 6
+**Rekommenderad ordning:** 4 -> 3 -> 5 -> 6
 
 Fas 4 (kund-offline) ar enkel att bygga med befintlig infrastruktur och kan goras parallellt med fas 3.
 Fas 5 (smart pre-fetching) ar den storsta UX-forbattringen men kraver stabil sync forst.

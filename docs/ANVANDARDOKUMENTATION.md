@@ -937,18 +937,25 @@ Du kan stänga installationsbannern om du inte vill installera. Den visas inte i
 
 ### Offline-läge
 
-Om du kör i ett område utan mobilnät kan du fortfarande se dina bokningar, rutter och profilinformation tack vare offline-cachning.
+Om du kör i ett område utan mobilnät kan du fortfarande använda Equinet tack vare offline-stöd. Du kan både se och göra ändringar -- ändringarna sparas lokalt och synkas automatiskt när du får nät igen.
 
 **Så fungerar det:**
 - När du har internetåtkomst sparas dina bokningar, rutter och profildata automatiskt lokalt på enheten
 - Om du tappar nätverket visar Equinet den senast sparade datan
 - En **gul banner** visas längst upp på sidan med texten "Du är offline"
-- När nätverket kommer tillbaka visas en **grön banner** med "Återansluten" i 3 sekunder
+- När nätverket kommer tillbaka visas en **grön banner** med "Återansluten" och antal synkade ändringar
+
+**Ändringar offline:**
+- Du kan **markera bokningar som klara** -- bokningen uppdateras direkt i appen
+- Du kan **uppdatera anteckningar** på bokningar
+- Du kan **ändra status på ruttstopp** (markera som besökt)
+- Ändringar som väntar på synk visas med en **gul badge** ("Väntar på synk")
+- Vid återanslutning synkas alla ändringar automatiskt i bakgrunden
 
 **Begränsningar i offline-läge:**
-- Du kan **se** bokningar, rutter och din profil -- men inte göra ändringar
 - Data som är äldre än 4 timmar visas inte (du uppmanas att ansluta igen)
-- Funktioner som kräver nätverksåtkomst (betala, boka, skicka meddelanden) fungerar inte offline
+- Funktioner som kräver nätverksåtkomst (betala, boka nya tider, skicka meddelanden) fungerar inte offline
+- Om en annan person ändrar samma bokning medan du är offline gäller den senaste ändringen
 
 **Bakom feature flag:** Funktionen måste vara aktiverad av en administratör under systeminställningar.
 

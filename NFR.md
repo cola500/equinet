@@ -117,6 +117,7 @@
 - Error handling & retry-logik (useRetry hook, ErrorState component, toast med retry)
 - Sentry för error tracking (client + server + edge, session replay)
 - Email-notifieringar via Resend (mock-fallback om nyckel saknas)
+- Offline PWA-stöd för leverantörer (service worker, IndexedDB-cache, mutation queue med automatisk sync vid återanslutning). Se [OFFLINE-ARCHITECTURE.md](docs/OFFLINE-ARCHITECTURE.md)
 
 ### Kvarstår
 
@@ -134,7 +135,7 @@
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 1982+ tester, 163 testfiler (2026-02-19) |
+| Unit/integration-tester | Klart | 2235+ tester, 163+ testfiler (2026-02-21) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
@@ -409,4 +410,4 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 ---
 
 **Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2026-02-19
+**Senast granskad**: 2026-02-21

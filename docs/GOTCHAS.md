@@ -30,6 +30,7 @@
 24. [Prisma Migration Workflow (db push -> migrate dev)](#24-prisma-migration-workflow-db-push---migrate-dev)
 25. [Deploy utan Migration = 500-fel i Produktion](#25-deploy-utan-migration--500-fel-i-produktion)
 26. [Lokal Offline/PWA-testning](#26-lokal-offlinepwa-testning)
+27. [Offline Sync Race Conditions](#27-offline-sync-race-conditions)
 
 ---
 
@@ -1131,8 +1132,51 @@ npm run build:pwa && npm run start:pwa
 - `package.json` -- scripts: `build:pwa`, `start:pwa`, `test:e2e:offline`
 - `playwright.config.ts` -- `webServer` array + `offline-chromium` projekt (villkorat på `OFFLINE_E2E`)
 - `e2e/offline-pwa.spec.ts` -- `test.skip(!process.env.OFFLINE_E2E)` + `SW.ready` i beforeEach
+- `e2e/offline-mutations.spec.ts` -- E2E-tester för offline-mutationer (markera klar, anteckningar, ruttstopp)
 
 **Impact:** Offline-testning lokalt istället för deploy-till-Vercel-roundtrip. Snabbare iteration.
+
+---
+
+## 27. Offline Sync Race Conditions
+
+> **Learning: 2026-02-21** | **Severity: HIGH**
+
+**Problem:** Vid återanslutning avfyras två system samtidigt -- SWR:s `revalidateOnReconnect` och sync engine:n. Resultatet:
+1. **Request-burst**: Båda skickar requests parallellt -> rate limiting (429)
+2. **Context destruction**: SWR:s revalidation kan orsaka React-ommountering som avmonterar sync-hooken mitt i operation
+
+**Lösning:** "Sequence over concurrency" -- inaktivera det automatiska och kör sekventiellt:
+
+```typescript
+// SWRProvider: stäng av automatisk revalidation vid reconnect
+<SWRConfig value={{ revalidateOnReconnect: false }}>
+
+// useMutationSync: sync först, sedan refresha all data
+await processMutationQueue();
+await globalMutate(); // SWR refreshar EFTER sync är klar
+```
+
+**Modul-nivå guard** (överlever React-ommountering):
+```typescript
+// useMutationSync.ts -- INTE useRef (dör vid unmount)
+let syncInProgress = false;
+
+export function _resetSyncGuard() { syncInProgress = false; } // för tester
+```
+
+**Sync engine** hanterar rate limiting:
+- 429 -> återställ mutation till `pending` (inte `failed`)
+- Exponentiell backoff: 1s, 2s, 4s
+- Respekterar `Retry-After`-header
+- `resetStaleSyncingMutations()` körs först i varje runda (rensa stuck mutations)
+
+**Filer:**
+- `src/components/providers/SWRProvider.tsx` -- `revalidateOnReconnect: false`
+- `src/hooks/useMutationSync.ts` -- sekventiell sync + modul-nivå guard
+- `src/lib/offline/sync-engine.ts` -- exponentiell backoff, 429-hantering
+
+**Impact:** Utan detta mönster kraschar sync vid återanslutning i ~30% av fallen (rate limiting + context destruction).
 
 ---
 
