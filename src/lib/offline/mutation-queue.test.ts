@@ -10,6 +10,7 @@ import {
   removeSyncedMutations,
   getPendingCount,
   clearAllMutations,
+  resetStaleSyncingMutations,
 } from "./mutation-queue"
 
 beforeEach(async () => {
@@ -224,6 +225,38 @@ describe("mutation-queue", () => {
 
       const count = await getPendingCount()
       expect(count).toBe(1)
+    })
+  })
+
+  describe("resetStaleSyncingMutations", () => {
+    it("should revert syncing mutations to pending", async () => {
+      const id1 = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+      const id2 = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/b",
+        body: "{}",
+        entityType: "booking",
+        entityId: "b",
+      })
+
+      // Simulate stuck syncing state
+      await updateMutationStatus(id1, "syncing")
+      // id2 stays as "pending"
+
+      const resetCount = await resetStaleSyncingMutations()
+
+      expect(resetCount).toBe(1)
+      const mut1 = await offlineDb.pendingMutations.get(id1)
+      expect(mut1?.status).toBe("pending")
+      // id2 should be unaffected
+      const mut2 = await offlineDb.pendingMutations.get(id2)
+      expect(mut2?.status).toBe("pending")
     })
   })
 

@@ -74,6 +74,21 @@ export async function getPendingCount(): Promise<number> {
     .count()
 }
 
+/** Reset mutations stuck in "syncing" back to "pending". Recovers from
+ *  interrupted sync runs (e.g. component unmount during async operation). */
+export async function resetStaleSyncingMutations(): Promise<number> {
+  const stale = await offlineDb.pendingMutations
+    .where("status")
+    .equals("syncing")
+    .toArray()
+
+  for (const mutation of stale) {
+    await offlineDb.pendingMutations.update(mutation.id!, { status: "pending" })
+  }
+
+  return stale.length
+}
+
 /** Remove all mutations regardless of status. */
 export async function clearAllMutations(): Promise<void> {
   await offlineDb.pendingMutations.clear()

@@ -1,11 +1,16 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { mutate as globalMutate } from "swr"
 import { toast } from "sonner"
 import { useOnlineStatus } from "./useOnlineStatus"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { processMutationQueue, type SyncResult } from "@/lib/offline/sync-engine"
 import { getPendingCount } from "@/lib/offline/mutation-queue"
+
+// Module-level guard -- survives component unmount/remount (e.g. from SWR
+// revalidation triggering React Suspense re-mounting).
+let syncInProgress = false
 
 /**
  * Hook that manages offline mutation sync.
@@ -22,7 +27,6 @@ export function useMutationSync() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSyncResult, setLastSyncResult] = useState<SyncResult | null>(null)
   const wasOfflineRef = useRef(false)
-  const syncInProgressRef = useRef(false)
 
   // Refresh pending count
   const refreshCount = useCallback(async () => {
@@ -30,10 +34,10 @@ export function useMutationSync() {
     setPendingCount(count)
   }, [])
 
-  // Run sync
+  // Run sync, then trigger SWR revalidation (replaces revalidateOnReconnect)
   const triggerSync = useCallback(async () => {
-    if (syncInProgressRef.current) return
-    syncInProgressRef.current = true
+    if (syncInProgress) return
+    syncInProgress = true
     setIsSyncing(true)
 
     try {
@@ -42,18 +46,24 @@ export function useMutationSync() {
       await refreshCount()
 
       // Toast feedback
-      if (result.synced > 0 && result.conflicts === 0 && result.failed === 0) {
+      if (result.synced > 0 && result.conflicts === 0 && result.failed === 0 && result.rateLimited === 0) {
         toast.success(`${result.synced} ${result.synced === 1 ? "ändring synkad" : "ändringar synkade"}`)
-      } else if (result.conflicts > 0 || result.failed > 0) {
+      } else if (result.conflicts > 0 || result.failed > 0 || result.rateLimited > 0) {
         const parts: string[] = []
         if (result.synced > 0) parts.push(`${result.synced} synkade`)
         if (result.conflicts > 0) parts.push(`${result.conflicts} kunde inte synkas`)
         if (result.failed > 0) parts.push(`${result.failed} misslyckades`)
+        if (result.rateLimited > 0) parts.push(`${result.rateLimited} begränsade av hastighet`)
         toast.warning(parts.join(", "))
       }
+
+      // Sequence: sync first, THEN revalidate SWR cache.
+      // This replaces SWR's implicit revalidateOnReconnect (which we disabled
+      // to prevent request bursts and execution context destruction).
+      await globalMutate(() => true, undefined, { revalidate: true })
     } finally {
       setIsSyncing(false)
-      syncInProgressRef.current = false
+      syncInProgress = false
     }
   }, [refreshCount])
 
@@ -86,4 +96,9 @@ export function useMutationSync() {
   }, [isOfflineEnabled, refreshCount])
 
   return { pendingCount, isSyncing, lastSyncResult, triggerSync }
+}
+
+/** Reset the module-level sync guard. Test-only. */
+export function _resetSyncGuard() {
+  syncInProgress = false
 }
