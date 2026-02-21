@@ -25,7 +25,7 @@ export function reportConnectivityLoss() {
 
 /**
  * Report that connectivity has been restored.
- * Called automatically when the browser "online" event fires,
+ * Called by the connectivity probe when network verification succeeds,
  * or manually when a fetch succeeds after a previous failure.
  */
 export function reportConnectivityRestored() {
@@ -109,7 +109,11 @@ export function stopProbing() {
 
 function subscribe(callback: () => void) {
   const handleOnline = () => {
-    reportConnectivityRestored()
+    if (fetchFailed) {
+      // We have evidence of network failure -- verify with a real probe
+      // before restoring. iOS Safari fires false online events.
+      probeConnectivity()
+    }
     callback()
   }
   // Manage recovery interval based on connectivity state changes

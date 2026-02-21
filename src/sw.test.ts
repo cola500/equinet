@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { authSessionMatcher, jsChunkMatcher } from "./sw-matchers"
+import { authSessionMatcher, apiCacheMatcher, jsChunkMatcher } from "./sw-matchers"
 
 // Helper to create a minimal matcher input
 function createMatcherInput(
@@ -28,6 +28,33 @@ describe("authSessionMatcher", () => {
   it("should NOT match /api/auth/session from different origin", () => {
     const input = createMatcherInput("/api/auth/session", false)
     expect(authSessionMatcher(input)).toBe(false)
+  })
+})
+
+describe("apiCacheMatcher", () => {
+  it("should match same-origin /api/ paths", () => {
+    const input = createMatcherInput("/api/bookings", true)
+    expect(apiCacheMatcher(input)).toBe(true)
+  })
+
+  it("should match /api/health", () => {
+    const input = createMatcherInput("/api/health", true)
+    expect(apiCacheMatcher(input)).toBe(true)
+  })
+
+  it("should match /api/auth/session (auth rule takes priority via ordering)", () => {
+    const input = createMatcherInput("/api/auth/session", true)
+    expect(apiCacheMatcher(input)).toBe(true)
+  })
+
+  it("should NOT match non-API paths", () => {
+    const input = createMatcherInput("/provider/dashboard", true)
+    expect(apiCacheMatcher(input)).toBe(false)
+  })
+
+  it("should NOT match cross-origin API paths", () => {
+    const input = createMatcherInput("/api/bookings", false)
+    expect(apiCacheMatcher(input)).toBe(false)
   })
 })
 

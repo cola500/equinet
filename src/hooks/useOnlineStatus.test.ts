@@ -156,7 +156,7 @@ describe("useOnlineStatus", () => {
       expect(result.current).toBe(true)
     })
 
-    it("online event restores connectivity after fetchFailed", () => {
+    it("online event does NOT immediately restore when fetchFailed is true (probes instead)", () => {
       Object.defineProperty(navigator, "onLine", {
         value: true,
         writable: true,
@@ -170,11 +170,13 @@ describe("useOnlineStatus", () => {
       })
       expect(result.current).toBe(false)
 
-      // Simulate browser online event (network restored)
+      // Simulate browser online event -- should NOT blindly restore
+      // (iOS Safari fires false online events)
       act(() => {
         window.dispatchEvent(new Event("online"))
       })
-      expect(result.current).toBe(true)
+      // Still offline because probe hasn't completed yet
+      expect(result.current).toBe(false)
     })
 
     it("subscribes to connectivity-change event", () => {
@@ -261,6 +263,96 @@ describe("useOnlineStatus", () => {
       )
 
       removeSpy.mockRestore()
+    })
+
+    it("probes instead of restoring when online event fires and fetchFailed is true", async () => {
+      const fetchMock = vi.spyOn(globalThis, "fetch")
+      fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
+
+      const { result } = renderHook(() => useOnlineStatus())
+
+      // Flush initial probe
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+      expect(result.current).toBe(true)
+
+      // Go offline
+      act(() => {
+        reportConnectivityLoss()
+      })
+      expect(result.current).toBe(false)
+
+      // Online event fires (iOS false positive scenario)
+      act(() => {
+        window.dispatchEvent(new Event("online"))
+      })
+
+      // Should NOT immediately restore -- probe is in-flight
+      expect(result.current).toBe(false)
+
+      // Flush the probe (fetch succeeds -> restores)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      expect(result.current).toBe(true)
+    })
+
+    it("stays offline when online event fires but probe fails", async () => {
+      const fetchMock = vi.spyOn(globalThis, "fetch")
+      fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
+
+      const { result } = renderHook(() => useOnlineStatus())
+
+      // Flush initial probe
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      // Go offline
+      act(() => {
+        reportConnectivityLoss()
+      })
+      expect(result.current).toBe(false)
+
+      // Network is still down
+      fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      // Online event fires (iOS false positive)
+      act(() => {
+        window.dispatchEvent(new Event("online"))
+      })
+
+      // Flush probe (fails)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      // Should stay offline
+      expect(result.current).toBe(false)
+    })
+
+    it("does not probe when online event fires and fetchFailed is false", async () => {
+      const fetchMock = vi.spyOn(globalThis, "fetch")
+      fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
+
+      renderHook(() => useOnlineStatus())
+
+      // Flush initial probe
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      fetchMock.mockClear()
+
+      // Online event when already online (fetchFailed is false)
+      act(() => {
+        window.dispatchEvent(new Event("online"))
+      })
+
+      // Should NOT trigger a probe
+      expect(fetchMock).not.toHaveBeenCalled()
     })
 
     it("probes with HEAD method and cache-busting param", async () => {

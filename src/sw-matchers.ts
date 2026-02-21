@@ -16,6 +16,17 @@ export function authSessionMatcher({
   return sameOrigin && pathname === "/api/auth/session"
 }
 
+/** Match same-origin /api/* GET requests (for cache + connectivity notifier) */
+export function apiCacheMatcher({
+  url: { pathname },
+  sameOrigin,
+}: {
+  url: { pathname: string }
+  sameOrigin: boolean
+}): boolean {
+  return sameOrigin && pathname.startsWith("/api/")
+}
+
 /** Match /_next/static/ JS chunk requests from the same origin */
 export function jsChunkMatcher({
   url: { pathname },

@@ -1,7 +1,7 @@
 import { defaultCache, PAGES_CACHE_NAME } from "@serwist/next/worker"
 import type { PrecacheEntry, RuntimeCaching } from "serwist"
 import { Serwist, NetworkFirst, CacheFirst, ExpirationPlugin } from "serwist"
-import { authSessionMatcher, jsChunkMatcher } from "./sw-matchers"
+import { authSessionMatcher, apiCacheMatcher, jsChunkMatcher } from "./sw-matchers"
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (PrecacheEntry | string)[]
@@ -51,6 +51,22 @@ const navigationCaching: RuntimeCaching[] = [
         connectivityNotifier,
       ],
       networkTimeoutSeconds: PAGE_TIMEOUT,
+    }),
+  },
+  // API requests: NetworkFirst with connectivity notifier.
+  // Mirrors defaultCache's "apis" rule but adds connectivityNotifier so
+  // failed API fetches trigger immediate offline detection via SW_FETCH_FAILED.
+  // Placed after auth session (which has its own caching) but before RSC/HTML rules.
+  {
+    matcher: apiCacheMatcher,
+    method: "GET",
+    handler: new NetworkFirst({
+      cacheName: "apis",
+      plugins: [
+        new ExpirationPlugin({ maxEntries: 16, maxAgeSeconds: 24 * 60 * 60 }),
+        connectivityNotifier,
+      ],
+      networkTimeoutSeconds: 10,
     }),
   },
   // RSC Prefetch: Next.js Link prefetch -- NetworkFirst with fast timeout
