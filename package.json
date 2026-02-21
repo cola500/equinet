@@ -28,7 +28,7 @@
     "test:e2e:cleanup": "playwright test --project=cleanup",
     "test:e2e:offline": "OFFLINE_E2E=true playwright test --project=offline-chromium",
     "build:pwa": "FEATURE_OFFLINE_MODE=true next build --webpack",
-    "start:pwa": "FEATURE_OFFLINE_MODE=true next start -p 3001",
+    "start:pwa": "FEATURE_OFFLINE_MODE=true AUTH_TRUST_HOST=true next start -p 3001",
     "typecheck": "tsc --project tsconfig.typecheck.json",
     "prepare": "husky",
     "check:swedish": "bash scripts/check-swedish.sh",
