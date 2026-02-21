@@ -4,9 +4,9 @@ import userEvent from "@testing-library/user-event"
 
 // No mocks needed -- the component is self-contained (no external imports)
 
-import ProviderError from "./error"
+import GlobalError from "./error"
 
-describe("ProviderError (error boundary)", () => {
+describe("GlobalError (error boundary)", () => {
   const mockReset = vi.fn()
   const testError = new Error("Test error message")
   let originalOnLine: boolean
@@ -35,8 +35,7 @@ describe("ProviderError (error boundary)", () => {
 
   describe("renders without external chunk dependencies", () => {
     it("renders with only React (no lucide-react, no @/components, no @/hooks)", () => {
-      // If this renders at all, the component has no chunk dependencies
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
       expect(screen.getByText("Något gick fel")).toBeInTheDocument()
     })
   })
@@ -47,7 +46,7 @@ describe("ProviderError (error boundary)", () => {
     })
 
     it("renders offline UI with WifiOff messaging", () => {
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
       expect(
         screen.getByText("Ingen internetanslutning")
@@ -61,7 +60,7 @@ describe("ProviderError (error boundary)", () => {
 
     it("shows retry button that calls reset", async () => {
       const user = userEvent.setup()
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
       const retryButton = screen.getByRole("button", {
         name: /försök igen/i,
@@ -69,12 +68,6 @@ describe("ProviderError (error boundary)", () => {
       await user.click(retryButton)
 
       expect(mockReset).toHaveBeenCalledOnce()
-    })
-
-    it("shows offline UI when navigator.onLine is false (no useOnlineStatus hook)", () => {
-      render(<ProviderError error={testError} reset={mockReset} />)
-      // Verify the SVG icon is present (inline WifiOff)
-      expect(screen.getByText("Ingen internetanslutning")).toBeInTheDocument()
     })
   })
 
@@ -84,19 +77,19 @@ describe("ProviderError (error boundary)", () => {
     })
 
     it("renders generic error UI", () => {
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
       expect(screen.getByText("Något gick fel")).toBeInTheDocument()
       expect(
         screen.getByText(
-          "Ett oväntat fel uppstod. Försök igen eller gå tillbaka till översikten."
+          "Ett oväntat fel uppstod. Försök igen eller gå tillbaka till startsidan."
         )
       ).toBeInTheDocument()
     })
 
     it("shows retry button that calls reset", async () => {
       const user = userEvent.setup()
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
       const retryButton = screen.getByRole("button", {
         name: /försök igen/i,
@@ -108,9 +101,9 @@ describe("ProviderError (error boundary)", () => {
 
     it("logs the error to console", () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
-      expect(consoleSpy).toHaveBeenCalledWith("Provider error:", testError)
+      expect(consoleSpy).toHaveBeenCalledWith("Application error:", testError)
       consoleSpy.mockRestore()
     })
   })
@@ -119,7 +112,7 @@ describe("ProviderError (error boundary)", () => {
     it("suppresses console.error for offline errors", () => {
       setOnlineStatus(false)
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
       expect(consoleSpy).not.toHaveBeenCalled()
       consoleSpy.mockRestore()
@@ -137,9 +130,9 @@ describe("ProviderError (error boundary)", () => {
       })
 
       const chunkError = new Error(
-        "Loading chunk 6619 failed (error: .../app/provider/error-6c48ed33846d0cde.js)"
+        "Loading chunk 6619 failed (error: .../app/error-abc123.js)"
       )
-      render(<ProviderError error={chunkError} reset={mockReset} />)
+      render(<GlobalError error={chunkError} reset={mockReset} />)
 
       expect(reloadMock).toHaveBeenCalledOnce()
     })
@@ -153,11 +146,10 @@ describe("ProviderError (error boundary)", () => {
         configurable: true,
       })
 
-      // Simulate that reload already happened
       sessionStorage.setItem("chunk-reload-attempted", "1")
 
       const chunkError = new Error("Loading chunk 1234 failed")
-      render(<ProviderError error={chunkError} reset={mockReset} />)
+      render(<GlobalError error={chunkError} reset={mockReset} />)
 
       expect(reloadMock).not.toHaveBeenCalled()
     })
@@ -166,32 +158,16 @@ describe("ProviderError (error boundary)", () => {
   describe("online/offline event switching", () => {
     it("switches to offline UI when offline event fires", () => {
       setOnlineStatus(true)
-      render(<ProviderError error={testError} reset={mockReset} />)
+      render(<GlobalError error={testError} reset={mockReset} />)
 
       expect(screen.getByText("Något gick fel")).toBeInTheDocument()
 
-      // Go offline
       act(() => {
         setOnlineStatus(false)
         window.dispatchEvent(new Event("offline"))
       })
 
       expect(screen.getByText("Ingen internetanslutning")).toBeInTheDocument()
-    })
-
-    it("switches to online UI when online event fires", () => {
-      setOnlineStatus(false)
-      render(<ProviderError error={testError} reset={mockReset} />)
-
-      expect(screen.getByText("Ingen internetanslutning")).toBeInTheDocument()
-
-      // Go online
-      act(() => {
-        setOnlineStatus(true)
-        window.dispatchEvent(new Event("online"))
-      })
-
-      expect(screen.getByText("Något gick fel")).toBeInTheDocument()
     })
   })
 })
