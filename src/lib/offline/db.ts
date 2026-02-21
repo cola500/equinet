@@ -29,6 +29,21 @@ export interface DebugLogEntry {
   data?: string
 }
 
+export type MutationStatus = "pending" | "syncing" | "synced" | "failed" | "conflict"
+
+export interface PendingMutation {
+  id?: number
+  method: "PUT" | "PATCH"
+  url: string
+  body: string
+  entityType: "booking" | "booking-notes" | "route-stop"
+  entityId: string
+  createdAt: number
+  status: MutationStatus
+  retryCount: number
+  error?: string
+}
+
 const db = new Dexie("equinet-offline") as Dexie & {
   bookings: EntityTable<CachedRecord, "id">
   routes: EntityTable<CachedRecord, "id">
@@ -36,6 +51,7 @@ const db = new Dexie("equinet-offline") as Dexie & {
   metadata: EntityTable<MetadataRecord, "key">
   debugLogs: EntityTable<DebugLogEntry, "id">
   endpointCache: EntityTable<EndpointCacheRecord, "url">
+  pendingMutations: EntityTable<PendingMutation, "id">
 }
 
 db.version(1).stores({
@@ -60,6 +76,16 @@ db.version(3).stores({
   metadata: "key",
   debugLogs: "++id, timestamp, category",
   endpointCache: "&url, cachedAt",
+})
+
+db.version(4).stores({
+  bookings: "id",
+  routes: "id",
+  profile: "id",
+  metadata: "key",
+  debugLogs: "++id, timestamp, category",
+  endpointCache: "&url, cachedAt",
+  pendingMutations: "++id, status, entityId, createdAt",
 })
 
 export { db as offlineDb }

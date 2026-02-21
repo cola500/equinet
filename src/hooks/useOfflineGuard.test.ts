@@ -6,6 +6,7 @@ import { toast } from "sonner"
 vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
+    info: vi.fn(),
   },
 }))
 
@@ -13,13 +14,30 @@ vi.mock("./useOnlineStatus", () => ({
   useOnlineStatus: vi.fn(() => true),
 }))
 
+vi.mock("@/components/providers/FeatureFlagProvider", () => ({
+  useFeatureFlag: vi.fn(() => true),
+}))
+
+const mockQueueMutation = vi.fn(async () => 1)
+const mockGetPendingMutationsByEntity = vi.fn(async () => [])
+vi.mock("@/lib/offline/mutation-queue", () => ({
+  queueMutation: (...args: unknown[]) => mockQueueMutation(...args),
+  getPendingMutationsByEntity: (...args: unknown[]) => mockGetPendingMutationsByEntity(...args),
+}))
+
 import { useOnlineStatus } from "./useOnlineStatus"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 describe("useOfflineGuard", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useOnlineStatus).mockReturnValue(true)
+    vi.mocked(useFeatureFlag).mockReturnValue(true)
+    mockQueueMutation.mockResolvedValue(1)
+    mockGetPendingMutationsByEntity.mockResolvedValue([])
   })
+
+  // -- Existing behavior (backward compat) --
 
   it("should return isOnline true when online", () => {
     const { result } = renderHook(() => useOfflineGuard())
@@ -44,7 +62,7 @@ describe("useOfflineGuard", () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it("should block action and show toast when offline", async () => {
+  it("should block action and show toast when offline (no offlineOptions)", async () => {
     vi.mocked(useOnlineStatus).mockReturnValue(false)
     const action = vi.fn().mockResolvedValue(undefined)
     const { result } = renderHook(() => useOfflineGuard())
@@ -63,11 +81,109 @@ describe("useOfflineGuard", () => {
     const action = vi.fn().mockResolvedValue("result")
     const { result } = renderHook(() => useOfflineGuard())
 
-    let returnValue: any
+    let returnValue: unknown
     await act(async () => {
       returnValue = await result.current.guardMutation(action)
     })
 
     expect(returnValue).toBe("result")
+  })
+
+  // -- New offline queueing behavior --
+
+  it("should queue mutation when offline with offlineOptions", async () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    const action = vi.fn().mockResolvedValue(undefined)
+    const optimisticUpdate = vi.fn()
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "PUT",
+        url: "/api/bookings/abc",
+        body: JSON.stringify({ status: "completed" }),
+        entityType: "booking",
+        entityId: "abc",
+        optimisticUpdate,
+      })
+    })
+
+    expect(action).not.toHaveBeenCalled()
+    expect(mockQueueMutation).toHaveBeenCalledWith({
+      method: "PUT",
+      url: "/api/bookings/abc",
+      body: JSON.stringify({ status: "completed" }),
+      entityType: "booking",
+      entityId: "abc",
+    })
+    expect(optimisticUpdate).toHaveBeenCalled()
+    expect(toast.info).toHaveBeenCalledWith(
+      expect.stringContaining("sparas offline")
+    )
+  })
+
+  it("should still block when offline with offlineOptions but feature flag is off", async () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    vi.mocked(useFeatureFlag).mockReturnValue(false)
+    const action = vi.fn().mockResolvedValue(undefined)
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "PUT",
+        url: "/api/bookings/abc",
+        body: JSON.stringify({ status: "completed" }),
+        entityType: "booking",
+        entityId: "abc",
+      })
+    })
+
+    expect(action).not.toHaveBeenCalled()
+    expect(mockQueueMutation).not.toHaveBeenCalled()
+    expect(toast.error).toHaveBeenCalled()
+  })
+
+  it("should deduplicate: not queue if identical mutation already pending", async () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    mockGetPendingMutationsByEntity.mockResolvedValue([
+      { id: 1, method: "PUT", url: "/api/bookings/abc", body: JSON.stringify({ status: "completed" }), entityType: "booking", entityId: "abc", createdAt: Date.now(), status: "pending", retryCount: 0 },
+    ])
+    const action = vi.fn().mockResolvedValue(undefined)
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "PUT",
+        url: "/api/bookings/abc",
+        body: JSON.stringify({ status: "completed" }),
+        entityType: "booking",
+        entityId: "abc",
+      })
+    })
+
+    expect(mockQueueMutation).not.toHaveBeenCalled()
+    expect(toast.info).toHaveBeenCalledWith(
+      expect.stringContaining("redan sparad")
+    )
+  })
+
+  it("should execute action normally when online even with offlineOptions", async () => {
+    const action = vi.fn().mockResolvedValue("ok")
+    const { result } = renderHook(() => useOfflineGuard())
+
+    let returnValue: unknown
+    await act(async () => {
+      returnValue = await result.current.guardMutation(action, {
+        method: "PUT",
+        url: "/api/bookings/abc",
+        body: JSON.stringify({ status: "completed" }),
+        entityType: "booking",
+        entityId: "abc",
+      })
+    })
+
+    expect(action).toHaveBeenCalled()
+    expect(mockQueueMutation).not.toHaveBeenCalled()
+    expect(returnValue).toBe("ok")
   })
 })

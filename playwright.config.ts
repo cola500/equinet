@@ -90,7 +90,7 @@ export default defineConfig({
       ? [
           {
             name: 'offline-chromium',
-            testMatch: /offline-pwa\.spec\.ts/,
+            testMatch: /offline-.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3001' },
           },
         ]
