@@ -9,8 +9,11 @@ vi.mock("sonner", () => ({
   },
 }))
 
+const mockPrefetch = vi.fn()
+
 vi.mock("next/navigation", () => ({
   usePathname: vi.fn(() => "/provider/dashboard"),
+  useRouter: vi.fn(() => ({ prefetch: mockPrefetch })),
 }))
 
 vi.mock("@/hooks/useOnlineStatus", () => ({
@@ -28,12 +31,15 @@ vi.mock("./BottomTabBar", () => ({
 
 import { usePathname } from "next/navigation"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 
 describe("ProviderNav", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockPrefetch.mockClear()
     vi.mocked(useOnlineStatus).mockReturnValue(true)
     vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
+    vi.mocked(useFeatureFlags).mockReturnValue({})
   })
 
   it("should render desktop nav links when online", () => {
@@ -92,5 +98,24 @@ describe("ProviderNav", () => {
     fireEvent.click(dashboardLink)
 
     expect(toast.error).not.toHaveBeenCalled()
+  })
+
+  it("should prefetch main tabs when offline_mode is enabled", () => {
+    vi.mocked(useFeatureFlags).mockReturnValue({ offline_mode: true })
+
+    render(<ProviderNav />)
+
+    expect(mockPrefetch).toHaveBeenCalledWith("/provider/dashboard")
+    expect(mockPrefetch).toHaveBeenCalledWith("/provider/calendar")
+    expect(mockPrefetch).toHaveBeenCalledWith("/provider/bookings")
+    expect(mockPrefetch).toHaveBeenCalledTimes(3)
+  })
+
+  it("should NOT prefetch when offline_mode is disabled", () => {
+    vi.mocked(useFeatureFlags).mockReturnValue({})
+
+    render(<ProviderNav />)
+
+    expect(mockPrefetch).not.toHaveBeenCalled()
   })
 })

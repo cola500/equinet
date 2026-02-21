@@ -8,6 +8,22 @@ declare const self: ServiceWorkerGlobalScope & {
 }
 
 /**
+ * Notify all client windows when a network fetch fails.
+ *
+ * This is the primary offline detection mechanism -- zero polling, zero server
+ * cost. The client-side useOnlineStatus() hook listens for SW_FETCH_FAILED
+ * messages and calls reportConnectivityLoss().
+ */
+const connectivityNotifier = {
+  fetchDidFail: async () => {
+    const clients = await self.clients.matchAll({ type: "window" })
+    for (const client of clients) {
+      client.postMessage({ type: "SW_FETCH_FAILED" })
+    }
+  },
+}
+
+/**
  * Network timeout for page/RSC requests (seconds).
  *
  * Without this, NetworkFirst waits for the network to fail completely before
@@ -32,6 +48,7 @@ const navigationCaching: RuntimeCaching[] = [
       cacheName: "auth-session",
       plugins: [
         new ExpirationPlugin({ maxEntries: 1, maxAgeSeconds: 24 * 60 * 60 }),
+        connectivityNotifier,
       ],
       networkTimeoutSeconds: PAGE_TIMEOUT,
     }),
@@ -47,6 +64,7 @@ const navigationCaching: RuntimeCaching[] = [
       cacheName: PAGES_CACHE_NAME.rscPrefetch,
       plugins: [
         new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+        connectivityNotifier,
       ],
       networkTimeoutSeconds: PAGE_TIMEOUT,
     }),
@@ -61,6 +79,7 @@ const navigationCaching: RuntimeCaching[] = [
       cacheName: PAGES_CACHE_NAME.rsc,
       plugins: [
         new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+        connectivityNotifier,
       ],
       networkTimeoutSeconds: PAGE_TIMEOUT,
     }),
@@ -77,6 +96,7 @@ const navigationCaching: RuntimeCaching[] = [
       cacheName: PAGES_CACHE_NAME.html,
       plugins: [
         new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+        connectivityNotifier,
       ],
       networkTimeoutSeconds: PAGE_TIMEOUT,
     }),
