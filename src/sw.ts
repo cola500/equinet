@@ -54,6 +54,9 @@ const navigationCaching: RuntimeCaching[] = [
     }),
   },
   // RSC Prefetch: Next.js Link prefetch -- NetworkFirst with fast timeout
+  // ignoreVary: Next.js sets Vary: RSC, Next-Router-Prefetch, Next-Router-State-Tree
+  // on responses. Without ignoreVary, cached prefetch responses won't match navigation
+  // requests that have different header combinations, causing cache misses offline.
   {
     matcher: ({ request, url: { pathname }, sameOrigin }) =>
       request.headers.get("RSC") === "1" &&
@@ -62,6 +65,7 @@ const navigationCaching: RuntimeCaching[] = [
       !pathname.startsWith("/api/"),
     handler: new NetworkFirst({
       cacheName: PAGES_CACHE_NAME.rscPrefetch,
+      matchOptions: { ignoreVary: true },
       plugins: [
         new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
         connectivityNotifier,
@@ -70,6 +74,7 @@ const navigationCaching: RuntimeCaching[] = [
     }),
   },
   // RSC: Next.js App Router client-side navigation -- NetworkFirst with fast timeout
+  // ignoreVary: same reason as prefetch handler above
   {
     matcher: ({ request, url: { pathname }, sameOrigin }) =>
       request.headers.get("RSC") === "1" &&
@@ -77,6 +82,7 @@ const navigationCaching: RuntimeCaching[] = [
       !pathname.startsWith("/api/"),
     handler: new NetworkFirst({
       cacheName: PAGES_CACHE_NAME.rsc,
+      matchOptions: { ignoreVary: true },
       plugins: [
         new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
         connectivityNotifier,

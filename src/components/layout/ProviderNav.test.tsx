@@ -33,13 +33,37 @@ import { usePathname } from "next/navigation"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 
+// Reset module-level guard between tests
+async function resetRscCacheGuard() {
+  const mod = await import("./ProviderNav")
+  mod._resetRscCacheWarmed()
+}
+
 describe("ProviderNav", () => {
-  beforeEach(() => {
+  const originalLocation = window.location
+
+  beforeEach(async () => {
     vi.clearAllMocks()
     mockPrefetch.mockClear()
     vi.mocked(useOnlineStatus).mockReturnValue(true)
     vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
     vi.mocked(useFeatureFlags).mockReturnValue({})
+    // Reset module-level guard
+    await resetRscCacheGuard()
+    // Mock window.location for hard navigation tests
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: { ...originalLocation, href: "http://localhost/provider/dashboard" },
+    })
+    // Reset global fetch mock
+    vi.restoreAllMocks()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: originalLocation,
+    })
   })
 
   it("should render desktop nav links when online", () => {
@@ -117,5 +141,72 @@ describe("ProviderNav", () => {
     render(<ProviderNav />)
 
     expect(mockPrefetch).not.toHaveBeenCalled()
+  })
+
+  it("should hard navigate to offlineSafe link when offline", () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
+
+    render(<ProviderNav />)
+
+    const calendarLink = screen.getByText("Kalender").closest("a")!
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true })
+    Object.defineProperty(clickEvent, "preventDefault", { value: vi.fn() })
+
+    calendarLink.dispatchEvent(clickEvent)
+
+    // Should hard navigate instead of RSC navigation
+    expect(window.location.href).toBe("/provider/calendar")
+    // Should NOT show error toast
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
+  it("should warm RSC cache with raw fetch when offline_mode is enabled", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(""))
+    vi.mocked(useFeatureFlags).mockReturnValue({ offline_mode: true })
+
+    render(<ProviderNav />)
+
+    // Wait for useEffect to fire
+    await vi.waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalled()
+    })
+
+    // Should fetch each offlineSafe path with RSC header (without Next-Router-Prefetch)
+    const rscCalls = fetchSpy.mock.calls.filter(
+      (call) => {
+        const init = call[1] as RequestInit | undefined
+        return init?.headers && (init.headers as Record<string, string>)["RSC"] === "1"
+      }
+    )
+    expect(rscCalls.length).toBeGreaterThanOrEqual(3)
+
+    // Verify headers do NOT include Next-Router-Prefetch
+    for (const call of rscCalls) {
+      const headers = (call[1] as RequestInit).headers as Record<string, string>
+      expect(headers["Next-Router-Prefetch"]).toBeUndefined()
+    }
+  })
+
+  it("should only warm RSC cache once per session (module-level guard)", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(""))
+    vi.mocked(useFeatureFlags).mockReturnValue({ offline_mode: true })
+
+    const { unmount } = render(<ProviderNav />)
+
+    await vi.waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalled()
+    })
+
+    const firstCallCount = fetchSpy.mock.calls.length
+    unmount()
+
+    // Re-render -- should NOT fetch again
+    fetchSpy.mockClear()
+    render(<ProviderNav />)
+
+    // Give useEffect time to fire (it shouldn't fetch again)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 })

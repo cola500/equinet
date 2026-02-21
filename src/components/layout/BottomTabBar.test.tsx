@@ -33,10 +33,24 @@ const mockMoreItems: MoreMenuItem[] = [
 ]
 
 describe("BottomTabBar", () => {
+  const originalLocation = window.location
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useOnlineStatus).mockReturnValue(true)
     vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
+    // Mock window.location for hard navigation tests
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: { ...originalLocation, href: "http://localhost/provider/dashboard" },
+    })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: originalLocation,
+    })
   })
 
   it("should render all tab links when online", () => {
@@ -131,6 +145,24 @@ describe("BottomTabBar", () => {
     const dashboardLink = screen.getByText("Översikt").closest("a")
     fireEvent.click(dashboardLink!)
 
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
+  it("should hard navigate to offlineSafe tab when offline and not on current page", () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
+
+    render(<BottomTabBar tabs={mockTabs} moreItems={mockMoreItems} />)
+
+    const calendarLink = screen.getByText("Kalender").closest("a")!
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true })
+    Object.defineProperty(clickEvent, "preventDefault", { value: vi.fn() })
+
+    calendarLink.dispatchEvent(clickEvent)
+
+    // Should hard navigate (window.location.href) instead of RSC navigation
+    expect(window.location.href).toBe("/provider/calendar")
+    // Should NOT show error toast -- offlineSafe routes are allowed
     expect(toast.error).not.toHaveBeenCalled()
   })
 })

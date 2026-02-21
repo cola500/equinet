@@ -49,9 +49,15 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
   }
 
   function handleOfflineClick(e: React.MouseEvent, href: string, matchPrefix?: string, offlineSafe?: boolean) {
-    if (!isOnline && !offlineSafe && !isActive(href, matchPrefix)) {
-      e.preventDefault()
-      toast.error("Du är offline. Navigering kräver internetanslutning.")
+    if (!isOnline && !isActive(href, matchPrefix)) {
+      if (!offlineSafe) {
+        e.preventDefault()
+        toast.error("Du är offline. Navigering kräver internetanslutning.")
+      } else {
+        // offlineSafe: hard navigate to bypass RSC fetch and use SW document cache
+        e.preventDefault()
+        window.location.href = href
+      }
     }
   }
 

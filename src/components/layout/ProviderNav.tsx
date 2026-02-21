@@ -74,6 +74,34 @@ const OFFLINE_SAFE_PATHS = providerTabs
   .filter((t) => t.offlineSafe)
   .map((t) => t.href)
 
+/**
+ * Module-level guard: warm the RSC navigation cache only once per page session.
+ *
+ * router.prefetch() caches in `pages-rsc-prefetch` (with Next-Router-Prefetch header),
+ * but navigation requests look in `pages-rsc` (without that header). This raw fetch
+ * populates the correct cache so offline navigation works via SW cache hit.
+ */
+let rscCacheWarmed = false
+
+function warmRscCache() {
+  if (rscCacheWarmed) return
+  rscCacheWarmed = true
+
+  OFFLINE_SAFE_PATHS.forEach((path) => {
+    fetch(path, {
+      headers: { RSC: "1" },
+    }).catch(() => {
+      // Fetch failed (offline already?) -- reset guard so next mount retries
+      rscCacheWarmed = false
+    })
+  })
+}
+
+/** Reset guard for tests */
+export function _resetRscCacheWarmed() {
+  rscCacheWarmed = false
+}
+
 export function ProviderNav() {
   const pathname = usePathname()
   const router = useRouter()
@@ -84,6 +112,7 @@ export function ProviderNav() {
   useEffect(() => {
     if (flags.offline_mode) {
       OFFLINE_SAFE_PATHS.forEach((path) => router.prefetch(path))
+      warmRscCache()
     }
   }, [flags.offline_mode, router])
 
@@ -101,9 +130,15 @@ export function ProviderNav() {
   }
 
   function handleOfflineClick(e: React.MouseEvent, item: NavItem) {
-    if (!isOnline && !item.offlineSafe && !isActive(item)) {
-      e.preventDefault()
-      toast.error("Du är offline. Navigering kräver internetanslutning.")
+    if (!isOnline && !isActive(item)) {
+      if (!item.offlineSafe) {
+        e.preventDefault()
+        toast.error("Du är offline. Navigering kräver internetanslutning.")
+      } else {
+        // offlineSafe: hard navigate to bypass RSC fetch and use SW document cache
+        e.preventDefault()
+        window.location.href = item.href
+      }
     }
   }
 
