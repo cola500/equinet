@@ -3,6 +3,17 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 
 /**
+ * Lightweight connectivity probe for offline detection.
+ *
+ * Used by useOnlineStatus() to proactively detect network loss on iOS Safari
+ * where navigator.onLine stays true even when WiFi drops. Returns 200 with
+ * no body -- the client only cares whether the request throws (offline) or not.
+ */
+export async function HEAD() {
+  return new Response(null, { status: 200 })
+}
+
+/**
  * Health check endpoint for uptime monitoring
  *
  * Used by:

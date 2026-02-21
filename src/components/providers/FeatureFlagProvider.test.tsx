@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { render, screen, act } from "@testing-library/react"
+
+const mockIsOnline = vi.fn(() => true)
+vi.mock("@/hooks/useOnlineStatus", () => ({
+  useOnlineStatus: () => mockIsOnline(),
+}))
+
 import {
   FeatureFlagProvider,
   useFeatureFlag,
@@ -42,6 +48,7 @@ describe("FeatureFlagProvider", () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    mockIsOnline.mockReturnValue(true)
   })
 
   it("does NOT fetch at mount when initialFlags are provided", () => {
@@ -232,12 +239,7 @@ describe("FeatureFlagProvider", () => {
   })
 
   it("does not poll when offline", async () => {
-    // Set offline
-    Object.defineProperty(navigator, "onLine", {
-      value: false,
-      writable: true,
-      configurable: true,
-    })
+    mockIsOnline.mockReturnValue(false)
 
     render(
       <FeatureFlagProvider initialFlags={{ voice_logging: true }}>
@@ -252,22 +254,10 @@ describe("FeatureFlagProvider", () => {
 
     // Should NOT have fetched since we're offline
     expect(fetchSpy).not.toHaveBeenCalled()
-
-    // Restore online
-    Object.defineProperty(navigator, "onLine", {
-      value: true,
-      writable: true,
-      configurable: true,
-    })
   })
 
   it("does not fetch on focus when offline", async () => {
-    // Set offline
-    Object.defineProperty(navigator, "onLine", {
-      value: false,
-      writable: true,
-      configurable: true,
-    })
+    mockIsOnline.mockReturnValue(false)
 
     render(
       <FeatureFlagProvider initialFlags={{ voice_logging: false }}>
@@ -287,13 +277,6 @@ describe("FeatureFlagProvider", () => {
 
     // Should NOT fetch since we're offline
     expect(fetchSpy).not.toHaveBeenCalled()
-
-    // Restore online
-    Object.defineProperty(navigator, "onLine", {
-      value: true,
-      writable: true,
-      configurable: true,
-    })
   })
 
   describe("useFeatureFlag", () => {
