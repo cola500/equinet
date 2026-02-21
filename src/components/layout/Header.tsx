@@ -15,7 +15,7 @@ import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 
 export function Header() {
-  const { user, isAuthenticated, isProvider, isCustomer, isAdmin } = useAuth()
+  const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin } = useAuth()
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" })
@@ -29,7 +29,7 @@ export function Header() {
           Equinet
         </Link>
         <div className="flex items-center gap-2 md:gap-4">
-          {!isAuthenticated ? (
+          {isLoading ? null : !isAuthenticated ? (
             <>
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="h-11 px-3 md:px-4">
