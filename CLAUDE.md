@@ -179,6 +179,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Error boundaries for offline**: `error.tsx` med `useOnlineStatus()` -- offline visar WifiOff-UI, online visar generisk error-UI. Importera ALDRIG layout-komponenter i error.tsx (kraschar error boundary:n ar vi tillbaka pa ruta ett).
 - **useSession vs navigator.onLine race condition**: `useSession()` rapporterar `"unauthenticated"` ~2s FORE `navigator.onLine` andras. Utfor ALDRIG destruktiva operationer (cache-rensning) baserat pa "unauthenticated + online" -- det kan betyda "natverk nere". Lat sessionStorage rensas naturligt vid flik-stangning.
 - **Offline-navigeringsskydd**: Blockera `Link`-klick med `e.preventDefault()` + `toast.error()` nar offline och ej pa aktiv sida. Forhindrar RSC-request som ger cache miss -> `/~offline` -> krasch. Pattern i `BottomTabBar.tsx` och `ProviderNav.tsx`.
+- **router.replace() triggar RSC-request**: `router.replace()`/`router.push()` i App Router ar INTE lokala URL-uppdateringar -- de triggar natverksanrop. Guard med `if (isOnline)` nar URL-uppdateringen bara ar for deep-linking (inte for att ladda nytt innehall). Pattern i `calendar/page.tsx`.
 
 ---
 

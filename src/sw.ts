@@ -1,7 +1,7 @@
 import { defaultCache, PAGES_CACHE_NAME } from "@serwist/next/worker"
 import type { PrecacheEntry, RuntimeCaching } from "serwist"
-import { Serwist, NetworkFirst, ExpirationPlugin } from "serwist"
-import { authSessionMatcher } from "./sw-matchers"
+import { Serwist, NetworkFirst, CacheFirst, ExpirationPlugin } from "serwist"
+import { authSessionMatcher, jsChunkMatcher } from "./sw-matchers"
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (PrecacheEntry | string)[]
@@ -99,6 +99,19 @@ const navigationCaching: RuntimeCaching[] = [
         connectivityNotifier,
       ],
       networkTimeoutSeconds: PAGE_TIMEOUT,
+    }),
+  },
+  // JS chunks: CacheFirst (same strategy as defaultCache) but with offline notification.
+  // Without connectivityNotifier, failed JS chunk loads (e.g. error.tsx after deploy)
+  // don't trigger offline detection, causing cascade failures.
+  {
+    matcher: jsChunkMatcher,
+    handler: new CacheFirst({
+      cacheName: "next-static-js-assets",
+      plugins: [
+        new ExpirationPlugin({ maxEntries: 64, maxAgeSeconds: 24 * 60 * 60 }),
+        connectivityNotifier,
+      ],
     }),
   },
 ]
