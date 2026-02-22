@@ -84,6 +84,23 @@ export interface CreateVerificationTokenData {
 // Interface
 // -----------------------------------------------------------
 
+/** Password reset token with user info */
+export interface PasswordResetTokenWithUser {
+  id: string
+  token: string
+  userId: string
+  expiresAt: Date
+  usedAt: Date | null
+  userEmail: string
+  userFirstName: string
+}
+
+export interface CreatePasswordResetTokenData {
+  token: string
+  userId: string
+  expiresAt: Date
+}
+
 export interface IAuthRepository {
   /**
    * Find user by email (only returns { id } for duplicate check)
@@ -126,4 +143,28 @@ export interface IAuthRepository {
    * Uses $transaction for consistency.
    */
   verifyEmail(userId: string, tokenId: string): Promise<void>
+
+  // -----------------------------------------------------------
+  // Password reset
+  // -----------------------------------------------------------
+
+  /**
+   * Create a password reset token
+   */
+  createPasswordResetToken(data: CreatePasswordResetTokenData): Promise<void>
+
+  /**
+   * Find password reset token by token string (with user info)
+   */
+  findPasswordResetToken(token: string): Promise<PasswordResetTokenWithUser | null>
+
+  /**
+   * Invalidate all existing reset tokens for a user (set usedAt)
+   */
+  invalidatePasswordResetTokens(userId: string): Promise<void>
+
+  /**
+   * Reset password: atomically update passwordHash and mark token as used.
+   */
+  resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void>
 }

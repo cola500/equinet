@@ -54,6 +54,7 @@ export default function ProviderProfilePage() {
   const { isLoading, isProvider, providerId } = useAuth()
   const { profile: swrProfile, mutate: mutateProfile } = useProviderProfile()
   const profile = swrProfile as ProviderProfile | null
+  const [activeTab, setActiveTab] = useState<"profile" | "availability" | "settings">("profile")
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
   const [isEditingBusiness, setIsEditingBusiness] = useState(false)
 
@@ -285,8 +286,32 @@ export default function ProviderProfilePage() {
 
   return (
     <ProviderLayout>
-      <h1 className="text-3xl font-bold mb-8">Min profil</h1>
+      <h1 className="text-3xl font-bold mb-6">Min profil</h1>
 
+      {/* Tab navigation */}
+      <div className="flex gap-1 mb-6 border-b">
+        {([
+          { key: "profile" as const, label: "Profil" },
+          { key: "availability" as const, label: "Tillgänglighet" },
+          { key: "settings" as const, label: "Bokningsinställningar" },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors -mb-px ${
+              activeTab === tab.key
+                ? "border-b-2 border-green-600 text-green-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab: Profil */}
+      {activeTab === "profile" && (
+        <>
           {/* Profile Completion Indicator */}
           {calculateProfileCompletion() < 100 && (
             <Card className="mb-6 border-amber-200 bg-amber-50">
@@ -626,8 +651,36 @@ export default function ProviderProfilePage() {
             </CardContent>
           </Card>
 
+        </>
+      )}
+
+      {/* Tab: Tillgänglighet */}
+      {activeTab === "availability" && (
+        <>
+          {providerId && <AvailabilitySchedule providerId={providerId} />}
+
+          {/* Verification Link */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Verifiering</CardTitle>
+              <CardDescription>
+                Verifiera ditt företag för att öka förtroendet hos kunder
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/provider/verification">
+                <Button variant="outline">Gå till verifiering</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Tab: Bokningsinställningar */}
+      {activeTab === "settings" && (
+        <>
       {/* Booking Settings Card */}
-      <Card className="mt-6">
+      <Card>
         <CardHeader>
           <CardTitle>Bokningsinställningar</CardTitle>
           <CardDescription>
@@ -947,23 +1000,8 @@ export default function ProviderProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Availability Schedule Card */}
-      {providerId && <AvailabilitySchedule providerId={providerId} />}
-
-      {/* Verification Link */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Verifiering</CardTitle>
-          <CardDescription>
-            Verifiera ditt företag för att öka förtroendet hos kunder
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link href="/provider/verification">
-            <Button variant="outline">Gå till verifiering</Button>
-          </Link>
-        </CardContent>
-      </Card>
+        </>
+      )}
     </ProviderLayout>
   )
 }

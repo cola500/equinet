@@ -18,6 +18,9 @@ Equinet har nu ett komplett bokningsflöde som täcker hela kundresan:
 │     ├─ Fixed time: Välj datum och tid                       │
 │     └─ Flexible: Ange datumspann och prioritet              │
 │                                                             │
+│  2b. SAMMANFATTNING                                         │
+│     └─ Granska tjänst, datum, tid, häst innan bekräftelse   │
+│                                                             │
 │  3. BEKRÄFTELSE                                             │
 │     └─ Provider accepterar eller avböjer                    │
 │                                                             │

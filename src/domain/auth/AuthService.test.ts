@@ -6,11 +6,13 @@ describe('AuthService', () => {
   let authRepo: MockAuthRepository
   let service: AuthService
   let sentEmails: Array<{ email: string; firstName: string; token: string }>
+  let sentPasswordResetEmails: Array<{ email: string; firstName: string; resetUrl: string }>
   let tokenCounter: number
 
   beforeEach(() => {
     authRepo = new MockAuthRepository()
     sentEmails = []
+    sentPasswordResetEmails = []
     tokenCounter = 0
 
     const deps: AuthServiceDeps = {
@@ -21,6 +23,9 @@ describe('AuthService', () => {
       emailService: {
         sendVerification: async (email, firstName, token) => {
           sentEmails.push({ email, firstName, token })
+        },
+        sendPasswordReset: async (email, firstName, resetUrl) => {
+          sentPasswordResetEmails.push({ email, firstName, resetUrl })
         },
       },
     }
@@ -362,6 +367,161 @@ describe('AuthService', () => {
 
       expect(result.isSuccess).toBe(true)
       expect(result.value.providerId).toBe('provider-1')
+    })
+  })
+
+  // ===========================================================
+  // requestPasswordReset
+  // ===========================================================
+
+  describe('requestPasswordReset', () => {
+    it('should create a reset token and send email for existing user', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        passwordHash: 'hashed:pw',
+        emailVerified: true,
+      })
+
+      const result = await service.requestPasswordReset('test@example.com')
+
+      expect(result.isSuccess).toBe(true)
+      expect(sentPasswordResetEmails).toHaveLength(1)
+      expect(sentPasswordResetEmails[0].email).toBe('test@example.com')
+      expect(sentPasswordResetEmails[0].firstName).toBe('Test')
+    })
+
+    it('should return success for non-existent email (enumeration prevention)', async () => {
+      const result = await service.requestPasswordReset('nonexistent@example.com')
+
+      expect(result.isSuccess).toBe(true)
+      expect(sentPasswordResetEmails).toHaveLength(0)
+    })
+
+    it('should create a password reset token with 1h expiry', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        passwordHash: 'hashed:pw',
+        emailVerified: true,
+      })
+
+      await service.requestPasswordReset('test@example.com')
+
+      const tokens = authRepo.getPasswordResetTokens()
+      expect(tokens).toHaveLength(1)
+      expect(tokens[0].token).toBe('test-token-1')
+      expect(tokens[0].userId).toBe('user-1')
+      // 1 hour expiry (+/- 5 seconds tolerance)
+      const expectedExpiry = Date.now() + 60 * 60 * 1000
+      expect(tokens[0].expiresAt.getTime()).toBeGreaterThan(expectedExpiry - 5000)
+      expect(tokens[0].expiresAt.getTime()).toBeLessThan(expectedExpiry + 5000)
+    })
+
+    it('should invalidate previous reset tokens when requesting new one', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        passwordHash: 'hashed:pw',
+        emailVerified: true,
+      })
+
+      await service.requestPasswordReset('test@example.com')
+      await service.requestPasswordReset('test@example.com')
+
+      // Old tokens should be invalidated (usedAt set)
+      const tokens = authRepo.getPasswordResetTokens()
+      const activeTokens = tokens.filter(t => !t.usedAt)
+      expect(activeTokens).toHaveLength(1)
+      expect(activeTokens[0].token).toBe('test-token-2')
+    })
+  })
+
+  // ===========================================================
+  // resetPassword
+  // ===========================================================
+
+  describe('resetPassword', () => {
+    beforeEach(() => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        passwordHash: 'hashed:OldPassword1!',
+        emailVerified: true,
+      })
+      authRepo.seedPasswordResetToken({
+        id: 'reset-token-1',
+        token: 'valid-reset-token',
+        userId: 'user-1',
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        usedAt: null,
+      })
+    })
+
+    it('should reset password with valid token', async () => {
+      const result = await service.resetPassword('valid-reset-token', 'NewPassword1!')
+
+      expect(result.isSuccess).toBe(true)
+
+      const users = authRepo.getUsers()
+      expect(users[0].passwordHash).toBe('hashed:NewPassword1!')
+    })
+
+    it('should mark the token as used after reset', async () => {
+      await service.resetPassword('valid-reset-token', 'NewPassword1!')
+
+      const tokens = authRepo.getPasswordResetTokens()
+      const token = tokens.find(t => t.token === 'valid-reset-token')
+      expect(token?.usedAt).not.toBeNull()
+    })
+
+    it('should fail if token does not exist', async () => {
+      const result = await service.resetPassword('nonexistent-token', 'NewPassword1!')
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('TOKEN_NOT_FOUND')
+    })
+
+    it('should fail if token is already used', async () => {
+      authRepo.seedPasswordResetToken({
+        id: 'reset-token-2',
+        token: 'used-reset-token',
+        userId: 'user-1',
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        usedAt: new Date(),
+      })
+
+      const result = await service.resetPassword('used-reset-token', 'NewPassword1!')
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('TOKEN_ALREADY_USED')
+    })
+
+    it('should fail if token is expired', async () => {
+      authRepo.seedPasswordResetToken({
+        id: 'reset-token-3',
+        token: 'expired-reset-token',
+        userId: 'user-1',
+        expiresAt: new Date(Date.now() - 1000),
+        usedAt: null,
+      })
+
+      const result = await service.resetPassword('expired-reset-token', 'NewPassword1!')
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('TOKEN_EXPIRED')
     })
   })
 })

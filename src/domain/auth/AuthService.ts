@@ -10,7 +10,7 @@ import type { IAuthRepository, AuthUser } from '@/infrastructure/persistence/aut
 import { PrismaAuthRepository } from '@/infrastructure/persistence/auth/PrismaAuthRepository'
 import bcrypt from 'bcrypt'
 import { randomBytes } from 'crypto'
-import { sendEmailVerificationNotification } from '@/lib/email'
+import { sendEmailVerificationNotification, sendPasswordResetNotification } from '@/lib/email'
 
 // -----------------------------------------------------------
 // Types
@@ -23,6 +23,7 @@ export interface AuthServiceDeps {
   generateToken?: () => string
   emailService?: {
     sendVerification: (email: string, firstName: string, token: string) => Promise<unknown>
+    sendPasswordReset?: (email: string, firstName: string, resetUrl: string) => Promise<unknown>
   }
 }
 
@@ -48,6 +49,14 @@ export interface VerifyEmailResult {
 
 export interface ResendResult {
   sent: boolean
+}
+
+export interface RequestPasswordResetResult {
+  sent: boolean
+}
+
+export interface ResetPasswordResult {
+  email: string
 }
 
 export interface VerifyCredentialsResult {
@@ -269,6 +278,82 @@ export class AuthService {
       providerId: user.provider?.id || null,
     })
   }
+
+  // -----------------------------------------------------------
+  // requestPasswordReset
+  // -----------------------------------------------------------
+
+  async requestPasswordReset(email: string): Promise<Result<RequestPasswordResetResult, AuthError>> {
+    const user = await this.repo.findUserForResend(email)
+
+    if (user) {
+      // Invalidate any existing reset tokens
+      await this.repo.invalidatePasswordResetTokens(user.id)
+
+      // Create new token (1 hour expiry)
+      const token = this.generateToken()
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+
+      await this.repo.createPasswordResetToken({
+        token,
+        userId: user.id,
+        expiresAt,
+      })
+
+      // Send password reset email (fire-and-forget)
+      if (this.emailService?.sendPasswordReset) {
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const resetUrl = `${baseUrl}/reset-password?token=${token}`
+        this.emailService.sendPasswordReset(user.email, user.firstName, resetUrl).catch(() => {
+          // Logged at infrastructure level
+        })
+      }
+
+      return Result.ok({ sent: true })
+    }
+
+    // Always return success (enumeration prevention)
+    return Result.ok({ sent: false })
+  }
+
+  // -----------------------------------------------------------
+  // resetPassword
+  // -----------------------------------------------------------
+
+  async resetPassword(token: string, newPassword: string): Promise<Result<ResetPasswordResult, AuthError>> {
+    // 1. Find token
+    const resetToken = await this.repo.findPasswordResetToken(token)
+    if (!resetToken) {
+      return Result.fail({
+        type: 'TOKEN_NOT_FOUND',
+        message: 'Ogiltig eller utgången återställningslänk',
+      })
+    }
+
+    // 2. Check if already used
+    if (resetToken.usedAt) {
+      return Result.fail({
+        type: 'TOKEN_ALREADY_USED',
+        message: 'Denna återställningslänk har redan använts',
+      })
+    }
+
+    // 3. Check if expired
+    if (new Date() > resetToken.expiresAt) {
+      return Result.fail({
+        type: 'TOKEN_EXPIRED',
+        message: 'Återställningslänken har gått ut. Begär en ny.',
+      })
+    }
+
+    // 4. Hash new password
+    const passwordHash = await this.hashPassword(newPassword)
+
+    // 5. Atomic reset (update password + mark token as used)
+    await this.repo.resetPassword(resetToken.userId, resetToken.id, passwordHash)
+
+    return Result.ok({ email: resetToken.userEmail })
+  }
 }
 
 // -----------------------------------------------------------
@@ -282,6 +367,7 @@ export function createAuthService(): AuthService {
     comparePassword: (pw, hash) => bcrypt.compare(pw, hash),
     emailService: {
       sendVerification: sendEmailVerificationNotification,
+      sendPasswordReset: sendPasswordResetNotification,
     },
   })
 }

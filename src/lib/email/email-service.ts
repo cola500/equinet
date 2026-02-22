@@ -98,8 +98,8 @@ class EmailService {
 // Singleton instance
 export const emailService = new EmailService()
 
-// --- Email Verification Notification ---
-import { emailVerificationEmail } from "./templates"
+// --- Email Notifications ---
+import { emailVerificationEmail, passwordResetEmail } from "./templates"
 
 /**
  * Send email verification notification
@@ -124,6 +124,31 @@ export async function sendEmailVerificationNotification(
   return await emailService.send({
     to: email,
     subject: "Verifiera din e-post - Equinet",
+    html,
+    text,
+  })
+}
+
+/**
+ * Send password reset notification
+ *
+ * @param email - Recipient email
+ * @param firstName - User's first name
+ * @param resetUrl - Full URL to password reset page with token
+ */
+export async function sendPasswordResetNotification(
+  email: string,
+  firstName: string,
+  resetUrl: string
+) {
+  const { html, text } = passwordResetEmail({
+    firstName,
+    resetUrl,
+  })
+
+  return await emailService.send({
+    to: email,
+    subject: "Återställ ditt lösenord - Equinet",
     html,
     text,
   })

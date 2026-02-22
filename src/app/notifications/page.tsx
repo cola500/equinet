@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
-import { Header } from "@/components/layout/Header"
+import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bell, Check, CheckCheck } from "lucide-react"
@@ -27,7 +28,7 @@ function getNotificationTypeLabel(type: string): string {
 
 export default function NotificationsPage() {
   const router = useRouter()
-  const { isLoading, isAuthenticated } = useAuth()
+  const { user, isLoading, isAuthenticated } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -110,10 +111,10 @@ export default function NotificationsPage() {
     )
   }
 
+  const Layout = user?.userType === "provider" ? ProviderLayout : CustomerLayout
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-8">
+    <Layout>
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Notifikationer</h1>
@@ -209,7 +210,6 @@ export default function NotificationsPage() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </Layout>
   )
 }

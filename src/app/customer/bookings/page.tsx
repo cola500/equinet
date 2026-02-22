@@ -327,6 +327,7 @@ export default function CustomerBookingsPage() {
             <button
               key={tab}
               onClick={() => setFilter(tab)}
+              aria-pressed={filter === tab}
               className={`px-4 py-2 touch-target rounded-md text-sm font-medium transition-all duration-200 ${
                 filter === tab
                   ? "bg-white text-gray-900 shadow-sm"

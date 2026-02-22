@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { format, addDays } from "date-fns"
 import { toast } from "sonner"
 
-export type BookingStep = "selectType" | "selectTime" | "selectHorse" | "submitting"
+export type BookingStep = "selectType" | "selectTime" | "selectHorse" | "confirm" | "submitting"
 
 export interface BookingFormState {
   bookingDate: string

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -87,18 +88,107 @@ export function DesktopBookingDialog({
   setTotalOccurrences,
 }: DesktopBookingDialogProps) {
   const recurringEnabled = useFeatureFlag("recurring_bookings")
+  const [showSummary, setShowSummary] = useState(false)
+
   if (!selectedService) return null
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) setShowSummary(false)
+    onOpenChange(open)
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Boka {selectedService.name}</DialogTitle>
           <DialogDescription>
-            Fyll i dina uppgifter för att skicka en bokningsförfrågan
+            {showSummary
+              ? "Kontrollera dina uppgifter innan du skickar"
+              : "Fyll i dina uppgifter för att skicka en bokningsförfrågan"}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
+
+        {/* Summary view */}
+        {showSummary && (
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-gray-50 p-4 space-y-3">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Tjänst</p>
+                <p className="font-medium">{selectedService.name}</p>
+                <p className="text-sm text-gray-600">{selectedService.price} kr ({selectedService.durationMinutes} min)</p>
+              </div>
+              {!isFlexibleBooking && bookingForm.bookingDate && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Datum & tid</p>
+                  <p className="font-medium">
+                    {new Date(bookingForm.bookingDate).toLocaleDateString("sv-SE", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}{" "}
+                    kl. {bookingForm.startTime}
+                  </p>
+                </div>
+              )}
+              {isFlexibleBooking && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Period</p>
+                  <p className="font-medium">{flexibleForm.dateFrom} - {flexibleForm.dateTo}</p>
+                  <p className="text-sm text-gray-600">
+                    {flexibleForm.priority === "urgent" ? "Akut" : "Normal"} prioritet, {flexibleForm.numberOfHorses} häst{flexibleForm.numberOfHorses !== 1 ? "ar" : ""}
+                  </p>
+                </div>
+              )}
+              {!isFlexibleBooking && (bookingForm.horseName || bookingForm.horseId) && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Häst</p>
+                  <p className="font-medium">
+                    {bookingForm.horseId
+                      ? customerHorses.find(h => h.id === bookingForm.horseId)?.name || bookingForm.horseName
+                      : bookingForm.horseName}
+                  </p>
+                </div>
+              )}
+              {isRecurring && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Återkommande</p>
+                  <p className="font-medium">
+                    Var {intervalWeeks}:e vecka, {totalOccurrences} tillfällen
+                  </p>
+                </div>
+              )}
+              {!isFlexibleBooking && bookingForm.customerNotes && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Kommentarer</p>
+                  <p className="text-sm">{bookingForm.customerNotes}</p>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowSummary(false)}
+              >
+                Ändra
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowSummary(false)
+                  onSubmit()
+                }}
+              >
+                Skicka bokningsförfrågan
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Form view */}
+        <form onSubmit={(e) => { e.preventDefault(); setShowSummary(true) }} className={`space-y-4 ${showSummary ? "hidden" : ""}`}>
           {/* Route Booking Option */}
           {nearbyRoute && (
             <div
@@ -477,7 +567,7 @@ export function DesktopBookingDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
             >
               Avbryt
             </Button>
@@ -485,7 +575,7 @@ export function DesktopBookingDialog({
               type="submit"
               disabled={!canSubmit}
             >
-              Skicka bokningsförfrågan
+              Granska bokning
             </Button>
           </div>
         </form>

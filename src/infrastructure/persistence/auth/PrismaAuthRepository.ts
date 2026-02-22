@@ -13,9 +13,11 @@ import type {
   AuthUserWithCredentials,
   UserForResend,
   VerificationTokenWithUser,
+  PasswordResetTokenWithUser,
   CreateUserData,
   CreateProviderData,
   CreateVerificationTokenData,
+  CreatePasswordResetTokenData,
 } from './IAuthRepository'
 
 // Safe user select (NEVER includes passwordHash)
@@ -148,6 +150,68 @@ export class PrismaAuthRepository implements IAuthRepository {
         },
       }),
       prisma.emailVerificationToken.update({
+        where: { id: tokenId },
+        data: { usedAt: new Date() },
+      }),
+    ])
+  }
+
+  // -----------------------------------------------------------
+  // Password reset
+  // -----------------------------------------------------------
+
+  async createPasswordResetToken(data: CreatePasswordResetTokenData): Promise<void> {
+    await prisma.passwordResetToken.create({
+      data: {
+        token: data.token,
+        userId: data.userId,
+        expiresAt: data.expiresAt,
+      },
+    })
+  }
+
+  async findPasswordResetToken(token: string): Promise<PasswordResetTokenWithUser | null> {
+    const result = await prisma.passwordResetToken.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        token: true,
+        userId: true,
+        expiresAt: true,
+        usedAt: true,
+        user: {
+          select: { email: true, firstName: true },
+        },
+      },
+    })
+
+    if (!result) return null
+
+    return {
+      id: result.id,
+      token: result.token,
+      userId: result.userId,
+      expiresAt: result.expiresAt,
+      usedAt: result.usedAt,
+      userEmail: result.user.email,
+      userFirstName: result.user.firstName,
+    }
+  }
+
+  async invalidatePasswordResetTokens(userId: string): Promise<void> {
+    await prisma.passwordResetToken.updateMany({
+      where: { userId, usedAt: null },
+      data: { usedAt: new Date() },
+    })
+  }
+
+  async resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void> {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      }),
+      prisma.passwordResetToken.update({
         where: { id: tokenId },
         data: { usedAt: new Date() },
       }),

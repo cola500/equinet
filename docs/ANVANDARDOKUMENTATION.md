@@ -98,6 +98,17 @@ Equinet är byggt för alla typer av mobila hästtjänster:
 
 Lösenordet måste innehålla minst 8 tecken, inklusive stor bokstav, liten bokstav, siffra och specialtecken. En styrkemätare visar i realtid hur starkt lösenordet är.
 
+### Glömt lösenord
+
+Om du glömt ditt lösenord kan du återställa det:
+
+1. Klicka **"Glömt lösenord?"** på inloggningssidan
+2. Ange din e-postadress
+3. Du får ett mail med en återställningslänk (giltig i 1 timme)
+4. Klicka på länken och välj ett nytt lösenord
+
+Av säkerhetsskäl visar systemet alltid samma bekräftelse oavsett om e-postadressen finns i systemet eller inte.
+
 ---
 
 ## Guide för hästägare
@@ -109,8 +120,11 @@ Gå till **Leverantörer** i menyn för att bläddra bland alla aktiva tjänstel
 **Du kan:**
 - Söka på namn eller tjänstetyp
 - Filtrera på plats och avstånd
-- Se varje leverantörs betyg och antal omdömen
+- Sortera på högst betyg eller flest recensioner
+- Se varje leverantörs profilbild, betyg och antal omdömen
 - Klicka på en leverantör för att se fullständig profil
+
+Dina sökfilter sparas i URL:en, så om du klickar in på en leverantörsprofil och sedan går tillbaka bevaras dina filter.
 
 **På leverantörens profil ser du:**
 - Beskrivning av verksamheten
@@ -132,7 +146,8 @@ Traditionell bokning innebär att du väljer ett specifikt datum och en tid.
 4. Välj en ledig tid
 5. Välj häst från ditt register (eller skriv hästens namn manuellt)
 6. Lägg till eventuella kommentarer eller önskemål
-7. Bekräfta bokningen
+7. Granska en sammanfattning av bokningen (tjänst, datum, tid, häst)
+8. Bekräfta bokningen
 
 **Vad händer sen?**
 - Leverantören får en notifikation om din bokning
@@ -406,13 +421,22 @@ Du ser din framgång som en procent-indikator. När alla steg är klara är du r
 
 ### Företagsprofil
 
-Under **Min profil** fyller du i:
+Under **Min profil** finns tre flikar:
 
+**Profil-fliken:**
 - **Profilbild** - ladda upp en bild som visas för kunder (dra och släpp eller klicka)
 - **Företagsnamn** - det namn kunder ser
 - **Beskrivning** - berätta om din verksamhet och erfarenhet
 - **Adress, ort, postnummer** - din utgångspunkt (används för avståndberäkning)
 - **Serviceområde** - hur långt du åker (standard 50 km radie)
+
+**Tillgänglighet-fliken:**
+- Veckoschema och tillgänglighetsundantag
+- Kompetenser & verifiering
+
+**Bokningsinställningar-fliken:**
+- Bokningsinställningar (acceptera nya kunder, etc.)
+- Ombokning och återkommande bokningar
 
 Adressen omvandlas automatiskt till GPS-koordinater som används vid ruttplanering och restidsberäkning.
 

@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +31,7 @@ interface Provider {
   businessName: string
   description?: string
   city?: string
+  profileImageUrl?: string | null
   services: Array<{
     id: string
     name: string
@@ -50,6 +52,8 @@ interface Provider {
   }
 }
 
+type SortOption = "default" | "rating" | "reviews"
+
 interface ProviderWithVisit {
   provider: Provider
   nextVisit: {
@@ -62,14 +66,17 @@ interface ProviderWithVisit {
 
 export default function ProvidersPage() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const initializedFromUrl = useRef(false)
   const [providers, setProviders] = useState<Provider[]>([])
   const [visitingProviders, setVisitingProviders] = useState<ProviderWithVisit[]>([])
-  const [search, setSearch] = useState("")
-  const [city, setCity] = useState("")
-  const [visitingArea, setVisitingArea] = useState("")
+  const [search, setSearch] = useState(() => searchParams.get("search") || "")
+  const [city, setCity] = useState(() => searchParams.get("city") || "")
+  const [visitingArea, setVisitingArea] = useState(() => searchParams.get("visiting") || "")
   const [isLoading, setIsLoading] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<SortOption>(() => (searchParams.get("sort") as SortOption) || "default")
 
   // Geo-filtering state
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -81,8 +88,39 @@ export default function ProvidersPage() {
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
 
+  // Sync filter state to URL (no network request -- uses replaceState)
+  useEffect(() => {
+    if (!initializedFromUrl.current) {
+      initializedFromUrl.current = true
+      return
+    }
+    const params = new URLSearchParams()
+    if (search) params.set("search", search)
+    if (city) params.set("city", city)
+    if (visitingArea) params.set("visiting", visitingArea)
+    if (sortBy !== "default") params.set("sort", sortBy)
+    const qs = params.toString()
+    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    window.history.replaceState(null, "", url)
+  }, [search, city, visitingArea, sortBy])
+
   // Count active advanced filters (not counting main search)
   const activeFilterCount = [city, visitingArea, userLocation].filter(Boolean).length
+
+  // Sort providers client-side
+  const sortedProviders = [...providers].sort((a, b) => {
+    if (sortBy === "rating") {
+      const ratingA = a.reviewStats?.averageRating ?? 0
+      const ratingB = b.reviewStats?.averageRating ?? 0
+      return ratingB - ratingA
+    }
+    if (sortBy === "reviews") {
+      const countA = a.reviewStats?.totalCount ?? 0
+      const countB = b.reviewStats?.totalCount ?? 0
+      return countB - countA
+    }
+    return 0 // default: API order
+  })
 
   // Debounce search - sök automatiskt efter 500ms av inaktivitet
   // Initial load (tom sökning) hämtar direkt, sökningar debouncar
@@ -428,13 +466,26 @@ export default function ProvidersPage() {
                 <p className="text-sm text-red-600">{locationError}</p>
               )}
 
-              {/* Result count + active filter chips */}
+              {/* Result count + sort + active filter chips */}
               {!isLoading && !isSearching && !error && (
-                <p className="text-sm text-gray-500">
-                  {providers.length === 0
-                    ? "Inga träffar"
-                    : `${providers.length} leverantör${providers.length !== 1 ? "er" : ""}`}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">
+                    {providers.length === 0
+                      ? "Inga träffar"
+                      : `${providers.length} leverantör${providers.length !== 1 ? "er" : ""}`}
+                  </p>
+                  {providers.length > 1 && (
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className="text-sm border rounded-md px-3 py-1.5 bg-white text-gray-700"
+                    >
+                      <option value="default">Sortera</option>
+                      <option value="rating">Högst betyg</option>
+                      <option value="reviews">Flest recensioner</option>
+                    </select>
+                  )}
+                </div>
               )}
 
               {isSearching && (
@@ -776,14 +827,31 @@ export default function ProvidersPage() {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {providers.map((provider, index) => (
+              {sortedProviders.map((provider, index) => (
                 <Card key={provider.id} className="animate-fade-in-up hover:shadow-lg transition-shadow" data-testid="provider-card" style={{ animationDelay: `${index * 50}ms` }}>
                   <CardHeader>
-                    <CardTitle>{provider.businessName}</CardTitle>
-                    <CardDescription>
-                      {provider.city && `${provider.city} • `}
-                      {provider.user.firstName} {provider.user.lastName}
-                    </CardDescription>
+                    <div className="flex items-start gap-3">
+                      {provider.profileImageUrl ? (
+                        <img
+                          src={provider.profileImageUrl}
+                          alt={provider.businessName}
+                          className="h-12 w-12 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                          <span className="text-green-700 font-semibold text-lg">
+                            {provider.businessName.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <CardTitle className="truncate">{provider.businessName}</CardTitle>
+                        <CardDescription>
+                          {provider.city && `${provider.city} • `}
+                          {provider.user.firstName} {provider.user.lastName}
+                        </CardDescription>
+                      </div>
+                    </div>
                     {provider.reviewStats && provider.reviewStats.totalCount > 0 && provider.reviewStats.averageRating !== null && (
                       <div className="flex items-center gap-1.5 mt-1">
                         <StarRating rating={Math.round(provider.reviewStats.averageRating)} readonly size="sm" />
