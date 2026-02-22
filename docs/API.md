@@ -53,6 +53,8 @@ Rate limiting via Redis (Upstash) för serverless-kompatibilitet.
 | Endpoint | Limit | Fönster |
 |----------|-------|---------|
 | POST `/api/auth/register` | 5 | /timme per IP |
+| POST `/api/auth/forgot-password` | 3 | /timme per IP |
+| POST `/api/auth/reset-password` | 3 | /timme per IP |
 | POST `/api/bookings` | 10 | /timme per användare |
 | POST `/api/bookings/manual` | 10 | /timme per provider |
 | POST `/api/services` | 10 | /timme per provider |
@@ -74,6 +76,8 @@ Rate limiting via Redis (Upstash) för serverless-kompatibilitet.
 |-------|------|------|-------------|
 | POST | `/api/auth/register` | - | Registrera ny användare |
 | GET/POST | `/api/auth/[...nextauth]` | - | NextAuth inloggning/utloggning/session |
+| POST | `/api/auth/forgot-password` | - | Begär lösenordsåterställning |
+| POST | `/api/auth/reset-password` | - | Återställ lösenord med token |
 | GET | `/api/profile` | Session | Hämta användarprofil |
 | PUT | `/api/profile` | Session | Uppdatera användarprofil |
 
