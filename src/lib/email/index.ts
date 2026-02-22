@@ -2,9 +2,10 @@
  * Email module exports
  */
 
-export { emailService, sendEmailVerificationNotification } from "./email-service"
+export { emailService, sendEmailVerificationNotification, sendPasswordResetNotification } from "./email-service"
 export {
   emailVerificationEmail,
+  passwordResetEmail,
   bookingConfirmationEmail,
   paymentConfirmationEmail,
   bookingStatusChangeEmail,

@@ -10,9 +10,11 @@ import type {
   AuthUserWithCredentials,
   UserForResend,
   VerificationTokenWithUser,
+  PasswordResetTokenWithUser,
   CreateUserData,
   CreateProviderData,
   CreateVerificationTokenData,
+  CreatePasswordResetTokenData,
 } from './IAuthRepository'
 
 interface StoredUser {
@@ -44,10 +46,19 @@ interface StoredToken {
   usedAt: Date | null
 }
 
+interface StoredPasswordResetToken {
+  id: string
+  token: string
+  userId: string
+  expiresAt: Date
+  usedAt: Date | null
+}
+
 export class MockAuthRepository implements IAuthRepository {
   private users: Map<string, StoredUser> = new Map()
   private providers: Map<string, StoredProvider> = new Map()
   private tokens: Map<string, StoredToken> = new Map()
+  private passwordResetTokens: Map<string, StoredPasswordResetToken> = new Map()
   private idCounter = 0
 
   // -----------------------------------------------------------
@@ -171,6 +182,60 @@ export class MockAuthRepository implements IAuthRepository {
   }
 
   // -----------------------------------------------------------
+  // Password reset
+  // -----------------------------------------------------------
+
+  async createPasswordResetToken(data: CreatePasswordResetTokenData): Promise<void> {
+    const id = `prt-${++this.idCounter}`
+    this.passwordResetTokens.set(id, {
+      id,
+      token: data.token,
+      userId: data.userId,
+      expiresAt: data.expiresAt,
+      usedAt: null,
+    })
+  }
+
+  async findPasswordResetToken(token: string): Promise<PasswordResetTokenWithUser | null> {
+    for (const stored of this.passwordResetTokens.values()) {
+      if (stored.token === token) {
+        const user = this.findUserById(stored.userId)
+        if (!user) return null
+        return {
+          id: stored.id,
+          token: stored.token,
+          userId: stored.userId,
+          expiresAt: stored.expiresAt,
+          usedAt: stored.usedAt,
+          userEmail: user.email,
+          userFirstName: user.firstName,
+        }
+      }
+    }
+    return null
+  }
+
+  async invalidatePasswordResetTokens(userId: string): Promise<void> {
+    for (const stored of this.passwordResetTokens.values()) {
+      if (stored.userId === userId && !stored.usedAt) {
+        stored.usedAt = new Date()
+      }
+    }
+  }
+
+  async resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void> {
+    const user = this.users.get(userId)
+    if (user) {
+      user.passwordHash = passwordHash
+    }
+    for (const stored of this.passwordResetTokens.values()) {
+      if (stored.id === tokenId) {
+        stored.usedAt = new Date()
+      }
+    }
+  }
+
+  // -----------------------------------------------------------
   // Test helpers
   // -----------------------------------------------------------
 
@@ -195,10 +260,18 @@ export class MockAuthRepository implements IAuthRepository {
     this.tokens.set(token.id, token)
   }
 
+  /**
+   * Seed a password reset token for testing
+   */
+  seedPasswordResetToken(token: StoredPasswordResetToken): void {
+    this.passwordResetTokens.set(token.id, token)
+  }
+
   clear(): void {
     this.users.clear()
     this.providers.clear()
     this.tokens.clear()
+    this.passwordResetTokens.clear()
     this.idCounter = 0
   }
 
@@ -212,6 +285,10 @@ export class MockAuthRepository implements IAuthRepository {
 
   getTokens(): StoredToken[] {
     return Array.from(this.tokens.values())
+  }
+
+  getPasswordResetTokens(): StoredPasswordResetToken[] {
+    return Array.from(this.passwordResetTokens.values())
   }
 
   // -----------------------------------------------------------

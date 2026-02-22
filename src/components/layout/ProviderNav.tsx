@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -17,6 +17,7 @@ import {
   User,
   Mic,
   BarChart3,
+  ChevronDown,
 } from "lucide-react"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
@@ -54,19 +55,24 @@ const providerMoreItems: MoreItem[] = [
   { href: "/provider/profile", label: "Min profil", icon: User },
 ]
 
-const navItems: NavItem[] = [
+// Primary nav items always visible on desktop (max 6)
+const primaryNavItems: NavItem[] = [
   { href: "/provider/dashboard", label: "Översikt", offlineSafe: true },
   { href: "/provider/calendar", label: "Kalender", offlineSafe: true },
   { href: "/provider/bookings", label: "Bokningar", offlineSafe: true },
-  { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging" },
   { href: "/provider/services", label: "Mina tjänster" },
+  { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
+  { href: "/provider/reviews", label: "Recensioner" },
+]
+
+// Secondary nav items in "Mer" dropdown on desktop
+const secondaryNavItems: NavItem[] = [
+  { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging" },
   { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route", featureFlag: "route_planning" },
   { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", featureFlag: "route_announcements" },
-  { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
   { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
   { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", featureFlag: "business_insights" },
-  { href: "/provider/reviews", label: "Recensioner" },
   { href: "/provider/profile", label: "Min profil" },
 ]
 
@@ -107,6 +113,26 @@ export function ProviderNav() {
   const router = useRouter()
   const flags = useFeatureFlags()
   const isOnline = useOnlineStatus()
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    if (moreOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [moreOpen])
+
+  // Close dropdown on navigation
+  useEffect(() => {
+    setMoreOpen(false)
+  }, [pathname])
 
   // Prefetch offline-safe tabs so RSC payloads are cached for offline navigation
   useEffect(() => {
@@ -119,7 +145,7 @@ export function ProviderNav() {
   const isVisible = (item: { featureFlag?: string }) =>
     !item.featureFlag || flags[item.featureFlag]
 
-  const visibleNavItems = navItems.filter(isVisible)
+  const visibleSecondaryItems = secondaryNavItems.filter(isVisible)
   const visibleMoreItems = providerMoreItems.filter(isVisible)
 
   const isActive = (item: NavItem) => {
@@ -128,6 +154,9 @@ export function ProviderNav() {
     }
     return pathname === item.href
   }
+
+  // Check if any secondary item is active (for "Mer" button highlight)
+  const isSecondaryActive = visibleSecondaryItems.some(isActive)
 
   function handleOfflineClick(e: React.MouseEvent, item: NavItem) {
     if (!isOnline && !isActive(item)) {
@@ -144,7 +173,7 @@ export function ProviderNav() {
 
   const linkClasses = (item: NavItem) => {
     const active = isActive(item)
-    return `py-3 ${
+    return `py-3 whitespace-nowrap ${
       active
         ? "border-b-2 border-green-600 text-green-600 font-medium"
         : "text-gray-600 hover:text-gray-900"
@@ -156,8 +185,8 @@ export function ProviderNav() {
       {/* Desktop navigation */}
       <nav className="bg-white border-b hidden md:block">
         <div className="container mx-auto px-4">
-          <div className="flex gap-6">
-            {visibleNavItems.map((item) => (
+          <div className="flex gap-6 items-center">
+            {primaryNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -167,6 +196,42 @@ export function ProviderNav() {
                 {item.label}
               </Link>
             ))}
+
+            {/* "Mer" dropdown for secondary items */}
+            {visibleSecondaryItems.length > 0 && (
+              <div className="relative" ref={moreRef}>
+                <button
+                  onClick={() => setMoreOpen(!moreOpen)}
+                  className={`py-3 flex items-center gap-1 whitespace-nowrap ${
+                    isSecondaryActive
+                      ? "border-b-2 border-green-600 text-green-600 font-medium"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Mer
+                  <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {moreOpen && (
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border py-1 min-w-[200px] z-50">
+                    {visibleSecondaryItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={(e) => handleOfflineClick(e, item)}
+                        className={`block px-4 py-2 text-sm ${
+                          isActive(item)
+                            ? "bg-green-50 text-green-700 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </nav>

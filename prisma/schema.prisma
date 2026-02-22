@@ -59,6 +59,7 @@ model User {
   groupBookingParticipations GroupBookingParticipant[]
   uploads                   Upload[]
   bookingSeries             BookingSeries[]
+  passwordResetTokens       PasswordResetToken[]
 
   @@index([latitude, longitude]) // For geo-queries
   providerCustomerLinks ProviderCustomer[]
@@ -450,6 +451,19 @@ model RouteStop {
 }
 
 model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordResetToken {
   id        String    @id @default(uuid())
   token     String    @unique
   userId    String

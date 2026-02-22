@@ -103,6 +103,8 @@ export function MobileBookingFlow({
         return isFlexibleBooking ? "Välj datumspann" : "Välj tid"
       case "selectHorse":
         return "Häst & detaljer"
+      case "confirm":
+        return "Bekräfta bokning"
       case "submitting":
         return "Skickar..."
     }
@@ -118,6 +120,8 @@ export function MobileBookingFlow({
           : "Välj datum och tid i kalendern"
       case "selectHorse":
         return "Fyll i resterande uppgifter"
+      case "confirm":
+        return "Kontrollera att allt stämmer"
       case "submitting":
         return "Vänta medan vi skickar din bokning..."
     }
@@ -127,7 +131,13 @@ export function MobileBookingFlow({
     if (step === "selectType") {
       setStep("selectTime")
     } else if (step === "selectTime") {
-      setStep("selectHorse")
+      if (isFlexibleBooking) {
+        setStep("confirm")
+      } else {
+        setStep("selectHorse")
+      }
+    } else if (step === "selectHorse") {
+      setStep("confirm")
     }
   }
 
@@ -136,6 +146,8 @@ export function MobileBookingFlow({
       setStep("selectType")
     } else if (step === "selectHorse") {
       setStep("selectTime")
+    } else if (step === "confirm") {
+      setStep(isFlexibleBooking ? "selectTime" : "selectHorse")
     }
   }
 
@@ -534,6 +546,64 @@ export function MobileBookingFlow({
             </div>
           )}
 
+          {/* Confirm step */}
+          {step === "confirm" && (
+            <div className="rounded-lg border bg-gray-50 p-4 space-y-3">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Tjänst</p>
+                <p className="font-medium">{selectedService.name}</p>
+                <p className="text-sm text-gray-600">{selectedService.price} kr ({selectedService.durationMinutes} min)</p>
+              </div>
+              {!isFlexibleBooking && bookingForm.bookingDate && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Datum & tid</p>
+                  <p className="font-medium">
+                    {new Date(bookingForm.bookingDate).toLocaleDateString("sv-SE", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}{" "}
+                    kl. {bookingForm.startTime}
+                  </p>
+                </div>
+              )}
+              {isFlexibleBooking && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Period</p>
+                  <p className="font-medium">{flexibleForm.dateFrom} - {flexibleForm.dateTo}</p>
+                  <p className="text-sm text-gray-600">
+                    {flexibleForm.priority === "urgent" ? "Akut" : "Normal"} prioritet, {flexibleForm.numberOfHorses} häst{flexibleForm.numberOfHorses !== 1 ? "ar" : ""}
+                  </p>
+                </div>
+              )}
+              {!isFlexibleBooking && (bookingForm.horseName || bookingForm.horseId) && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Häst</p>
+                  <p className="font-medium">
+                    {bookingForm.horseId
+                      ? customerHorses.find(h => h.id === bookingForm.horseId)?.name || bookingForm.horseName
+                      : bookingForm.horseName}
+                  </p>
+                </div>
+              )}
+              {isRecurring && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Återkommande</p>
+                  <p className="font-medium">
+                    Var {intervalWeeks}:e vecka, {totalOccurrences} tillfällen
+                  </p>
+                </div>
+              )}
+              {!isFlexibleBooking && bookingForm.customerNotes && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Kommentarer</p>
+                  <p className="text-sm">{bookingForm.customerNotes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Submitting state */}
           {step === "submitting" && (
             <div className="flex items-center justify-center py-8">
@@ -560,22 +630,13 @@ export function MobileBookingFlow({
               >
                 Tillbaka
               </Button>
-              {isFlexibleBooking ? (
-                <Button
-                  onClick={() => onSubmit()}
-                  className="flex-1"
-                >
-                  Skicka förfrågan
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNext}
-                  disabled={!canGoNext()}
-                  className="flex-1"
-                >
-                  Fortsätt
-                </Button>
-              )}
+              <Button
+                onClick={handleNext}
+                disabled={!canGoNext()}
+                className="flex-1"
+              >
+                Fortsätt
+              </Button>
             </div>
           ) : step === "selectHorse" ? (
             <div className="flex gap-2 w-full">
@@ -587,8 +648,24 @@ export function MobileBookingFlow({
                 Tillbaka
               </Button>
               <Button
-                onClick={() => onSubmit()}
+                onClick={handleNext}
                 disabled={!canSubmit}
+                className="flex-1"
+              >
+                Granska bokning
+              </Button>
+            </div>
+          ) : step === "confirm" ? (
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="flex-1"
+              >
+                Ändra
+              </Button>
+              <Button
+                onClick={() => onSubmit()}
                 className="flex-1"
               >
                 Skicka bokningsförfrågan

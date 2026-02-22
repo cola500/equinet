@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
 import { useIsMobile } from "@/hooks/useMediaQuery"
@@ -260,16 +259,16 @@ export default function ProviderDetailPage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Back Link */}
-          <Link
-            href="/providers"
+          {/* Back Link -- uses router.back() to preserve filter state */}
+          <button
+            onClick={() => router.back()}
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6 touch-target"
           >
             <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Tillbaka till leverantörer
-          </Link>
+          </button>
 
           {/* Provider Info */}
           <Card className="mb-8">
@@ -313,7 +312,12 @@ export default function ProviderDetailPage() {
                 <p className="text-sm text-gray-600">{provider.address}</p>
               )}
               {provider.user.phone && (
-                <p className="text-sm text-gray-600">{provider.user.phone}</p>
+                <a
+                  href={`tel:${provider.user.phone}`}
+                  className="text-sm text-primary hover:text-primary/80 inline-flex items-center gap-1"
+                >
+                  {provider.user.phone}
+                </a>
               )}
             </CardContent>
           </Card>

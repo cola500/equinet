@@ -115,7 +115,7 @@ export default function RegisterPage() {
                   }}
                   className={`p-4 border-2 rounded-lg transition-all min-h-[80px] ${
                     userType === "customer"
-                      ? "border-blue-600 bg-blue-50"
+                      ? "border-primary bg-primary/10"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                   disabled={isLoading}
@@ -134,7 +134,7 @@ export default function RegisterPage() {
                   }}
                   className={`p-4 border-2 rounded-lg transition-all min-h-[80px] ${
                     userType === "provider"
-                      ? "border-blue-600 bg-blue-50"
+                      ? "border-primary bg-primary/10"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                   disabled={isLoading}

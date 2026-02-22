@@ -244,6 +244,7 @@ export default function ProviderBookingsPage() {
             <button
               key={key}
               onClick={() => setFilter(key)}
+              aria-pressed={filter === key}
               className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
                 filter === key
                   ? "bg-green-600 text-white"

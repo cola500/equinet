@@ -135,7 +135,7 @@
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 2235+ tester, 163+ testfiler (2026-02-21) |
+| Unit/integration-tester | Klart | 2272+ tester, 194 testfiler (2026-02-22) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |

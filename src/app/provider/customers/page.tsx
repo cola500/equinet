@@ -13,6 +13,7 @@ import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { CustomerListSkeleton } from "@/components/loading/CustomerListSkeleton"
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -489,12 +490,7 @@ export default function ProviderCustomersPage() {
   if (authLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <CustomerListSkeleton />
       </ProviderLayout>
     )
   }
@@ -552,10 +548,7 @@ export default function ProviderCustomersPage() {
 
       {/* Customer list */}
       {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Laddar kunder...</p>
-        </div>
+        <CustomerListSkeleton />
       ) : customers.length === 0 ? (
         searchQuery || statusFilter !== "all" ? (
           <EmptyState
