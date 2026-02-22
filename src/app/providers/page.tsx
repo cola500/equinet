@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -65,6 +65,27 @@ interface ProviderWithVisit {
 }
 
 export default function ProvidersPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-2xl sm:text-4xl font-bold mb-2">Hitta tjänsteleverantörer</h1>
+            <p className="text-gray-600 mb-8">
+              Bläddra bland professionella hovslagare, veterinärer och andra hästtjänster
+            </p>
+            <ProviderCardSkeleton count={6} />
+          </div>
+        </main>
+      </div>
+    }>
+      <ProvidersContent />
+    </Suspense>
+  )
+}
+
+function ProvidersContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const initializedFromUrl = useRef(false)
