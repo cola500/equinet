@@ -855,11 +855,13 @@ Under **Besöksplanering** ser du vilka hästar som snart behöver besök, sorte
 - **Försenade** - enbart hästar som passerat sitt datum
 - **Inom 2 veckor** - hästar som snart behöver besök
 
-**Individuella intervall per häst:**
+**Individuella intervall per häst och tjänst:**
 
-Standardintervallet sätts på tjänstenivå (t.ex. 8 veckor för hovbeläggning). Men ibland behöver en specifik häst tätare -- eller glesare -- besök. Du kan sätta ett individuellt intervall per häst som override:ar tjänstens standard.
+Standardintervallet sätts på tjänstenivå (t.ex. 8 veckor för hovbeläggning). Men ibland behöver en specifik häst tätare -- eller glesare -- besök. Du kan sätta individuella intervall per häst *och* per tjänst.
 
-Det individuella intervallet gäller bara för dig som leverantör. En annan leverantör (t.ex. massör) kan ha ett annat intervall för samma häst.
+Gå till **Hästens hälsohistorik** (klicka på en häst) och tryck **Lägg till** under Återbesöksintervall. Välj tjänst, välj intervall och spara. Du kan ha olika intervall för olika tjänster på samma häst -- t.ex. 6 veckor för hovslagning och 8 veckor för massage.
+
+Det individuella intervallet gäller bara för dig som leverantör. Kunden kan också ha satt ett eget intervall som har högre prioritet (prioritetsordning: Kundens intervall > Leverantörens intervall > Tjänstens standard).
 
 ---
 

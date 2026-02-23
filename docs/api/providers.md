@@ -209,41 +209,60 @@ Uppdatera tjänst.
 
 ---
 
-## Återbesöksintervall
+## Återbesöksintervall (per tjänst)
 
 ### GET /api/provider/horses/[horseId]/interval
 
-Hämta återbesöksintervall för en häst (provider-specifikt override).
+Hämta alla återbesöksintervall för en häst + leverantörens tillgängliga tjänster.
 
 **Auth:** Required (provider med bokning för hästen)
 
 **Response:** `200 OK`
 ```json
-{ "horseId": "uuid", "providerId": "uuid", "intervalWeeks": 8 }
+{
+  "intervals": [
+    {
+      "id": "uuid",
+      "serviceId": "uuid",
+      "revisitIntervalWeeks": 8,
+      "notes": "Hovproblem",
+      "service": { "id": "uuid", "name": "Hovslagning", "recommendedIntervalWeeks": 6 }
+    }
+  ],
+  "availableServices": [
+    { "id": "uuid", "name": "Hovslagning", "recommendedIntervalWeeks": 6 },
+    { "id": "uuid", "name": "Massage", "recommendedIntervalWeeks": 8 }
+  ]
+}
 ```
 
 ### PUT /api/provider/horses/[horseId]/interval
 
-Sätt eller uppdatera återbesöksintervall (upsert).
+Sätt eller uppdatera återbesöksintervall per tjänst (upsert).
 
 **Auth:** Required (provider med bokning för hästen)
 
 **Request Body:**
 ```json
-{ "intervalWeeks": 8 }
+{ "serviceId": "uuid", "revisitIntervalWeeks": 8, "notes": "valfritt" }
 ```
 
-**Validering:** `intervalWeeks` heltal, 1-52.
+**Validering:** `serviceId` UUID, `revisitIntervalWeeks` heltal 1-52, `notes` max 500 tecken.
 
 **Response:** `200 OK`
 
 ### DELETE /api/provider/horses/[horseId]/interval
 
-Ta bort återbesöksintervall (återställ till tjänstens default).
+Ta bort återbesöksintervall för en specifik tjänst.
 
 **Auth:** Required (provider med bokning för hästen)
 
-**Response:** `200 OK` `{ "message": "Interval removed" }`
+**Request Body:**
+```json
+{ "serviceId": "uuid" }
+```
+
+**Response:** `200 OK` `{ "success": true }`
 
 ---
 

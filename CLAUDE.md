@@ -189,6 +189,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Fire-and-forget notifier med DI**: Injicera alla beroenden (repo, emailService, notificationService) via constructor, kör `.catch(logger.error)` i API-routen. Testbart med mocks, robust i prod. Pattern i `RouteAnnouncementNotifier.ts`.
 - **NotificationDelivery dedup-tabell**: Unique constraint `[routeOrderId, customerId, channel]` förhindrar dubbelnotiser vid retries/race conditions. Kontrollera `exists()` före `create()`.
 - **E2E feature flag env-var**: Feature-flag-gated E2E-tester kräver `FEATURE_X=true` i `.env` (lokal) + `playwright.config.ts` webServer.env (CI). Admin API-toggle räcker INTE -- dev mode module-isolation gör att inte alla API-routes ser flaggan. Env-variabler har högsta prioritet och delas av alla instanser.
+- **Migration med constraint-ändring + datamigrering**: Ordning: (1) Add nullable column + FK, (2) DROP old constraint, (3) Data migration DO-block, (4) SET NOT NULL + CREATE new constraint. Droppa ALLTID gamla constrainten FÖRE datamigreringssteget -- annars failar INSERT på duplicate key.
+- **Per-service override map**: När override-tabell utvidgas med `serviceId`, byt Map-nyckel från `horseId` till `` `${horseId}:${serviceId}` `` i ALLA konsumenter (DueForServiceService, DueForServiceLookup, provider due-for-service route, ReminderService).
 
 ---
 
