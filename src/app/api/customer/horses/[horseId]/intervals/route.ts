@@ -30,7 +30,7 @@ async function authorizeCustomer(request: NextRequest, context: RouteContext) {
   if (session.user.userType !== "customer") {
     return {
       error: NextResponse.json(
-        { error: "Bara kunder har tillgang" },
+        { error: "Bara kunder har tillgång" },
         { status: 403 }
       ),
     }
@@ -41,7 +41,7 @@ async function authorizeCustomer(request: NextRequest, context: RouteContext) {
   if (!isAllowed) {
     return {
       error: NextResponse.json(
-        { error: "For manga forfragningar" },
+        { error: "För många förfrågningar" },
         { status: 429 }
       ),
     }
@@ -63,7 +63,7 @@ async function authorizeCustomer(request: NextRequest, context: RouteContext) {
   if (!horse) {
     return {
       error: NextResponse.json(
-        { error: "Hasten hittades inte" },
+        { error: "Hästen hittades inte" },
         { status: 404 }
       ),
     }
@@ -83,26 +83,50 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { horseId } = authResult
 
-    const intervals = await prisma.customerHorseServiceInterval.findMany({
-      where: { horseId },
-      select: {
-        id: true,
-        serviceId: true,
-        intervalWeeks: true,
-        service: {
-          select: {
-            id: true,
-            name: true,
-            recommendedIntervalWeeks: true,
+    const [intervals, bookings] = await Promise.all([
+      prisma.customerHorseServiceInterval.findMany({
+        where: { horseId },
+        select: {
+          id: true,
+          serviceId: true,
+          intervalWeeks: true,
+          service: {
+            select: {
+              id: true,
+              name: true,
+              recommendedIntervalWeeks: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.booking.findMany({
+        where: { horseId, status: { in: ["completed", "confirmed"] } },
+        select: {
+          service: {
+            select: {
+              id: true,
+              name: true,
+              recommendedIntervalWeeks: true,
+            },
           },
         },
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    })
+        orderBy: { bookingDate: "desc" },
+      }),
+    ])
 
-    return NextResponse.json({ intervals })
+    // Deduplicate services from booking history
+    const serviceMap = new Map<string, { id: string; name: string; recommendedIntervalWeeks: number | null }>()
+    for (const booking of bookings) {
+      if (!serviceMap.has(booking.service.id)) {
+        serviceMap.set(booking.service.id, booking.service)
+      }
+    }
+    const availableServices = Array.from(serviceMap.values())
+
+    return NextResponse.json({ intervals, availableServices })
   } catch (error) {
     if (error instanceof Response) return error
 
@@ -111,7 +135,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       error instanceof Error ? error : new Error(String(error))
     )
     return NextResponse.json(
-      { error: "Kunde inte hamta intervall" },
+      { error: "Kunde inte hämta intervall" },
       { status: 500 }
     )
   }

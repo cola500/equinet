@@ -88,7 +88,6 @@ export default function CustomerHorsesPage() {
   const { horses, isLoading, mutate: mutateHorses } = useSWRHorses()
   const { items: dueItems } = useDueForService()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
-  const [editingHorse, setEditingHorse] = useState<Horse | null>(null)
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null)
   const [formData, setFormData] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
@@ -136,44 +135,6 @@ export default function CustomerHorsesPage() {
     }
   }
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editingHorse) return
-    setIsSaving(true)
-
-    try {
-      const body: Record<string, unknown> = { name: formData.name }
-      body.breed = formData.breed || null
-      body.birthYear = formData.birthYear ? parseInt(formData.birthYear) : null
-      body.color = formData.color || null
-      body.gender = formData.gender || null
-      body.specialNeeds = formData.specialNeeds || null
-      body.registrationNumber = formData.registrationNumber || null
-      body.microchipNumber = formData.microchipNumber || null
-
-      const response = await fetch(`/api/horses/${editingHorse.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Kunde inte uppdatera häst")
-      }
-
-      toast.success("Hästen har uppdaterats!")
-      setEditingHorse(null)
-      setFormData(emptyForm)
-      mutateHorses()
-    } catch (error) {
-      console.error("Error updating horse:", error)
-      toast.error(error instanceof Error ? error.message : "Kunde inte uppdatera häst")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   const handleDelete = async (horse: Horse) => {
     try {
       const response = await fetch(`/api/horses/${horse.id}`, {
@@ -191,20 +152,6 @@ export default function CustomerHorsesPage() {
       console.error("Error deleting horse:", error)
       toast.error("Kunde inte ta bort häst")
     }
-  }
-
-  const openEditDialog = (horse: Horse) => {
-    setEditingHorse(horse)
-    setFormData({
-      name: horse.name,
-      breed: horse.breed || "",
-      birthYear: horse.birthYear?.toString() || "",
-      color: horse.color || "",
-      gender: horse.gender || "",
-      specialNeeds: horse.specialNeeds || "",
-      registrationNumber: horse.registrationNumber || "",
-      microchipNumber: horse.microchipNumber || "",
-    })
   }
 
   if (authLoading || !isCustomer) {
@@ -298,17 +245,9 @@ export default function CustomerHorsesPage() {
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/customer/horses/${horse.id}`}>
                     <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0">
-                      Se historik
+                      Information
                     </Button>
                   </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="min-h-[44px] sm:min-h-0"
-                    onClick={() => openEditDialog(horse)}
-                  >
-                    Redigera
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -323,33 +262,6 @@ export default function CustomerHorsesPage() {
           ))}
         </div>
       )}
-
-      {/* Edit dialog */}
-      <ResponsiveDialog
-        open={editingHorse !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditingHorse(null)
-            setFormData(emptyForm)
-          }
-        }}
-      >
-        <ResponsiveDialogContent>
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Redigera {editingHorse?.name}</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Uppdatera information om din häst.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <HorseForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleEdit}
-            isSaving={isSaving}
-            submitLabel="Spara ändringar"
-          />
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
 
       {/* Delete confirmation dialog */}
       {horseToDelete && (
@@ -400,7 +312,7 @@ function DueStatusBadge({
     return (
       <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 gap-1">
         <AlertTriangle className="h-3 w-3" />
-        <span>{label} försenad</span>
+        <span>{item.serviceName}: {label} försenad</span>
       </Badge>
     )
   }
@@ -411,7 +323,7 @@ function DueStatusBadge({
     return (
       <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
         <Clock className="h-3 w-3" />
-        <span>{label}</span>
+        <span>{item.serviceName}: {label}</span>
       </Badge>
     )
   }

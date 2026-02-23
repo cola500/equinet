@@ -24,6 +24,7 @@ const mockIntervalFindMany = vi.fn()
 const mockIntervalUpsert = vi.fn()
 const mockIntervalDelete = vi.fn()
 const mockServiceFindUnique = vi.fn()
+const mockBookingFindMany = vi.fn()
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -37,6 +38,9 @@ vi.mock("@/lib/prisma", () => ({
     },
     service: {
       findUnique: (...args: unknown[]) => mockServiceFindUnique(...args),
+    },
+    booking: {
+      findMany: (...args: unknown[]) => mockBookingFindMany(...args),
     },
   },
 }))
@@ -106,6 +110,7 @@ describe("Customer Horse Intervals API", () => {
       updatedAt: new Date(),
     })
     mockServiceFindUnique.mockResolvedValue({ id: SERVICE_ID, name: "Hovslagare" })
+    mockBookingFindMany.mockResolvedValue([])
   })
 
   // --- Auth & Guards ---
@@ -156,6 +161,40 @@ describe("Customer Horse Intervals API", () => {
 
       expect(response.status).toBe(200)
       expect(data.intervals).toEqual([])
+    })
+
+    it("returns availableServices from booking history", async () => {
+      mockBookingFindMany.mockResolvedValue([
+        { service: { id: SERVICE_ID, name: "Hovslagare", recommendedIntervalWeeks: 8 } },
+        { service: { id: SERVICE_ID, name: "Hovslagare", recommendedIntervalWeeks: 8 } },
+        { service: { id: "a0000000-0000-4000-a000-000000000004", name: "Tandvård", recommendedIntervalWeeks: 26 } },
+      ])
+
+      const response = await GET(makeGetRequest(), makeContext())
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.availableServices).toHaveLength(2)
+      expect(data.availableServices[0]).toEqual({
+        id: SERVICE_ID,
+        name: "Hovslagare",
+        recommendedIntervalWeeks: 8,
+      })
+      expect(data.availableServices[1]).toEqual({
+        id: "a0000000-0000-4000-a000-000000000004",
+        name: "Tandvård",
+        recommendedIntervalWeeks: 26,
+      })
+    })
+
+    it("returns empty availableServices when no bookings exist", async () => {
+      mockBookingFindMany.mockResolvedValue([])
+
+      const response = await GET(makeGetRequest(), makeContext())
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.availableServices).toEqual([])
     })
 
     it("returns intervals with service info", async () => {

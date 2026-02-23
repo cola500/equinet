@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -77,6 +78,12 @@ interface ServiceInterval {
   }
 }
 
+interface AvailableService {
+  id: string
+  name: string
+  recommendedIntervalWeeks: number | null
+}
+
 // --- Constants ---
 
 const GENDER_LABELS: Record<string, string> = {
@@ -104,11 +111,23 @@ const emptyNoteForm = {
   noteDate: new Date().toISOString().split("T")[0],
 }
 
+const emptyHorseForm = {
+  name: "",
+  breed: "",
+  birthYear: "",
+  color: "",
+  gender: "",
+  specialNeeds: "",
+  registrationNumber: "",
+  microchipNumber: "",
+}
+
 // --- Page Component ---
 
 export default function HorseDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const horseId = params.id as string
   const { isLoading: authLoading, isCustomer } = useAuth()
 
@@ -120,9 +139,19 @@ export default function HorseDetailPage() {
   const [noteForm, setNoteForm] = useState(emptyNoteForm)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Service intervals
+  // Edit horse
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editForm, setEditForm] = useState(emptyHorseForm)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+
+  // Tabs
   const dueForServiceEnabled = useFeatureFlag("due_for_service")
+  const initialTab = searchParams.get("tab") || "historik"
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  // Service intervals
   const [intervals, setIntervals] = useState<ServiceInterval[]>([])
+  const [availableServices, setAvailableServices] = useState<AvailableService[]>([])
   const [intervalDialogOpen, setIntervalDialogOpen] = useState(false)
   const [editingInterval, setEditingInterval] = useState<ServiceInterval | null>(null)
   const [intervalForm, setIntervalForm] = useState({ serviceId: "", intervalWeeks: "" })
@@ -173,6 +202,7 @@ export default function HorseDetailPage() {
       if (response.ok) {
         const data = await response.json()
         setIntervals(data.intervals ?? [])
+        setAvailableServices(data.availableServices ?? [])
       }
     } catch {
       // Silent -- intervals are supplementary
@@ -186,6 +216,59 @@ export default function HorseDetailPage() {
       fetchIntervals()
     }
   }, [isCustomer, horseId, fetchHorse, fetchTimeline, fetchIntervals])
+
+  const openEditDialog = () => {
+    if (!horse) return
+    setEditForm({
+      name: horse.name,
+      breed: horse.breed || "",
+      birthYear: horse.birthYear?.toString() || "",
+      color: horse.color || "",
+      gender: horse.gender || "",
+      specialNeeds: horse.specialNeeds || "",
+      registrationNumber: horse.registrationNumber || "",
+      microchipNumber: horse.microchipNumber || "",
+    })
+    setEditDialogOpen(true)
+  }
+
+  const handleEditHorse = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!horse) return
+    setIsSavingEdit(true)
+
+    try {
+      const body: Record<string, unknown> = { name: editForm.name }
+      body.breed = editForm.breed || null
+      body.birthYear = editForm.birthYear ? parseInt(editForm.birthYear) : null
+      body.color = editForm.color || null
+      body.gender = editForm.gender || null
+      body.specialNeeds = editForm.specialNeeds || null
+      body.registrationNumber = editForm.registrationNumber || null
+      body.microchipNumber = editForm.microchipNumber || null
+
+      const response = await fetch(`/api/horses/${horse.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Kunde inte uppdatera häst")
+      }
+
+      toast.success("Hästen har uppdaterats!")
+      setEditDialogOpen(false)
+      setEditForm(emptyHorseForm)
+      fetchHorse()
+    } catch (error) {
+      console.error("Error updating horse:", error)
+      toast.error(error instanceof Error ? error.message : "Kunde inte uppdatera häst")
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
 
   const handleSaveInterval = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -220,7 +303,9 @@ export default function HorseDetailPage() {
     }
   }
 
-  const handleDeleteInterval = async (serviceId: string) => {
+  const handleDeleteInterval = async (serviceId: string, serviceName: string) => {
+    if (!window.confirm(`Ta bort intervall för ${serviceName}?`)) return
+
     try {
       const response = await fetch(`/api/customer/horses/${horseId}/intervals`, {
         method: "DELETE",
@@ -242,6 +327,17 @@ export default function HorseDetailPage() {
     }
   }
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    const url = new URL(window.location.href)
+    if (tab === "historik") {
+      url.searchParams.delete("tab")
+    } else {
+      url.searchParams.set("tab", tab)
+    }
+    window.history.replaceState(null, "", url.toString())
+  }
+
   const openEditInterval = (interval: ServiceInterval) => {
     setEditingInterval(interval)
     setIntervalForm({
@@ -255,6 +351,16 @@ export default function HorseDetailPage() {
     setEditingInterval(null)
     setIntervalForm({ serviceId: "", intervalWeeks: "" })
     setIntervalDialogOpen(true)
+  }
+
+  const handleServiceSelect = (serviceId: string) => {
+    const service = availableServices.find((s) => s.id === serviceId)
+    setIntervalForm({
+      serviceId,
+      intervalWeeks: service?.recommendedIntervalWeeks
+        ? String(service.recommendedIntervalWeeks)
+        : intervalForm.intervalWeeks,
+    })
   }
 
   const handleAddNote = async (e: React.FormEvent) => {
@@ -314,341 +420,516 @@ export default function HorseDetailPage() {
         </Link>
       </div>
 
-      {/* Horse header */}
+      {/* Horse header -- always visible above tabs */}
       {horse && (
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-start gap-4">
-                <ImageUpload
-                  bucket="horses"
-                  entityId={horse.id}
-                  currentUrl={horse.photoUrl}
-                  onUploaded={(url) => setHorse({ ...horse, photoUrl: url })}
-                  variant="square"
-                  className="w-20 sm:w-32 flex-shrink-0"
-                />
-                <div>
-                  <CardTitle className="text-2xl">{horse.name}</CardTitle>
-                  <p className="text-gray-600">
-                    {[
-                      horse.breed,
-                      horse.color,
-                      horse.gender && GENDER_LABELS[horse.gender],
-                      horse.birthYear && `f. ${horse.birthYear}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") || "Ingen extra info"}
-                  </p>
-                  {(horse.registrationNumber || horse.microchipNumber) && (
-                    <p className="text-sm text-gray-500 mt-1 font-mono">
-                      {[
-                        horse.registrationNumber && `UELN: ${horse.registrationNumber}`,
-                        horse.microchipNumber && `Chip: ${horse.microchipNumber}`,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <ShareProfileDialog horseId={horse.id} horseName={horse.name} />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+          <div className="flex items-start gap-4">
+            <ImageUpload
+              bucket="horses"
+              entityId={horse.id}
+              currentUrl={horse.photoUrl}
+              onUploaded={(url) => setHorse({ ...horse, photoUrl: url })}
+              variant="square"
+              className="w-20 sm:w-32 flex-shrink-0"
+            />
+            <div>
+              <h1 className="text-2xl font-bold">{horse.name}</h1>
+              <p className="text-gray-600">
+                {[
+                  horse.breed,
+                  horse.color,
+                  horse.gender && GENDER_LABELS[horse.gender],
+                  horse.birthYear && `f. ${horse.birthYear}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Ingen extra info"}
+              </p>
             </div>
-          </CardHeader>
-          {horse.specialNeeds && (
-            <CardContent>
-              <div className="bg-amber-50 p-3 rounded text-sm text-amber-800">
-                <span className="font-medium">Specialbehov:</span>{" "}
-                {horse.specialNeeds}
-              </div>
-            </CardContent>
-          )}
-        </Card>
+          </div>
+          <ShareProfileDialog horseId={horse.id} horseName={horse.name} />
+        </div>
       )}
 
-      {/* Service Intervals */}
-      {dueForServiceEnabled && horse && (
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Serviceintervall</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={openNewInterval}
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-col">
+        <TabsList>
+          <TabsTrigger value="historik">Historik</TabsTrigger>
+          {dueForServiceEnabled && (
+            <TabsTrigger value="intervall">Intervall</TabsTrigger>
+          )}
+          <TabsTrigger value="info">Info</TabsTrigger>
+        </TabsList>
+
+        {/* --- Historik tab --- */}
+        <TabsContent value="historik">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <h2 className="text-xl font-semibold">Historik</h2>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={() => setNoteDialogOpen(true)}
+            >
+              Lägg till anteckning
+            </Button>
+          </div>
+
+          {/* Note dialog */}
+          <ResponsiveDialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+            <ResponsiveDialogContent>
+              <ResponsiveDialogHeader>
+                <ResponsiveDialogTitle>Ny anteckning</ResponsiveDialogTitle>
+                <ResponsiveDialogDescription>
+                  Lägg till en anteckning i hästens hälsohistorik.
+                </ResponsiveDialogDescription>
+              </ResponsiveDialogHeader>
+              <form onSubmit={handleAddNote} className="space-y-4">
+                <div>
+                  <Label htmlFor="note-category">Kategori *</Label>
+                  <Select
+                    value={noteForm.category}
+                    onValueChange={(value) =>
+                      setNoteForm({ ...noteForm, category: value })
+                    }
+                  >
+                    <SelectTrigger id="note-category">
+                      <SelectValue placeholder="Välj kategori..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="note-title">Titel *</Label>
+                  <Input
+                    id="note-title"
+                    value={noteForm.title}
+                    onChange={(e) =>
+                      setNoteForm({ ...noteForm, title: e.target.value })
+                    }
+                    placeholder="T.ex. Vaccination - influensa"
+                    required
+                    maxLength={200}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="note-content">Beskrivning</Label>
+                  <Textarea
+                    id="note-content"
+                    value={noteForm.content}
+                    onChange={(e) =>
+                      setNoteForm({ ...noteForm, content: e.target.value })
+                    }
+                    placeholder="Valfri beskrivning..."
+                    rows={3}
+                    maxLength={2000}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="note-date">Datum *</Label>
+                  <Input
+                    id="note-date"
+                    type="date"
+                    value={noteForm.noteDate}
+                    onChange={(e) =>
+                      setNoteForm({ ...noteForm, noteDate: e.target.value })
+                    }
+                    max={new Date().toISOString().split("T")[0]}
+                    required
+                  />
+                </div>
+                <ResponsiveDialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={
+                      isSaving ||
+                      !noteForm.category ||
+                      !noteForm.title.trim() ||
+                      !noteForm.noteDate
+                    }
+                  >
+                    {isSaving ? "Sparar..." : "Lägg till"}
+                  </Button>
+                </ResponsiveDialogFooter>
+              </form>
+            </ResponsiveDialogContent>
+          </ResponsiveDialog>
+
+          {/* Category filter chips */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => setActiveFilter(null)}
+              className={`px-3 py-1 touch-target rounded-full text-sm border transition-colors ${
+                activeFilter === null
+                  ? "bg-green-600 text-white border-green-600"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              Alla
+            </button>
+            {CATEGORY_OPTIONS.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() =>
+                  setActiveFilter(activeFilter === cat.value ? null : cat.value)
+                }
+                className={`px-3 py-1 touch-target rounded-full text-sm border transition-colors ${
+                  activeFilter === cat.value
+                    ? "bg-green-600 text-white border-green-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                }`}
               >
-                Lagg till
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Timeline */}
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto" />
+              <p className="mt-2 text-gray-600">Laddar historik...</p>
+            </div>
+          ) : timeline.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-gray-600 mb-2">
+                  Ingen historik att visa ännu.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Anteckningar och genomförda bokningar visas här.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+              <div className="space-y-4">
+                {timeline.map((item) => (
+                  <TimelineCard key={`${item.type}-${item.id}`} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* --- Intervall tab --- */}
+        {dueForServiceEnabled && (
+          <TabsContent value="intervall">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Serviceintervall</h2>
+              <Button variant="outline" size="sm" onClick={openNewInterval}>
+                Lägg till
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
+
             {intervals.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                Inga serviceintervall satta. Lagg till for att fa paminnelser nar det ar dags for service.
-              </p>
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-gray-600 mb-2">
+                    Inga serviceintervall satta.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Lägg till för att få påminnelser när det är dags för service.
+                  </p>
+                </CardContent>
+              </Card>
             ) : (
               <div className="space-y-3">
                 {intervals.map((interval) => (
-                  <div
-                    key={interval.id}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{interval.service.name}</p>
-                      <p className="text-sm text-gray-600">
-                        Var {interval.intervalWeeks} vecka{interval.intervalWeeks !== 1 ? "r" : ""}
-                      </p>
-                      {interval.service.recommendedIntervalWeeks && (
-                        <p className="text-xs text-gray-400">
-                          Leverantorens rekommendation: {interval.service.recommendedIntervalWeeks} veckor
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditInterval(interval)}
-                      >
-                        Andra
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDeleteInterval(interval.serviceId)}
-                      >
-                        Ta bort
-                      </Button>
-                    </div>
-                  </div>
+                  <Card key={interval.id}>
+                    <CardContent className="py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{interval.service.name}</p>
+                          <p className="text-sm text-gray-600">
+                            Var {interval.intervalWeeks} vecka{interval.intervalWeeks !== 1 ? "r" : ""}
+                          </p>
+                          {interval.service.recommendedIntervalWeeks && (
+                            <p className="text-xs text-gray-400">
+                              Leverantörens rekommendation: {interval.service.recommendedIntervalWeeks} veckor
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditInterval(interval)}
+                          >
+                            Ändra
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteInterval(interval.serviceId, interval.service.name)}
+                          >
+                            Ta bort
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Interval Dialog */}
-      <ResponsiveDialog open={intervalDialogOpen} onOpenChange={setIntervalDialogOpen}>
-        <ResponsiveDialogContent>
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>
-              {editingInterval ? "Andra serviceintervall" : "Lagg till serviceintervall"}
-            </ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Ange hur ofta denna tjanst ska utforas. Du far en paminnelse nar det ar dags.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <form onSubmit={handleSaveInterval} className="space-y-4">
-            {!editingInterval && (
-              <div>
-                <Label htmlFor="interval-service">Tjanst-ID *</Label>
-                <Input
-                  id="interval-service"
-                  value={intervalForm.serviceId}
-                  onChange={(e) =>
-                    setIntervalForm({ ...intervalForm, serviceId: e.target.value })
-                  }
-                  placeholder="Klistra in tjanst-ID fran bokningshistorik"
-                  required
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Du hittar tjanst-ID i dina bokningsdetaljer.
-                </p>
+            {/* Interval Dialog */}
+            <ResponsiveDialog open={intervalDialogOpen} onOpenChange={setIntervalDialogOpen}>
+              <ResponsiveDialogContent>
+                <ResponsiveDialogHeader>
+                  <ResponsiveDialogTitle>
+                    {editingInterval ? "Ändra serviceintervall" : "Lägg till serviceintervall"}
+                  </ResponsiveDialogTitle>
+                  <ResponsiveDialogDescription>
+                    Ange hur ofta denna tjänst ska utföras. Du får en påminnelse när det är dags.
+                  </ResponsiveDialogDescription>
+                </ResponsiveDialogHeader>
+                <form onSubmit={handleSaveInterval} className="space-y-4">
+                  {!editingInterval && (
+                    <div>
+                      <Label htmlFor="interval-service">Tjänst *</Label>
+                      {availableServices.length > 0 ? (
+                        <Select
+                          value={intervalForm.serviceId}
+                          onValueChange={handleServiceSelect}
+                        >
+                          <SelectTrigger id="interval-service">
+                            <SelectValue placeholder="Välj tjänst..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableServices.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Inga tjänster hittades. Boka en tjänst först så dyker den upp här.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <div>
+                    <Label htmlFor="interval-weeks">Intervall (veckor) *</Label>
+                    <Input
+                      id="interval-weeks"
+                      type="number"
+                      min={1}
+                      max={104}
+                      value={intervalForm.intervalWeeks}
+                      onChange={(e) =>
+                        setIntervalForm({ ...intervalForm, intervalWeeks: e.target.value })
+                      }
+                      placeholder="T.ex. 6"
+                      required
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      1-104 veckor. T.ex. 6 veckor för hovslagare, 26 veckor för tandvård.
+                    </p>
+                  </div>
+                  <ResponsiveDialogFooter>
+                    <Button
+                      type="submit"
+                      disabled={
+                        isSavingInterval ||
+                        !intervalForm.serviceId.trim() ||
+                        !intervalForm.intervalWeeks ||
+                        Number(intervalForm.intervalWeeks) < 1 ||
+                        Number(intervalForm.intervalWeeks) > 104
+                      }
+                    >
+                      {isSavingInterval ? "Sparar..." : "Spara"}
+                    </Button>
+                  </ResponsiveDialogFooter>
+                </form>
+              </ResponsiveDialogContent>
+            </ResponsiveDialog>
+          </TabsContent>
+        )}
+
+        {/* --- Info tab --- */}
+        <TabsContent value="info">
+          {horse && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Hästinformation</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={openEditDialog}
+                >
+                  Redigera
+                </Button>
               </div>
-            )}
-            <div>
-              <Label htmlFor="interval-weeks">Intervall (veckor) *</Label>
-              <Input
-                id="interval-weeks"
-                type="number"
-                min={1}
-                max={104}
-                value={intervalForm.intervalWeeks}
-                onChange={(e) =>
-                  setIntervalForm({ ...intervalForm, intervalWeeks: e.target.value })
-                }
-                placeholder="T.ex. 6"
-                required
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                1-104 veckor. T.ex. 6 veckor for hovslagare, 26 veckor for tandvard.
-              </p>
+
+              <Card>
+                <CardContent className="py-4 space-y-4">
+                  <InfoRow label="Namn" value={horse.name} />
+                  <InfoRow label="Ras" value={horse.breed} />
+                  <InfoRow label="Färg" value={horse.color} />
+                  <InfoRow
+                    label="Kön"
+                    value={horse.gender ? GENDER_LABELS[horse.gender] || horse.gender : null}
+                  />
+                  <InfoRow
+                    label="Födelseår"
+                    value={horse.birthYear ? String(horse.birthYear) : null}
+                  />
+                  <InfoRow label="UELN" value={horse.registrationNumber} />
+                  <InfoRow label="Chipnummer" value={horse.microchipNumber} />
+                </CardContent>
+              </Card>
+
+              {horse.specialNeeds && (
+                <Card>
+                  <CardContent className="py-4">
+                    <div className="bg-amber-50 p-3 rounded text-sm text-amber-800">
+                      <span className="font-medium">Specialbehov:</span>{" "}
+                      {horse.specialNeeds}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-            <ResponsiveDialogFooter>
-              <Button
-                type="submit"
-                disabled={
-                  isSavingInterval ||
-                  !intervalForm.serviceId.trim() ||
-                  !intervalForm.intervalWeeks ||
-                  Number(intervalForm.intervalWeeks) < 1 ||
-                  Number(intervalForm.intervalWeeks) > 104
-                }
-              >
-                {isSavingInterval ? "Sparar..." : "Spara"}
-              </Button>
-            </ResponsiveDialogFooter>
-          </form>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
+          )}
+        </TabsContent>
+      </Tabs>
 
-      {/* Timeline controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 className="text-xl font-semibold">Historik</h2>
-        <Button
-          className="w-full sm:w-auto"
-          onClick={() => setNoteDialogOpen(true)}
-        >
-          Lägg till anteckning
-        </Button>
-      </div>
-
-      <ResponsiveDialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+      {/* Edit horse dialog */}
+      <ResponsiveDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditDialogOpen(false)
+            setEditForm(emptyHorseForm)
+          }
+        }}
+      >
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Ny anteckning</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Redigera {horse?.name}</ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
-              Lägg till en anteckning i hästens hälsohistorik.
+              Uppdatera information om din häst.
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
-          <form onSubmit={handleAddNote} className="space-y-4">
+          <form onSubmit={handleEditHorse} className="space-y-4">
             <div>
-              <Label htmlFor="note-category">Kategori *</Label>
-              <Select
-                value={noteForm.category}
-                onValueChange={(value) =>
-                  setNoteForm({ ...noteForm, category: value })
-                }
-              >
-                <SelectTrigger id="note-category">
-                  <SelectValue placeholder="Välj kategori..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORY_OPTIONS.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="note-title">Titel *</Label>
+              <Label htmlFor="edit-horse-name">Namn *</Label>
               <Input
-                id="note-title"
-                value={noteForm.title}
-                onChange={(e) =>
-                  setNoteForm({ ...noteForm, title: e.target.value })
-                }
-                placeholder="T.ex. Vaccination - influensa"
+                id="edit-horse-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                 required
-                maxLength={200}
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-horse-breed">Ras</Label>
+                <Input
+                  id="edit-horse-breed"
+                  value={editForm.breed}
+                  onChange={(e) => setEditForm({ ...editForm, breed: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-horse-color">Färg</Label>
+                <Input
+                  id="edit-horse-color"
+                  value={editForm.color}
+                  onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-horse-birthYear">Födelseår</Label>
+                <Input
+                  id="edit-horse-birthYear"
+                  type="number"
+                  value={editForm.birthYear}
+                  onChange={(e) => setEditForm({ ...editForm, birthYear: e.target.value })}
+                  min={1980}
+                  max={new Date().getFullYear()}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-horse-gender">Kön</Label>
+                <Select
+                  value={editForm.gender}
+                  onValueChange={(v) => setEditForm({ ...editForm, gender: v })}
+                >
+                  <SelectTrigger id="edit-horse-gender">
+                    <SelectValue placeholder="Välj kön" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mare">Sto</SelectItem>
+                    <SelectItem value="gelding">Valack</SelectItem>
+                    <SelectItem value="stallion">Hingst</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-horse-regnum">Registreringsnummer</Label>
+                <Input
+                  id="edit-horse-regnum"
+                  value={editForm.registrationNumber}
+                  onChange={(e) => setEditForm({ ...editForm, registrationNumber: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-horse-chip">Chipnummer</Label>
+                <Input
+                  id="edit-horse-chip"
+                  value={editForm.microchipNumber}
+                  onChange={(e) => setEditForm({ ...editForm, microchipNumber: e.target.value })}
+                />
+              </div>
+            </div>
             <div>
-              <Label htmlFor="note-content">Beskrivning</Label>
+              <Label htmlFor="edit-horse-needs">Speciella behov</Label>
               <Textarea
-                id="note-content"
-                value={noteForm.content}
-                onChange={(e) =>
-                  setNoteForm({ ...noteForm, content: e.target.value })
-                }
-                placeholder="Valfri beskrivning..."
+                id="edit-horse-needs"
+                value={editForm.specialNeeds}
+                onChange={(e) => setEditForm({ ...editForm, specialNeeds: e.target.value })}
                 rows={3}
-                maxLength={2000}
-              />
-            </div>
-            <div>
-              <Label htmlFor="note-date">Datum *</Label>
-              <Input
-                id="note-date"
-                type="date"
-                value={noteForm.noteDate}
-                onChange={(e) =>
-                  setNoteForm({ ...noteForm, noteDate: e.target.value })
-                }
-                max={new Date().toISOString().split("T")[0]}
-                required
               />
             </div>
             <ResponsiveDialogFooter>
               <Button
-                type="submit"
-                disabled={
-                  isSaving ||
-                  !noteForm.category ||
-                  !noteForm.title.trim() ||
-                  !noteForm.noteDate
-                }
+                type="button"
+                variant="outline"
+                onClick={() => setEditDialogOpen(false)}
               >
-                {isSaving ? "Sparar..." : "Lägg till"}
+                Avbryt
+              </Button>
+              <Button type="submit" disabled={isSavingEdit || !editForm.name.trim()}>
+                {isSavingEdit ? "Sparar..." : "Spara ändringar"}
               </Button>
             </ResponsiveDialogFooter>
           </form>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
-
-      {/* Category filter chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => setActiveFilter(null)}
-          className={`px-3 py-1 touch-target rounded-full text-sm border transition-colors ${
-            activeFilter === null
-              ? "bg-green-600 text-white border-green-600"
-              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-          }`}
-        >
-          Alla
-        </button>
-        {CATEGORY_OPTIONS.map((cat) => (
-          <button
-            key={cat.value}
-            onClick={() =>
-              setActiveFilter(activeFilter === cat.value ? null : cat.value)
-            }
-            className={`px-3 py-1 touch-target rounded-full text-sm border transition-colors ${
-              activeFilter === cat.value
-                ? "bg-green-600 text-white border-green-600"
-                : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Timeline */}
-      {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto" />
-          <p className="mt-2 text-gray-600">Laddar historik...</p>
-        </div>
-      ) : timeline.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-gray-600 mb-2">
-              Ingen historik att visa ännu.
-            </p>
-            <p className="text-sm text-gray-500">
-              Anteckningar och genomförda bokningar visas här.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
-
-          <div className="space-y-4">
-            {timeline.map((item) => (
-              <TimelineCard key={`${item.type}-${item.id}`} item={item} />
-            ))}
-          </div>
-        </div>
-      )}
     </CustomerLayout>
+  )
+}
+
+// --- Info Row ---
+
+function InfoRow({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex justify-between py-1 border-b last:border-0">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-medium">{value || "-"}</span>
+    </div>
   )
 }
 
