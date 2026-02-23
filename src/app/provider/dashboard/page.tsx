@@ -38,6 +38,7 @@ export default function ProviderDashboard() {
   }>({ bookingTrend: [], revenueTrend: [] })
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
+  const isRoutePlanningEnabled = useFeatureFlag("route_planning")
   const pendingCount = bookings.filter((b: any) => b.status === "pending").length
   const { retry, retryCount, isRetrying, canRetry } = useRetry({
     maxRetries: 3,
@@ -349,12 +350,14 @@ export default function ProviderDashboard() {
                   Kalender
                 </Button>
               </Link>
-              <Link href="/provider/route-planning">
-                <Button className="w-full" variant="outline">
-                  <Map className="h-4 w-4 mr-2" />
-                  Planera rutter
-                </Button>
-              </Link>
+              {isRoutePlanningEnabled && (
+                <Link href="/provider/route-planning">
+                  <Button className="w-full" variant="outline">
+                    <Map className="h-4 w-4 mr-2" />
+                    Planera rutter
+                  </Button>
+                </Link>
+              )}
               {isVoiceLoggingEnabled && (
                 <Link href="/provider/voice-log">
                   <Button className="w-full" variant="outline">
