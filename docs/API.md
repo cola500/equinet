@@ -209,6 +209,17 @@ Rate limiting via Redis (Upstash) för serverless-kompatibilitet.
 | GET | `/api/routes/my-routes` | Provider | Lista rutter |
 | PATCH | `/api/routes/[id]/stops/[sid]` | Provider (ägare) | Uppdatera stopp-status |
 
+### Följ leverantör (feature flag: `follow_provider`)
+
+| Metod | Path | Auth | Beskrivning |
+|-------|------|------|-------------|
+| POST | `/api/follows` | Customer | Följ leverantör |
+| GET | `/api/follows` | Customer | Lista följda leverantörer |
+| DELETE | `/api/follows/[providerId]` | Customer | Avfölj leverantör |
+| GET | `/api/follows/[providerId]` | Session | Följstatus + antal följare |
+| POST | `/api/push-subscriptions` | Session | Spara push-prenumeration (stub) |
+| DELETE | `/api/push-subscriptions` | Session | Ta bort push-prenumeration |
+
 ### Röst & AI -- [detaljer](api/voice-and-ai.md)
 
 | Metod | Path | Auth | Beskrivning |

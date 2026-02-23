@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import Link from "next/link"
 
 interface Profile {
@@ -20,6 +21,7 @@ interface Profile {
   userType: string
   city?: string
   address?: string
+  municipality?: string
   latitude?: number | null
   longitude?: number | null
 }
@@ -35,6 +37,7 @@ export default function CustomerProfilePage() {
     phone: "",
     city: "",
     address: "",
+    municipality: "",
     latitude: null as number | null,
     longitude: null as number | null,
   })
@@ -64,6 +67,7 @@ export default function CustomerProfilePage() {
           phone: data.phone || "",
           city: data.city || "",
           address: data.address || "",
+          municipality: data.municipality || "",
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
         })
@@ -89,6 +93,7 @@ export default function CustomerProfilePage() {
           phone: formData.phone || undefined,
           city: formData.city || undefined,
           address: formData.address || undefined,
+          municipality: formData.municipality || undefined,
           latitude: formData.latitude,
           longitude: formData.longitude,
         }),
@@ -116,6 +121,7 @@ export default function CustomerProfilePage() {
         phone: profile.phone || "",
         city: profile.city || "",
         address: profile.address || "",
+        municipality: profile.municipality || "",
         latitude: profile.latitude ?? null,
         longitude: profile.longitude ?? null,
       })
@@ -233,6 +239,13 @@ export default function CustomerProfilePage() {
                     <Label className="text-sm text-gray-600">Ort</Label>
                     <p className="font-medium">{profile.city || "Ej angiven"}</p>
                   </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Kommun</Label>
+                    <p className="font-medium">{profile.municipality || "Ej angiven"}</p>
+                    <p className="text-xs text-gray-500">
+                      Används för att matcha med leverantörers rutt-annonser
+                    </p>
+                  </div>
                   {profile.latitude && profile.longitude && (
                     <div>
                       <Label className="text-sm text-gray-600">Koordinater</Label>
@@ -327,6 +340,21 @@ export default function CustomerProfilePage() {
                       }
                       placeholder="Göteborg"
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="municipality">Kommun</Label>
+                    <MunicipalitySelect
+                      id="municipality"
+                      value={formData.municipality}
+                      onChange={(name) =>
+                        setFormData({ ...formData, municipality: name })
+                      }
+                      placeholder="Välj kommun..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Du får notiser när leverantörer du följer annonserar i din kommun
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">

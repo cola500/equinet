@@ -120,6 +120,7 @@ describe("feature-flags", () => {
         self_reschedule: true,
         recurring_bookings: false,
         offline_mode: true,
+        follow_provider: false,
       })
     })
 

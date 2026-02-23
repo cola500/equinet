@@ -186,6 +186,9 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Modul-niva guard for async hooks**: `let syncInProgress = false` pa modul-niva istallet for `useRef` -- overlever komponent-ommountering (Suspense, error boundaries). Exportera `_resetSyncGuard()` for tester.
 - **E2E IndexedDB-lasningar: stang anslutningen**: `db.close()` efter `indexedDB.open()` i E2E-tester. Oppen ra-anslutning kan interferera med Dexie:s transaktioner. Krav `mutations.length > 0` i pollning for att undvika tomma snapshots under Dexie-skrivningar.
 - **iOS Safari falska online-events**: Lita ALDRIG blint pa browserns `online`-event nar `fetchFailed` ar true. Proba med HEAD-request forst, aterstall bara om proben lyckas. Pattern i `useOnlineStatus.ts` `handleOnline`.
+- **Fire-and-forget notifier med DI**: Injicera alla beroenden (repo, emailService, notificationService) via constructor, kör `.catch(logger.error)` i API-routen. Testbart med mocks, robust i prod. Pattern i `RouteAnnouncementNotifier.ts`.
+- **NotificationDelivery dedup-tabell**: Unique constraint `[routeOrderId, customerId, channel]` förhindrar dubbelnotiser vid retries/race conditions. Kontrollera `exists()` före `create()`.
+- **E2E feature flag env-var**: Feature-flag-gated E2E-tester kräver `FEATURE_X=true` i `.env` (lokal) + `playwright.config.ts` webServer.env (CI). Admin API-toggle räcker INTE -- dev mode module-isolation gör att inte alla API-routes ser flaggan. Env-variabler har högsta prioritet och delas av alla instanser.
 
 ---
 

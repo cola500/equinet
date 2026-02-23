@@ -69,6 +69,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "PWA-stöd med offline-cachning av bokningar och rutter",
     defaultEnabled: true,
   },
+  follow_provider: {
+    key: "follow_provider",
+    label: "Följ leverantör",
+    description: "Kunder kan följa leverantörer och få notiser vid nya rutt-annonser",
+    defaultEnabled: false,
+  },
 }
 
 const REDIS_PREFIX = "feature_flag:"

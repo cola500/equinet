@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { isValidMunicipality } from "@/lib/geo/municipalities"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
+import { createRouteAnnouncementNotifier } from "@/domain/notification/RouteAnnouncementNotifierFactory"
 
 // Validation schema for customer-initiated route order
 const createRouteOrderSchema = z.object({
@@ -286,6 +288,17 @@ async function handleProviderAnnouncement(body: any, session: any) {
       },
     }
   })
+
+  // Fire-and-forget: notify followers of new route announcement
+  if (await isFeatureEnabled("follow_provider")) {
+    const notifier = createRouteAnnouncementNotifier()
+    notifier.notifyFollowersOfNewRoute(announcement.id).catch((err) =>
+      logger.error(
+        "Failed to notify followers",
+        err instanceof Error ? err : new Error(String(err))
+      )
+    )
+  }
 
   return NextResponse.json(announcement, { status: 201 })
 }

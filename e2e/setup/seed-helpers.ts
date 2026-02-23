@@ -369,3 +369,26 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
     where: { specialInstructions: marker },
   })
 }
+
+/**
+ * Clean up Follow-related data for the seed customer.
+ * Separate from cleanupSpecData since Follow records are not tagged.
+ */
+export async function cleanupFollowData(): Promise<void> {
+  const base = await getBaseEntities()
+
+  await prisma.notificationDelivery.deleteMany({
+    where: { customerId: base.customerId },
+  })
+
+  await prisma.notification.deleteMany({
+    where: {
+      userId: base.customerId,
+      type: 'ROUTE_ANNOUNCEMENT_NEW',
+    },
+  })
+
+  await prisma.follow.deleteMany({
+    where: { customerId: base.customerId },
+  })
+}

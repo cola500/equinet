@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { isValidMunicipality } from "@/lib/geo/municipalities"
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "Förnamn krävs"),
@@ -11,6 +12,10 @@ const profileSchema = z.object({
   // Geographic location fields
   city: z.string().optional(),
   address: z.string().optional(),
+  municipality: z.string().optional().refine(
+    (val) => !val || isValidMunicipality(val),
+    { message: "Ogiltig kommun" }
+  ),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
 }).strict()
@@ -32,6 +37,7 @@ export async function GET(_request: NextRequest) {
         userType: true,
         city: true,
         address: true,
+        municipality: true,
         latitude: true,
         longitude: true,
         provider: {
@@ -96,6 +102,7 @@ export async function PUT(request: NextRequest) {
         userType: true,
         city: true,
         address: true,
+        municipality: true,
         latitude: true,
         longitude: true,
       },

@@ -41,6 +41,7 @@ model User {
   address      String?
   latitude     Float?
   longitude    Float?
+  municipality String?  // Kommun (for route announcement matching)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -60,8 +61,12 @@ model User {
   uploads                   Upload[]
   bookingSeries             BookingSeries[]
   passwordResetTokens       PasswordResetToken[]
+  follows                   Follow[]
+  pushSubscriptions         PushSubscription[]
+  notificationDeliveries    NotificationDelivery[]
 
   @@index([latitude, longitude]) // For geo-queries
+  @@index([municipality])
   providerCustomerLinks ProviderCustomer[]
 }
 
@@ -122,6 +127,7 @@ model Provider {
   customerNotes          ProviderCustomerNote[] @relation("ProviderCustomerNotes")
   manualCustomers        ProviderCustomer[]
   bookingSeries          BookingSeries[]
+  followers              Follow[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -396,6 +402,7 @@ model RouteOrder {
   routeStops RouteStop[]
   bookings   Booking[]
   services   Service[]  // Many-to-many: provider's services for this announcement
+  deliveries NotificationDelivery[]
 
   @@index([status, serviceType])
   @@index([status, priority])
@@ -686,4 +693,45 @@ model BookingSeries {
   @@index([customerId])
   @@index([providerId])
   @@index([status])
+}
+
+// Follow: customer follows provider for route announcements
+model Follow {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, providerId])
+  @@index([customerId])
+  @@index([providerId])
+}
+
+// Dedup: track which route announcement notifications have been sent
+model NotificationDelivery {
+  id           String     @id @default(uuid())
+  routeOrderId String
+  routeOrder   RouteOrder @relation(fields: [routeOrderId], references: [id], onDelete: Cascade)
+  customerId   String
+  customer     User       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  channel      String     // "in_app" | "email" | "push"
+  createdAt    DateTime   @default(now())
+
+  @@unique([routeOrderId, customerId, channel])
+  @@index([routeOrderId])
+}
+
+// Push subscription stub (for future web push notifications)
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

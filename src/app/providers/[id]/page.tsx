@@ -20,6 +20,9 @@ import { StarRating } from "@/components/review/StarRating"
 import { MobileBookingFlow } from "@/components/booking/MobileBookingFlow"
 import { DesktopBookingDialog } from "@/components/booking/DesktopBookingDialog"
 import { SeriesResultDialog } from "@/components/booking/SeriesResultDialog"
+import { FollowButton } from "@/components/follow/FollowButton"
+import { useFollowProvider } from "@/hooks/useFollowProvider"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import type { CustomerHorse } from "@/hooks/useBookingFlow"
 
 interface Service {
@@ -95,6 +98,12 @@ export default function ProviderDetailPage() {
     providerAddress: provider?.address,
     providerCity: provider?.city,
     providerBusinessName: provider?.businessName,
+  })
+
+  const followProviderEnabled = useFeatureFlag("follow_provider")
+  const follow = useFollowProvider({
+    providerId: provider?.id || "",
+    enabled: followProviderEnabled && isCustomer && !!provider,
   })
 
   useEffect(() => {
@@ -293,15 +302,25 @@ export default function ProviderDetailPage() {
                     </CardDescription>
                   </div>
                 </div>
-                {reviewSummary.totalCount > 0 && reviewSummary.averageRating !== null && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <StarRating rating={Math.round(reviewSummary.averageRating)} readonly size="sm" />
-                    <span className="font-semibold">{reviewSummary.averageRating.toFixed(1)}</span>
-                    <span className="text-gray-500">
-                      ({reviewSummary.totalCount})
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  {reviewSummary.totalCount > 0 && reviewSummary.averageRating !== null && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <StarRating rating={Math.round(reviewSummary.averageRating)} readonly size="sm" />
+                      <span className="font-semibold">{reviewSummary.averageRating.toFixed(1)}</span>
+                      <span className="text-gray-500">
+                        ({reviewSummary.totalCount})
+                      </span>
+                    </div>
+                  )}
+                  {followProviderEnabled && isCustomer && (
+                    <FollowButton
+                      isFollowing={follow.isFollowing}
+                      followerCount={follow.followerCount}
+                      isLoading={follow.isLoading}
+                      onToggle={follow.toggle}
+                    />
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>

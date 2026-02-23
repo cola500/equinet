@@ -105,6 +105,12 @@ export default defineConfig({
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 300000, // 5 minutes (first Turbopack build can be slow)
+      env: {
+        FEATURE_SELF_RESCHEDULE: 'true',
+        FEATURE_CUSTOMER_INSIGHTS: 'true',
+        FEATURE_OFFLINE_MODE: 'true',
+        FEATURE_FOLLOW_PROVIDER: 'true',
+      },
     },
     ...(process.env.OFFLINE_E2E === 'true'
       ? [
