@@ -60,14 +60,15 @@ export class ReminderService {
       const serviceInterval = booking.service.recommendedIntervalWeeks
       if (!serviceInterval) continue
 
-      // Check for horse-specific override (only if booking has a horse)
+      // Check for horse+service-specific override (only if booking has a horse)
       let intervalWeeks = serviceInterval
       if (booking.horseId) {
         const horseOverride = await prisma.horseServiceInterval.findUnique({
           where: {
-            horseId_providerId: {
+            horseId_providerId_serviceId: {
               horseId: booking.horseId,
               providerId: booking.providerId,
+              serviceId: booking.service.id,
             },
           },
           select: { revisitIntervalWeeks: true },

@@ -104,12 +104,12 @@ describe("DueForServiceService", () => {
       expect(result[0].daysSinceService).toBe(30)
     })
 
-    it("applies horse-specific interval override", async () => {
+    it("applies horse-specific interval override (per service)", async () => {
       mockBookingFindMany.mockResolvedValue([
         makeBooking({ bookingDate: daysAgo(25) }), // 25 days ago
       ])
       mockHorseServiceIntervalFindMany.mockResolvedValue([
-        { horseId: "horse-1", revisitIntervalWeeks: 3 }, // 3-week override = 21 days
+        { horseId: "horse-1", serviceId: "service-1", revisitIntervalWeeks: 3 }, // 3-week override = 21 days
       ])
 
       const result = await service.getForCustomer("customer-1")
@@ -179,6 +179,23 @@ describe("DueForServiceService", () => {
       expect(callArgs.where.service).toBeUndefined()
     })
 
+    it("ignores provider override for a different service", async () => {
+      mockBookingFindMany.mockResolvedValue([
+        makeBooking({ bookingDate: daysAgo(35) }), // 35 days ago, service-1
+      ])
+      mockHorseServiceIntervalFindMany.mockResolvedValue([
+        { horseId: "horse-1", serviceId: "service-other", revisitIntervalWeeks: 3 }, // override for DIFFERENT service
+      ])
+
+      const result = await service.getForCustomer("customer-1")
+
+      // Should use default 6-week interval (not the 3-week override for other service)
+      // 35 days ago with 6-week (42 day) interval = 7 days left = upcoming
+      expect(result).toHaveLength(1)
+      expect(result[0].intervalWeeks).toBe(6)
+      expect(result[0].status).toBe("upcoming")
+    })
+
     // --- New: 3-tier priority with customerInterval ---
 
     it("customer interval trumps provider override and service default", async () => {
@@ -189,7 +206,7 @@ describe("DueForServiceService", () => {
         }),
       ])
       mockHorseServiceIntervalFindMany.mockResolvedValue([
-        { horseId: "horse-1", revisitIntervalWeeks: 4 },
+        { horseId: "horse-1", serviceId: "service-1", revisitIntervalWeeks: 4 },
       ])
       mockCustomerHorseServiceIntervalFindMany.mockResolvedValue([
         { horseId: "horse-1", serviceId: "service-1", intervalWeeks: 3 },

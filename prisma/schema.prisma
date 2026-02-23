@@ -151,6 +151,7 @@ model Service {
   announcements RouteOrder[] // Many-to-many: announcements using this service
   bookingSeries BookingSeries[]
   customerServiceIntervals CustomerHorseServiceInterval[]
+  horseServiceIntervals    HorseServiceInterval[]
 
   @@index([providerId, isActive])
 }
@@ -624,22 +625,25 @@ model GroupBookingParticipant {
   @@index([horseId])
 }
 
-// Per-horse revisit interval override (provider-specific)
-// Allows providers to set custom rebooking intervals per horse
+// Per-horse, per-service revisit interval override (provider-specific)
+// Allows providers to set custom rebooking intervals per horse per service
 model HorseServiceInterval {
   id                    String   @id @default(uuid())
   horseId               String
   horse                 Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
   providerId            String
   provider              Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  serviceId             String
+  service               Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   revisitIntervalWeeks  Int      // 1-52
   notes                 String?  // "Hovproblem, behover tatare besok"
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  @@unique([horseId, providerId])
+  @@unique([horseId, providerId, serviceId])
   @@index([providerId])
   @@index([horseId])
+  @@index([serviceId])
 }
 
 // Per-horse service interval set by customer (customer-controlled priority)

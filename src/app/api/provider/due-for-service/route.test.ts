@@ -179,7 +179,7 @@ describe('GET /api/provider/due-for-service', () => {
     ] as any)
 
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
-      { horseId: TEST_UUIDS.horse1, providerId: TEST_UUIDS.provider, revisitIntervalWeeks: 4 },
+      { horseId: TEST_UUIDS.horse1, serviceId: TEST_UUIDS.service1, providerId: TEST_UUIDS.provider, revisitIntervalWeeks: 4 },
     ] as any)
 
     const response = await GET(makeRequest())

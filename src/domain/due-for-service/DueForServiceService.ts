@@ -70,12 +70,12 @@ export class DueForServiceService {
       horseIds.length > 0
         ? await prisma.horseServiceInterval.findMany({
             where: { horseId: { in: horseIds } },
-            select: { horseId: true, revisitIntervalWeeks: true },
+            select: { horseId: true, serviceId: true, revisitIntervalWeeks: true },
           })
         : []
 
     const overrideMap = new Map(
-      overrides.map((o) => [o.horseId, o.revisitIntervalWeeks])
+      overrides.map((o) => [`${o.horseId}:${o.serviceId}`, o.revisitIntervalWeeks])
     )
 
     // Fetch customer-set intervals per horse+service
@@ -110,7 +110,7 @@ export class DueForServiceService {
     for (const booking of latestBookingMap.values()) {
       const intervalWeeks = resolveInterval(
         booking.service.recommendedIntervalWeeks,
-        overrideMap.get(booking.horseId!) ?? null,
+        overrideMap.get(`${booking.horseId!}:${booking.serviceId}`) ?? null,
         customerIntervalMap.get(`${booking.horseId!}:${booking.serviceId}`) ?? null
       )
 

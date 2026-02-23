@@ -10,6 +10,8 @@ const TEST_UUIDS = {
   provider: '22222222-2222-4222-8222-222222222222',
   horse: '33333333-3333-4333-8333-333333333333',
   interval: '44444444-4444-4444-8444-444444444444',
+  service1: '55555555-5555-4555-8555-555555555555',
+  service2: '66666666-6666-4666-8666-666666666666',
 }
 
 vi.mock('@/lib/auth-server', () => ({
@@ -32,9 +34,12 @@ vi.mock('@/lib/prisma', () => ({
       count: vi.fn(),
     },
     horseServiceInterval: {
-      findUnique: vi.fn(),
+      findMany: vi.fn(),
       upsert: vi.fn(),
       delete: vi.fn(),
+    },
+    service: {
+      findMany: vi.fn(),
     },
   },
 }))
@@ -95,33 +100,51 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
     expect(response.status).toBe(403)
   })
 
-  it('should return interval when it exists', async () => {
-    vi.mocked(prisma.horseServiceInterval.findUnique).mockResolvedValue({
-      id: TEST_UUIDS.interval,
-      horseId: TEST_UUIDS.horse,
-      providerId: TEST_UUIDS.provider,
-      revisitIntervalWeeks: 8,
-      notes: 'Hovproblem',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+  it('should return intervals list and available services', async () => {
+    vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
+      {
+        id: TEST_UUIDS.interval,
+        serviceId: TEST_UUIDS.service1,
+        revisitIntervalWeeks: 8,
+        notes: 'Hovproblem',
+        service: {
+          id: TEST_UUIDS.service1,
+          name: 'Hovslagning',
+          recommendedIntervalWeeks: 6,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ] as any)
+
+    vi.mocked(prisma.service.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
+      { id: TEST_UUIDS.service2, name: 'Massage', recommendedIntervalWeeks: 8 },
+    ] as any)
 
     const response = await GET(makeRequest('GET'), routeContext)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.revisitIntervalWeeks).toBe(8)
-    expect(data.notes).toBe('Hovproblem')
+    expect(data.intervals).toHaveLength(1)
+    expect(data.intervals[0].revisitIntervalWeeks).toBe(8)
+    expect(data.intervals[0].notes).toBe('Hovproblem')
+    expect(data.intervals[0].service.name).toBe('Hovslagning')
+    expect(data.availableServices).toHaveLength(2)
   })
 
-  it('should return null interval when none exists', async () => {
-    vi.mocked(prisma.horseServiceInterval.findUnique).mockResolvedValue(null)
+  it('should return empty intervals list when none exist', async () => {
+    vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([])
+    vi.mocked(prisma.service.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
+    ] as any)
 
     const response = await GET(makeRequest('GET'), routeContext)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.interval).toBeNull()
+    expect(data.intervals).toHaveLength(0)
+    expect(data.availableServices).toHaveLength(1)
   })
 })
 
@@ -141,11 +164,12 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
   })
 
-  it('should create/update interval with valid data', async () => {
+  it('should create/update interval with valid data including serviceId', async () => {
     vi.mocked(prisma.horseServiceInterval.upsert).mockResolvedValue({
       id: TEST_UUIDS.interval,
       horseId: TEST_UUIDS.horse,
       providerId: TEST_UUIDS.provider,
+      serviceId: TEST_UUIDS.service1,
       revisitIntervalWeeks: 6,
       notes: 'Nytt intervall',
       createdAt: new Date(),
@@ -153,7 +177,11 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
     } as any)
 
     const response = await PUT(
-      makeRequest('PUT', { revisitIntervalWeeks: 6, notes: 'Nytt intervall' }),
+      makeRequest('PUT', {
+        serviceId: TEST_UUIDS.service1,
+        revisitIntervalWeeks: 6,
+        notes: 'Nytt intervall',
+      }),
       routeContext
     )
     const data = await response.json()
@@ -161,11 +189,42 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
     expect(response.status).toBe(200)
     expect(data.revisitIntervalWeeks).toBe(6)
     expect(data.notes).toBe('Nytt intervall')
+
+    // Verify upsert was called with correct compound key
+    expect(prisma.horseServiceInterval.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          horseId_providerId_serviceId: {
+            horseId: TEST_UUIDS.horse,
+            providerId: TEST_UUIDS.provider,
+            serviceId: TEST_UUIDS.service1,
+          },
+        },
+      })
+    )
+  })
+
+  it('should return 400 when serviceId is missing', async () => {
+    const response = await PUT(
+      makeRequest('PUT', { revisitIntervalWeeks: 6 }),
+      routeContext
+    )
+
+    expect(response.status).toBe(400)
+  })
+
+  it('should return 400 for invalid serviceId (not UUID)', async () => {
+    const response = await PUT(
+      makeRequest('PUT', { serviceId: 'not-a-uuid', revisitIntervalWeeks: 6 }),
+      routeContext
+    )
+
+    expect(response.status).toBe(400)
   })
 
   it('should return 400 for invalid interval (too low)', async () => {
     const response = await PUT(
-      makeRequest('PUT', { revisitIntervalWeeks: 0 }),
+      makeRequest('PUT', { serviceId: TEST_UUIDS.service1, revisitIntervalWeeks: 0 }),
       routeContext
     )
 
@@ -174,16 +233,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
 
   it('should return 400 for invalid interval (too high)', async () => {
     const response = await PUT(
-      makeRequest('PUT', { revisitIntervalWeeks: 53 }),
-      routeContext
-    )
-
-    expect(response.status).toBe(400)
-  })
-
-  it('should return 400 for missing interval', async () => {
-    const response = await PUT(
-      makeRequest('PUT', {}),
+      makeRequest('PUT', { serviceId: TEST_UUIDS.service1, revisitIntervalWeeks: 53 }),
       routeContext
     )
 
@@ -208,7 +258,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
 
     const response = await PUT(
-      makeRequest('PUT', { revisitIntervalWeeks: 6 }),
+      makeRequest('PUT', { serviceId: TEST_UUIDS.service1, revisitIntervalWeeks: 6 }),
       routeContext
     )
 
@@ -220,6 +270,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
       id: TEST_UUIDS.interval,
       horseId: TEST_UUIDS.horse,
       providerId: TEST_UUIDS.provider,
+      serviceId: TEST_UUIDS.service1,
       revisitIntervalWeeks: 4,
       notes: null,
       createdAt: new Date(),
@@ -227,7 +278,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
     } as any)
 
     const response = await PUT(
-      makeRequest('PUT', { revisitIntervalWeeks: 4 }),
+      makeRequest('PUT', { serviceId: TEST_UUIDS.service1, revisitIntervalWeeks: 4 }),
       routeContext
     )
 
@@ -251,22 +302,32 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
   })
 
-  it('should delete interval successfully', async () => {
+  it('should delete interval for specific service', async () => {
     vi.mocked(prisma.horseServiceInterval.delete).mockResolvedValue({
       id: TEST_UUIDS.interval,
     } as any)
 
-    const response = await DELETE(makeRequest('DELETE'), routeContext)
+    const response = await DELETE(
+      makeRequest('DELETE', { serviceId: TEST_UUIDS.service1 }),
+      routeContext
+    )
 
     expect(response.status).toBe(200)
     expect(prisma.horseServiceInterval.delete).toHaveBeenCalledWith({
       where: {
-        horseId_providerId: {
+        horseId_providerId_serviceId: {
           horseId: TEST_UUIDS.horse,
           providerId: TEST_UUIDS.provider,
+          serviceId: TEST_UUIDS.service1,
         },
       },
     })
+  })
+
+  it('should return 400 when serviceId is missing from body', async () => {
+    const response = await DELETE(makeRequest('DELETE', {}), routeContext)
+
+    expect(response.status).toBe(400)
   })
 
   it('should return 404 when interval does not exist', async () => {
@@ -275,7 +336,10 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
     ;(prismaError as any).name = 'PrismaClientKnownRequestError'
     vi.mocked(prisma.horseServiceInterval.delete).mockRejectedValue(prismaError)
 
-    const response = await DELETE(makeRequest('DELETE'), routeContext)
+    const response = await DELETE(
+      makeRequest('DELETE', { serviceId: TEST_UUIDS.service1 }),
+      routeContext
+    )
 
     expect(response.status).toBe(404)
   })
@@ -285,7 +349,10 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
       user: { id: 'customer-user', userType: 'customer' },
     } as any)
 
-    const response = await DELETE(makeRequest('DELETE'), routeContext)
+    const response = await DELETE(
+      makeRequest('DELETE', { serviceId: TEST_UUIDS.service1 }),
+      routeContext
+    )
     expect(response.status).toBe(403)
   })
 })

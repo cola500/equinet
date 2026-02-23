@@ -39,10 +39,18 @@ interface TimelineItem {
   authorName?: string
 }
 
-interface HorseInterval {
+interface ProviderHorseInterval {
   id: string
+  serviceId: string
   revisitIntervalWeeks: number
   notes: string | null
+  service: { id: string; name: string; recommendedIntervalWeeks: number | null }
+}
+
+interface AvailableService {
+  id: string
+  name: string
+  recommendedIntervalWeeks: number | null
 }
 
 // --- Constants ---
@@ -82,10 +90,13 @@ export default function ProviderHorseTimelinePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
 
-  // Interval state
-  const [interval, setInterval] = useState<HorseInterval | null>(null)
+  // Interval state (now a list per service)
+  const [intervals, setIntervals] = useState<ProviderHorseInterval[]>([])
+  const [availableServices, setAvailableServices] = useState<AvailableService[]>([])
   const [intervalLoading, setIntervalLoading] = useState(true)
   const [isEditingInterval, setIsEditingInterval] = useState(false)
+  const [editingIntervalId, setEditingIntervalId] = useState<string | null>(null) // null = new
+  const [editServiceId, setEditServiceId] = useState<string>("")
   const [editWeeks, setEditWeeks] = useState<string>("")
   const [editNotes, setEditNotes] = useState<string>("")
   const [isSaving, setIsSaving] = useState(false)
@@ -124,18 +135,14 @@ export default function ProviderHorseTimelinePage() {
       .catch(() => {})
   }, [isProvider, horseId])
 
-  // Fetch interval
-  // GET returns { interval: null } when no override, or { id, revisitIntervalWeeks, notes, ... } when override exists
-  const fetchInterval = useCallback(async () => {
+  // Fetch intervals (now returns list + available services)
+  const fetchIntervals = useCallback(async () => {
     try {
       const res = await fetch(`/api/provider/horses/${horseId}/interval`)
       if (res.ok) {
         const data = await res.json()
-        if ("interval" in data && data.interval === null) {
-          setInterval(null)
-        } else {
-          setInterval(data)
-        }
+        setIntervals(data.intervals ?? [])
+        setAvailableServices(data.availableServices ?? [])
       }
     } catch {
       // Interval is non-critical -- silently fail
@@ -146,23 +153,56 @@ export default function ProviderHorseTimelinePage() {
 
   useEffect(() => {
     if (isProvider && horseId) {
-      fetchInterval()
+      fetchIntervals()
     }
-  }, [isProvider, horseId, fetchInterval])
+  }, [isProvider, horseId, fetchIntervals])
 
-  const startEditing = () => {
-    setEditWeeks(interval ? String(interval.revisitIntervalWeeks) : "")
-    setEditNotes(interval?.notes ?? "")
+  // Services that don't already have an interval set
+  const unusedServices = availableServices.filter(
+    (svc) => !intervals.some((i) => i.serviceId === svc.id)
+  )
+
+  const startNewInterval = () => {
+    setEditingIntervalId(null)
+    setEditServiceId("")
+    setEditWeeks("")
+    setEditNotes("")
+    setIsEditingInterval(true)
+  }
+
+  const startEditingInterval = (interval: ProviderHorseInterval) => {
+    setEditingIntervalId(interval.id)
+    setEditServiceId(interval.serviceId)
+    setEditWeeks(String(interval.revisitIntervalWeeks))
+    setEditNotes(interval.notes ?? "")
     setIsEditingInterval(true)
   }
 
   const cancelEditing = () => {
     setIsEditingInterval(false)
+    setEditingIntervalId(null)
+    setEditServiceId("")
     setEditWeeks("")
     setEditNotes("")
   }
 
+  const handleServiceChange = (serviceId: string) => {
+    setEditServiceId(serviceId)
+    // Auto-fill recommended interval if available
+    const svc = availableServices.find((s) => s.id === serviceId)
+    if (svc?.recommendedIntervalWeeks) {
+      const recommended = String(svc.recommendedIntervalWeeks)
+      if (INTERVAL_OPTIONS.some((opt) => opt.value === recommended)) {
+        setEditWeeks(recommended)
+      }
+    }
+  }
+
   const saveInterval = async () => {
+    if (!editServiceId) {
+      toast.error("Välj en tjänst")
+      return
+    }
     if (!editWeeks) {
       toast.error("Välj ett intervall")
       return
@@ -173,14 +213,15 @@ export default function ProviderHorseTimelinePage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          serviceId: editServiceId,
           revisitIntervalWeeks: Number(editWeeks),
           notes: editNotes.trim() || null,
         }),
       })
       if (res.ok) {
-        const data = await res.json()
-        setInterval(data)
+        await fetchIntervals()
         setIsEditingInterval(false)
+        setEditingIntervalId(null)
         toast.success("Intervall sparat")
       } else {
         const err = await res.json().catch(() => null)
@@ -193,15 +234,18 @@ export default function ProviderHorseTimelinePage() {
     }
   }
 
-  const deleteInterval = async () => {
+  const deleteInterval = async (serviceId: string) => {
     setIsSaving(true)
     try {
       const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceId }),
       })
       if (res.ok) {
-        setInterval(null)
+        await fetchIntervals()
         setIsEditingInterval(false)
+        setEditingIntervalId(null)
         toast.success("Intervall borttaget")
       } else {
         toast.error("Kunde inte ta bort intervall")
@@ -250,15 +294,49 @@ export default function ProviderHorseTimelinePage() {
           Av integritetsskäl visas bara veterinär-, hovslagare- och medicinanteckningar.
         </p>
 
-        {/* Interval section */}
+        {/* Interval section -- per service */}
         {!intervalLoading && (
           <Card className="mb-6">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Återbesöksintervall</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Återbesöksintervall</CardTitle>
+                {!isEditingInterval && unusedServices.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={startNewInterval}>
+                    Lägg till
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {isEditingInterval ? (
                 <div className="space-y-3">
+                  {/* Service selector -- only for new intervals */}
+                  {editingIntervalId === null ? (
+                    <div>
+                      <Label htmlFor="interval-service">Tjänst</Label>
+                      <Select value={editServiceId} onValueChange={handleServiceChange}>
+                        <SelectTrigger id="interval-service" className="mt-1">
+                          <SelectValue placeholder="Välj tjänst..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {unusedServices.map((svc) => (
+                            <SelectItem key={svc.id} value={svc.id}>
+                              {svc.name}
+                              {svc.recommendedIntervalWeeks && (
+                                <span className="text-gray-400 ml-1">
+                                  (standard: {svc.recommendedIntervalWeeks} v)
+                                </span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">
+                      Tjänst: <span className="font-medium">{intervals.find(i => i.id === editingIntervalId)?.service.name}</span>
+                    </p>
+                  )}
                   <div>
                     <Label htmlFor="interval-weeks">Intervall</Label>
                     <Select value={editWeeks} onValueChange={setEditWeeks}>
@@ -300,39 +378,45 @@ export default function ProviderHorseTimelinePage() {
                     </Button>
                   </div>
                 </div>
-              ) : interval ? (
-                <div className="space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium">Eget intervall:</span>{" "}
-                    {interval.revisitIntervalWeeks} veckor
-                  </p>
-                  {interval.notes && (
-                    <p className="text-sm text-gray-600">{interval.notes}</p>
-                  )}
-                  <div className="flex gap-2 pt-1">
-                    <Button size="sm" variant="outline" onClick={startEditing}>
-                      Ändra
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={deleteInterval}
-                      disabled={isSaving}
-                    >
-                      Ta bort
-                    </Button>
-                  </div>
+              ) : intervals.length > 0 ? (
+                <div className="space-y-3">
+                  {intervals.map((interval) => (
+                    <div key={interval.id} className="flex items-start justify-between border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                      <div>
+                        <p className="text-sm font-medium">{interval.service.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {interval.revisitIntervalWeeks} veckor
+                          {interval.service.recommendedIntervalWeeks && (
+                            <span className="text-gray-400 ml-1">
+                              (standard: {interval.service.recommendedIntervalWeeks} v)
+                            </span>
+                          )}
+                        </p>
+                        {interval.notes && (
+                          <p className="text-xs text-gray-500 mt-0.5">{interval.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="ghost" onClick={() => startEditingInterval(interval)}>
+                          Ändra
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => deleteInterval(interval.serviceId)}
+                          disabled={isSaving}
+                        >
+                          Ta bort
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    Inget eget intervall. Standardintervallet från tjänsten används.
-                  </p>
-                  <Button size="sm" variant="outline" onClick={startEditing}>
-                    Sätt intervall
-                  </Button>
-                </div>
+                <p className="text-sm text-gray-600">
+                  Inga intervall satta. Standardintervall från tjänsterna används.
+                </p>
               )}
             </CardContent>
           </Card>

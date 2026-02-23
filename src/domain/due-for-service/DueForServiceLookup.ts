@@ -58,13 +58,13 @@ export class PrismaDueForServiceLookup implements DueForServiceLookup {
 
     if (horseIds.length === 0) return new Map()
 
-    // 2. Provider overrides (batch)
+    // 2. Provider overrides (batch, per service)
     const overrides = await prisma.horseServiceInterval.findMany({
       where: { horseId: { in: horseIds } },
-      select: { horseId: true, revisitIntervalWeeks: true },
+      select: { horseId: true, serviceId: true, revisitIntervalWeeks: true },
     })
     const overrideMap = new Map(
-      overrides.map((o) => [o.horseId, o.revisitIntervalWeeks])
+      overrides.map((o) => [`${o.horseId}:${o.serviceId}`, o.revisitIntervalWeeks])
     )
 
     // 3. Customer intervals (batch)
@@ -100,7 +100,7 @@ export class PrismaDueForServiceLookup implements DueForServiceLookup {
     for (const booking of latestBookingMap.values()) {
       const intervalWeeks = resolveInterval(
         booking.service.recommendedIntervalWeeks,
-        overrideMap.get(booking.horseId!) ?? null,
+        overrideMap.get(`${booking.horseId!}:${booking.serviceId}`) ?? null,
         customerIntervalMap.get(
           `${booking.horseId!}:${booking.serviceId}`
         ) ?? null

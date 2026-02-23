@@ -186,7 +186,7 @@ describe("PrismaDueForServiceLookup", () => {
 
     // Provider override: 4 weeks -- now overdue
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
-      { horseId: "h1", revisitIntervalWeeks: 4 },
+      { horseId: "h1", serviceId: "s1", revisitIntervalWeeks: 4 },
     ] as any)
 
     const lookup = createLookup()
@@ -211,7 +211,7 @@ describe("PrismaDueForServiceLookup", () => {
 
     // Provider override: 4 weeks -- would be overdue
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
-      { horseId: "h1", revisitIntervalWeeks: 4 },
+      { horseId: "h1", serviceId: "s1", revisitIntervalWeeks: 4 },
     ] as any)
 
     // Customer interval: 6 weeks -- overrides provider, not overdue

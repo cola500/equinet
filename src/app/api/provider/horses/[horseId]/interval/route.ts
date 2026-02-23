@@ -6,8 +6,13 @@ import { logger } from "@/lib/logger"
 import { z } from "zod"
 
 const intervalSchema = z.object({
+  serviceId: z.string().uuid(),
   revisitIntervalWeeks: z.number().int().min(1).max(52),
   notes: z.string().max(500).optional().nullable(),
+}).strict()
+
+const deleteSchema = z.object({
+  serviceId: z.string().uuid(),
 }).strict()
 
 type RouteContext = { params: Promise<{ horseId: string }> }
@@ -55,6 +60,7 @@ async function authorizeProvider(request: NextRequest, context: RouteContext) {
 }
 
 // GET /api/provider/horses/[horseId]/interval
+// Returns: { intervals: [...], availableServices: [...] }
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const authResult = await authorizeProvider(request, context)
@@ -62,24 +68,38 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { providerId, horseId } = authResult
 
-    const interval = await prisma.horseServiceInterval.findUnique({
-      where: {
-        horseId_providerId: { horseId, providerId },
-      },
-      select: {
-        id: true,
-        revisitIntervalWeeks: true,
-        notes: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    const [intervals, availableServices] = await Promise.all([
+      prisma.horseServiceInterval.findMany({
+        where: { horseId, providerId },
+        select: {
+          id: true,
+          serviceId: true,
+          revisitIntervalWeeks: true,
+          notes: true,
+          service: {
+            select: {
+              id: true,
+              name: true,
+              recommendedIntervalWeeks: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.service.findMany({
+        where: { providerId, isActive: true },
+        select: {
+          id: true,
+          name: true,
+          recommendedIntervalWeeks: true,
+        },
+        orderBy: { name: "asc" },
+      }),
+    ])
 
-    if (!interval) {
-      return NextResponse.json({ interval: null })
-    }
-
-    return NextResponse.json(interval)
+    return NextResponse.json({ intervals, availableServices })
   } catch (error) {
     if (error instanceof Response) return error
 
@@ -107,11 +127,16 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const interval = await prisma.horseServiceInterval.upsert({
       where: {
-        horseId_providerId: { horseId, providerId },
+        horseId_providerId_serviceId: {
+          horseId,
+          providerId,
+          serviceId: validated.serviceId,
+        },
       },
       create: {
         horseId,
         providerId,
+        serviceId: validated.serviceId,
         revisitIntervalWeeks: validated.revisitIntervalWeeks,
         notes: validated.notes ?? null,
       },
@@ -121,6 +146,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       },
       select: {
         id: true,
+        serviceId: true,
         revisitIntervalWeeks: true,
         notes: true,
         createdAt: true,
@@ -152,15 +178,35 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     const { providerId, horseId } = authResult
 
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
+    }
+
+    const validated = deleteSchema.parse(body)
+
     await prisma.horseServiceInterval.delete({
       where: {
-        horseId_providerId: { horseId, providerId },
+        horseId_providerId_serviceId: {
+          horseId,
+          providerId,
+          serviceId: validated.serviceId,
+        },
       },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Response) return error
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Valideringsfel", details: error.issues },
+        { status: 400 }
+      )
+    }
 
     // P2025: Record not found
     if (error && typeof error === "object" && "code" in error && error.code === "P2025") {

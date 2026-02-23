@@ -109,7 +109,7 @@ describe("ReminderService", () => {
       expect(result).toHaveLength(0)
     })
 
-    it("should use horse-specific override interval when available", async () => {
+    it("should use horse+service-specific override interval when available", async () => {
       const completedBookings = [
         {
           id: "booking-1",
@@ -129,7 +129,7 @@ describe("ReminderService", () => {
       ]
 
       mockBookingFindMany.mockResolvedValue(completedBookings)
-      // Horse-specific override: 4 weeks (shorter than default 8)
+      // Horse+service-specific override: 4 weeks (shorter than default 8)
       mockHorseServiceIntervalFindUnique.mockResolvedValue({
         revisitIntervalWeeks: 4,
       })
@@ -141,9 +141,22 @@ describe("ReminderService", () => {
       // Should be due because override says 4 weeks, and it's been ~4.5 weeks
       expect(result).toHaveLength(1)
       expect(result[0].bookingId).toBe("booking-1")
+
+      // Verify findUnique was called with new compound key including serviceId
+      expect(mockHorseServiceIntervalFindUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            horseId_providerId_serviceId: {
+              horseId: "horse-1",
+              providerId: "provider-1",
+              serviceId: "service-1",
+            },
+          },
+        })
+      )
     })
 
-    it("should NOT be due when horse-specific override extends the interval", async () => {
+    it("should NOT be due when horse+service-specific override extends the interval", async () => {
       const completedBookings = [
         {
           id: "booking-1",
@@ -163,7 +176,7 @@ describe("ReminderService", () => {
       ]
 
       mockBookingFindMany.mockResolvedValue(completedBookings)
-      // Horse-specific override: 12 weeks (longer than default 4)
+      // Horse+service-specific override: 12 weeks (longer than default 4)
       mockHorseServiceIntervalFindUnique.mockResolvedValue({
         revisitIntervalWeeks: 12,
       })

@@ -76,17 +76,18 @@ export async function GET(request: NextRequest) {
       orderBy: { bookingDate: "desc" },
     })
 
-    // Fetch all horse-specific overrides for this provider
+    // Fetch all horse-specific overrides for this provider (per service)
     const overrides = await prisma.horseServiceInterval.findMany({
       where: { providerId: provider.id },
       select: {
         horseId: true,
+        serviceId: true,
         revisitIntervalWeeks: true,
       },
     })
 
     const overrideMap = new Map(
-      overrides.map((o) => [o.horseId, o.revisitIntervalWeeks])
+      overrides.map((o) => [`${o.horseId}:${o.serviceId}`, o.revisitIntervalWeeks])
     )
 
     // Fetch customer-set intervals per horse+service
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
     for (const booking of latestBookingMap.values()) {
       const intervalWeeks = resolveInterval(
         booking.service.recommendedIntervalWeeks,
-        overrideMap.get(booking.horseId!) ?? null,
+        overrideMap.get(`${booking.horseId!}:${booking.serviceId}`) ?? null,
         customerIntervalMap.get(`${booking.horseId!}:${booking.serviceId}`) ?? null
       )
 
