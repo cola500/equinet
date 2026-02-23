@@ -16,7 +16,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import { SlidersHorizontal, MapPin } from "lucide-react"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { SlidersHorizontal, MapPin, Heart } from "lucide-react"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 
@@ -87,6 +88,8 @@ export default function ProvidersPage() {
 
 function ProvidersContent() {
   const { user } = useAuth()
+  const isCustomer = user?.userType === "customer"
+  const followEnabled = useFeatureFlag("follow_provider")
   const searchParams = useSearchParams()
   const initializedFromUrl = useRef(false)
   const [providers, setProviders] = useState<Provider[]>([])
@@ -99,6 +102,10 @@ function ProvidersContent() {
   const [error, setError] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortOption>(() => (searchParams.get("sort") as SortOption) || "default")
 
+  // Favorites filter state
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set())
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(() => searchParams.get("favorites") === "true")
+
   // Geo-filtering state
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [radiusKm, setRadiusKm] = useState(50)
@@ -108,6 +115,19 @@ function ProvidersContent() {
   const [searchPlaceName, setSearchPlaceName] = useState<string | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+
+  // Fetch followed provider IDs for favorites filter
+  useEffect(() => {
+    if (!isCustomer || !followEnabled) return
+    fetch("/api/follows")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((follows: Array<{ providerId: string }>) => {
+        setFollowedIds(new Set(follows.map((f) => f.providerId)))
+      })
+      .catch(() => {
+        // Silently fail -- favorites filter just won't be available
+      })
+  }, [isCustomer, followEnabled])
 
   // Sync filter state to URL (no network request -- uses replaceState)
   useEffect(() => {
@@ -120,13 +140,14 @@ function ProvidersContent() {
     if (city) params.set("city", city)
     if (visitingArea) params.set("visiting", visitingArea)
     if (sortBy !== "default") params.set("sort", sortBy)
+    if (showFavoritesOnly) params.set("favorites", "true")
     const qs = params.toString()
     const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
     window.history.replaceState(null, "", url)
-  }, [search, city, visitingArea, sortBy])
+  }, [search, city, visitingArea, sortBy, showFavoritesOnly])
 
   // Count active advanced filters (not counting main search)
-  const activeFilterCount = [city, visitingArea, userLocation].filter(Boolean).length
+  const activeFilterCount = [city, visitingArea, userLocation, showFavoritesOnly].filter(Boolean).length
 
   // Sort providers client-side
   const sortedProviders = [...providers].sort((a, b) => {
@@ -142,6 +163,11 @@ function ProvidersContent() {
     }
     return 0 // default: API order
   })
+
+  // Apply favorites filter
+  const displayedProviders = showFavoritesOnly
+    ? sortedProviders.filter((p) => followedIds.has(p.id))
+    : sortedProviders
 
   // Debounce search - sök automatiskt efter 500ms av inaktivitet
   // Initial load (tom sökning) hämtar direkt, sökningar debouncar
@@ -261,6 +287,7 @@ function ProvidersContent() {
     setLocationError(null)
     setSearchPlaceName(null)
     setSearchPlace("")
+    setShowFavoritesOnly(false)
     fetchProviders()
   }
 
@@ -409,7 +436,7 @@ function ProvidersContent() {
                 </Button>
 
                 {/* Desktop: inline advanced filters */}
-                <div className="hidden md:flex gap-4">
+                <div className="hidden md:flex gap-4 items-center">
                   <Input
                     placeholder="Filtrera på ort..."
                     value={city}
@@ -422,8 +449,20 @@ function ProvidersContent() {
                     onChange={(e) => setVisitingArea(e.target.value)}
                     className="w-40 lg:w-48"
                   />
+                  {isCustomer && followEnabled && followedIds.size > 0 && (
+                    <Button
+                      variant={showFavoritesOnly ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                      aria-pressed={showFavoritesOnly}
+                      data-testid="favorites-filter-button"
+                    >
+                      <Heart className={`h-4 w-4 mr-1.5 ${showFavoritesOnly ? "fill-current" : ""}`} />
+                      Favoriter ({followedIds.size})
+                    </Button>
+                  )}
                 </div>
-                {(search || city || visitingArea || userLocation) && (
+                {(search || city || visitingArea || userLocation || showFavoritesOnly) && (
                   <Button
                     type="button"
                     variant="outline"
@@ -491,11 +530,11 @@ function ProvidersContent() {
               {!isLoading && !isSearching && !error && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">
-                    {providers.length === 0
-                      ? "Inga träffar"
-                      : `${providers.length} leverantör${providers.length !== 1 ? "er" : ""}`}
+                    {displayedProviders.length === 0
+                      ? showFavoritesOnly ? "Inga favoriter matchar" : "Inga träffar"
+                      : `${displayedProviders.length} leverantör${displayedProviders.length !== 1 ? "er" : ""}`}
                   </p>
-                  {providers.length > 1 && (
+                  {displayedProviders.length > 1 && (
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -515,7 +554,7 @@ function ProvidersContent() {
                   <span>Söker...</span>
                 </div>
               )}
-              {!isSearching && (search || city || visitingArea || userLocation) && (
+              {!isSearching && (search || city || visitingArea || userLocation || showFavoritesOnly) && (
                 <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
                   <span>Aktiva filter:</span>
                   {search && (
@@ -576,6 +615,19 @@ function ProvidersContent() {
                         type="button"
                         onClick={clearLocation}
                         className="hover:text-orange-900"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {showFavoritesOnly && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-red-100 text-red-800 rounded-full">
+                      <Heart className="h-3 w-3 fill-current" />
+                      Favoriter
+                      <button
+                        type="button"
+                        onClick={() => setShowFavoritesOnly(false)}
+                        className="hover:text-red-900"
                       >
                         ×
                       </button>
@@ -655,8 +707,23 @@ function ProvidersContent() {
                 {locationError && (
                   <p className="text-sm text-red-600">{locationError}</p>
                 )}
+                {isCustomer && followEnabled && followedIds.size > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Favoriter</label>
+                    <Button
+                      variant={showFavoritesOnly ? "default" : "outline"}
+                      className="w-full min-h-[44px]"
+                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                      aria-pressed={showFavoritesOnly}
+                      data-testid="favorites-filter-button-mobile"
+                    >
+                      <Heart className={`h-4 w-4 mr-1.5 ${showFavoritesOnly ? "fill-current" : ""}`} />
+                      Visa bara favoriter ({followedIds.size})
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-3 pt-2">
-                  {(city || visitingArea || userLocation) && (
+                  {(city || visitingArea || userLocation || showFavoritesOnly) && (
                     <Button
                       variant="outline"
                       className="flex-1"
@@ -803,7 +870,7 @@ function ProvidersContent() {
             </Card>
           ) : isLoading ? (
             <ProviderCardSkeleton count={6} />
-          ) : providers.length === 0 ? (
+          ) : displayedProviders.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <div className="mb-4">
@@ -822,10 +889,20 @@ function ProvidersContent() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Inga leverantörer hittades
+                  {showFavoritesOnly ? "Inga favoriter matchar" : "Inga leverantörer hittades"}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {search || city || userLocation ? (
+                  {showFavoritesOnly ? (
+                    <>
+                      Inga av dina följda leverantörer matchar de aktuella filtren.{" "}
+                      <button
+                        onClick={() => setShowFavoritesOnly(false)}
+                        className="text-green-600 hover:text-green-700 font-medium"
+                      >
+                        Visa alla leverantörer
+                      </button>
+                    </>
+                  ) : search || city || userLocation ? (
                     <>
                       Prova att ändra dina sökfilter eller{" "}
                       <button
@@ -839,7 +916,7 @@ function ProvidersContent() {
                     "Det finns inga leverantörer tillgängliga just nu. Kom tillbaka senare!"
                   )}
                 </p>
-                {user && user.userType === "provider" && !search && !city && !userLocation && (
+                {user && user.userType === "provider" && !search && !city && !userLocation && !showFavoritesOnly && (
                   <p className="text-sm text-gray-500">
                     Tips: Se till att din profil är komplett och att du har skapat minst en tjänst för att synas här.
                   </p>
@@ -848,7 +925,7 @@ function ProvidersContent() {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedProviders.map((provider, index) => (
+              {displayedProviders.map((provider, index) => (
                 <Card key={provider.id} className="animate-fade-in-up hover:shadow-lg transition-shadow" data-testid="provider-card" style={{ animationDelay: `${index * 50}ms` }}>
                   <CardHeader>
                     <div className="flex items-start gap-3">
