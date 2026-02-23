@@ -158,7 +158,7 @@ setup('seed E2E test data', async () => {
 
     // 5. Route orders -- seeded per-spec via seed-helpers.ts (no global route orders)
 
-    // 6. Upsert horse for test customer
+    // 6. Upsert horse for test customer (restore if soft-deleted by horses.spec.ts)
     let horse = await prisma.horse.findFirst({
       where: { ownerId: customer.id, name: 'E2E Blansen' },
     })
@@ -173,6 +173,11 @@ setup('seed E2E test data', async () => {
           color: 'Brun',
           gender: 'mare',
         },
+      })
+    } else if (!horse.isActive) {
+      await prisma.horse.update({
+        where: { id: horse.id },
+        data: { isActive: true },
       })
     }
     console.log('  Horse: E2E Blansen')

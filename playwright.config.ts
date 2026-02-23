@@ -110,6 +110,7 @@ export default defineConfig({
         FEATURE_CUSTOMER_INSIGHTS: 'true',
         FEATURE_OFFLINE_MODE: 'true',
         FEATURE_FOLLOW_PROVIDER: 'true',
+        FEATURE_DUE_FOR_SERVICE: 'true',
       },
     },
     ...(process.env.OFFLINE_E2E === 'true'

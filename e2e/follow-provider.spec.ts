@@ -256,6 +256,29 @@ test.describe('Follow Provider', () => {
     await expect(page.getByRole('button', { name: /följ/i })).not.toBeVisible({ timeout: 3000 })
   })
 
+  // ─── Idempotency: follow -> unfollow -> follow ───────────────────
+
+  test('should handle follow -> unfollow -> follow again (idempotency)', async ({ page }) => {
+    await loginAsCustomer(page)
+    await navigateToProviderProfile(page)
+    await ensureNotFollowing(page)
+
+    // Follow
+    const followButton = page.getByRole('button').filter({ hasText: /följ/i })
+    await followButton.click()
+    await expect(page.getByRole('button', { name: /följer/i })).toBeVisible({ timeout: 5000 })
+
+    // Unfollow
+    await page.getByRole('button', { name: /följer/i }).click()
+    await expect(followButton).toHaveAttribute('aria-pressed', 'false', { timeout: 5000 })
+
+    // Follow again
+    await resetRateLimit(page)
+    await followButton.click()
+    await expect(page.getByRole('button', { name: /följer/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: /följer.*\(1\)/i })).toBeVisible({ timeout: 5000 })
+  })
+
   // ─── Municipality in customer profile ─────────────────────────────
 
   test('should set municipality in customer profile', async ({ page }) => {

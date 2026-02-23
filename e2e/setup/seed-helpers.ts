@@ -61,10 +61,10 @@ export async function getBaseEntities(): Promise<BaseEntities> {
     select: { id: true },
   })
 
-  // Horse may have been renamed/deleted by horses.spec.ts -- re-create if missing
+  // Horse may have been renamed/deleted/soft-deleted by horses.spec.ts -- re-create or restore
   let horse = await prisma.horse.findFirst({
     where: { ownerId: customer.id, name: 'E2E Blansen' },
-    select: { id: true },
+    select: { id: true, isActive: true },
   })
   if (!horse) {
     horse = await prisma.horse.create({
@@ -76,7 +76,13 @@ export async function getBaseEntities(): Promise<BaseEntities> {
         color: 'Brun',
         gender: 'mare',
       },
-      select: { id: true },
+      select: { id: true, isActive: true },
+    })
+  } else if (!horse.isActive) {
+    // Restore soft-deleted horse
+    await prisma.horse.update({
+      where: { id: horse.id },
+      data: { isActive: true },
     })
   }
 
@@ -371,6 +377,16 @@ export async function cleanupSpecData(specTag: string): Promise<void> {
 }
 
 /**
+ * Clean up customer-set service intervals for the seed customer's horses.
+ */
+export async function cleanupCustomerIntervals(): Promise<void> {
+  const base = await getBaseEntities()
+  await prisma.customerHorseServiceInterval.deleteMany({
+    where: { horse: { ownerId: base.customerId } },
+  })
+}
+
+/**
  * Clean up Follow-related data for the seed customer.
  * Separate from cleanupSpecData since Follow records are not tagged.
  */
@@ -384,7 +400,7 @@ export async function cleanupFollowData(): Promise<void> {
   await prisma.notification.deleteMany({
     where: {
       userId: base.customerId,
-      type: 'ROUTE_ANNOUNCEMENT_NEW',
+      type: { in: ['route_announcement_new', 'route_announcement_due_horse'] },
     },
   })
 
