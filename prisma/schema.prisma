@@ -150,6 +150,7 @@ model Service {
   bookings      Booking[]
   announcements RouteOrder[] // Many-to-many: announcements using this service
   bookingSeries BookingSeries[]
+  customerServiceIntervals CustomerHorseServiceInterval[]
 
   @@index([providerId, isActive])
 }
@@ -273,6 +274,7 @@ model Horse {
   groupBookingParticipants GroupBookingParticipant[]
   profileTokens HorseProfileToken[]
   serviceIntervals HorseServiceInterval[]
+  customerServiceIntervals CustomerHorseServiceInterval[]
   bookingSeries BookingSeries[]
 
   @@index([ownerId, isActive])
@@ -638,6 +640,23 @@ model HorseServiceInterval {
   @@unique([horseId, providerId])
   @@index([providerId])
   @@index([horseId])
+}
+
+// Per-horse service interval set by customer (customer-controlled priority)
+// Priority: CustomerHorseServiceInterval > HorseServiceInterval > Service.recommendedIntervalWeeks
+model CustomerHorseServiceInterval {
+  id            String   @id @default(uuid())
+  horseId       String
+  horse         Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  intervalWeeks Int      // 1-104
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([horseId, serviceId])
+  @@index([horseId])
+  @@index([serviceId])
 }
 
 // Provider's private notes about a customer (journal/log)

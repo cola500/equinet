@@ -34,6 +34,7 @@ import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ShareProfileDialog } from "./ShareProfileDialog"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 // --- Types ---
 
@@ -63,6 +64,17 @@ interface TimelineItem {
   category?: string
   content?: string | null
   authorName?: string
+}
+
+interface ServiceInterval {
+  id: string
+  serviceId: string
+  intervalWeeks: number
+  service: {
+    id: string
+    name: string
+    recommendedIntervalWeeks: number | null
+  }
 }
 
 // --- Constants ---
@@ -108,6 +120,14 @@ export default function HorseDetailPage() {
   const [noteForm, setNoteForm] = useState(emptyNoteForm)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Service intervals
+  const dueForServiceEnabled = useFeatureFlag("due_for_service")
+  const [intervals, setIntervals] = useState<ServiceInterval[]>([])
+  const [intervalDialogOpen, setIntervalDialogOpen] = useState(false)
+  const [editingInterval, setEditingInterval] = useState<ServiceInterval | null>(null)
+  const [intervalForm, setIntervalForm] = useState({ serviceId: "", intervalWeeks: "" })
+  const [isSavingInterval, setIsSavingInterval] = useState(false)
+
   useEffect(() => {
     if (!authLoading && !isCustomer) {
       router.push("/login")
@@ -146,12 +166,96 @@ export default function HorseDetailPage() {
     }
   }, [horseId, activeFilter])
 
+  const fetchIntervals = useCallback(async () => {
+    if (!dueForServiceEnabled) return
+    try {
+      const response = await fetch(`/api/customer/horses/${horseId}/intervals`)
+      if (response.ok) {
+        const data = await response.json()
+        setIntervals(data.intervals ?? [])
+      }
+    } catch {
+      // Silent -- intervals are supplementary
+    }
+  }, [horseId, dueForServiceEnabled])
+
   useEffect(() => {
     if (isCustomer && horseId) {
       fetchHorse()
       fetchTimeline()
+      fetchIntervals()
     }
-  }, [isCustomer, horseId, fetchHorse, fetchTimeline])
+  }, [isCustomer, horseId, fetchHorse, fetchTimeline, fetchIntervals])
+
+  const handleSaveInterval = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingInterval(true)
+
+    try {
+      const response = await fetch(`/api/customer/horses/${horseId}/intervals`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId: intervalForm.serviceId,
+          intervalWeeks: Number(intervalForm.intervalWeeks),
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Kunde inte spara intervall")
+      }
+
+      toast.success(editingInterval ? "Intervall uppdaterat!" : "Intervall tillagt!")
+      setIntervalDialogOpen(false)
+      setEditingInterval(null)
+      setIntervalForm({ serviceId: "", intervalWeeks: "" })
+      fetchIntervals()
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Kunde inte spara intervall"
+      )
+    } finally {
+      setIsSavingInterval(false)
+    }
+  }
+
+  const handleDeleteInterval = async (serviceId: string) => {
+    try {
+      const response = await fetch(`/api/customer/horses/${horseId}/intervals`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceId }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Kunde inte ta bort intervall")
+      }
+
+      toast.success("Intervall borttaget!")
+      fetchIntervals()
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Kunde inte ta bort intervall"
+      )
+    }
+  }
+
+  const openEditInterval = (interval: ServiceInterval) => {
+    setEditingInterval(interval)
+    setIntervalForm({
+      serviceId: interval.serviceId,
+      intervalWeeks: String(interval.intervalWeeks),
+    })
+    setIntervalDialogOpen(true)
+  }
+
+  const openNewInterval = () => {
+    setEditingInterval(null)
+    setIntervalForm({ serviceId: "", intervalWeeks: "" })
+    setIntervalDialogOpen(true)
+  }
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -261,6 +365,134 @@ export default function HorseDetailPage() {
           )}
         </Card>
       )}
+
+      {/* Service Intervals */}
+      {dueForServiceEnabled && horse && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Serviceintervall</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openNewInterval}
+              >
+                Lagg till
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {intervals.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Inga serviceintervall satta. Lagg till for att fa paminnelser nar det ar dags for service.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {intervals.map((interval) => (
+                  <div
+                    key={interval.id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{interval.service.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Var {interval.intervalWeeks} vecka{interval.intervalWeeks !== 1 ? "r" : ""}
+                      </p>
+                      {interval.service.recommendedIntervalWeeks && (
+                        <p className="text-xs text-gray-400">
+                          Leverantorens rekommendation: {interval.service.recommendedIntervalWeeks} veckor
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditInterval(interval)}
+                      >
+                        Andra
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteInterval(interval.serviceId)}
+                      >
+                        Ta bort
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Interval Dialog */}
+      <ResponsiveDialog open={intervalDialogOpen} onOpenChange={setIntervalDialogOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              {editingInterval ? "Andra serviceintervall" : "Lagg till serviceintervall"}
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Ange hur ofta denna tjanst ska utforas. Du far en paminnelse nar det ar dags.
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <form onSubmit={handleSaveInterval} className="space-y-4">
+            {!editingInterval && (
+              <div>
+                <Label htmlFor="interval-service">Tjanst-ID *</Label>
+                <Input
+                  id="interval-service"
+                  value={intervalForm.serviceId}
+                  onChange={(e) =>
+                    setIntervalForm({ ...intervalForm, serviceId: e.target.value })
+                  }
+                  placeholder="Klistra in tjanst-ID fran bokningshistorik"
+                  required
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Du hittar tjanst-ID i dina bokningsdetaljer.
+                </p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="interval-weeks">Intervall (veckor) *</Label>
+              <Input
+                id="interval-weeks"
+                type="number"
+                min={1}
+                max={104}
+                value={intervalForm.intervalWeeks}
+                onChange={(e) =>
+                  setIntervalForm({ ...intervalForm, intervalWeeks: e.target.value })
+                }
+                placeholder="T.ex. 6"
+                required
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                1-104 veckor. T.ex. 6 veckor for hovslagare, 26 veckor for tandvard.
+              </p>
+            </div>
+            <ResponsiveDialogFooter>
+              <Button
+                type="submit"
+                disabled={
+                  isSavingInterval ||
+                  !intervalForm.serviceId.trim() ||
+                  !intervalForm.intervalWeeks ||
+                  Number(intervalForm.intervalWeeks) < 1 ||
+                  Number(intervalForm.intervalWeeks) > 104
+                }
+              >
+                {isSavingInterval ? "Sparar..." : "Spara"}
+              </Button>
+            </ResponsiveDialogFooter>
+          </form>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       {/* Timeline controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">

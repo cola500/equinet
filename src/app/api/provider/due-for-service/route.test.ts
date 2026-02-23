@@ -35,6 +35,9 @@ vi.mock('@/lib/prisma', () => ({
     horseServiceInterval: {
       findMany: vi.fn(),
     },
+    customerHorseServiceInterval: {
+      findMany: vi.fn(),
+    },
   },
 }))
 
@@ -55,6 +58,7 @@ describe('GET /api/provider/due-for-service', () => {
     } as any)
 
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([])
+    vi.mocked(prisma.customerHorseServiceInterval.findMany).mockResolvedValue([])
   })
 
   it('should return 401 for unauthenticated users', async () => {
