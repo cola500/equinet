@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
+import { startOfWeek } from "date-fns"
 
 // Mock dependencies
 vi.mock("@/lib/auth-server", () => ({
@@ -84,8 +85,8 @@ describe("GET /api/provider/dashboard/stats", () => {
     mockFindFirst.mockResolvedValue({ id: "provider-1" } as any)
 
     const now = new Date()
-    const thisWeekDate = new Date(now)
-    thisWeekDate.setDate(thisWeekDate.getDate() - 1) // yesterday
+    // Use this week's Monday to guarantee the date falls in the current week bucket
+    const thisWeekDate = startOfWeek(now, { weekStartsOn: 1 })
 
     mockFindMany.mockResolvedValue([
       {

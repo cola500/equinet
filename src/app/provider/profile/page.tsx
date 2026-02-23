@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { InfoPopover } from "@/components/ui/info-popover"
 import { Switch } from "@/components/ui/switch"
 import {
   Select,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import Link from "next/link"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 interface ProviderProfile {
   id: string
@@ -77,6 +79,8 @@ export default function ProviderProfilePage() {
   })
   const [isGeocoding, setIsGeocoding] = useState(false)
   const { guardMutation } = useOfflineGuard()
+  const selfRescheduleEnabled = useFeatureFlag("self_reschedule")
+  const recurringBookingsEnabled = useFeatureFlag("recurring_bookings")
 
   // Sync form state when SWR profile data arrives or changes
   useEffect(() => {
@@ -292,12 +296,13 @@ export default function ProviderProfilePage() {
       <div className="flex gap-1 mb-6 border-b">
         {([
           { key: "profile" as const, label: "Profil" },
+          { key: "settings" as const, label: "Inställningar" },
           { key: "availability" as const, label: "Tillgänglighet" },
-          { key: "settings" as const, label: "Bokningsinställningar" },
         ]).map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
+            aria-pressed={activeTab === tab.key}
             className={`px-4 py-2.5 text-sm font-medium transition-colors -mb-px ${
               activeTab === tab.key
                 ? "border-b-2 border-green-600 text-green-600"
@@ -611,7 +616,7 @@ export default function ProviderProfilePage() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       type="button"
                       variant="outline"
@@ -651,14 +656,6 @@ export default function ProviderProfilePage() {
             </CardContent>
           </Card>
 
-        </>
-      )}
-
-      {/* Tab: Tillgänglighet */}
-      {activeTab === "availability" && (
-        <>
-          {providerId && <AvailabilitySchedule providerId={providerId} />}
-
           {/* Verification Link */}
           <Card className="mt-6">
             <CardHeader>
@@ -673,28 +670,41 @@ export default function ProviderProfilePage() {
               </Link>
             </CardContent>
           </Card>
+
+          {/* Export Data */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Exportera data</CardTitle>
+              <CardDescription>
+                Ladda ner all din data i enlighet med GDPR
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/provider/export">
+                <Button variant="outline">Exportera mina data</Button>
+              </Link>
+            </CardContent>
+          </Card>
+
         </>
       )}
 
-      {/* Tab: Bokningsinställningar */}
+      {/* Tab: Inställningar */}
       {activeTab === "settings" && (
         <>
       {/* Booking Settings Card */}
       <Card>
-        <CardHeader>
-          <CardTitle>Bokningsinställningar</CardTitle>
-          <CardDescription>
-            Hantera vilka som kan boka dina tjänster
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="accepting-new-customers" className="text-sm font-medium">
+              <Label htmlFor="accepting-new-customers" className="text-sm font-medium flex items-center gap-1.5">
                 Ta emot nya kunder
+                <InfoPopover text="När avaktiverad kan bara kunder som redan har genomförda bokningar hos dig boka nya tider" />
               </Label>
               <p className="text-xs text-gray-500">
-                När avaktiverad kan bara kunder som redan har genomförda bokningar hos dig boka nya tider
+                {profile.acceptingNewCustomers
+                  ? "Alla kunder kan boka dina tjänster"
+                  : "Bara befintliga kunder kan boka"}
               </p>
             </div>
             <Switch
@@ -729,6 +739,7 @@ export default function ProviderProfilePage() {
       </Card>
 
       {/* Reschedule Settings Card */}
+      {selfRescheduleEnabled && (
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Ombokningsinställningar</CardTitle>
@@ -905,8 +916,10 @@ export default function ProviderProfilePage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Recurring Booking Settings Card */}
+      {recurringBookingsEnabled && (
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Återkommande bokningar</CardTitle>
@@ -999,7 +1012,15 @@ export default function ProviderProfilePage() {
           )}
         </CardContent>
       </Card>
+      )}
 
+        </>
+      )}
+
+      {/* Tab: Tillgänglighet */}
+      {activeTab === "availability" && (
+        <>
+          {providerId && <AvailabilitySchedule providerId={providerId} />}
         </>
       )}
     </ProviderLayout>

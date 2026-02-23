@@ -37,7 +37,7 @@ global.fetch = mockFetch
 
 // Mock feature flags
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
-  useFeatureFlag: (flag: string) => flag === "voice_logging",
+  useFeatureFlag: (flag: string) => flag === "voice_logging" || flag === "route_planning",
   useFeatureFlags: () => ({
     voice_logging: true,
     route_planning: true,
