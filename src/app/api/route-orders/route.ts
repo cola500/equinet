@@ -291,13 +291,14 @@ async function handleProviderAnnouncement(body: any, session: any) {
 
   // Fire-and-forget: notify followers of new route announcement
   if (await isFeatureEnabled("follow_provider")) {
-    const notifier = createRouteAnnouncementNotifier()
-    notifier.notifyFollowersOfNewRoute(announcement.id).catch((err) =>
-      logger.error(
-        "Failed to notify followers",
-        err instanceof Error ? err : new Error(String(err))
+    createRouteAnnouncementNotifier()
+      .then((notifier) => notifier.notifyFollowersOfNewRoute(announcement.id))
+      .catch((err) =>
+        logger.error(
+          "Failed to notify followers",
+          err instanceof Error ? err : new Error(String(err))
+        )
       )
-    )
   }
 
   return NextResponse.json(announcement, { status: 201 })

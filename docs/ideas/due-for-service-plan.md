@@ -2,6 +2,20 @@
 
 > Baserat på: `docs/ideas/due for service+ notice.md`
 > Skapad: 2026-02-23
+> Senast uppdaterad: 2026-02-23
+
+## Status
+
+| Fas | Status | Commits |
+|-----|--------|---------|
+| Fas 1: Kund-synlig due-for-service | **KLAR** | `2e93f3f`, `144dd9c`, `0e38bfa` |
+| Fas 1 bonus: Kundstyrda intervall | **KLAR** | `2e93f3f`, `0e38bfa` |
+| Fas 2: Hyperrelevant notis | Ej påbörjad | -- |
+| Fas 3: Push-notiser | Ej påbörjad | -- |
+
+**Supabase-migration applicerad:** `CustomerHorseServiceInterval` (2026-02-23)
+
+---
 
 ## Kontext
 
@@ -32,11 +46,11 @@ Idedokumentet beskriver en hyperrelevant notis som kombinerar:
 
 ---
 
-## Fas 1: Kund-synlig "due for service"-status
+## Fas 1: Kund-synlig "due for service"-status -- KLAR
 
 **Mal:** Kunder ser direkt pa sin hastlista vilka hastar som behover service. Ger omedelbart varde -- kunder far proaktiv information utan att leverantoren behover gora nagot.
 
-### 1.1 Extrahera DueForServiceCalculator
+### 1.1 Extrahera DueForServiceCalculator -- KLAR
 
 Berakningslogiken i provider-routen (rad 116-155) extraheras till en ren, testbar domanfunktion.
 
@@ -86,7 +100,7 @@ TDD-testfall:
 7. Edge: daysUntilDue = 15 -> "ok"
 8. Korrekt berakning av `daysSinceService` och `dueDate`
 
-### 1.2 DueForServiceService (data-access + berakning)
+### 1.2 DueForServiceService (data-access + berakning) -- KLAR
 
 **Ny fil:** `src/domain/due-for-service/DueForServiceService.ts`
 
@@ -112,14 +126,14 @@ Prisma direkt ar OK har -- det ar en read-only query service, inte en karndomans
 
 **Ny fil:** `src/domain/due-for-service/DueForServiceService.test.ts`
 
-### 1.3 Refaktorera provider-route
+### 1.3 Refaktorera provider-route -- KLAR
 
 **Andra:** `src/app/api/provider/due-for-service/route.ts`
 - Ersatt inline-berakning (rad 116-155) med import fran `DueForServiceCalculator`
 - Ingen beteendeandring -- befintliga tester ska fortfarande passera
 - Bade kund- och provider-vagen anrops samma berakningsfunktion
 
-### 1.4 Kund-API
+### 1.4 Kund-API -- KLAR
 
 **Ny fil:** `src/app/api/customer/due-for-service/route.ts`
 
@@ -147,7 +161,7 @@ Testfall:
 5. horseId-filter fungerar
 6. Ownership check: kan inte fraga om annan kunds hast
 
-### 1.5 SWR-hook
+### 1.5 SWR-hook -- KLAR
 
 **Ny fil:** `src/hooks/useDueForService.ts`
 
@@ -158,7 +172,7 @@ export function useDueForService() {
 }
 ```
 
-### 1.6 UI: Badges pa hastlistan
+### 1.6 UI: Badges pa hastlistan -- KLAR
 
 **Andra:** `src/app/customer/horses/page.tsx`
 
@@ -168,22 +182,39 @@ export function useDueForService() {
   - Gul badge: "Snart dags" (upcoming)
 - Matcha due-items mot horse.id, visa mest bradskande per hast
 - Bara synligt nar feature flag ar pa
+- **Bonus:** Badges visar tjanstnamn ("Hovvard: Forsenad")
+
+### 1.7 Kundstyrda serviceintervall (bonus, ej i ursprunglig plan) -- KLAR
+
+Utokade fas 1 med mojlighet for kunder att satta egna intervall per hast+tjanst:
+
+- **Ny modell:** `CustomerHorseServiceInterval` (horseId, serviceId, intervalWeeks, unique constraint)
+- **Migration:** `20260223121939_add_customer_horse_service_interval` (applicerad pa Supabase 2026-02-23)
+- **3-tier prioritet:** Kundintervall > Provider-rekommendation > Service default
+- **CRUD API:** `GET/PUT/DELETE /api/customer/horses/[horseId]/intervals` + tester
+- **UI:** Fliksystem pa hastdetaljsidan (Historik/Intervall/Info) med URL-state
+- **Hastar utan recommendedIntervalWeeks** inkluderas om kund satt intervall
 
 ### Fas 1 sammanfattning
 
-| Typ | Fil | Uppskattning |
-|-----|-----|-------------|
-| NY | `src/domain/due-for-service/DueForServiceCalculator.ts` | ~60 rader |
-| NY | `src/domain/due-for-service/DueForServiceCalculator.test.ts` | ~120 rader |
-| NY | `src/domain/due-for-service/DueForServiceService.ts` | ~100 rader |
-| NY | `src/domain/due-for-service/DueForServiceService.test.ts` | ~100 rader |
-| ANDRA | `src/app/api/provider/due-for-service/route.ts` | Refaktor ~-40 rader |
-| NY | `src/app/api/customer/due-for-service/route.ts` | ~80 rader |
-| NY | `src/app/api/customer/due-for-service/route.test.ts` | ~120 rader |
-| NY | `src/hooks/useDueForService.ts` | ~25 rader |
-| ANDRA | `src/app/customer/horses/page.tsx` | ~+30 rader |
+| Typ | Fil | Status |
+|-----|-----|--------|
+| NY | `src/domain/due-for-service/DueForServiceCalculator.ts` | KLAR |
+| NY | `src/domain/due-for-service/DueForServiceCalculator.test.ts` | KLAR |
+| NY | `src/domain/due-for-service/DueForServiceService.ts` | KLAR |
+| NY | `src/domain/due-for-service/DueForServiceService.test.ts` | KLAR |
+| ANDRA | `src/app/api/provider/due-for-service/route.ts` | KLAR (refaktorerad) |
+| NY | `src/app/api/customer/due-for-service/route.ts` | KLAR |
+| NY | `src/app/api/customer/due-for-service/route.test.ts` | KLAR |
+| NY | `src/hooks/useDueForService.ts` | KLAR |
+| ANDRA | `src/app/customer/horses/page.tsx` | KLAR |
+| NY | `src/app/api/customer/horses/[horseId]/intervals/route.ts` | KLAR (bonus) |
+| NY | `src/app/api/customer/horses/[horseId]/intervals/route.test.ts` | KLAR (bonus) |
+| ANDRA | `src/app/customer/horses/[id]/page.tsx` | KLAR (bonus, fliksystem) |
+| NY | `src/components/ui/tabs.tsx` | KLAR (bonus) |
+| NY | `prisma/migrations/20260223121939_.../migration.sql` | KLAR |
 
-**Migration:** Inga schemaaandringar. Befintliga modeller har all data.
+**Migration:** `CustomerHorseServiceInterval` -- applicerad pa Supabase 2026-02-23.
 **Beroenden:** Inga nya.
 
 ---
@@ -461,10 +492,10 @@ I loopen efter in-app + email:
 
 ## Oversikt
 
-| | Nya filer | Andrade filer | Migration | Beroenden |
-|-----|-----------|---------------|-----------|-----------|
-| Fas 1 | ~7 | ~2 | Nej | Inga |
-| Fas 2 | ~2 | ~5 | Nej | Inga |
-| Fas 3 | ~7 | ~3 | Nej | web-push |
+| | Nya filer | Andrade filer | Migration | Beroenden | Status |
+|-----|-----------|---------------|-----------|-----------|--------|
+| Fas 1 | 10 | 4 | `CustomerHorseServiceInterval` | Inga | **KLAR** |
+| Fas 2 | ~2 | ~5 | Nej | Inga | Ej paborjad |
+| Fas 3 | ~7 | ~3 | Nej | web-push | Ej paborjad |
 
 Varje fas ar oberoende deploybar och ger varde pa egen hand.
