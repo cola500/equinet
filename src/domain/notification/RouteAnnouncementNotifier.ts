@@ -9,6 +9,10 @@
  * Dedup via NotificationDelivery table.
  */
 import { logger } from "@/lib/logger"
+import { escapeHtml } from "@/lib/sanitize"
+
+/** Alias for escapeHtml -- keeps template interpolations readable */
+const e = escapeHtml
 import type { IFollowRepository } from "@/infrastructure/persistence/follow/IFollowRepository"
 import type { NotificationService, NotificationTypeValue } from "./NotificationService"
 import { NotificationType } from "./NotificationService"
@@ -262,7 +266,7 @@ function routeAnnouncementEmail(data: RouteAnnouncementEmailData): { html: strin
   const overdueBanner = data.overdueHorse
     ? `
     <div class="overdue-banner">
-      <strong>${data.overdueHorse.horseName}</strong> behövde ${data.overdueHorse.serviceName.toLowerCase()} för <strong>${data.overdueHorse.timeAgo}</strong>.
+      <strong>${e(data.overdueHorse.horseName)}</strong> behövde ${e(data.overdueHorse.serviceName.toLowerCase())} för <strong>${e(data.overdueHorse.timeAgo)}</strong>.
     </div>`
     : ""
 
@@ -278,26 +282,26 @@ function routeAnnouncementEmail(data: RouteAnnouncementEmailData): { html: strin
     <h1>${headerText}</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.firstName}!</p>
+    <p>Hej ${e(data.firstName)}!</p>
     ${overdueBanner}
-    <p><strong>${data.businessName}</strong> har annonserat nya tider i <strong>${data.municipality}</strong>.</p>
+    <p><strong>${e(data.businessName)}</strong> har annonserat nya tider i <strong>${e(data.municipality)}</strong>.</p>
 
     <div class="detail-row">
       <span class="label">Datum:</span>
-      <span class="value">${data.dateRange}</span>
+      <span class="value">${e(data.dateRange)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tjänster:</span>
-      <span class="value">${data.serviceNames}</span>
+      <span class="value">${e(data.serviceNames)}</span>
     </div>
 
     <div style="text-align: center; margin: 20px 0;">
-      <a href="${data.announcementUrl}" class="button">Se annonsering</a>
+      <a href="${e(data.announcementUrl)}" class="button">Se annonsering</a>
     </div>
   </div>
   <div class="footer">
     <p>Equinet - Din plattform för hästtjänster</p>
-    <p>Du får detta mail för att du följer ${data.businessName}.</p>
+    <p>Du får detta mail för att du följer ${e(data.businessName)}.</p>
   </div>
 </body>
 </html>

@@ -3,6 +3,10 @@
  */
 
 import { PREPARATION_CHECKLIST } from "@/lib/preparation-checklist"
+import { escapeHtml } from "@/lib/sanitize"
+
+/** Alias for escapeHtml -- keeps template interpolations readable */
+const e = escapeHtml
 
 interface EmailVerificationData {
   firstName: string
@@ -114,11 +118,11 @@ export function emailVerificationEmail(data: EmailVerificationData): { html: str
     <h1>Verifiera din e-post</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.firstName}!</p>
+    <p>Hej ${e(data.firstName)}!</p>
     <p>Tack for att du registrerade dig pa Equinet. Klicka pa knappen nedan for att verifiera din e-postadress.</p>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.verificationUrl}" class="button" style="font-size: 16px;">
+      <a href="${e(data.verificationUrl)}" class="button" style="font-size: 16px;">
         Verifiera e-post
       </a>
     </div>
@@ -129,7 +133,7 @@ export function emailVerificationEmail(data: EmailVerificationData): { html: str
 
     <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
       Om knappen inte fungerar, kopiera och klistra in folande lank i din webblasare:<br>
-      <a href="${data.verificationUrl}" style="color: #16a34a; word-break: break-all;">${data.verificationUrl}</a>
+      <a href="${e(data.verificationUrl)}" style="color: #16a34a; word-break: break-all;">${e(data.verificationUrl)}</a>
     </p>
   </div>
   <div class="footer">
@@ -175,11 +179,11 @@ export function passwordResetEmail(data: PasswordResetData): { html: string; tex
     <h1>Återställ ditt lösenord</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.firstName}!</p>
+    <p>Hej ${e(data.firstName)}!</p>
     <p>Vi har fått en begäran om att återställa lösenordet för ditt konto på Equinet.</p>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.resetUrl}" class="button" style="font-size: 16px;">
+      <a href="${e(data.resetUrl)}" class="button" style="font-size: 16px;">
         Återställ lösenord
       </a>
     </div>
@@ -190,7 +194,7 @@ export function passwordResetEmail(data: PasswordResetData): { html: string; tex
 
     <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
       Om knappen inte fungerar, kopiera och klistra in följande länk i din webbläsare:<br>
-      <a href="${data.resetUrl}" style="color: #16a34a; word-break: break-all;">${data.resetUrl}</a>
+      <a href="${e(data.resetUrl)}" style="color: #16a34a; word-break: break-all;">${e(data.resetUrl)}</a>
     </p>
   </div>
   <div class="footer">
@@ -233,25 +237,25 @@ export function bookingConfirmationEmail(data: BookingConfirmationData): { html:
     <h1>Bokningsbekräftelse</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
+    <p>Hej ${e(data.customerName)}!</p>
     <p>Din bokning har mottagits och väntar på bekräftelse från leverantören.</p>
 
     <h3>Bokningsdetaljer</h3>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
-      <span class="value">${data.serviceName}</span>
+      <span class="value">${e(data.serviceName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Leverantör:</span>
-      <span class="value">${data.businessName}</span>
+      <span class="value">${e(data.businessName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Datum:</span>
-      <span class="value">${data.bookingDate}</span>
+      <span class="value">${e(data.bookingDate)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tid:</span>
-      <span class="value">${data.startTime} - ${data.endTime}</span>
+      <span class="value">${e(data.startTime)} - ${e(data.endTime)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Pris:</span>
@@ -266,7 +270,7 @@ export function bookingConfirmationEmail(data: BookingConfirmationData): { html:
   </div>
   <div class="footer">
     <p>Equinet - Din plattform för hästtjänster</p>
-    <p>Boknings-ID: ${data.bookingId}</p>
+    <p>Boknings-ID: ${e(data.bookingId)}</p>
   </div>
 </body>
 </html>
@@ -312,34 +316,34 @@ export function paymentConfirmationEmail(data: PaymentConfirmationData): { html:
     <h1>Betalningsbekräftelse</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
+    <p>Hej ${e(data.customerName)}!</p>
     <p><span class="success-badge">Betalning mottagen</span></p>
     <p>Tack för din betalning! Här är ditt kvitto.</p>
 
     <h3>Kvittouppgifter</h3>
     <div class="detail-row">
       <span class="label">Kvittonummer:</span>
-      <span class="value">${data.invoiceNumber}</span>
+      <span class="value">${e(data.invoiceNumber)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
-      <span class="value">${data.serviceName}</span>
+      <span class="value">${e(data.serviceName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Leverantör:</span>
-      <span class="value">${data.businessName}</span>
+      <span class="value">${e(data.businessName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Datum för tjänst:</span>
-      <span class="value">${data.bookingDate}</span>
+      <span class="value">${e(data.bookingDate)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Betaldatum:</span>
-      <span class="value">${data.paidAt}</span>
+      <span class="value">${e(data.paidAt)}</span>
     </div>
     <div class="detail-row" style="border-bottom: 2px solid #16a34a;">
       <span class="label" style="font-weight: 600;">Totalt betalt:</span>
-      <span class="value" style="font-size: 18px; color: #16a34a;">${data.amount} ${data.currency}</span>
+      <span class="value" style="font-size: 18px; color: #16a34a;">${data.amount} ${e(data.currency)}</span>
     </div>
 
     <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings" class="button">
@@ -348,7 +352,7 @@ export function paymentConfirmationEmail(data: PaymentConfirmationData): { html:
   </div>
   <div class="footer">
     <p>Equinet - Din plattform för hästtjänster</p>
-    <p>Boknings-ID: ${data.bookingId}</p>
+    <p>Boknings-ID: ${e(data.bookingId)}</p>
     <p>Spara detta email som kvitto för din bokföring.</p>
   </div>
 </body>
@@ -415,38 +419,38 @@ export function bookingStatusChangeEmail(data: BookingStatusChangeData): { html:
     <h1>Bokningsuppdatering</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
+    <p>Hej ${e(data.customerName)}!</p>
     <p>Din bokning har uppdaterats:</p>
 
     <div style="text-align: center; margin: 20px 0;">
       <span style="display: inline-block; background: ${bgColor}; color: ${color}; padding: 8px 20px; border-radius: 20px; font-size: 16px; font-weight: 600;">
-        ${data.statusLabel}
+        ${e(data.statusLabel)}
       </span>
     </div>
 
     ${data.newStatus === "cancelled" && data.cancellationMessage ? `
     <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
       <p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>Meddelande:</strong></p>
-      <p style="margin: 4px 0 0; font-size: 14px; color: #333;">${data.cancellationMessage}</p>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #333;">${e(data.cancellationMessage)}</p>
     </div>
     ` : ""}
 
     <h3>Bokningsdetaljer</h3>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
-      <span class="value">${data.serviceName}</span>
+      <span class="value">${e(data.serviceName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Leverantör:</span>
-      <span class="value">${data.businessName}</span>
+      <span class="value">${e(data.businessName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Datum:</span>
-      <span class="value">${data.bookingDate}</span>
+      <span class="value">${e(data.bookingDate)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tid:</span>
-      <span class="value">${data.startTime}</span>
+      <span class="value">${e(data.startTime)}</span>
     </div>
 
     ${data.newStatus === "confirmed" ? `
@@ -513,12 +517,12 @@ export function rebookingReminderEmail(data: RebookingReminderData): { html: str
     <h1>Dags att boka igen!</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
-    <p>Det har gått ett tag sedan du senast använde <strong>${data.serviceName}</strong> hos <strong>${data.providerName}</strong>.</p>
+    <p>Hej ${e(data.customerName)}!</p>
+    <p>Det har gått ett tag sedan du senast använde <strong>${e(data.serviceName)}</strong> hos <strong>${e(data.providerName)}</strong>.</p>
     <p>Vi rekommenderar att du bokar en ny tid för att hålla din häst i bästa skick.</p>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.rebookUrl}" class="button" style="font-size: 16px;">
+      <a href="${e(data.rebookUrl)}" class="button" style="font-size: 16px;">
         Boka igen
       </a>
     </div>
@@ -560,25 +564,25 @@ export function bookingReminderEmail(data: BookingReminderData): { html: string;
     <h1>Påminnelse: Din bokning imorgon</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
+    <p>Hej ${e(data.customerName)}!</p>
     <p>Vi vill påminna dig om att du har en bokning imorgon.</p>
 
     <h3>Bokningsdetaljer</h3>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
-      <span class="value">${data.serviceName}</span>
+      <span class="value">${e(data.serviceName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Leverantör:</span>
-      <span class="value">${data.businessName}</span>
+      <span class="value">${e(data.businessName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Datum:</span>
-      <span class="value">${data.bookingDate}</span>
+      <span class="value">${e(data.bookingDate)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tid:</span>
-      <span class="value">${data.startTime} - ${data.endTime}</span>
+      <span class="value">${e(data.startTime)} - ${e(data.endTime)}</span>
     </div>
 
     <h3 style="margin-top: 20px;">Inför besöket</h3>
@@ -588,13 +592,13 @@ export function bookingReminderEmail(data: BookingReminderData): { html: string;
     </ul>
 
     <div style="text-align: center; margin: 20px 0;">
-      <a href="${data.bookingUrl}" class="button">Se dina bokningar</a>
+      <a href="${e(data.bookingUrl)}" class="button">Se dina bokningar</a>
     </div>
   </div>
   <div class="footer">
     <p>Equinet - Din plattform för hästtjänster</p>
     <p style="margin-top: 8px;">
-      <a href="${data.unsubscribeUrl}" style="color: #6b7280; font-size: 11px;">Avregistrera dig från bokningspåminnelser</a>
+      <a href="${e(data.unsubscribeUrl)}" style="color: #6b7280; font-size: 11px;">Avregistrera dig från bokningspåminnelser</a>
     </p>
   </div>
 </body>
@@ -648,39 +652,39 @@ export function bookingRescheduleEmail(data: BookingRescheduleData): { html: str
     <h1>Bokning ombokad</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
+    <p>Hej ${e(data.customerName)}!</p>
     <p>${statusMessage}</p>
 
     <h3>Tidigare tid</h3>
     <div class="detail-row">
       <span class="label">Datum:</span>
-      <span class="value" style="text-decoration: line-through; color: #9ca3af;">${data.oldBookingDate}</span>
+      <span class="value" style="text-decoration: line-through; color: #9ca3af;">${e(data.oldBookingDate)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tid:</span>
-      <span class="value" style="text-decoration: line-through; color: #9ca3af;">${data.oldStartTime}</span>
+      <span class="value" style="text-decoration: line-through; color: #9ca3af;">${e(data.oldStartTime)}</span>
     </div>
 
     <h3 style="margin-top: 20px;">Ny tid</h3>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
-      <span class="value">${data.serviceName}</span>
+      <span class="value">${e(data.serviceName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Leverantör:</span>
-      <span class="value">${data.businessName}</span>
+      <span class="value">${e(data.businessName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Datum:</span>
-      <span class="value">${data.newBookingDate}</span>
+      <span class="value">${e(data.newBookingDate)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Tid:</span>
-      <span class="value">${data.newStartTime} - ${data.newEndTime}</span>
+      <span class="value">${e(data.newStartTime)} - ${e(data.newEndTime)}</span>
     </div>
 
     <div style="text-align: center; margin: 20px 0;">
-      <a href="${data.bookingUrl}" class="button">Se dina bokningar</a>
+      <a href="${e(data.bookingUrl)}" class="button">Se dina bokningar</a>
     </div>
   </div>
   <div class="footer">
@@ -724,7 +728,7 @@ export function bookingSeriesCreatedEmail(data: BookingSeriesCreatedData): { htm
     : `var ${data.intervalWeeks}:e vecka`
 
   const dateListHtml = data.bookingDates
-    .map(d => `<li>${d.date} kl. ${d.time}</li>`)
+    .map(d => `<li>${e(d.date)} kl. ${e(d.time)}</li>`)
     .join('\n')
 
   const skippedHtml = data.skippedDates && data.skippedDates.length > 0
@@ -732,7 +736,7 @@ export function bookingSeriesCreatedEmail(data: BookingSeriesCreatedData): { htm
     <div style="background: #fffbeb; border: 1px solid #fbbf24; padding: 12px; border-radius: 6px; margin-top: 15px;">
       <p style="font-weight: 600; color: #92400e; margin: 0 0 8px 0;">Hoppade datum:</p>
       <ul style="margin: 0; padding-left: 20px; color: #92400e;">
-        ${data.skippedDates.map(s => `<li>${s.date} - ${s.reason}</li>`).join('\n')}
+        ${data.skippedDates.map(s => `<li>${e(s.date)} - ${e(s.reason)}</li>`).join('\n')}
       </ul>
     </div>`
     : ''
@@ -749,17 +753,17 @@ export function bookingSeriesCreatedEmail(data: BookingSeriesCreatedData): { htm
     <h1>Återkommande bokning skapad!</h1>
   </div>
   <div class="content">
-    <p>Hej ${data.customerName}!</p>
+    <p>Hej ${e(data.customerName)}!</p>
     <p>Din återkommande bokning har skapats. ${data.createdCount} av ${data.totalOccurrences} bokningar skapades.</p>
 
     <h3>Detaljer</h3>
     <div class="detail-row">
       <span class="label">Tjänst:</span>
-      <span class="value">${data.serviceName}</span>
+      <span class="value">${e(data.serviceName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Leverantör:</span>
-      <span class="value">${data.businessName}</span>
+      <span class="value">${e(data.businessName)}</span>
     </div>
     <div class="detail-row">
       <span class="label">Intervall:</span>

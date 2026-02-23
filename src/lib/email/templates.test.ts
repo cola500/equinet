@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { bookingConfirmationEmail, bookingStatusChangeEmail, bookingRescheduleEmail, bookingSeriesCreatedEmail } from "./templates"
 import { PREPARATION_CHECKLIST } from "@/lib/preparation-checklist"
+import { escapeHtml } from "@/lib/sanitize"
 
 const mockBookingData = {
   customerName: "Anna Svensson",
@@ -123,9 +124,9 @@ describe("bookingRescheduleEmail", () => {
     expect(html).toContain("godkännande")
   })
 
-  it("includes booking URL", () => {
+  it("includes booking URL (escaped)", () => {
     const { html } = bookingRescheduleEmail(mockRescheduleData)
-    expect(html).toContain(mockRescheduleData.bookingUrl)
+    expect(html).toContain(escapeHtml(mockRescheduleData.bookingUrl))
   })
 })
 
