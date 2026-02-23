@@ -185,6 +185,21 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Exponentiell backoff for sync-motorn**: `getRetryDelay(attempt, response)` -- 1s/2s/4s default, respekterar `Retry-After`-header. 429 ar aterhamtningsbart (revert till "pending"), 5xx ar permanent ("failed" efter max retries).
 - **Modul-niva guard for async hooks**: `let syncInProgress = false` pa modul-niva istallet for `useRef` -- overlever komponent-ommountering (Suspense, error boundaries). Exportera `_resetSyncGuard()` for tester.
 - **E2E IndexedDB-lasningar: stang anslutningen**: `db.close()` efter `indexedDB.open()` i E2E-tester. Oppen ra-anslutning kan interferera med Dexie:s transaktioner. Krav `mutations.length > 0` i pollning for att undvika tomma snapshots under Dexie-skrivningar.
+- **iOS Safari falska online-events**: Lita ALDRIG blint pa browserns `online`-event nar `fetchFailed` ar true. Proba med HEAD-request forst, aterstall bara om proben lyckas. Pattern i `useOnlineStatus.ts` `handleOnline`.
+
+---
+
+## Debugging: 5 Whys
+
+När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varför?" upprepat tills vi hittar rotorsaken. Vi fixar grundproblemet, inte symptomen.
+
+---
+
+## Version & SDK Policy
+
+- **Lita INTE på training data**: När du skriver kod som använder externa SDKs, APIs eller AI-modeller -- STOPP innan du skriver import eller install.
+- **Sök upp aktuell version**: Verifiera senaste paketversion, korrekta modell-IDs och aktuellt initialiseringsmönster via sökning.
+- **Använd det du hittar**: Skriv kod baserat på aktuell dokumentation, inte på vad du "minns" från träningsdatan.
 
 ---
 
