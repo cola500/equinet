@@ -42,7 +42,8 @@
     "db:backup": "bash scripts/db-backup.sh",
     "db:restore": "bash scripts/db-restore.sh",
     "db:drift-check": "bash scripts/drift-check.sh",
-    "deploy": "bash scripts/deploy.sh"
+    "deploy": "bash scripts/deploy.sh",
+    "migrate:supabase": "bash scripts/migrate-supabase.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",

@@ -46,7 +46,10 @@ import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 import { EmptyState } from "@/components/ui/empty-state"
-import { PawPrint } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { useDueForService } from "@/hooks/useDueForService"
+import { PawPrint, AlertTriangle, Clock } from "lucide-react"
+import type { DueForServiceResult } from "@/domain/due-for-service/DueForServiceCalculator"
 
 interface Horse {
   id: string
@@ -83,6 +86,7 @@ export default function CustomerHorsesPage() {
   const router = useRouter()
   const { isLoading: authLoading, isCustomer } = useAuth()
   const { horses, isLoading, mutate: mutateHorses } = useSWRHorses()
+  const { items: dueItems } = useDueForService()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingHorse, setEditingHorse] = useState<Horse | null>(null)
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null)
@@ -268,7 +272,10 @@ export default function CustomerHorsesPage() {
                     className="w-20 flex-shrink-0"
                   />
                   <div>
-                    <CardTitle className="text-lg">{horse.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{horse.name}</CardTitle>
+                      <DueStatusBadge dueItems={dueItems} horseId={horse.id} />
+                    </div>
                     <CardDescription>
                       {[
                         horse.breed,
@@ -372,6 +379,44 @@ export default function CustomerHorsesPage() {
       )}
     </CustomerLayout>
   )
+}
+
+// --- Due Status Badge ---
+
+function DueStatusBadge({
+  dueItems,
+  horseId,
+}: {
+  dueItems: DueForServiceResult[]
+  horseId: string
+}) {
+  // Find the most urgent due item for this horse
+  const item = dueItems.find((i) => i.horseId === horseId)
+  if (!item) return null
+
+  if (item.status === "overdue") {
+    const days = Math.abs(item.daysUntilDue)
+    const label = days === 1 ? "1 dag" : `${days} dagar`
+    return (
+      <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 gap-1">
+        <AlertTriangle className="h-3 w-3" />
+        <span>{label} försenad</span>
+      </Badge>
+    )
+  }
+
+  if (item.status === "upcoming") {
+    const days = item.daysUntilDue
+    const label = days === 0 ? "Idag" : days === 1 ? "1 dag kvar" : `${days} dagar kvar`
+    return (
+      <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
+        <Clock className="h-3 w-3" />
+        <span>{label}</span>
+      </Badge>
+    )
+  }
+
+  return null
 }
 
 // ---  Horse Form (shared between add/edit) ---

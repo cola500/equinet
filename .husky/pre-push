@@ -10,7 +10,7 @@ if [[ -n "$MIGRATION_DIFF" ]]; then
   echo "=========================================="
   echo "$MIGRATION_DIFF" | sed 's/^/  /'
   echo ""
-  echo "  Kör apply_migration på Supabase efter push!"
+  echo "  Kör: npm run migrate:supabase"
   echo "=========================================="
   echo ""
 fi

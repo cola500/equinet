@@ -77,7 +77,7 @@ echo "Vercel deployer automatiskt. Verifiera:"
 echo "  1. Vercel Dashboard -- vänta på 'Ready'"
 echo "  2. /api/health -- ska returnera 200"
 if [[ "$PENDING" -gt 0 ]]; then
-  echo "  3. Kör apply_migration på Supabase ($PENDING pending)"
+  echo "  3. Kör: npm run migrate:supabase ($PENDING pending)"
   echo "     En backup skapades automatiskt i backups/"
 else
   echo "  3. Inga nya migrationer"
