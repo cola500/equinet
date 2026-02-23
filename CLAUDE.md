@@ -96,7 +96,7 @@ src/
 
 ### Repository Pattern (OBLIGATORISKT för kärndomäner)
 
-**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`, `Horse`
+**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`, `Horse`, `Follow`
 **Stöddomäner** (Prisma OK): `AvailabilityException`, `AvailabilitySchedule`
 
 ### Checklista för ny feature
@@ -230,4 +230,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-02-19
+**Senast uppdaterad**: 2026-02-23

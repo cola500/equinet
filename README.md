@@ -129,7 +129,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (2272+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (2394+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -149,7 +149,7 @@ equinet/
 │   │   ├── customer/         # Kundsidor
 │   │   └── provider/         # Leverantörssidor
 │   ├── components/           # React-komponenter (layout, provider, review, ui)
-│   ├── domain/               # Affärslogik (booking, group-booking, notification, payment, reminder)
+│   ├── domain/               # Affärslogik (booking, due-for-service, group-booking, notification, payment, reminder)
 │   ├── infrastructure/       # Repositories (Prisma-implementationer)
 │   ├── hooks/                # Custom hooks (useAuth, useNotifications)
 │   ├── lib/                  # Utilities (auth, email, prisma, rate-limit, validations)
@@ -185,7 +185,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**26 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
+**28 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
@@ -237,6 +237,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Recensioner och betyg (båda riktningar)
 - Gruppbokning för stallgemenskaper
 - Ruttannonsering med kundvy (kunder ser lediga tider och bokar sig på annonserade rutter)
+- Följ leverantör med personliga ruttannonser (due-for-service-kontext i notiser)
 - In-app notifikationer + email
 - Automatiska återbesökspåminnelser
 - Bokningspåminnelser 24h före (med opt-out via unsubscribe-länk)
@@ -254,7 +255,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**2597+ tester** (325+ E2E desktop + mobil + 2272+ unit/integration) med **70% coverage**.
+**2719+ tester** (325+ E2E desktop + mobil + 2394+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

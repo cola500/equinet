@@ -104,7 +104,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### Databasschema
 
-**27 tabeller** med index optimerade för vanliga queries:
+**28 tabeller** med index optimerade för vanliga queries:
 
 | Tabell | Kritiska Index | Syfte |
 |--------|----------------|-------|
@@ -117,13 +117,14 @@ const prismaWithExtensions = basePrisma.$extends({
 | AvailabilityException | providerId+date | Undantag från öppettider |
 | Review | providerId+createdAt | Recensioner |
 | HorseServiceInterval | horseId+providerId (unique) | Återbesöksintervall per häst och leverantör |
+| CustomerHorseServiceInterval | horseId+serviceId (unique) | Kundstyrda serviceintervall per häst och tjänst |
 | ProviderCustomerNote | providerId+customerId+createdAt | Leverantörens privata kundanteckningar (journal) |
 | BookingSeries | customerId, providerId, status | Återkommande bokningsserier |
 | PasswordResetToken | token (unique), userId | Lösenordsåterställning |
 | Follow | customerId+providerId (unique) | Kund följer leverantör |
 | NotificationDelivery | routeOrderId+customerId+channel (unique) | Dedup för ruttannons-notiser |
 | PushSubscription | endpoint (unique), userId | Web push-prenumerationer (stub) |
-| (+ 13 andra) | ... | ... |
+| (+ 12 andra) | ... | ... |
 
 **Viktiga patterns:**
 - Foreign keys + vanliga filter-kombinationer indexerade
@@ -133,7 +134,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### RLS Security Model
 
-**Status:** Aktiverat på alla 27 tabeller + `_prisma_migrations` sedan 2026-02-04
+**Status:** Aktiverat på alla 28 tabeller + `_prisma_migrations` sedan 2026-02-04
 
 ```sql
 -- Migration: 20260204120000_enable_rls

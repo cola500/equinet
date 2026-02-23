@@ -10,7 +10,7 @@
 |-----|--------|---------|
 | Fas 1: Kund-synlig due-for-service | **KLAR** | `2e93f3f`, `144dd9c`, `0e38bfa` |
 | Fas 1 bonus: Kundstyrda intervall | **KLAR** | `2e93f3f`, `0e38bfa` |
-| Fas 2: Hyperrelevant notis | Ej påbörjad | -- |
+| Fas 2: Hyperrelevant notis | **KLAR** | `633897c`, `895e54c` |
 | Fas 3: Push-notiser | Ej påbörjad | -- |
 
 **Supabase-migration applicerad:** `CustomerHorseServiceInterval` (2026-02-23)
@@ -495,7 +495,7 @@ I loopen efter in-app + email:
 | | Nya filer | Andrade filer | Migration | Beroenden | Status |
 |-----|-----------|---------------|-----------|-----------|--------|
 | Fas 1 | 10 | 4 | `CustomerHorseServiceInterval` | Inga | **KLAR** |
-| Fas 2 | ~2 | ~5 | Nej | Inga | Ej paborjad |
+| Fas 2 | 2 | 5 | Nej | Inga | **KLAR** |
 | Fas 3 | ~7 | ~3 | Nej | web-push | Ej paborjad |
 
 Varje fas ar oberoende deploybar och ger varde pa egen hand.

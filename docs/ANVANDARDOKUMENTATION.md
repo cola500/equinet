@@ -270,6 +270,33 @@ Borttagna hästar tas bort mjukt (dold men inte raderad) så att bokningshistori
 
 ---
 
+### Servicestatus
+
+På din hästlista ser du automatiskt om någon häst behöver service. Systemet beräknar detta baserat på senaste bokningens datum och tjänstens rekommenderade intervall.
+
+**Statusbadges på hästlistan:**
+
+| Färg | Badge | Betydelse |
+|------|-------|-----------|
+| Röd | "Hovvård: Försenad" | Hästen borde redan ha fått service |
+| Gul | "Hovvård: Snart dags" | Service behövs inom 2 veckor |
+
+Badges visar tjänstens namn (t.ex. "Hovvård") så du ser vilken typ av service det gäller.
+
+**Kundstyrda serviceintervall:**
+
+Du kan själv bestämma hur ofta din häst ska få service -- oberoende av leverantörens standardintervall.
+
+1. Gå till en häst under **Mina hästar**
+2. Klicka på fliken **Intervall**
+3. Sätt intervall (i veckor) per tjänstetyp
+
+**Prioritetsordning:** Ditt eget intervall gäller före leverantörens rekommendation och tjänstens standardvärde. Om du inte har satt ett eget intervall används leverantörens rekommendation.
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
+
+---
+
 ### Hälsotidslinje
 
 Varje registrerad häst har en **hälsotidslinje** som samlar all vårdinformation kronologiskt.
@@ -400,6 +427,32 @@ Du får automatiskt en påminnelse **24 timmar innan** varje bekräftad bokning.
 - Eller gå till **Min profil** och inaktivera e-postpåminnelser
 
 Du kan när som helst slå på påminnelser igen via din profil.
+
+---
+
+### Följ leverantör
+
+Du kan följa leverantörer du gillar för att få personliga ruttannonser.
+
+**Följ en leverantör:**
+1. Gå till leverantörens profil
+2. Klicka **Följ**
+3. Knappen ändras till **Följer** (klicka igen för att sluta följa)
+
+**Välj kommun:**
+
+För att få relevanta ruttannonser behöver du ange vilken kommun du befinner dig i:
+1. Gå till **Min profil**
+2. Välj kommun i dropdown-menyn
+3. Spara
+
+**Personliga ruttannonser:**
+
+När en leverantör du följer annonserar en rutt i din kommun får du en notifikation. Om din häst dessutom är försenad för service får du ett personligt meddelande med information om både hästens servicebehov och leverantörens lediga tider.
+
+Exempel: *"Blansen behövde skoning för 2 veckor sedan. Anna har lediga tider i Kungsbacka nästa vecka."*
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
 
 ---
 
@@ -1098,6 +1151,8 @@ Under **System** ser du:
 - **Självservice-ombokning** -- Kunder kan boka om sina egna bokningar
 - **Återkommande bokningar** -- Möjlighet att skapa återkommande bokningsserier
 - **Offlineläge** -- PWA-stöd med offline-cachning av bokningar och rutter för leverantörer
+- **Följ leverantör** -- Kunder kan följa leverantörer och få personliga ruttannonser
+- **Besöksplanering (kund)** -- Kunder ser servicestatus-badges och kan sätta egna intervall
 
 Flaggor kan slås av och på i realtid. Ändringar sparas i Redis och gäller omedelbart.
 

@@ -2,7 +2,7 @@
 
 **Projekt**: Equinet - Bokningsplattform för hästtjänster
 **Version**: v0.3.0+
-**Senast uppdaterad**: 2026-02-19
+**Senast uppdaterad**: 2026-02-23
 **Syfte**: Levande dokument som visar production readiness-status och gap med story-ready acceptance criteria.
 
 **Relaterade dokument:**
@@ -135,7 +135,7 @@
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 2272+ tester, 194 testfiler (2026-02-22) |
+| Unit/integration-tester | Klart | 2394+ tester, 205 testfiler (2026-02-23) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
