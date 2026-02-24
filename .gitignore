@@ -76,3 +76,6 @@ sentry.properties
 # Generated service worker (built from src/sw.ts)
 public/sw.js
 public/sw.js.map
+
+# Git worktrees
+.worktrees/

@@ -60,6 +60,7 @@ export default [
   {
     ignores: [
       ".next/**",
+      ".worktrees/**",
       "out/**",
       "build/**",
       "coverage/**",
