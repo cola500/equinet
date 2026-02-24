@@ -43,8 +43,8 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
   group_bookings: {
     key: "group_bookings",
     label: "Gruppbokningar",
-    description: "Gruppbokningsfunktionalitet (under utveckling)",
-    defaultEnabled: false,
+    description: "Gruppbokningsfunktionalitet",
+    defaultEnabled: true,
   },
   business_insights: {
     key: "business_insights",
@@ -62,7 +62,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     key: "recurring_bookings",
     label: "Återkommande bokningar",
     description: "Möjlighet att skapa återkommande bokningsserier",
-    defaultEnabled: false,
+    defaultEnabled: true,
   },
   offline_mode: {
     key: "offline_mode",
@@ -74,13 +74,13 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     key: "follow_provider",
     label: "Följ leverantör",
     description: "Kunder kan följa leverantörer och få notiser vid nya rutt-annonser",
-    defaultEnabled: false,
+    defaultEnabled: true,
   },
   municipality_watch: {
     key: "municipality_watch",
     label: "Bevaka kommun",
     description: "Kunder kan bevaka kommun + tjänstetyp och få notiser vid nya rutt-annonser",
-    defaultEnabled: false,
+    defaultEnabled: true,
   },
 }
 

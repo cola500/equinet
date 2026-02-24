@@ -32,7 +32,7 @@ describe("feature-flags", () => {
   describe("isFeatureEnabled", () => {
     it("returns default value when no override exists", async () => {
       expect(await isFeatureEnabled("voice_logging")).toBe(true)
-      expect(await isFeatureEnabled("group_bookings")).toBe(false)
+      expect(await isFeatureEnabled("group_bookings")).toBe(true)
     })
 
     it("returns false for unknown flag", async () => {
@@ -76,13 +76,13 @@ describe("feature-flags", () => {
         route_announcements: true,
         customer_insights: true,
         due_for_service: true,
-        group_bookings: false,
+        group_bookings: true,
         business_insights: true,
         self_reschedule: true,
-        recurring_bookings: false,
+        recurring_bookings: true,
         offline_mode: true,
-        follow_provider: false,
-        municipality_watch: false,
+        follow_provider: true,
+        municipality_watch: true,
       })
     })
 
@@ -133,7 +133,7 @@ describe("feature-flags", () => {
       const flags = await getFeatureFlags()
       // Should return defaults without crashing
       expect(flags.voice_logging).toBe(true)
-      expect(flags.group_bookings).toBe(false)
+      expect(flags.group_bookings).toBe(true)
     })
   })
 
@@ -172,9 +172,9 @@ describe("feature-flags", () => {
       await setFeatureFlagOverride("group_bookings", "true")
       await removeFeatureFlagOverride("group_bookings")
 
-      // group_bookings default is false
+      // group_bookings default is true
       const flags = await getFeatureFlags()
-      expect(flags.group_bookings).toBe(false)
+      expect(flags.group_bookings).toBe(true)
     })
 
     it("throws descriptive error on DB failure", async () => {

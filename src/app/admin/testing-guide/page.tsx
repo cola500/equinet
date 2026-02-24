@@ -166,7 +166,7 @@ const TEST_DATA: TestCategory[] = [
           { id: "cbookings-3", label: "Avboka väntande bokning" },
           { id: "cbookings-4", label: "Betalning fungerar (mock)" },
           { id: "cbookings-5", label: "Kvitto kan laddas ner" },
-          { id: "cbookings-6", label: "Ombokning fungerar (om tillåtet)" },
+          { id: "cbookings-6", label: "Ombokning fungerar [kräver self_reschedule]" },
         ],
       },
       {
@@ -196,7 +196,7 @@ const TEST_DATA: TestCategory[] = [
           { id: "cprof-1", label: "Visa och redigera personuppgifter" },
           { id: "cprof-2", label: "FAQ-sidan laddas" },
           { id: "cprof-3", label: "GDPR-export fungerar" },
-          { id: "cprof-4", label: "Följ/avfölj leverantör" },
+          { id: "cprof-4", label: "Följ/avfölj leverantör [kräver follow_provider]" },
         ],
       },
     ],
@@ -400,7 +400,6 @@ const TEST_DATA: TestCategory[] = [
         items: [
           { id: "finsights-1", label: "Menyval visas när PÅ, döljs när AV" },
           { id: "finsights-2", label: "Grafer: tjänster, tidsanalys, retention" },
-          { id: "finsights-3", label: "AI-kundinsikter på kunddetaljsida" },
         ],
       },
       {
@@ -422,6 +421,46 @@ const TEST_DATA: TestCategory[] = [
           { id: "foffline-2", label: "Offlineindikator visas" },
           { id: "foffline-3", label: "Ändringar synkas vid återanslutning" },
           { id: "foffline-4", label: "Ej cacheade sidor visar offline-meddelande" },
+        ],
+      },
+      {
+        id: "feat-reschedule",
+        title: "Självservice-ombokning",
+        description: "Slå PÅ self_reschedule i Admin → System",
+        items: [
+          { id: "freschedule-1", label: "Ombokning visas/döljs baserat på flagga" },
+          { id: "freschedule-2", label: "Kund kan välja nytt datum/tid" },
+          { id: "freschedule-3", label: "Leverantör ser ombokningshistorik" },
+        ],
+      },
+      {
+        id: "feat-follow",
+        title: "Följ leverantör",
+        description: "Slå PÅ follow_provider i Admin → System",
+        items: [
+          { id: "ffollow-1", label: "Följ-knapp visas på leverantörsprofil" },
+          { id: "ffollow-2", label: "Kund kan följa och avfölja" },
+          { id: "ffollow-3", label: "Notis vid ny rutt-annons i kundens kommun" },
+        ],
+      },
+      {
+        id: "feat-municipality",
+        title: "Bevaka kommun",
+        description: "Slå PÅ municipality_watch i Admin → System",
+        items: [
+          { id: "fmunicipality-1", label: "Bevakningsval visas i kundprofil" },
+          { id: "fmunicipality-2", label: "Välj kommun + tjänstetyp" },
+          { id: "fmunicipality-3", label: "Notis vid ny rutt-annons i bevakad kommun" },
+        ],
+      },
+      {
+        id: "feat-custinsights",
+        title: "Kundinsikter",
+        description: "Slå PÅ customer_insights i Admin → System",
+        items: [
+          { id: "fcustinsights-1", label: "Kundinsikter visas/döljs baserat på flagga" },
+          { id: "fcustinsights-2", label: "AI-genererade insikter på kunddetaljsida" },
+          { id: "fcustinsights-3", label: "Insikter uppdateras vid ny bokningshistorik" },
         ],
       },
     ],
