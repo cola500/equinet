@@ -1,9 +1,11 @@
 /**
- * RouteAnnouncementNotifier - Notifies followers when a provider
- * creates a new route announcement in their municipality.
+ * RouteAnnouncementNotifier - Notifies followers AND municipality watchers
+ * when a provider creates a new route announcement.
  *
- * If dueForServiceLookup is provided, followers with overdue horses
- * get a personalized notification mentioning their horse by name.
+ * Followers get personalized notifications (with optional due-for-service info).
+ * Watchers get "Du bevakar X i Y" notifications.
+ *
+ * If a customer is both follower AND watcher, they get follower notification only.
  *
  * Channels: in-app notification + email. Push is stub (schema only).
  * Dedup via NotificationDelivery table.
@@ -13,7 +15,8 @@ import { escapeHtml } from "@/lib/sanitize"
 
 /** Alias for escapeHtml -- keeps template interpolations readable */
 const e = escapeHtml
-import type { IFollowRepository } from "@/infrastructure/persistence/follow/IFollowRepository"
+import type { IFollowRepository, FollowerInfo } from "@/infrastructure/persistence/follow/IFollowRepository"
+import type { IMunicipalityWatchRepository } from "@/infrastructure/persistence/municipality-watch/IMunicipalityWatchRepository"
 import type { NotificationService, NotificationTypeValue } from "./NotificationService"
 import { NotificationType } from "./NotificationService"
 import type {
@@ -53,6 +56,7 @@ interface NotifierDeps {
   routeOrderLookup: RouteOrderLookup
   deliveryStore: DeliveryStore
   dueForServiceLookup?: DueForServiceLookup
+  watchRepo?: IMunicipalityWatchRepository
 }
 
 export function formatDaysAgo(days: number): string {
@@ -69,6 +73,7 @@ export class RouteAnnouncementNotifier {
   private routeOrderLookup: RouteOrderLookup
   private deliveryStore: DeliveryStore
   private dueForServiceLookup?: DueForServiceLookup
+  private watchRepo?: IMunicipalityWatchRepository
 
   constructor(deps: NotifierDeps) {
     this.followRepo = deps.followRepo
@@ -77,6 +82,7 @@ export class RouteAnnouncementNotifier {
     this.routeOrderLookup = deps.routeOrderLookup
     this.deliveryStore = deps.deliveryStore
     this.dueForServiceLookup = deps.dueForServiceLookup
+    this.watchRepo = deps.watchRepo
   }
 
   async notifyFollowersOfNewRoute(routeOrderId: string): Promise<void> {
@@ -91,22 +97,47 @@ export class RouteAnnouncementNotifier {
       return
     }
 
+    // 1. Fetch followers
     const followers = await this.followRepo.findFollowersInMunicipality(
       routeOrder.provider.id,
       routeOrder.municipality
     )
 
-    if (followers.length === 0) {
-      logger.info("RouteAnnouncementNotifier: no followers in municipality", {
+    // 2. Fetch watchers (if watchRepo available)
+    let watchers: FollowerInfo[] = []
+    if (this.watchRepo) {
+      try {
+        const serviceNames = routeOrder.services.map((s) => s.name)
+        watchers = await this.watchRepo.findWatchersForAnnouncement(
+          routeOrder.municipality,
+          serviceNames
+        )
+      } catch (error) {
+        logger.error(
+          "RouteAnnouncementNotifier: watch lookup failed, skipping watchers",
+          error instanceof Error ? error : new Error(String(error))
+        )
+        // Continue with followers only
+      }
+    }
+
+    // Build set of follower customer IDs for dedup
+    const followerIds = new Set(followers.map((f) => f.userId))
+
+    // Filter watchers: remove anyone who is also a follower
+    const uniqueWatchers = watchers.filter((w) => !followerIds.has(w.userId))
+
+    if (followers.length === 0 && uniqueWatchers.length === 0) {
+      logger.info("RouteAnnouncementNotifier: no followers or watchers", {
         routeOrderId,
         municipality: routeOrder.municipality,
       })
       return
     }
 
-    // Batch-fetch overdue horses for all followers (if lookup available)
+    // 3. Batch-fetch overdue horses for followers (if lookup available)
     let overdueByCustomer: Map<string, OverdueHorseInfo[]> | undefined
-    if (this.dueForServiceLookup) {
+    if (this.dueForServiceLookup && followers.length > 0) {
       try {
         const customerIds = followers.map((f) => f.userId)
         overdueByCustomer =
@@ -116,31 +147,24 @@ export class RouteAnnouncementNotifier {
           "RouteAnnouncementNotifier: due-for-service lookup failed, falling back to standard",
           error instanceof Error ? error : new Error(String(error))
         )
-        // Fall through: overdueByCustomer remains undefined -> all get standard
       }
     }
 
+    const serviceNames = routeOrder.services.map((s) => s.name).join(", ")
+    const dateStr = formatDateRange(routeOrder.dateFrom, routeOrder.dateTo)
     let notified = 0
     let skipped = 0
 
+    // 4. Notify followers (existing logic)
     for (const follower of followers) {
-      // Dedup check: already notified for this route order?
-      const alreadyDelivered = await this.deliveryStore.exists(
-        routeOrderId,
-        follower.userId,
-        "in_app"
-      )
-      if (alreadyDelivered) {
+      const wasDelivered = await this.deliveryStore.exists(routeOrderId, follower.userId, "in_app")
+      if (wasDelivered) {
         skipped++
         continue
       }
 
-      const serviceNames = routeOrder.services.map(s => s.name).join(", ")
-      const dateStr = formatDateRange(routeOrder.dateFrom, routeOrder.dateTo)
-
-      // Check for overdue horses for this follower
       const overdueHorses = overdueByCustomer?.get(follower.userId)
-      const topOverdue = overdueHorses?.[0] // most overdue (pre-sorted)
+      const topOverdue = overdueHorses?.[0]
 
       let message: string
       let notificationType: NotificationTypeValue
@@ -175,7 +199,6 @@ export class RouteAnnouncementNotifier {
         emailSubject = `Ny ruttannons i ${routeOrder.municipality} - ${routeOrder.provider.businessName}`
       }
 
-      // In-app notification
       await this.notificationService.createAsync({
         userId: follower.userId,
         type: notificationType,
@@ -185,7 +208,6 @@ export class RouteAnnouncementNotifier {
       })
       await this.deliveryStore.create(routeOrderId, follower.userId, "in_app")
 
-      // Email (fire-and-forget, errors don't block)
       try {
         const { html, text } = routeAnnouncementEmail({
           firstName: follower.firstName,
@@ -197,16 +219,61 @@ export class RouteAnnouncementNotifier {
           overdueHorse: overdueForEmail,
         })
 
-        await this.emailService.send({
-          to: follower.email,
-          subject: emailSubject,
-          html,
-          text,
-        })
+        await this.emailService.send({ to: follower.email, subject: emailSubject, html, text })
         await this.deliveryStore.create(routeOrderId, follower.userId, "email")
       } catch (error) {
         logger.error(
           "RouteAnnouncementNotifier: email failed",
+          error instanceof Error ? error : new Error(String(error))
+        )
+      }
+
+      notified++
+    }
+
+    // 5. Notify watchers (new: municipality_watch_match)
+    for (const watcher of uniqueWatchers) {
+      const wasDelivered = await this.deliveryStore.exists(routeOrderId, watcher.userId, "in_app")
+      if (wasDelivered) {
+        skipped++
+        continue
+      }
+
+      const message = `Du bevakar ${serviceNames} i ${routeOrder.municipality}. ${routeOrder.provider.businessName} har annonserat nya tider (${dateStr}).`
+
+      await this.notificationService.createAsync({
+        userId: watcher.userId,
+        type: NotificationType.MUNICIPALITY_WATCH_MATCH,
+        message,
+        linkUrl: "/customer/announcements",
+        metadata: {
+          routeOrderId,
+          providerId: routeOrder.provider.id,
+          municipality: routeOrder.municipality,
+        },
+      })
+      await this.deliveryStore.create(routeOrderId, watcher.userId, "in_app")
+
+      try {
+        const { html, text } = municipalityWatchEmail({
+          firstName: watcher.firstName,
+          businessName: routeOrder.provider.businessName,
+          municipality: routeOrder.municipality,
+          dateRange: dateStr,
+          serviceNames,
+          announcementUrl: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/customer/announcements`,
+        })
+
+        await this.emailService.send({
+          to: watcher.email,
+          subject: `Ny annons i ${routeOrder.municipality} - ${serviceNames}`,
+          html,
+          text,
+        })
+        await this.deliveryStore.create(routeOrderId, watcher.userId, "email")
+      } catch (error) {
+        logger.error(
+          "RouteAnnouncementNotifier: watcher email failed",
           error instanceof Error ? error : new Error(String(error))
         )
       }
@@ -219,6 +286,8 @@ export class RouteAnnouncementNotifier {
       municipality: routeOrder.municipality,
       notified,
       skipped,
+      followers: followers.length,
+      watchers: uniqueWatchers.length,
     })
   }
 }
@@ -230,7 +299,8 @@ function formatDateRange(from: Date, to: Date): string {
   return fromStr === toStr ? fromStr : `${fromStr} - ${toStr}`
 }
 
-// Email template
+// --- Follower email template (existing) ---
+
 interface RouteAnnouncementEmailData {
   firstName: string
   businessName: string
@@ -326,6 +396,88 @@ Se annonsering: ${data.announcementUrl}
 --
 Equinet - Din plattform för hästtjänster
 Du får detta mail för att du följer ${data.businessName}.
+`
+
+  return { html, text }
+}
+
+// --- Municipality watch email template (new: blue header) ---
+
+interface MunicipalityWatchEmailData {
+  firstName: string
+  businessName: string
+  municipality: string
+  dateRange: string
+  serviceNames: string
+  announcementUrl: string
+}
+
+function municipalityWatchEmail(data: MunicipalityWatchEmailData): { html: string; text: string } {
+  const headerBg = "#2563eb" // blue
+  const buttonBg = "#2563eb"
+
+  const baseStyles = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: ${headerBg}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; }
+    .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+    .label { color: #6b7280; }
+    .value { font-weight: 600; }
+    .button { display: inline-block; background: ${buttonBg}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  `
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Du bevakar ${e(data.serviceNames)} i ${e(data.municipality)}</h1>
+  </div>
+  <div class="content">
+    <p>Hej ${e(data.firstName)}!</p>
+    <p><strong>${e(data.businessName)}</strong> har annonserat nya tider i <strong>${e(data.municipality)}</strong>.</p>
+
+    <div class="detail-row">
+      <span class="label">Datum:</span>
+      <span class="value">${e(data.dateRange)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Tjänster:</span>
+      <span class="value">${e(data.serviceNames)}</span>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <a href="${e(data.announcementUrl)}" class="button">Se annonsering</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>Equinet - Din plattform för hästtjänster</p>
+    <p>Du får detta mail för att du bevakar ${e(data.serviceNames)} i ${e(data.municipality)}.</p>
+  </div>
+</body>
+</html>
+`
+
+  const text = `
+Du bevakar ${data.serviceNames} i ${data.municipality}
+
+Hej ${data.firstName}!
+
+${data.businessName} har annonserat nya tider i ${data.municipality}.
+
+Datum: ${data.dateRange}
+Tjänster: ${data.serviceNames}
+
+Se annonsering: ${data.announcementUrl}
+
+--
+Equinet - Din plattform för hästtjänster
+Du får detta mail för att du bevakar ${data.serviceNames} i ${data.municipality}.
 `
 
   return { html, text }

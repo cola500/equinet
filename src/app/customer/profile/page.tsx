@@ -11,6 +11,8 @@ import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import Link from "next/link"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { MunicipalityWatchCard } from "@/components/municipality-watch/MunicipalityWatchCard"
 
 interface Profile {
   id: string
@@ -29,6 +31,7 @@ interface Profile {
 export default function CustomerProfilePage() {
   const router = useRouter()
   const { isLoading, isCustomer } = useAuth()
+  const municipalityWatchEnabled = useFeatureFlag("municipality_watch")
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
@@ -397,6 +400,13 @@ export default function CustomerProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Municipality Watch */}
+        {municipalityWatchEnabled && (
+          <div className="max-w-2xl mt-6">
+            <MunicipalityWatchCard />
+          </div>
+        )}
 
         {/* Data Export Link */}
         <div className="max-w-2xl mt-6">
