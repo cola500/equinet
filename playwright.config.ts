@@ -111,6 +111,7 @@ export default defineConfig({
         FEATURE_OFFLINE_MODE: 'true',
         FEATURE_FOLLOW_PROVIDER: 'true',
         FEATURE_DUE_FOR_SERVICE: 'true',
+        FEATURE_MUNICIPALITY_WATCH: 'true',
       },
     },
     ...(process.env.OFFLINE_E2E === 'true'

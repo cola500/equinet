@@ -1,5 +1,6 @@
-import { Redis } from "@upstash/redis"
-import { getRuntimeSetting, setRuntimeSetting, deleteRuntimeSetting } from "./settings/runtime-settings"
+import { logger } from "./logger"
+import type { IFeatureFlagRepository } from "@/infrastructure/persistence/feature-flag"
+import { featureFlagRepository as defaultRepository } from "@/infrastructure/persistence/feature-flag"
 
 export interface FeatureFlag {
   key: string
@@ -75,85 +76,59 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Kunder kan följa leverantörer och få notiser vid nya rutt-annonser",
     defaultEnabled: false,
   },
+  municipality_watch: {
+    key: "municipality_watch",
+    label: "Bevaka kommun",
+    description: "Kunder kan bevaka kommun + tjänstetyp och få notiser vid nya rutt-annonser",
+    defaultEnabled: false,
+  },
 }
 
-const REDIS_PREFIX = "feature_flag:"
+// --- Repository + Cache ---
 
-let redis: Redis | null = null
+const CACHE_TTL_MS = 30_000 // 30 seconds
 
-function getRedis(): Redis | null {
-  if (
-    !redis &&
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    })
-  }
-  return redis
+let repository: IFeatureFlagRepository | null = null
+let cache: { data: Record<string, boolean>; timestamp: number } | null = null
+
+function getRepository(): IFeatureFlagRepository {
+  return repository ?? defaultRepository
 }
 
-/**
- * Set a feature flag override.
- * When Redis is configured: writes to Redis only (in-memory is useless in serverless).
- * When Redis is NOT configured (local dev): writes to in-memory fallback.
- * Redis errors are propagated so the admin UI can show the failure.
- */
-export async function setFeatureFlagOverride(
-  key: string,
-  value: string
-): Promise<void> {
-  const r = getRedis()
-  if (r) {
-    await r.set(`${REDIS_PREFIX}${key}`, value)
-    return
-  }
-
-  // Local dev fallback (no Redis configured)
-  setRuntimeSetting(`feature_${key}`, value)
+function invalidateCache(): void {
+  cache = null
 }
 
-/**
- * Remove a feature flag override.
- * When Redis is configured: deletes from Redis only.
- * When Redis is NOT configured (local dev): deletes from in-memory.
- * Redis errors are propagated so the admin UI can show the failure.
- */
-export async function removeFeatureFlagOverride(key: string): Promise<void> {
-  const r = getRedis()
-  if (r) {
-    await r.del(`${REDIS_PREFIX}${key}`)
-    return
-  }
-
-  // Local dev fallback
-  deleteRuntimeSetting(`feature_${key}`)
+function isCacheValid(): boolean {
+  return cache !== null && Date.now() - cache.timestamp < CACHE_TTL_MS
 }
 
 /**
  * Get all feature flags with their current enabled state.
- * Reads from Redis in production (single mget call), falls back to in-memory.
  *
- * Priority: env variable > Redis/runtime override > default
+ * Priority: env variable > database override > code default
+ *
+ * Caches DB results for 30s. Falls back to code defaults on DB error.
  */
 export async function getFeatureFlags(): Promise<Record<string, boolean>> {
   const keys = Object.keys(FEATURE_FLAGS)
   const result: Record<string, boolean> = {}
 
-  // Batch-fetch all overrides from Redis (single network call)
-  const redisOverrides: Record<string, string | null> = {}
-  const r = getRedis()
-  if (r) {
+  // Fetch DB overrides (with cache)
+  let dbOverrides: Record<string, boolean> = {}
+  if (isCacheValid()) {
+    dbOverrides = cache!.data
+  } else {
     try {
-      const redisKeys = keys.map((k) => `${REDIS_PREFIX}${k}`)
-      const values = await r.mget<(string | null)[]>(...redisKeys)
-      keys.forEach((k, i) => {
-        redisOverrides[k] = values[i]
-      })
-    } catch {
-      // Redis unavailable, fall through to in-memory/defaults
+      const repo = getRepository()
+      const flags = await repo.findAll()
+      for (const flag of flags) {
+        dbOverrides[flag.key] = flag.enabled
+      }
+      cache = { data: dbOverrides, timestamp: Date.now() }
+    } catch (error) {
+      logger.warn("Failed to fetch feature flags from database, using defaults", error as Error)
+      // Fall through -- dbOverrides stays empty, we use code defaults
     }
   }
 
@@ -168,21 +143,13 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
       continue
     }
 
-    // 2. Redis override (production)
-    const redisValue = redisOverrides[key]
-    if (redisValue !== null && redisValue !== undefined) {
-      result[key] = String(redisValue) === "true"
+    // 2. Database override
+    if (key in dbOverrides) {
+      result[key] = dbOverrides[key]
       continue
     }
 
-    // 3. In-memory runtime (dev fallback)
-    const runtimeValue = getRuntimeSetting(`feature_${key}`)
-    if (runtimeValue !== undefined) {
-      result[key] = runtimeValue === "true"
-      continue
-    }
-
-    // 4. Default
+    // 3. Code default
     result[key] = flag.defaultEnabled
   }
 
@@ -191,12 +158,47 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
 
 /**
  * Check if a specific feature flag is enabled.
- * Delegates to getFeatureFlags for a single code path.
  */
 export async function isFeatureEnabled(key: string): Promise<boolean> {
   if (!FEATURE_FLAGS[key]) return false
   const flags = await getFeatureFlags()
   return flags[key] ?? false
+}
+
+/**
+ * Set a feature flag override in the database.
+ * Invalidates cache so the change is visible immediately.
+ * Throws a descriptive error on DB failure.
+ */
+export async function setFeatureFlagOverride(
+  key: string,
+  value: string
+): Promise<void> {
+  try {
+    const repo = getRepository()
+    await repo.upsert(key, value === "true")
+    invalidateCache()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "okänt fel"
+    throw new Error(`Kunde inte uppdatera flaggan ${key}: ${message}`)
+  }
+}
+
+/**
+ * Remove a feature flag override (resets to code default).
+ * Writes the default value to the database to ensure consistency.
+ */
+export async function removeFeatureFlagOverride(key: string): Promise<void> {
+  const flag = FEATURE_FLAGS[key]
+  const defaultValue = flag?.defaultEnabled ?? false
+  try {
+    const repo = getRepository()
+    await repo.upsert(key, defaultValue)
+    invalidateCache()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "okänt fel"
+    throw new Error(`Kunde inte uppdatera flaggan ${key}: ${message}`)
+  }
 }
 
 /**
@@ -206,8 +208,13 @@ export function getFeatureFlagDefinitions(): FeatureFlag[] {
   return Object.values(FEATURE_FLAGS)
 }
 
-/** Reset cached Redis instance (test helper only) */
-export function _resetRedisForTesting(): void {
-  redis = null
+/** Set repository for testing (replaces the default Prisma repository) */
+export function _setRepositoryForTesting(repo: IFeatureFlagRepository | null): void {
+  repository = repo
+  invalidateCache()
 }
 
+/** Backward-compatible alias for _setRepositoryForTesting(null) */
+export function _resetRedisForTesting(): void {
+  _setRepositoryForTesting(null)
+}

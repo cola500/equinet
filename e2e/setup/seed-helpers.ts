@@ -390,6 +390,14 @@ export async function cleanupCustomerIntervals(): Promise<void> {
  * Clean up Follow-related data for the seed customer.
  * Separate from cleanupSpecData since Follow records are not tagged.
  */
+export async function cleanupMunicipalityWatchData(): Promise<void> {
+  const base = await getBaseEntities()
+
+  await prisma.municipalityWatch.deleteMany({
+    where: { customerId: base.customerId },
+  })
+}
+
 export async function cleanupFollowData(): Promise<void> {
   const base = await getBaseEntities()
 

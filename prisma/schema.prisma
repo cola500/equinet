@@ -64,6 +64,7 @@ model User {
   follows                   Follow[]
   pushSubscriptions         PushSubscription[]
   notificationDeliveries    NotificationDelivery[]
+  municipalityWatches       MunicipalityWatch[]
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
@@ -757,4 +758,28 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// Feature flags stored in database (replaces Redis)
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+  createdAt DateTime @default(now())
+}
+
+// Municipality watch: customer watches a municipality + service type for notifications
+model MunicipalityWatch {
+  id              String   @id @default(uuid())
+  customerId      String
+  customer        User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  municipality    String
+  serviceTypeName String   // Free text service type, e.g. "Hovslagning"
+  createdAt       DateTime @default(now())
+
+  @@unique([customerId, municipality, serviceTypeName])
+  @@index([municipality, serviceTypeName])
+  @@index([customerId])
 }

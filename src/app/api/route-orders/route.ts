@@ -289,13 +289,17 @@ async function handleProviderAnnouncement(body: any, session: any) {
     }
   })
 
-  // Fire-and-forget: notify followers of new route announcement
-  if (await isFeatureEnabled("follow_provider")) {
+  // Fire-and-forget: notify followers and/or municipality watchers
+  const [followEnabled, watchEnabled] = await Promise.all([
+    isFeatureEnabled("follow_provider"),
+    isFeatureEnabled("municipality_watch"),
+  ])
+  if (followEnabled || watchEnabled) {
     createRouteAnnouncementNotifier()
       .then((notifier) => notifier.notifyFollowersOfNewRoute(announcement.id))
       .catch((err) =>
         logger.error(
-          "Failed to notify followers",
+          "Failed to notify followers/watchers",
           err instanceof Error ? err : new Error(String(err))
         )
       )

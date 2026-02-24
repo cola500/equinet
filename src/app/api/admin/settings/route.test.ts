@@ -109,7 +109,7 @@ describe("GET /api/admin/settings", () => {
     expect(data.settings).toEqual({})
   })
 
-  it("returns featureFlagStates from Redis/getFeatureFlags", async () => {
+  it("returns featureFlagStates from getFeatureFlags", async () => {
     const res = await GET(makeRequest("GET"))
     const data = await res.json()
     expect(data.featureFlagStates).toEqual({
@@ -195,5 +195,34 @@ describe("PATCH /api/admin/settings", () => {
     expect(res.status).toBe(200)
     expect(setFeatureFlagOverride).not.toHaveBeenCalled()
     expect(getRuntimeSetting("disable_emails")).toBe("true")
+  })
+
+  it("returns 503 with descriptive message when setFeatureFlagOverride fails", async () => {
+    vi.mocked(setFeatureFlagOverride).mockRejectedValueOnce(
+      new Error("Kunde inte uppdatera flaggan voice_logging: Connection refused")
+    )
+
+    const res = await PATCH(
+      makeRequest("PATCH", { key: "feature_voice_logging", value: "true" })
+    )
+    expect(res.status).toBe(503)
+    const data = await res.json()
+    expect(data.error).toContain("Kunde inte uppdatera flaggan")
+  })
+
+  it("logs context when feature flag update fails", async () => {
+    const { logger } = await import("@/lib/logger")
+    vi.mocked(setFeatureFlagOverride).mockRejectedValueOnce(
+      new Error("Kunde inte uppdatera flaggan voice_logging: DB timeout")
+    )
+
+    await PATCH(
+      makeRequest("PATCH", { key: "feature_voice_logging", value: "true" })
+    )
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("feature_voice_logging"),
+      expect.any(Error)
+    )
   })
 })

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { RouteAnnouncementNotifier, formatDaysAgo } from "./RouteAnnouncementNotifier"
 import type { IFollowRepository, FollowerInfo } from "@/infrastructure/persistence/follow/IFollowRepository"
+import type { IMunicipalityWatchRepository } from "@/infrastructure/persistence/municipality-watch/IMunicipalityWatchRepository"
 import type { DueForServiceLookup } from "@/domain/due-for-service/DueForServiceLookup"
 
 // Mock dependencies
@@ -11,6 +12,14 @@ const mockFollowRepo: IFollowRepository = {
   findByCustomerIdWithProvider: vi.fn(),
   findFollowersInMunicipality: vi.fn(),
   countByProvider: vi.fn(),
+}
+
+const mockWatchRepo: IMunicipalityWatchRepository = {
+  create: vi.fn(),
+  delete: vi.fn(),
+  findByCustomerId: vi.fn(),
+  countByCustomerId: vi.fn(),
+  findWatchersForAnnouncement: vi.fn().mockResolvedValue([]),
 }
 
 const mockNotificationService = {
@@ -34,7 +43,10 @@ const mockDueForServiceLookup: DueForServiceLookup = {
   getOverdueHorsesForCustomers: vi.fn().mockResolvedValue(new Map()),
 }
 
-function createNotifier(opts?: { dueForServiceLookup?: DueForServiceLookup }) {
+function createNotifier(opts?: {
+  dueForServiceLookup?: DueForServiceLookup
+  watchRepo?: IMunicipalityWatchRepository
+}) {
   return new RouteAnnouncementNotifier({
     followRepo: mockFollowRepo,
     notificationService: mockNotificationService as any,
@@ -42,6 +54,7 @@ function createNotifier(opts?: { dueForServiceLookup?: DueForServiceLookup }) {
     routeOrderLookup: mockRouteOrderLookup,
     deliveryStore: mockDeliveryStore,
     dueForServiceLookup: opts?.dueForServiceLookup,
+    watchRepo: opts?.watchRepo,
   })
 }
 
@@ -338,6 +351,144 @@ describe("RouteAnnouncementNotifier", () => {
         (call: any) => call[0].to === "erik@example.com"
       )
       expect(standardEmailCall![0].subject).toContain("Ny ruttannons")
+    })
+  })
+
+  // --- Municipality watch tests ---
+
+  describe("with watchRepo", () => {
+    let notifierWithWatch: RouteAnnouncementNotifier
+
+    beforeEach(() => {
+      notifierWithWatch = createNotifier({ watchRepo: mockWatchRepo })
+      // Reset defaults (clearAllMocks in parent wipes return values)
+      mockDeliveryStore.exists.mockResolvedValue(false)
+      mockEmailService.send.mockResolvedValue({ success: true })
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([])
+    })
+
+    it("should notify watchers who are not followers", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      // No followers
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([])
+      // One watcher
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([
+        { userId: "watcher-1", email: "watcher@example.com", firstName: "Watcher" },
+      ])
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      expect(mockNotificationService.createAsync).toHaveBeenCalledTimes(1)
+      expect(mockNotificationService.createAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "watcher-1",
+          type: "municipality_watch_match",
+          message: expect.stringContaining("Du bevakar"),
+        })
+      )
+    })
+
+    it("should use watcher email template with blue header", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([])
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([
+        { userId: "watcher-1", email: "watcher@example.com", firstName: "Watcher" },
+      ])
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      const emailCall = mockEmailService.send.mock.calls[0][0]
+      expect(emailCall.html).toContain("#2563eb") // blue
+      expect(emailCall.html).toContain("Du bevakar")
+    })
+
+    it("should prefer follower notification when customer is both follower and watcher", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      // customer-1 is a follower
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([
+        { userId: "customer-1", email: "anna@example.com", firstName: "Anna" },
+      ])
+      // customer-1 is also a watcher
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([
+        { userId: "customer-1", email: "anna@example.com", firstName: "Anna" },
+      ])
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      // Should only get ONE notification (follower version), not two
+      expect(mockNotificationService.createAsync).toHaveBeenCalledTimes(1)
+      expect(mockNotificationService.createAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "route_announcement_new", // follower type, not watch type
+        })
+      )
+    })
+
+    it("should deduplicate: follower gets follower notis, watcher gets watcher notis", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([
+        { userId: "follower-1", email: "follower@example.com", firstName: "Follower" },
+      ])
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([
+        { userId: "watcher-1", email: "watcher@example.com", firstName: "Watcher" },
+      ])
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      // 2 in-app notifications
+      expect(mockNotificationService.createAsync).toHaveBeenCalledTimes(2)
+      // 2 emails
+      expect(mockEmailService.send).toHaveBeenCalledTimes(2)
+    })
+
+    it("should call findWatchersForAnnouncement with correct service names", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([])
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([])
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      expect(mockWatchRepo.findWatchersForAnnouncement).toHaveBeenCalledWith(
+        "Alingsås",
+        ["Hovslagning", "Hovvård"]
+      )
+    })
+
+    it("should not call watchRepo when municipality is null", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue({
+        ...mockRouteOrder,
+        municipality: null,
+      })
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      expect(mockWatchRepo.findWatchersForAnnouncement).not.toHaveBeenCalled()
+    })
+
+    it("should skip watch notification if dedup store says already delivered", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([])
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockResolvedValue([
+        { userId: "watcher-1", email: "watcher@example.com", firstName: "Watcher" },
+      ])
+      mockDeliveryStore.exists.mockResolvedValue(true) // already delivered
+
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      expect(mockNotificationService.createAsync).not.toHaveBeenCalled()
+    })
+
+    it("should handle watchRepo error gracefully", async () => {
+      mockRouteOrderLookup.findById.mockResolvedValue(mockRouteOrder)
+      vi.mocked(mockFollowRepo.findFollowersInMunicipality).mockResolvedValue([mockFollowers[0]])
+      vi.mocked(mockWatchRepo.findWatchersForAnnouncement).mockRejectedValue(
+        new Error("DB error")
+      )
+
+      // Should still notify followers, just skip watchers
+      await notifierWithWatch.notifyFollowersOfNewRoute("ro-1")
+
+      expect(mockNotificationService.createAsync).toHaveBeenCalledTimes(1)
     })
   })
 
