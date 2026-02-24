@@ -36,6 +36,10 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
 vi.mock("@/infrastructure/persistence/provider/ProviderRepository", () => ({
   ProviderRepository: class {
     findByUserId = mockFindByUserId
@@ -50,6 +54,8 @@ vi.mock("@/domain/voice-log/VoiceInterpretationService", () => ({
 }))
 
 import { auth } from "@/lib/auth-server"
+import { isFeatureEnabled } from "@/lib/feature-flags"
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 function makeRequest(body: any): NextRequest {
   return new NextRequest("http://localhost:3000/api/voice-log", {
@@ -62,11 +68,25 @@ function makeRequest(body: any): NextRequest {
 describe("POST /api/voice-log", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
     } as any)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockFindMany.mockResolvedValue([])
+  })
+
+  it("returns 404 when voice_logging feature flag is disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const formData = new FormData()
+    formData.append("audio", new Blob(["test"]), "test.webm")
+    const req = new NextRequest("http://localhost/api/voice-log", {
+      method: "POST",
+      body: formData,
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("voice_logging")
   })
 
   it("returns 401 when not authenticated", async () => {

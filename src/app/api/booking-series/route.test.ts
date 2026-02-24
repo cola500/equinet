@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { POST } from "./route"
 import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // Mock dependencies
 vi.mock("@/lib/auth-server", () => ({
@@ -120,6 +121,7 @@ const validBody = {
 describe("POST /api/booking-series", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue(CUSTOMER_SESSION)
     mockCreateSeries.mockResolvedValue({
       isSuccess: true,
@@ -141,6 +143,14 @@ describe("POST /api/booking-series", () => {
     vi.mocked(auth).mockResolvedValue(null as any)
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(401)
+  })
+
+  it("returns 404 when recurring_bookings feature flag is disabled", async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
+    const res = await POST(makeRequest(validBody))
+    expect(res.status).toBe(404)
+    const data = await res.json()
+    expect(data.error).toBe("Ej tillgänglig")
   })
 
   it("returns 429 when rate limited", async () => {

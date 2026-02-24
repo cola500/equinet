@@ -139,15 +139,15 @@ describe("PATCH /api/bookings/[id]/reschedule", () => {
     expect(data.error).toBe("Åtkomst nekad")
   })
 
-  it("should return 403 when feature flag is disabled", async () => {
+  it("returns 404 when self_reschedule feature flag is disabled", async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(false)
 
     const request = makeRequest(validBody)
     const response = await PATCH(request, { params: Promise.resolve({ id: "booking-1" }) })
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(404)
     const data = await response.json()
-    expect(data.error).toBe("Ombokning är inte aktiverad")
+    expect(data.error).toBe("Ej tillgänglig")
   })
 
   it("should return 429 when rate limited", async () => {

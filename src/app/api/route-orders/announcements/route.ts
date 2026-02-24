@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 /**
  * Haversine formula to calculate distance between two coordinates
@@ -49,6 +50,10 @@ function toRad(value: number): number {
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const searchParams = request.nextUrl.searchParams
 
     // Parse query parameters

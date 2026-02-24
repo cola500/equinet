@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { calculateDistance } from "@/lib/distance"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // GET /api/route-orders/available - Get available route orders for providers
 export async function GET(request: Request) {
@@ -20,6 +21,10 @@ export async function GET(request: Request) {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
 
     // Only providers can view available route orders
     if (session.user.userType !== "provider" || !session.user.providerId) {

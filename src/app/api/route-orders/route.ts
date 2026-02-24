@@ -38,6 +38,10 @@ export async function POST(request: Request) {
     // Auth handled by middleware
     const session = await auth()
 
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     // Parse request body with error handling
     let body
     try {
@@ -313,6 +317,10 @@ export async function GET(request: Request) {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
 
     // Parse query params
     const { searchParams } = new URL(request.url)

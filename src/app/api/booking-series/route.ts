@@ -68,7 +68,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 
-  // 2. Rate limit
+  // 2. Feature flag
+  if (!(await isFeatureEnabled("recurring_bookings"))) {
+    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+  }
+
+  // 3. Rate limit
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.booking(clientIp)
   if (!isAllowed) {

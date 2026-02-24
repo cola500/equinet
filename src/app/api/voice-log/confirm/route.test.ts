@@ -53,6 +53,10 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
 vi.mock("@/infrastructure/persistence/provider/ProviderRepository", () => ({
   ProviderRepository: class {
     findByUserId = mockFindByUserId
@@ -75,6 +79,8 @@ vi.mock("@/domain/booking", () => ({
 
 import { auth } from "@/lib/auth-server"
 import { rateLimiters } from "@/lib/rate-limit"
+import { isFeatureEnabled } from "@/lib/feature-flags"
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const VALID_BOOKING_ID = "a0000000-0000-4000-a000-000000000001"
 
@@ -101,6 +107,7 @@ function validBody(overrides: Record<string, unknown> = {}) {
 describe("POST /api/voice-log/confirm", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
     } as any)
@@ -115,6 +122,19 @@ describe("POST /api/voice-log/confirm", () => {
       isSuccess: true,
       isFailure: false,
     })
+  })
+
+  // --- Feature flag ---
+
+  it("returns 404 when voice_logging feature flag is disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest("http://localhost/api/voice-log/confirm", {
+      method: "POST",
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("voice_logging")
   })
 
   // --- Auth ---

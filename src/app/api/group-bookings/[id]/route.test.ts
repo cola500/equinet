@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
 import { auth } from '@/lib/auth-server'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
+
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -21,6 +24,10 @@ FUTURE_DATE_END.setDate(FUTURE_DATE_END.getDate() + 7)
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
+}))
+
+vi.mock('@/lib/feature-flags', () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -77,6 +84,17 @@ const makeParams = (id: string) => Promise.resolve({ id })
 describe('GET /api/group-bookings/[id]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('returns 404 when group_bookings feature flag is disabled', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.creator, userType: 'customer' },
+    } as any)
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest('http://localhost/api/group-bookings/gb-1')
+    const res = await GET(req, { params: makeParams('gb-1') })
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should return group booking details for a participant', async () => {
@@ -141,6 +159,20 @@ describe('GET /api/group-bookings/[id]', () => {
 describe('PUT /api/group-bookings/[id]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('returns 404 when group_bookings feature flag is disabled', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.creator, userType: 'customer' },
+    } as any)
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest('http://localhost/api/group-bookings/gb-1', {
+      method: 'PUT',
+      body: JSON.stringify({}),
+    })
+    const res = await PUT(req, { params: makeParams('gb-1') })
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should allow creator to update the group booking', async () => {

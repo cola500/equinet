@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
@@ -30,6 +31,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     const session = await auth()
+
+    if (!(await isFeatureEnabled("group_bookings"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const { id } = await params
 
     const service = createGroupBookingService()
@@ -59,6 +65,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
+
+    if (!(await isFeatureEnabled("group_bookings"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const { id } = await params
 
     // Parse JSON

@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
 import { auth } from '@/lib/auth-server'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
+
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -18,6 +21,10 @@ FUTURE_DATE_END.setDate(FUTURE_DATE_END.getDate() + 7)
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
+}))
+
+vi.mock('@/lib/feature-flags', () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -40,6 +47,18 @@ vi.mock('@/domain/group-booking/GroupBookingService', () => ({
 describe('POST /api/group-bookings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
+  })
+
+  it('returns 404 when group_bookings feature flag is disabled', async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest('http://localhost/api/group-bookings', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should create a group booking request for authenticated customer', async () => {
@@ -237,6 +256,15 @@ describe('POST /api/group-bookings', () => {
 describe('GET /api/group-bookings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
+  })
+
+  it('returns 404 when group_bookings feature flag is disabled', async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest('http://localhost/api/group-bookings')
+    const res = await GET(req)
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should return group bookings for authenticated customer (created + joined)', async () => {
