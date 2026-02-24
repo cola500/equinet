@@ -193,6 +193,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Per-service override map**: När override-tabell utvidgas med `serviceId`, byt Map-nyckel från `horseId` till `` `${horseId}:${serviceId}` `` i ALLA konsumenter (DueForServiceService, DueForServiceLookup, provider due-for-service route, ReminderService).
 - **Kanonisk distance-modul**: `src/lib/geo/distance.ts` ar enda kallan for Haversine-berakningar. Importera `calculateDistance` och `filterByDistance` darifran -- duplicera ALDRIG i API routes.
 - **Error mapper per doman**: `domain/X/mapXErrorToStatus.ts` mappar domanfel till HTTP-statuskoder. Importeras av alla routes i domanen. Befintliga: horse, auth, group-booking, review, customer-review.
+- **Client-safe modulseparation**: Nar en server-only modul (med Prisma) exporterar metadata som behövs i `"use client"`-komponenter, extrahera till separat fil utan server-beroenden. Mönster: `feature-flag-definitions.ts` (klient-safe) + `feature-flags.ts` (server-only, re-exporterar). Next.js bundler respekterar inte runtime-gränsar -- allt importerbart KOMMER att bundlas.
 
 ---
 
