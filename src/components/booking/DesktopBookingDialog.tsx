@@ -3,18 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -23,71 +13,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
-import { format } from "date-fns"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import type {
-  BookingFormState,
-  FlexibleFormState,
-  CustomerHorse,
-  SelectedService,
-} from "@/hooks/useBookingFlow"
+import { useBookingFlowContext } from "./BookingFlowContext"
+import { HorseSelector } from "./HorseSelector"
+import { RecurringSection } from "./RecurringSection"
+import { FlexibleBookingForm } from "./FlexibleBookingForm"
+import { BookingSummaryCard } from "./BookingSummaryCard"
 
-interface NearbyRoute {
-  id: string
-  dateFrom: string
-  dateTo: string
-}
+export function DesktopBookingDialog() {
+  const {
+    isOpen,
+    onOpenChange,
+    selectedService,
+    isFlexibleBooking,
+    setIsFlexibleBooking,
+    bookingForm,
+    canSubmit,
+    onSlotSelect,
+    onSubmit,
+    providerId,
+    customerLocation,
+    nearbyRoute,
+  } = useBookingFlowContext()
 
-interface DesktopBookingDialogProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  selectedService: SelectedService | null
-  isFlexibleBooking: boolean
-  setIsFlexibleBooking: (v: boolean) => void
-  bookingForm: BookingFormState
-  setBookingForm: (fn: BookingFormState | ((prev: BookingFormState) => BookingFormState)) => void
-  flexibleForm: FlexibleFormState
-  setFlexibleForm: (fn: FlexibleFormState | ((prev: FlexibleFormState) => FlexibleFormState)) => void
-  customerHorses: CustomerHorse[]
-  providerId: string
-  customerLocation?: { latitude: number; longitude: number }
-  nearbyRoute: NearbyRoute | null
-  canSubmit: boolean
-  onSlotSelect: (date: string, startTime: string, endTime: string) => void
-  onSubmit: (e?: React.FormEvent) => void
-  isRecurring: boolean
-  setIsRecurring: (v: boolean) => void
-  intervalWeeks: number
-  setIntervalWeeks: (v: number) => void
-  totalOccurrences: number
-  setTotalOccurrences: (v: number) => void
-}
-
-export function DesktopBookingDialog({
-  isOpen,
-  onOpenChange,
-  selectedService,
-  isFlexibleBooking,
-  setIsFlexibleBooking,
-  bookingForm,
-  setBookingForm,
-  flexibleForm,
-  setFlexibleForm,
-  customerHorses,
-  providerId,
-  customerLocation,
-  nearbyRoute,
-  canSubmit,
-  onSlotSelect,
-  onSubmit,
-  isRecurring,
-  setIsRecurring,
-  intervalWeeks,
-  setIntervalWeeks,
-  totalOccurrences,
-  setTotalOccurrences,
-}: DesktopBookingDialogProps) {
-  const recurringEnabled = useFeatureFlag("recurring_bookings")
   const [showSummary, setShowSummary] = useState(false)
 
   if (!selectedService) return null
@@ -112,60 +59,7 @@ export function DesktopBookingDialog({
         {/* Summary view */}
         {showSummary && (
           <div className="space-y-4">
-            <div className="rounded-lg border bg-gray-50 p-4 space-y-3">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Tjänst</p>
-                <p className="font-medium">{selectedService.name}</p>
-                <p className="text-sm text-gray-600">{selectedService.price} kr ({selectedService.durationMinutes} min)</p>
-              </div>
-              {!isFlexibleBooking && bookingForm.bookingDate && (
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Datum & tid</p>
-                  <p className="font-medium">
-                    {new Date(bookingForm.bookingDate).toLocaleDateString("sv-SE", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}{" "}
-                    kl. {bookingForm.startTime}
-                  </p>
-                </div>
-              )}
-              {isFlexibleBooking && (
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Period</p>
-                  <p className="font-medium">{flexibleForm.dateFrom} - {flexibleForm.dateTo}</p>
-                  <p className="text-sm text-gray-600">
-                    {flexibleForm.priority === "urgent" ? "Akut" : "Normal"} prioritet, {flexibleForm.numberOfHorses} häst{flexibleForm.numberOfHorses !== 1 ? "ar" : ""}
-                  </p>
-                </div>
-              )}
-              {!isFlexibleBooking && (bookingForm.horseName || bookingForm.horseId) && (
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Häst</p>
-                  <p className="font-medium">
-                    {bookingForm.horseId
-                      ? customerHorses.find(h => h.id === bookingForm.horseId)?.name || bookingForm.horseName
-                      : bookingForm.horseName}
-                  </p>
-                </div>
-              )}
-              {isRecurring && (
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Återkommande</p>
-                  <p className="font-medium">
-                    Var {intervalWeeks}:e vecka, {totalOccurrences} tillfällen
-                  </p>
-                </div>
-              )}
-              {!isFlexibleBooking && bookingForm.customerNotes && (
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Kommentarer</p>
-                  <p className="text-sm">{bookingForm.customerNotes}</p>
-                </div>
-              )}
-            </div>
+            <BookingSummaryCard />
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
@@ -313,254 +207,14 @@ export function DesktopBookingDialog({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="horse-select">Häst</Label>
-                {customerHorses.length > 0 ? (
-                  <>
-                    <Select
-                      value={bookingForm.horseId}
-                      onValueChange={(value) => {
-                        if (value === "__manual__") {
-                          setBookingForm({
-                            ...bookingForm,
-                            horseId: "",
-                            horseName: "",
-                            horseInfo: "",
-                          })
-                        } else {
-                          const horse = customerHorses.find((h) => h.id === value)
-                          setBookingForm({
-                            ...bookingForm,
-                            horseId: value,
-                            horseName: horse?.name || "",
-                            horseInfo: horse?.specialNeeds || "",
-                          })
-                        }
-                      }}
-                    >
-                      <SelectTrigger id="horse-select">
-                        <SelectValue placeholder="Välj häst..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customerHorses.map((horse) => (
-                          <SelectItem key={horse.id} value={horse.id}>
-                            {horse.name}
-                            {horse.breed && ` (${horse.breed})`}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="__manual__">
-                          Annan häst (ange manuellt)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {bookingForm.horseId && bookingForm.horseId !== "__manual__" && bookingForm.horseInfo && (
-                      <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded">
-                        {bookingForm.horseInfo}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <Input
-                    id="horseName"
-                    value={bookingForm.horseName}
-                    onChange={(e) =>
-                      setBookingForm({ ...bookingForm, horseName: e.target.value })
-                    }
-                    placeholder="Hästens namn"
-                  />
-                )}
-                {customerHorses.length > 0 && !bookingForm.horseId && (
-                  <Input
-                    id="horseName-manual"
-                    value={bookingForm.horseName}
-                    onChange={(e) =>
-                      setBookingForm({ ...bookingForm, horseName: e.target.value })
-                    }
-                    placeholder="Hästens namn"
-                  />
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customerNotes">Övriga kommentarer</Label>
-                <Textarea
-                  id="customerNotes"
-                  value={bookingForm.customerNotes}
-                  onChange={(e) =>
-                    setBookingForm({
-                      ...bookingForm,
-                      customerNotes: e.target.value,
-                    })
-                  }
-                  rows={2}
-                />
-              </div>
-
-              {/* Recurring booking section */}
-              {recurringEnabled && (
-                <div className="space-y-3 border-t pt-3">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="recurring-toggle" className="text-sm font-medium">
-                        Gör detta återkommande
-                      </Label>
-                      <p className="text-xs text-gray-500">
-                        Boka samma tid med regelbundna intervall
-                      </p>
-                    </div>
-                    <Switch
-                      id="recurring-toggle"
-                      checked={isRecurring}
-                      onCheckedChange={setIsRecurring}
-                    />
-                  </div>
-
-                  {isRecurring && (
-                    <div className="space-y-3 pl-1">
-                      <div className="space-y-1">
-                        <Label className="text-sm">Intervall</Label>
-                        <Select
-                          value={String(intervalWeeks)}
-                          onValueChange={(v) => setIntervalWeeks(parseInt(v, 10))}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">Varje vecka</SelectItem>
-                            <SelectItem value="2">Varannan vecka</SelectItem>
-                            <SelectItem value="4">Var 4:e vecka</SelectItem>
-                            <SelectItem value="6">Var 6:e vecka</SelectItem>
-                            <SelectItem value="8">Var 8:e vecka</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-sm">Antal tillfällen</Label>
-                        <Select
-                          value={String(totalOccurrences)}
-                          onValueChange={(v) => setTotalOccurrences(parseInt(v, 10))}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="2">2 tillfällen</SelectItem>
-                            <SelectItem value="4">4 tillfällen</SelectItem>
-                            <SelectItem value="6">6 tillfällen</SelectItem>
-                            <SelectItem value="8">8 tillfällen</SelectItem>
-                            <SelectItem value="12">12 tillfällen</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              <HorseSelector />
+              <RecurringSection />
             </>
           )}
 
           {/* Flexible Booking Fields */}
           {isFlexibleBooking && (
-            <div data-testid="flexible-booking-section">
-              <div className="space-y-2">
-                <Label htmlFor="dateFrom">Från datum *</Label>
-                <Input
-                  id="dateFrom"
-                  type="date"
-                  value={flexibleForm.dateFrom}
-                  onChange={(e) =>
-                    setFlexibleForm({ ...flexibleForm, dateFrom: e.target.value })
-                  }
-                  min={format(new Date(), "yyyy-MM-dd")}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dateTo">Till datum *</Label>
-                <Input
-                  id="dateTo"
-                  type="date"
-                  value={flexibleForm.dateTo}
-                  onChange={(e) =>
-                    setFlexibleForm({ ...flexibleForm, dateTo: e.target.value })
-                  }
-                  min={flexibleForm.dateFrom}
-                  required
-                />
-                <p className="text-xs text-gray-600">
-                  Leverantören kan besöka dig när som helst under denna period
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Prioritet *</Label>
-                <RadioGroup
-                  value={flexibleForm.priority}
-                  onValueChange={(value) =>
-                    setFlexibleForm({ ...flexibleForm, priority: value })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="normal" id="priority-normal" data-testid="priority-normal" />
-                    <Label htmlFor="priority-normal" className="font-normal cursor-pointer">
-                      Normal - Inom den valda perioden
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="urgent" id="priority-urgent" data-testid="priority-urgent" />
-                    <Label htmlFor="priority-urgent" className="font-normal cursor-pointer">
-                      Akut - Inom 48 timmar
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="numberOfHorses">Antal hästar *</Label>
-                <Input
-                  id="numberOfHorses"
-                  type="number"
-                  min="1"
-                  value={flexibleForm.numberOfHorses}
-                  onChange={(e) =>
-                    setFlexibleForm({ ...flexibleForm, numberOfHorses: parseInt(e.target.value) || 1 })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">Kontakttelefon *</Label>
-                <Input
-                  id="contactPhone"
-                  type="tel"
-                  value={flexibleForm.contactPhone}
-                  onChange={(e) =>
-                    setFlexibleForm({ ...flexibleForm, contactPhone: e.target.value })
-                  }
-                  placeholder="070-123 45 67"
-                  required
-                />
-                <p className="text-xs text-gray-600">
-                  Leverantören kontaktar dig på detta nummer för att bekräfta tid
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="specialInstructions">Särskilda instruktioner</Label>
-                <Textarea
-                  id="specialInstructions"
-                  value={flexibleForm.specialInstructions}
-                  onChange={(e) =>
-                    setFlexibleForm({ ...flexibleForm, specialInstructions: e.target.value })
-                  }
-                  rows={2}
-                  placeholder="T.ex. portkod, parkering, hästens behov..."
-                />
-              </div>
-            </div>
+            <FlexibleBookingForm />
           )}
 
           <div className="flex justify-end gap-2 pt-4">

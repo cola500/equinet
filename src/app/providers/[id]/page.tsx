@@ -19,6 +19,7 @@ import { ReviewList } from "@/components/review/ReviewList"
 import { StarRating } from "@/components/review/StarRating"
 import { MobileBookingFlow } from "@/components/booking/MobileBookingFlow"
 import { DesktopBookingDialog } from "@/components/booking/DesktopBookingDialog"
+import { BookingFlowProvider, type BookingFlowContextValue } from "@/components/booking/BookingFlowContext"
 import { SeriesResultDialog } from "@/components/booking/SeriesResultDialog"
 import { FollowButton } from "@/components/follow/FollowButton"
 import { useFollowProvider } from "@/hooks/useFollowProvider"
@@ -236,30 +237,39 @@ export default function ProviderDetailPage() {
     return null
   }
 
-  // Shared booking dialog props
-  const bookingDialogProps = {
+  // Booking flow context value (replaces 22-prop drilling)
+  const bookingFlowValue: BookingFlowContextValue = {
+    // State from hook
     isOpen: booking.isOpen,
-    onOpenChange: (open: boolean) => { if (!open) booking.close() },
     selectedService: booking.selectedService,
     isFlexibleBooking: booking.isFlexibleBooking,
-    setIsFlexibleBooking: booking.setIsFlexibleBooking,
+    step: booking.step,
     bookingForm: booking.bookingForm,
-    setBookingForm: booking.setBookingForm,
     flexibleForm: booking.flexibleForm,
+    canSubmit: booking.canSubmit,
+    isRecurring: booking.isRecurring,
+    intervalWeeks: booking.intervalWeeks,
+    totalOccurrences: booking.totalOccurrences,
+
+    // Setters
+    setIsFlexibleBooking: booking.setIsFlexibleBooking,
+    setStep: booking.setStep,
+    setBookingForm: booking.setBookingForm,
     setFlexibleForm: booking.setFlexibleForm,
+    setIsRecurring: booking.setIsRecurring,
+    setIntervalWeeks: booking.setIntervalWeeks,
+    setTotalOccurrences: booking.setTotalOccurrences,
+
+    // Actions
+    onSlotSelect: booking.handleSlotSelect,
+    onSubmit: booking.handleSubmitBooking,
+    onOpenChange: (open: boolean) => { if (!open) booking.close() },
+
+    // Extra context
     customerHorses,
     providerId: provider.id,
     customerLocation: customerLocation || undefined,
     nearbyRoute,
-    canSubmit: booking.canSubmit,
-    onSlotSelect: booking.handleSlotSelect,
-    onSubmit: booking.handleSubmitBooking,
-    isRecurring: booking.isRecurring,
-    setIsRecurring: booking.setIsRecurring,
-    intervalWeeks: booking.intervalWeeks,
-    setIntervalWeeks: booking.setIntervalWeeks,
-    totalOccurrences: booking.totalOccurrences,
-    setTotalOccurrences: booking.setTotalOccurrences,
   }
 
   return (
@@ -520,15 +530,9 @@ export default function ProviderDetailPage() {
       </Dialog>
 
       {/* Booking: Mobile Drawer or Desktop Dialog */}
-      {isMobile ? (
-        <MobileBookingFlow
-          {...bookingDialogProps}
-          step={booking.step}
-          setStep={booking.setStep}
-        />
-      ) : (
-        <DesktopBookingDialog {...bookingDialogProps} />
-      )}
+      <BookingFlowProvider value={bookingFlowValue}>
+        {isMobile ? <MobileBookingFlow /> : <DesktopBookingDialog />}
+      </BookingFlowProvider>
 
       {/* Series Result Dialog */}
       <SeriesResultDialog
