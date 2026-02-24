@@ -8,6 +8,7 @@ import { InsightsCharts } from "@/components/provider/InsightsCharts"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 type Period = 3 | 6 | 12
 
@@ -33,6 +34,7 @@ const EMPTY_DATA: InsightsData = {
 
 export default function ProviderInsightsPage() {
   const { isLoading: authLoading, isProvider } = useAuth()
+  const businessInsightsEnabled = useFeatureFlag("business_insights")
   const [data, setData] = useState<InsightsData>(EMPTY_DATA)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +75,17 @@ export default function ProviderInsightsPage() {
     return (
       <ProviderLayout>
         <InsightsChartSkeleton />
+      </ProviderLayout>
+    )
+  }
+
+  if (!businessInsightsEnabled) {
+    return (
+      <ProviderLayout>
+        <div className="py-12 text-center">
+          <h1 className="text-2xl font-bold mb-2">Affärsinsikter</h1>
+          <p className="text-gray-600">Affärsinsikter är inte tillgängliga just nu.</p>
+        </div>
       </ProviderLayout>
     )
   }

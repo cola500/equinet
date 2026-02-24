@@ -686,6 +686,72 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     })
   })
 
+  // ─── API enforcement when flags are OFF ────────────────────────
+
+  test.describe('API enforcement when flags are OFF', () => {
+
+    test('group_bookings API returns 404 when flag is OFF', async ({ page }) => {
+      await loginAsAdmin(page)
+      await setFlag(page, 'group_bookings', false)
+
+      // Login as customer for auth
+      await loginAsCustomer(page)
+      await resetRateLimit(page)
+
+      const endpoints = [
+        { method: 'GET', url: '/api/group-bookings' },
+        { method: 'POST', url: '/api/group-bookings' },
+        { method: 'GET', url: '/api/group-bookings/available' },
+      ]
+
+      for (const ep of endpoints) {
+        const response = ep.method === 'GET'
+          ? await page.request.get(ep.url)
+          : await page.request.post(ep.url, { data: {} })
+        expect(response.status(), `${ep.method} ${ep.url} should return 404`).toBe(404)
+      }
+    })
+
+    test('voice_logging API returns 404 when flag is OFF', async ({ page }) => {
+      await loginAsAdmin(page)
+      await setFlag(page, 'voice_logging', false)
+
+      await loginAsProvider(page)
+      await resetRateLimit(page)
+
+      const response = await page.request.post('/api/voice-log', {
+        data: { transcript: 'test' },
+      })
+      expect(response.status()).toBe(404)
+    })
+
+    test('route_planning API returns 404 when flag is OFF', async ({ page }) => {
+      await loginAsAdmin(page)
+      await setFlag(page, 'route_planning', false)
+
+      await loginAsProvider(page)
+      await resetRateLimit(page)
+
+      const response = await page.request.post('/api/routes', {
+        data: {},
+      })
+      expect(response.status()).toBe(404)
+    })
+
+    test('recurring_bookings API returns 404 when flag is OFF', async ({ page }) => {
+      await loginAsAdmin(page)
+      await setFlag(page, 'recurring_bookings', false)
+
+      await loginAsCustomer(page)
+      await resetRateLimit(page)
+
+      const response = await page.request.post('/api/booking-series', {
+        data: {},
+      })
+      expect(response.status()).toBe(404)
+    })
+  })
+
   // ─── Cleanup: restore defaults ──────────────────────────────────
 
   test('cleanup: restore all flags to defaults', async ({ page }) => {

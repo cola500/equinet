@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth-server"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // Validation schema for PATCH updates
 const updateStatusSchema = z.object({
@@ -19,6 +20,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const { id } = await params
 
     const routeOrder = await prisma.routeOrder.findUnique({
@@ -99,6 +104,11 @@ export async function PATCH(
 ) {
   try {
     const session = await auth()
+
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const { id } = await params
 
     // Parse request body

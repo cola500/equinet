@@ -4,6 +4,9 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
 import { Result } from "@/domain/shared"
+import { isFeatureEnabled } from "@/lib/feature-flags"
+
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   providerUser: "11111111-1111-4111-8111-111111111111",
@@ -37,11 +40,26 @@ vi.mock("@/domain/group-booking/GroupBookingService", () => ({
   createGroupBookingService: () => mockService,
 }))
 
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
 const makeParams = (id: string) => Promise.resolve({ id })
 
 describe("POST /api/group-bookings/[id]/match", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("returns 404 when group_bookings feature flag is disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest("http://localhost/api/group-bookings/gb-1/match", {
+      method: "POST",
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req, { params: Promise.resolve({ id: "gb-1" }) })
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("group_bookings")
   })
 
   it("should match provider to group booking and create bookings", async () => {

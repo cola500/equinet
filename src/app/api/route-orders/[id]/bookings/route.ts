@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 /**
  * GET /api/route-orders/[id]/bookings
@@ -16,6 +17,10 @@ export async function GET(
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
 
     // Only providers can access this endpoint
     if (session.user.userType !== "provider") {

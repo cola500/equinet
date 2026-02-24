@@ -11,6 +11,7 @@ import {
 } from "@/domain/voice-log/VoiceInterpretationService"
 import { parseVocabulary, formatForPrompt } from "@/domain/voice-log/VocabularyService"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 const interpretSchema = z.object({
   transcript: z.string().min(1, "Transkribering krävs").max(5000, "Transkribering för lång"),
@@ -20,6 +21,11 @@ const interpretSchema = z.object({
 // POST /api/voice-log - Interpret a voice transcript
 export async function POST(request: NextRequest) {
   try {
+    // Feature flag check
+    if (!(await isFeatureEnabled("voice_logging"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     // Rate limiting
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.ai(clientIp)

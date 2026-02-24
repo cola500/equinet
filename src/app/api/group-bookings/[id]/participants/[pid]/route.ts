@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { logger } from "@/lib/logger"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 type RouteParams = { params: Promise<{ id: string; pid: string }> }
 
@@ -10,6 +11,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
     const { id, pid } = await params
+
+    if (!(await isFeatureEnabled("group_bookings"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
 
     const service = createGroupBookingService()
     const result = await service.removeParticipant({

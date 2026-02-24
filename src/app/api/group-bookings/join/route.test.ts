@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST } from './route'
 import { auth } from '@/lib/auth-server'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
+
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -13,6 +16,10 @@ const TEST_UUIDS = {
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
+}))
+
+vi.mock('@/lib/feature-flags', () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -33,6 +40,17 @@ vi.mock('@/domain/group-booking/GroupBookingService', () => ({
 describe('POST /api/group-bookings/join', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('returns 404 when group_bookings feature flag is disabled', async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest('http://localhost/api/group-bookings/join', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should allow a user to join via invite code', async () => {

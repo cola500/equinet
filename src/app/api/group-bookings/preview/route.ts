@@ -4,9 +4,14 @@ import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 export async function GET(request: NextRequest) {
   try {
+    if (!(await isFeatureEnabled("group_bookings"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const session = await auth()
 
     // Rate limiting

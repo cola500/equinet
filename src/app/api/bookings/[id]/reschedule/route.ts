@@ -32,12 +32,8 @@ export async function PATCH(
     }
 
     // 2. Feature flag check
-    const enabled = await isFeatureEnabled("self_reschedule")
-    if (!enabled) {
-      return NextResponse.json(
-        { error: "Ombokning är inte aktiverad" },
-        { status: 403 }
-      )
+    if (!(await isFeatureEnabled("self_reschedule"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     // 3. Rate limiting

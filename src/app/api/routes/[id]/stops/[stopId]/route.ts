@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // Validation schema for updating stop
 const updateStopSchema = z.object({
@@ -16,6 +17,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; stopId: string }> }
 ) {
   try {
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     const { id: routeId, stopId } = await params
 
     // Auth handled by middleware

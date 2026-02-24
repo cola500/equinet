@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Activity, Database, Clock, Mail, Flag } from "lucide-react"
 import { InfoPopover } from "@/components/ui/info-popover"
 import { toast } from "sonner"
-import { FEATURE_FLAGS } from "@/lib/feature-flags"
+import { FEATURE_FLAGS } from "@/lib/feature-flag-definitions"
 import { FEATURE_FLAGS_CHANGED_EVENT } from "@/components/providers/FeatureFlagProvider"
 
 interface SystemData {

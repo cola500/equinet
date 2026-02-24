@@ -3,6 +3,9 @@ import { GET } from "./route"
 import { auth } from "@/lib/auth-server"
 import { NextRequest } from "next/server"
 import { Result } from "@/domain/shared"
+import { isFeatureEnabled } from "@/lib/feature-flags"
+
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   customer: "11111111-1111-4111-8111-111111111111",
@@ -17,6 +20,10 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
 const mockService = {
   getPreviewByCode: vi.fn(),
 }
@@ -28,6 +35,14 @@ vi.mock("@/domain/group-booking/GroupBookingService", () => ({
 describe("GET /api/group-bookings/preview", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("returns 404 when group_bookings feature flag is disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+    const req = new NextRequest("http://localhost/api/group-bookings/preview?code=ABC")
+    const res = await GET(req)
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("group_bookings")
   })
 
   it("should return preview for valid invite code", async () => {

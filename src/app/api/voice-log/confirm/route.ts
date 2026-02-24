@@ -7,6 +7,7 @@ import { ProviderRepository } from "@/infrastructure/persistence/provider/Provid
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { createBookingService } from "@/domain/booking"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 import {
   parseVocabulary,
   addCorrections,
@@ -27,6 +28,11 @@ const confirmSchema = z.object({
 // POST /api/voice-log/confirm - Save interpreted voice log data
 export async function POST(request: NextRequest) {
   try {
+    // Feature flag check
+    if (!(await isFeatureEnabled("voice_logging"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     // Rate limiting
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

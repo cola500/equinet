@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -25,6 +26,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
     const { id } = await params
+
+    if (!(await isFeatureEnabled("group_bookings"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json(

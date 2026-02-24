@@ -2,12 +2,17 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // GET /api/route-orders/my-orders - Get customer's own route orders
 export async function GET() {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
 
     // Only customers can view their route orders
     if (session.user.userType !== "customer") {

@@ -3,9 +3,14 @@ import { GET } from "./route"
 import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 vi.mock("@/lib/auth-server", () => ({
   auth: vi.fn(),
+}))
+
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -75,6 +80,7 @@ const mockSeries = {
 describe("GET /api/booking-series/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue(CUSTOMER_SESSION)
     vi.mocked(prisma.bookingSeries.findUnique).mockResolvedValue(mockSeries as any)
   })
@@ -83,6 +89,14 @@ describe("GET /api/booking-series/[id]", () => {
     vi.mocked(auth).mockResolvedValue(null as any)
     const res = await GET(makeRequest("series-1"), { params: Promise.resolve({ id: "series-1" }) })
     expect(res.status).toBe(401)
+  })
+
+  it("returns 404 when recurring_bookings feature flag is disabled", async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
+    const res = await GET(makeRequest("series-1"), { params: Promise.resolve({ id: "series-1" }) })
+    expect(res.status).toBe(404)
+    const data = await res.json()
+    expect(data.error).toBe("Ej tillgänglig")
   })
 
   it("returns 429 when rate limited", async () => {

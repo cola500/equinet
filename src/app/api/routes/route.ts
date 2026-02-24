@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { calculateDistance } from "@/lib/distance"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // Validation schema for creating route
 const createRouteSchema = z.object({
@@ -16,6 +17,10 @@ const createRouteSchema = z.object({
 // POST /api/routes - Create new route
 export async function POST(request: Request) {
   try {
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
     // Auth handled by middleware - get session
     const session = await auth()
 
