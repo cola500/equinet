@@ -4,23 +4,15 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MunicipalitySelect } from "@/components/ui/municipality-select"
-import { Input } from "@/components/ui/input"
+import { ServiceTypeSelect } from "@/components/ui/service-type-select"
 import { Label } from "@/components/ui/label"
-import { useMunicipalityWatches, useServiceTypes } from "@/hooks/useMunicipalityWatches"
+import { useMunicipalityWatches } from "@/hooks/useMunicipalityWatches"
 import { X } from "lucide-react"
 
 export function MunicipalityWatchCard() {
   const { watches, isLoading, isSubmitting, addWatch, removeWatch } = useMunicipalityWatches()
-  const { serviceTypes } = useServiceTypes()
   const [municipality, setMunicipality] = useState("")
   const [serviceTypeName, setServiceTypeName] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-
-  const filteredSuggestions = serviceTypeName.length >= 1
-    ? serviceTypes.filter((s) =>
-        s.toLowerCase().includes(serviceTypeName.toLowerCase())
-      )
-    : []
 
   const handleAdd = async () => {
     if (!municipality || !serviceTypeName.trim()) return
@@ -64,41 +56,14 @@ export function MunicipalityWatchCard() {
               placeholder="Välj kommun..."
             />
           </div>
-          <div className="relative">
+          <div>
             <Label htmlFor="watch-service">Tjänstetyp</Label>
-            <Input
+            <ServiceTypeSelect
               id="watch-service"
               value={serviceTypeName}
-              onChange={(e) => {
-                setServiceTypeName(e.target.value)
-                setShowSuggestions(true)
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => {
-                // Delay to allow click on suggestion
-                setTimeout(() => setShowSuggestions(false), 200)
-              }}
-              placeholder="t.ex. Hovslagning"
-              autoComplete="off"
+              onChange={setServiceTypeName}
+              placeholder="Sök tjänstetyp..."
             />
-            {showSuggestions && filteredSuggestions.length > 0 && (
-              <ul className="absolute z-50 mt-1 w-full max-h-40 overflow-auto rounded-md border bg-white shadow-lg">
-                {filteredSuggestions.map((s) => (
-                  <li
-                    key={s}
-                    role="option"
-                    aria-selected={false}
-                    className="cursor-pointer px-3 py-2 text-sm hover:bg-gray-100"
-                    onMouseDown={() => {
-                      setServiceTypeName(s)
-                      setShowSuggestions(false)
-                    }}
-                  >
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
           <Button
             onClick={handleAdd}

@@ -7,7 +7,7 @@ import { cleanupMunicipalityWatchData } from './setup/seed-helpers'
  * Covers:
  * - Card visibility on customer profile
  * - Add a watch (municipality + service type)
- * - Autocomplete suggestions for service types
+ * - Combobox suggestions for service types
  * - Watch counter display
  * - Remove a watch
  * - Persistence across page reload
@@ -71,16 +71,16 @@ async function selectWatchMunicipality(page: import('@playwright/test').Page, na
 }
 
 /**
- * Type a service type name directly (no autocomplete selection).
- * Blurs the input to dismiss the suggestion dropdown (onBlur + 200ms delay).
+ * Select a service type from the watch card's ServiceTypeSelect combobox.
  */
 async function fillServiceType(page: import('@playwright/test').Page, name: string) {
   const input = page.locator('#watch-service')
   await input.clear()
-  await input.fill(name)
-  // Tab away to trigger onBlur which closes suggestions after 200ms
-  await input.press('Tab')
-  await page.waitForTimeout(400)
+  await input.fill(name.substring(0, 3))
+
+  const listbox = page.locator('#service-type-listbox')
+  await expect(listbox).toBeVisible({ timeout: 5000 })
+  await listbox.getByRole('option', { name }).click()
 }
 
 // --- Tests ---
@@ -118,30 +118,32 @@ test.describe('Municipality Watch', () => {
     await navigateToProfile(page)
 
     await selectWatchMunicipality(page, 'Göteborg')
-    await fillServiceType(page, 'Hovslagning')
+    await fillServiceType(page, 'Hovslagning Standard')
 
     await resetRateLimit(page)
     await page.getByRole('button', { name: 'Lägg till bevakning' }).click()
 
-    await expect(page.getByText('Hovslagning i Göteborg')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Hovslagning Standard i Göteborg')).toBeVisible({ timeout: 5000 })
     await expect(page.getByText('1 av 10 bevakningar')).toBeVisible()
     await expect(page.getByText('Du har inga aktiva bevakningar')).not.toBeVisible()
   })
 
   // --- Autocomplete ---
 
-  test('should show autocomplete suggestions for service types', async ({ page }) => {
+  test('should show combobox suggestions for service types', async ({ page }) => {
     await loginAsCustomer(page)
     await navigateToProfile(page)
 
     const serviceInput = page.locator('#watch-service')
     await serviceInput.fill('Hov')
 
-    // Suggestions from seed data (e.g. "Hovslagning Standard")
-    const suggestion = page.getByRole('option').filter({ hasText: /hovslagning/i })
-    await expect(suggestion.first()).toBeVisible({ timeout: 5000 })
+    const listbox = page.locator('#service-type-listbox')
+    await expect(listbox).toBeVisible({ timeout: 5000 })
 
-    await suggestion.first().click()
+    const option = listbox.getByRole('option').filter({ hasText: /hovslagning/i })
+    await expect(option.first()).toBeVisible({ timeout: 5000 })
+
+    await option.first().click()
 
     await expect(serviceInput).toHaveValue(/Hovslagning/i)
   })
@@ -156,7 +158,7 @@ test.describe('Municipality Watch', () => {
     const hasWatch = await page.getByText('av 10 bevakningar').isVisible().catch(() => false)
     if (!hasWatch) {
       await selectWatchMunicipality(page, 'Göteborg')
-      await fillServiceType(page, 'Hovslagning')
+      await fillServiceType(page, 'Hovslagning Standard')
       await resetRateLimit(page)
       await page.getByRole('button', { name: 'Lägg till bevakning' }).click()
       await expect(page.getByText('av 10 bevakningar')).toBeVisible({ timeout: 5000 })
@@ -176,10 +178,10 @@ test.describe('Municipality Watch', () => {
     await navigateToProfile(page)
 
     await selectWatchMunicipality(page, 'Malmö')
-    await fillServiceType(page, 'Tandrasp')
+    await fillServiceType(page, 'Ridlektion')
     await resetRateLimit(page)
     await page.getByRole('button', { name: 'Lägg till bevakning' }).click()
-    await expect(page.getByText('Tandrasp i Malmö')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Ridlektion i Malmö')).toBeVisible({ timeout: 5000 })
 
     // Reload and verify persistence
     await resetRateLimit(page)
@@ -187,11 +189,11 @@ test.describe('Municipality Watch', () => {
     await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
     await syncClientFlags(page)
 
-    await expect(page.getByText('Tandrasp i Malmö')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Ridlektion i Malmö')).toBeVisible({ timeout: 10000 })
 
     // Clean up
     await resetRateLimit(page)
-    await page.getByRole('button', { name: /ta bort bevakning tandrasp i malmö/i }).click()
+    await page.getByRole('button', { name: /ta bort bevakning ridlektion i malmö/i }).click()
     await expect(page.getByText('Du har inga aktiva bevakningar')).toBeVisible({ timeout: 5000 })
   })
 })
