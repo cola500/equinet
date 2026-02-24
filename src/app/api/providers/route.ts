@@ -4,38 +4,10 @@ import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { calculateBoundingBox, getMaxRadiusKm } from "@/lib/geo/bounding-box"
 import { getCachedProviders, setCachedProviders, CachedProvider } from "@/lib/cache/provider-cache"
+import { calculateDistance } from "@/lib/geo/distance"
 import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { logger } from "@/lib/logger"
-
-/**
- * Haversine formula to calculate distance between two coordinates
- * Returns distance in kilometers
- */
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371 // Earth's radius in km
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  const distance = R * c
-
-  return distance
-}
-
-function toRad(value: number): number {
-  return (value * Math.PI) / 180
-}
 
 // Enrich providers with aggregated review data
 async function enrichWithReviewStats<T extends { id: string }>(

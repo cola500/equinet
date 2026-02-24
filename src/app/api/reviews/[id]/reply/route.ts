@@ -4,24 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { ReviewService, type ReviewError } from "@/domain/review/ReviewService"
+import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
 
 const replySchema = z.object({
   reply: z.string().min(1, "Svar krävs").max(500, "Svar kan vara max 500 tecken"),
 }).strict()
-
-function mapErrorToStatus(error: ReviewError): number {
-  switch (error.type) {
-    case 'REVIEW_NOT_FOUND':
-      return 404
-    case 'UNAUTHORIZED':
-      return 403
-    case 'ALREADY_REPLIED':
-      return 409
-    default:
-      return 500
-  }
-}
 
 // POST - Add a reply to a review (provider only)
 export async function POST(
@@ -71,7 +59,7 @@ export async function POST(
     if (result.isFailure) {
       return NextResponse.json(
         { error: result.error.message },
-        { status: mapErrorToStatus(result.error) }
+        { status: mapReviewErrorToStatus(result.error) }
       )
     }
 
@@ -133,7 +121,7 @@ export async function DELETE(
     if (result.isFailure) {
       return NextResponse.json(
         { error: result.error.message },
-        { status: mapErrorToStatus(result.error) }
+        { status: mapReviewErrorToStatus(result.error) }
       )
     }
 

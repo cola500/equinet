@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
-import { calculateDistance } from "@/lib/distance"
+import { calculateDistance } from "@/lib/geo/distance"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"

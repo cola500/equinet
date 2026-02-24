@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { CustomerReviewService, type CustomerReviewError } from "@/domain/customer-review/CustomerReviewService"
+import { mapCustomerReviewErrorToStatus } from "@/domain/customer-review/mapCustomerReviewErrorToStatus"
 import { CustomerReviewRepository } from "@/infrastructure/persistence/customer-review/CustomerReviewRepository"
 
 const createCustomerReviewSchema = z.object({
@@ -11,21 +12,6 @@ const createCustomerReviewSchema = z.object({
   rating: z.number().int().min(1, "Betyg måste vara minst 1").max(5, "Betyg måste vara max 5"),
   comment: z.string().max(500, "Kommentar kan vara max 500 tecken").optional(),
 }).strict()
-
-function mapErrorToStatus(error: CustomerReviewError): number {
-  switch (error.type) {
-    case 'BOOKING_NOT_FOUND':
-      return 404
-    case 'UNAUTHORIZED':
-      return 403
-    case 'BOOKING_NOT_COMPLETED':
-      return 400
-    case 'ALREADY_REVIEWED':
-      return 409
-    default:
-      return 500
-  }
-}
 
 // POST - Create a customer review (provider only)
 export async function POST(request: NextRequest) {
@@ -87,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (result.isFailure) {
       return NextResponse.json(
         { error: result.error.message },
-        { status: mapErrorToStatus(result.error) }
+        { status: mapCustomerReviewErrorToStatus(result.error) }
       )
     }
 

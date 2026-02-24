@@ -12,7 +12,7 @@
  */
 import { ValueObject } from './base/ValueObject'
 import { Result } from './types/Result'
-import { calculateDistance } from '@/lib/distance'
+import { calculateDistance } from '@/lib/geo/distance'
 
 interface LocationProps {
   latitude: number

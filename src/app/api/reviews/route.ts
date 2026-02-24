@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { ReviewService, type ReviewError } from "@/domain/review/ReviewService"
+import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
 import { notificationService } from "@/domain/notification/NotificationService"
 
@@ -12,23 +13,6 @@ const createReviewSchema = z.object({
   rating: z.number().int().min(1, "Betyg måste vara minst 1").max(5, "Betyg måste vara max 5"),
   comment: z.string().max(500, "Kommentar kan vara max 500 tecken").optional(),
 }).strict()
-
-function mapErrorToStatus(error: ReviewError): number {
-  switch (error.type) {
-    case 'BOOKING_NOT_FOUND':
-    case 'REVIEW_NOT_FOUND':
-      return 404
-    case 'UNAUTHORIZED':
-      return 403
-    case 'BOOKING_NOT_COMPLETED':
-      return 400
-    case 'ALREADY_REVIEWED':
-    case 'ALREADY_REPLIED':
-      return 409
-    default:
-      return 500
-  }
-}
 
 // POST - Create a review for a completed booking
 export async function POST(request: NextRequest) {
@@ -96,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (result.isFailure) {
       return NextResponse.json(
         { error: result.error.message },
-        { status: mapErrorToStatus(result.error) }
+        { status: mapReviewErrorToStatus(result.error) }
       )
     }
 
