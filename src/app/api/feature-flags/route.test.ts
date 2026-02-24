@@ -41,13 +41,13 @@ describe("GET /api/feature-flags", () => {
       route_announcements: true,
       customer_insights: true,
       due_for_service: true,
-      group_bookings: false,
+      group_bookings: true,
       business_insights: true,
       self_reschedule: true,
-      recurring_bookings: false,
+      recurring_bookings: true,
       offline_mode: true,
-      follow_provider: false,
-      municipality_watch: false,
+      follow_provider: true,
+      municipality_watch: true,
     })
   })
 
