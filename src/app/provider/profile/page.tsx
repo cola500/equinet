@@ -7,50 +7,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { AvailabilitySchedule } from "@/components/provider/AvailabilitySchedule"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { InfoPopover } from "@/components/ui/info-popover"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import Link from "next/link"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-
-interface ProviderProfile {
-  id: string
-  businessName: string
-  description?: string
-  address?: string
-  city?: string
-  postalCode?: string
-  serviceArea?: string
-  latitude?: number | null
-  longitude?: number | null
-  serviceAreaKm?: number | null
-  profileImageUrl?: string | null
-  acceptingNewCustomers: boolean
-  rescheduleEnabled: boolean
-  rescheduleWindowHours: number
-  maxReschedules: number
-  rescheduleRequiresApproval: boolean
-  recurringEnabled: boolean
-  maxSeriesOccurrences: number
-  user: {
-    firstName: string
-    lastName: string
-    email: string
-    phone?: string
-  }
-}
+import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard"
+import { RescheduleSettingsCard } from "@/components/provider/profile/RescheduleSettingsCard"
+import { RecurringBookingsCard } from "@/components/provider/profile/RecurringBookingsCard"
+import type { ProviderProfile } from "@/components/provider/profile/types"
 
 export default function ProviderProfilePage() {
   const { isLoading, isProvider, providerId } = useAuth()
@@ -58,7 +27,6 @@ export default function ProviderProfilePage() {
   const profile = swrProfile as ProviderProfile | null
   const [activeTab, setActiveTab] = useState<"profile" | "availability" | "settings">("profile")
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
-  const [isEditingBusiness, setIsEditingBusiness] = useState(false)
 
   const [personalData, setPersonalData] = useState({
     firstName: "",
@@ -66,18 +34,6 @@ export default function ProviderProfilePage() {
     phone: "",
   })
 
-  const [businessData, setBusinessData] = useState({
-    businessName: "",
-    description: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    serviceArea: "",
-    latitude: null as number | null,
-    longitude: null as number | null,
-    serviceAreaKm: null as number | null,
-  })
-  const [isGeocoding, setIsGeocoding] = useState(false)
   const { guardMutation } = useOfflineGuard()
   const selfRescheduleEnabled = useFeatureFlag("self_reschedule")
   const recurringBookingsEnabled = useFeatureFlag("recurring_bookings")
@@ -89,17 +45,6 @@ export default function ProviderProfilePage() {
         firstName: profile.user.firstName,
         lastName: profile.user.lastName,
         phone: profile.user.phone || "",
-      })
-      setBusinessData({
-        businessName: profile.businessName,
-        description: profile.description || "",
-        address: profile.address || "",
-        city: profile.city || "",
-        postalCode: profile.postalCode || "",
-        serviceArea: profile.serviceArea || "",
-        latitude: profile.latitude ?? null,
-        longitude: profile.longitude ?? null,
-        serviceAreaKm: profile.serviceAreaKm ?? null,
       })
     }
   }, [profile])
@@ -135,43 +80,6 @@ export default function ProviderProfilePage() {
     })
   }
 
-  const handleBusinessSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    await guardMutation(async () => {
-      try {
-        const response = await fetch("/api/provider/profile", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            businessName: businessData.businessName,
-            description: businessData.description || undefined,
-            address: businessData.address || undefined,
-            city: businessData.city || undefined,
-            postalCode: businessData.postalCode || undefined,
-            serviceArea: businessData.serviceArea || undefined,
-            latitude: businessData.latitude,
-            longitude: businessData.longitude,
-            serviceAreaKm: businessData.serviceAreaKm,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to update business profile")
-        }
-
-        setIsEditingBusiness(false)
-        toast.success("Företagsinformation uppdaterad!")
-        mutateProfile()
-      } catch (error) {
-        console.error("Error updating business profile:", error)
-        toast.error("Kunde inte uppdatera företagsinformation")
-      }
-    })
-  }
-
   const handlePersonalCancel = () => {
     if (profile) {
       setPersonalData({
@@ -181,76 +89,6 @@ export default function ProviderProfilePage() {
       })
     }
     setIsEditingPersonal(false)
-  }
-
-  const handleBusinessCancel = () => {
-    if (profile) {
-      setBusinessData({
-        businessName: profile.businessName,
-        description: profile.description || "",
-        address: profile.address || "",
-        city: profile.city || "",
-        postalCode: profile.postalCode || "",
-        serviceArea: profile.serviceArea || "",
-        latitude: profile.latitude ?? null,
-        longitude: profile.longitude ?? null,
-        serviceAreaKm: profile.serviceAreaKm ?? null,
-      })
-    }
-    setIsEditingBusiness(false)
-  }
-
-  const handleGeocode = async () => {
-    if (!businessData.address && !businessData.city) {
-      toast.error("Ange adress eller stad för att hitta koordinater")
-      return
-    }
-
-    setIsGeocoding(true)
-    try {
-      const params = new URLSearchParams()
-      if (businessData.address) params.append("address", businessData.address)
-      if (businessData.city) params.append("city", businessData.city)
-
-      const response = await fetch(`/api/geocode?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error("Kunde inte hitta platsen")
-      }
-
-      const { latitude, longitude } = await response.json()
-      setBusinessData(prev => ({ ...prev, latitude, longitude }))
-      toast.success("Plats hittad!")
-    } catch (error) {
-      console.error("Geocoding error:", error)
-      toast.error("Kunde inte hitta platsen. Kontrollera adressen.")
-    } finally {
-      setIsGeocoding(false)
-    }
-  }
-
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Din webbläsare stöder inte platsdelning")
-      return
-    }
-
-    setIsGeocoding(true)
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setBusinessData(prev => ({
-          ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }))
-        setIsGeocoding(false)
-        toast.success("Din position har sparats!")
-      },
-      (error) => {
-        console.error("Geolocation error:", error)
-        setIsGeocoding(false)
-        toast.error("Kunde inte hämta din position. Kontrollera behörigheter.")
-      }
-    )
   }
 
   // Calculate profile completion
@@ -480,181 +318,11 @@ export default function ProviderProfilePage() {
           </Card>
 
           {/* Business Information Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Företagsinformation</CardTitle>
-              <CardDescription>
-                Information om ditt företag som visas för kunder
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!isEditingBusiness ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm text-gray-600">Företagsnamn</Label>
-                    <p className="font-medium">{profile.businessName}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Beskrivning</Label>
-                    <p className="font-medium">{profile.description || "Ej angiven"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Adress</Label>
-                    <p className="font-medium">{profile.address || "Ej angiven"}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm text-gray-600">Stad</Label>
-                      <p className="font-medium">{profile.city || "Ej angiven"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-600">Postnummer</Label>
-                      <p className="font-medium">{profile.postalCode || "Ej angiven"}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Serviceområde</Label>
-                    <p className="font-medium">{profile.serviceArea || "Ej angiven"}</p>
-                  </div>
-                  <div className="border-t pt-4 mt-4">
-                    <Label className="text-sm text-gray-600">Hem-position</Label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Används för ruttplanering och avståndsmatchning
-                    </p>
-                    {profile.latitude && profile.longitude ? (
-                      <p className="font-medium text-green-600">
-                        Plats sparad ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
-                      </p>
-                    ) : (
-                      <p className="font-medium text-amber-600">
-                        Ej angiven - klicka Redigera för att sätta din position
-                      </p>
-                    )}
-                  </div>
-                  <div className="pt-4">
-                    <Button onClick={() => setIsEditingBusiness(true)}>
-                      Redigera
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleBusinessSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="businessName">Företagsnamn *</Label>
-                    <Input
-                      id="businessName"
-                      value={businessData.businessName}
-                      onChange={(e) =>
-                        setBusinessData({ ...businessData, businessName: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Beskrivning</Label>
-                    <Textarea
-                      id="description"
-                      value={businessData.description}
-                      onChange={(e) =>
-                        setBusinessData({ ...businessData, description: e.target.value })
-                      }
-                      rows={3}
-                      placeholder="Berätta om ditt företag och dina tjänster..."
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="address">Adress</Label>
-                    <Input
-                      id="address"
-                      value={businessData.address}
-                      onChange={(e) =>
-                        setBusinessData({ ...businessData, address: e.target.value })
-                      }
-                      placeholder="Exempelvis: Storgatan 1"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="city">Stad</Label>
-                      <Input
-                        id="city"
-                        value={businessData.city}
-                        onChange={(e) =>
-                          setBusinessData({ ...businessData, city: e.target.value })
-                        }
-                        placeholder="Exempelvis: Stockholm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="postalCode">Postnummer</Label>
-                      <Input
-                        id="postalCode"
-                        value={businessData.postalCode}
-                        onChange={(e) =>
-                          setBusinessData({ ...businessData, postalCode: e.target.value })
-                        }
-                        placeholder="123 45"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="serviceArea">Serviceområde</Label>
-                    <Input
-                      id="serviceArea"
-                      value={businessData.serviceArea}
-                      onChange={(e) =>
-                        setBusinessData({ ...businessData, serviceArea: e.target.value })
-                      }
-                      placeholder="Exempelvis: Stockholm och Södermanlands län"
-                    />
-                  </div>
-
-                  <div className="border-t pt-4 mt-4">
-                    <Label className="text-sm font-medium">Hem-position</Label>
-                    <p className="text-xs text-gray-500 mb-3">
-                      Ange din startposition för ruttplanering
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleGeocode}
-                      disabled={isGeocoding || (!businessData.address && !businessData.city)}
-                    >
-                      {isGeocoding ? "Söker..." : "Sök adress"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleUseCurrentLocation}
-                      disabled={isGeocoding}
-                    >
-                      Använd min position
-                    </Button>
-                  </div>
-
-                  {businessData.latitude && businessData.longitude && (
-                    <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
-                      Plats sparad: {businessData.latitude.toFixed(4)}, {businessData.longitude.toFixed(4)}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 pt-4">
-                    <Button type="submit">Spara ändringar</Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleBusinessCancel}
-                    >
-                      Avbryt
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </CardContent>
-          </Card>
+          <BusinessInfoCard
+            profile={profile}
+            onSaved={() => mutateProfile()}
+            guardMutation={guardMutation}
+          />
 
           {/* Verification Link */}
           <Card className="mt-6">
@@ -740,278 +408,20 @@ export default function ProviderProfilePage() {
 
       {/* Reschedule Settings Card */}
       {selfRescheduleEnabled && (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Ombokningsinställningar</CardTitle>
-          <CardDescription>
-            Bestäm om och hur kunder kan omboka sina bokningar
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Enable/disable */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="reschedule-enabled" className="text-sm font-medium">
-                Tillåt ombokning
-              </Label>
-              <p className="text-xs text-gray-500">
-                Kunder kan själva omboka sina bokningar
-              </p>
-            </div>
-            <Switch
-              id="reschedule-enabled"
-              checked={profile.rescheduleEnabled}
-              onCheckedChange={async (checked) => {
-                await guardMutation(async () => {
-                  try {
-                    const response = await fetch("/api/provider/profile", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        businessName: profile.businessName,
-                        rescheduleEnabled: checked,
-                      }),
-                    })
-                    if (!response.ok) throw new Error("Failed to update")
-                    mutateProfile()
-                    toast.success(
-                      checked
-                        ? "Kunder kan nu omboka"
-                        : "Ombokning är avstängt"
-                    )
-                  } catch {
-                    toast.error("Kunde inte uppdatera inställningen")
-                  }
-                })
-              }}
-            />
-          </div>
-
-          {profile.rescheduleEnabled && (
-            <>
-              {/* Window hours */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Ombokningsfönster
-                </Label>
-                <p className="text-xs text-gray-500">
-                  Hur lång tid före bokningen kunden kan omboka
-                </p>
-                <Select
-                  value={String(profile.rescheduleWindowHours)}
-                  onValueChange={async (value) => {
-                    await guardMutation(async () => {
-                      try {
-                        const response = await fetch("/api/provider/profile", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            businessName: profile.businessName,
-                            rescheduleWindowHours: parseInt(value, 10),
-                          }),
-                        })
-                        if (!response.ok) throw new Error("Failed to update")
-                        mutateProfile()
-                        toast.success("Ombokningsfönster uppdaterat")
-                      } catch {
-                        toast.error("Kunde inte uppdatera inställningen")
-                      }
-                    })
-                  }}
-                >
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="12">12 timmar</SelectItem>
-                    <SelectItem value="24">24 timmar</SelectItem>
-                    <SelectItem value="48">48 timmar</SelectItem>
-                    <SelectItem value="72">72 timmar</SelectItem>
-                    <SelectItem value="168">1 vecka</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Max reschedules */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Max antal ombokningar
-                </Label>
-                <p className="text-xs text-gray-500">
-                  Hur många gånger en kund kan omboka samma bokning
-                </p>
-                <Select
-                  value={String(profile.maxReschedules)}
-                  onValueChange={async (value) => {
-                    await guardMutation(async () => {
-                      try {
-                        const response = await fetch("/api/provider/profile", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            businessName: profile.businessName,
-                            maxReschedules: parseInt(value, 10),
-                          }),
-                        })
-                        if (!response.ok) throw new Error("Failed to update")
-                        mutateProfile()
-                        toast.success("Max ombokningar uppdaterat")
-                      } catch {
-                        toast.error("Kunde inte uppdatera inställningen")
-                      }
-                    })
-                  }}
-                >
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 gång</SelectItem>
-                    <SelectItem value="2">2 gånger</SelectItem>
-                    <SelectItem value="3">3 gånger</SelectItem>
-                    <SelectItem value="5">5 gånger</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Requires approval */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="reschedule-approval" className="text-sm font-medium">
-                    Kräv godkännande
-                  </Label>
-                  <p className="text-xs text-gray-500">
-                    Du måste godkänna ombokningar innan de bekräftas
-                  </p>
-                </div>
-                <Switch
-                  id="reschedule-approval"
-                  checked={profile.rescheduleRequiresApproval}
-                  onCheckedChange={async (checked) => {
-                    await guardMutation(async () => {
-                      try {
-                        const response = await fetch("/api/provider/profile", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            businessName: profile.businessName,
-                            rescheduleRequiresApproval: checked,
-                          }),
-                        })
-                        if (!response.ok) throw new Error("Failed to update")
-                        mutateProfile()
-                        toast.success(
-                          checked
-                            ? "Godkännande krävs nu för ombokningar"
-                            : "Ombokningar bekräftas direkt"
-                        )
-                      } catch {
-                        toast.error("Kunde inte uppdatera inställningen")
-                      }
-                    })
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+        <RescheduleSettingsCard
+          profile={profile}
+          onSaved={() => mutateProfile()}
+          guardMutation={guardMutation}
+        />
       )}
 
       {/* Recurring Booking Settings Card */}
       {recurringBookingsEnabled && (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Återkommande bokningar</CardTitle>
-          <CardDescription>
-            Tillåt kunder att skapa återkommande bokningsserier
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="recurring-enabled" className="text-sm font-medium">
-                Tillåt återkommande bokningar
-              </Label>
-              <p className="text-xs text-gray-500">
-                Kunder kan boka samma tjänst med regelbundna intervall
-              </p>
-            </div>
-            <Switch
-              id="recurring-enabled"
-              checked={profile.recurringEnabled}
-              onCheckedChange={async (checked) => {
-                await guardMutation(async () => {
-                  try {
-                    const response = await fetch("/api/provider/profile", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        businessName: profile.businessName,
-                        recurringEnabled: checked,
-                      }),
-                    })
-                    if (!response.ok) throw new Error("Failed to update")
-                    mutateProfile()
-                    toast.success(
-                      checked
-                        ? "Återkommande bokningar aktiverade"
-                        : "Återkommande bokningar avaktiverade"
-                    )
-                  } catch {
-                    toast.error("Kunde inte uppdatera inställningen")
-                  }
-                })
-              }}
-            />
-          </div>
-
-          {profile.recurringEnabled && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Max antal tillfällen per serie
-              </Label>
-              <p className="text-xs text-gray-500">
-                Högsta antal bokningar en kund kan skapa i en serie
-              </p>
-              <Select
-                value={String(profile.maxSeriesOccurrences)}
-                onValueChange={async (value) => {
-                  await guardMutation(async () => {
-                    try {
-                      const response = await fetch("/api/provider/profile", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          businessName: profile.businessName,
-                          maxSeriesOccurrences: parseInt(value, 10),
-                        }),
-                      })
-                      if (!response.ok) throw new Error("Failed to update")
-                      mutateProfile()
-                      toast.success("Max tillfällen uppdaterat")
-                    } catch {
-                      toast.error("Kunde inte uppdatera inställningen")
-                    }
-                  })
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="4">4 tillfällen</SelectItem>
-                  <SelectItem value="6">6 tillfällen</SelectItem>
-                  <SelectItem value="8">8 tillfällen</SelectItem>
-                  <SelectItem value="12">12 tillfällen</SelectItem>
-                  <SelectItem value="24">24 tillfällen</SelectItem>
-                  <SelectItem value="52">52 tillfällen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <RecurringBookingsCard
+          profile={profile}
+          onSaved={() => mutateProfile()}
+          guardMutation={guardMutation}
+        />
       )}
 
         </>
