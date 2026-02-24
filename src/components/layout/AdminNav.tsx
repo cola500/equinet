@@ -11,6 +11,7 @@ import {
   Plug,
   Activity,
   Bell,
+  ClipboardCheck,
 } from "lucide-react"
 import { BottomTabBar } from "./BottomTabBar"
 import type { TabItem, MoreMenuItem } from "./BottomTabBar"
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/admin/integrations", label: "Integrationer", icon: Plug },
   { href: "/admin/system", label: "System", icon: Activity },
   { href: "/admin/notifications", label: "Notifikationer", icon: Bell },
+  { href: "/admin/testing-guide", label: "Testningsguide", icon: ClipboardCheck },
 ]
 
 const mobileTabs: TabItem[] = [
@@ -38,6 +40,7 @@ const mobileMoreItems: MoreMenuItem[] = [
   { href: "/admin/verifications", label: "Verifieringar", icon: ShieldCheck, matchPrefix: "/admin/verifications" },
   { href: "/admin/integrations", label: "Integrationer", icon: Plug, matchPrefix: "/admin/integrations" },
   { href: "/admin/notifications", label: "Notifikationer", icon: Bell, matchPrefix: "/admin/notifications" },
+  { href: "/admin/testing-guide", label: "Testguide", icon: ClipboardCheck, matchPrefix: "/admin/testing-guide" },
 ]
 
 export function AdminNav() {
