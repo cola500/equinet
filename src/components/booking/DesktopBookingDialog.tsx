@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -36,6 +36,13 @@ export function DesktopBookingDialog() {
   } = useBookingFlowContext()
 
   const [showSummary, setShowSummary] = useState(false)
+
+  // Reset summary view when dialog opens -- handleOpenChange only fires on
+  // user-initiated close (click X / overlay), not when isOpen changes
+  // programmatically (e.g. after successful booking submit).
+  useEffect(() => {
+    if (isOpen) setShowSummary(false)
+  }, [isOpen])
 
   if (!selectedService) return null
 
