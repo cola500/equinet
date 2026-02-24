@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get actual flag states from Redis (not just in-memory)
+    // Get actual flag states from database
     const featureFlagStates = await getFeatureFlags()
 
     return NextResponse.json(
@@ -106,10 +106,22 @@ export async function PATCH(request: NextRequest) {
 
     const { key, value } = parsed.data
 
-    // Feature flag keys -> Redis + in-memory via setFeatureFlagOverride
+    // Feature flag keys -> database via setFeatureFlagOverride
     if (key.startsWith("feature_")) {
       const flagKey = key.replace("feature_", "")
-      await setFeatureFlagOverride(flagKey, value)
+      try {
+        await setFeatureFlagOverride(flagKey, value)
+      } catch (flagError) {
+        logger.error(
+          `Failed to update feature flag ${key}=${value}`,
+          flagError as Error
+        )
+        const message = flagError instanceof Error ? flagError.message : "Databasfel"
+        return NextResponse.json(
+          { error: message },
+          { status: 503 }
+        )
+      }
     } else {
       setRuntimeSetting(key, value)
     }

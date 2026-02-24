@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import {
   isFeatureEnabled,
   getFeatureFlags,
@@ -6,41 +6,27 @@ import {
   FEATURE_FLAGS,
   setFeatureFlagOverride,
   removeFeatureFlagOverride,
+  _setRepositoryForTesting,
   _resetRedisForTesting,
 } from "./feature-flags"
-import { clearRuntimeSettings, setRuntimeSetting } from "./settings/runtime-settings"
-
-// Mock Redis -- return null by default (tests in-memory fallback path)
-const mockRedisGet = vi.fn().mockResolvedValue(null)
-const mockRedisSet = vi.fn().mockResolvedValue("OK")
-const mockRedisMget = vi.fn().mockResolvedValue([])
-const mockRedisDel = vi.fn().mockResolvedValue(1)
-
-vi.mock("@upstash/redis", () => {
-  return {
-    Redis: class MockRedis {
-      get = mockRedisGet
-      set = mockRedisSet
-      mget = mockRedisMget
-      del = mockRedisDel
-    },
-  }
-})
+import { MockFeatureFlagRepository } from "@/infrastructure/persistence/feature-flag"
 
 describe("feature-flags", () => {
+  let mockRepo: MockFeatureFlagRepository
+
   beforeEach(() => {
-    clearRuntimeSettings()
-    vi.clearAllMocks()
-    _resetRedisForTesting()
+    mockRepo = new MockFeatureFlagRepository()
+    _setRepositoryForTesting(mockRepo)
     // Clear all FEATURE_* env vars
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("FEATURE_")) {
         delete process.env[key]
       }
     }
-    // Reset Redis env so getRedis() returns null (in-memory fallback)
-    delete process.env.UPSTASH_REDIS_REST_URL
-    delete process.env.UPSTASH_REDIS_REST_TOKEN
+  })
+
+  afterEach(() => {
+    _setRepositoryForTesting(null)
   })
 
   describe("isFeatureEnabled", () => {
@@ -61,48 +47,23 @@ describe("feature-flags", () => {
       expect(await isFeatureEnabled("voice_logging")).toBe(false)
     })
 
-    it("runtime setting overrides default", async () => {
-      setRuntimeSetting("feature_group_bookings", "true")
-      expect(await isFeatureEnabled("group_bookings")).toBe(true)
+    it("DB override overrides default", async () => {
+      await mockRepo.upsert("group_bookings", true)
+      await mockRepo.upsert("voice_logging", false)
 
-      setRuntimeSetting("feature_voice_logging", "false")
+      // Both overrides should be visible (single cache fetch)
+      expect(await isFeatureEnabled("group_bookings")).toBe(true)
       expect(await isFeatureEnabled("voice_logging")).toBe(false)
     })
 
-    it("env variable overrides runtime setting", async () => {
+    it("env variable overrides DB", async () => {
       process.env.FEATURE_GROUP_BOOKINGS = "false"
-      setRuntimeSetting("feature_group_bookings", "true")
+      await mockRepo.upsert("group_bookings", true)
       expect(await isFeatureEnabled("group_bookings")).toBe(false)
 
       process.env.FEATURE_VOICE_LOGGING = "true"
-      setRuntimeSetting("feature_voice_logging", "false")
+      await mockRepo.upsert("voice_logging", false)
       expect(await isFeatureEnabled("voice_logging")).toBe(true)
-    })
-
-    it("Redis override trumps runtime setting", async () => {
-      // Enable Redis
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
-
-      // Runtime says true, Redis says false
-      setRuntimeSetting("feature_group_bookings", "true")
-      const keys = Object.keys(FEATURE_FLAGS)
-      const mgetResult = keys.map((k) => (k === "group_bookings" ? "false" : null))
-      mockRedisMget.mockResolvedValueOnce(mgetResult)
-
-      expect(await isFeatureEnabled("group_bookings")).toBe(false)
-    })
-
-    it("env variable overrides Redis", async () => {
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
-
-      process.env.FEATURE_GROUP_BOOKINGS = "true"
-      const keys = Object.keys(FEATURE_FLAGS)
-      const mgetResult = keys.map((k) => (k === "group_bookings" ? "false" : null))
-      mockRedisMget.mockResolvedValueOnce(mgetResult)
-
-      expect(await isFeatureEnabled("group_bookings")).toBe(true)
     })
   })
 
@@ -121,11 +82,12 @@ describe("feature-flags", () => {
         recurring_bookings: false,
         offline_mode: true,
         follow_provider: false,
+        municipality_watch: false,
       })
     })
 
-    it("reflects runtime overrides", async () => {
-      setRuntimeSetting("feature_group_bookings", "true")
+    it("reflects DB overrides", async () => {
+      await mockRepo.upsert("group_bookings", true)
       const flags = await getFeatureFlags()
       expect(flags.group_bookings).toBe(true)
     })
@@ -136,67 +98,91 @@ describe("feature-flags", () => {
       expect(flags.voice_logging).toBe(false)
     })
 
-    it("reflects Redis overrides", async () => {
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
+    it("caches result for 30s (no second DB call)", async () => {
+      const findAllSpy = vi.spyOn(mockRepo, "findAll")
 
-      const keys = Object.keys(FEATURE_FLAGS)
-      // Return "true" for group_bookings (last key), null for rest
-      const mgetResult = keys.map((k) => (k === "group_bookings" ? "true" : null))
-      mockRedisMget.mockResolvedValueOnce(mgetResult)
+      await getFeatureFlags()
+      await getFeatureFlags()
+      await getFeatureFlags()
+
+      // Should only have called findAll once due to cache
+      expect(findAllSpy.mock.calls.length).toBe(1)
+    })
+
+    it("re-fetches after cache expiry", async () => {
+      vi.useFakeTimers()
+      try {
+        const findAllSpy = vi.spyOn(mockRepo, "findAll")
+
+        await getFeatureFlags()
+        expect(findAllSpy.mock.calls.length).toBe(1)
+
+        // Fast-forward 31s
+        vi.advanceTimersByTime(31_000)
+
+        await getFeatureFlags()
+        expect(findAllSpy.mock.calls.length).toBe(2)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it("falls back to defaults on DB error", async () => {
+      vi.spyOn(mockRepo, "findAll").mockRejectedValueOnce(new Error("DB down"))
 
       const flags = await getFeatureFlags()
-      expect(flags.group_bookings).toBe(true)
+      // Should return defaults without crashing
+      expect(flags.voice_logging).toBe(true)
+      expect(flags.group_bookings).toBe(false)
     })
   })
 
   describe("setFeatureFlagOverride", () => {
-    it("writes to in-memory in local dev (no Redis)", async () => {
+    it("writes to repository", async () => {
       await setFeatureFlagOverride("group_bookings", "true")
-      expect(await isFeatureEnabled("group_bookings")).toBe(true)
+
+      const flag = await mockRepo.findByKey("group_bookings")
+      expect(flag).not.toBeNull()
+      expect(flag!.enabled).toBe(true)
     })
 
-    it("writes to Redis when available", async () => {
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
+    it("invalidates cache", async () => {
+      // Populate cache
+      await getFeatureFlags()
 
+      // Override a flag
       await setFeatureFlagOverride("group_bookings", "true")
-      expect(mockRedisSet).toHaveBeenCalledWith("feature_flag:group_bookings", "true")
+
+      // Should see the override immediately (cache invalidated)
+      const flags = await getFeatureFlags()
+      expect(flags.group_bookings).toBe(true)
     })
 
-    it("throws when Redis write fails", async () => {
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
-
-      mockRedisSet.mockRejectedValueOnce(new Error("Redis connection failed"))
+    it("throws descriptive error on DB failure", async () => {
+      vi.spyOn(mockRepo, "upsert").mockRejectedValueOnce(new Error("Connection refused"))
 
       await expect(
         setFeatureFlagOverride("group_bookings", "true")
-      ).rejects.toThrow("Redis connection failed")
-    })
-
-    it("does NOT write to in-memory when Redis is configured", async () => {
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
-
-      await setFeatureFlagOverride("group_bookings", "true")
-
-      // In-memory should NOT be updated -- verify via runtime settings
-      const { getRuntimeSetting } = await import("./settings/runtime-settings")
-      expect(getRuntimeSetting("feature_group_bookings")).toBeUndefined()
+      ).rejects.toThrow("Kunde inte uppdatera flaggan group_bookings: Connection refused")
     })
   })
 
   describe("removeFeatureFlagOverride", () => {
-    it("throws when Redis delete fails", async () => {
-      process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io"
-      process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
+    it("sets flag to default value in repository", async () => {
+      await setFeatureFlagOverride("group_bookings", "true")
+      await removeFeatureFlagOverride("group_bookings")
 
-      mockRedisDel.mockRejectedValueOnce(new Error("Redis delete failed"))
+      // group_bookings default is false
+      const flags = await getFeatureFlags()
+      expect(flags.group_bookings).toBe(false)
+    })
+
+    it("throws descriptive error on DB failure", async () => {
+      vi.spyOn(mockRepo, "upsert").mockRejectedValueOnce(new Error("Timeout"))
 
       await expect(
         removeFeatureFlagOverride("group_bookings")
-      ).rejects.toThrow("Redis delete failed")
+      ).rejects.toThrow("Kunde inte uppdatera flaggan group_bookings: Timeout")
     })
   })
 
@@ -219,26 +205,10 @@ describe("feature-flags", () => {
     })
   })
 
-  describe("getFeatureFlags after overrides", () => {
-    it("reflects override after setFeatureFlagOverride", async () => {
-      const flags1 = await getFeatureFlags()
-      expect(flags1.group_bookings).toBe(false)
-
-      await setFeatureFlagOverride("group_bookings", "true")
-
-      const flags2 = await getFeatureFlags()
-      expect(flags2.group_bookings).toBe(true)
-    })
-
-    it("reflects removal after removeFeatureFlagOverride", async () => {
-      await setFeatureFlagOverride("group_bookings", "true")
-      const flags1 = await getFeatureFlags()
-      expect(flags1.group_bookings).toBe(true)
-
-      await removeFeatureFlagOverride("group_bookings")
-
-      const flags2 = await getFeatureFlags()
-      expect(flags2.group_bookings).toBe(false)
+  describe("_resetRedisForTesting alias", () => {
+    it("is an alias for _setRepositoryForTesting(null)", () => {
+      // Should not throw
+      _resetRedisForTesting()
     })
   })
 })

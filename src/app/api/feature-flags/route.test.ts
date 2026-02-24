@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { GET } from "./route"
 import { NextRequest } from "next/server"
-import { clearRuntimeSettings, setRuntimeSetting } from "@/lib/settings/runtime-settings"
+import { _setRepositoryForTesting } from "@/lib/feature-flags"
+import { MockFeatureFlagRepository } from "@/infrastructure/persistence/feature-flag"
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: {
@@ -11,14 +12,21 @@ vi.mock("@/lib/rate-limit", () => ({
 }))
 
 describe("GET /api/feature-flags", () => {
+  let mockRepo: MockFeatureFlagRepository
+
   beforeEach(() => {
     vi.clearAllMocks()
-    clearRuntimeSettings()
+    mockRepo = new MockFeatureFlagRepository()
+    _setRepositoryForTesting(mockRepo)
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("FEATURE_")) {
         delete process.env[key]
       }
     }
+  })
+
+  afterEach(() => {
+    _setRepositoryForTesting(null)
   })
 
   it("returns all feature flags with default values", async () => {
@@ -39,11 +47,12 @@ describe("GET /api/feature-flags", () => {
       recurring_bookings: false,
       offline_mode: true,
       follow_provider: false,
+      municipality_watch: false,
     })
   })
 
-  it("reflects runtime overrides", async () => {
-    setRuntimeSetting("feature_group_bookings", "true")
+  it("reflects DB overrides", async () => {
+    await mockRepo.upsert("group_bookings", true)
 
     const request = new NextRequest("http://localhost:3000/api/feature-flags")
     const response = await GET(request)
