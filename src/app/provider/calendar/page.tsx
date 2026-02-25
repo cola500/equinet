@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useEffect, useState, useCallback } from "react"
+import { useDialogState } from "@/hooks/useDialogState"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
 import { Mic } from "lucide-react"
@@ -46,14 +47,14 @@ function CalendarContent() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const bookingDialog = useDialogState()
   const [availability, setAvailability] = useState<AvailabilityDay[]>([])
-  const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false)
+  const availabilityDialog = useDialogState()
   const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(null)
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([])
-  const [exceptionDialogOpen, setExceptionDialogOpen] = useState(false)
+  const exceptionDialog = useDialogState()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [manualBookingOpen, setManualBookingOpen] = useState(false)
+  const manualBookingDialog = useDialogState()
   const [prefillDate, setPrefillDate] = useState<string | undefined>()
   const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
@@ -135,15 +136,15 @@ function CalendarContent() {
   // Återställ dialog vid tillbaka-navigation (URL -> state)
   const bookingIdFromUrl = searchParams.get('bookingId')
   useEffect(() => {
-    if (bookingIdFromUrl && bookings?.length && !dialogOpen) {
+    if (bookingIdFromUrl && bookings?.length && !bookingDialog.open) {
       const booking = bookings.find(b => b.id === bookingIdFromUrl)
       if (booking) {
         setSelectedBooking(booking)
-        setDialogOpen(true)
+        bookingDialog.openDialog()
       }
     }
-    if (!bookingIdFromUrl && dialogOpen) {
-      setDialogOpen(false)
+    if (!bookingIdFromUrl && bookingDialog.open) {
+      bookingDialog.close()
       setSelectedBooking(null)
     }
   }, [bookingIdFromUrl, bookings]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -182,7 +183,7 @@ function CalendarContent() {
 
   const handleBookingClick = (booking: CalendarBooking) => {
     setSelectedBooking(booking)
-    setDialogOpen(true)
+    bookingDialog.openDialog()
     // Skip URL update offline -- RSC request would fail and trigger error boundary
     if (isOnline) {
       const params = new URLSearchParams(searchParams.toString())
@@ -192,7 +193,7 @@ function CalendarContent() {
   }
 
   const handleDialogClose = (open: boolean) => {
-    setDialogOpen(open)
+    bookingDialog.setOpen(open)
     if (!open) {
       setSelectedBooking(null)
       // Skip URL update offline -- RSC request would fail and trigger error boundary
@@ -207,18 +208,18 @@ function CalendarContent() {
 
   const handleDayClick = (dayOfWeek: number) => {
     setSelectedDayOfWeek(dayOfWeek)
-    setAvailabilityDialogOpen(true)
+    availabilityDialog.openDialog()
   }
 
   const handleDateClick = (date: string) => {
     setSelectedDate(date)
-    setExceptionDialogOpen(true)
+    exceptionDialog.openDialog()
   }
 
   const handleTimeSlotClick = (date: string, time: string) => {
     setPrefillDate(date)
     setPrefillTime(time)
-    setManualBookingOpen(true)
+    manualBookingDialog.openDialog()
   }
 
   const handleExceptionSave = async (data: {
@@ -300,7 +301,7 @@ function CalendarContent() {
         if (response.ok) {
           setAvailability(updatedAvailability)
           toast.success("Öppettider uppdaterade!")
-          setAvailabilityDialogOpen(false)
+          availabilityDialog.close()
         } else {
           toast.error("Kunde inte spara öppettider")
         }
@@ -375,7 +376,7 @@ function CalendarContent() {
           <p className="text-gray-600 mt-1">Överblick av dina bokningar</p>
         </div>
         <button
-          onClick={() => setManualBookingOpen(true)}
+          onClick={() => manualBookingDialog.openDialog()}
           className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
         >
           + Bokning
@@ -497,7 +498,7 @@ function CalendarContent() {
 
       <BookingDetailDialog
         booking={selectedBooking}
-        open={dialogOpen}
+        open={bookingDialog.open}
         onOpenChange={handleDialogClose}
         onStatusUpdate={handleStatusUpdate}
         onReviewSuccess={() => mutateBookings()}
@@ -513,24 +514,24 @@ function CalendarContent() {
 
       <AvailabilityEditDialog
         availability={selectedDayOfWeek !== null ? availability[selectedDayOfWeek] : null}
-        open={availabilityDialogOpen}
-        onOpenChange={setAvailabilityDialogOpen}
+        open={availabilityDialog.open}
+        onOpenChange={availabilityDialog.setOpen}
         onSave={handleAvailabilitySave}
       />
 
       <DayExceptionDialog
         date={selectedDate}
         exception={exceptions.find((e) => e.date === selectedDate) || null}
-        open={exceptionDialogOpen}
-        onOpenChange={setExceptionDialogOpen}
+        open={exceptionDialog.open}
+        onOpenChange={exceptionDialog.setOpen}
         onSave={handleExceptionSave}
         onDelete={handleExceptionDelete}
       />
 
       <ManualBookingDialog
-        open={manualBookingOpen}
+        open={manualBookingDialog.open}
         onOpenChange={(open) => {
-          setManualBookingOpen(open)
+          manualBookingDialog.setOpen(open)
           if (!open) { setPrefillDate(undefined); setPrefillTime(undefined) }
         }}
         services={services}
