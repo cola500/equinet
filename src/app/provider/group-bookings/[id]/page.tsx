@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useDialogState } from "@/hooks/useDialogState"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -98,7 +99,7 @@ export default function ProviderGroupBookingDetailPage({
   const [groupBooking, setGroupBooking] = useState<GroupBookingDetail | null>(null)
   const [services, setServices] = useState<ProviderService[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [matchDialogOpen, setMatchDialogOpen] = useState(false)
+  const matchDialog = useDialogState()
   const [isMatching, setIsMatching] = useState(false)
 
   const [matchForm, setMatchForm] = useState({
@@ -166,7 +167,7 @@ export default function ProviderGroupBookingDetailPage({
       }
 
       toast.success(`${data.bookingsCreated} bokningar skapade!`)
-      setMatchDialogOpen(false)
+      matchDialog.close()
       fetchDetail()
     } catch (error) {
       console.error("Error matching:", error)
@@ -330,12 +331,12 @@ export default function ProviderGroupBookingDetailPage({
 
           {isOpen && (
             <>
-              <Button onClick={() => setMatchDialogOpen(true)}>
+              <Button onClick={() => matchDialog.openDialog()}>
                 Matcha och skapa bokningar
               </Button>
               <ResponsiveAlertDialog
-                open={matchDialogOpen}
-                onOpenChange={setMatchDialogOpen}
+                open={matchDialog.open}
+                onOpenChange={matchDialog.setOpen}
               >
                 <ResponsiveAlertDialogContent>
                   <ResponsiveAlertDialogHeader>
@@ -418,7 +419,7 @@ export default function ProviderGroupBookingDetailPage({
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setMatchDialogOpen(false)}
+                        onClick={() => matchDialog.close()}
                       >
                         Avbryt
                       </Button>

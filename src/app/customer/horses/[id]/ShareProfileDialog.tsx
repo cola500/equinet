@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useDialogState } from "@/hooks/useDialogState"
 import { Button } from "@/components/ui/button"
 import {
   ResponsiveDialog,
@@ -21,7 +22,7 @@ export function ShareProfileDialog({
   horseId,
   horseName,
 }: ShareProfileDialogProps) {
-  const [open, setOpen] = useState(false)
+  const shareDialog = useDialogState()
   const [isCreating, setIsCreating] = useState(false)
   const [profileUrl, setProfileUrl] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
@@ -62,7 +63,7 @@ export function ShareProfileDialog({
   }
 
   const handleClose = (isOpen: boolean) => {
-    setOpen(isOpen)
+    shareDialog.setOpen(isOpen)
     if (!isOpen) {
       // Reset state when closing
       setProfileUrl(null)
@@ -80,10 +81,10 @@ export function ShareProfileDialog({
 
   return (
     <>
-      <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => setOpen(true)}>
+      <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => shareDialog.openDialog()}>
         Dela hästprofil
       </Button>
-      <ResponsiveDialog open={open} onOpenChange={handleClose}>
+      <ResponsiveDialog open={shareDialog.open} onOpenChange={handleClose}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Dela hästprofil för {horseName}</ResponsiveDialogTitle>
