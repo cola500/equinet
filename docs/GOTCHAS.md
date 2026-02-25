@@ -31,6 +31,7 @@
 25. [Deploy utan Migration = 500-fel i Produktion](#25-deploy-utan-migration--500-fel-i-produktion)
 26. [Lokal Offline/PWA-testning](#26-lokal-offlinepwa-testning)
 27. [Offline Sync Race Conditions](#27-offline-sync-race-conditions)
+28. [Radix Dialog onOpenChange vid Programmatisk Stängning](#28-radix-dialog-onopenchange-vid-programmatisk-stängning)
 
 ---
 
@@ -1177,6 +1178,28 @@ export function _resetSyncGuard() { syncInProgress = false; } // för tester
 - `src/lib/offline/sync-engine.ts` -- exponentiell backoff, 429-hantering
 
 **Impact:** Utan detta mönster kraschar sync vid återanslutning i ~30% av fallen (rate limiting + context destruction).
+
+---
+
+## 28. Radix Dialog onOpenChange vid Programmatisk Stängning
+
+**Problem:** Radix Dialog's `onOpenChange`-callback anropas INTE när `open`-propen ändras programmatiskt (t.ex. `setIsOpen(false)` efter lyckad submit). Den anropas BARA vid användarinteraktion (klick på X-knapp eller overlay).
+
+**Symptom:** Lokal state i dialog-komponenten (t.ex. `showSummary`, `currentStep`) återställs inte mellan öppningar om dialogen stängs programmatiskt.
+
+**Lösning:** Använd `useEffect` för att återställa lokal state när dialogen öppnas:
+
+```tsx
+const [showSummary, setShowSummary] = useState(false)
+
+useEffect(() => {
+  if (isOpen) setShowSummary(false)
+}, [isOpen])
+```
+
+**Gäller även:** vaul Drawer (`onOpenChange` beter sig likadant).
+
+**Filer:** `src/components/booking/DesktopBookingDialog.tsx`
 
 ---
 

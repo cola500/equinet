@@ -194,6 +194,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Kanonisk distance-modul**: `src/lib/geo/distance.ts` ar enda kallan for Haversine-berakningar. Importera `calculateDistance` och `filterByDistance` darifran -- duplicera ALDRIG i API routes.
 - **Error mapper per doman**: `domain/X/mapXErrorToStatus.ts` mappar domanfel till HTTP-statuskoder. Importeras av alla routes i domanen. Befintliga: horse, auth, group-booking, review, customer-review.
 - **Client-safe modulseparation**: Nar en server-only modul (med Prisma) exporterar metadata som behövs i `"use client"`-komponenter, extrahera till separat fil utan server-beroenden. Mönster: `feature-flag-definitions.ts` (klient-safe) + `feature-flags.ts` (server-only, re-exporterar). Next.js bundler respekterar inte runtime-gränsar -- allt importerbart KOMMER att bundlas.
+- **Radix Dialog `onOpenChange` triggar INTE programmatiskt**: Callback anropas bara vid användarinteraktion (X-knapp/overlay), inte vid `open`-prop-ändring. Återställ lokal state med `useEffect(() => { if (isOpen) reset() }, [isOpen])`. Gäller även vaul Drawer.
+- **Context > splitta hook vid prop-drilling**: När en hook returnerar 10+ värden som passas identiskt till 2+ komponenter, wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken -- problemet är konsumenterna, inte producenten.
 
 ---
 
