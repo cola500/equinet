@@ -64,12 +64,12 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
-    } as any)
+    } as never)
 
     // Provider has bookings for this horse (access check)
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
@@ -87,7 +87,7 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer-user', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await GET(makeRequest('GET'), routeContext)
     expect(response.status).toBe(403)
@@ -115,12 +115,12 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-    ] as any)
+    ] as never)
 
     vi.mocked(prisma.service.findMany).mockResolvedValue([
       { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       { id: TEST_UUIDS.service2, name: 'Massage', recommendedIntervalWeeks: 8 },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest('GET'), routeContext)
     const data = await response.json()
@@ -137,7 +137,7 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([])
     vi.mocked(prisma.service.findMany).mockResolvedValue([
       { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest('GET'), routeContext)
     const data = await response.json()
@@ -154,12 +154,12 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
-    } as any)
+    } as never)
 
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
   })
@@ -174,7 +174,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
       notes: 'Nytt intervall',
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as any)
+    } as never)
 
     const response = await PUT(
       makeRequest('PUT', {
@@ -275,7 +275,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
       notes: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as any)
+    } as never)
 
     const response = await PUT(
       makeRequest('PUT', { serviceId: TEST_UUIDS.service1, revisitIntervalWeeks: 4 }),
@@ -292,12 +292,12 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
-    } as any)
+    } as never)
 
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
   })
@@ -305,7 +305,7 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
   it('should delete interval for specific service', async () => {
     vi.mocked(prisma.horseServiceInterval.delete).mockResolvedValue({
       id: TEST_UUIDS.interval,
-    } as any)
+    } as never)
 
     const response = await DELETE(
       makeRequest('DELETE', { serviceId: TEST_UUIDS.service1 }),
@@ -332,8 +332,8 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
 
   it('should return 404 when interval does not exist', async () => {
     const prismaError = new Error('Record not found')
-    ;(prismaError as any).code = 'P2025'
-    ;(prismaError as any).name = 'PrismaClientKnownRequestError'
+    ;(prismaError as Record<string, unknown>).code = 'P2025'
+    ;(prismaError as Record<string, unknown>).name = 'PrismaClientKnownRequestError'
     vi.mocked(prisma.horseServiceInterval.delete).mockRejectedValue(prismaError)
 
     const response = await DELETE(
@@ -347,7 +347,7 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer-user', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await DELETE(
       makeRequest('DELETE', { serviceId: TEST_UUIDS.service1 }),

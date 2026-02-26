@@ -135,7 +135,7 @@ const mockPaymentRecord = {
 function mockGateway(result = mockPaymentResult) {
   mockedGetPaymentGateway.mockReturnValue({
     initiatePayment: vi.fn().mockResolvedValue(result),
-  } as any)
+  } as never)
 }
 
 // --- Tests ---
@@ -147,9 +147,9 @@ describe("POST /api/bookings/[id]/payment", () => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({
       user: { id: "user-1", email: "anna@example.com", userType: "customer" },
-    } as any)
+    } as never)
     mockGateway()
-    mockedPaymentUpsert.mockResolvedValue(mockPaymentRecord as any)
+    mockedPaymentUpsert.mockResolvedValue(mockPaymentRecord as never)
   })
 
   it("returns 401 when not authenticated", async () => {
@@ -178,7 +178,7 @@ describe("POST /api/bookings/[id]/payment", () => {
     mockedFindUnique.mockResolvedValue({
       ...mockBooking,
       payment: { status: "succeeded" },
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -192,7 +192,7 @@ describe("POST /api/bookings/[id]/payment", () => {
     mockedFindUnique.mockResolvedValue({
       ...mockBooking,
       status: "pending",
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -205,7 +205,7 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("returns 200 with payment data on successful payment", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -225,11 +225,11 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("calls payment gateway with correct arguments", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
     const mockInitiate = vi.fn().mockResolvedValue(mockPaymentResult)
     mockedGetPaymentGateway.mockReturnValue({
       initiatePayment: mockInitiate,
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     await POST(req, { params })
@@ -243,7 +243,7 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("upserts payment record with correct data", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     await POST(req, { params })
@@ -270,7 +270,7 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("dispatches booking payment received event with correct payload", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     await POST(req, { params })
@@ -303,20 +303,20 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("generates invoice number in EQ-YYYYMM-XXXXXX format", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     await POST(req, { params })
 
     // Verify the invoiceNumber passed to upsert matches the pattern
-    const upsertCall = mockedPaymentUpsert.mock.calls[0][0] as any
+    const upsertCall = mockedPaymentUpsert.mock.calls[0][0] as never
     const invoiceNumber = upsertCall.create.invoiceNumber
 
     expect(invoiceNumber).toMatch(/^EQ-\d{6}-[A-Z0-9]{6}$/)
   })
 
   it("returns correct response shape", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -334,12 +334,12 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("returns 402 when payment gateway fails", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
     mockedGetPaymentGateway.mockReturnValue({
       initiatePayment: vi
         .fn()
         .mockResolvedValue({ success: false, error: "Insufficient funds" }),
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -350,10 +350,10 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("returns 402 with default message when gateway fails without error text", async () => {
-    mockedFindUnique.mockResolvedValue(mockBooking as any)
+    mockedFindUnique.mockResolvedValue(mockBooking as never)
     mockedGetPaymentGateway.mockReturnValue({
       initiatePayment: vi.fn().mockResolvedValue({ success: false }),
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -382,7 +382,7 @@ describe("POST /api/bookings/[id]/payment", () => {
     mockedFindUnique.mockResolvedValue({
       ...mockBooking,
       status: "completed",
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "POST")
     const res = await POST(req, { params })
@@ -398,7 +398,7 @@ describe("GET /api/bookings/[id]/payment", () => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({
       user: { id: "user-1", email: "anna@example.com", userType: "customer" },
-    } as any)
+    } as never)
   })
 
   it("returns 401 when not authenticated", async () => {
@@ -427,7 +427,7 @@ describe("GET /api/bookings/[id]/payment", () => {
     mockedFindFirst.mockResolvedValue({
       ...mockBooking,
       payment: null,
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "GET")
     const res = await GET(req, { params })
@@ -445,7 +445,7 @@ describe("GET /api/bookings/[id]/payment", () => {
     mockedFindFirst.mockResolvedValue({
       ...mockBooking,
       payment: mockPaymentRecord,
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "GET")
     const res = await GET(req, { params })
@@ -470,12 +470,12 @@ describe("GET /api/bookings/[id]/payment", () => {
         email: "erik@example.com",
         userType: "provider",
       },
-    } as any)
+    } as never)
 
     mockedFindFirst.mockResolvedValue({
       ...mockBooking,
       payment: mockPaymentRecord,
-    } as any)
+    } as never)
 
     const req = createRequest(BOOKING_ID, "GET")
     const res = await GET(req, { params })

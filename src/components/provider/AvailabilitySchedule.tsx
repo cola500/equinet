@@ -46,7 +46,7 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
         // Skapa ett komplett schema för alla 7 dagar
         // Fyll i med data från DB om det finns, annars default
         const completeSchedule = Array.from({ length: 7 }, (_, dayOfWeek) => {
-          const existing = data.find((item: any) => item.dayOfWeek === dayOfWeek)
+          const existing = data.find((item: AvailabilityDay) => item.dayOfWeek === dayOfWeek)
           if (existing) {
             return {
               dayOfWeek: existing.dayOfWeek,
@@ -106,7 +106,7 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
     }
   }
 
-  const handleDayChange = (dayIndex: number, field: keyof AvailabilityDay, value: any) => {
+  const handleDayChange = (dayIndex: number, field: keyof AvailabilityDay, value: string | boolean | number) => {
     setSchedule((prev) =>
       prev.map((day, i) =>
         i === dayIndex ? { ...day, [field]: value } : day

@@ -27,7 +27,7 @@ describe("GET /api/notifications", () => {
   it("should return notifications and unreadCount for authenticated user", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
 
     const mockNotifications = [
       {
@@ -67,7 +67,7 @@ describe("GET /api/notifications", () => {
   it("should respect limit query parameter", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
     mockGetForUser.mockResolvedValue([])
     mockGetUnreadCount.mockResolvedValue(0)
 
@@ -101,7 +101,7 @@ describe("POST /api/notifications (mark all as read)", () => {
   it("should mark all notifications as read", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
     mockMarkAllAsRead.mockResolvedValue({ count: 3 })
 
     const request = new NextRequest("http://localhost:3000/api/notifications", {

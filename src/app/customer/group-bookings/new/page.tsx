@@ -52,7 +52,7 @@ export default function CreateGroupBookingPage() {
       .then((data) => {
         if (Array.isArray(data)) {
           setHorses(
-            data.map((h: any) => ({
+            data.map((h: { id: string; name: string; breed?: string | null; specialNeeds?: string | null }) => ({
               id: h.id,
               name: h.name,
               breed: h.breed || null,

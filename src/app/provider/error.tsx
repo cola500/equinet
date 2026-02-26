@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useSyncExternalStore } from "react"
 
 /**
  * Inline online status -- replaces useOnlineStatus() to avoid chunk dependencies.

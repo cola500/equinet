@@ -90,7 +90,7 @@ describe('POST /api/group-bookings', () => {
       _count: { participants: 1 },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
     mockService.createRequest.mockResolvedValue(Result.ok(mockCreated))
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings', {
@@ -142,7 +142,7 @@ describe('POST /api/group-bookings', () => {
   it('should return 400 for missing required fields', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings', {
       method: 'POST',
@@ -162,7 +162,7 @@ describe('POST /api/group-bookings', () => {
   it('should return 400 when dateFrom is in the past', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     const pastDate = new Date()
     pastDate.setDate(pastDate.getDate() - 1)
@@ -188,7 +188,7 @@ describe('POST /api/group-bookings', () => {
   it('should return 400 when date span exceeds 30 days', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     const farDate = new Date(FUTURE_DATE)
     farDate.setDate(farDate.getDate() + 31)
@@ -214,7 +214,7 @@ describe('POST /api/group-bookings', () => {
   it('should return 400 when maxParticipants is out of range', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings', {
       method: 'POST',
@@ -238,7 +238,7 @@ describe('POST /api/group-bookings', () => {
   it('should return 400 for invalid JSON', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/group-bookings', {
       method: 'POST',
@@ -270,7 +270,7 @@ describe('GET /api/group-bookings', () => {
   it('should return group bookings for authenticated customer (created + joined)', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     const mockRequests = [
       {

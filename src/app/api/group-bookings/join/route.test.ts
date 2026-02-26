@@ -56,7 +56,7 @@ describe('POST /api/group-bookings/join', () => {
   it('should allow a user to join via invite code', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.joinByInviteCode.mockResolvedValue(
       Result.ok({
         id: TEST_UUIDS.newParticipant,
@@ -89,7 +89,7 @@ describe('POST /api/group-bookings/join', () => {
   it('should return 404 for invalid invite code', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.joinByInviteCode.mockResolvedValue(
       Result.fail({
         type: 'GROUP_BOOKING_NOT_FOUND',
@@ -112,7 +112,7 @@ describe('POST /api/group-bookings/join', () => {
   it('should return 400 when group is not open', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.joinByInviteCode.mockResolvedValue(
       Result.fail({
         type: 'GROUP_NOT_OPEN',
@@ -135,7 +135,7 @@ describe('POST /api/group-bookings/join', () => {
   it('should return 400 when group is full', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.joinByInviteCode.mockResolvedValue(
       Result.fail({
         type: 'GROUP_FULL',
@@ -158,7 +158,7 @@ describe('POST /api/group-bookings/join', () => {
   it('should return 409 when user already joined', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.joinByInviteCode.mockResolvedValue(
       Result.fail({
         type: 'ALREADY_JOINED',
@@ -181,7 +181,7 @@ describe('POST /api/group-bookings/join', () => {
   it('should return 400 when join deadline has passed', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.joinByInviteCode.mockResolvedValue(
       Result.fail({
         type: 'JOIN_DEADLINE_PASSED',

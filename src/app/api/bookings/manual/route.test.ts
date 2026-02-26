@@ -75,14 +75,14 @@ describe('POST /api/bookings/manual', () => {
     // Default: provider session
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     // Default: provider exists
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
       isActive: true,
-    } as any)
+    } as never)
 
     // Default: service exists
     vi.mocked(prisma.service.findUnique).mockResolvedValue({
@@ -90,7 +90,7 @@ describe('POST /api/bookings/manual', () => {
       providerId: TEST_UUIDS.provider,
       durationMinutes: 60,
       isActive: true,
-    } as any)
+    } as never)
 
     // Default: no existing bookings (no overlap)
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
@@ -100,7 +100,7 @@ describe('POST /api/bookings/manual', () => {
       latitude: 57.7089,
       longitude: 11.9746,
       address: 'Test',
-    } as any)
+    } as never)
 
     // Default: no availability exception (day is open)
     vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue(null)
@@ -130,7 +130,7 @@ describe('POST /api/bookings/manual', () => {
     }
 
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         booking: {
           findMany: vi.fn().mockResolvedValue([]),
@@ -163,7 +163,7 @@ describe('POST /api/bookings/manual', () => {
       id: ghostUserId,
       email: 'manual-test@ghost.equinet.se',
       isManualCustomer: true,
-    } as any)
+    } as never)
 
     const mockBooking = {
       id: TEST_UUIDS.booking,
@@ -176,7 +176,7 @@ describe('POST /api/bookings/manual', () => {
     }
 
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         booking: {
           findMany: vi.fn().mockResolvedValue([]),
@@ -204,7 +204,7 @@ describe('POST /api/bookings/manual', () => {
   it('should return 401 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = makeRequest({
       serviceId: TEST_UUIDS.service,
@@ -261,10 +261,10 @@ describe('POST /api/bookings/manual', () => {
       id: 'ghost-user-new',
       email: 'manual-test@ghost.equinet.se',
       isManualCustomer: true,
-    } as any)
+    } as never)
 
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         booking: {
           findMany: vi.fn().mockResolvedValue([]),
@@ -302,10 +302,10 @@ describe('POST /api/bookings/manual', () => {
       id: 'ghost-user-new',
       email: 'manual-test@ghost.equinet.se',
       isManualCustomer: true,
-    } as any)
+    } as never)
 
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         booking: {
           findMany: vi.fn().mockResolvedValue([]),
@@ -377,7 +377,7 @@ describe('POST /api/bookings/manual', () => {
     }
 
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         booking: {
           findMany: vi.fn().mockResolvedValue([]),
@@ -410,7 +410,7 @@ describe('POST /api/bookings/manual', () => {
       reason: 'Sjuk',
       startTime: null,
       endTime: null,
-    } as any)
+    } as never)
 
     const request = makeRequest({
       serviceId: TEST_UUIDS.service,

@@ -29,11 +29,11 @@ vi.mock("@/lib/rate-limit", () => ({
 
 const providerSession = {
   user: { id: "user-1", userType: "provider", providerId: "provider-1" },
-} as any
+} as never
 
 const customerSession = {
   user: { id: "user-1", userType: "customer" },
-} as any
+} as never
 
 const makeParams = (customerId: string, horseId: string) =>
   Promise.resolve({ customerId, horseId })
@@ -142,12 +142,12 @@ describe("PUT /api/provider/customers/[customerId]/horses/[horseId]", () => {
     vi.mocked(prisma.horse.findFirst).mockResolvedValue({
       id: "h1",
       ownerId: "c1",
-    } as any)
+    } as never)
     vi.mocked(prisma.horse.update).mockResolvedValue({
       id: "h1",
       name: "Uppdaterad",
       breed: "Islandshäst",
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses/h1", {
       method: "PUT",
@@ -213,11 +213,11 @@ describe("DELETE /api/provider/customers/[customerId]/horses/[horseId]", () => {
     vi.mocked(prisma.horse.findFirst).mockResolvedValue({
       id: "h1",
       ownerId: "c1",
-    } as any)
+    } as never)
     vi.mocked(prisma.horse.update).mockResolvedValue({
       id: "h1",
       isActive: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses/h1", {
       method: "DELETE",

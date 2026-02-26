@@ -62,13 +62,13 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
-    } as any)
-    vi.mocked(prisma.availabilityException.findMany).mockResolvedValue(mockExceptions as any)
+    } as never)
+    vi.mocked(prisma.availabilityException.findMany).mockResolvedValue(mockExceptions as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`
     )
-    const response = await GET(request as any, {
+    const response = await GET(request as never, {
       params: Promise.resolve({ id: mockProviderId }),
     })
 
@@ -85,13 +85,13 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
   it("should filter exceptions by from/to dates", async () => {
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
-    } as any)
+    } as never)
     vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions?from=2026-01-20&to=2026-01-31`
     )
-    const response = await GET(request as any, {
+    const response = await GET(request as never, {
       params: Promise.resolve({ id: mockProviderId }),
     })
 
@@ -112,13 +112,13 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
   it("should return empty array if no exceptions", async () => {
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
-    } as any)
+    } as never)
     vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`
     )
-    const response = await GET(request as any, {
+    const response = await GET(request as never, {
       params: Promise.resolve({ id: mockProviderId }),
     })
 
@@ -131,7 +131,7 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions?from=27-01-2026`
     )
-    const response = await GET(request as any, {
+    const response = await GET(request as never, {
       params: Promise.resolve({ id: mockProviderId }),
     })
 
@@ -144,7 +144,7 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions?to=2026/01/27`
     )
-    const response = await GET(request as any, {
+    const response = await GET(request as never, {
       params: Promise.resolve({ id: mockProviderId }),
     })
 
@@ -159,7 +159,7 @@ describe("GET /api/providers/[id]/availability-exceptions", () => {
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`
     )
-    const response = await GET(request as any, {
+    const response = await GET(request as never, {
       params: Promise.resolve({ id: mockProviderId }),
     })
 
@@ -183,11 +183,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockException = {
       id: "exc-1",
@@ -200,7 +200,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -229,11 +229,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockException = {
       id: "exc-1",
@@ -246,7 +246,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -276,11 +276,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -307,11 +307,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -337,11 +337,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -367,11 +367,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -417,7 +417,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "customer" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -441,11 +441,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: "different-user-id", // Different owner
-    } as any)
+    } as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -469,7 +469,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(false) // Rate limited
 
     const request = new Request(
@@ -496,11 +496,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockException = {
       id: "exc-1",
@@ -513,7 +513,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -547,11 +547,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockException = {
       id: "exc-1",
@@ -564,7 +564,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -598,11 +598,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockException = {
       id: "exc-1",
@@ -615,7 +615,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+    vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -660,11 +660,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
 
       const mockException = {
         id: "exc-1",
@@ -680,7 +680,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       }
-      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -729,11 +729,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
 
       const mockException = {
         id: "exc-1",
@@ -749,7 +749,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       }
-      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -779,11 +779,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -811,11 +811,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -843,11 +843,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
 
       const mockException = {
         id: "exc-1",
@@ -863,7 +863,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       }
-      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -897,11 +897,11 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
 
       const mockException = {
         id: "exc-1",
@@ -917,7 +917,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       }
-      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as any)
+      vi.mocked(prisma.availabilityException.upsert).mockResolvedValue(mockException as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -953,7 +953,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "customer" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
 
       const request = new Request(
@@ -977,12 +977,12 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: "different-user-id",
-      } as any)
+      } as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -1005,12 +1005,12 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
       const mockSession = {
         user: { id: mockUserId, userType: "provider" },
       }
-      vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+      vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
         userId: mockUserId,
-      } as any)
+      } as never)
       vi.mocked(prisma.availabilityException.upsert).mockRejectedValue(
         new Error("DB connection lost")
       )
@@ -1037,7 +1037,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     it("should include location in response when set", async () => {
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: mockProviderId,
-      } as any)
+      } as never)
 
       const mockExceptions = [
         {
@@ -1055,7 +1055,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
           updatedAt: new Date(),
         },
       ]
-      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue(mockExceptions as any)
+      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue(mockExceptions as never)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions?from=2026-03-01&to=2026-03-07`,

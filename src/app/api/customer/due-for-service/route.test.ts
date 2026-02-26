@@ -44,7 +44,7 @@ describe("GET /api/customer/due-for-service", () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: CUSTOMER_ID, userType: "customer" },
-    } as any)
+    } as never)
 
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -64,7 +64,7 @@ describe("GET /api/customer/due-for-service", () => {
   it("returns 403 for provider users", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "provider-user", userType: "provider" },
-    } as any)
+    } as never)
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(403)

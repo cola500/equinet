@@ -54,7 +54,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockUpdateWithAuth.mockResolvedValue(mockUpdatedService)
 
@@ -120,7 +120,7 @@ describe('PUT /api/services/[id]', () => {
     // Arrange - customer trying to update a service
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -142,7 +142,7 @@ describe('PUT /api/services/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -170,7 +170,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null when service not found or unauthorized
     mockUpdateWithAuth.mockResolvedValue(null)
@@ -200,7 +200,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null for unauthorized access
     mockUpdateWithAuth.mockResolvedValue(null)
@@ -230,7 +230,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -258,7 +258,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -292,7 +292,7 @@ describe('DELETE /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockDeleteWithAuth.mockResolvedValue(true)
 
@@ -339,7 +339,7 @@ describe('DELETE /api/services/[id]', () => {
     // Arrange - customer trying to delete a service
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'DELETE',
@@ -360,7 +360,7 @@ describe('DELETE /api/services/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -387,7 +387,7 @@ describe('DELETE /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false when service not found
     mockDeleteWithAuth.mockResolvedValue(false)
@@ -416,7 +416,7 @@ describe('DELETE /api/services/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false for unauthorized access
     mockDeleteWithAuth.mockResolvedValue(false)

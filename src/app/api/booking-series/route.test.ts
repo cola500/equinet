@@ -91,7 +91,7 @@ const CUSTOMER_SESSION = {
     email: "customer@test.se",
     userType: "customer",
   },
-} as any
+} as never
 
 const PROVIDER_SESSION = {
   user: {
@@ -100,7 +100,7 @@ const PROVIDER_SESSION = {
     userType: "provider",
     providerId: "a0000000-0000-4000-a000-000000000001",
   },
-} as any
+} as never
 
 function makeRequest(body: object): NextRequest {
   return new NextRequest("http://localhost:3000/api/booking-series", {
@@ -140,7 +140,7 @@ describe("POST /api/booking-series", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue(null as any)
+    vi.mocked(auth).mockResolvedValue(null as never)
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(401)
   })

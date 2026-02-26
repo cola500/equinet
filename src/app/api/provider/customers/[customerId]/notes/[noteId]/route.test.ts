@@ -27,7 +27,7 @@ vi.mock('@/lib/rate-limit', () => ({
 
 const providerSession = {
   user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-} as any
+} as never
 
 const makeParams = (customerId: string, noteId: string) =>
   Promise.resolve({ customerId, noteId })
@@ -42,7 +42,7 @@ describe('DELETE /api/provider/customers/[customerId]/notes/[noteId]', () => {
 
   it('should delete a note owned by the provider', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
-    vi.mocked(prisma.providerCustomerNote.delete).mockResolvedValue({} as any)
+    vi.mocked(prisma.providerCustomerNote.delete).mockResolvedValue({} as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes/note-1',
@@ -75,7 +75,7 @@ describe('DELETE /api/provider/customers/[customerId]/notes/[noteId]', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes/note-1',
@@ -129,7 +129,7 @@ describe('PUT /api/provider/customers/[customerId]/notes/[noteId]', () => {
 
   it('should update a note owned by the provider', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
-    vi.mocked(prisma.providerCustomerNote.update).mockResolvedValue(updatedNote as any)
+    vi.mocked(prisma.providerCustomerNote.update).mockResolvedValue(updatedNote as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes/note-1',
@@ -171,7 +171,7 @@ describe('PUT /api/provider/customers/[customerId]/notes/[noteId]', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes/note-1',
@@ -270,7 +270,7 @@ describe('PUT /api/provider/customers/[customerId]/notes/[noteId]', () => {
   it('should sanitize XSS in content', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     // The route sanitizes before passing to Prisma, so check what Prisma receives
-    vi.mocked(prisma.providerCustomerNote.update).mockImplementation(async (args: any) => ({
+    vi.mocked(prisma.providerCustomerNote.update).mockImplementation(async (args: never) => ({
       ...updatedNote,
       content: args.data.content,
     }))

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { encrypt } from "@/lib/encryption"
 import { exchangeCodeForTokens } from "@/lib/fortnox-client"
+import type { SessionUser } from "@/types/auth"
 
 // GET /api/integrations/fortnox/callback - OAuth callback
 export async function GET(request: NextRequest) {
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Get provider ID
-    const providerId = (session.user as any).providerId
+    const providerId = (session.user as SessionUser).providerId
     if (!providerId) {
       return NextResponse.redirect(
         new URL("/provider/settings/integrations?error=no_provider", request.url)

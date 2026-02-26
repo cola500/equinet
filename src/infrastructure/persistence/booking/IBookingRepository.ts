@@ -165,7 +165,7 @@ export interface IBookingRepository extends IRepository<Booking> {
   // ==========================================
   // Inherited from IRepository<Booking>:
   // - findById(id: string): Promise<Booking | null>
-  // - findMany(criteria?: Record<string, any>): Promise<Booking[]>
+  // - findMany(criteria?: Record<string, unknown>): Promise<Booking[]>
   // - save(entity: Booking): Promise<Booking>
   // - delete(id: string): Promise<void>
 

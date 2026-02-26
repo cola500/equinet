@@ -50,7 +50,7 @@ describe("DELETE /api/follows/:providerId", () => {
   it("should return 200 on successful unfollow", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockUnfollow.mockResolvedValue({ ok: true, value: undefined })
@@ -65,7 +65,7 @@ describe("DELETE /api/follows/:providerId", () => {
   it("should return 200 even when not following (idempotent)", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockUnfollow.mockResolvedValue({ ok: true, value: undefined })
@@ -83,7 +83,7 @@ describe("GET /api/follows/:providerId", () => {
   it("should return follow status with isFollowing true", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockIsFollowing.mockResolvedValue(true)
@@ -100,7 +100,7 @@ describe("GET /api/follows/:providerId", () => {
   it("should return follow status with isFollowing false", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockIsFollowing.mockResolvedValue(false)

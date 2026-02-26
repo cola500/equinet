@@ -189,7 +189,7 @@ export interface IGroupBookingRepository {
   findByIdForCreator(
     id: string,
     creatorId: string
-  ): Promise<(GroupBookingRequest & { participants: { userId: true }[] }) | null>
+  ): Promise<(GroupBookingRequest & { participants: { userId: string }[] }) | null>
 
   /**
    * Find participant with access check (self or creator)

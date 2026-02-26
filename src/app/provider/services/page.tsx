@@ -62,7 +62,7 @@ export default function ProviderServicesPage() {
         const method = editingService ? "PUT" : "POST"
 
         // Build payload - only include isActive when updating
-        const payload: any = {
+        const payload: Record<string, unknown> = {
           name: formData.name,
           description: formData.description || undefined,
           price: parseFloat(formData.price),

@@ -39,7 +39,7 @@ export interface IRepository<T> {
   /**
    * Find all entities matching criteria
    */
-  findMany(criteria?: Record<string, any>): Promise<T[]>
+  findMany(criteria?: Record<string, unknown>): Promise<T[]>
 
   /**
    * Save (insert or update) entity
@@ -62,7 +62,7 @@ export interface IRepository<T> {
  */
 export abstract class BaseRepository<T> implements IRepository<T> {
   abstract findById(id: string): Promise<T | null>
-  abstract findMany(criteria?: Record<string, any>): Promise<T[]>
+  abstract findMany(criteria?: Record<string, unknown>): Promise<T[]>
   abstract save(entity: T): Promise<T>
   abstract delete(id: string): Promise<void>
 

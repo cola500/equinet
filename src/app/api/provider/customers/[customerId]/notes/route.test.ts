@@ -33,7 +33,7 @@ vi.mock('@/lib/rate-limit', () => ({
 
 const providerSession = {
   user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-} as any
+} as never
 
 const makeParams = (customerId: string) =>
   Promise.resolve({ customerId })
@@ -57,7 +57,7 @@ describe('GET /api/provider/customers/[customerId]/notes', () => {
         content: 'Behöver extra tid',
         createdAt: new Date('2026-02-10'),
       },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes'
@@ -87,7 +87,7 @@ describe('GET /api/provider/customers/[customerId]/notes', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes'
@@ -151,7 +151,7 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
       customerId: 'customer-1',
       content: 'Ny anteckning',
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes',
@@ -189,7 +189,7 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes',
@@ -305,7 +305,7 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
       customerId: 'customer-1',
       content: 'Manuell kund-anteckning',
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/provider/customers/customer-1/notes',
@@ -323,7 +323,7 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
     vi.mocked(prisma.providerCustomerNote.create).mockImplementation(
-      async (args: any) => ({
+      async (args: { data: { content: string } }) => ({
         id: 'note-1',
         providerId: 'provider-1',
         customerId: 'customer-1',
@@ -352,7 +352,7 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
     vi.mocked(prisma.providerCustomerNote.create).mockImplementation(
-      async (args: any) => ({
+      async (args: { data: { content: string } }) => ({
         id: 'note-1',
         providerId: 'provider-1',
         customerId: 'customer-1',

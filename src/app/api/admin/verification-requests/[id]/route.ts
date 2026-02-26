@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     // Use transaction: update verification + optionally set provider verified + create notification
     // @ts-expect-error - Prisma transaction callback type inference issue
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
       // 1. Update verification status
       const updated = await tx.providerVerification.update({
         where: { id },

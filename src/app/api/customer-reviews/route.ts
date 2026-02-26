@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
-import { CustomerReviewService, type CustomerReviewError } from "@/domain/customer-review/CustomerReviewService"
+import { CustomerReviewService } from "@/domain/customer-review/CustomerReviewService"
 import { mapCustomerReviewErrorToStatus } from "@/domain/customer-review/mapCustomerReviewErrorToStatus"
 import { CustomerReviewRepository } from "@/infrastructure/persistence/customer-review/CustomerReviewRepository"
 

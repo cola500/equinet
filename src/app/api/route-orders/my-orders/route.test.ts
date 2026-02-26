@@ -22,11 +22,11 @@ const mockFindMany = vi.mocked(prisma.routeOrder.findMany)
 
 const mockCustomerSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 const mockProviderSession = {
   user: { id: "provider-1", email: "magnus@test.se", userType: "provider" },
-} as any
+} as never
 
 describe("GET /api/route-orders/my-orders", () => {
   beforeEach(() => {
@@ -92,7 +92,7 @@ describe("GET /api/route-orders/my-orders", () => {
         ],
       },
     ]
-    mockFindMany.mockResolvedValue(mockOrders as any)
+    mockFindMany.mockResolvedValue(mockOrders as never)
 
     const res = await GET()
     const body = await res.json()

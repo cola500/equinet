@@ -64,10 +64,10 @@ export async function POST(request: NextRequest) {
       distance: route.distance,
       duration: route.duration,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Routing proxy error", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
-      { error: error.message || 'Internt serverfel' },
+      { error: error instanceof Error ? error.message : 'Internt serverfel' },
       { status: 500 }
     )
   }

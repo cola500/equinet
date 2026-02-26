@@ -29,7 +29,7 @@ vi.mock("@/lib/supabase-storage", () => ({
 
 const mockSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 const mockProviderSession = {
   user: {
@@ -38,7 +38,7 @@ const mockProviderSession = {
     userType: "provider",
     providerId: "provider-1",
   },
-} as any
+} as never
 
 /**
  * Create a mock NextRequest with working FormData.
@@ -79,13 +79,13 @@ describe("POST /api/upload", () => {
     vi.mocked(prisma.horse.findFirst).mockResolvedValue({
       id: "horse-1",
       ownerId: "customer-1",
-    } as any)
-    vi.mocked(prisma.horse.update).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.horse.update).mockResolvedValue({} as never)
     vi.mocked(prisma.upload.create).mockResolvedValue({
       id: "upload-1",
       url: "https://storage.example.com/horses/test.jpg",
       path: "horses/test.jpg",
-    } as any)
+    } as never)
 
     const request = createMockUploadRequest(
       { bucket: "horses", entityId: "horse-1" },
@@ -104,13 +104,13 @@ describe("POST /api/upload", () => {
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
-    vi.mocked(prisma.provider.update).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.provider.update).mockResolvedValue({} as never)
     vi.mocked(prisma.upload.create).mockResolvedValue({
       id: "upload-2",
       url: "https://storage.example.com/avatars/test.jpg",
       path: "avatars/test.jpg",
-    } as any)
+    } as never)
 
     const request = createMockUploadRequest(
       { bucket: "avatars", entityId: "provider-1" },
@@ -164,13 +164,13 @@ describe("POST /api/upload", () => {
       id: "ver-1",
       providerId: "provider-1",
       status: "pending",
-    } as any)
+    } as never)
     vi.mocked(prisma.upload.count).mockResolvedValue(0)
     vi.mocked(prisma.upload.create).mockResolvedValue({
       id: "upload-ver",
       url: "https://storage.example.com/verifications/test.jpg",
       path: "verifications/test.jpg",
-    } as any)
+    } as never)
 
     const request = createMockUploadRequest(
       { bucket: "verifications", entityId: "ver-1" },
@@ -217,7 +217,7 @@ describe("POST /api/upload", () => {
       id: "ver-1",
       providerId: "provider-1",
       status: "pending",
-    } as any)
+    } as never)
     vi.mocked(prisma.upload.count).mockResolvedValue(5)
 
     const request = createMockUploadRequest(

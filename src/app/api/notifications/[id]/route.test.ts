@@ -23,7 +23,7 @@ describe("PUT /api/notifications/[id]", () => {
   it("should mark notification as read for the owner", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
 
     mockMarkAsRead.mockResolvedValue({
       id: "n1",
@@ -49,7 +49,7 @@ describe("PUT /api/notifications/[id]", () => {
   it("should return 404 when notification not found or not owned", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
 
     // Prisma throws P2025 when record not found in update with WHERE
     mockMarkAsRead.mockRejectedValue(

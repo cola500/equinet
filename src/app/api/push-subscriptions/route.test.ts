@@ -57,7 +57,7 @@ describe("POST /api/push-subscriptions", () => {
   it("should create subscription with 201", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     vi.mocked(prisma.pushSubscription.upsert).mockResolvedValue({
       id: "ps-1",
       userId: "u1",
@@ -65,7 +65,7 @@ describe("POST /api/push-subscriptions", () => {
       p256dh: validSubscription.keys.p256dh,
       auth: validSubscription.keys.auth,
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const response = await POST(makeRequest("POST", validSubscription))
     expect(response.status).toBe(201)
@@ -74,7 +74,7 @@ describe("POST /api/push-subscriptions", () => {
   it("should upsert on duplicate endpoint (200)", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     vi.mocked(prisma.pushSubscription.upsert).mockResolvedValue({
       id: "ps-1",
       userId: "u1",
@@ -82,7 +82,7 @@ describe("POST /api/push-subscriptions", () => {
       p256dh: validSubscription.keys.p256dh,
       auth: validSubscription.keys.auth,
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const response = await POST(makeRequest("POST", validSubscription))
     // Upsert is used so it's always 201
@@ -103,7 +103,7 @@ describe("DELETE /api/push-subscriptions", () => {
   it("should delete subscription and return 200", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     vi.mocked(prisma.pushSubscription.deleteMany).mockResolvedValue({ count: 1 })
 
     const response = await DELETE(

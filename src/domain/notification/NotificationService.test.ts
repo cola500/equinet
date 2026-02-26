@@ -83,7 +83,7 @@ describe("NotificationService", () => {
         ...baseInput,
         metadata: { key: "value", nested: "data" },
       }
-      mockCreate.mockResolvedValue({} as any)
+      mockCreate.mockResolvedValue({} as never)
 
       await service.create(input)
 
@@ -97,7 +97,7 @@ describe("NotificationService", () => {
     })
 
     it("should create notification without optional fields", async () => {
-      mockCreate.mockResolvedValue({} as any)
+      mockCreate.mockResolvedValue({} as never)
 
       await service.create(baseInput)
 
@@ -230,7 +230,7 @@ describe("NotificationService", () => {
 
   describe("createAsync()", () => {
     it("should create notification successfully", async () => {
-      mockCreate.mockResolvedValue({} as any)
+      mockCreate.mockResolvedValue({} as never)
 
       await service.createAsync(baseInput)
 

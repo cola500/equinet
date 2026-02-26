@@ -12,8 +12,8 @@ const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 vi.mock("sonner", () => ({
   toast: {
-    success: (...args: any[]) => mockToastSuccess(...args),
-    error: (...args: any[]) => mockToastError(...args),
+    success: (...args: unknown[]) => mockToastSuccess(...args),
+    error: (...args: unknown[]) => mockToastError(...args),
   },
 }))
 

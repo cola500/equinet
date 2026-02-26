@@ -92,7 +92,7 @@ export async function PUT(
     // Update availability schedule using transaction to avoid connection pool exhaustion
     // This runs all operations in a single connection
     // @ts-expect-error - Prisma transaction callback type inference issue
-    const updatedAvailability = await prisma.$transaction(async (tx: any) => {
+    const updatedAvailability = await prisma.$transaction(async (tx: typeof prisma) => {
       // Delete existing availability
       await tx.availability.deleteMany({
         where: { providerId },

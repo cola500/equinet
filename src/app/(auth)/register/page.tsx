@@ -69,8 +69,8 @@ export default function RegisterPage() {
 
       // Redirect to check-email page
       router.push("/check-email")
-    } catch (error: any) {
-      const errorMessage = error.message || "Något gick fel vid registrering. Kontrollera din internetanslutning."
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Något gick fel vid registrering. Kontrollera din internetanslutning."
       setError(errorMessage)
       console.error("Registration error:", error)
     } finally {

@@ -50,12 +50,12 @@ describe('GET /api/provider/due-for-service', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
-    } as any)
+    } as never)
 
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([])
     vi.mocked(prisma.customerHorseServiceInterval.findMany).mockResolvedValue([])
@@ -73,7 +73,7 @@ describe('GET /api/provider/due-for-service', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer-user', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(403)
@@ -113,7 +113,7 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -149,7 +149,7 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -176,11 +176,11 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 8 },
       },
-    ] as any)
+    ] as never)
 
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
       { horseId: TEST_UUIDS.horse1, serviceId: TEST_UUIDS.service1, providerId: TEST_UUIDS.provider, revisitIntervalWeeks: 4 },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -222,7 +222,7 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest('?filter=overdue'))
     const data = await response.json()
@@ -249,7 +249,7 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest('?filter=upcoming'))
     const data = await response.json()
@@ -291,7 +291,7 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -330,7 +330,7 @@ describe('GET /api/provider/due-for-service', () => {
         customer: { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson' },
         service: { id: TEST_UUIDS.service1, name: 'Hovslagning', recommendedIntervalWeeks: 6 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()

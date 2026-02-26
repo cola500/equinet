@@ -68,7 +68,14 @@ export async function GET(request: NextRequest) {
 
     // Filter to only active providers and deduplicate
     const providerMap = new Map<string, {
-      provider: any
+      provider: {
+        id: string
+        businessName: string
+        description: string | null
+        city: string | null
+        services: Array<{ id: string; name: string; price: number; durationMinutes: number; isActive: boolean }>
+        user: { firstName: string; lastName: string }
+      }
       nextVisit: {
         date: string
         location: string

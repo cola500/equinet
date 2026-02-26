@@ -50,14 +50,14 @@ describe("GET /api/provider/dashboard/stats", () => {
   })
 
   it("should return 401 when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null as any)
+    mockAuth.mockResolvedValue(null as never)
 
     const response = await GET(createRequest())
     expect(response.status).toBe(401)
   })
 
   it("should return 404 when provider not found", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
     mockFindFirst.mockResolvedValue(null)
 
     const response = await GET(createRequest())
@@ -65,8 +65,8 @@ describe("GET /api/provider/dashboard/stats", () => {
   })
 
   it("should return empty trends for provider with no bookings", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
-    mockFindFirst.mockResolvedValue({ id: "provider-1" } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
     mockFindMany.mockResolvedValue([])
 
     const response = await GET(createRequest())
@@ -76,13 +76,13 @@ describe("GET /api/provider/dashboard/stats", () => {
     expect(data.bookingTrend).toHaveLength(8)
     expect(data.revenueTrend).toHaveLength(6)
     // All zero values
-    expect(data.bookingTrend.every((w: any) => w.completed === 0 && w.cancelled === 0)).toBe(true)
-    expect(data.revenueTrend.every((m: any) => m.revenue === 0)).toBe(true)
+    expect(data.bookingTrend.every((w: { completed: number; cancelled: number }) => w.completed === 0 && w.cancelled === 0)).toBe(true)
+    expect(data.revenueTrend.every((m: { revenue: number }) => m.revenue === 0)).toBe(true)
   })
 
   it("should correctly count completed and cancelled bookings per week", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
-    mockFindFirst.mockResolvedValue({ id: "provider-1" } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
 
     const now = new Date()
     // Use this week's Monday to guarantee the date falls in the current week bucket
@@ -104,7 +104,7 @@ describe("GET /api/provider/dashboard/stats", () => {
         status: "cancelled",
         service: { price: 500 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -118,8 +118,8 @@ describe("GET /api/provider/dashboard/stats", () => {
   })
 
   it("should calculate revenue from completed bookings only", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
-    mockFindFirst.mockResolvedValue({ id: "provider-1" } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
 
     const now = new Date()
     mockFindMany.mockResolvedValue([
@@ -133,7 +133,7 @@ describe("GET /api/provider/dashboard/stats", () => {
         status: "cancelled",
         service: { price: 1200 },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -144,8 +144,8 @@ describe("GET /api/provider/dashboard/stats", () => {
   })
 
   it("should return exactly 8 weeks and 6 months", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
-    mockFindFirst.mockResolvedValue({ id: "provider-1" } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
     mockFindMany.mockResolvedValue([])
 
     const response = await GET(createRequest())
@@ -156,8 +156,8 @@ describe("GET /api/provider/dashboard/stats", () => {
   })
 
   it("should use select on booking query (not include)", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
-    mockFindFirst.mockResolvedValue({ id: "provider-1" } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
     mockFindMany.mockResolvedValue([])
 
     await GET(createRequest())

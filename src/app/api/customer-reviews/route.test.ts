@@ -45,9 +45,9 @@ describe('POST /api/customer-reviews', () => {
   it('should create a customer review for a completed booking', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
     vi.mocked(prisma.customerReview.create).mockResolvedValue({
       id: 'cr-1',
       rating: 4,
@@ -56,7 +56,7 @@ describe('POST /api/customer-reviews', () => {
       providerId: 'provider-1',
       customerId: 'customer-1',
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -79,9 +79,9 @@ describe('POST /api/customer-reviews', () => {
   it('should create a review without comment', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
     vi.mocked(prisma.customerReview.create).mockResolvedValue({
       id: 'cr-1',
       rating: 5,
@@ -90,7 +90,7 @@ describe('POST /api/customer-reviews', () => {
       providerId: 'provider-1',
       customerId: 'customer-1',
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -127,7 +127,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 401 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -144,7 +144,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 401 when provider has no providerId', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: null },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -161,7 +161,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for invalid rating (too low)', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -178,7 +178,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for invalid rating (too high)', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -195,7 +195,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for comment exceeding 500 characters', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -216,7 +216,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 404 when booking not found', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -234,8 +234,8 @@ describe('POST /api/customer-reviews', () => {
   it('should return 403 when provider does not own the booking', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'other-provider' },
-    } as any)
-    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as any)
+    } as never)
+    vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -252,11 +252,11 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 when booking is not completed', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
       status: 'confirmed',
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -273,11 +273,11 @@ describe('POST /api/customer-reviews', () => {
   it('should return 409 when customer review already exists', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
       customerReview: { id: 'existing-cr' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -294,7 +294,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for invalid JSON', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -311,7 +311,7 @@ describe('POST /api/customer-reviews', () => {
   it('should reject extra fields (strict mode)', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -333,7 +333,7 @@ describe('POST /api/customer-reviews', () => {
   it('should not allow providerId in request body', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -357,7 +357,7 @@ describe('GET /api/customer-reviews', () => {
   it('should return customer reviews for the provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([
       {
@@ -371,7 +371,7 @@ describe('GET /api/customer-reviews', () => {
         customer: { firstName: 'Anna', lastName: 'Svensson' },
         booking: { service: { name: 'Hovslagning' }, bookingDate: new Date() },
       },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews')
     const response = await GET(request)
@@ -386,7 +386,7 @@ describe('GET /api/customer-reviews', () => {
   it('should return 401 when not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews')
     const response = await GET(request)

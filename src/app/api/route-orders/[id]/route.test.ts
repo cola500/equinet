@@ -41,13 +41,13 @@ describe("GET /api/route-orders/[id]", () => {
   })
 
   it("uses select on routeStops to prevent data leakage", async () => {
-    mockedFindUnique.mockResolvedValue({ id: "test" } as any)
+    mockedFindUnique.mockResolvedValue({ id: "test" } as never)
     const req = new NextRequest("http://localhost:3000/api/route-orders/abc")
     await GET(req, { params })
 
     const call = mockedFindUnique.mock.calls[0][0]
     // routeStops must use select (not return all fields including full addresses)
-    const include = (call as any).include
+    const include = (call as never).include
     expect(include.routeStops).toHaveProperty("select")
     // Should NOT include problemNote or actualArrival/actualDeparture
     const routeStopSelect = include.routeStops.select

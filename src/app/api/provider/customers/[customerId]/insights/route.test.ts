@@ -103,7 +103,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   })
 
   it("returns 401 without session", async () => {
-    mockAuth.mockResolvedValue(null as any)
+    mockAuth.mockResolvedValue(null as never)
 
     const response = await POST(createRequest(), { params })
     expect(response.status).toBe(401)
@@ -112,7 +112,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns 403 for non-provider", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
 
     const response = await POST(createRequest(), { params })
     expect(response.status).toBe(403)
@@ -121,7 +121,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns 429 when rate limited", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     vi.mocked(rateLimiters.ai).mockResolvedValueOnce(false)
 
     const response = await POST(createRequest(), { params })
@@ -131,7 +131,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns 403 when no customer relationship", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(false)
 
@@ -144,7 +144,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns 400 when customer has no completed bookings", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
 
@@ -159,7 +159,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
         service: { name: "Hovvård", price: 1500 },
         horse: null,
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomerNote.findMany).mockResolvedValue([])
     vi.mocked(prisma.review.findMany).mockResolvedValue([])
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([])
@@ -177,7 +177,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns insight on success (happy path)", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
 
@@ -200,7 +200,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
         service: { name: "Hovvård", price: 1500 },
         horse: { name: "Stella", breed: "Islandshäst", specialNeeds: null },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomerNote.findMany).mockResolvedValue([])
     vi.mocked(prisma.review.findMany).mockResolvedValue([])
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([])
@@ -225,7 +225,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns 500 when AI service fails", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
 
@@ -239,7 +239,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
         service: { name: "Hovvård", price: 1500 },
         horse: null,
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomerNote.findMany).mockResolvedValue([])
     vi.mocked(prisma.review.findMany).mockResolvedValue([])
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([])
@@ -257,7 +257,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns 404 when provider not found", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(null)
 
     const response = await POST(createRequest(), { params })
@@ -269,7 +269,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("returns cached insight without calling AI", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
 
@@ -304,7 +304,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("stores result in cache after AI generation", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
 
@@ -318,7 +318,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
         service: { name: "Hovvård", price: 1500 },
         horse: null,
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomerNote.findMany).mockResolvedValue([])
     vi.mocked(prisma.review.findMany).mockResolvedValue([])
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([])
@@ -343,7 +343,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
   it("ignores cache when ?refresh=true", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
 
@@ -364,7 +364,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
         service: { name: "Hovvård", price: 1500 },
         horse: null,
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomerNote.findMany).mockResolvedValue([])
     vi.mocked(prisma.review.findMany).mockResolvedValue([])
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([])

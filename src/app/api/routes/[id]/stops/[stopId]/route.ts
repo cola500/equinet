@@ -70,7 +70,12 @@ export async function PATCH(
 
     // 4. Update stop
     const now = new Date()
-    const updateData: any = {
+    const updateData: {
+      status: string
+      problemNote?: string
+      actualArrival?: Date
+      actualDeparture?: Date
+    } = {
       status: validated.status,
       problemNote: validated.problemNote,
     }
@@ -83,7 +88,6 @@ export async function PATCH(
       updateData.actualDeparture = now
     }
 
-    // @ts-expect-error - Prisma transaction callback type inference issue
     const updatedStop = await prisma.$transaction(async (tx) => {
       // Update the stop
       const stop = await tx.routeStop.update({

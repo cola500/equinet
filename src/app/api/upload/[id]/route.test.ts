@@ -24,7 +24,7 @@ vi.mock("@/lib/supabase-storage", () => ({
 
 const mockSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 const makeContext = (id: string) => ({ params: Promise.resolve({ id }) })
 
@@ -37,8 +37,8 @@ describe("DELETE /api/upload/[id]", () => {
       id: "upload-1",
       userId: "customer-1",
       path: "horses/photo.jpg",
-    } as any)
-    vi.mocked(prisma.upload.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.upload.delete).mockResolvedValue({} as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/upload/upload-1",
@@ -69,11 +69,11 @@ describe("DELETE /api/upload/[id]", () => {
       userId: "customer-1",
       path: "verifications/cert.jpg",
       verificationId: "ver-approved",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
       id: "ver-approved",
       status: "approved",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/upload/upload-ver",
@@ -91,12 +91,12 @@ describe("DELETE /api/upload/[id]", () => {
       userId: "customer-1",
       path: "verifications/cert.jpg",
       verificationId: "ver-pending",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
       id: "ver-pending",
       status: "pending",
-    } as any)
-    vi.mocked(prisma.upload.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.upload.delete).mockResolvedValue({} as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/upload/upload-ver",

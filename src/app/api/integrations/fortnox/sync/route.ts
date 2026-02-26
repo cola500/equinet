@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const providerId = (session.user as any).providerId
+    const providerId = session.user.providerId
     if (!providerId) {
       return NextResponse.json(
         { error: "Leverantör hittades inte" },
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Batch all DB updates in a single transaction
     if (pendingUpdates.length > 0) {
       // @ts-expect-error - Prisma transaction callback type inference issue
-      await prisma.$transaction(async (tx: any) => {
+      await prisma.$transaction(async (tx: typeof prisma) => {
         for (const update of pendingUpdates) {
           await tx.payment.update({
             where: { id: update.paymentId },

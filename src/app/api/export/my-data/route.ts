@@ -13,6 +13,7 @@ import {
   flattenProvider,
   flattenProviderServices,
 } from "@/lib/export-utils"
+import type { SessionUser } from "@/types/auth"
 
 // GET /api/export/my-data - Export all user data (GDPR Art 20)
 export async function GET(request: NextRequest) {
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
     // Fetch reviews (written by this user)
     const reviews = await prisma.review.findMany({
       where: isProvider
-        ? { providerId: (session.user as any).providerId }
+        ? { providerId: (session.user as SessionUser).providerId! }
         : { customerId: userId },
       select: {
         id: true,
@@ -133,9 +134,9 @@ export async function GET(request: NextRequest) {
 
     // Fetch provider-specific data if applicable
     let provider = null
-    if (isProvider && (session.user as any).providerId) {
+    if (isProvider && (session.user as SessionUser).providerId) {
       provider = await prisma.provider.findUnique({
-        where: { id: (session.user as any).providerId },
+        where: { id: (session.user as SessionUser).providerId! },
         select: {
           id: true,
           businessName: true,

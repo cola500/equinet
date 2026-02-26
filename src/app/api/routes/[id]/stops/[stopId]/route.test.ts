@@ -85,13 +85,13 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
     // Default auth: authenticated provider
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider", providerId: "provider-1" },
-    } as any)
+    } as never)
 
     // Default route: exists and owned by provider-1
     mockFindUnique.mockResolvedValue({
       id: "route-1",
       providerId: "provider-1",
-    } as any)
+    } as never)
 
     // Setup transaction mock helpers
     mockStopUpdate = vi.fn()
@@ -99,7 +99,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
     mockOrderUpdate = vi.fn()
     mockRouteUpdate = vi.fn()
 
-    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: never) => {
       return cb({
         routeStop: { update: mockStopUpdate, findMany: mockStopFindMany },
         routeOrder: { update: mockOrderUpdate },
@@ -138,7 +138,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
   it("returns 403 when user is not a provider", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "customer", customerId: "cust-1" },
-    } as any)
+    } as never)
 
     const req = createRequest({ status: "completed" })
     const res = await PATCH(req, defaultParams)
@@ -151,7 +151,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
   it("returns 403 when provider has no providerId", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "provider", providerId: null },
-    } as any)
+    } as never)
 
     const req = createRequest({ status: "completed" })
     const res = await PATCH(req, defaultParams)
@@ -180,7 +180,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
     mockFindUnique.mockResolvedValue({
       id: "route-1",
       providerId: "other-provider",
-    } as any)
+    } as never)
 
     const req = createRequest({ status: "completed" })
     const res = await PATCH(req, defaultParams)

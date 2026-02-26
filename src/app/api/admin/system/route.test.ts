@@ -39,7 +39,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se" },
-} as any
+} as never
 
 describe("GET /api/admin/system", () => {
   beforeEach(() => {
@@ -48,14 +48,14 @@ describe("GET /api/admin/system", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   it("should return system health status", async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([{ result: 1 }])
     vi.mocked(prisma.notification.findFirst).mockResolvedValue({
       createdAt: new Date("2026-02-10T08:00:00Z"),
-    } as any)
+    } as never)
     vi.mocked(prisma.notification.count).mockResolvedValue(42)
 
     const request = new NextRequest("http://localhost:3000/api/admin/system")
@@ -99,7 +99,7 @@ describe("GET /api/admin/system", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/system")
     const response = await GET(request)

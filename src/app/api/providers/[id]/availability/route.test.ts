@@ -42,7 +42,7 @@ describe("GET /api/providers/[id]/availability", () => {
     vi.mocked(rateLimit.rateLimiters.api).mockResolvedValue(true)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
-    } as any)
+    } as never)
     // Default: no availability exception
     vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
@@ -61,7 +61,7 @@ describe("GET /api/providers/[id]/availability", () => {
         reason: "Semester",
         startTime: null,
         endTime: null,
-      } as any)
+      } as never)
 
       // Normal weekly schedule exists
       vi.mocked(prisma.availability.findFirst).mockResolvedValue({
@@ -69,9 +69,9 @@ describe("GET /api/providers/[id]/availability", () => {
         endTime: "17:00",
         isClosed: false,
         isActive: true,
-      } as any)
+      } as never)
 
-      const response = await GET(createRequest("2026-02-10") as any, {
+      const response = await GET(createRequest("2026-02-10") as never, {
         params: Promise.resolve({ id: mockProviderId }),
       })
 
@@ -88,7 +88,7 @@ describe("GET /api/providers/[id]/availability", () => {
         reason: null,
         startTime: "10:00",
         endTime: "14:00",
-      } as any)
+      } as never)
 
       // Normal weekly schedule is wider
       vi.mocked(prisma.availability.findFirst).mockResolvedValue({
@@ -96,9 +96,9 @@ describe("GET /api/providers/[id]/availability", () => {
         endTime: "17:00",
         isClosed: false,
         isActive: true,
-      } as any)
+      } as never)
 
-      const response = await GET(createRequest("2026-02-10") as any, {
+      const response = await GET(createRequest("2026-02-10") as never, {
         params: Promise.resolve({ id: mockProviderId }),
       })
 
@@ -108,7 +108,7 @@ describe("GET /api/providers/[id]/availability", () => {
       expect(data.openingTime).toBe("10:00")
       expect(data.closingTime).toBe("14:00")
       // Slots should be within 10:00-14:00, not 08:00-17:00
-      const slotTimes = data.slots.map((s: any) => s.startTime)
+      const slotTimes = data.slots.map((s: { startTime: string }) => s.startTime)
       expect(slotTimes).toContain("10:00")
       expect(slotTimes).not.toContain("08:00")
       expect(slotTimes).not.toContain("14:00") // 14:00+30min=14:30 > 14:00, so no slot starting at 14:00
@@ -122,9 +122,9 @@ describe("GET /api/providers/[id]/availability", () => {
         endTime: "17:00",
         isClosed: false,
         isActive: true,
-      } as any)
+      } as never)
 
-      const response = await GET(createRequest("2026-02-10") as any, {
+      const response = await GET(createRequest("2026-02-10") as never, {
         params: Promise.resolve({ id: mockProviderId }),
       })
 
@@ -141,16 +141,16 @@ describe("GET /api/providers/[id]/availability", () => {
         reason: null,
         startTime: null,
         endTime: null,
-      } as any)
+      } as never)
 
       vi.mocked(prisma.availability.findFirst).mockResolvedValue({
         startTime: "08:00",
         endTime: "17:00",
         isClosed: false,
         isActive: true,
-      } as any)
+      } as never)
 
-      const response = await GET(createRequest("2026-02-10") as any, {
+      const response = await GET(createRequest("2026-02-10") as never, {
         params: Promise.resolve({ id: mockProviderId }),
       })
 

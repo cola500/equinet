@@ -38,13 +38,13 @@ export class MockBookingRepository
     return this.bookings.get(id) ?? null
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<Booking[]> {
+  async findMany(criteria?: Record<string, unknown>): Promise<Booking[]> {
     let results = Array.from(this.bookings.values())
 
     if (criteria) {
       results = results.filter((booking) => {
         return Object.entries(criteria).every(([key, value]) => {
-          return (booking as any)[key] === value
+          return booking[key as keyof Booking] === value
         })
       })
     }

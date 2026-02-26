@@ -21,7 +21,19 @@ interface UseSpeechRecognitionReturn {
   error: string | null
 }
 
-// Extend Window for SpeechRecognition types
+// SpeechRecognition instance interface (Web Speech API)
+interface SpeechRecognitionInstance {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onstart: (() => void) | null
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList
   resultIndex: number
@@ -32,11 +44,17 @@ interface SpeechRecognitionErrorEvent extends Event {
   message: string
 }
 
+// Window augmentation for vendor-prefixed SpeechRecognition
+interface WindowWithSpeechRecognition extends Window {
+  SpeechRecognition?: new () => SpeechRecognitionInstance
+  webkitSpeechRecognition?: new () => SpeechRecognitionInstance
+}
+
 export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [transcript, setTranscript] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const recognitionRef = useRef<any>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
 
   // Check browser support
   const isSupported =
@@ -45,14 +63,19 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
   const startListening = useCallback(() => {
     if (!isSupported) {
-      setError("Taligenk\u00e4nning st\u00f6ds inte i denna webbl\u00e4sare")
+      setError("Taligenkänning stöds inte i denna webbläsare")
       return
     }
 
     setError(null)
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const w = window as unknown as WindowWithSpeechRecognition
+    const SpeechRecognition = w.SpeechRecognition || w.webkitSpeechRecognition
+
+    if (!SpeechRecognition) {
+      setError("Taligenkänning stöds inte i denna webbläsare")
+      return
+    }
 
     const recognition = new SpeechRecognition()
     recognition.lang = "sv-SE"
@@ -86,7 +109,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
         // Not a real error, just silence
         return
       }
-      setError(`Fel vid taligenk\u00e4nning: ${event.error}`)
+      setError(`Fel vid taligenkänning: ${event.error}`)
       setIsListening(false)
     }
 

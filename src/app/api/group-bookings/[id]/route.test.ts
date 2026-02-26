@@ -89,7 +89,7 @@ describe('GET /api/group-bookings/[id]', () => {
   it('returns 404 when group_bookings feature flag is disabled', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
     mockIsFeatureEnabled.mockResolvedValueOnce(false)
     const req = new NextRequest('http://localhost/api/group-bookings/gb-1')
     const res = await GET(req, { params: makeParams('gb-1') })
@@ -100,7 +100,7 @@ describe('GET /api/group-bookings/[id]', () => {
   it('should return group booking details for a participant', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.getById.mockResolvedValue(Result.ok(mockGroupRequest))
 
     const request = new NextRequest(
@@ -121,7 +121,7 @@ describe('GET /api/group-bookings/[id]', () => {
   it('should return 404 when group booking not found or user not participant', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.otherUser, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.getById.mockResolvedValue(
       Result.fail({
         type: 'GROUP_BOOKING_NOT_FOUND',
@@ -164,7 +164,7 @@ describe('PUT /api/group-bookings/[id]', () => {
   it('returns 404 when group_bookings feature flag is disabled', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
     mockIsFeatureEnabled.mockResolvedValueOnce(false)
     const req = new NextRequest('http://localhost/api/group-bookings/gb-1', {
       method: 'PUT',
@@ -178,7 +178,7 @@ describe('PUT /api/group-bookings/[id]', () => {
   it('should allow creator to update the group booking', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.updateRequest.mockResolvedValue(
       Result.ok({
         ...mockGroupRequest,
@@ -204,7 +204,7 @@ describe('PUT /api/group-bookings/[id]', () => {
   it('should allow creator to cancel the group booking', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.updateRequest.mockResolvedValue(
       Result.ok({
         ...mockGroupRequest,
@@ -230,7 +230,7 @@ describe('PUT /api/group-bookings/[id]', () => {
   it('should return 403 when non-creator tries to update', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.otherUser, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.updateRequest.mockResolvedValue(
       Result.fail({
         type: 'UNAUTHORIZED',
@@ -256,7 +256,7 @@ describe('PUT /api/group-bookings/[id]', () => {
   it('should return 400 for invalid status transition', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
     mockService.updateRequest.mockResolvedValue(
       Result.fail({
         type: 'INVALID_STATUS_TRANSITION',

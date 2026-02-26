@@ -31,7 +31,7 @@ const mockProviderSession = {
     userType: "provider",
     providerId: "provider-1",
   },
-} as any
+} as never
 
 const mockCustomerSession = {
   user: {
@@ -39,7 +39,7 @@ const mockCustomerSession = {
     email: "customer@test.se",
     userType: "customer",
   },
-} as any
+} as never
 
 const mockProviderSessionNoProviderId = {
   user: {
@@ -47,7 +47,7 @@ const mockProviderSessionNoProviderId = {
     email: "provider-no-id@test.se",
     userType: "provider",
   },
-} as any
+} as never
 
 function makeRequest(
   params: Record<string, string> = {},
@@ -191,7 +191,7 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "at-123",
       refresh_token: "rt-123",
       expires_in: 3600,
-    } as any)
+    } as never)
 
     const request = makeRequest(
       { code: "abc", state: "test-state" },
@@ -209,11 +209,11 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "access-token-123",
       refresh_token: "refresh-token-456",
       expires_in: 3600,
-    } as any)
+    } as never)
     vi.mocked(encrypt)
       .mockReturnValueOnce("encrypted-access-token")
       .mockReturnValueOnce("encrypted-refresh-token")
-    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as any)
+    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as never)
 
     const request = makeRequest(
       { code: "auth-code", state: "csrf-state" },
@@ -231,9 +231,9 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "at",
       refresh_token: "rt",
       expires_in: 3600,
-    } as any)
+    } as never)
     vi.mocked(encrypt).mockReturnValue("encrypted")
-    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as any)
+    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as never)
 
     const request = makeRequest(
       { code: "my-code", state: "my-state" },
@@ -255,9 +255,9 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "the-access-token",
       refresh_token: "the-refresh-token",
       expires_in: 3600,
-    } as any)
+    } as never)
     vi.mocked(encrypt).mockReturnValue("encrypted")
-    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as any)
+    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as never)
 
     const request = makeRequest(
       { code: "code", state: "state" },
@@ -276,13 +276,13 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "at",
       refresh_token: "rt",
       expires_in: 7200,
-    } as any)
+    } as never)
     let callIndex = 0
     vi.mocked(encrypt).mockImplementation(() => {
       callIndex++
       return `encrypted-${callIndex}`
     })
-    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as any)
+    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as never)
 
     const request = makeRequest(
       { code: "code", state: "state" },
@@ -312,9 +312,9 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "at",
       refresh_token: "rt",
       expires_in: 3600,
-    } as any)
+    } as never)
     vi.mocked(encrypt).mockReturnValue("encrypted")
-    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as any)
+    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as never)
 
     const request = makeRequest(
       { code: "code", state: "state" },
@@ -355,9 +355,9 @@ describe("GET /api/integrations/fortnox/callback", () => {
       access_token: "at",
       refresh_token: "rt",
       expires_in: 3600,
-    } as any)
+    } as never)
     vi.mocked(encrypt).mockReturnValue("encrypted")
-    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as any)
+    vi.mocked(prisma.fortnoxConnection.upsert).mockResolvedValue({} as never)
 
     const request = makeRequest(
       { code: "code", state: "state" },

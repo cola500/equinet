@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 }
 
 // Handle customer-initiated route orders
-async function handleCustomerOrder(body: any, session: any) {
+async function handleCustomerOrder(body: unknown, session: { user: { id: string; userType: string } }) {
   // Only customers can create route orders
   if (session.user.userType !== "customer") {
     return NextResponse.json(
@@ -169,7 +169,7 @@ async function handleCustomerOrder(body: any, session: any) {
 }
 
 // Handle provider-announced route orders
-async function handleProviderAnnouncement(body: any, session: any) {
+async function handleProviderAnnouncement(body: unknown, session: { user: { id: string; userType: string } }) {
   // Only providers can create announcements
   if (session.user.userType !== "provider") {
     return NextResponse.json(

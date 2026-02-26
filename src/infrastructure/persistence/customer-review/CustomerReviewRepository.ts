@@ -51,9 +51,9 @@ export class CustomerReviewRepository implements ICustomerReviewRepository {
     })
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<CustomerReview[]> {
+  async findMany(criteria?: Record<string, unknown>): Promise<CustomerReview[]> {
     return prisma.customerReview.findMany({
-      ...(criteria as any),
+      ...(criteria as Prisma.CustomerReviewFindManyArgs),
       select: customerReviewSelect,
     })
   }

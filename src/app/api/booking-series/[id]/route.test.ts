@@ -42,7 +42,7 @@ const CUSTOMER_SESSION = {
     email: "customer@test.se",
     userType: "customer",
   },
-} as any
+} as never
 
 const PROVIDER_SESSION = {
   user: {
@@ -51,7 +51,7 @@ const PROVIDER_SESSION = {
     userType: "provider",
     providerId: "provider-1",
   },
-} as any
+} as never
 
 function makeRequest(id: string): NextRequest {
   return new NextRequest(`http://localhost:3000/api/booking-series/${id}`)
@@ -82,11 +82,11 @@ describe("GET /api/booking-series/[id]", () => {
     vi.clearAllMocks()
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue(CUSTOMER_SESSION)
-    vi.mocked(prisma.bookingSeries.findUnique).mockResolvedValue(mockSeries as any)
+    vi.mocked(prisma.bookingSeries.findUnique).mockResolvedValue(mockSeries as never)
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue(null as any)
+    vi.mocked(auth).mockResolvedValue(null as never)
     const res = await GET(makeRequest("series-1"), { params: Promise.resolve({ id: "series-1" }) })
     expect(res.status).toBe(401)
   })
@@ -115,7 +115,7 @@ describe("GET /api/booking-series/[id]", () => {
   it("returns 403 when user is not owner", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "other-user", userType: "customer" },
-    } as any)
+    } as never)
     const res = await GET(makeRequest("series-1"), { params: Promise.resolve({ id: "series-1" }) })
     expect(res.status).toBe(403)
   })

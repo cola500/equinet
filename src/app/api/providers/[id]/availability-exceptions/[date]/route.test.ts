@@ -47,7 +47,7 @@ describe("GET /api/providers/[id]/availability-exceptions/[date]", () => {
       updatedAt: new Date(),
     }
 
-    vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue(mockException as any)
+    vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue(mockException as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions/${mockDate}`
@@ -118,11 +118,11 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockDeleted = {
       id: "exc-1",
@@ -133,7 +133,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
       endTime: null,
       reason: "Semester",
     }
-    vi.mocked(prisma.availabilityException.delete).mockResolvedValue(mockDeleted as any)
+    vi.mocked(prisma.availabilityException.delete).mockResolvedValue(mockDeleted as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions/${mockDate}`,
@@ -153,15 +153,15 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     // Prisma throws P2025 when record to delete doesn't exist
     const prismaError = new Error("Record not found")
-    ;(prismaError as any).code = "P2025"
+    ;(prismaError as Record<string, unknown>).code = "P2025"
     vi.mocked(prisma.availabilityException.delete).mockRejectedValue(prismaError)
 
     const request = new Request(
@@ -181,7 +181,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions/27-01-2026`,
@@ -216,7 +216,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "customer" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions/${mockDate}`,
@@ -233,11 +233,11 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: "different-user-id", // Different owner
-    } as any)
+    } as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions/${mockDate}`,
@@ -254,7 +254,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(false) // Rate limited
 
     const request = new Request(
@@ -274,11 +274,11 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     const mockSession = {
       user: { id: mockUserId, userType: "provider" },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const mockDeleted = {
       id: "exc-1",
@@ -286,7 +286,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
       date: new Date("2026-01-27"),
       isClosed: true,
     }
-    vi.mocked(prisma.availabilityException.delete).mockResolvedValue(mockDeleted as any)
+    vi.mocked(prisma.availabilityException.delete).mockResolvedValue(mockDeleted as never)
 
     const request = new Request(
       `http://localhost/api/providers/${mockProviderId}/availability-exceptions/${mockDate}`,

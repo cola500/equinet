@@ -25,7 +25,7 @@ export default function ProviderDashboard() {
   const { services, isLoading: isLoadingServices } = useServices()
   const { bookings, isLoading: isLoadingBookings } = useSWRBookings()
   const [routes, setRoutes] = useState([])
-  const [availableRouteOrders, setAvailableRouteOrders] = useState([])
+  const [_availableRouteOrders, setAvailableRouteOrders] = useState([])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [reviewStats, setReviewStats] = useState<{
@@ -39,7 +39,7 @@ export default function ProviderDashboard() {
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
   const isRoutePlanningEnabled = useFeatureFlag("route_planning")
-  const pendingCount = bookings.filter((b: any) => b.status === "pending").length
+  const pendingCount = bookings.filter((b) => b.status === "pending").length
   const { retry, retryCount, isRetrying, canRetry } = useRetry({
     maxRetries: 3,
     onMaxRetriesReached: () => {
@@ -47,11 +47,11 @@ export default function ProviderDashboard() {
     },
   })
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs only on mount/auth change
   useEffect(() => {
     if (isProvider) {
       fetchData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs only on mount/auth change
   }, [isProvider])
 
   const fetchData = async () => {
@@ -178,7 +178,7 @@ export default function ProviderDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {services.filter((s: any) => s.isActive).length}
+                  {services.filter((s: { isActive: boolean }) => s.isActive).length}
                 </div>
               </CardContent>
             </Card>
@@ -193,9 +193,9 @@ export default function ProviderDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {bookings.filter((b: any) =>
+                  {bookings.filter((b) =>
                     (b.status === "pending" || b.status === "confirmed") &&
-                    new Date(b.bookingDate) >= new Date()
+                    new Date(b.bookingDate as string) >= new Date()
                   ).length}
                 </div>
               </CardContent>
@@ -270,8 +270,8 @@ export default function ProviderDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {routes.slice(0, 3).map((route: any) => {
-                  const completedCount = route.stops?.filter((s: any) => s.status === "completed").length || 0
+                {routes.slice(0, 3).map((route: { id: string; routeName: string; routeDate: string; startTime: string; status: string; stops?: Array<{ status: string }> }) => {
+                  const completedCount = route.stops?.filter((s: { status: string }) => s.status === "completed").length || 0
                   const totalStops = route.stops?.length || 0
                   const progressPercent = totalStops > 0 ? (completedCount / totalStops) * 100 : 0
 
@@ -381,7 +381,7 @@ export default function ProviderDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {services.slice(0, 3).map((service: any) => (
+                {services.slice(0, 3).map((service: { id: string; name: string; durationMinutes: number; price: number; isActive: boolean }) => (
                   <div
                     key={service.id}
                     className="flex justify-between items-center p-4 border rounded-lg"

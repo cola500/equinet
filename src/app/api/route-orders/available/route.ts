@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 import { calculateDistance } from "@/lib/geo/distance"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
     const priority = searchParams.get('priority')
 
     // 3. Fetch available route orders (status = open or pending)
-    const whereClause: any = {
+    const whereClause: Prisma.RouteOrderWhereInput = {
       status: { in: ['open', 'pending'] }
     }
 
