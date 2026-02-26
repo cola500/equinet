@@ -1,9 +1,9 @@
 "use client"
 
-import { Suspense, useEffect, useState, useCallback } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useDialogState } from "@/hooks/useDialogState"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from "date-fns"
+import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
 import { Mic } from "lucide-react"
 import { toast } from "sonner"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
@@ -13,6 +13,8 @@ import { useIsMobile } from "@/hooks/useMediaQuery"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
 import { useServices } from "@/hooks/useServices"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
+import { useAvailabilitySchedule } from "@/hooks/useAvailabilitySchedule"
+import { useAvailabilityExceptions } from "@/hooks/useAvailabilityExceptions"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CalendarHeader, ViewMode } from "@/components/calendar/CalendarHeader"
 import { WeekCalendar } from "@/components/calendar/WeekCalendar"
@@ -48,10 +50,10 @@ function CalendarContent() {
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
   const bookingDialog = useDialogState()
-  const [availability, setAvailability] = useState<AvailabilityDay[]>([])
+  const { availability, mutate: mutateAvailability } = useAvailabilitySchedule(providerId)
   const availabilityDialog = useDialogState()
   const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(null)
-  const [exceptions, setExceptions] = useState<AvailabilityException[]>([])
+  const { exceptions, mutate: mutateExceptions } = useAvailabilityExceptions(providerId, currentDate)
   const exceptionDialog = useDialogState()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const manualBookingDialog = useDialogState()
@@ -66,72 +68,6 @@ function CalendarContent() {
       setViewMode("day")
     }
   }, [isMobile])
-
-  // Hämta öppettider
-  const fetchAvailability = useCallback(async () => {
-    if (!providerId) return
-
-    try {
-      const response = await fetch(`/api/providers/${providerId}/availability-schedule`)
-      if (response.ok) {
-        const data = await response.json()
-        // Skapa komplett schema för alla 7 dagar
-        const completeSchedule = Array.from({ length: 7 }, (_, dayOfWeek) => {
-          const existing = data.find((item: AvailabilityDay) => item.dayOfWeek === dayOfWeek)
-          if (existing) {
-            return {
-              dayOfWeek: existing.dayOfWeek,
-              startTime: existing.startTime,
-              endTime: existing.endTime,
-              isClosed: existing.isClosed,
-            }
-          }
-          // Default för dagar som saknas
-          return {
-            dayOfWeek,
-            startTime: "09:00",
-            endTime: "17:00",
-            isClosed: false,
-          }
-        })
-        setAvailability(completeSchedule)
-      }
-    } catch (error) {
-      console.error("Error fetching availability:", error)
-    }
-  }, [providerId])
-
-  // Hämta undantag för aktuell period (vecka eller månad)
-  const fetchExceptions = useCallback(async () => {
-    if (!providerId) return
-
-    // Use month range to cover both week and month views
-    const monthStart = startOfMonth(currentDate)
-    const monthEnd = endOfMonth(currentDate)
-    const rangeStart = startOfWeek(monthStart, { weekStartsOn: 1 })
-    const rangeEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
-
-    try {
-      const from = format(rangeStart, "yyyy-MM-dd")
-      const to = format(rangeEnd, "yyyy-MM-dd")
-      const response = await fetch(
-        `/api/providers/${providerId}/availability-exceptions?from=${from}&to=${to}`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setExceptions(data)
-      }
-    } catch (error) {
-      console.error("Error fetching exceptions:", error)
-    }
-  }, [providerId, currentDate])
-
-  useEffect(() => {
-    if (providerId) {
-      fetchAvailability()
-      fetchExceptions()
-    }
-  }, [providerId, fetchAvailability, fetchExceptions])
 
   // Återställ dialog vid tillbaka-navigation (URL -> state)
   const bookingIdFromUrl = searchParams.get('bookingId')
@@ -246,7 +182,7 @@ function CalendarContent() {
 
       if (response.ok) {
         toast.success("Undantag sparat!")
-        fetchExceptions()
+        mutateExceptions()
       } else {
         let errorMessage = "Kunde inte spara undantag"
         try {
@@ -272,7 +208,7 @@ function CalendarContent() {
 
       if (response.ok) {
         toast.success("Undantag borttaget!")
-        fetchExceptions()
+        mutateExceptions()
       } else {
         toast.error("Kunde inte ta bort undantag")
         throw new Error("Failed to delete exception")
@@ -284,8 +220,7 @@ function CalendarContent() {
     if (!providerId) return
 
     await guardMutation(async () => {
-      // Uppdatera lokal state
-      const updatedAvailability = availability.map((day) =>
+      const updatedSchedule = availability.map((day) =>
         day.dayOfWeek === updatedDay.dayOfWeek ? updatedDay : day
       )
 
@@ -295,11 +230,11 @@ function CalendarContent() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ schedule: updatedAvailability }),
+          body: JSON.stringify({ schedule: updatedSchedule }),
         })
 
         if (response.ok) {
-          setAvailability(updatedAvailability)
+          mutateAvailability()
           toast.success("Öppettider uppdaterade!")
           availabilityDialog.close()
         } else {

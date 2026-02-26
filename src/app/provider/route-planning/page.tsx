@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useAuth } from "@/hooks/useAuth"
+import { useRouteOrders } from "@/hooks/useRouteOrders"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -50,11 +51,8 @@ interface RouteOrder {
 export default function RoutePlanningPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [orders, setOrders] = useState<RouteOrder[]>([])
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
-  const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [isCreatingRoute, setIsCreatingRoute] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // Route optimization state
   const [isOptimizing, setIsOptimizing] = useState(false)
@@ -69,6 +67,12 @@ export default function RoutePlanningPage() {
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
 
+  // SWR-driven data fetching
+  const { orders, error, isLoading: isLoadingOrders } = useRouteOrders(
+    { serviceType: serviceTypeFilter, priority: priorityFilter },
+    !!isProvider
+  )
+
   // Start location (geolocation with Göteborg fallback)
   const [startLocation, setStartLocation] = useState<{ lat: number; lon: number }>({
     lat: 57.7089, lon: 11.9746,
@@ -81,12 +85,6 @@ export default function RoutePlanningPage() {
   const [routeName, setRouteName] = useState("")
   const [routeDate, setRouteDate] = useState("")
   const [startTime, setStartTime] = useState("08:00")
-
-  useEffect(() => {
-    if (isProvider) {
-      fetchOrders()
-    }
-  }, [isProvider, serviceTypeFilter, priorityFilter])
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -103,30 +101,6 @@ export default function RoutePlanningPage() {
     tomorrow.setDate(tomorrow.getDate() + 1)
     setRouteDate(format(tomorrow, 'yyyy-MM-dd'))
   }, [])
-
-  const fetchOrders = async () => {
-    try {
-      setIsLoadingOrders(true)
-      setError(null)
-
-      const params = new URLSearchParams()
-      if (serviceTypeFilter !== "all") params.append("serviceType", serviceTypeFilter)
-      if (priorityFilter !== "all") params.append("priority", priorityFilter)
-
-      const response = await fetch(`/api/route-orders/available?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setOrders(data)
-      } else {
-        setError("Kunde inte hämta beställningar")
-      }
-    } catch (error) {
-      console.error("Error fetching route orders:", error)
-      setError("Något gick fel. Kontrollera din internetanslutning.")
-    } finally {
-      setIsLoadingOrders(false)
-    }
-  }
 
   const toggleOrderSelection = (orderId: string) => {
     const newSelected = new Set(selectedOrders)
@@ -368,7 +342,7 @@ export default function RoutePlanningPage() {
         {error && (
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="pt-6">
-              <p className="text-red-600">{error}</p>
+              <p className="text-red-600">Kunde inte hämta beställningar</p>
             </CardContent>
           </Card>
         )}
