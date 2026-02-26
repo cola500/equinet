@@ -25,29 +25,6 @@ const RouteMapVisualization = dynamic(
   { ssr: false, loading: () => <div className="h-[500px] bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-gray-500">Laddar karta...</div> }
 )
 
-interface RouteOrder {
-  id: string
-  serviceType: string
-  address: string
-  latitude: number
-  longitude: number
-  numberOfHorses: number
-  dateFrom: string
-  dateTo: string
-  priority: string
-  specialInstructions?: string
-  contactPhone: string
-  customer: {
-    firstName: string
-    lastName: string
-    phone?: string
-  } | null
-  provider: {
-    businessName: string
-  } | null
-  distanceKm?: number
-}
-
 export default function RoutePlanningPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()

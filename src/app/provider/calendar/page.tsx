@@ -24,7 +24,7 @@ import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDi
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
-import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
+import { CalendarBooking, AvailabilityDay } from "@/types"
 
 export default function ProviderCalendarPage() {
   return (
