@@ -21,7 +21,7 @@ describe("logger", () => {
   })
 
   // Helper to parse the JSON log entry from console.log
-  function getLogEntry(): Record<string, any> {
+  function getLogEntry(): Record<string, unknown> {
     expect(consoleLogSpy).toHaveBeenCalled()
     return JSON.parse(consoleLogSpy.mock.calls[0][0])
   }

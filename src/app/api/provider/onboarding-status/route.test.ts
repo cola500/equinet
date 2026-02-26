@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { NextResponse } from "next/server"
 
 vi.mock("@/lib/auth", () => ({ auth: vi.fn() }))
 vi.mock("@/lib/prisma", () => ({
@@ -38,8 +37,8 @@ describe("GET /api/provider/onboarding-status", () => {
     vi.clearAllMocks()
     mockAuth.mockResolvedValue({
       user: { id: "user-1" },
-    } as any)
-    mockFindFirst.mockResolvedValue(makeProvider() as any)
+    } as never)
+    mockFindFirst.mockResolvedValue(makeProvider() as never)
   })
 
   // --- Auth ---
@@ -54,7 +53,7 @@ describe("GET /api/provider/onboarding-status", () => {
   })
 
   it("returns 401 when session.user.id is missing", async () => {
-    mockAuth.mockResolvedValueOnce({ user: {} } as any)
+    mockAuth.mockResolvedValueOnce({ user: {} } as never)
 
     const res = await GET()
 
@@ -86,7 +85,7 @@ describe("GET /api/provider/onboarding-status", () => {
         isActive: false,
         services: [],
         availability: [],
-      }) as any
+      }) as never
     )
 
     const res = await GET()
@@ -111,7 +110,7 @@ describe("GET /api/provider/onboarding-status", () => {
 
   it("returns profileComplete=false when description missing", async () => {
     mockFindFirst.mockResolvedValueOnce(
-      makeProvider({ description: null }) as any
+      makeProvider({ description: null }) as never
     )
 
     const res = await GET()
@@ -122,7 +121,7 @@ describe("GET /api/provider/onboarding-status", () => {
 
   it("returns profileComplete=false when latitude/longitude null", async () => {
     mockFindFirst.mockResolvedValueOnce(
-      makeProvider({ latitude: null, longitude: null }) as any
+      makeProvider({ latitude: null, longitude: null }) as never
     )
 
     const res = await GET()

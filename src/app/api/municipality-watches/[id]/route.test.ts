@@ -50,7 +50,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "provider" },
-    } as any)
+    } as never)
 
     const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
     expect(response.status).toBe(403)
@@ -59,7 +59,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should return 404 when watch not found", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockRemoveWatch.mockResolvedValue(false)
@@ -71,7 +71,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should return 200 on successful deletion", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockRemoveWatch.mockResolvedValue(true)
@@ -83,7 +83,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should use customerId from session for ownership check", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "session-user", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockRemoveWatch.mockResolvedValue(true)

@@ -86,7 +86,6 @@ export default function ProviderHorseTimelinePage() {
   const { isLoading: authLoading, isProvider } = useAuth()
 
   const [timeline, setTimeline] = useState<TimelineItem[]>([])
-  const [horseName, setHorseName] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
 

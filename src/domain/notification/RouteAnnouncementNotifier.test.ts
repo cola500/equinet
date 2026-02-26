@@ -49,8 +49,8 @@ function createNotifier(opts?: {
 }) {
   return new RouteAnnouncementNotifier({
     followRepo: mockFollowRepo,
-    notificationService: mockNotificationService as any,
-    emailService: mockEmailService as any,
+    notificationService: mockNotificationService as never,
+    emailService: mockEmailService as never,
     routeOrderLookup: mockRouteOrderLookup,
     deliveryStore: mockDeliveryStore,
     dueForServiceLookup: opts?.dueForServiceLookup,
@@ -341,14 +341,14 @@ describe("RouteAnnouncementNotifier", () => {
 
       // customer-1 gets enhanced email subject
       const enhancedEmailCall = mockEmailService.send.mock.calls.find(
-        (call: any) => call[0].to === "anna@example.com"
+        (call: [{ to: string; subject: string }]) => call[0].to === "anna@example.com"
       )
       expect(enhancedEmailCall![0].subject).toContain("Blansen")
       expect(enhancedEmailCall![0].subject).toContain("Hovslagare AB")
 
       // customer-2 gets standard email subject
       const standardEmailCall = mockEmailService.send.mock.calls.find(
-        (call: any) => call[0].to === "erik@example.com"
+        (call: [{ to: string; subject: string }]) => call[0].to === "erik@example.com"
       )
       expect(standardEmailCall![0].subject).toContain("Ny ruttannons")
     })

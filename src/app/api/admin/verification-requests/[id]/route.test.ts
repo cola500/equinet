@@ -39,11 +39,11 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-user-1", email: "admin@test.se", userType: "provider" },
-} as any
+} as never
 
 const mockNonAdminSession = {
   user: { id: "regular-user-1", email: "user@test.se", userType: "provider" },
-} as any
+} as never
 
 const routeContext = {
   params: Promise.resolve({ id: "ver-1" }),
@@ -59,19 +59,19 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-user-1",
       isAdmin: true,
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
       id: "ver-1",
       providerId: "provider-1",
       status: "pending",
       provider: { userId: "provider-user-1" },
-    } as any)
+    } as never)
     vi.mocked(prisma.$transaction).mockResolvedValue({
       id: "ver-1",
       status: "approved",
       reviewedAt: new Date(),
       reviewedBy: "admin-user-1",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/verification-requests/ver-1",
@@ -96,17 +96,17 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-user-1",
       isAdmin: true,
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
       id: "ver-1",
       providerId: "provider-1",
       status: "pending",
       provider: { userId: "provider-user-1" },
-    } as any)
+    } as never)
     vi.mocked(prisma.$transaction).mockResolvedValue({
       id: "ver-1",
       status: "rejected",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/verification-requests/ver-1",
@@ -129,7 +129,7 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "regular-user-1",
       isAdmin: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/verification-requests/ver-1",
@@ -153,7 +153,7 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-user-1",
       isAdmin: true,
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest(
@@ -176,13 +176,13 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-user-1",
       isAdmin: true,
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findUnique).mockResolvedValue({
       id: "ver-1",
       providerId: "provider-1",
       status: "approved", // Already processed
       provider: { userId: "provider-user-1" },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/verification-requests/ver-1",
@@ -204,7 +204,7 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-user-1",
       isAdmin: true,
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/verification-requests/ver-1",

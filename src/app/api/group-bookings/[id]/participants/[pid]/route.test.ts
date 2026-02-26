@@ -51,7 +51,7 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
   it('should allow participant to leave (cancel their own participation)', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.participant, userType: 'customer' },
-    } as any)
+    } as never)
 
     mockService.removeParticipant.mockResolvedValue(
       Result.ok({ message: 'Deltagaren har lämnat grupprequesten' })
@@ -74,7 +74,7 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
   it('should allow creator to remove a participant', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
-    } as any)
+    } as never)
 
     mockService.removeParticipant.mockResolvedValue(
       Result.ok({ message: 'Deltagaren har lämnat grupprequesten' })
@@ -95,7 +95,7 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
   it('should auto-cancel group when all participants leave', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.participant, userType: 'customer' },
-    } as any)
+    } as never)
 
     mockService.removeParticipant.mockResolvedValue(
       Result.ok({ message: 'Deltagaren har lämnat grupprequesten' })
@@ -117,7 +117,7 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
   it('should return 404 when unauthorized user tries to remove', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.otherUser, userType: 'customer' },
-    } as any)
+    } as never)
 
     mockService.removeParticipant.mockResolvedValue(
       Result.fail({

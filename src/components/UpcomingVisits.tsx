@@ -32,7 +32,7 @@ export function UpcomingVisits({ providerId }: UpcomingVisitsProps) {
           const data = await response.json()
           // Filter to only show visits with location (not just closed days)
           const visitsWithLocation = data.filter(
-            (e: any) => e.location && !e.isClosed
+            (e: { location?: string | null; isClosed: boolean }) => e.location && !e.isClosed
           )
           setVisits(visitsWithLocation)
         }

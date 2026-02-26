@@ -505,6 +505,7 @@ export default function ProviderVerificationPage() {
                                 </span>
                               </a>
                             ) : (
+                              /* eslint-disable-next-line @next/next/no-img-element -- dynamic user-uploaded verification images with external URLs */
                               <img
                                 src={img.url}
                                 alt="Verifieringsbild"
@@ -614,6 +615,7 @@ export default function ProviderVerificationPage() {
               <DialogTitle>Bild</DialogTitle>
             </DialogHeader>
             {lightboxImage && (
+              /* eslint-disable-next-line @next/next/no-img-element -- lightbox display of dynamic user-uploaded images */
               <img
                 src={lightboxImage}
                 alt="Verifieringsbild"

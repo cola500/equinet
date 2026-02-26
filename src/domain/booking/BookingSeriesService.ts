@@ -72,19 +72,40 @@ export interface ProviderRecurringInfo {
   maxSeriesOccurrences: number
 }
 
+// --- Prisma delegate shapes (narrowed from `any` to match actual usage) ---
+
+interface BookingSeriesRecord {
+  id: string
+  customerId: string
+  providerId: string
+  [key: string]: unknown
+}
+
+interface BookingRecord {
+  id: string
+  providerId: string
+  customerId: string
+  [key: string]: unknown
+}
+
 // --- Dependencies ---
 
 export interface BookingSeriesServiceDeps {
   bookingRepository: IBookingRepository
   prisma: {
     bookingSeries: {
-      create: (args: any) => Promise<any>
-      update: (args: any) => Promise<any>
-      delete: (args: any) => Promise<any>
-      findUnique: (args: any) => Promise<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      create: (args: any) => Promise<BookingSeriesRecord>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      update: (args: any) => Promise<BookingSeriesRecord>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete: (args: any) => Promise<BookingSeriesRecord>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      findUnique: (args: any) => Promise<BookingSeriesRecord | null>
     }
     booking: {
-      findMany: (args: any) => Promise<any[]>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      findMany: (args: any) => Promise<BookingRecord[]>
     }
   }
   isFeatureEnabled: (key: string) => Promise<boolean>

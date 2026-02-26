@@ -43,7 +43,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se" },
-} as any
+} as never
 
 describe("GET /api/admin/bookings", () => {
   beforeEach(() => {
@@ -52,7 +52,7 @@ describe("GET /api/admin/bookings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   it("should return paginated booking list", async () => {
@@ -68,7 +68,7 @@ describe("GET /api/admin/bookings", () => {
         provider: { businessName: "Hästkliniken" },
         service: { name: "Hovvård" },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.booking.count).mockResolvedValue(1)
 
     const request = new NextRequest("http://localhost:3000/api/admin/bookings")
@@ -146,7 +146,7 @@ describe("GET /api/admin/bookings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/bookings")
     const response = await GET(request)
@@ -176,7 +176,7 @@ const PROVIDER_USER_UUID = "a0000000-0000-4000-a000-000000000030"
 
 const mockAdminSessionPatch = {
   user: { id: ADMIN_UUID, email: "admin@test.se" },
-} as any
+} as never
 
 describe("PATCH /api/admin/bookings", () => {
   beforeEach(() => {
@@ -185,7 +185,7 @@ describe("PATCH /api/admin/bookings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   function makePatchRequest(body: Record<string, unknown>) {
@@ -202,12 +202,12 @@ describe("PATCH /api/admin/bookings", () => {
       status: "pending",
       customerId: CUSTOMER_UUID,
       provider: { userId: PROVIDER_USER_UUID },
-    } as any)
+    } as never)
     vi.mocked(prisma.booking.update).mockResolvedValue({
       id: BOOKING_UUID,
       status: "cancelled",
       cancellationMessage: "[Admin] Test-anledning",
-    } as any)
+    } as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 2 })
 
     const response = await PATCH(makePatchRequest({
@@ -236,11 +236,11 @@ describe("PATCH /api/admin/bookings", () => {
       status: "confirmed",
       customerId: CUSTOMER_UUID,
       provider: { userId: PROVIDER_USER_UUID },
-    } as any)
+    } as never)
     vi.mocked(prisma.booking.update).mockResolvedValue({
       id: BOOKING_UUID,
       status: "cancelled",
-    } as any)
+    } as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 2 })
 
     const response = await PATCH(makePatchRequest({
@@ -258,11 +258,11 @@ describe("PATCH /api/admin/bookings", () => {
       status: "pending",
       customerId: CUSTOMER_UUID,
       provider: { userId: PROVIDER_USER_UUID },
-    } as any)
+    } as never)
     vi.mocked(prisma.booking.update).mockResolvedValue({
       id: BOOKING_UUID,
       status: "cancelled",
-    } as any)
+    } as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 2 })
 
     await PATCH(makePatchRequest({
@@ -285,7 +285,7 @@ describe("PATCH /api/admin/bookings", () => {
       status: "cancelled",
       customerId: CUSTOMER_UUID,
       provider: { userId: PROVIDER_USER_UUID },
-    } as any)
+    } as never)
 
     const response = await PATCH(makePatchRequest({
       bookingId: BOOKING_UUID,
@@ -302,7 +302,7 @@ describe("PATCH /api/admin/bookings", () => {
       status: "completed",
       customerId: CUSTOMER_UUID,
       provider: { userId: PROVIDER_USER_UUID },
-    } as any)
+    } as never)
 
     const response = await PATCH(makePatchRequest({
       bookingId: BOOKING_UUID,
@@ -326,7 +326,7 @@ describe("PATCH /api/admin/bookings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: false,
-    } as any)
+    } as never)
 
     const response = await PATCH(makePatchRequest({
       bookingId: BOOKING_UUID,

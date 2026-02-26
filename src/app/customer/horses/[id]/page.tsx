@@ -36,7 +36,7 @@ import { TimelineSection } from "@/components/customer/horses/TimelineSection"
 import { IntervalSection } from "@/components/customer/horses/IntervalSection"
 import { HorseInfoSection } from "@/components/customer/horses/HorseInfoSection"
 import type { Horse, TimelineItem } from "./types"
-import { GENDER_LABELS, CATEGORY_OPTIONS, emptyNoteForm } from "./types"
+import { GENDER_LABELS, CATEGORY_OPTIONS } from "./types"
 
 export default function HorseDetailPage() {
   const router = useRouter()
@@ -98,6 +98,7 @@ export default function HorseDetailPage() {
     }
   }, [isCustomer, authLoading, router])
 
+  /* eslint-disable react-hooks/exhaustive-deps -- intervals is an object ref that changes on every render; fetchIntervals is stable via useCallback inside the hook */
   useEffect(() => {
     if (isCustomer && horseId) {
       fetchHorse()
@@ -105,6 +106,7 @@ export default function HorseDetailPage() {
       intervals.fetchIntervals()
     }
   }, [isCustomer, horseId, fetchHorse, fetchTimeline, intervals.fetchIntervals])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)

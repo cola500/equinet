@@ -40,7 +40,7 @@ const ADMIN_UUID = "a0000000-0000-4000-a000-000000000001"
 
 const mockAdminSession = {
   user: { id: ADMIN_UUID, email: "admin@test.se" },
-} as any
+} as never
 
 describe("POST /api/admin/notifications", () => {
   beforeEach(() => {
@@ -49,7 +49,7 @@ describe("POST /api/admin/notifications", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   function makePostRequest(body: Record<string, unknown>) {
@@ -65,7 +65,7 @@ describe("POST /api/admin/notifications", () => {
       { id: "u-1" },
       { id: "u-2" },
       { id: "u-3" },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 3 })
 
     const response = await POST(makePostRequest({
@@ -92,7 +92,7 @@ describe("POST /api/admin/notifications", () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: "c-1" },
       { id: "c-2" },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 2 })
 
     const response = await POST(makePostRequest({
@@ -114,7 +114,7 @@ describe("POST /api/admin/notifications", () => {
   it("should send to providers only", async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: "p-1" },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 1 })
 
     const response = await POST(makePostRequest({
@@ -144,7 +144,7 @@ describe("POST /api/admin/notifications", () => {
   })
 
   it("should include linkUrl if provided", async () => {
-    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "u-1" }] as any)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "u-1" }] as never)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 1 })
 
     const response = await POST(makePostRequest({
@@ -168,7 +168,7 @@ describe("POST /api/admin/notifications", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: false,
-    } as any)
+    } as never)
 
     const response = await POST(makePostRequest({
       target: "all",

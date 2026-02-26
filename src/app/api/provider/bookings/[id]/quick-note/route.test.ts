@@ -93,7 +93,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   })
 
   it('returns 401 without session', async () => {
-    mockAuth.mockResolvedValue(null as any)
+    mockAuth.mockResolvedValue(null as never)
 
     const response = await POST(createRequest({ transcript: 'test' }), { params })
     expect(response.status).toBe(401)
@@ -102,7 +102,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 403 for non-provider user', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await POST(createRequest({ transcript: 'test' }), { params })
     expect(response.status).toBe(403)
@@ -111,7 +111,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 429 when rate limited', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(rateLimiters.ai).mockResolvedValueOnce(false)
 
     const response = await POST(createRequest({ transcript: 'test' }), { params })
@@ -121,7 +121,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 400 for invalid JSON', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
 
     const response = await POST(createInvalidJsonRequest(), { params })
@@ -131,7 +131,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 400 for missing transcript', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking)
 
@@ -142,7 +142,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 400 for extra fields (strict mode)', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking)
 
@@ -156,7 +156,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 404 when booking not found', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(null)
 
@@ -167,7 +167,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 404 for another providers booking', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({ ...mockBooking, providerId: 'other-provider' })
 
@@ -178,7 +178,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 400 for booking with invalid status (pending)', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({ ...mockBooking, status: 'pending' })
 
@@ -189,7 +189,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('saves cleaned text as providerNotes and returns result', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking)
     mockInterpretQuickNote.mockResolvedValue({
@@ -225,7 +225,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('creates HorseNote when health-related', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking)
     mockInterpretQuickNote.mockResolvedValue({
@@ -260,7 +260,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('does NOT create HorseNote when not health-related', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking)
     mockInterpretQuickNote.mockResolvedValue({
@@ -291,7 +291,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('does NOT create HorseNote when no horseId on booking', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({ ...mockBooking, horseId: null, horse: null })
     mockInterpretQuickNote.mockResolvedValue({
@@ -321,7 +321,7 @@ describe('POST /api/provider/bookings/[id]/quick-note', () => {
   it('returns 500 when AI interpretation fails', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking)
     mockInterpretQuickNote.mockResolvedValue({

@@ -95,7 +95,7 @@ describe("Customer Horse Intervals API", () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: CUSTOMER_ID, userType: "customer" },
-    } as any)
+    } as never)
 
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -127,7 +127,7 @@ describe("Customer Horse Intervals API", () => {
   it("returns 403 for provider users", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "provider-user", userType: "provider" },
-    } as any)
+    } as never)
 
     const response = await GET(makeGetRequest(), makeContext())
     expect(response.status).toBe(403)
@@ -298,8 +298,7 @@ describe("Customer Horse Intervals API", () => {
     })
 
     it("returns 404 when interval does not exist (P2025)", async () => {
-      const prismaError = new Error("Record not found") as any
-      prismaError.code = "P2025"
+      const prismaError = Object.assign(new Error("Record not found"), { code: "P2025" });
       mockIntervalDelete.mockRejectedValue(prismaError)
 
       const response = await DELETE(

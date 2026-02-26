@@ -1,13 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { PrismaDueForServiceLookup } from "./DueForServiceLookup"
 
-// Mock Prisma
-const mockPrisma = {
-  booking: { findMany: vi.fn() },
-  horseServiceInterval: { findMany: vi.fn() },
-  customerHorseServiceInterval: { findMany: vi.fn() },
-}
-
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     booking: { findMany: vi.fn() },
@@ -78,7 +71,7 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 10,
         recommendedIntervalWeeks: 8,
       }),
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])
@@ -102,7 +95,7 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 4, // 4 weeks ago, interval 8 weeks -- not overdue
         recommendedIntervalWeeks: 8,
       }),
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])
@@ -130,7 +123,7 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 4, // not overdue (4 < 8)
         recommendedIntervalWeeks: 8,
       }),
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1", "c2"])
@@ -162,7 +155,7 @@ describe("PrismaDueForServiceLookup", () => {
     vi.mocked(prisma.booking.findMany).mockResolvedValue([
       olderBooking,
       newerBooking,
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])
@@ -182,12 +175,12 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 5,
         recommendedIntervalWeeks: 8, // default: 8 weeks -- not overdue
       }),
-    ] as any)
+    ] as never)
 
     // Provider override: 4 weeks -- now overdue
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
       { horseId: "h1", serviceId: "s1", revisitIntervalWeeks: 4 },
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])
@@ -207,17 +200,17 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 5,
         recommendedIntervalWeeks: 8, // default: not overdue
       }),
-    ] as any)
+    ] as never)
 
     // Provider override: 4 weeks -- would be overdue
     vi.mocked(prisma.horseServiceInterval.findMany).mockResolvedValue([
       { horseId: "h1", serviceId: "s1", revisitIntervalWeeks: 4 },
-    ] as any)
+    ] as never)
 
     // Customer interval: 6 weeks -- overrides provider, not overdue
     vi.mocked(prisma.customerHorseServiceInterval.findMany).mockResolvedValue([
       { horseId: "h1", serviceId: "s1", intervalWeeks: 6 },
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])
@@ -246,7 +239,7 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 16, // 8 weeks overdue
         recommendedIntervalWeeks: 8,
       }),
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])
@@ -268,7 +261,7 @@ describe("PrismaDueForServiceLookup", () => {
         weeksAgo: 10,
         recommendedIntervalWeeks: null, // no default interval
       }),
-    ] as any)
+    ] as never)
 
     const lookup = createLookup()
     const result = await lookup.getOverdueHorsesForCustomers(["c1"])

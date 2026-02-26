@@ -248,9 +248,9 @@ describe("rate-limit (Upstash mode)", () => {
     process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token"
 
     // Get reference to the mock function from the mocked module
-    const { __mockLimit } = await import("@upstash/ratelimit") as any
+    const { __mockLimit } = await import("@upstash/ratelimit") as never
     // Sync our local reference
-    mockLimit.mockImplementation((...args: any[]) => __mockLimit(...args))
+    mockLimit.mockImplementation((...args: unknown[]) => __mockLimit(...args))
     // Clear previous calls
     __mockLimit.mockReset()
   })
@@ -261,7 +261,7 @@ describe("rate-limit (Upstash mode)", () => {
   })
 
   it("should allow request when Upstash returns success: true", async () => {
-    const { __mockLimit } = await import("@upstash/ratelimit") as any
+    const { __mockLimit } = await import("@upstash/ratelimit") as never
     __mockLimit.mockResolvedValue({ success: true })
 
     const { rateLimiters } = await import("./rate-limit")
@@ -270,7 +270,7 @@ describe("rate-limit (Upstash mode)", () => {
   })
 
   it("should block request when Upstash returns success: false", async () => {
-    const { __mockLimit } = await import("@upstash/ratelimit") as any
+    const { __mockLimit } = await import("@upstash/ratelimit") as never
     __mockLimit.mockResolvedValue({ success: false })
 
     const { rateLimiters } = await import("./rate-limit")
@@ -279,7 +279,7 @@ describe("rate-limit (Upstash mode)", () => {
   })
 
   it("should fail-open when Upstash throws an error", async () => {
-    const { __mockLimit } = await import("@upstash/ratelimit") as any
+    const { __mockLimit } = await import("@upstash/ratelimit") as never
     __mockLimit.mockRejectedValue(new Error("Upstash connection failed"))
 
     const { rateLimiters } = await import("./rate-limit")

@@ -2,7 +2,6 @@
  * FollowRepository - Prisma implementation
  */
 import { prisma } from "@/lib/prisma"
-import { logger } from "@/lib/logger"
 import type {
   IFollowRepository,
   Follow,

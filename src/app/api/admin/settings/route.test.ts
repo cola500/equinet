@@ -59,7 +59,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se" },
-} as any
+} as never
 
 function makeRequest(method: string, body?: object): NextRequest {
   return new NextRequest("http://localhost:3000/api/admin/settings", {
@@ -76,7 +76,7 @@ describe("GET /api/admin/settings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   it("returns 401 when not authenticated", async () => {
@@ -89,7 +89,7 @@ describe("GET /api/admin/settings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "user-1",
       isAdmin: false,
-    } as any)
+    } as never)
     const res = await GET(makeRequest("GET"))
     expect(res.status).toBe(403)
   })
@@ -134,7 +134,7 @@ describe("PATCH /api/admin/settings", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   it("returns 401 when not authenticated", async () => {

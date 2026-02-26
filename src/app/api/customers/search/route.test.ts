@@ -32,18 +32,18 @@ describe('GET /api/customers/search', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
       userId: 'provider-user-1',
-    } as any)
+    } as never)
   })
 
   it('should return matching customers', async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: 'c1', firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: '070-123' },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/customers/search?q=anna')
     const response = await GET(request)
@@ -59,7 +59,7 @@ describe('GET /api/customers/search', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/customers/search?q=anna')
     const response = await GET(request)
@@ -85,7 +85,7 @@ describe('GET /api/customers/search', () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: 'c1', firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: '070-123' },
       { id: 'c2', firstName: 'Anna', lastName: 'Ghost', email: 'anna-ghost@placeholder.equinet.se', phone: '070-456' },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/customers/search?q=anna')
     const response = await GET(request)
@@ -96,14 +96,14 @@ describe('GET /api/customers/search', () => {
 
     // Verify query includes providerCustomerLinks OR bookings (not just bookings)
     const findManyCall = vi.mocked(prisma.user.findMany).mock.calls[0][0]
-    const andConditions = findManyCall?.where?.AND as any[]
+    const andConditions = findManyCall?.where?.AND as Record<string, unknown>[]
 
     // Should have an OR condition that includes both bookings and providerCustomerLinks
-    const providerRelationCondition = andConditions.find((c: any) => c.OR?.some((or: any) => or.providerCustomerLinks))
+    const providerRelationCondition = andConditions.find((c: Record<string, unknown>) => (c.OR as Record<string, unknown>[])?.some((or: Record<string, unknown>) => or.providerCustomerLinks))
     expect(providerRelationCondition).toBeDefined()
 
     // Should NOT have isManualCustomer: false filter
-    const manualCustomerFilter = andConditions.find((c: any) => c.isManualCustomer === false)
+    const manualCustomerFilter = andConditions.find((c: Record<string, unknown>) => c.isManualCustomer === false)
     expect(manualCustomerFilter).toBeUndefined()
   })
 })

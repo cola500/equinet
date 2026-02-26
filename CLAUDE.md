@@ -196,6 +196,9 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Client-safe modulseparation**: Nar en server-only modul (med Prisma) exporterar metadata som behövs i `"use client"`-komponenter, extrahera till separat fil utan server-beroenden. Mönster: `feature-flag-definitions.ts` (klient-safe) + `feature-flags.ts` (server-only, re-exporterar). Next.js bundler respekterar inte runtime-gränsar -- allt importerbart KOMMER att bundlas.
 - **Radix Dialog `onOpenChange` triggar INTE programmatiskt**: Callback anropas bara vid användarinteraktion (X-knapp/overlay), inte vid `open`-prop-ändring. Återställ lokal state med `useEffect(() => { if (isOpen) reset() }, [isOpen])`. Gäller även vaul Drawer.
 - **Context > splitta hook vid prop-drilling**: När en hook returnerar 10+ värden som passas identiskt till 2+ komponenter, wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken -- problemet är konsumenterna, inte producenten.
+- **`as never` i testmockar**: Ersätt `as any` med `as never` i alla mock-returvärden. `never` är assignerbar till alla typer utan att trigga `no-explicit-any`. Universellt mönster.
+- **SessionUser-typ**: `(session.user as SessionUser)` från `@/types/auth` ersätter `session.user as any` i API routes. Behövs pga NextAuth-typinferens.
+- **Lint: 0 varningar (2026-02-26)**: Alla `no-explicit-any`, `no-unused-vars`, `exhaustive-deps`, `no-img-element` är lösta. Håll 0 -- introducera INTE nya `any`.
 
 ---
 

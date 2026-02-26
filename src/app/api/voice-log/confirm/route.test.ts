@@ -84,7 +84,7 @@ const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const VALID_BOOKING_ID = "a0000000-0000-4000-a000-000000000001"
 
-function makeRequest(body: any): NextRequest {
+function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/voice-log/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -110,7 +110,7 @@ describe("POST /api/voice-log/confirm", () => {
     mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockUpdateProviderNotesWithAuth.mockResolvedValue({
@@ -151,7 +151,7 @@ describe("POST /api/voice-log/confirm", () => {
   it("returns 403 when user is not a provider", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
 
     const response = await POST(makeRequest(validBody()))
     expect(response.status).toBe(403)
@@ -444,7 +444,7 @@ describe("POST /api/voice-log/confirm", () => {
     const updateCall = mockProviderUpdate.mock.calls[0][0]
     const savedVocab = JSON.parse(updateCall.data.vocabularyTerms)
     const correction = savedVocab.corrections.find(
-      (c: any) => c.from === "Hovbeslag"
+      (c: { from: string }) => c.from === "Hovbeslag"
     )
     expect(correction.count).toBe(3)
   })

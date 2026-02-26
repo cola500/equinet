@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const updated = await prisma.horse.update({
       where: { id: horseId },
-      data: data as any,
+      data,
       select: {
         id: true,
         name: true,

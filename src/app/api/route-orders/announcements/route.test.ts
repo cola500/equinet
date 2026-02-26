@@ -50,7 +50,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/announcements')
 
@@ -90,7 +90,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/announcements?municipality=Göteborg'
@@ -131,7 +131,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockNearbyAnnouncements as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockNearbyAnnouncements as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/announcements?latitude=57.930&longitude=12.532&radiusKm=50'
@@ -159,7 +159,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockHovslagningAnnouncements as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockHovslagningAnnouncements as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/announcements?serviceType=Hovslagning'
@@ -192,7 +192,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncements as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/announcements?dateFrom=2025-12-15&dateTo=2025-12-20'
@@ -250,7 +250,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncementsWithServices as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockAnnouncementsWithServices as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/announcements')
 
@@ -308,7 +308,7 @@ describe('GET /api/route-orders/announcements', () => {
       },
     ]
 
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockProviderAnnouncements as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(mockProviderAnnouncements as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/announcements?providerId=provider1'
@@ -360,7 +360,7 @@ describe('GET /api/route-orders/announcements', () => {
       )
 
       // Verify user relation is NOT selected
-      const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as any
+      const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as never
       expect(callArgs.select.provider.select.user).toBeUndefined()
       expect(callArgs.select.provider.select.email).toBeUndefined()
     })

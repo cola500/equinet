@@ -107,8 +107,10 @@ export default function RoutePlanningPage() {
     setOptimizationResult(null)
 
     try {
-      // Hämta valda orders
-      const selected = orders.filter(o => selectedOrders.has(o.id))
+      // Hämta valda orders (filtrera bort de utan koordinater -- kan inte ruttplaneras)
+      const selected = orders.filter(
+        o => selectedOrders.has(o.id) && o.latitude != null && o.longitude != null
+      ) as (typeof orders[number] & { latitude: number; longitude: number })[]
 
       // Konvertera till Location format med index som ID för Modal API
       const locations: Location[] = selected.map((order, index) => ({
@@ -181,9 +183,9 @@ export default function RoutePlanningPage() {
 
         toast.success(`Rutt optimerad! ${result.improvement_percent.toFixed(1)}% kortare`)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Optimization error:", error)
-      toast.error("Kunde inte optimera rutt: " + error.message)
+      toast.error("Kunde inte optimera rutt: " + (error instanceof Error ? error.message : "Okänt fel"))
     } finally {
       setIsOptimizing(false)
     }
@@ -231,9 +233,9 @@ export default function RoutePlanningPage() {
       const newRoute = await response.json()
       toast.success("Rutt skapad!")
       router.push(`/provider/routes/${newRoute.id}`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating route:", error)
-      toast.error(error.message || "Något gick fel")
+      toast.error(error instanceof Error ? error.message : "Något gick fel")
     } finally {
       setIsCreatingRoute(false)
     }

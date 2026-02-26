@@ -171,7 +171,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange - Mock session (provider owns this profile)
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     // Mock existing provider (owner check passes)
     mockFindByIdForOwner.mockResolvedValue({
@@ -245,7 +245,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     // Existing provider with coordinates
     mockFindByIdForOwner.mockResolvedValue({
@@ -300,7 +300,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     mockFindByIdForOwner.mockResolvedValue({
       id: 'provider123',
@@ -358,7 +358,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange - User authenticated but doesn't own this provider
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'otherUser', userType: 'provider' },
-    } as any)
+    } as never)
 
     // Repository returns null for ownership check (security: 404 not 403)
     mockFindByIdForOwner.mockResolvedValue(null)
@@ -383,7 +383,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     mockFindByIdForOwner.mockResolvedValue(null)
 
@@ -407,7 +407,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     mockFindByIdForOwner.mockResolvedValue({
       id: 'provider123',
@@ -434,7 +434,7 @@ describe('PUT /api/providers/[id]', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     mockFindByIdForOwner.mockResolvedValue({
       id: 'provider123',

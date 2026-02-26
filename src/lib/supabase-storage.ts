@@ -94,7 +94,7 @@ export async function uploadFile(
       const mockUrl = `/uploads/${mockPath}`
       return { data: { path: mockPath, url: mockUrl } }
     } catch (err) {
-      logger.error("Dev mock upload failed", err as any)
+      logger.error("Dev mock upload failed", err instanceof Error ? err : new Error(String(err)))
       return { error: { message: "Mock upload failed", code: "UPLOAD_FAILED" } }
     }
   }
@@ -116,7 +116,7 @@ export async function uploadFile(
     })
 
   if (uploadError) {
-    logger.error("Supabase upload failed", uploadError as any)
+    logger.error("Supabase upload failed", uploadError as Error)
     return {
       error: {
         message: "Kunde inte ladda upp filen. Försök igen.",
@@ -153,7 +153,7 @@ export async function deleteFile(path: string): Promise<boolean> {
     .remove([path])
 
   if (error) {
-    logger.error("Supabase delete failed", error as any)
+    logger.error("Supabase delete failed", error as Error)
     return false
   }
 

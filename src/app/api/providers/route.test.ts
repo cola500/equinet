@@ -62,7 +62,7 @@ describe('GET /api/providers', () => {
       },
     ]
 
-    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
     const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -120,7 +120,7 @@ describe('GET /api/providers', () => {
       },
     ]
 
-    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
     const request = new NextRequest('http://localhost:3000/api/providers?city=Stockholm')
 
@@ -154,7 +154,7 @@ describe('GET /api/providers', () => {
       },
     ]
 
-    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
     const request = new NextRequest('http://localhost:3000/api/providers?search=Hovslagare')
 
@@ -174,7 +174,7 @@ describe('GET /api/providers', () => {
 
   it('should combine city and search filters', async () => {
     // Arrange
-    const mockProviders: any[] = []
+    const mockProviders: never[] = []
 
     vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders)
 
@@ -223,7 +223,7 @@ describe('GET /api/providers', () => {
       },
     ]
 
-    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+    vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
     const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -267,7 +267,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       // Search near Alingsås with 50km radius
       const request = new NextRequest(
@@ -300,7 +300,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       // Search from Sollebrunn (about 15km from Alingsås)
       // Note: Max radius is 100km for security (prevents data enumeration)
@@ -331,7 +331,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       // Search near Alingsås with small radius
       const request = new NextRequest(
@@ -362,7 +362,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       // Search near Alingsås + city filter
       const request = new NextRequest(
@@ -432,7 +432,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       const request = new NextRequest(
         'http://localhost:3000/api/providers?latitude=57.930&longitude=12.532&radiusKm=50'
@@ -462,14 +462,14 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
       vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([
         {
           providerId: 'provider1',
           date: new Date('2026-02-03'),
           location: 'Sollebrunn',
         },
-      ] as any)
+      ] as never)
 
       const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -497,7 +497,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
       vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
 
       const request = new NextRequest('http://localhost:3000/api/providers')
@@ -523,7 +523,7 @@ describe('GET /api/providers', () => {
         },
       ]
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
       // Note: Results are ordered by date ASC in the query
       vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([
         {
@@ -536,7 +536,7 @@ describe('GET /api/providers', () => {
           date: new Date('2026-02-10'),
           location: 'Uppsala',
         },
-      ] as any)
+      ] as never)
 
       const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -564,7 +564,7 @@ describe('GET /api/providers', () => {
         user: { firstName: 'John', lastName: 'Doe' },
       }))
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -593,7 +593,7 @@ describe('GET /api/providers', () => {
         user: { firstName: 'John', lastName: 'Doe' },
       }))
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       // Request with limit=200 should be clamped to 100
       const request = new NextRequest('http://localhost:3000/api/providers?limit=200')
@@ -617,7 +617,7 @@ describe('GET /api/providers', () => {
         user: { firstName: 'John', lastName: 'Doe' },
       }))
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       const request = new NextRequest('http://localhost:3000/api/providers?limit=10')
 
@@ -646,7 +646,7 @@ describe('GET /api/providers', () => {
         user: { firstName: 'John', lastName: 'Doe' },
       }))
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       const request = new NextRequest('http://localhost:3000/api/providers?limit=10&offset=10')
 
@@ -676,7 +676,7 @@ describe('GET /api/providers', () => {
         user: { firstName: 'John', lastName: 'Doe' },
       }))
 
-      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as any)
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
 
       const request = new NextRequest('http://localhost:3000/api/providers?limit=10&offset=20')
 

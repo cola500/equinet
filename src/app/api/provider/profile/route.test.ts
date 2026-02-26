@@ -24,7 +24,7 @@ vi.mock('@/lib/cache/provider-cache', () => ({
 
 const providerSession = {
   user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-} as any
+} as never
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
@@ -51,7 +51,7 @@ describe('GET /api/provider/profile', () => {
 
   it('should return provider profile with acceptingNewCustomers', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
     const response = await GET(request)
@@ -63,7 +63,7 @@ describe('GET /api/provider/profile', () => {
 
   it('should use select instead of include to prevent data leakage', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
     await GET(request)
@@ -74,14 +74,14 @@ describe('GET /api/provider/profile', () => {
     expect(call.select).toBeDefined()
     // vocabularyTerms should NOT be selected
     if (call.select && typeof call.select === 'object') {
-      expect((call.select as any).vocabularyTerms).toBeFalsy()
+      expect((call.select as never).vocabularyTerms).toBeFalsy()
     }
   })
 
   it('should return 401 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
     const response = await GET(request)
@@ -99,7 +99,7 @@ describe('PUT /api/provider/profile', () => {
     vi.mocked(prisma.provider.update).mockResolvedValue({
       ...mockProvider,
       acceptingNewCustomers: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -128,7 +128,7 @@ describe('PUT /api/provider/profile', () => {
     vi.mocked(prisma.provider.update).mockResolvedValue({
       ...mockProvider,
       acceptingNewCustomers: true,
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -169,7 +169,7 @@ describe('PUT /api/provider/profile', () => {
       rescheduleWindowHours: 48,
       maxReschedules: 3,
       rescheduleRequiresApproval: true,
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -233,7 +233,7 @@ describe('PUT /api/provider/profile', () => {
       ...mockProvider,
       recurringEnabled: true,
       maxSeriesOccurrences: 8,
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',

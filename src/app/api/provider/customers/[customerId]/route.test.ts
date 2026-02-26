@@ -33,7 +33,7 @@ vi.mock('@/lib/prisma', () => ({
 
 const providerSession = {
   user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-} as any
+} as never
 
 const makeParams = (customerId: string) =>
   Promise.resolve({ customerId })
@@ -61,7 +61,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
     expect(response.status).toBe(403)
@@ -82,14 +82,14 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       id: 'pc-1',
       providerId: 'provider-1',
       customerId: 'customer-1',
-    } as any)
-    vi.mocked(prisma.providerCustomer.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.providerCustomer.delete).mockResolvedValue({} as never)
     // Ghost user with bookings -- should NOT be deleted
     vi.mocked(prisma.booking.count).mockResolvedValue(2)
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'customer-1',
       isManualCustomer: true,
-    } as any)
+    } as never)
 
     const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
     const data = await response.json()
@@ -123,14 +123,14 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       id: 'pc-1',
       providerId: 'provider-1',
       customerId: 'customer-1',
-    } as any)
-    vi.mocked(prisma.providerCustomer.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.providerCustomer.delete).mockResolvedValue({} as never)
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'customer-1',
       isManualCustomer: true,
-    } as any)
-    vi.mocked(prisma.user.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.user.delete).mockResolvedValue({} as never)
 
     const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
 
@@ -145,13 +145,13 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       id: 'pc-1',
       providerId: 'provider-1',
       customerId: 'customer-1',
-    } as any)
-    vi.mocked(prisma.providerCustomer.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.providerCustomer.delete).mockResolvedValue({} as never)
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'customer-1',
       isManualCustomer: false, // Real user
-    } as any)
+    } as never)
 
     const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
 

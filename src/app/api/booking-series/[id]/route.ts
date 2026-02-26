@@ -4,6 +4,7 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import type { SessionUser } from "@/types/auth"
 
 export async function GET(
   request: NextRequest,
@@ -74,7 +75,7 @@ export async function GET(
     }
 
     // 4. Ownership check
-    const user = session.user as any
+    const user = session.user as SessionUser
     const isCustomer = series.customerId === user.id
     const isProvider = user.providerId && series.providerId === user.providerId
     if (!isCustomer && !isProvider) {

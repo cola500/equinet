@@ -64,7 +64,7 @@ export default function ProviderRoutesPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: any; label: string }> = {
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       planned: { variant: "secondary", label: "Planerad" },
       active: { variant: "default", label: "Aktiv" },
       completed: { variant: "outline", label: "Klar" },

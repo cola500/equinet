@@ -28,7 +28,7 @@ vi.mock('@/lib/logger', () => ({
 
 const customerSession = {
   user: { id: 'user-1', userType: 'customer' },
-} as any
+} as never
 
 const mockUserWithProvider = {
   id: 'user-1',
@@ -96,7 +96,7 @@ describe('GET /api/profile', () => {
 
   it('returns profile with provider data and flattened providerId', async () => {
     vi.mocked(auth).mockResolvedValue(customerSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUserWithProvider as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUserWithProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/profile')
     const response = await GET(request)
@@ -116,7 +116,7 @@ describe('GET /api/profile', () => {
 
   it('returns profile without provider (customer) with providerId null', async () => {
     vi.mocked(auth).mockResolvedValue(customerSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUserWithoutProvider as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUserWithoutProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/profile')
     const response = await GET(request)
@@ -236,7 +236,7 @@ describe('PUT /api/profile', () => {
     expect(data.error).toBe('Valideringsfel')
     // Check that the specific municipality validation message is present
     const municipalityIssue = data.details.find(
-      (d: any) => d.path?.includes('municipality')
+      (d: { path?: string[]; message?: string }) => d.path?.includes('municipality')
     )
     expect(municipalityIssue).toBeDefined()
     expect(municipalityIssue.message).toBe('Ogiltig kommun')
@@ -257,7 +257,7 @@ describe('PUT /api/profile', () => {
       latitude: null,
       longitude: null,
     }
-    vi.mocked(prisma.user.update).mockResolvedValue(updatedUser as any)
+    vi.mocked(prisma.user.update).mockResolvedValue(updatedUser as never)
 
     const request = new NextRequest('http://localhost:3000/api/profile', {
       method: 'PUT',
@@ -305,7 +305,7 @@ describe('PUT /api/profile', () => {
       latitude: 57.7089,
       longitude: 11.9746,
     }
-    vi.mocked(prisma.user.update).mockResolvedValue(updatedUser as any)
+    vi.mocked(prisma.user.update).mockResolvedValue(updatedUser as never)
 
     const request = new NextRequest('http://localhost:3000/api/profile', {
       method: 'PUT',
@@ -390,7 +390,7 @@ describe('PUT /api/profile', () => {
       latitude: 59.8586,
       longitude: 17.6389,
     }
-    vi.mocked(prisma.user.update).mockResolvedValue(updatedUser as any)
+    vi.mocked(prisma.user.update).mockResolvedValue(updatedUser as never)
 
     const request = new NextRequest('http://localhost:3000/api/profile', {
       method: 'PUT',

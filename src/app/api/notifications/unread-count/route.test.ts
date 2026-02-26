@@ -23,7 +23,7 @@ describe("GET /api/notifications/unread-count", () => {
   it("should return unread count for authenticated user", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
     mockGetUnreadCount.mockResolvedValue(5)
 
     const request = new NextRequest(
@@ -41,7 +41,7 @@ describe("GET /api/notifications/unread-count", () => {
   it("should return 0 when no unread notifications", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
     mockGetUnreadCount.mockResolvedValue(0)
 
     const request = new NextRequest(

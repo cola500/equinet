@@ -147,7 +147,7 @@ describe('Entity', () => {
         value: 42,
       })
 
-      expect(entity.equals(null as any)).toBe(false)
+      expect(entity.equals(null as never)).toBe(false)
     })
 
     it('should return false for non-Entity objects', () => {

@@ -59,9 +59,9 @@ export class ReviewRepository implements IReviewRepository {
     })
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<Review[]> {
+  async findMany(criteria?: Record<string, unknown>): Promise<Review[]> {
     return prisma.review.findMany({
-      ...(criteria as any),
+      ...(criteria as Prisma.ReviewFindManyArgs),
       select: reviewSelect,
     })
   }

@@ -21,6 +21,7 @@ export function ProviderGrid({ providers }: ProviderGridProps) {
           <CardHeader>
             <div className="flex items-start gap-3">
               {provider.profileImageUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element -- dynamic user-uploaded profile images with external URLs */
                 <img
                   src={provider.profileImageUrl}
                   alt={provider.businessName}

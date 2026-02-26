@@ -72,9 +72,9 @@ describe("GET /api/profile/[token]", () => {
   beforeEach(() => vi.clearAllMocks())
 
   it("should return horse data for valid token (no auth required)", async () => {
-    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue(mockNotes as any)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.horseNote.findMany).mockResolvedValue(mockNotes as never)
 
     const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     const response = await GET(request, makeContext("abc123"))
@@ -88,7 +88,7 @@ describe("GET /api/profile/[token]", () => {
   })
 
   it("should include registrationNumber and microchipNumber in response", async () => {
-    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as any)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as never)
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
 
@@ -102,7 +102,7 @@ describe("GET /api/profile/[token]", () => {
   })
 
   it("should return 404 for expired token", async () => {
-    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(expiredToken as any)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(expiredToken as never)
 
     const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     const response = await GET(request, makeContext("abc123"))
@@ -122,9 +122,9 @@ describe("GET /api/profile/[token]", () => {
   })
 
   it("should not expose private notes (general, injury)", async () => {
-    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as any)
+    vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(validToken as never)
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue(mockNotes as any)
+    vi.mocked(prisma.horseNote.findMany).mockResolvedValue(mockNotes as never)
 
     const request = new NextRequest("http://localhost:3000/api/profile/abc123")
     await GET(request, makeContext("abc123"))
@@ -145,7 +145,7 @@ describe("GET /api/profile/[token]", () => {
       horse: { ...validToken.horse, isActive: false },
     }
     vi.mocked(prisma.horseProfileToken.findUnique).mockResolvedValue(
-      inactiveHorseToken as any
+      inactiveHorseToken as never
     )
 
     const request = new NextRequest("http://localhost:3000/api/profile/abc123")

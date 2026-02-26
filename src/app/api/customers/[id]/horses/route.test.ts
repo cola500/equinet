@@ -37,17 +37,17 @@ describe('GET /api/customers/:id/horses', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
       userId: 'provider-user-1',
-    } as any)
+    } as never)
 
     // Default: provider has a booking with this customer
     vi.mocked(prisma.booking.findFirst).mockResolvedValue({
       id: 'booking-1',
-    } as any)
+    } as never)
   })
 
   function makeRequest() {
@@ -58,7 +58,7 @@ describe('GET /api/customers/:id/horses', () => {
     vi.mocked(prisma.horse.findMany).mockResolvedValue([
       { id: 'h1', name: 'Thunder', breed: 'Warmblood', birthYear: 2015, gender: 'gelding' },
       { id: 'h2', name: 'Storm', breed: 'Icelandic', birthYear: 2018, gender: 'mare' },
-    ] as any)
+    ] as never)
 
     const request = makeRequest()
     const response = await GET(request, { params: Promise.resolve({ id: customerId }) })
@@ -85,7 +85,7 @@ describe('GET /api/customers/:id/horses', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = makeRequest()
     const response = await GET(request, { params: Promise.resolve({ id: customerId }) })

@@ -198,7 +198,6 @@ describe("ProviderNav", () => {
       expect(fetchSpy).toHaveBeenCalled()
     })
 
-    const firstCallCount = fetchSpy.mock.calls.length
     unmount()
 
     // Re-render -- should NOT fetch again

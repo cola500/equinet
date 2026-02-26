@@ -44,18 +44,18 @@ vi.mock('@/domain/booking', () => ({
     dispatch: vi.fn().mockResolvedValue(undefined),
     dispatchAll: vi.fn().mockResolvedValue(undefined),
   }),
-  createBookingStatusChangedEvent: vi.fn((payload: any) => ({
+  createBookingStatusChangedEvent: vi.fn((payload: unknown) => ({
     eventId: 'test-evt',
     eventType: 'BOOKING_STATUS_CHANGED',
     occurredAt: new Date(),
     payload,
   })),
-  mapBookingErrorToStatus: vi.fn((error: any) => {
+  mapBookingErrorToStatus: vi.fn((error: { type: string }) => {
     if (error.type === 'BOOKING_NOT_FOUND') return 404
     if (error.type === 'INVALID_STATUS_TRANSITION') return 400
     return 500
   }),
-  mapBookingErrorToMessage: vi.fn((error: any) => {
+  mapBookingErrorToMessage: vi.fn((error: { type: string; message?: string }) => {
     if (error.type === 'BOOKING_NOT_FOUND') return 'Bokningen hittades inte'
     if (error.type === 'INVALID_STATUS_TRANSITION') return error.message
     return 'Ett fel uppstod'
@@ -102,7 +102,7 @@ describe('PUT /api/bookings/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -143,7 +143,7 @@ describe('PUT /api/bookings/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
-    } as any)
+    } as never)
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -170,7 +170,7 @@ describe('PUT /api/bookings/[id]', () => {
   it('should return 404 when booking does not exist', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(
       Result.fail({ type: 'BOOKING_NOT_FOUND' })
@@ -193,7 +193,7 @@ describe('PUT /api/bookings/[id]', () => {
   it('should return 400 for invalid status transition', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(
       Result.fail({
@@ -221,7 +221,7 @@ describe('PUT /api/bookings/[id]', () => {
   it('should return 400 for invalid status value (Zod)', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -240,7 +240,7 @@ describe('PUT /api/bookings/[id]', () => {
   it('should return 404 when provider profile not found', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -260,7 +260,7 @@ describe('PUT /api/bookings/[id]', () => {
   it('should return 400 for invalid JSON body', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -292,7 +292,7 @@ describe('PUT /api/bookings/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -330,7 +330,7 @@ describe('PUT /api/bookings/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -356,7 +356,7 @@ describe('PUT /api/bookings/[id]', () => {
   it('should return 400 for too long cancellationMessage', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
 
     const longMessage = 'a'.repeat(501)
@@ -389,7 +389,7 @@ describe('PUT /api/bookings/[id]', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
-    } as any)
+    } as never)
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -420,7 +420,7 @@ describe('DELETE /api/bookings/[id]', () => {
   it('should delete booking when provider is authorized', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(true)
 
@@ -444,7 +444,7 @@ describe('DELETE /api/bookings/[id]', () => {
   it('should delete booking when customer is authorized', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
-    } as any)
+    } as never)
     mockDeleteWithAuth.mockResolvedValue(true)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -467,7 +467,7 @@ describe('DELETE /api/bookings/[id]', () => {
   it('should return 404 when booking does not exist', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(false)
 
@@ -487,7 +487,7 @@ describe('DELETE /api/bookings/[id]', () => {
   it('should return 404 when not authorized', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(false)
 
@@ -507,7 +507,7 @@ describe('DELETE /api/bookings/[id]', () => {
   it('should return 404 when provider profile not found', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {

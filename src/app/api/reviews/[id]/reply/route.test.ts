@@ -51,17 +51,17 @@ describe('POST /api/reviews/[id]/reply', () => {
   it('should add a reply to a review', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-    } as any)
+    } as never)
     // ReviewService.addReply calls findById (findUnique) then addReplyWithAuth (update)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
+    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as never)
     vi.mocked(prisma.review.update).mockResolvedValue({
       ...mockReview,
       reply: 'Tack för ditt betyg!',
       repliedAt: new Date(),
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('review-1', 'POST', {
       reply: 'Tack för ditt betyg!',
@@ -91,7 +91,7 @@ describe('POST /api/reviews/[id]/reply', () => {
   it('should return 401 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('review-1', 'POST', { reply: 'Tack!' })
     const response = await POST(request, { params })
@@ -104,10 +104,10 @@ describe('POST /api/reviews/[id]/reply', () => {
   it('should return 404 when review not found', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-    } as any)
+    } as never)
     vi.mocked(prisma.review.findUnique).mockResolvedValue(null)
 
     const { request, params } = createRequest('nonexistent', 'POST', { reply: 'Tack!' })
@@ -121,11 +121,11 @@ describe('POST /api/reviews/[id]/reply', () => {
   it('should return 403 when provider does not own the review', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'other-provider',
-    } as any)
-    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as any)
+    } as never)
+    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as never)
 
     const { request, params } = createRequest('review-1', 'POST', { reply: 'Tack!' })
     const response = await POST(request, { params })
@@ -138,7 +138,7 @@ describe('POST /api/reviews/[id]/reply', () => {
   it('should return 400 for reply exceeding 500 characters', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('review-1', 'POST', {
       reply: 'a'.repeat(501),
@@ -154,15 +154,15 @@ describe('POST /api/reviews/[id]/reply', () => {
   it('should return 409 when reply already exists', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-    } as any)
+    } as never)
     vi.mocked(prisma.review.findUnique).mockResolvedValue({
       ...mockReview,
       reply: 'Redan svarat',
       repliedAt: new Date(),
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('review-1', 'POST', { reply: 'Nytt svar' })
     const response = await POST(request, { params })
@@ -181,20 +181,20 @@ describe('DELETE /api/reviews/[id]/reply', () => {
   it('should delete a reply', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-    } as any)
+    } as never)
     vi.mocked(prisma.review.findUnique).mockResolvedValue({
       ...mockReview,
       reply: 'Tack!',
       repliedAt: new Date(),
-    } as any)
+    } as never)
     vi.mocked(prisma.review.update).mockResolvedValue({
       ...mockReview,
       reply: null,
       repliedAt: null,
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('review-1', 'DELETE')
     const response = await DELETE(request, { params })
@@ -205,10 +205,10 @@ describe('DELETE /api/reviews/[id]/reply', () => {
   it('should return 404 when review not found', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-    } as any)
+    } as never)
     vi.mocked(prisma.review.findUnique).mockResolvedValue(null)
 
     const { request, params } = createRequest('review-1', 'DELETE')
@@ -222,14 +222,14 @@ describe('DELETE /api/reviews/[id]/reply', () => {
   it('should return 403 when provider does not own the review', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'other-provider',
-    } as any)
+    } as never)
     vi.mocked(prisma.review.findUnique).mockResolvedValue({
       ...mockReview,
       reply: 'Tack!',
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('review-1', 'DELETE')
     const response = await DELETE(request, { params })

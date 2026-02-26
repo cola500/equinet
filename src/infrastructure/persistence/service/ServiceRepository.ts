@@ -16,13 +16,13 @@ export class ServiceRepository implements IServiceRepository {
     return service
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<Service[]> {
-    const services = await prisma.service.findMany(criteria as any)
+  async findMany(criteria?: Record<string, unknown>): Promise<Service[]> {
+    const services = await prisma.service.findMany(criteria as Prisma.ServiceFindManyArgs)
     return services
   }
 
   async findAll(filters?: ServiceFilters): Promise<Service[]> {
-    const where: any = {}
+    const where: Prisma.ServiceWhereInput = {}
 
     // Build where clause based on filters
     if (filters?.isActive !== undefined) {

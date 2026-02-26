@@ -56,12 +56,12 @@ describe('GET /api/providers/[id]/reviews', () => {
   })
 
   it('should return reviews with aggregated data for a provider', async () => {
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({ id: 'provider-1' } as any)
-    vi.mocked(prisma.review.findMany).mockResolvedValue(mockReviews as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({ id: 'provider-1' } as never)
+    vi.mocked(prisma.review.findMany).mockResolvedValue(mockReviews as never)
     vi.mocked(prisma.review.count).mockResolvedValue(2)
     vi.mocked(prisma.review.aggregate).mockResolvedValue({
       _avg: { rating: 4.5 },
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('provider-1')
     const response = await GET(request, { params })
@@ -80,12 +80,12 @@ describe('GET /api/providers/[id]/reviews', () => {
   })
 
   it('should return empty reviews for provider with no reviews', async () => {
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({ id: 'provider-1' } as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({ id: 'provider-1' } as never)
     vi.mocked(prisma.review.findMany).mockResolvedValue([])
     vi.mocked(prisma.review.count).mockResolvedValue(0)
     vi.mocked(prisma.review.aggregate).mockResolvedValue({
       _avg: { rating: null },
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('provider-1')
     const response = await GET(request, { params })
@@ -98,12 +98,12 @@ describe('GET /api/providers/[id]/reviews', () => {
   })
 
   it('should support pagination with page and limit', async () => {
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue({ id: 'provider-1' } as any)
-    vi.mocked(prisma.review.findMany).mockResolvedValue([mockReviews[1]] as any)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({ id: 'provider-1' } as never)
+    vi.mocked(prisma.review.findMany).mockResolvedValue([mockReviews[1]] as never)
     vi.mocked(prisma.review.count).mockResolvedValue(2)
     vi.mocked(prisma.review.aggregate).mockResolvedValue({
       _avg: { rating: 4.5 },
-    } as any)
+    } as never)
 
     const { request, params } = createRequest('provider-1', { page: '2', limit: '1' })
     const response = await GET(request, { params })

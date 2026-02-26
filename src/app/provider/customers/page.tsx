@@ -18,7 +18,6 @@ import { AddCustomerDialog } from "@/components/provider/customers/AddCustomerDi
 import { AddEditHorseDialog } from "@/components/provider/customers/AddEditHorseDialog"
 import { DeleteConfirmDialogs } from "@/components/provider/customers/DeleteConfirmDialogs"
 import type { Customer, CustomerHorse, CustomerNote, HorseFormData } from "@/components/provider/customers/types"
-import { emptyHorseForm } from "@/components/provider/customers/types"
 
 type StatusFilter = "all" | "active" | "inactive"
 
@@ -56,11 +55,13 @@ export default function ProviderCustomersPage() {
   const [isDeletingHorse, setIsDeletingHorse] = useState(false)
   const [isSavingHorse, setIsSavingHorse] = useState(false)
 
+  /* eslint-disable react-hooks/exhaustive-deps -- fetchCustomers reads statusFilter and searchQuery from closure; intentionally triggered by their changes */
   useEffect(() => {
     if (isProvider) {
       fetchCustomers()
     }
   }, [isProvider, statusFilter, searchQuery])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchCustomers = async () => {
     setIsLoading(true)

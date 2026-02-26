@@ -47,7 +47,7 @@ describe("GET /api/service-types", () => {
   it("should return distinct service type names", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()

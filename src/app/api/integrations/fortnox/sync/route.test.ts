@@ -9,7 +9,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     booking: { findMany: vi.fn() },
     payment: { update: vi.fn() },
-    $transaction: vi.fn(async (fn: any) => fn({
+    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn({
       payment: { update: vi.fn().mockResolvedValue({}) },
     })),
   },
@@ -38,11 +38,11 @@ const mockProviderSession = {
     userType: "provider",
     providerId: "provider-1",
   },
-} as any
+} as never
 
 const mockCustomerSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 describe("POST /api/integrations/fortnox/sync", () => {
   beforeEach(() => vi.clearAllMocks())
@@ -58,8 +58,8 @@ describe("POST /api/integrations/fortnox/sync", () => {
         service: { name: "Hovslagning", price: 1500 },
         payment: { id: "pay-1", amount: 1500, currency: "SEK" },
       },
-    ] as any)
-    vi.mocked(prisma.payment.update).mockResolvedValue({} as any)
+    ] as never)
+    vi.mocked(prisma.payment.update).mockResolvedValue({} as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/integrations/fortnox/sync",

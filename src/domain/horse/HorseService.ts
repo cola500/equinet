@@ -23,6 +23,7 @@ import type {
   CreateNoteData,
   UpdateNoteData,
   TimelineNoteData,
+  ExportBookingData,
 } from '@/infrastructure/persistence/horse/IHorseRepository'
 import { HorseRepository } from '@/infrastructure/persistence/horse/HorseRepository'
 
@@ -65,7 +66,7 @@ export interface ExportResult {
     registrationNumber: string | null
     microchipNumber: string | null
   }
-  bookings: any[]
+  bookings: ExportBookingData[]
   notes: TimelineNoteData[]
   timeline: TimelineItem[]
 }

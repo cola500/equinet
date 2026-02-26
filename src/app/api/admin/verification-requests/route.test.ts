@@ -22,7 +22,7 @@ const mockFindMany = vi.mocked(prisma.providerVerification.findMany)
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se", userType: "provider" },
-} as any
+} as never
 
 function createRequest() {
   return new NextRequest(
@@ -35,7 +35,7 @@ describe("GET /api/admin/verification-requests", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuth.mockResolvedValue(mockAdminSession)
-    mockFindUnique.mockResolvedValue({ id: "admin-1", isAdmin: true } as any)
+    mockFindUnique.mockResolvedValue({ id: "admin-1", isAdmin: true } as never)
     mockFindMany.mockResolvedValue([])
   })
 
@@ -52,7 +52,7 @@ describe("GET /api/admin/verification-requests", () => {
   })
 
   it("returns 403 when user is not admin", async () => {
-    mockFindUnique.mockResolvedValue({ id: "admin-1", isAdmin: false } as any)
+    mockFindUnique.mockResolvedValue({ id: "admin-1", isAdmin: false } as never)
 
     const res = await GET(createRequest())
     const body = await res.json()
@@ -86,7 +86,7 @@ describe("GET /api/admin/verification-requests", () => {
         images: [{ id: "img-1", url: "https://example.com/cert.jpg", mimeType: "image/jpeg" }],
       },
     ]
-    mockFindMany.mockResolvedValue(mockVerifications as any)
+    mockFindMany.mockResolvedValue(mockVerifications as never)
 
     const res = await GET(createRequest())
     const body = await res.json()

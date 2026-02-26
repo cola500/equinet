@@ -73,11 +73,11 @@ describe("GET /api/bookings/[id]/receipt", () => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({
       user: { id: "user-1", email: "anna@example.com", userType: "customer" },
-    } as any)
+    } as never)
   })
 
   it("returns receipt HTML for valid booking", async () => {
-    mockedFindFirst.mockResolvedValue(mockBooking as any)
+    mockedFindFirst.mockResolvedValue(mockBooking as never)
     const req = createRequest("a0000000-0000-4000-a000-000000000001")
     const res = await GET(req, { params })
     expect(res.status).toBe(200)
@@ -98,7 +98,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
     mockedFindFirst.mockResolvedValue({
       ...mockBooking,
       payment: { ...mockBooking.payment, status: "pending" },
-    } as any)
+    } as never)
     const req = createRequest("a0000000-0000-4000-a000-000000000001")
     const res = await GET(req, { params })
     expect(res.status).toBe(400)
@@ -112,7 +112,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
           ...mockBooking.provider,
           businessName: '<script>alert("xss")</script>',
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()
@@ -128,7 +128,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
           firstName: '<img src=x onerror="alert(1)">',
           lastName: "Doe",
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()
@@ -143,7 +143,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
           ...mockBooking.customer,
           email: '"><script>alert(1)</script>@evil.com',
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()
@@ -157,7 +157,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
           ...mockBooking.customer,
           address: '<div onmouseover="alert(1)">Evil Street</div>',
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()
@@ -171,7 +171,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
           ...mockBooking.service,
           name: '"><iframe src="evil.com">',
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()
@@ -188,7 +188,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
             lastName: '<script>evil()</script>',
           },
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()
@@ -203,7 +203,7 @@ describe("GET /api/bookings/[id]/receipt", () => {
           ...mockBooking.payment,
           invoiceNumber: '<script>alert("inv")</script>',
         },
-      } as any)
+      } as never)
       const req = createRequest("a0000000-0000-4000-a000-000000000001")
       const res = await GET(req, { params })
       const html = await res.text()

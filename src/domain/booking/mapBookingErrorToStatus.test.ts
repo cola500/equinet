@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { mapBookingErrorToStatus, mapBookingErrorToMessage } from './mapBookingErrorToStatus'
-import type { BookingError } from './BookingService'
 
 describe('mapBookingErrorToStatus', () => {
   it('should return 400 for validation errors', () => {
@@ -30,7 +29,7 @@ describe('mapBookingErrorToStatus', () => {
   })
 
   it('should return 400 for INVALID_CUSTOMER_DATA', () => {
-    expect(mapBookingErrorToStatus({ type: 'INVALID_CUSTOMER_DATA', message: 'test' } as any)).toBe(400)
+    expect(mapBookingErrorToStatus({ type: 'INVALID_CUSTOMER_DATA', message: 'test' } as never)).toBe(400)
   })
 
   it('should return 400 for PROVIDER_CLOSED', () => {

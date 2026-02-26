@@ -48,8 +48,8 @@ function createRequest(months?: number) {
 const PROVIDER_ID = "a0000000-0000-4000-a000-000000000001"
 
 function setupAuthenticatedProvider() {
-  mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
-  mockProviderFindFirst.mockResolvedValue({ id: PROVIDER_ID } as any)
+  mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+  mockProviderFindFirst.mockResolvedValue({ id: PROVIDER_ID } as never)
 }
 
 function setupEmptyData() {
@@ -58,7 +58,7 @@ function setupEmptyData() {
 }
 
 // Helper to create booking data for tests
-function createBooking(overrides: Record<string, any> = {}) {
+function createBooking(overrides: Record<string, unknown> = {}) {
   const now = new Date()
   return {
     id: `booking-${Math.random().toString(36).slice(2)}`,
@@ -80,7 +80,7 @@ describe("GET /api/provider/insights", () => {
   // --- Auth & authorization ---
 
   it("should return 401 when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null as any)
+    mockAuth.mockResolvedValue(null as never)
 
     const response = await GET(createRequest())
     expect(response.status).toBe(401)
@@ -90,7 +90,7 @@ describe("GET /api/provider/insights", () => {
   })
 
   it("should return 404 when provider not found", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
     mockProviderFindFirst.mockResolvedValue(null)
 
     const response = await GET(createRequest())
@@ -132,7 +132,7 @@ describe("GET /api/provider/insights", () => {
       createBooking({ status: "cancelled" }),
       createBooking({ status: "cancelled" }),
       createBooking({ status: "no_show" }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -150,7 +150,7 @@ describe("GET /api/provider/insights", () => {
       createBooking({ status: "completed", service: { id: "s1", name: "A", price: 600 } }),
       createBooking({ status: "completed", service: { id: "s2", name: "B", price: 900 } }),
       createBooking({ status: "completed", service: { id: "s3", name: "C", price: 1200 } }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -167,7 +167,7 @@ describe("GET /api/provider/insights", () => {
       createBooking({ customerId: "c2" }),
       createBooking({ customerId: "c1" }),
       createBooking({ customerId: "c3" }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -183,7 +183,7 @@ describe("GET /api/provider/insights", () => {
       createBooking({ isManualBooking: true }),
       createBooking({ isManualBooking: false }),
       createBooking({ isManualBooking: false }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -200,13 +200,13 @@ describe("GET /api/provider/insights", () => {
       createBooking({ status: "completed", service: { id: "s1", name: "Hovbeläggning", price: 800 } }),
       createBooking({ status: "completed", service: { id: "s1", name: "Hovbeläggning", price: 800 } }),
       createBooking({ status: "completed", service: { id: "s2", name: "Verkning", price: 600 } }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
 
     expect(data.serviceBreakdown).toHaveLength(2)
-    const hov = data.serviceBreakdown.find((s: any) => s.serviceName === "Hovbeläggning")
+    const hov = data.serviceBreakdown.find((s: { serviceName: string }) => s.serviceName === "Hovbeläggning")
     expect(hov.count).toBe(2)
     expect(hov.revenue).toBe(1600)
   })
@@ -222,7 +222,7 @@ describe("GET /api/provider/insights", () => {
     mockBookingFindMany.mockResolvedValue([
       createBooking({ bookingDate: monday, startTime: "10:00" }),
       createBooking({ bookingDate: monday, startTime: "10:00" }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()
@@ -246,7 +246,7 @@ describe("GET /api/provider/insights", () => {
       createBooking({ customerId: "c1", bookingDate: month1, status: "completed" }),
       createBooking({ customerId: "c2", bookingDate: month1, status: "completed" }),
       createBooking({ customerId: "c1", bookingDate: month2, status: "completed" }),
-    ] as any)
+    ] as never)
 
     const response = await GET(createRequest())
     const data = await response.json()

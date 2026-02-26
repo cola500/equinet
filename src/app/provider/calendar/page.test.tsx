@@ -50,7 +50,7 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
 }))
 
 // Mock offline guard (mutable per test)
-const mockGuardMutation = vi.fn((fn: () => any) => fn())
+const mockGuardMutation = vi.fn((fn: () => unknown) => fn())
 let mockIsOnline = true
 vi.mock("@/hooks/useOfflineGuard", () => ({
   useOfflineGuard: () => ({ isOnline: mockIsOnline, guardMutation: mockGuardMutation }),
@@ -70,7 +70,7 @@ vi.mock("@/components/calendar/CalendarHeader", () => ({
 }))
 
 vi.mock("@/components/calendar/WeekCalendar", () => ({
-  WeekCalendar: ({ onBookingClick, bookings }: { onBookingClick: (b: any) => void; bookings: any[] }) => (
+  WeekCalendar: ({ onBookingClick, bookings }: { onBookingClick: (b: unknown) => void; bookings: unknown[] }) => (
     <button data-testid="booking-click" onClick={() => onBookingClick(bookings?.[0] || { id: "booking-1" })}>
       Klicka bokning
     </button>

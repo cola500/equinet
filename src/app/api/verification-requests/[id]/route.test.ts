@@ -43,7 +43,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockProviderSession = {
   user: { id: "provider-user-1", email: "magnus@test.se", userType: "provider" },
-} as any
+} as never
 
 const mockProvider = {
   id: "provider-1",
@@ -94,14 +94,14 @@ describe("PUT /api/verification-requests/[id]", () => {
 
   it("should update a pending verification request", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as never)
     vi.mocked(prisma.providerVerification.update).mockResolvedValue({
       ...mockPendingVerification,
       title: "Uppdaterad titel",
       issuer: "Wången",
       year: 2020,
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-1",
@@ -126,8 +126,8 @@ describe("PUT /api/verification-requests/[id]", () => {
 
   it("should reset rejected status to pending on edit", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockRejectedVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockRejectedVerification as never)
     vi.mocked(prisma.providerVerification.update).mockResolvedValue({
       ...mockRejectedVerification,
       title: "Bättre titel",
@@ -135,7 +135,7 @@ describe("PUT /api/verification-requests/[id]", () => {
       reviewNote: null,
       reviewedAt: null,
       reviewedBy: null,
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-rejected",
@@ -167,8 +167,8 @@ describe("PUT /api/verification-requests/[id]", () => {
 
   it("should reject edit on approved verification (400)", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockApprovedVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockApprovedVerification as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-approved",
@@ -185,7 +185,7 @@ describe("PUT /api/verification-requests/[id]", () => {
 
   it("should return 404 for IDOR attempt", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(null) // Not found with this provider
 
     const request = new NextRequest(
@@ -203,8 +203,8 @@ describe("PUT /api/verification-requests/[id]", () => {
 
   it("should return 400 for invalid JSON", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-1",
@@ -221,8 +221,8 @@ describe("PUT /api/verification-requests/[id]", () => {
 
   it("should return 400 for invalid year", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-1",
@@ -247,10 +247,10 @@ describe("DELETE /api/verification-requests/[id]", () => {
 
   it("should delete a pending verification", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as any)
-    vi.mocked(prisma.upload.deleteMany).mockResolvedValue({ count: 0 } as any)
-    vi.mocked(prisma.providerVerification.delete).mockResolvedValue(mockPendingVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockPendingVerification as never)
+    vi.mocked(prisma.upload.deleteMany).mockResolvedValue({ count: 0 } as never)
+    vi.mocked(prisma.providerVerification.delete).mockResolvedValue(mockPendingVerification as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-1",
@@ -270,10 +270,10 @@ describe("DELETE /api/verification-requests/[id]", () => {
 
   it("should delete a rejected verification", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockRejectedVerification as any)
-    vi.mocked(prisma.upload.deleteMany).mockResolvedValue({ count: 2 } as any)
-    vi.mocked(prisma.providerVerification.delete).mockResolvedValue(mockRejectedVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockRejectedVerification as never)
+    vi.mocked(prisma.upload.deleteMany).mockResolvedValue({ count: 2 } as never)
+    vi.mocked(prisma.providerVerification.delete).mockResolvedValue(mockRejectedVerification as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-rejected",
@@ -287,8 +287,8 @@ describe("DELETE /api/verification-requests/[id]", () => {
 
   it("should reject delete on approved verification (400)", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockApprovedVerification as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(mockApprovedVerification as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests/ver-approved",
@@ -302,7 +302,7 @@ describe("DELETE /api/verification-requests/[id]", () => {
 
   it("should return 404 for IDOR attempt", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
-    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as any)
+    vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(null)
 
     const request = new NextRequest(

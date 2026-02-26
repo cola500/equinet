@@ -31,7 +31,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockCustomerSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 const mockProviderSession = {
   user: {
@@ -40,7 +40,7 @@ const mockProviderSession = {
     userType: "provider",
     providerId: "provider-1",
   },
-} as any
+} as never
 
 const mockUser = {
   id: "customer-1",
@@ -101,11 +101,11 @@ describe("GET /api/export/my-data", () => {
 
   it("should return JSON export for customer", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any)
-    vi.mocked(prisma.horse.findMany).mockResolvedValue(mockHorses as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never)
+    vi.mocked(prisma.horse.findMany).mockResolvedValue(mockHorses as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
-    vi.mocked(prisma.review.findMany).mockResolvedValue(mockReviews as any)
+    vi.mocked(prisma.review.findMany).mockResolvedValue(mockReviews as never)
 
     const request = new NextRequest("http://localhost:3000/api/export/my-data")
     const response = await GET(request)
@@ -126,7 +126,7 @@ describe("GET /api/export/my-data", () => {
   it("should use select to avoid exposing passwordHash", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
     // Prisma select only returns listed fields - verify select is used
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never)
     vi.mocked(prisma.horse.findMany).mockResolvedValue([])
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
@@ -147,11 +147,11 @@ describe("GET /api/export/my-data", () => {
 
   it("should return CSV with all sections when format=csv", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any)
-    vi.mocked(prisma.horse.findMany).mockResolvedValue(mockHorses as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never)
+    vi.mocked(prisma.horse.findMany).mockResolvedValue(mockHorses as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
-    vi.mocked(prisma.review.findMany).mockResolvedValue(mockReviews as any)
+    vi.mocked(prisma.review.findMany).mockResolvedValue(mockReviews as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/export/my-data?format=csv"
@@ -189,7 +189,7 @@ describe("GET /api/export/my-data", () => {
       ...mockUser,
       id: "provider-user-1",
       userType: "provider",
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: "provider-1",
       businessName: "Magnus Hovslagar",
@@ -210,7 +210,7 @@ describe("GET /api/export/my-data", () => {
           isActive: true,
         },
       ],
-    } as any)
+    } as never)
     vi.mocked(prisma.horse.findMany).mockResolvedValue([])
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
@@ -247,12 +247,12 @@ describe("GET /api/export/my-data", () => {
       ...mockUser,
       id: "provider-user-1",
       userType: "provider",
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: "provider-1",
       businessName: "Magnus Hovslagar",
       services: [{ id: "s-1", name: "Hovslagning", price: 500 }],
-    } as any)
+    } as never)
     vi.mocked(prisma.horse.findMany).mockResolvedValue([])
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
     vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
