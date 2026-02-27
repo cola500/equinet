@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               isDev
                 ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: React DevTools need unsafe-eval
-                : "script-src 'self'", // Prod: SRI integrity hashes allow removal of unsafe-inline
+                : "script-src 'self' 'unsafe-inline'", // Prod: SRI hashes don't cover inline scripts on Vercel
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
@@ -85,10 +85,10 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // Script sources - stricter in production (SRI integrity hashes replace unsafe-inline)
+              // Script sources - unsafe-inline required: Next.js injects inline scripts that SRI can't cover on Vercel
               isDev
                 ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: React DevTools need unsafe-eval
-                : "script-src 'self'", // Prod: SRI integrity hashes allow removal of unsafe-inline
+                : "script-src 'self' 'unsafe-inline'", // Prod: SRI covers external scripts, inline still needed
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
