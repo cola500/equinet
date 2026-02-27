@@ -37,6 +37,7 @@ interface CustomerCardProps {
   onEditHorse: (horse: CustomerHorse, customerId: string) => void
   onDeleteHorse: (horse: CustomerHorse, customerId: string) => void
   // Customer callbacks
+  onEditCustomer: (customer: Customer) => void
   onDeleteCustomer: (customer: Customer) => void
 }
 
@@ -81,6 +82,7 @@ export function CustomerCard({
   onAddHorse,
   onEditHorse,
   onDeleteHorse,
+  onEditCustomer,
   onDeleteCustomer,
 }: CustomerCardProps) {
   // Local note form state
@@ -456,9 +458,18 @@ export function CustomerCard({
             </div>
           )}
 
-          {/* Delete customer button (only for manually added) */}
-          {customer.isManuallyAdded && (
-            <div className="mt-4 pt-4 border-t">
+          {/* Customer actions */}
+          <div className="mt-4 pt-4 border-t flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 hover:text-gray-800"
+              onClick={() => onEditCustomer(customer)}
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              Redigera kund
+            </Button>
+            {customer.isManuallyAdded && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -468,8 +479,8 @@ export function CustomerCard({
                 <Trash2 className="h-3.5 w-3.5 mr-1" />
                 Ta bort kund
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </Card>

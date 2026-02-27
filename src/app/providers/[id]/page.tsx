@@ -165,6 +165,19 @@ export default function ProviderDetailPage() {
     fetchHorses()
   }, [isCustomer])
 
+  // Auto-select horse when customer has exactly 1 horse
+  useEffect(() => {
+    if (customerHorses.length === 1 && booking.isOpen) {
+      const horse = customerHorses[0]
+      booking.setBookingForm((prev) => ({
+        ...prev,
+        horseId: horse.id,
+        horseName: horse.name,
+        horseInfo: horse.specialNeeds || "",
+      }))
+    }
+  }, [customerHorses, booking.isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch customer location and nearby routes for customers
   useEffect(() => {
     if (!isCustomer || !params.id) return
