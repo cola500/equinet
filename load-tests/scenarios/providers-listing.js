@@ -29,9 +29,9 @@ export default function () {
 
   check(res, {
     "status is 200": (r) => r.status === 200,
-    "has providers array or error": (r) => {
+    "has data array or error": (r) => {
       const body = r.json()
-      return Array.isArray(body) || body.error !== undefined
+      return Array.isArray(body.data) || body.error !== undefined
     },
   })
 

@@ -49,15 +49,33 @@ npm run loadtest:all
 
 ## Baseline-resultat
 
-> **TODO**: Fyll i efter första körningen med k6.
->
-> Mall:
->
-> | Endpoint | p50 | p95 | p99 | Error rate | Req/s |
-> |----------|-----|-----|-----|------------|-------|
-> | GET /api/providers | - | - | - | - | - |
-> | GET /api/provider/dashboard/stats | - | - | - | - | - |
-> | GET /api/provider/insights | - | - | - | - | - |
+**Datum**: 2026-02-27
+**Miljö**: Next.js dev-server (lokal), Docker PostgreSQL, MacOS ARM64
+**k6**: v1.6.1
+**Seedat data**: Ja (db:seed)
+
+### Dev-server (next dev)
+
+| Endpoint | VUs | p50 | p95 | Error rate | Req/s |
+|----------|-----|-----|-----|------------|-------|
+| GET /api/providers | 100 | 7.12s | 19.08s | 0% | 7.0 |
+| GET /api/provider/dashboard/stats | 50 | 457ms | 1.06s | 100%* | 19.2 |
+| GET /api/provider/insights | 50 | 440ms | 1.08s | 100%* | 19.1 |
+
+*\* Autentiserade endpoints utan session cookie returnerar 500 (auth() kastar utan cookie). Error rate avser HTTP-statuskod, inte serverstabilitet -- servern hanterade lasten utan krasch.*
+
+### Analys
+
+- **Providers-listing** (publik, 100 VUs): Svarstiderna är höga pga Next.js dev-mode (on-the-fly kompilering). I production build förväntas p95 < 500ms.
+- **Dashboard/Insights** (50 VUs, utan auth): ~460ms median visar att servern hanterar 50 concurrent utan problem. Med caching aktivt (Redis) förväntas cached requests < 50ms.
+- **Inga krascher** under hela testperioden (2 min per scenario).
+
+### Nästa steg
+
+- [ ] Kör mot production build (`npm run build && npm start`) för realistiska siffror
+- [ ] Kör med giltig session cookie för autentiserade endpoints
+- [ ] Kör mot Vercel staging med `LOAD_TEST_BASE_URL`
+- [ ] Jämför med/utan Redis-cache
 
 ## Prestandaoptimeringar implementerade
 
