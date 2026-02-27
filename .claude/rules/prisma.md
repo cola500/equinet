@@ -37,6 +37,14 @@ paths:
 Karndomaner (Booking, Provider, Service, CustomerReview, Horse) MASTE anvanda repository.
 Stoddomaner (AvailabilityException, AvailabilitySchedule) -- Prisma direkt ar OK.
 
+## Schema-först
+
+Prisma-schema -> API -> UI ger typsäkerhet hela vägen. Designa alltid schemat först.
+
+## Migration med constraint-ändring + datamigrering
+
+Ordning: (1) Add nullable column + FK, (2) DROP old constraint, (3) Data migration DO-block, (4) SET NOT NULL + CREATE new constraint. Droppa ALLTID gamla constrainten FÖRE datamigreringssteget -- annars failar INSERT på duplicate key.
+
 ## Nytt falt pa befintlig modell
 
 Kontrollera ALLA select-block, mappings och queries i hela kodbasen. `providerNotes` missades forst i passport-route.

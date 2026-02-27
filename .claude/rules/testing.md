@@ -39,6 +39,10 @@ expect(data[0]).toMatchObject({
 expect(data[0].user.passwordHash).toBeUndefined()
 ```
 
+## Mock-patterns
+
+- **`as never` i testmockar**: Ersätt `as any` med `as never` i alla mock-returvärden. `never` är assignerbar till alla typer utan att trigga `no-explicit-any`. Universellt mönster.
+
 ## Gotchas
 
 - **Zod v4 UUID**: Kraver korrekt UUID v4-format. `a0000000-0000-4000-a000-000000000001` funkar, `00000000-0000-0000-0000-000000000001` funkar INTE.
