@@ -369,7 +369,7 @@ describe('HorseService', () => {
       // Only veterinary should be visible (general and injury are restricted)
       const noteItems = result.value.filter((i) => i.type === 'note')
       expect(noteItems).toHaveLength(1)
-      expect((noteItems[0] as any).category).toBe('veterinary')
+      expect((noteItems[0] as never).category).toBe('veterinary')
     })
 
     it('should return 404 for user without access', async () => {

@@ -48,9 +48,9 @@ describe('ReviewService', () => {
   let mockNotify: ReturnType<typeof createMockNotify>
 
   function createMockNotify() {
-    const calls: any[] = []
+    const calls: unknown[] = []
     return {
-      createAsync: (data: any) => { calls.push(data) },
+      createAsync: (data: unknown) => { calls.push(data) },
       calls,
     }
   }

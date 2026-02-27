@@ -44,7 +44,7 @@ const ADMIN_UUID = "a0000000-0000-4000-a000-000000000001"
 
 const mockAdminSession = {
   user: { id: ADMIN_UUID, email: "admin@test.se" },
-} as any
+} as never
 
 describe("GET /api/admin/reviews", () => {
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe("GET /api/admin/reviews", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   it("should return merged and paginated review list", async () => {
@@ -68,7 +68,7 @@ describe("GET /api/admin/reviews", () => {
         provider: { businessName: "Kliniken" },
         booking: { bookingDate: new Date("2026-02-01") },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.review.count).mockResolvedValue(1)
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([
       {
@@ -80,7 +80,7 @@ describe("GET /api/admin/reviews", () => {
         provider: { businessName: "Stall AB" },
         booking: { bookingDate: new Date("2026-01-20") },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.customerReview.count).mockResolvedValue(1)
 
     const request = new NextRequest("http://localhost:3000/api/admin/reviews")
@@ -149,7 +149,7 @@ describe("GET /api/admin/reviews", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/reviews")
     const response = await GET(request)

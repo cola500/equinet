@@ -64,9 +64,9 @@ describe('GET /api/services', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.service.findMany).mockResolvedValue(mockServices as any)
+    } as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.service.findMany).mockResolvedValue(mockServices as never)
 
     const request = new NextRequest('http://localhost:3000/api/services')
 
@@ -103,7 +103,7 @@ describe('GET /api/services', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/services')
 
@@ -120,7 +120,7 @@ describe('GET /api/services', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services')
@@ -162,10 +162,10 @@ describe('POST /api/services', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    } as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.service.count).mockResolvedValue(0) // Service doesn't exist
-    vi.mocked(prisma.service.create).mockResolvedValue(mockService as any)
+    vi.mocked(prisma.service.create).mockResolvedValue(mockService as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -222,8 +222,8 @@ describe('POST /api/services', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    } as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -251,8 +251,8 @@ describe('POST /api/services', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    } as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -281,8 +281,8 @@ describe('POST /api/services', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    } as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -306,7 +306,7 @@ describe('POST /api/services', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(rateLimiters.serviceCreate).mockResolvedValue(false) // Rate limited
 
     const request = new NextRequest('http://localhost:3000/api/services', {

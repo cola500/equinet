@@ -89,10 +89,10 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       },
     ]
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockAnnouncement as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockAnnouncement as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const request = new NextRequest(
       `http://localhost:3000/api/route-orders/${TEST_UUIDS.announcement}/bookings`
@@ -120,7 +120,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
 
     const request = new NextRequest(
       `http://localhost:3000/api/route-orders/${TEST_UUIDS.announcement}/bookings`
@@ -148,8 +148,8 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       id: TEST_UUIDS.provider,
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest(
@@ -188,9 +188,9 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       status: 'open',
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockAnnouncement as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockAnnouncement as never)
 
     const request = new NextRequest(
       `http://localhost:3000/api/route-orders/${TEST_UUIDS.announcement}/bookings`
@@ -228,9 +228,9 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       status: 'open',
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
     const request = new NextRequest(
       `http://localhost:3000/api/route-orders/${TEST_UUIDS.announcement}/bookings`
@@ -268,9 +268,9 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       status: 'open',
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockAnnouncement as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockAnnouncement as never)
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
 
     const request = new NextRequest(

@@ -45,7 +45,7 @@ const REVIEW_UUID = "a0000000-0000-4000-a000-000000000010"
 
 const mockAdminSession = {
   user: { id: ADMIN_UUID, email: "admin@test.se" },
-} as any
+} as never
 
 const routeContext = {
   params: Promise.resolve({ id: REVIEW_UUID }),
@@ -58,7 +58,7 @@ describe("DELETE /api/admin/reviews/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   function makeDeleteRequest(body: Record<string, unknown>) {
@@ -70,8 +70,8 @@ describe("DELETE /api/admin/reviews/[id]", () => {
   }
 
   it("should delete a Review", async () => {
-    vi.mocked(prisma.review.findUnique).mockResolvedValue({ id: REVIEW_UUID } as any)
-    vi.mocked(prisma.review.delete).mockResolvedValue({ id: REVIEW_UUID } as any)
+    vi.mocked(prisma.review.findUnique).mockResolvedValue({ id: REVIEW_UUID } as never)
+    vi.mocked(prisma.review.delete).mockResolvedValue({ id: REVIEW_UUID } as never)
 
     const response = await DELETE(makeDeleteRequest({ type: "review" }), routeContext)
     const data = await response.json()
@@ -82,8 +82,8 @@ describe("DELETE /api/admin/reviews/[id]", () => {
   })
 
   it("should delete a CustomerReview", async () => {
-    vi.mocked(prisma.customerReview.findUnique).mockResolvedValue({ id: REVIEW_UUID } as any)
-    vi.mocked(prisma.customerReview.delete).mockResolvedValue({ id: REVIEW_UUID } as any)
+    vi.mocked(prisma.customerReview.findUnique).mockResolvedValue({ id: REVIEW_UUID } as never)
+    vi.mocked(prisma.customerReview.delete).mockResolvedValue({ id: REVIEW_UUID } as never)
 
     const response = await DELETE(makeDeleteRequest({ type: "customerReview" }), routeContext)
     const data = await response.json()
@@ -105,7 +105,7 @@ describe("DELETE /api/admin/reviews/[id]", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: ADMIN_UUID,
       isAdmin: false,
-    } as any)
+    } as never)
 
     const response = await DELETE(makeDeleteRequest({ type: "review" }), routeContext)
 

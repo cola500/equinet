@@ -4,8 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import { getRouteWithFallback } from '@/lib/routing'
 
-// Prevent Leaflet from re-initializing icons
+// Prevent Leaflet from re-initializing icons.
+// Leaflet's _getIconUrl is a private property not in the type definitions,
+// but must be deleted to prevent broken default marker icons in bundled builds.
 if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete (L.Icon.Default.prototype as any)._getIconUrl
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -17,8 +20,8 @@ if (typeof window !== 'undefined') {
 interface RouteOrder {
   id: string
   address: string
-  latitude?: number
-  longitude?: number
+  latitude: number | null
+  longitude: number | null
   serviceType: string
   customer: {
     firstName: string

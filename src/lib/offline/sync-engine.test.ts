@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import "fake-indexeddb/auto"
 import { offlineDb } from "./db"
 import { queueMutation, updateMutationStatus } from "./mutation-queue"
-import { processMutationQueue, type SyncResult } from "./sync-engine"
+import { processMutationQueue } from "./sync-engine"
 
 beforeEach(async () => {
   await offlineDb.pendingMutations.clear()

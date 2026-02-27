@@ -122,12 +122,12 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
   async findByIdForCreator(
     id: string,
     creatorId: string
-  ): Promise<(GroupBookingRequest & { participants: { userId: true }[] }) | null> {
+  ): Promise<(GroupBookingRequest & { participants: { userId: string }[] }) | null> {
     const request = this.requests.get(id)
     if (!request || request.creatorId !== creatorId) return null
 
     const activeParticipants = this.getActiveParticipantsForRequest(id)
-      .map((_p) => ({ userId: true as const }))
+      .map((p) => ({ userId: p.userId }))
 
     return { ...request, participants: activeParticipants }
   }

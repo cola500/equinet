@@ -37,7 +37,7 @@ vi.mock('@/domain/horse/HorseService', () => ({
 
 const mockCustomerSession = {
   user: { id: 'customer-1', email: 'anna@test.se', userType: 'customer' },
-} as any
+} as never
 
 describe('GET /api/horses', () => {
   beforeEach(() => {

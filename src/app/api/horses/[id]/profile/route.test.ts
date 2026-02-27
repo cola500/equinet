@@ -24,7 +24,7 @@ vi.mock("@/domain/horse/HorseService", () => ({
 
 const mockSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 const makeContext = (id: string) => ({ params: Promise.resolve({ id }) })
 

@@ -691,7 +691,7 @@ describe('BookingService', () => {
 
       const result = await service.updateStatus({
         bookingId,
-        newStatus: 'bogus' as any,
+        newStatus: 'bogus' as never,
         providerId: 'provider-1',
       })
 
@@ -1005,7 +1005,7 @@ describe('BookingService', () => {
 
     it('should return GHOST_USER_CREATION_FAILED on duplicate email race condition (P2002)', async () => {
       const prismaError = new Error('Unique constraint failed on the fields: (`email`)')
-      ;(prismaError as any).code = 'P2002'
+      Object.assign(prismaError, { code: 'P2002' })
       const depsWithGhost: BookingServiceDeps = {
         ...deps,
         createGhostUser: vi.fn().mockRejectedValue(prismaError),
@@ -1256,7 +1256,7 @@ describe('BookingService', () => {
         startTime: overrides?.startTime || '10:00',
         endTime: '11:00',
         timezone: 'Europe/Stockholm',
-        status: (overrides?.status || 'confirmed') as any,
+        status: (overrides?.status || 'confirmed') as never,
         rescheduleCount: overrides?.rescheduleCount ?? 0,
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -23,13 +23,13 @@ export class ProviderRepository implements IProviderRepository {
     return provider
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<Provider[]> {
-    const providers = await prisma.provider.findMany(criteria as any)
+  async findMany(criteria?: Record<string, unknown>): Promise<Provider[]> {
+    const providers = await prisma.provider.findMany(criteria as Prisma.ProviderFindManyArgs)
     return providers
   }
 
   async findAll(filters?: ProviderFilters): Promise<Provider[]> {
-    const where: any = {}
+    const where: Prisma.ProviderWhereInput = {}
 
     // Build where clause based on filters
     if (filters?.isActive !== undefined) {
@@ -67,7 +67,7 @@ export class ProviderRepository implements IProviderRepository {
   }
 
   async findAllWithDetails(filters?: ProviderFilters): Promise<ProviderWithDetails[]> {
-    const where: any = {}
+    const where: Prisma.ProviderWhereInput = {}
 
     // Build where clause based on filters
     if (filters?.isActive !== undefined) {

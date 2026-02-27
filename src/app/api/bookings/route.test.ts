@@ -115,8 +115,8 @@ describe('GET /api/bookings', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer123', userType: 'customer' },
-    } as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    } as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
 
@@ -161,9 +161,9 @@ describe('GET /api/bookings', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as any)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    } as never)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
 
@@ -201,7 +201,7 @@ describe('GET /api/bookings', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
@@ -226,13 +226,13 @@ describe('POST /api/bookings', () => {
       isActive: true,
       latitude: 57.7089,
       longitude: 11.9746,
-    } as any)
+    } as never)
     // Default mock for customer location (for travel time validation)
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       latitude: 57.7089,
       longitude: 11.9746,
       address: 'Göteborg',
-    } as any)
+    } as never)
     // Default mock for existing bookings (for travel time validation)
     // Returns empty array - no existing bookings
     vi.mocked(prisma.booking.findMany).mockResolvedValue([])
@@ -283,12 +283,12 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
     // Mock $transaction to execute the callback immediately with tx object
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: never) => {
       const tx = {
         booking: {
           findMany: vi.fn().mockResolvedValue([]), // No overlapping bookings
@@ -357,7 +357,7 @@ describe('POST /api/bookings', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: 'customer' },
-    } as any)
+    } as never)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
@@ -402,8 +402,8 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
-    vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -434,7 +434,7 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -494,11 +494,11 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: never) => {
         const tx = {
           booking: {
             findMany: vi.fn().mockResolvedValue([]),
@@ -568,11 +568,11 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: never) => {
         const tx = {
           booking: {
             findMany: vi.fn().mockResolvedValue([]),
@@ -624,8 +624,8 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
@@ -699,12 +699,12 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
+      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: never) => {
         const tx = {
           booking: {
             findMany: vi.fn().mockResolvedValue([]),
@@ -776,11 +776,11 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: never) => {
         const tx = {
           booking: {
             findMany: vi.fn().mockResolvedValue([]),
@@ -833,8 +833,8 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(null)
 
       const request = new NextRequest('http://localhost:3000/api/bookings', {
@@ -888,9 +888,9 @@ describe('POST /api/bookings', () => {
         providerId: TEST_UUIDS.provider,
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
+      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
@@ -947,9 +947,9 @@ describe('POST /api/bookings', () => {
         providerId: TEST_UUIDS.provider,
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
+      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
@@ -1002,9 +1002,9 @@ describe('POST /api/bookings', () => {
         providerId: TEST_UUIDS.differentProvider, // DIFFERENT provider!
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
+      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
       const request = new NextRequest('http://localhost:3000/api/bookings', {
         method: 'POST',
@@ -1077,12 +1077,12 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as any)
-      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as any)
-      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as any)
+      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
+      vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: never) => {
         const tx = {
           booking: {
             findMany: vi.fn().mockResolvedValue([]),
@@ -1122,14 +1122,14 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.service.findUnique).mockResolvedValue({
       id: TEST_UUIDS.service,
       name: 'Hovslagning',
       providerId: TEST_UUIDS.provider,
       durationMinutes: 60,
       isActive: true,
-    } as any)
+    } as never)
 
     // Provider has closed this day
     vi.mocked(prisma.availabilityException.findUnique).mockResolvedValue({
@@ -1137,7 +1137,7 @@ describe('POST /api/bookings', () => {
       reason: 'Semester',
       startTime: null,
       endTime: null,
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',

@@ -251,9 +251,9 @@ export function useBookingFlow({
         setIsOpen(false)
         router.push("/customer/bookings")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating booking:", error)
-      toast.error(error.message || "Kunde inte skapa bokning")
+      toast.error(error instanceof Error ? error.message : "Kunde inte skapa bokning")
       setStep("selectHorse")
     }
   }

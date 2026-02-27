@@ -32,7 +32,7 @@ export class PrismaBookingRepository
     return booking ? this.mapper.toDomain(booking) : null
   }
 
-  async findMany(criteria?: Record<string, any>): Promise<Booking[]> {
+  async findMany(criteria?: Record<string, unknown>): Promise<Booking[]> {
     const bookings = await prisma.booking.findMany({
       where: criteria,
       orderBy: { bookingDate: 'desc' },

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useServices } from "@/hooks/useServices"
+import { useDialogState } from "@/hooks/useDialogState"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -37,7 +38,7 @@ const INTERVAL_OPTIONS = [
 export default function ProviderServicesPage() {
   const { isLoading, isProvider } = useAuth()
   const { services, mutate: mutateServices } = useServices()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const serviceDialog = useDialogState()
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [formData, setFormData] = useState({
     name: "",
@@ -61,7 +62,7 @@ export default function ProviderServicesPage() {
         const method = editingService ? "PUT" : "POST"
 
         // Build payload - only include isActive when updating
-        const payload: any = {
+        const payload: Record<string, unknown> = {
           name: formData.name,
           description: formData.description || undefined,
           price: parseFloat(formData.price),
@@ -92,7 +93,7 @@ export default function ProviderServicesPage() {
           editingService ? "Tjänst uppdaterad!" : "Tjänst skapad!"
         )
 
-        setIsDialogOpen(false)
+        serviceDialog.close()
         resetForm()
         mutateServices()
       } catch (error) {
@@ -111,7 +112,7 @@ export default function ProviderServicesPage() {
       durationMinutes: service.durationMinutes.toString(),
       recommendedIntervalWeeks: service.recommendedIntervalWeeks?.toString() || "",
     })
-    setIsDialogOpen(true)
+    serviceDialog.openDialog()
   }
 
   const handleDelete = async (id: string) => {
@@ -213,12 +214,12 @@ export default function ProviderServicesPage() {
               Hantera de tjänster du erbjuder
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={serviceDialog.open} onOpenChange={serviceDialog.setOpen}>
             <DialogTrigger asChild>
               <Button
                 onClick={() => {
                   resetForm()
-                  setIsDialogOpen(true)
+                  serviceDialog.openDialog()
                 }}
               >
                 Lägg till tjänst
@@ -324,7 +325,7 @@ export default function ProviderServicesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setIsDialogOpen(false)
+                      serviceDialog.close()
                       resetForm()
                     }}
                   >
@@ -364,7 +365,7 @@ export default function ProviderServicesPage() {
                 Börja med att skapa din första tjänst. Lägg till tjänster som hovslagning,
                 veterinärvård, eller ridlektioner för att börja ta emot bokningar.
               </p>
-              <Button onClick={() => setIsDialogOpen(true)} size="lg">
+              <Button onClick={() => serviceDialog.openDialog()} size="lg">
                 <svg
                   className="mr-2 h-5 w-5"
                   fill="none"

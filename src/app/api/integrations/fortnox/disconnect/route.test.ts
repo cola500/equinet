@@ -24,11 +24,11 @@ const mockProviderSession = {
     userType: "provider",
     providerId: "provider-1",
   },
-} as any
+} as never
 
 const mockCustomerSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 describe("POST /api/integrations/fortnox/disconnect", () => {
   beforeEach(() => vi.clearAllMocks())
@@ -38,8 +38,8 @@ describe("POST /api/integrations/fortnox/disconnect", () => {
     vi.mocked(prisma.fortnoxConnection.findUnique).mockResolvedValue({
       id: "conn-1",
       providerId: "provider-1",
-    } as any)
-    vi.mocked(prisma.fortnoxConnection.delete).mockResolvedValue({} as any)
+    } as never)
+    vi.mocked(prisma.fortnoxConnection.delete).mockResolvedValue({} as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/integrations/fortnox/disconnect",

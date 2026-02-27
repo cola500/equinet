@@ -19,7 +19,7 @@ describe('geocodeAddress', () => {
       lon: '12.532',
     }]
 
-    ;(global.fetch as any).mockResolvedValueOnce({
+    ;(global.fetch as never).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse
     })
@@ -32,7 +32,7 @@ describe('geocodeAddress', () => {
     })
 
     // Verify fetch was called with correct URL
-    const callArg = (global.fetch as any).mock.calls[0][0]
+    const callArg = (global.fetch as never).mock.calls[0][0]
     expect(callArg).toContain('https://nominatim.openstreetmap.org/search')
     expect(callArg).toContain('format=json')
     expect(callArg).toContain('limit=1')
@@ -53,7 +53,7 @@ describe('geocodeAddress', () => {
   })
 
   it('should handle empty results from API', async () => {
-    ;(global.fetch as any).mockResolvedValueOnce({
+    ;(global.fetch as never).mockResolvedValueOnce({
       ok: true,
       json: async () => []
     })
@@ -64,7 +64,7 @@ describe('geocodeAddress', () => {
   })
 
   it('should handle HTTP error responses', async () => {
-    ;(global.fetch as any).mockResolvedValueOnce({
+    ;(global.fetch as never).mockResolvedValueOnce({
       ok: false,
       status: 500,
     })
@@ -75,7 +75,7 @@ describe('geocodeAddress', () => {
   })
 
   it('should handle network errors', async () => {
-    ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
+    ;(global.fetch as never).mockRejectedValueOnce(new Error('Network error'))
 
     const result = await geocodeAddress('Storgatan 1, Alingsås')
 
@@ -88,7 +88,7 @@ describe('geocodeAddress', () => {
       lon: '11.974',
     }]
 
-    ;(global.fetch as any).mockResolvedValueOnce({
+    ;(global.fetch as never).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse
     })
@@ -96,7 +96,7 @@ describe('geocodeAddress', () => {
     await geocodeAddress('Göteborg')
 
     // Verify URL encoding of Swedish characters
-    const callArg = (global.fetch as any).mock.calls[0][0]
+    const callArg = (global.fetch as never).mock.calls[0][0]
     expect(callArg).toContain('G%C3%B6teborg')
   })
 
@@ -106,7 +106,7 @@ describe('geocodeAddress', () => {
       lon: '18.068',
     }]
 
-    ;(global.fetch as any).mockResolvedValueOnce({
+    ;(global.fetch as never).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse
     })
@@ -114,7 +114,7 @@ describe('geocodeAddress', () => {
     await geocodeAddress('Stockholm')
 
     // Verify User-Agent header
-    const [, options] = (global.fetch as any).mock.calls[0]
+    const [, options] = (global.fetch as never).mock.calls[0]
     expect(options.headers['User-Agent']).toContain('Equinet')
   })
 })

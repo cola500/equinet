@@ -9,6 +9,7 @@ import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/Pr
 import { BookingSeriesService, SeriesError } from "@/domain/booking/BookingSeriesService"
 import { BookingService } from "@/domain/booking/BookingService"
 import { TravelTimeService } from "@/domain/booking/TravelTimeService"
+import type { SessionUser } from "@/types/auth"
 
 const createSeriesSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID"),
@@ -47,11 +48,11 @@ function mapSeriesErrorToMessage(error: SeriesError): string {
     case 'RECURRING_DISABLED':
       return 'Leverantören har inte aktiverat återkommande bokningar'
     case 'INVALID_INTERVAL':
-      return (error as any).message
+      return error.message
     case 'INVALID_OCCURRENCES':
-      return (error as any).message
+      return error.message
     case 'NO_BOOKINGS_CREATED':
-      return (error as any).message
+      return error.message
     case 'SERIES_NOT_FOUND':
       return 'Bokningsserien hittades inte'
     case 'NOT_OWNER':
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
 
   // 5. Determine if manual booking (provider creating)
-  const user = session.user as any
+  const user = session.user as SessionUser
   const isManualBooking = !!(user.providerId && user.providerId === data.providerId)
   const customerId = isManualBooking ? undefined : user.id
   const createdByProviderId = isManualBooking ? data.providerId : undefined

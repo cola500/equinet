@@ -20,7 +20,7 @@ export class MockProviderRepository implements IProviderRepository {
     return this.providers.get(id) || null
   }
 
-  async findMany(_criteria?: Record<string, any>): Promise<Provider[]> {
+  async findMany(_criteria?: Record<string, unknown>): Promise<Provider[]> {
     // Simple implementation for base interface compatibility
     return Array.from(this.providers.values())
   }

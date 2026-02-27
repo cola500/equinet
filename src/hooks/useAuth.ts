@@ -5,8 +5,17 @@ import { useOnlineStatus } from "./useOnlineStatus"
 
 const SESSION_STORAGE_KEY = "equinet-auth-cache"
 
+interface CachedAuthUser {
+  id: string
+  email: string
+  name: string
+  userType: string
+  isAdmin?: boolean
+  providerId?: string | null
+}
+
 interface CachedAuth {
-  user: any
+  user: CachedAuthUser
   isProvider: boolean
   isCustomer: boolean
   isAdmin: boolean

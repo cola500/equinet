@@ -53,11 +53,13 @@ export default function DueForServicePage() {
   const [fetchError, setFetchError] = useState(false)
   const [filter, setFilter] = useState<Filter>("all")
 
+  /* eslint-disable react-hooks/exhaustive-deps -- fetchDueItems reads filter from closure; intentionally triggered by filter changes */
   useEffect(() => {
     if (isProvider) {
       fetchDueItems()
     }
   }, [isProvider, filter])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchDueItems = async () => {
     setIsLoading(true)

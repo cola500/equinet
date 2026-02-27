@@ -65,14 +65,14 @@ describe("POST /api/group-bookings/[id]/match", () => {
   it("should match provider to group booking and create bookings", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: "provider" },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
-    } as any)
+    } as never)
     vi.mocked(prisma.service.findFirst).mockResolvedValue({
       id: TEST_UUIDS.service,
       durationMinutes: 60,
-    } as any)
+    } as never)
     mockService.matchRequest.mockResolvedValue(
       Result.ok({
         bookingsCreated: 3,
@@ -102,7 +102,7 @@ describe("POST /api/group-bookings/[id]/match", () => {
   it("should return 403 for non-provider users", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customerUser, userType: "customer" },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}/match`,
@@ -123,10 +123,10 @@ describe("POST /api/group-bookings/[id]/match", () => {
   it("should return 400 when service not found", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: "provider" },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
-    } as any)
+    } as never)
     vi.mocked(prisma.service.findFirst).mockResolvedValue(null)
 
     const request = new NextRequest(
@@ -151,14 +151,14 @@ describe("POST /api/group-bookings/[id]/match", () => {
   it("should return 400 when matching fails", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: "provider" },
-    } as any)
+    } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
-    } as any)
+    } as never)
     vi.mocked(prisma.service.findFirst).mockResolvedValue({
       id: TEST_UUIDS.service,
       durationMinutes: 60,
-    } as any)
+    } as never)
     mockService.matchRequest.mockResolvedValue(
       Result.fail({
         type: 'GROUP_BOOKING_NOT_FOUND',

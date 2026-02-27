@@ -36,7 +36,7 @@ vi.mock('@/lib/prisma', () => {
       findMany: vi.fn(),
     },
     // $transaction executes callback with prisma itself as the tx client
-    $transaction: vi.fn(async (cb: (tx: any) => Promise<any>) => cb(mockPrisma)),
+    $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => cb(mockPrisma)),
   }
   return { prisma: mockPrisma }
 })
@@ -57,7 +57,7 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'customer123', userType: 'customer' },
-      } as any)
+      } as never)
 
       const mockRouteOrder = {
         id: 'order123',
@@ -74,7 +74,7 @@ describe('POST /api/route-orders', () => {
         announcementType: 'customer_initiated',
       }
 
-      vi.mocked(prisma.routeOrder.create).mockResolvedValue(mockRouteOrder as any)
+      vi.mocked(prisma.routeOrder.create).mockResolvedValue(mockRouteOrder as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -107,7 +107,7 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'provider123', userType: 'provider' },
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -140,18 +140,18 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
         userId: 'user123',
-      } as any)
+      } as never)
 
       // Provider owns these services
       vi.mocked(prisma.service.findMany).mockResolvedValue([
         { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
         { id: 'b0000000-0000-4000-b000-000000000002', name: 'Verkning', providerId: 'provider123' },
-      ] as any)
+      ] as never)
 
       const mockAnnouncement = {
         id: 'announcement123',
@@ -164,7 +164,7 @@ describe('POST /api/route-orders', () => {
         status: 'open',
       }
 
-      vi.mocked(prisma.routeOrder.create).mockResolvedValue(mockAnnouncement as any)
+      vi.mocked(prisma.routeOrder.create).mockResolvedValue(mockAnnouncement as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -195,12 +195,12 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
         userId: 'user123',
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -228,7 +228,7 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -256,17 +256,17 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
         userId: 'user123',
-      } as any)
+      } as never)
 
       // Only 1 of 2 serviceIds belongs to provider
       vi.mocked(prisma.service.findMany).mockResolvedValue([
         { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
-      ] as any)
+      ] as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -294,7 +294,7 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -322,7 +322,7 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'customer123', userType: 'customer' },
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -350,7 +350,7 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
@@ -380,16 +380,16 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
         userId: 'user123',
-      } as any)
+      } as never)
 
       vi.mocked(prisma.service.findMany).mockResolvedValue([
         { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
-      ] as any)
+      ] as never)
 
       vi.mocked(prisma.routeOrder.create).mockResolvedValue({
         id: 'announcement123',
@@ -401,7 +401,7 @@ describe('POST /api/route-orders', () => {
         dateTo: dateToObj,
         announcementType: 'provider_announced',
         status: 'open',
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -430,22 +430,22 @@ describe('POST /api/route-orders', () => {
 
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user123', userType: 'provider' },
-      } as any)
+      } as never)
 
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
         id: 'provider123',
         userId: 'user123',
-      } as any)
+      } as never)
 
       vi.mocked(prisma.service.findMany).mockResolvedValue([
         { id: 'a0000000-0000-4000-a000-000000000001', name: 'Hovslagning', providerId: 'provider123' },
         { id: 'b0000000-0000-4000-b000-000000000002', name: 'Verkning', providerId: 'provider123' },
-      ] as any)
+      ] as never)
 
       vi.mocked(prisma.routeOrder.create).mockResolvedValue({
         id: 'announcement123',
         providerId: 'provider123',
-      } as any)
+      } as never)
 
       const request = new NextRequest('http://localhost:3000/api/route-orders', {
         method: 'POST',
@@ -482,12 +482,12 @@ describe('GET /api/route-orders', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider123',
       userId: 'user123',
-    } as any)
+    } as never)
 
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       {
@@ -500,7 +500,7 @@ describe('GET /api/route-orders', () => {
           { id: 'stop1', locationName: 'Alingsås', stopOrder: 1 }
         ]
       }
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders?announcementType=provider_announced'
@@ -520,7 +520,7 @@ describe('GET /api/route-orders', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
@@ -541,7 +541,7 @@ describe('GET /api/route-orders', () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders' // No params

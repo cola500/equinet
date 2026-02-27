@@ -29,11 +29,11 @@ vi.mock("@/lib/rate-limit", () => ({
 
 const providerSession = {
   user: { id: "user-1", userType: "provider", providerId: "provider-1" },
-} as any
+} as never
 
 const customerSession = {
   user: { id: "user-1", userType: "customer" },
-} as any
+} as never
 
 const makeParams = (customerId: string) => Promise.resolve({ customerId })
 
@@ -103,7 +103,7 @@ describe("GET /api/provider/customers/[customerId]/horses", () => {
     withRelationship()
     vi.mocked(prisma.horse.findMany).mockResolvedValue([
       { id: "h1", name: "Blansen", breed: "Islandshäst", ownerId: "c1" },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses")
     const response = await GET(request, { params: makeParams("c1") })
@@ -253,7 +253,7 @@ describe("POST /api/provider/customers/[customerId]/horses", () => {
       name: "Blansen",
       breed: "Islandshäst",
       ownerId: "c1",
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses", {
       method: "POST",
@@ -276,7 +276,7 @@ describe("POST /api/provider/customers/[customerId]/horses", () => {
   it("should sanitize horse name (strip XSS)", async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     withRelationship()
-    vi.mocked(prisma.horse.create).mockImplementation(async (args: any) => ({
+    vi.mocked(prisma.horse.create).mockImplementation(async (args: never) => ({
       id: "h1",
       ...args.data,
     }))

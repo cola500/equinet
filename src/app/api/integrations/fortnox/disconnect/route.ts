@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import type { SessionUser } from "@/types/auth"
 
 // POST /api/integrations/fortnox/disconnect - Remove Fortnox connection
 export async function POST(_request: NextRequest) {
@@ -15,7 +16,7 @@ export async function POST(_request: NextRequest) {
       )
     }
 
-    const providerId = (session.user as any).providerId
+    const providerId = (session.user as SessionUser).providerId
     if (!providerId) {
       return NextResponse.json(
         { error: "Leverantör hittades inte" },

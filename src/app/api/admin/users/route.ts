@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
 
     if (search) {
-      const searchConditions = [
+      const searchConditions: Record<string, unknown>[] = [
         { email: { contains: search, mode: "insensitive" } },
         { firstName: { contains: search, mode: "insensitive" } },
         { lastName: { contains: search, mode: "insensitive" } },
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       if (isProviderFilter) {
         searchConditions.push({
           provider: { businessName: { contains: search, mode: "insensitive" } },
-        } as any)
+        })
       }
       where.OR = searchConditions
     }
@@ -106,13 +106,23 @@ export async function GET(request: NextRequest) {
     ])
 
     // Mappa utökad provider-data
-    const users = usersRaw.map((user: any) => {
+    type UserRow = (typeof usersRaw)[number]
+    const users = usersRaw.map((user: UserRow) => {
       if (!isProviderFilter || !user.provider) return user
 
-      const p = user.provider
+      // Cast to the extended provider shape (only present when isProviderFilter)
+      const p = user.provider as {
+        businessName: string
+        isVerified: boolean
+        isActive: boolean
+        city?: string | null
+        _count: { bookings: number; services: number }
+        reviews: { rating: number }[]
+        fortnoxConnection: { id: string } | null
+      }
       const avgRating =
         p.reviews?.length > 0
-          ? p.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / p.reviews.length
+          ? p.reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / p.reviews.length
           : null
 
       return {

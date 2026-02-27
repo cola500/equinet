@@ -50,7 +50,7 @@ const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 const mockRateLimiters = vi.mocked(rateLimiters)
 
 // Helper: create a provider session
-function providerSession(overrides: Record<string, any> = {}) {
+function providerSession(overrides: Record<string, unknown> = {}) {
   return {
     user: {
       id: 'user-1',
@@ -58,11 +58,11 @@ function providerSession(overrides: Record<string, any> = {}) {
       providerId: 'provider-1',
       ...overrides,
     },
-  } as any
+  } as never
 }
 
 // Helper: create a mock route order
-function mockRouteOrder(overrides: Record<string, any> = {}) {
+function mockRouteOrder(overrides: Record<string, unknown> = {}) {
   return {
     id: 'order-1',
     serviceType: 'Hovslagning',
@@ -98,7 +98,7 @@ describe('GET /api/route-orders/available', () => {
     mockRateLimiters.api.mockResolvedValue(true)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
-    } as any)
+    } as never)
   })
 
   // -------------------------------------------------------
@@ -166,7 +166,7 @@ describe('GET /api/route-orders/available', () => {
     // Arrange
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -183,7 +183,7 @@ describe('GET /api/route-orders/available', () => {
     // Arrange - userType is provider but providerId is missing
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: null },
-    } as any)
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -223,7 +223,7 @@ describe('GET /api/route-orders/available', () => {
       mockRouteOrder({ id: 'order-1', latitude: 57.93, longitude: 12.53 }),
       mockRouteOrder({ id: 'order-2', latitude: 58.0, longitude: 12.6 }),
     ]
-    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(orders as any)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue(orders as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -246,7 +246,7 @@ describe('GET /api/route-orders/available', () => {
     // Arrange
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder({ serviceType: 'Massage' }),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/available?serviceType=Massage'
@@ -274,7 +274,7 @@ describe('GET /api/route-orders/available', () => {
     // Arrange
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder({ priority: 'urgent' }),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/available?priority=urgent'
@@ -299,7 +299,7 @@ describe('GET /api/route-orders/available', () => {
     // Arrange
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder({ serviceType: 'Hovslagning', priority: 'urgent' }),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       'http://localhost:3000/api/route-orders/available?serviceType=Hovslagning&priority=urgent'
@@ -376,7 +376,7 @@ describe('GET /api/route-orders/available', () => {
     // Arrange
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder(),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -444,7 +444,7 @@ describe('GET /api/route-orders/available', () => {
 
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder({ id: 'no-coords', latitude: null, longitude: null }),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -468,7 +468,7 @@ describe('GET /api/route-orders/available', () => {
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder({ id: 'far', latitude: 58.5, longitude: 13.0 }),
       mockRouteOrder({ id: 'close', latitude: 57.75, longitude: 12.0 }),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -491,7 +491,7 @@ describe('GET /api/route-orders/available', () => {
 
     vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
       mockRouteOrder(),
-    ] as any)
+    ] as never)
 
     const request = new NextRequest('http://localhost:3000/api/route-orders/available')
 
@@ -516,7 +516,7 @@ describe('GET /api/route-orders/available', () => {
     await GET(request)
 
     // Assert
-    const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as any
+    const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as never
     expect(callArgs).toHaveProperty('select')
     expect(callArgs).not.toHaveProperty('include')
   })
@@ -580,7 +580,7 @@ describe('GET /api/route-orders/available', () => {
     await GET(request)
 
     // Assert
-    const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as any
+    const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as never
     expect(callArgs.where).toEqual({
       status: { in: ['open', 'pending'] },
     })

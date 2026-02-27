@@ -121,7 +121,7 @@ export function sanitizeFileName(fileName: string): string {
 /**
  * Sanitize numeric input
  */
-export function sanitizeNumber(input: any): number | null {
+export function sanitizeNumber(input: unknown): number | null {
   const num = Number(input)
   if (isNaN(num) || !isFinite(num)) {
     return null
@@ -132,7 +132,7 @@ export function sanitizeNumber(input: any): number | null {
 /**
  * Sanitize boolean input
  */
-export function sanitizeBoolean(input: any): boolean {
+export function sanitizeBoolean(input: unknown): boolean {
   if (typeof input === "boolean") return input
   if (typeof input === "string") {
     const lower = input.toLowerCase()
@@ -200,17 +200,18 @@ export interface SanitizedUserInput {
   serviceArea?: string
 }
 
-export function sanitizeUserInput(input: any): SanitizedUserInput {
+export function sanitizeUserInput(input: Record<string, unknown>): SanitizedUserInput {
+  const str = (key: string): string => typeof input[key] === "string" ? input[key] : ""
   return {
-    firstName: sanitizeString(input.firstName || ""),
-    lastName: sanitizeString(input.lastName || ""),
-    email: sanitizeEmail(input.email || ""),
-    phone: input.phone ? sanitizePhone(input.phone) : undefined,
-    businessName: input.businessName ? sanitizeString(input.businessName) : undefined,
-    description: input.description ? sanitizeString(input.description) : undefined,
-    address: input.address ? sanitizeString(input.address) : undefined,
-    city: input.city ? sanitizeString(input.city) : undefined,
-    postalCode: input.postalCode ? sanitizeString(input.postalCode) : undefined,
-    serviceArea: input.serviceArea ? sanitizeString(input.serviceArea) : undefined,
+    firstName: sanitizeString(str("firstName")),
+    lastName: sanitizeString(str("lastName")),
+    email: sanitizeEmail(str("email")),
+    phone: str("phone") ? sanitizePhone(str("phone")) : undefined,
+    businessName: str("businessName") ? sanitizeString(str("businessName")) : undefined,
+    description: str("description") ? sanitizeString(str("description")) : undefined,
+    address: str("address") ? sanitizeString(str("address")) : undefined,
+    city: str("city") ? sanitizeString(str("city")) : undefined,
+    postalCode: str("postalCode") ? sanitizeString(str("postalCode")) : undefined,
+    serviceArea: str("serviceArea") ? sanitizeString(str("serviceArea")) : undefined,
   }
 }

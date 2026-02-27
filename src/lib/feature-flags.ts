@@ -51,7 +51,9 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
       }
       cache = { data: dbOverrides, timestamp: Date.now() }
     } catch (error) {
-      logger.warn("Failed to fetch feature flags from database, using defaults", error as Error)
+      logger.warn("Failed to fetch feature flags from database, using defaults", {
+        error: error instanceof Error ? error.message : String(error),
+      })
       // Fall through -- dbOverrides stays empty, we use code defaults
     }
   }

@@ -81,7 +81,7 @@ const validBody = {
 describe("PATCH /api/bookings/[id]/reschedule", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(mockSession as any)
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(rateLimiters.booking).mockResolvedValue(true)
 
@@ -129,7 +129,7 @@ describe("PATCH /api/bookings/[id]/reschedule", () => {
   it("should return 403 for provider users", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "provider-1", email: "provider@test.se", userType: "provider" },
-    } as any)
+    } as never)
 
     const request = makeRequest(validBody)
     const response = await PATCH(request, { params: Promise.resolve({ id: "booking-1" }) })

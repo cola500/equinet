@@ -36,7 +36,7 @@ function createDeps(overrides?: Partial<BookingSeriesServiceDeps>): BookingSerie
       booking: {
         findMany: vi.fn().mockResolvedValue([]),
       },
-    } as any,
+    } as never,
     isFeatureEnabled: vi.fn().mockResolvedValue(true),
     getProvider: vi.fn().mockResolvedValue({
       id: PROVIDER_ID,
@@ -64,7 +64,7 @@ function createDeps(overrides?: Partial<BookingSeriesServiceDeps>): BookingSerie
           value: makeFakeBooking(),
         }
       }),
-    } as any,
+    } as never,
     ...overrides,
   }
 }
@@ -204,7 +204,7 @@ describe('BookingSeriesService', () => {
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('INVALID_OCCURRENCES')
-      expect((result.error as any).max).toBe(6)
+      expect((result.error as never).max).toBe(6)
     })
 
     it('returns INVALID_OCCURRENCES for totalOccurrences < 2', async () => {
@@ -266,7 +266,7 @@ describe('BookingSeriesService', () => {
             return { isSuccess: true, value: makeFakeBooking() }
           }),
           createManualBooking: vi.fn(),
-        } as any,
+        } as never,
       })
       const service = new BookingSeriesService(deps)
 
@@ -302,7 +302,7 @@ describe('BookingSeriesService', () => {
             return { isSuccess: true, value: makeFakeBooking() }
           }),
           createManualBooking: vi.fn(),
-        } as any,
+        } as never,
       })
       const service = new BookingSeriesService(deps)
 
@@ -330,7 +330,7 @@ describe('BookingSeriesService', () => {
             error: { type: 'OVERLAP', message: 'All booked' },
           }),
           createManualBooking: vi.fn(),
-        } as any,
+        } as never,
       })
       const service = new BookingSeriesService(deps)
 
@@ -460,7 +460,7 @@ describe('BookingSeriesService', () => {
           booking: {
             findMany: vi.fn().mockResolvedValue([futureBooking]),
           },
-        } as any,
+        } as never,
       })
 
       // Mock the bookingService.updateStatus to succeed
@@ -470,7 +470,7 @@ describe('BookingSeriesService', () => {
           isSuccess: true,
           value: makeFakeBooking({ status: 'cancelled' }),
         }),
-      } as any
+      } as never
 
       const service = new BookingSeriesService(deps)
 
@@ -500,7 +500,7 @@ describe('BookingSeriesService', () => {
             findUnique: vi.fn().mockResolvedValue(null),
           },
           booking: { findMany: vi.fn() },
-        } as any,
+        } as never,
       })
       const service = new BookingSeriesService(deps)
 
@@ -528,7 +528,7 @@ describe('BookingSeriesService', () => {
             }),
           },
           booking: { findMany: vi.fn() },
-        } as any,
+        } as never,
       })
       const service = new BookingSeriesService(deps)
 
@@ -558,13 +558,13 @@ describe('BookingSeriesService', () => {
           booking: {
             findMany: vi.fn().mockResolvedValue([]),
           },
-        } as any,
+        } as never,
       })
 
       deps.bookingService = {
         ...deps.bookingService,
         updateStatus: vi.fn(),
-      } as any
+      } as never
 
       const service = new BookingSeriesService(deps)
 

@@ -7,7 +7,7 @@ import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceR
 // GET /api/service-types - List distinct active service type names
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    await auth()
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

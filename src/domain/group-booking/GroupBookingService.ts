@@ -307,9 +307,9 @@ export class GroupBookingService {
     // 4. Notify participants if cancelled
     if (input.status === 'cancelled' && this.notificationService) {
       for (const participant of existing.participants) {
-        if ((participant as any).userId !== input.userId) {
+        if (participant.userId !== input.userId) {
           this.notificationService.createAsync({
-            userId: (participant as any).userId,
+            userId: participant.userId,
             type: NotificationType.GROUP_BOOKING_CANCELLED,
             message: `Grupprequest för ${existing.serviceType} har avbrutits`,
             linkUrl: '/customer/group-bookings',

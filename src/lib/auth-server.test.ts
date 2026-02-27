@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 // Mock the underlying NextAuth auth function
 const mockNextAuth = vi.fn()
 vi.mock("@/lib/auth", () => ({
-  auth: (...args: any[]) => mockNextAuth(...args),
+  auth: (...args: unknown[]) => mockNextAuth(...args),
 }))
 
 describe("auth-server", () => {
@@ -36,7 +36,8 @@ describe("auth-server", () => {
       try {
         await auth()
         expect.fail("Should have thrown")
-      } catch (response: any) {
+      } catch (err: unknown) {
+        const response = err as Response
         expect(response.status).toBe(401)
         const data = await response.json()
         expect(data.error).toBe("Unauthorized")
@@ -51,7 +52,8 @@ describe("auth-server", () => {
       try {
         await auth()
         expect.fail("Should have thrown")
-      } catch (response: any) {
+      } catch (err: unknown) {
+        const response = err as Response
         expect(response.status).toBe(401)
         const data = await response.json()
         expect(data.error).toBe("Unauthorized")
@@ -66,7 +68,8 @@ describe("auth-server", () => {
       try {
         await auth()
         expect.fail("Should have thrown")
-      } catch (response: any) {
+      } catch (err: unknown) {
+        const response = err as Response
         expect(response.status).toBe(401)
       }
     })

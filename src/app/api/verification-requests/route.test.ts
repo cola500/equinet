@@ -40,11 +40,11 @@ vi.mock("@/lib/logger", () => ({
 
 const mockProviderSession = {
   user: { id: "provider-user-1", email: "magnus@test.se", userType: "provider" },
-} as any
+} as never
 
 const mockCustomerSession = {
   user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as any
+} as never
 
 describe("GET /api/verification-requests", () => {
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe("GET /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findMany).mockResolvedValue([
       {
         id: "ver-1",
@@ -67,7 +67,7 @@ describe("GET /api/verification-requests", () => {
         status: "pending",
         createdAt: new Date(),
       },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests"
@@ -90,7 +90,7 @@ describe("GET /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.findMany).mockResolvedValue([
       {
         id: "ver-1",
@@ -107,7 +107,7 @@ describe("GET /api/verification-requests", () => {
           { id: "img-1", url: "https://storage.example.com/cert.jpg", mimeType: "image/jpeg" },
         ],
       },
-    ] as any)
+    ] as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests"
@@ -165,7 +165,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
     vi.mocked(prisma.providerVerification.create).mockResolvedValue({
       id: "ver-new",
@@ -175,7 +175,7 @@ describe("POST /api/verification-requests", () => {
       description: "Godkänd hovslagare",
       status: "pending",
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",
@@ -206,7 +206,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",
@@ -231,7 +231,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",
@@ -253,7 +253,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(5)
 
     const request = new NextRequest(
@@ -299,7 +299,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",
@@ -319,7 +319,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
     vi.mocked(prisma.providerVerification.create).mockResolvedValue({
       id: "ver-new",
@@ -330,7 +330,7 @@ describe("POST /api/verification-requests", () => {
       year: 2023,
       status: "pending",
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",
@@ -362,7 +362,7 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
     vi.mocked(prisma.providerVerification.create).mockResolvedValue({
       id: "ver-new",
@@ -371,7 +371,7 @@ describe("POST /api/verification-requests", () => {
       title: "Veterinärlicens",
       status: "pending",
       createdAt: new Date(),
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",
@@ -394,12 +394,12 @@ describe("POST /api/verification-requests", () => {
     vi.mocked(prisma.provider.findFirst).mockResolvedValue({
       id: "provider-1",
       userId: "provider-user-1",
-    } as any)
+    } as never)
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
     vi.mocked(prisma.providerVerification.create).mockResolvedValue({
       id: "ver-new",
       providerId: "provider-1",
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/verification-requests",

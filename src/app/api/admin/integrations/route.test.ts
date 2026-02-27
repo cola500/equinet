@@ -42,7 +42,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se" },
-} as any
+} as never
 
 describe("GET /api/admin/integrations", () => {
   beforeEach(() => {
@@ -51,7 +51,7 @@ describe("GET /api/admin/integrations", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
   })
 
   it("should return integration status", async () => {
@@ -62,7 +62,7 @@ describe("GET /api/admin/integrations", () => {
         createdAt: new Date("2026-01-15"),
         expiresAt: new Date("2026-03-15"),
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.fortnoxConnection.count).mockResolvedValue(1)
 
     vi.mocked(prisma.payment.count)
@@ -72,7 +72,7 @@ describe("GET /api/admin/integrations", () => {
       .mockResolvedValueOnce(10)   // failed
     vi.mocked(prisma.payment.aggregate).mockResolvedValue({
       _sum: { amount: 50000 },
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/integrations")
     const response = await GET(request)
@@ -100,7 +100,7 @@ describe("GET /api/admin/integrations", () => {
     vi.mocked(prisma.payment.count).mockResolvedValue(0)
     vi.mocked(prisma.payment.aggregate).mockResolvedValue({
       _sum: { amount: null },
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/integrations")
     const response = await GET(request)
@@ -115,7 +115,7 @@ describe("GET /api/admin/integrations", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/integrations")
     const response = await GET(request)

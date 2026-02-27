@@ -61,7 +61,7 @@ describe('GET /api/providers/[id]/availability-schedule', () => {
       },
     ]
 
-    vi.mocked(prisma.availability.findMany).mockResolvedValue(mockAvailability as any)
+    vi.mocked(prisma.availability.findMany).mockResolvedValue(mockAvailability as never)
 
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`)
     const response = await GET(request, {
@@ -108,11 +108,11 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'provider', providerId: mockProviderId },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const scheduleData = [
       { dayOfWeek: 0, startTime: '09:00', endTime: '17:00', isClosed: false },
@@ -129,7 +129,7 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
 
     // Mock $transaction to execute the callback and return the result
     // @ts-expect-error - Vitest type instantiation depth limitation
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         availability: {
           deleteMany: vi.fn().mockResolvedValue({ count: 7 }),
@@ -177,7 +177,7 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'customer' },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
 
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`, {
       method: 'PUT',
@@ -195,12 +195,12 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'provider', providerId: 'different-provider' },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     // Mock that the provider is owned by a DIFFERENT user
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: 'different-user-id',  // Different user owns this provider
-    } as any)
+    } as never)
 
     const request = new Request(`http://localhost/api/providers/${mockProviderId}/availability-schedule`, {
       method: 'PUT',
@@ -218,11 +218,11 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     const mockSession = {
       user: { id: mockUserId, userType: 'provider', providerId: mockProviderId },
     }
-    vi.mocked(authServer.auth).mockResolvedValue(mockSession as any)
+    vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: mockProviderId,
       userId: mockUserId,
-    } as any)
+    } as never)
 
     const invalidSchedule = [
       { dayOfWeek: 8, startTime: '09:00', endTime: '17:00', isClosed: false }, // Invalid dayOfWeek

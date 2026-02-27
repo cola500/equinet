@@ -129,7 +129,7 @@ describe("POST /api/routes", () => {
     mockIsFeatureEnabled.mockResolvedValue(true)
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "PROVIDER", providerId: "provider-1" },
-    } as any)
+    } as never)
   })
 
   // --- Feature flag ---
@@ -213,7 +213,7 @@ describe("POST /api/routes", () => {
 
   it("returns 400 when orders not found or not available", async () => {
     // Request has 2 orderIds but DB only returns 1 matching order
-    mockFindMany.mockResolvedValueOnce([makeOrder("order-1")] as any)
+    mockFindMany.mockResolvedValueOnce([makeOrder("order-1")] as never)
 
     const res = await POST(makeRequest(validBody()))
 
@@ -229,9 +229,9 @@ describe("POST /api/routes", () => {
       makeOrder("order-1", { latitude: 59.0, longitude: 18.0 }),
       makeOrder("order-2", { latitude: 59.5, longitude: 18.5 }),
     ]
-    mockFindMany.mockResolvedValueOnce(orders as any)
+    mockFindMany.mockResolvedValueOnce(orders as never)
     mockTransaction.mockResolvedValueOnce({ id: "route-1" })
-    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as any)
+    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as never)
 
     const res = await POST(makeRequest(validBody()))
 
@@ -250,10 +250,10 @@ describe("POST /api/routes", () => {
       makeOrder("order-1", { latitude: 59.0, longitude: 18.0 }),
       makeOrder("order-2", { latitude: 59.5, longitude: 18.5 }),
     ]
-    mockFindMany.mockResolvedValueOnce(orders as any)
+    mockFindMany.mockResolvedValueOnce(orders as never)
     mockCalculateDistance.mockReturnValue(15.3)
     mockTransaction.mockResolvedValueOnce({ id: "route-1" })
-    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as any)
+    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as never)
 
     await POST(makeRequest(validBody()))
 
@@ -267,9 +267,9 @@ describe("POST /api/routes", () => {
       makeOrder("order-1", { latitude: null, longitude: null }),
       makeOrder("order-2", { latitude: 59.5, longitude: 18.5 }),
     ]
-    mockFindMany.mockResolvedValueOnce(orders as any)
+    mockFindMany.mockResolvedValueOnce(orders as never)
     mockTransaction.mockResolvedValueOnce({ id: "route-1" })
-    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as any)
+    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as never)
 
     await POST(makeRequest(validBody()))
 
@@ -284,8 +284,8 @@ describe("POST /api/routes", () => {
       makeOrder("order-1"),
       makeOrder("order-2"),
     ]
-    mockFindMany.mockResolvedValueOnce(orders as any)
-    mockTransaction.mockImplementationOnce(async (cb: any) => {
+    mockFindMany.mockResolvedValueOnce(orders as never)
+    mockTransaction.mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => {
       const txMock = {
         route: {
           create: vi.fn().mockResolvedValue({ id: "route-1" }),
@@ -315,7 +315,7 @@ describe("POST /api/routes", () => {
 
       return { id: "route-1" }
     })
-    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as any)
+    mockFindUnique.mockResolvedValueOnce(completeRouteResponse as never)
 
     const res = await POST(makeRequest(validBody()))
     expect(res.status).toBe(201)
@@ -326,7 +326,6 @@ describe("POST /api/routes", () => {
   it("returns 500 on unexpected error", async () => {
     mockFindMany.mockRejectedValueOnce(new Error("DB connection lost"))
 
-    const orders = [makeOrder("order-1"), makeOrder("order-2")]
     // findMany will throw before we get to use orders, but we need valid input
     const res = await POST(makeRequest(validBody()))
 

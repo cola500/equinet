@@ -47,7 +47,7 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se" },
-} as any
+} as never
 
 describe("GET /api/admin/stats", () => {
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe("GET /api/admin/stats", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
 
     // User counts
     vi.mocked(prisma.user.count)
@@ -88,8 +88,8 @@ describe("GET /api/admin/stats", () => {
 
     // Revenue
     vi.mocked(prisma.payment.aggregate)
-      .mockResolvedValueOnce({ _sum: { amount: 150000 } } as any)  // totalCompleted
-      .mockResolvedValueOnce({ _sum: { amount: 25000 } } as any)   // thisMonth
+      .mockResolvedValueOnce({ _sum: { amount: 150000 } } as never)  // totalCompleted
+      .mockResolvedValueOnce({ _sum: { amount: 25000 } } as never)   // thisMonth
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)
@@ -127,7 +127,7 @@ describe("GET /api/admin/stats", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: false,
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)
@@ -153,13 +153,13 @@ describe("GET /api/admin/stats", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
 
     vi.mocked(prisma.user.count).mockResolvedValue(0)
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
     vi.mocked(prisma.provider.count).mockResolvedValue(0)
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(0)
-    vi.mocked(prisma.payment.aggregate).mockResolvedValue({ _sum: { amount: null } } as any)
+    vi.mocked(prisma.payment.aggregate).mockResolvedValue({ _sum: { amount: null } } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)

@@ -69,11 +69,13 @@ export default function AnnouncementDetailPage() {
 
   const announcementId = params.id as string
 
+  /* eslint-disable react-hooks/exhaustive-deps -- fetchAnnouncementDetails is defined inline; runs on mount and announcementId change */
   useEffect(() => {
     if (isProvider && announcementId) {
       fetchAnnouncementDetails()
     }
   }, [isProvider, announcementId])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchAnnouncementDetails = async () => {
     try {

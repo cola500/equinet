@@ -57,11 +57,13 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
   const [error, setError] = useState<string | null>(null)
   const { guardMutation } = useOfflineGuard()
 
+  /* eslint-disable react-hooks/exhaustive-deps -- fetchRoute reads resolvedParams.id from closure; runs on mount/auth change */
   useEffect(() => {
     if (isProvider) {
       fetchRoute()
     }
   }, [isProvider, resolvedParams.id])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchRoute = async () => {
     try {
@@ -137,7 +139,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   const getStopStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: any; label: string; icon: string }> = {
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; icon: string }> = {
       pending: { variant: "secondary", label: "Kommande", icon: "⏹️" },
       in_progress: { variant: "default", label: "Pågående", icon: "▶️" },
       completed: { variant: "outline", label: "Klar", icon: "✅" },

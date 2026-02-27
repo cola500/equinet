@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Optional category filter
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
-    const validCategory = category && NOTE_CATEGORIES.includes(category as any)
+    const validCategory = category && (NOTE_CATEGORIES as readonly string[]).includes(category)
       ? category
       : undefined
 

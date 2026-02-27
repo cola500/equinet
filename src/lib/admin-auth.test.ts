@@ -18,11 +18,11 @@ vi.mock("@/lib/logger", () => ({
 
 const mockAdminSession = {
   user: { id: "admin-1", email: "admin@test.se" },
-} as any
+} as never
 
 const mockNonAdminSession = {
   user: { id: "user-1", email: "user@test.se" },
-} as any
+} as never
 
 describe("requireAdmin", () => {
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe("requireAdmin", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "admin-1",
       isAdmin: true,
-    } as any)
+    } as never)
 
     const user = await requireAdmin(mockAdminSession)
 
@@ -48,7 +48,7 @@ describe("requireAdmin", () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "user-1",
       isAdmin: false,
-    } as any)
+    } as never)
 
     try {
       await requireAdmin(mockNonAdminSession)
@@ -77,7 +77,7 @@ describe("requireAdmin", () => {
 
   it("should throw 401 Response when session has no user", async () => {
     try {
-      await requireAdmin(null as any)
+      await requireAdmin(null as never)
       expect.fail("Should have thrown")
     } catch (error) {
       expect(error).toBeInstanceOf(Response)
@@ -88,7 +88,7 @@ describe("requireAdmin", () => {
 
   it("should throw 401 Response when session user has no id", async () => {
     try {
-      await requireAdmin({ user: {} } as any)
+      await requireAdmin({ user: {} } as never)
       expect.fail("Should have thrown")
     } catch (error) {
       expect(error).toBeInstanceOf(Response)

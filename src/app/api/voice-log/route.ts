@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
 
     // Fetch latest provider note for each horse (from previous bookings)
     const horseIds = bookings
-      .map((b: any) => b.horse?.id)
-      .filter(Boolean) as string[]
+      .map((b) => b.horse?.id)
+      .filter((id): id is string => Boolean(id))
     const previousNotesByHorse: Record<string, string> = {}
     if (horseIds.length > 0) {
       const prevBookings = await prisma.booking.findMany({
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Map to context format
-    const bookingContext: BookingContext[] = bookings.map((b: any) => ({
+    const bookingContext: BookingContext[] = bookings.map((b) => ({
       id: b.id,
       customerName: `${b.customer.firstName} ${b.customer.lastName}`,
       horseName: b.horse?.name || b.horseName,

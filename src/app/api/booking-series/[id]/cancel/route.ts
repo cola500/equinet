@@ -9,6 +9,7 @@ import { BookingSeriesService, SeriesError } from "@/domain/booking/BookingSerie
 import { BookingService } from "@/domain/booking/BookingService"
 import { TravelTimeService } from "@/domain/booking/TravelTimeService"
 import { z } from "zod"
+import type { SessionUser } from "@/types/auth"
 
 const cancelBodySchema = z.object({
   cancellationMessage: z.string().max(500).optional(),
@@ -111,7 +112,7 @@ export async function POST(
 
   // 5. Call cancel
   try {
-    const user = session.user as any
+    const user = session.user as SessionUser
     const result = await seriesService.cancelSeries({
       seriesId: id,
       actorCustomerId: user.userType === 'customer' ? user.id : undefined,

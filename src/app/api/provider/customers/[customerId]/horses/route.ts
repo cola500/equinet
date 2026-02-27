@@ -136,7 +136,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (parsed.data.microchipNumber) data.microchipNumber = sanitizeString(stripXss(parsed.data.microchipNumber))
 
     const horse = await prisma.horse.create({
-      data: data as any,
+      // @ts-expect-error -- Prisma expects typed input but data is dynamically built from validated fields
+      data,
       select: {
         id: true,
         name: true,

@@ -73,9 +73,13 @@ export async function GET(request: NextRequest) {
         : 0,
     ])
 
+    // Types matching the Prisma select shapes above
+    type ReviewRow = (typeof reviews)[number]
+    type CustomerReviewRow = (typeof customerReviews)[number]
+
     // Merge and sort by createdAt desc
     const merged = [
-      ...reviews.map((r: any) => ({
+      ...reviews.map((r: ReviewRow) => ({
         id: r.id,
         type: "review" as const,
         rating: r.rating,
@@ -86,7 +90,7 @@ export async function GET(request: NextRequest) {
         bookingDate: r.booking?.bookingDate,
         createdAt: r.createdAt,
       })),
-      ...customerReviews.map((r: any) => ({
+      ...customerReviews.map((r: CustomerReviewRow) => ({
         id: r.id,
         type: "customerReview" as const,
         rating: r.rating,

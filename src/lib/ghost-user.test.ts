@@ -22,7 +22,7 @@ describe('createGhostUser', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.user.create).mockImplementation(async (args: any) => ({
+    vi.mocked(prisma.user.create).mockImplementation(async (args: never) => ({
       id: 'new-ghost-id',
       ...args.data,
     }))
@@ -67,7 +67,7 @@ describe('createGhostUser', () => {
   it('should reuse existing user when email matches', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'existing-user-id',
-    } as any)
+    } as never)
 
     const userId = await createGhostUser({
       firstName: 'Anna',

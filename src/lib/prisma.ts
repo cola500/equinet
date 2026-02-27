@@ -1,10 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { logger } from '@/lib/logger'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
 // Create base Prisma client with logging configuration
 const basePrisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development'
@@ -17,12 +13,10 @@ const basePrisma = new PrismaClient({
 const prismaWithExtensions = basePrisma.$extends({
   query: {
     $allModels: {
-      async $allOperations({ model, operation, args, query }: {
-        model: string
-        operation: string
-        args: any
-        query: (args: any) => Promise<any>
-      }) {
+      // Prisma extension callback types are complex generics -- narrowing beyond
+      // the Prisma-provided types is not practical here.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async $allOperations({ model, operation, args, query }: any) {
         const timeout = 10000 // 10 seconds timeout for all queries
 
         const timeoutPromise = new Promise<never>((_, reject) => {
@@ -72,9 +66,15 @@ const prismaWithExtensions = basePrisma.$extends({
   },
 })
 
+type PrismaWithExtensions = typeof prismaWithExtensions
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaWithExtensions | undefined
+}
+
 export const prisma = globalForPrisma.prisma ?? prismaWithExtensions
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma as any
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 /**
  * Database health check

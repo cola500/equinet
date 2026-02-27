@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import {
   Dialog,
@@ -32,11 +32,13 @@ export default function ProviderReviewsPage() {
   const [reviewListKey, setReviewListKey] = useState(0)
   const { guardMutation } = useOfflineGuard()
 
+  /* eslint-disable react-hooks/exhaustive-deps -- fetchReviewStats reads providerId from closure; runs when providerId becomes available */
   useEffect(() => {
     if (providerId) {
       fetchReviewStats()
     }
   }, [providerId])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchReviewStats = async () => {
     if (!providerId) return

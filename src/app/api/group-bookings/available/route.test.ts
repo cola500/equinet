@@ -50,7 +50,7 @@ describe("GET /api/group-bookings/available", () => {
   it("should return open group bookings for provider", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: "provider" },
-    } as any)
+    } as never)
     mockService.listAvailableForProvider.mockResolvedValue(
       Result.ok({
         provider: { id: TEST_UUIDS.provider },
@@ -84,7 +84,7 @@ describe("GET /api/group-bookings/available", () => {
   it("should return 403 for non-provider users", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customerUser, userType: "customer" },
-    } as any)
+    } as never)
 
     const request = new NextRequest("http://localhost:3000/api/group-bookings/available")
     const response = await GET(request)

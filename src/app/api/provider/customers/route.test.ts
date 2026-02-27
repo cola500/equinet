@@ -48,7 +48,7 @@ vi.mock('@/lib/ghost-user', () => ({
 const makeRequest = (params = '') =>
   new NextRequest(`http://localhost:3000/api/provider/customers${params}`)
 
-const makePostRequest = (body: any) =>
+const makePostRequest = (body: Record<string, unknown>) =>
   new NextRequest('http://localhost:3000/api/provider/customers', {
     method: 'POST',
     body: JSON.stringify(body),
@@ -64,12 +64,12 @@ describe('GET /api/provider/customers', () => {
     // Default: authenticated provider
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
-    } as any)
+    } as never)
 
     // Default: no manual customers
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([])
@@ -89,7 +89,7 @@ describe('GET /api/provider/customers', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'customer-user', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(403)
@@ -153,7 +153,7 @@ describe('GET /api/provider/customers', () => {
       },
     ]
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -163,7 +163,7 @@ describe('GET /api/provider/customers', () => {
     expect(data.customers).toHaveLength(2)
 
     // First customer
-    const anna = data.customers.find((c: any) => c.firstName === 'Anna')
+    const anna = data.customers.find((c: Record<string, unknown>) => c.firstName === 'Anna')
     expect(anna).toBeDefined()
     expect(anna.email).toBe('anna@test.com')
     expect(anna.phone).toBe('070-1234567')
@@ -171,7 +171,7 @@ describe('GET /api/provider/customers', () => {
     expect(anna.lastBookingDate).toBeDefined()
 
     // Second customer
-    const erik = data.customers.find((c: any) => c.firstName === 'Erik')
+    const erik = data.customers.find((c: Record<string, unknown>) => c.firstName === 'Erik')
     expect(erik).toBeDefined()
     expect(erik.bookingCount).toBe(1)
 
@@ -214,7 +214,7 @@ describe('GET /api/provider/customers', () => {
       },
     ]
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -223,8 +223,8 @@ describe('GET /api/provider/customers', () => {
     const anna = data.customers[0]
     // Should have 2 unique horses
     expect(anna.horses).toHaveLength(2)
-    expect(anna.horses.map((h: any) => h.name)).toContain('Blansen')
-    expect(anna.horses.map((h: any) => h.name)).toContain('Pransen')
+    expect(anna.horses.map((h: Record<string, unknown>) => h.name)).toContain('Blansen')
+    expect(anna.horses.map((h: Record<string, unknown>) => h.name)).toContain('Pransen')
   })
 
   // --- Filtering ---
@@ -266,7 +266,7 @@ describe('GET /api/provider/customers', () => {
       },
     ]
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const response = await GET(makeRequest('?status=active'))
     const data = await response.json()
@@ -311,7 +311,7 @@ describe('GET /api/provider/customers', () => {
       },
     ]
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const response = await GET(makeRequest('?status=inactive'))
     const data = await response.json()
@@ -358,7 +358,7 @@ describe('GET /api/provider/customers', () => {
       },
     ]
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const response = await GET(makeRequest('?q=anna'))
     const data = await response.json()
@@ -387,7 +387,7 @@ describe('GET /api/provider/customers', () => {
       },
     ]
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as any)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const response = await GET(makeRequest('?q=anna@test'))
     const data = await response.json()
@@ -444,7 +444,7 @@ describe('GET /api/provider/customers', () => {
           phone: '070-9999999',
         },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -474,7 +474,7 @@ describe('GET /api/provider/customers', () => {
         horse: null,
         service: { name: 'Hovslagning' },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer1,
@@ -486,7 +486,7 @@ describe('GET /api/provider/customers', () => {
           phone: '070-1234567',
         },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -514,7 +514,7 @@ describe('GET /api/provider/customers', () => {
         horse: null,
         service: { name: 'Hovslagning' },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer2,
@@ -526,7 +526,7 @@ describe('GET /api/provider/customers', () => {
           phone: null,
         },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -556,7 +556,7 @@ describe('GET /api/provider/customers', () => {
         horse: null,
         service: { name: 'Hovslagning' },
       },
-    ] as any)
+    ] as never)
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer2,
@@ -568,13 +568,13 @@ describe('GET /api/provider/customers', () => {
           phone: null,
         },
       },
-    ] as any)
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
 
-    const anna = data.customers.find((c: any) => c.firstName === 'Anna')
-    const manuell = data.customers.find((c: any) => c.firstName === 'Manuell')
+    const anna = data.customers.find((c: Record<string, unknown>) => c.firstName === 'Anna')
+    const manuell = data.customers.find((c: Record<string, unknown>) => c.firstName === 'Manuell')
 
     expect(anna.isManuallyAdded).toBeUndefined()
     expect(manuell.isManuallyAdded).toBe(true)
@@ -590,12 +590,12 @@ describe('POST /api/provider/customers', () => {
 
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as any)
+    } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
       userId: TEST_UUIDS.providerUser,
-    } as any)
+    } as never)
 
     // Default: no duplicate
     vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValue(null)
@@ -604,7 +604,7 @@ describe('POST /api/provider/customers', () => {
       providerId: TEST_UUIDS.provider,
       customerId: 'new-ghost-id',
       createdAt: new Date(),
-    } as any)
+    } as never)
   })
 
   it('should return 401 for unauthenticated users', async () => {
@@ -619,7 +619,7 @@ describe('POST /api/provider/customers', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await POST(makePostRequest({ firstName: 'Anna' }))
     expect(response.status).toBe(403)
@@ -697,7 +697,7 @@ describe('POST /api/provider/customers', () => {
   it('should return 409 when customer already in registry', async () => {
     vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValue({
       id: 'existing',
-    } as any)
+    } as never)
 
     const response = await POST(makePostRequest({ firstName: 'Anna' }))
     const data = await response.json()

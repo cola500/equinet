@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useDialogState } from "@/hooks/useDialogState"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -92,7 +93,7 @@ export default function GroupBookingDetailPage({
   const [isCopied, setIsCopied] = useState(false)
   const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null)
   const [participantToLeave, setParticipantToLeave] = useState<Participant | null>(null)
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const cancelDialog = useDialogState()
 
   useEffect(() => {
     if (!authLoading && !isCustomer) {
@@ -166,7 +167,7 @@ export default function GroupBookingDetailPage({
       })
       if (response.ok) {
         toast.success("Grupprequest avbruten")
-        setShowCancelDialog(false)
+        cancelDialog.close()
         fetchDetail()
       } else {
         toast.error("Kunde inte avbryta")
@@ -423,7 +424,7 @@ export default function GroupBookingDetailPage({
             <Button
               variant="outline"
               className="text-red-600 border-red-200"
-              onClick={() => setShowCancelDialog(true)}
+              onClick={() => cancelDialog.openDialog()}
             >
               Avbryt grupprequest
             </Button>
@@ -483,17 +484,16 @@ export default function GroupBookingDetailPage({
         )}
 
         {/* Cancel group booking dialog */}
-        {showCancelDialog && (
-          <ResponsiveAlertDialog open={true} onOpenChange={setShowCancelDialog}>
-            <ResponsiveAlertDialogContent>
-              <ResponsiveAlertDialogHeader>
-                <ResponsiveAlertDialogTitle>Avbryt grupprequesten?</ResponsiveAlertDialogTitle>
-                <ResponsiveAlertDialogDescription>
-                  Alla deltagare kommer att meddelas. Denna åtgärd kan inte ångras.
-                </ResponsiveAlertDialogDescription>
-              </ResponsiveAlertDialogHeader>
-              <ResponsiveAlertDialogFooter>
-                <ResponsiveAlertDialogCancel onClick={() => setShowCancelDialog(false)}>Behåll</ResponsiveAlertDialogCancel>
+        <ResponsiveAlertDialog open={cancelDialog.open} onOpenChange={cancelDialog.setOpen}>
+          <ResponsiveAlertDialogContent>
+            <ResponsiveAlertDialogHeader>
+              <ResponsiveAlertDialogTitle>Avbryt grupprequesten?</ResponsiveAlertDialogTitle>
+              <ResponsiveAlertDialogDescription>
+                Alla deltagare kommer att meddelas. Denna åtgärd kan inte ångras.
+              </ResponsiveAlertDialogDescription>
+            </ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogFooter>
+              <ResponsiveAlertDialogCancel onClick={() => cancelDialog.close()}>Behåll</ResponsiveAlertDialogCancel>
                 <ResponsiveAlertDialogAction
                   onClick={handleCancel}
                   className="bg-red-600 hover:bg-red-700"
@@ -503,7 +503,6 @@ export default function GroupBookingDetailPage({
               </ResponsiveAlertDialogFooter>
             </ResponsiveAlertDialogContent>
           </ResponsiveAlertDialog>
-        )}
       </div>
     </CustomerLayout>
   )

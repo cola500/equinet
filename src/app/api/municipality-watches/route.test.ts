@@ -57,7 +57,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "provider" },
-    } as any)
+    } as never)
 
     const response = await POST(makeRequest("POST", {
       municipality: "Kungsbacka",
@@ -69,7 +69,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 404 when feature flag is disabled", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(false)
 
@@ -83,7 +83,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 400 for invalid JSON", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -98,7 +98,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 400 for missing municipality", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -111,7 +111,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 400 for extra fields (.strict())", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -126,7 +126,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 400 for INVALID_MUNICIPALITY", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({ ok: false, error: "INVALID_MUNICIPALITY" })
@@ -143,7 +143,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 400 for MAX_WATCHES_REACHED", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({ ok: false, error: "MAX_WATCHES_REACHED" })
@@ -160,7 +160,7 @@ describe("POST /api/municipality-watches", () => {
   it("should return 201 on success", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({
@@ -188,7 +188,7 @@ describe("POST /api/municipality-watches", () => {
   it("should use customerId from session, not from body", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "session-user", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({ ok: true, value: { id: "w1" } })
@@ -214,7 +214,7 @@ describe("GET /api/municipality-watches", () => {
   it("should return customer's watches", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
-    } as any)
+    } as never)
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockGetWatches.mockResolvedValue([
@@ -238,7 +238,7 @@ describe("GET /api/municipality-watches", () => {
   it("should return 403 for non-customer", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "provider" },
-    } as any)
+    } as never)
 
     const response = await GET(makeRequest("GET"))
     expect(response.status).toBe(403)

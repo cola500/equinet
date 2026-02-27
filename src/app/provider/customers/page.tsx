@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useDialogState } from "@/hooks/useDialogState"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
@@ -17,7 +18,6 @@ import { AddCustomerDialog } from "@/components/provider/customers/AddCustomerDi
 import { AddEditHorseDialog } from "@/components/provider/customers/AddEditHorseDialog"
 import { DeleteConfirmDialogs } from "@/components/provider/customers/DeleteConfirmDialogs"
 import type { Customer, CustomerHorse, CustomerNote, HorseFormData } from "@/components/provider/customers/types"
-import { emptyHorseForm } from "@/components/provider/customers/types"
 
 type StatusFilter = "all" | "active" | "inactive"
 
@@ -39,7 +39,7 @@ export default function ProviderCustomersPage() {
   const [isDeletingNote, setIsDeletingNote] = useState(false)
 
   // Add customer dialog
-  const [showAddDialog, setShowAddDialog] = useState(false)
+  const addCustomerDialog = useDialogState()
   const [isAddingCustomer, setIsAddingCustomer] = useState(false)
 
   // Delete customer
@@ -55,11 +55,13 @@ export default function ProviderCustomersPage() {
   const [isDeletingHorse, setIsDeletingHorse] = useState(false)
   const [isSavingHorse, setIsSavingHorse] = useState(false)
 
+  /* eslint-disable react-hooks/exhaustive-deps -- fetchCustomers reads statusFilter and searchQuery from closure; intentionally triggered by their changes */
   useEffect(() => {
     if (isProvider) {
       fetchCustomers()
     }
   }, [isProvider, statusFilter, searchQuery])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchCustomers = async () => {
     setIsLoading(true)
@@ -230,7 +232,7 @@ export default function ProviderCustomersPage() {
       })
 
       if (response.ok) {
-        setShowAddDialog(false)
+        addCustomerDialog.close()
         toast.success(`${body.firstName} har lagts till i kundregistret`)
         fetchCustomers()
       } else {
@@ -380,7 +382,7 @@ export default function ProviderCustomersPage() {
               Översikt över dina kunder och deras hästar
             </p>
           </div>
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button onClick={() => addCustomerDialog.openDialog()}>
             <UserPlus className="h-4 w-4 mr-2" />
             Lägg till kund
           </Button>
@@ -436,7 +438,7 @@ export default function ProviderCustomersPage() {
             icon={Users}
             title="Inga kunder ännu"
             description="Kunder visas här när de bokar dina tjänster, eller lägg till dem manuellt."
-            action={{ label: "Lägg till din första kund", onClick: () => setShowAddDialog(true) }}
+            action={{ label: "Lägg till din första kund", onClick: () => addCustomerDialog.openDialog() }}
           />
         )
       ) : (
@@ -472,10 +474,10 @@ export default function ProviderCustomersPage() {
 
       {/* Add customer dialog */}
       <AddCustomerDialog
-        open={showAddDialog}
+        open={addCustomerDialog.open}
         isAdding={isAddingCustomer}
         onAdd={handleAddCustomer}
-        onClose={() => setShowAddDialog(false)}
+        onClose={() => addCustomerDialog.close()}
       />
 
       {/* Add/Edit horse dialog */}

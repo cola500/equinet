@@ -146,7 +146,7 @@ export class GroupBookingRepository implements IGroupBookingRepository {
           select: { participants: { where: { status: { not: 'cancelled' } } } },
         },
       },
-    }) as any
+    }) as Promise<(GroupBookingRequest & { _count: { participants: number } }) | null>
   }
 
   async findForMatch(id: string): Promise<GroupBookingForMatch | null> {
@@ -190,7 +190,7 @@ export class GroupBookingRepository implements IGroupBookingRepository {
   async findByIdForCreator(
     id: string,
     creatorId: string
-  ): Promise<(GroupBookingRequest & { participants: { userId: true }[] }) | null> {
+  ): Promise<(GroupBookingRequest & { participants: { userId: string }[] }) | null> {
     return prisma.groupBookingRequest.findFirst({
       where: { id, creatorId },
       include: {
@@ -199,7 +199,7 @@ export class GroupBookingRepository implements IGroupBookingRepository {
           select: { userId: true },
         },
       },
-    }) as any
+    }) as Promise<(GroupBookingRequest & { participants: { userId: string }[] }) | null>
   }
 
   async findParticipantWithAccess(
@@ -234,7 +234,14 @@ export class GroupBookingRepository implements IGroupBookingRepository {
           },
         },
       },
-    }) as any
+    }) as Promise<(GroupBookingParticipant & {
+      groupBookingRequest: {
+        id: string
+        creatorId: string
+        status: string
+        serviceType: string
+      }
+    }) | null>
   }
 
   async countActiveParticipants(groupBookingRequestId: string): Promise<number> {
@@ -334,7 +341,7 @@ export class GroupBookingRepository implements IGroupBookingRepository {
     participantBookingLinks: { participantId: string; bookingIndex: number }[]
   ): Promise<{ bookingIds: string[]; errors: string[] }> {
     // @ts-expect-error - Prisma interactive transaction TypeScript inference issue
-    const result: { bookingIds: string[]; errors: string[] } = await prisma.$transaction(async (tx: any) => {
+    const result: { bookingIds: string[]; errors: string[] } = await prisma.$transaction(async (tx: typeof prisma) => {
       const bookingIds: string[] = []
       const errors: string[] = []
 

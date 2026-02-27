@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import { useDialogState } from "@/hooks/useDialogState"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Button } from "@/components/ui/button"
 import {
@@ -106,7 +107,7 @@ export default function ProviderVerificationPage() {
 
   const [requests, setRequests] = useState<VerificationRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const verificationDialog = useDialogState()
   const [form, setForm] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -136,7 +137,7 @@ export default function ProviderVerificationPage() {
   }, [isProvider, fetchRequests])
 
   const handleDialogClose = () => {
-    setDialogOpen(false)
+    verificationDialog.close()
     setForm(emptyForm)
     setEditingId(null)
     setCreatedId(null)
@@ -199,7 +200,7 @@ export default function ProviderVerificationPage() {
       issuer: req.issuer || "",
       year: req.year ? String(req.year) : "",
     })
-    setDialogOpen(true)
+    verificationDialog.openDialog()
   }
 
   const handleDelete = async () => {
@@ -280,12 +281,12 @@ export default function ProviderVerificationPage() {
             </p>
           </div>
           <Dialog
-            open={dialogOpen}
+            open={verificationDialog.open}
             onOpenChange={(open) => {
               if (!open) {
                 handleDialogClose()
               } else {
-                setDialogOpen(true)
+                verificationDialog.openDialog()
               }
             }}
           >
@@ -504,6 +505,7 @@ export default function ProviderVerificationPage() {
                                 </span>
                               </a>
                             ) : (
+                              /* eslint-disable-next-line @next/next/no-img-element -- dynamic user-uploaded verification images with external URLs */
                               <img
                                 src={img.url}
                                 alt="Verifieringsbild"
@@ -613,6 +615,7 @@ export default function ProviderVerificationPage() {
               <DialogTitle>Bild</DialogTitle>
             </DialogHeader>
             {lightboxImage && (
+              /* eslint-disable-next-line @next/next/no-img-element -- lightbox display of dynamic user-uploaded images */
               <img
                 src={lightboxImage}
                 alt="Verifieringsbild"

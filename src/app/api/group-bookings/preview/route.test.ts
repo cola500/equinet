@@ -48,7 +48,7 @@ describe("GET /api/group-bookings/preview", () => {
   it("should return preview for valid invite code", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: "customer" },
-    } as any)
+    } as never)
     mockService.getPreviewByCode.mockResolvedValue(
       Result.ok({
         serviceType: "hovslagning",
@@ -79,7 +79,7 @@ describe("GET /api/group-bookings/preview", () => {
   it("should return 400 when code parameter is missing", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: "customer" },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/group-bookings/preview"
@@ -92,7 +92,7 @@ describe("GET /api/group-bookings/preview", () => {
   it("should return 400 when code is too long", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: "customer" },
-    } as any)
+    } as never)
 
     const request = new NextRequest(
       "http://localhost:3000/api/group-bookings/preview?code=ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -105,7 +105,7 @@ describe("GET /api/group-bookings/preview", () => {
   it("should return 404 for unknown code", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: "customer" },
-    } as any)
+    } as never)
     mockService.getPreviewByCode.mockResolvedValue(
       Result.fail({
         type: "GROUP_BOOKING_NOT_FOUND",

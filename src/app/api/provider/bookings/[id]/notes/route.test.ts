@@ -84,7 +84,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   })
 
   it('returns 401 without session', async () => {
-    mockAuth.mockResolvedValue(null as any)
+    mockAuth.mockResolvedValue(null as never)
 
     const response = await PUT(createRequest({ providerNotes: 'test' }), { params })
     expect(response.status).toBe(401)
@@ -93,7 +93,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 403 for non-provider user', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
-    } as any)
+    } as never)
 
     const response = await PUT(createRequest({ providerNotes: 'test' }), { params })
     expect(response.status).toBe(403)
@@ -102,7 +102,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 400 for invalid JSON', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
 
     const response = await PUT(createInvalidJsonRequest(), { params })
@@ -114,7 +114,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 400 for Zod validation error (too long)', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
 
     const response = await PUT(
@@ -129,7 +129,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 400 for unexpected fields (strict mode)', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
 
     const response = await PUT(
@@ -142,7 +142,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 400 for booking with invalid status (pending)', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue({ ...mockBooking, status: 'pending', providerId: 'provider-1' })
 
@@ -155,7 +155,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 400 for booking with invalid status (cancelled)', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue({ ...mockBooking, status: 'cancelled', providerId: 'provider-1' })
 
@@ -166,7 +166,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 404 when booking not found', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue(null)
 
@@ -177,7 +177,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 404 for another providers booking', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue({ ...mockBooking, providerId: 'other-provider' })
 
@@ -188,7 +188,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 200 for confirmed booking with notes', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue({ ...mockBooking, status: 'confirmed', providerId: 'provider-1' })
     mockUpdateProviderNotesWithAuth.mockResolvedValue({
@@ -213,7 +213,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 200 for completed booking with notes', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue({ ...mockBooking, status: 'completed', providerId: 'provider-1' })
     mockUpdateProviderNotesWithAuth.mockResolvedValue({
@@ -234,7 +234,7 @@ describe('PUT /api/provider/bookings/[id]/notes', () => {
   it('returns 200 when clearing notes with null', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: 'provider-1' })
     mockFindById.mockResolvedValue({ ...mockBooking, status: 'confirmed', providerId: 'provider-1' })
     mockUpdateProviderNotesWithAuth.mockResolvedValue({

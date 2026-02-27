@@ -57,7 +57,7 @@ import { auth } from "@/lib/auth-server"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
-function makeRequest(body: any): NextRequest {
+function makeRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/voice-log", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -71,7 +71,7 @@ describe("POST /api/voice-log", () => {
     mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "provider" },
-    } as any)
+    } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockFindMany.mockResolvedValue([])
   })
@@ -101,7 +101,7 @@ describe("POST /api/voice-log", () => {
   it("returns 403 when user is not a provider", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },
-    } as any)
+    } as never)
 
     const response = await POST(makeRequest({ transcript: "test" }))
     expect(response.status).toBe(403)
