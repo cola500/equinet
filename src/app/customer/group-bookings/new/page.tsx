@@ -23,6 +23,7 @@ export default function CreateGroupBookingPage() {
   const { isLoading: authLoading, isCustomer } = useAuth()
   const [isSaving, setIsSaving] = useState(false)
   const [horses, setHorses] = useState<HorseOption[]>([])
+  const [step, setStep] = useState<1 | 2>(1)
 
   const [formData, setFormData] = useState({
     serviceType: "",
@@ -135,156 +136,204 @@ export default function CreateGroupBookingPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Uppgifter om besök</CardTitle>
+            <CardTitle>
+              {step === 1 ? "Vad, var och när" : "Detaljer"}
+            </CardTitle>
             <CardDescription>
-              Fyll i vilken tjänst ni behöver och var ni finns.
+              {step === 1
+                ? "Fyll i vilken tjänst ni behöver och var ni finns."
+                : "Fyll i resterande uppgifter om ert besök."}
             </CardDescription>
+            {/* Step indicator */}
+            <div className="flex items-center gap-3 mt-3">
+              <div className="flex gap-1.5 flex-1">
+                <div className="h-1 flex-1 rounded-full bg-green-600" />
+                <div
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    step === 2 ? "bg-green-600" : "bg-gray-200"
+                  }`}
+                />
+              </div>
+              <span className="text-xs text-gray-500">
+                Steg {step} av 2
+              </span>
+            </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="serviceType">Tjänsttyp *</Label>
-                <Input
-                  id="serviceType"
-                  value={formData.serviceType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, serviceType: e.target.value })
-                  }
-                  placeholder="T.ex. hovslagning, massagebehandling, tandvård..."
-                  required
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Skriv vad för typ av tjänst ni söker. Leverantören väljer sin exakta tjänst vid match.
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="locationName">Platsnamn *</Label>
-                <Input
-                  id="locationName"
-                  value={formData.locationName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, locationName: e.target.value })
-                  }
-                  placeholder="T.ex. Sollebrunn Ridklubb"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="address">Adress *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="T.ex. Stallvägen 1, 441 91 Alingsås"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Step 1: Vad, var och när */}
+            {step === 1 && (
+              <div className="space-y-6">
                 <div>
-                  <Label htmlFor="dateFrom">Från datum *</Label>
+                  <Label htmlFor="serviceType">Tjänsttyp *</Label>
                   <Input
-                    id="dateFrom"
-                    type="date"
-                    value={formData.dateFrom}
+                    id="serviceType"
+                    value={formData.serviceType}
                     onChange={(e) =>
-                      setFormData({ ...formData, dateFrom: e.target.value })
+                      setFormData({ ...formData, serviceType: e.target.value })
                     }
-                    min={minDate}
+                    placeholder="T.ex. hovslagning, massagebehandling, tandvård..."
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Skriv vad för typ av tjänst ni söker. Leverantören väljer sin exakta tjänst vid match.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="locationName">Platsnamn *</Label>
+                  <Input
+                    id="locationName"
+                    value={formData.locationName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, locationName: e.target.value })
+                    }
+                    placeholder="T.ex. Sollebrunn Ridklubb"
                     required
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="dateTo">Till datum *</Label>
+                  <Label htmlFor="address">Adress *</Label>
                   <Input
-                    id="dateTo"
-                    type="date"
-                    value={formData.dateTo}
+                    id="address"
+                    value={formData.address}
                     onChange={(e) =>
-                      setFormData({ ...formData, dateTo: e.target.value })
+                      setFormData({ ...formData, address: e.target.value })
                     }
-                    min={formData.dateFrom || minDate}
+                    placeholder="T.ex. Stallvägen 1, 441 91 Alingsås"
                     required
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="maxParticipants">Max antal deltagare</Label>
-                <Input
-                  id="maxParticipants"
-                  type="number"
-                  value={formData.maxParticipants}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxParticipants: e.target.value })
-                  }
-                  min={2}
-                  max={20}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Minst 2, max 20 deltagare.
-                </p>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dateFrom">Från datum *</Label>
+                    <Input
+                      id="dateFrom"
+                      type="date"
+                      value={formData.dateFrom}
+                      onChange={(e) =>
+                        setFormData({ ...formData, dateFrom: e.target.value })
+                      }
+                      min={minDate}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dateTo">Till datum *</Label>
+                    <Input
+                      id="dateTo"
+                      type="date"
+                      value={formData.dateTo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, dateTo: e.target.value })
+                      }
+                      min={formData.dateFrom || minDate}
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <Label className="text-base font-medium">Din häst</Label>
-                <HorseSelect
-                  horses={horses}
-                  horseId={formData.horseId}
-                  horseName={formData.horseName}
-                  horseInfo={formData.horseInfo}
-                  onHorseChange={({ horseId, horseName, horseInfo }) =>
-                    setFormData((prev) => ({ ...prev, horseId, horseName, horseInfo }))
-                  }
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!formData.serviceType || !formData.locationName || !formData.address || !formData.dateFrom || !formData.dateTo) {
+                        toast.error("Fyll i alla obligatoriska fält innan du fortsätter")
+                        return
+                      }
+                      setStep(2)
+                    }}
+                  >
+                    Fortsätt
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/customer/group-bookings")}
+                  >
+                    Avbryt
+                  </Button>
+                </div>
               </div>
+            )}
 
-              <div>
-                <Label htmlFor="joinDeadline">Sista datum att ansluta (valfritt)</Label>
-                <Input
-                  id="joinDeadline"
-                  type="datetime-local"
-                  value={formData.joinDeadline}
-                  onChange={(e) =>
-                    setFormData({ ...formData, joinDeadline: e.target.value })
-                  }
-                  min={formData.dateFrom ? `${formData.dateFrom}T00:00` : undefined}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Efter detta datum kan inga fler deltagare gå med.
-                </p>
-              </div>
+            {/* Step 2: Detaljer */}
+            {step === 2 && (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <Label className="text-base font-medium">Din häst</Label>
+                  <HorseSelect
+                    horses={horses}
+                    horseId={formData.horseId}
+                    horseName={formData.horseName}
+                    horseInfo={formData.horseInfo}
+                    onHorseChange={({ horseId, horseName, horseInfo }) =>
+                      setFormData((prev) => ({ ...prev, horseId, horseName, horseInfo }))
+                    }
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="notes">Anteckningar</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  placeholder="T.ex. vi har 6 hästar totalt, behöver förvaring i stallet..."
-                  rows={3}
-                />
-              </div>
+                <div>
+                  <Label htmlFor="maxParticipants">Max antal deltagare</Label>
+                  <Input
+                    id="maxParticipants"
+                    type="number"
+                    value={formData.maxParticipants}
+                    onChange={(e) =>
+                      setFormData({ ...formData, maxParticipants: e.target.value })
+                    }
+                    min={2}
+                    max={20}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Minst 2, max 20 deltagare.
+                  </p>
+                </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving ? "Skapar..." : "Skapa grupprequest"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push("/customer/group-bookings")}
-                >
-                  Avbryt
-                </Button>
-              </div>
-            </form>
+                <div>
+                  <Label htmlFor="joinDeadline">Sista datum att ansluta (valfritt)</Label>
+                  <Input
+                    id="joinDeadline"
+                    type="datetime-local"
+                    value={formData.joinDeadline}
+                    onChange={(e) =>
+                      setFormData({ ...formData, joinDeadline: e.target.value })
+                    }
+                    min={formData.dateFrom ? `${formData.dateFrom}T00:00` : undefined}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Efter detta datum kan inga fler deltagare gå med.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Anteckningar</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    placeholder="T.ex. vi har 6 hästar totalt, behöver förvaring i stallet..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                  >
+                    Tillbaka
+                  </Button>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Skapar..." : "Skapa grupprequest"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

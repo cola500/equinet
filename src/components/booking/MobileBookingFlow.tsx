@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/drawer"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
 import { useBookingFlowContext } from "./BookingFlowContext"
+import { getVisibleSteps } from "@/hooks/useBookingFlow"
 import { HorseSelector } from "./HorseSelector"
 import { RecurringSection } from "./RecurringSection"
 import { FlexibleBookingForm } from "./FlexibleBookingForm"
@@ -33,9 +34,12 @@ export function MobileBookingFlow() {
     providerId,
     customerLocation,
     nearbyRoute,
+    customerHorses,
   } = useBookingFlowContext()
 
   if (!selectedService) return null
+
+  const visibleSteps = getVisibleSteps(customerHorses.length, isFlexibleBooking)
 
   const stepTitle = () => {
     switch (step) {
@@ -70,26 +74,16 @@ export function MobileBookingFlow() {
   }
 
   const handleNext = () => {
-    if (step === "selectType") {
-      setStep("selectTime")
-    } else if (step === "selectTime") {
-      if (isFlexibleBooking) {
-        setStep("confirm")
-      } else {
-        setStep("selectHorse")
-      }
-    } else if (step === "selectHorse") {
-      setStep("confirm")
+    const currentIndex = visibleSteps.indexOf(step)
+    if (currentIndex >= 0 && currentIndex < visibleSteps.length - 1) {
+      setStep(visibleSteps[currentIndex + 1])
     }
   }
 
   const handleBack = () => {
-    if (step === "selectTime") {
-      setStep("selectType")
-    } else if (step === "selectHorse") {
-      setStep("selectTime")
-    } else if (step === "confirm") {
-      setStep(isFlexibleBooking ? "selectTime" : "selectHorse")
+    const currentIndex = visibleSteps.indexOf(step)
+    if (currentIndex > 0) {
+      setStep(visibleSteps[currentIndex - 1])
     }
   }
 
@@ -110,11 +104,11 @@ export function MobileBookingFlow() {
           <DrawerDescription>{stepDescription()}</DrawerDescription>
           {/* Step indicator */}
           <div className="flex gap-1.5 mt-2">
-            {["selectType", "selectTime", "selectHorse"].map((s, i) => (
+            {visibleSteps.filter((s) => s !== "confirm").map((s, i) => (
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  ["selectType", "selectTime", "selectHorse"].indexOf(step) >= i
+                  visibleSteps.indexOf(step) >= i
                     ? "bg-green-600"
                     : "bg-gray-200"
                 }`}

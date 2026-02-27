@@ -58,6 +58,21 @@ export interface UseBookingFlowOptions {
   providerBusinessName?: string
 }
 
+/**
+ * Returns the visible booking steps based on horse count and booking type.
+ * Skips "selectHorse" when customer has exactly 1 horse (auto-selected)
+ * or when booking is flexible (no horse selection needed).
+ */
+export function getVisibleSteps(
+  customerHorsesCount: number,
+  isFlexibleBooking: boolean
+): BookingStep[] {
+  if (isFlexibleBooking || customerHorsesCount === 1) {
+    return ["selectType", "selectTime", "confirm"]
+  }
+  return ["selectType", "selectTime", "selectHorse", "confirm"]
+}
+
 export function useBookingFlow({
   providerId,
   providerAddress,
