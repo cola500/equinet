@@ -250,39 +250,47 @@ function ProvidersContent() {
                 </div>
               )}
               {!isSearching && (search || city || visitingArea || geo.userLocation || favorites.showFavoritesOnly) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
-                  <span>Aktiva filter:</span>
+                <div className="flex items-center gap-2 text-sm text-gray-600 overflow-x-auto pb-1 scrollbar-hide">
+                  <span className="shrink-0">Aktiva filter:</span>
                   {search && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-green-100 text-green-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-green-100 text-green-800 rounded-full shrink-0 whitespace-nowrap">
                       Sökning: &quot;{search}&quot;
                       <button type="button" onClick={() => setSearch("")} className="hover:text-green-900">×</button>
                     </span>
                   )}
                   {city && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-blue-100 text-blue-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-blue-100 text-blue-800 rounded-full shrink-0 whitespace-nowrap">
                       Ort: &quot;{city}&quot;
                       <button type="button" onClick={() => setCity("")} className="hover:text-blue-900">×</button>
                     </span>
                   )}
                   {visitingArea && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-purple-100 text-purple-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-purple-100 text-purple-800 rounded-full shrink-0 whitespace-nowrap">
                       Besöker: &quot;{visitingArea}&quot;
                       <button type="button" onClick={() => setVisitingArea("")} className="hover:text-purple-900">×</button>
                     </span>
                   )}
                   {geo.userLocation && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-orange-100 text-orange-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-orange-100 text-orange-800 rounded-full shrink-0 whitespace-nowrap">
                       {geo.searchPlaceName ? geo.searchPlaceName : "Min position"}, inom {geo.radiusKm} km
                       <button type="button" onClick={geo.clearLocation} className="hover:text-orange-900">×</button>
                     </span>
                   )}
                   {favorites.showFavoritesOnly && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-red-100 text-red-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-red-100 text-red-800 rounded-full shrink-0 whitespace-nowrap">
                       <Heart className="h-3 w-3 fill-current" />
                       Favoriter
                       <button type="button" onClick={() => favorites.setShowFavoritesOnly(false)} className="hover:text-red-900">×</button>
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="inline-flex items-center px-3 py-1 text-gray-500 hover:text-gray-700 rounded-full border border-gray-300 hover:bg-gray-50 shrink-0 whitespace-nowrap md:hidden"
+                    data-testid="clear-filters-mobile"
+                  >
+                    Rensa alla
+                  </button>
                 </div>
               )}
             </div>

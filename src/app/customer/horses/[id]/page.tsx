@@ -177,7 +177,7 @@ export default function HorseDetailPage() {
         <TabsList>
           <TabsTrigger value="historik">Historik</TabsTrigger>
           {dueForServiceEnabled && (
-            <TabsTrigger value="intervall">Intervall</TabsTrigger>
+            <TabsTrigger value="intervall">Besöksschema</TabsTrigger>
           )}
           <TabsTrigger value="info">Info</TabsTrigger>
         </TabsList>

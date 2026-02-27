@@ -16,8 +16,10 @@ import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
 import { StarRating } from "@/components/review/StarRating"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { Wrench, CalendarDays, Users, CalendarRange, Map, Mic } from "lucide-react"
+import { CalendarDays, Users, CalendarRange, Map, Mic, ChevronDown } from "lucide-react"
 import { DashboardCharts } from "@/components/provider/DashboardCharts"
+import { PriorityActionCard } from "@/components/provider/PriorityActionCard"
+import type { PriorityRoute } from "@/components/provider/PriorityActionCard"
 
 export default function ProviderDashboard() {
   const { isLoading, isProvider } = useAuth()
@@ -37,6 +39,8 @@ export default function ProviderDashboard() {
     revenueTrend: Array<{ month: string; revenue: number }>
   }>({ bookingTrend: [], revenueTrend: [] })
   const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [onboardingComplete, setOnboardingComplete] = useState(true)
+  const [showCharts, setShowCharts] = useState<boolean | null>(null)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
   const isRoutePlanningEnabled = useFeatureFlag("route_planning")
   const pendingCount = bookings.filter((b) => b.status === "pending").length
@@ -54,6 +58,12 @@ export default function ProviderDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs only on mount/auth change
   }, [isProvider])
 
+  useEffect(() => {
+    if (showCharts === null && !isLoadingBookings) {
+      setShowCharts(bookings.length >= 10)
+    }
+  }, [showCharts, isLoadingBookings, bookings.length])
+
   const fetchData = async () => {
     setIsLoadingData(true)
     setError(null)
@@ -63,6 +73,7 @@ export default function ProviderDashboard() {
         fetchAvailableRouteOrders(),
         fetchReviewStats(),
         fetchDashboardStats(),
+        fetchOnboardingStatus(),
       ])
     } catch (error) {
       console.error("Error fetching data:", error)
@@ -126,6 +137,18 @@ export default function ProviderDashboard() {
     }
   }
 
+  const fetchOnboardingStatus = async () => {
+    try {
+      const response = await fetch("/api/provider/onboarding-status")
+      if (response.ok) {
+        const data = await response.json()
+        setOnboardingComplete(data.allComplete ?? true)
+      }
+    } catch {
+      // Non-critical -- default to complete
+    }
+  }
+
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
@@ -162,6 +185,13 @@ export default function ProviderDashboard() {
           </div>
         ) : (
           <>
+            {/* Priority action -- "Vad ska jag göra nu?" */}
+            <PriorityActionCard
+              pendingCount={pendingCount}
+              routes={routes as PriorityRoute[]}
+              onboardingComplete={onboardingComplete}
+            />
+
             {/* Onboarding Checklist for new providers */}
             <div className="mb-8">
               <OnboardingChecklist />
@@ -243,13 +273,22 @@ export default function ProviderDashboard() {
           </Link>
         </div>
 
-        {/* Dashboard Charts */}
+        {/* Dashboard Charts -- collapsible */}
         <div className="mb-8">
-          <DashboardCharts
-            bookingTrend={dashboardStats.bookingTrend}
-            revenueTrend={dashboardStats.revenueTrend}
-            isLoading={isLoadingStats}
-          />
+          <button
+            onClick={() => setShowCharts((prev) => !prev)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-3 transition-colors"
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${showCharts ? "rotate-0" : "-rotate-90"}`} />
+            {showCharts ? "Dölj statistik" : "Visa statistik"}
+          </button>
+          {showCharts && (
+            <DashboardCharts
+              bookingTrend={dashboardStats.bookingTrend}
+              revenueTrend={dashboardStats.revenueTrend}
+              isLoading={isLoadingStats}
+            />
+          )}
         </div>
 
         {/* Routes Section */}
@@ -320,13 +359,7 @@ export default function ProviderDashboard() {
             <CardDescription>Vanliga åtgärder</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <Link href="/provider/services">
-                <Button className="w-full" variant="outline">
-                  <Wrench className="h-4 w-4 mr-2" />
-                  Hantera tjänster
-                </Button>
-              </Link>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Link href="/provider/bookings">
                 <Button className="w-full" variant="outline">
                   <CalendarDays className="h-4 w-4 mr-2" />
@@ -338,84 +371,36 @@ export default function ProviderDashboard() {
                   )}
                 </Button>
               </Link>
-              <Link href="/provider/customers">
-                <Button className="w-full" variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  Kundregister
-                </Button>
-              </Link>
               <Link href="/provider/calendar">
                 <Button className="w-full" variant="outline">
                   <CalendarRange className="h-4 w-4 mr-2" />
                   Kalender
                 </Button>
               </Link>
-              {isRoutePlanningEnabled && (
-                <Link href="/provider/route-planning">
-                  <Button className="w-full" variant="outline">
-                    <Map className="h-4 w-4 mr-2" />
-                    Planera rutter
-                  </Button>
-                </Link>
-              )}
-              {isVoiceLoggingEnabled && (
+              <Link href="/provider/customers">
+                <Button className="w-full" variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Kundregister
+                </Button>
+              </Link>
+              {isVoiceLoggingEnabled ? (
                 <Link href="/provider/voice-log">
                   <Button className="w-full" variant="outline">
                     <Mic className="h-4 w-4 mr-2" />
                     Logga arbete
                   </Button>
                 </Link>
-              )}
+              ) : isRoutePlanningEnabled ? (
+                <Link href="/provider/route-planning">
+                  <Button className="w-full" variant="outline">
+                    <Map className="h-4 w-4 mr-2" />
+                    Planera rutter
+                  </Button>
+                </Link>
+              ) : null}
             </div>
           </CardContent>
         </Card>
-
-        {/* Recent Services */}
-        {services.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Dina tjänster</CardTitle>
-              <CardDescription>
-                {services.length} tjänster registrerade
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {services.slice(0, 3).map((service: { id: string; name: string; durationMinutes: number; price: number; isActive: boolean }) => (
-                  <div
-                    key={service.id}
-                    className="flex justify-between items-center p-4 border rounded-lg"
-                  >
-                    <div>
-                      <h3 className="font-semibold">{service.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {service.durationMinutes} min • {service.price} kr
-                      </p>
-                    </div>
-                    <div>
-                      {service.isActive ? (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                          Aktiv
-                        </span>
-                      ) : (
-                        <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                          Inaktiv
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {services.length > 3 && (
-                <div className="mt-4">
-                  <Link href="/provider/services">
-                    <Button variant="link">Se alla tjänster →</Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {services.length === 0 && (
           <Card>

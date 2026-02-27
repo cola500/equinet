@@ -4,9 +4,10 @@ import { Suspense, useEffect, useState } from "react"
 import { useDialogState } from "@/hooks/useDialogState"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
-import { Mic } from "lucide-react"
+import { Mic, Info } from "lucide-react"
 import { toast } from "sonner"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useAuth } from "@/hooks/useAuth"
 import { useIsMobile } from "@/hooks/useMediaQuery"
@@ -61,6 +62,16 @@ function CalendarContent() {
   const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
   const { isOnline, guardMutation } = useOfflineGuard()
+  const [legendOpen, setLegendOpen] = useState(false)
+
+  // Visa legenden automatiskt vid första besöket
+  useEffect(() => {
+    const hasSeenLegend = localStorage.getItem("equinet-calendar-legend-seen")
+    if (!hasSeenLegend) {
+      setLegendOpen(true)
+      localStorage.setItem("equinet-calendar-legend-seen", "true")
+    }
+  }, [])
 
   // Sätt dagvy som default på mobil
   useEffect(() => {
@@ -356,65 +367,59 @@ function CalendarContent() {
         />
       )}
 
-      {/* Färgförklaring - under kalendern */}
-      <div className="mt-4">
-        <p className="text-xs text-gray-500 mb-3">
+      {/* Färgförklaring - kompakt med popover */}
+      <div className="mt-4 flex items-center gap-2">
+        <p className="text-xs text-gray-500">
           Klicka på en dag för att skapa bokning eller hantera tillgänglighet.
         </p>
-        <div className="md:hidden overflow-x-auto pb-2">
-          <div className="flex gap-3 text-xs whitespace-nowrap">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-yellow-50 border-l-2 border-yellow-500" />
-              <span>Väntar</span>
+        <Popover open={legendOpen} onOpenChange={setLegendOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
+              aria-label="Visa färgförklaring"
+            >
+              <Info className="h-4 w-4" />
+              <span className="hidden sm:inline">Färgkoder</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72" align="end">
+            <p className="text-sm font-medium mb-3">Färgförklaring</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-yellow-50 border-l-2 border-yellow-500 shrink-0" />
+                <span>Väntar på svar</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-green-50 border-l-2 border-green-600 shrink-0" />
+                <span>Bekräftad</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-blue-50 border-l-2 border-blue-600 shrink-0" />
+                <span>Genomförd</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-red-50 border-l-2 border-red-500 shrink-0" />
+                <span>Avbokad</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-emerald-100 border-l-2 border-emerald-600 shrink-0" />
+                <span>Betald</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-green-100 border border-green-200 shrink-0" />
+                <span>Öppet</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-gray-200 border border-gray-300 shrink-0" />
+                <span>Stängt</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-orange-200 border border-orange-300 shrink-0" />
+                <span>Ledig/undantag</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-50 border-l-2 border-green-600" />
-              <span>Bekräftad</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-blue-50 border-l-2 border-blue-600" />
-              <span>Genomförd</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-emerald-100 border-l-2 border-emerald-600" />
-              <span>Betald</span>
-            </div>
-          </div>
-        </div>
-        <div className="hidden md:flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-yellow-50 border-l-4 border-yellow-500" />
-            <span>Väntar på svar</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-50 border-l-4 border-green-600" />
-            <span>Bekräftad</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-50 border-l-4 border-blue-600" />
-            <span>Genomförd</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-50 border-l-4 border-red-500" />
-            <span>Avbokad</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-emerald-100 border-l-4 border-emerald-600" />
-            <span>Betald</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
-            <span>Öppet</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300" />
-            <span>Stängt (veckoschema)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-orange-200 border border-orange-300" />
-            <span>Ledig/undantag</span>
-          </div>
-        </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Mobile FAB for voice log */}

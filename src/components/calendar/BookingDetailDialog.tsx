@@ -11,15 +11,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
@@ -436,14 +436,14 @@ export function BookingDetailDialog({
     )}
 
     {/* Cancel Confirmation Dialog */}
-    <AlertDialog open={showCancelDialog} onOpenChange={handleCancelDialogClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Avboka bokning?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <ResponsiveAlertDialog open={showCancelDialog} onOpenChange={handleCancelDialogClose}>
+      <ResponsiveAlertDialogContent>
+        <ResponsiveAlertDialogHeader>
+          <ResponsiveAlertDialogTitle>Avboka bokning?</ResponsiveAlertDialogTitle>
+          <ResponsiveAlertDialogDescription>
             Kunden kommer att meddelas om avbokningen. Du kan skicka ett valfritt meddelande.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+          </ResponsiveAlertDialogDescription>
+        </ResponsiveAlertDialogHeader>
         <div className="py-2">
           <Label htmlFor="cancel-message-calendar">Meddelande till kund (valfritt)</Label>
           <VoiceTextarea
@@ -457,20 +457,20 @@ export function BookingDetailDialog({
           />
           <p className="text-xs text-gray-500 mt-1">{cancellationMessage.length}/500</p>
         </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isCancelling}>
+        <ResponsiveAlertDialogFooter>
+          <ResponsiveAlertDialogCancel disabled={isCancelling}>
             Avbryt
-          </AlertDialogCancel>
-          <AlertDialogAction
+          </ResponsiveAlertDialogCancel>
+          <ResponsiveAlertDialogAction
             onClick={handleCancelConfirm}
             disabled={isCancelling}
             className="bg-red-600 hover:bg-red-700"
           >
             {isCancelling ? "Avbokar..." : "Ja, avboka"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </ResponsiveAlertDialogAction>
+        </ResponsiveAlertDialogFooter>
+      </ResponsiveAlertDialogContent>
+    </ResponsiveAlertDialog>
     </>
   )
 }

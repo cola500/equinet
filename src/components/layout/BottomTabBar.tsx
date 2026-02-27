@@ -29,6 +29,7 @@ export interface MoreMenuItem {
   icon: LucideIcon
   matchPrefix?: string
   offlineSafe?: boolean
+  section?: string
 }
 
 interface BottomTabBarProps {
@@ -128,24 +129,33 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
             <DrawerTitle>Mer</DrawerTitle>
           </DrawerHeader>
           <nav className="flex flex-col pb-6">
-            {moreItems.map((item) => {
+            {moreItems.map((item, index) => {
               const active = isActive(item.href, item.matchPrefix)
               const Icon = item.icon
+              const showSectionHeader =
+                item.section && (index === 0 || moreItems[index - 1].section !== item.section)
               return (
-                <DrawerClose key={item.href} asChild>
-                  <Link
-                    href={item.href}
-                    onClick={(e) => handleOfflineClick(e, item.href, item.matchPrefix, item.offlineSafe)}
-                    className={`flex items-center gap-3 px-4 py-3 min-h-[48px] ${
-                      active
-                        ? "text-green-700 bg-green-50 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span>{item.label}</span>
-                  </Link>
-                </DrawerClose>
+                <div key={item.href}>
+                  {showSectionHeader && (
+                    <div className="px-4 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      {item.section}
+                    </div>
+                  )}
+                  <DrawerClose asChild>
+                    <Link
+                      href={item.href}
+                      onClick={(e) => handleOfflineClick(e, item.href, item.matchPrefix, item.offlineSafe)}
+                      className={`flex items-center gap-3 px-4 py-3 min-h-[48px] ${
+                        active
+                          ? "text-green-700 bg-green-50 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </DrawerClose>
+                </div>
               )
             })}
           </nav>
