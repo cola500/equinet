@@ -6,16 +6,15 @@ import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
@@ -52,6 +51,7 @@ export default function ProviderAnnouncementsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [cancelId, setCancelId] = useState<string | null>(null)
   const { guardMutation } = useOfflineGuard()
 
   useEffect(() => {
@@ -293,28 +293,9 @@ export default function ProviderAnnouncementsPage() {
                       >
                         Visa detaljer
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            Avbryt rutt
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Avbryt rutt-annons?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Kunder som redan sett annonsen kan inte längre boka in sig.
-                              Befintliga bokningar påverkas inte.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Behåll</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleCancel(announcement.id)}>
-                              Avbryt rutt-annons
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <Button variant="destructive" size="sm" onClick={() => setCancelId(announcement.id)}>
+                        Avbryt rutt
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -323,6 +304,27 @@ export default function ProviderAnnouncementsPage() {
           ))}
         </div>
       )}
+      {/* Cancel Confirmation Dialog */}
+      <ResponsiveAlertDialog open={!!cancelId} onOpenChange={(open) => { if (!open) setCancelId(null) }}>
+        <ResponsiveAlertDialogContent>
+          <ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogTitle>Avbryt rutt-annons?</ResponsiveAlertDialogTitle>
+            <ResponsiveAlertDialogDescription>
+              Kunder som redan sett annonsen kan inte längre boka in sig.
+              Befintliga bokningar påverkas inte.
+            </ResponsiveAlertDialogDescription>
+          </ResponsiveAlertDialogHeader>
+          <ResponsiveAlertDialogFooter>
+            <ResponsiveAlertDialogCancel>Behåll</ResponsiveAlertDialogCancel>
+            <ResponsiveAlertDialogAction
+              onClick={() => { if (cancelId) handleCancel(cancelId); setCancelId(null) }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Avbryt rutt-annons
+            </ResponsiveAlertDialogAction>
+          </ResponsiveAlertDialogFooter>
+        </ResponsiveAlertDialogContent>
+      </ResponsiveAlertDialog>
     </ProviderLayout>
   )
 }

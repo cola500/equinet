@@ -10,15 +10,15 @@ import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -465,14 +465,14 @@ export default function ProviderBookingsPage() {
           </div>
         )}
       {/* Cancel Confirmation Dialog */}
-      <AlertDialog open={!!bookingToCancel} onOpenChange={() => { setBookingToCancel(null); setCancellationMessage("") }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Avboka bokning?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <ResponsiveAlertDialog open={!!bookingToCancel} onOpenChange={() => { setBookingToCancel(null); setCancellationMessage("") }}>
+        <ResponsiveAlertDialogContent>
+          <ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogTitle>Avboka bokning?</ResponsiveAlertDialogTitle>
+            <ResponsiveAlertDialogDescription>
               Kunden kommer att meddelas om avbokningen. Du kan skicka ett valfritt meddelande.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+            </ResponsiveAlertDialogDescription>
+          </ResponsiveAlertDialogHeader>
           <div className="py-2">
             <Label htmlFor="cancellation-message">Meddelande till kund (valfritt)</Label>
             <VoiceTextarea
@@ -486,20 +486,20 @@ export default function ProviderBookingsPage() {
             />
             <p className="text-xs text-gray-500 mt-1">{cancellationMessage.length}/500</p>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCancelling}>
+          <ResponsiveAlertDialogFooter>
+            <ResponsiveAlertDialogCancel disabled={isCancelling}>
               Avbryt
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </ResponsiveAlertDialogCancel>
+            <ResponsiveAlertDialogAction
               onClick={handleCancelBooking}
               disabled={isCancelling}
               className="bg-red-600 hover:bg-red-700"
             >
               {isCancelling ? "Avbokar..." : "Ja, avboka"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </ResponsiveAlertDialogAction>
+          </ResponsiveAlertDialogFooter>
+        </ResponsiveAlertDialogContent>
+      </ResponsiveAlertDialog>
 
       {/* Mobile FAB for voice log */}
       {isVoiceLoggingEnabled && (
