@@ -2,7 +2,7 @@
 
 **Projekt**: Equinet - Bokningsplattform för hästtjänster
 **Version**: v0.3.0+
-**Senast uppdaterad**: 2026-02-23
+**Senast uppdaterad**: 2026-02-27
 **Syfte**: Levande dokument som visar production readiness-status och gap med story-ready acceptance criteria.
 
 **Relaterade dokument:**
@@ -17,12 +17,12 @@
 | Kategori | Klart | Kvar | Score |
 |----------|-------|------|-------|
 | Performance & Skalbarhet | 7 | 3 | 70% |
-| Säkerhet & Privacy | 12 | 5 | 71% |
+| Säkerhet & Privacy | 15 | 5 | 75% |
 | Reliability & Availability | 3 | 4 | 43% |
 | Kodkvalitet & Testning | 8 | 3 | 73% |
 | Tillgänglighet | 4 | 3 | 57% |
 | Monitoring & Observability | 3 | 4 | 43% |
-| **Totalt** | **37** | **22** | **63%** |
+| **Totalt** | **40** | **22** | **65%** |
 
 **Prioriterade gap:** P0: 4 st (launch blockers) | P1: 6 st (inom 2 veckor) | P2: 6 st (inom 1 månad)
 
@@ -71,19 +71,22 @@
 |------|--------|----------|
 | Lösenordshashing | Klart | bcrypt, 10 rounds |
 | HTTP-only cookies | Klart | NextAuth sessions |
-| CSRF-skydd | Klart | NextAuth inbyggt |
+| CSRF-skydd | Klart | NextAuth + Origin header-validering |
 | SQL injection-skydd | Klart | Prisma (parameterized queries) |
 | XSS-skydd | Klart | React auto-escaping |
 | Input-validering | Klart | Zod på både client & server (.strict()) |
 | Auktoriseringskontroller | Klart | Session + ownership i WHERE clause |
 | GDPR-compliant API | Klart | Email/phone ej exponerat |
 | Rate limiting | Klart | Upstash Redis (5/h login, 10/h bookings, 100/h publikt) |
-| HTTPS + Security headers | Klart | Vercel + HSTS, CSP, X-Frame-Options DENY, nosniff |
+| HTTPS + Security headers | Klart | HSTS, CSP (SRI, no unsafe-inline), X-Frame-Options DENY, nosniff, COOP, CORP |
 | Lösenordskrav | Klart | Styrka-validering |
 | Audit logging | Klart | logger.security() för känsliga operationer |
 | Row Level Security | Klart | Deny-all på alla 22 tabeller (migration 20260204120000). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
 | GDPR data export | Klart | /api/export/my-data (JSON + CSV), GDPR Art. 20 |
 | Horse data export | Klart | /api/horses/[id]/export |
+| SRI (Subresource Integrity) | Klart | `integrity="sha256-..."` på alla script-taggar, tar bort `unsafe-inline` från CSP |
+| Error sanitering | Klart | Inga stack traces eller interna detaljer läcker till klienter i produktion |
+| Penetrationstestning | Klart | ZAP-baserat pentest (2026-02-27), 6/9 fynd åtgärdade, 3 accepterade/falska positiver |
 
 ### Kvarstår
 
@@ -135,7 +138,7 @@
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 2394+ tester, 205 testfiler (2026-02-23) |
+| Unit/integration-tester | Klart | 2577+ tester, 220 testfiler (2026-02-27) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
@@ -410,4 +413,4 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 ---
 
 **Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2026-02-21
+**Senast granskad**: 2026-02-27

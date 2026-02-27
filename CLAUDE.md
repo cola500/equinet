@@ -17,6 +17,7 @@
 | Offline-arkitektur | [docs/OFFLINE-ARCHITECTURE.md](docs/OFFLINE-ARCHITECTURE.md) |
 | Production Readiness | [NFR.md](NFR.md) |
 | Röstloggning | [docs/VOICE-WORK-LOGGING.md](docs/VOICE-WORK-LOGGING.md) |
+| Pentest-rapport (feb 2026) | [docs/security/pentest-report-2026-02-15.md](docs/security/pentest-report-2026-02-15.md) |
 
 ---
 
@@ -136,7 +137,7 @@ src/
 
 ## Säkerhet
 
-**Implementerat:** bcrypt, HTTP-only cookies, CSRF, Prisma (SQL injection), React (XSS), Zod, session + ownership checks.
+**Implementerat:** bcrypt, HTTP-only cookies, CSRF (NextAuth + Origin-validering), Prisma (SQL injection), React (XSS), Zod, session + ownership checks, SRI (script integrity), error sanitering, rate limiting (Upstash Redis).
 
 > Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
@@ -199,6 +200,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **`as never` i testmockar**: Ersätt `as any` med `as never` i alla mock-returvärden. `never` är assignerbar till alla typer utan att trigga `no-explicit-any`. Universellt mönster.
 - **SessionUser-typ**: `(session.user as SessionUser)` från `@/types/auth` ersätter `session.user as any` i API routes. Behövs pga NextAuth-typinferens.
 - **Lint: 0 varningar (2026-02-26)**: Alla `no-explicit-any`, `no-unused-vars`, `exhaustive-deps`, `no-img-element` är lösta. Håll 0 -- introducera INTE nya `any`.
+- **SRI för CSP-hardening**: `experimental.sri` i `next.config.ts` genererar `integrity="sha256-..."` på alla `<script>` vid build. Tar bort `unsafe-inline` från prod `script-src`. Webpack-only (OK -- prod bygger med webpack). `style-src 'unsafe-inline'` kvarstår (Tailwind + dynamiska `style={}`).
 
 ---
 
@@ -240,4 +242,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-02-23
+**Senast uppdaterad**: 2026-02-27
