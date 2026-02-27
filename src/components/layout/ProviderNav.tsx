@@ -34,6 +34,7 @@ interface NavItem {
 
 interface MoreItem extends MoreMenuItem {
   featureFlag?: string
+  section?: string
 }
 
 const providerTabs: TabItem[] = [
@@ -43,16 +44,16 @@ const providerTabs: TabItem[] = [
 ]
 
 const providerMoreItems: MoreItem[] = [
-  { href: "/provider/services", label: "Mina tjänster", icon: Wrench },
-  { href: "/provider/voice-log", label: "Logga arbete", icon: Mic, matchPrefix: "/provider/voice-log", featureFlag: "voice_logging" },
-  { href: "/provider/route-planning", label: "Ruttplanering", icon: Route, matchPrefix: "/provider/route", featureFlag: "route_planning" },
-  { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements", featureFlag: "route_announcements" },
-  { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
-  { href: "/provider/due-for-service", label: "Besöksplanering", icon: Clock, matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service" },
-  { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
-  { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", featureFlag: "business_insights" },
-  { href: "/provider/reviews", label: "Recensioner", icon: Star },
-  { href: "/provider/profile", label: "Min profil", icon: User },
+  { href: "/provider/services", label: "Mina tjänster", icon: Wrench, section: "Dagligt arbete" },
+  { href: "/provider/voice-log", label: "Logga arbete", icon: Mic, matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
+  { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers", section: "Dagligt arbete" },
+  { href: "/provider/route-planning", label: "Ruttplanering", icon: Route, matchPrefix: "/provider/route", featureFlag: "route_planning", section: "Planering" },
+  { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements", featureFlag: "route_announcements", section: "Planering" },
+  { href: "/provider/due-for-service", label: "Besöksplanering", icon: Clock, matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service", section: "Planering" },
+  { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings", section: "Planering" },
+  { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", featureFlag: "business_insights", section: "Mitt företag" },
+  { href: "/provider/reviews", label: "Recensioner", icon: Star, section: "Mitt företag" },
+  { href: "/provider/profile", label: "Min profil", icon: User, section: "Mitt företag" },
 ]
 
 // Primary nav items always visible on desktop (max 6)
@@ -66,14 +67,14 @@ const primaryNavItems: NavItem[] = [
 ]
 
 // Secondary nav items in "Mer" dropdown on desktop
-const secondaryNavItems: NavItem[] = [
-  { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging" },
-  { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route", featureFlag: "route_planning" },
-  { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", featureFlag: "route_announcements" },
-  { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service" },
-  { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings" },
-  { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", featureFlag: "business_insights" },
-  { href: "/provider/profile", label: "Min profil" },
+const secondaryNavItems: (NavItem & { section?: string })[] = [
+  { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
+  { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route", featureFlag: "route_planning", section: "Planering" },
+  { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", featureFlag: "route_announcements", section: "Planering" },
+  { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service", section: "Planering" },
+  { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings", section: "Planering" },
+  { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", featureFlag: "business_insights", section: "Mitt företag" },
+  { href: "/provider/profile", label: "Min profil", section: "Mitt företag" },
 ]
 
 const OFFLINE_SAFE_PATHS = providerTabs
@@ -214,20 +215,31 @@ export function ProviderNav() {
 
                 {moreOpen && (
                   <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border py-1 min-w-[200px] z-50">
-                    {visibleSecondaryItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={(e) => handleOfflineClick(e, item)}
-                        className={`block px-4 py-2 text-sm ${
-                          isActive(item)
-                            ? "bg-green-50 text-green-700 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
+                    {visibleSecondaryItems.map((item, index) => {
+                      const showSectionHeader =
+                        item.section &&
+                        (index === 0 || visibleSecondaryItems[index - 1].section !== item.section)
+                      return (
+                        <div key={item.href}>
+                          {showSectionHeader && (
+                            <div className={`px-4 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${index > 0 ? "border-t border-gray-100 mt-1" : ""}`}>
+                              {item.section}
+                            </div>
+                          )}
+                          <Link
+                            href={item.href}
+                            onClick={(e) => handleOfflineClick(e, item)}
+                            className={`block px-4 py-2 text-sm ${
+                              isActive(item)
+                                ? "bg-green-50 text-green-700 font-medium"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            {item.label}
+                          </Link>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>

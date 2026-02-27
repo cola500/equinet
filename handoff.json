@@ -1,0 +1,162 @@
+{
+  "project": "equinet",
+  "plan": "Kognitiv last-reduktion för kunder och leverantörer",
+  "branch": "feature/cognitive-load-reduction",
+  "created": "2026-02-27",
+  "status": "Sprint 1 klar, Sprint 2-4 kvar",
+
+  "completed": {
+    "sprint_1": {
+      "name": "Quick Wins",
+      "status": "DONE",
+      "typecheck": "0 errors",
+      "lint": "0 errors",
+      "tasks": [
+        {
+          "id": "1.1",
+          "name": "Gruppera Mer-menyn med visuella sektioner",
+          "files": [
+            "src/components/layout/ProviderNav.tsx",
+            "src/components/layout/BottomTabBar.tsx"
+          ],
+          "what_changed": "Lade till section-property på MoreMenuItem. Sektionsrubriker (Dagligt arbete, Planering, Mitt företag) renderas i både desktop-dropdown och mobil-drawer. Itemordningen ändrad: Kunder flyttad till Dagligt arbete."
+        },
+        {
+          "id": "1.2",
+          "name": "Visa Rensa alla filter tydligt på kundsök",
+          "files": ["src/app/providers/page.tsx"],
+          "what_changed": "Filter-chips gjorda horisontellt scrollbara (overflow-x-auto, shrink-0, whitespace-nowrap). Ny mobil-synlig 'Rensa alla'-knapp (md:hidden) i filter-chips-raden. Desktop-knappen var redan synlig."
+        },
+        {
+          "id": "1.3",
+          "name": "Kalender-legend bakom progressive disclosure",
+          "files": ["src/app/provider/calendar/page.tsx"],
+          "what_changed": "Ersatte hela legend-sektionen (8 färgkodade items, mobil+desktop) med en Info-knapp + Popover. Öppnas automatiskt vid första besök (localStorage: equinet-calendar-legend-seen). Kompakt 2-kolumns grid i popovern."
+        },
+        {
+          "id": "1.4",
+          "name": "Byt namn häst-flik Intervall till Besöksschema",
+          "files": ["src/app/customer/horses/[id]/page.tsx"],
+          "what_changed": "TabsTrigger text ändrad från 'Intervall' till 'Besöksschema'. Tab value (intervall) behölls för URL-kompatibilitet. Badge för förfallna besök skippades -- ServiceInterval har inte overdue-data på kundsidan."
+        }
+      ]
+    }
+  },
+
+  "remaining": {
+    "sprint_2": {
+      "name": "Dashboard-fokus",
+      "status": "NOT STARTED",
+      "estimated_effort": "2-3 dagar",
+      "tasks": [
+        {
+          "id": "2.1",
+          "name": "Dashboard progressive disclosure för statistik",
+          "files": ["src/app/provider/dashboard/page.tsx"],
+          "plan": "1. Flytta DashboardCharts bakom en Visa statistik-toggle (useState showCharts). Default kollapsat för nya leverantörer (< 10 bokningar), expanderat för erfarna. 2. Ta bort Dina tjänster-sektionen (rad 373-418, duplicerar /provider/services). 3. Minska quick-actions från 6 till 4: Se bokningar (badge), Kalender, Kundregister, 1 dynamisk (voice log eller ruttplanering).",
+          "key_insight": "Wrench-icon import kan tas bort efter att Hantera tjänster-quickaction plockas bort."
+        },
+        {
+          "id": "2.2",
+          "name": "PriorityActionCard",
+          "files": [
+            "src/components/provider/PriorityActionCard.tsx (NY)",
+            "src/app/provider/dashboard/page.tsx"
+          ],
+          "plan": "Ny komponent som visas överst, visar VIKTIGASTE åtgärden: 1) Ventande bokningar -> 'Du har X nya förfrågningar -- Granska', 2) Rutt idag/imorgon -> 'Du har en rutt idag -- Se rutten', 3) Onboarding ofullständig -> visa onboarding-CTA, 4) Annars: dölj kortet. Data: pendingCount (redan finns), routes[] (redan finns)."
+        },
+        {
+          "id": "2.3",
+          "name": "Konsekvent destruktiv-action-bekräftelse",
+          "files": [
+            "src/components/calendar/BookingDetailDialog.tsx",
+            "2-3 andra filer med destruktiva actions"
+          ],
+          "plan": "Inventera alla destruktiva actions (avboka, ta bort undantag, etc). Standardisera till ResponsiveAlertDialog. Kolla först: grep 'confirm\\|window.confirm\\|AlertDialog' i src/"
+        }
+      ]
+    },
+    "sprint_3": {
+      "name": "Flödesförenkling",
+      "status": "NOT STARTED",
+      "estimated_effort": "3-4 dagar",
+      "tasks": [
+        {
+          "id": "3.1",
+          "name": "Gruppbokning: dela formuläret i 2 steg",
+          "files": ["src/app/customer/group-bookings/new/page.tsx"],
+          "plan": "Steg 1 (Vad behöver ni?): serviceType, locationName, address, dateFrom, dateTo. Steg 2 (Mer detaljer): maxParticipants, horse, joinDeadline (default 3d före dateFrom), notes."
+        },
+        {
+          "id": "3.2",
+          "name": "Bokningsflöde: auto-välj häst om kunden har 1",
+          "files": [
+            "src/hooks/useBookingFlow.ts",
+            "src/components/booking/MobileBookingFlow.tsx",
+            "src/components/booking/DesktopBookingDialog.tsx",
+            "src/components/booking/BookingSummaryCard.tsx"
+          ],
+          "plan": "I useBookingFlow: om horses.length === 1, auto-setHorse + skippa steg 3. Visa hästen i sammanfattningen med 'Annan häst'-länk. KRÄVER E2E-test pga kritisk väg."
+        },
+        {
+          "id": "3.3",
+          "name": "Kundsida hook-extrahering + förenad dialog",
+          "files": [
+            "src/hooks/useCustomerPage.ts (NY)",
+            "src/app/provider/customers/page.tsx",
+            "src/components/provider/AddCustomerDialog.tsx"
+          ],
+          "plan": "Extrahera 15+ useState-hooks till useCustomerPage hook. Lägg till valfritt steg 2 i AddCustomerDialog: 'Vill du lägga till en häst?'"
+        }
+      ]
+    },
+    "sprint_4": {
+      "name": "Infrastruktur + polish",
+      "status": "NOT STARTED",
+      "estimated_effort": "2-3 dagar",
+      "tasks": [
+        {
+          "id": "4.1",
+          "name": "Standardisera laddningstillstånd med skeletons",
+          "files": [
+            "src/components/loading/DashboardSkeleton.tsx (NY)",
+            "src/components/loading/CalendarSkeleton.tsx (NY)",
+            "src/components/loading/ProfileSkeleton.tsx (NY)",
+            "src/components/loading/GenericPageSkeleton.tsx (NY)",
+            "~15 page.tsx filer"
+          ],
+          "plan": "Skapa 3-4 skeleton-komponenter. Ersätt inline-spinners. Tips: sök 'animate-spin' för att hitta alla."
+        },
+        {
+          "id": "4.2",
+          "name": "FirstUseTooltip för kontextuell hjälp",
+          "files": [
+            "src/components/ui/first-use-tooltip.tsx (NY)",
+            "src/app/provider/calendar/page.tsx",
+            "src/app/provider/customers/page.tsx",
+            "src/app/customer/group-bookings/new/page.tsx (om wizarden finns)",
+            "src/app/provider/route-planning/page.tsx",
+            "src/app/customer/horses/[id]/page.tsx"
+          ],
+          "plan": "Ny komponent: localStorage-baserad, auto-dismiss efter 10s. 5 texter: Kalender -> 'Klicka på en tid...', Kunder -> 'Expandera en kund...', Bokning -> 'Fast tid = du väljer exakt...', Rutt -> 'Planera din rutt...', Häst -> 'Lägg till behandlingshistorik...'."
+        }
+      ]
+    }
+  },
+
+  "quality_gates": {
+    "typecheck": "npm run typecheck -- måste vara 0 errors",
+    "lint": "npm run lint -- 0 errors (pre-existing warnings OK)",
+    "tests": "npm run test:run -- alla tester gröna",
+    "swedish": "npm run check:swedish"
+  },
+
+  "notes": [
+    "Sprint 1 använde INTE TDD (ren UI-refaktorering utan logik-ändringar)",
+    "Sprint 2.2 (PriorityActionCard) och 3.2 (auto-välj häst) har logik som BÖR testas",
+    "Sprint 3.2 kräver E2E-test pga kritisk bokningsväg",
+    "Inga migrations eller API-route-ändringar i hela planen",
+    "Alla Sprint 1-ändringar är ocommittade -- kör /ship eller commit manuellt",
+    "Pre-existing lint warnings (7 st, alla i e2e/) -- inte från våra ändringar"
+  ]
+}
