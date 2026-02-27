@@ -21,6 +21,11 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
+vi.mock("@/lib/cache/provider-stats-cache", () => ({
+  getCachedProviderInsights: vi.fn().mockResolvedValue(null),
+  setCachedProviderInsights: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     warn: vi.fn(),
@@ -30,13 +35,18 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { auth } from "@/lib/auth-server"
+import { rateLimiters } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
+import { getCachedProviderInsights, setCachedProviderInsights } from "@/lib/cache/provider-stats-cache"
 import { GET } from "./route"
 
 const mockAuth = vi.mocked(auth)
+const mockRateLimiters = vi.mocked(rateLimiters)
 const mockProviderFindFirst = vi.mocked(prisma.provider.findFirst)
 const mockBookingFindMany = vi.mocked(prisma.booking.findMany)
 const mockBookingCount = vi.mocked(prisma.booking.count)
+const mockGetCachedInsights = vi.mocked(getCachedProviderInsights)
+const mockSetCachedInsights = vi.mocked(setCachedProviderInsights)
 
 function createRequest(months?: number) {
   const url = months
@@ -87,6 +97,14 @@ describe("GET /api/provider/insights", () => {
 
     const data = await response.json()
     expect(data.error).toBe("Ej inloggad")
+  })
+
+  it("returns 429 when rate limited", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockRateLimiters.api.mockResolvedValueOnce(false)
+
+    const response = await GET(createRequest())
+    expect(response.status).toBe(429)
   })
 
   it("should return 404 when provider not found", async () => {
@@ -317,6 +335,43 @@ describe("GET /api/provider/insights", () => {
           bookingDate: true,
           status: true,
         }),
+      })
+    )
+  })
+
+  // --- Caching ---
+
+  it("returns cached data on cache hit", async () => {
+    setupAuthenticatedProvider()
+    const cachedData = {
+      serviceBreakdown: [],
+      timeHeatmap: [],
+      customerRetention: [],
+      kpis: { cancellationRate: 0, noShowRate: 0, averageBookingValue: 0, uniqueCustomers: 0, manualBookingRate: 0 },
+    }
+    mockGetCachedInsights.mockResolvedValueOnce(cachedData)
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toEqual(cachedData)
+    // Should NOT query the database
+    expect(mockBookingFindMany).not.toHaveBeenCalled()
+  })
+
+  it("calls setCachedProviderInsights after DB fetch", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    await GET(createRequest())
+
+    expect(mockSetCachedInsights).toHaveBeenCalledWith(
+      PROVIDER_ID,
+      6,
+      expect.objectContaining({
+        serviceBreakdown: expect.any(Array),
+        kpis: expect.any(Object),
       })
     )
   })

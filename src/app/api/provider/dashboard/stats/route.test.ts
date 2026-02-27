@@ -21,6 +21,11 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
+vi.mock("@/lib/cache/provider-stats-cache", () => ({
+  getCachedDashboardStats: vi.fn().mockResolvedValue(null),
+  setCachedDashboardStats: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     warn: vi.fn(),
@@ -30,10 +35,15 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { auth } from "@/lib/auth-server"
+import { rateLimiters } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
+import { getCachedDashboardStats, setCachedDashboardStats } from "@/lib/cache/provider-stats-cache"
 import { GET } from "./route"
 
 const mockAuth = vi.mocked(auth)
+const mockRateLimiters = vi.mocked(rateLimiters)
+const mockGetCachedStats = vi.mocked(getCachedDashboardStats)
+const mockSetCachedStats = vi.mocked(setCachedDashboardStats)
 const mockFindFirst = vi.mocked(prisma.provider.findFirst)
 const mockFindMany = vi.mocked(prisma.booking.findMany)
 
@@ -54,6 +64,14 @@ describe("GET /api/provider/dashboard/stats", () => {
 
     const response = await GET(createRequest())
     expect(response.status).toBe(401)
+  })
+
+  it("returns 429 when rate limited", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockRateLimiters.api.mockResolvedValueOnce(false)
+
+    const response = await GET(createRequest())
+    expect(response.status).toBe(429)
   })
 
   it("should return 404 when provider not found", async () => {
@@ -153,6 +171,42 @@ describe("GET /api/provider/dashboard/stats", () => {
 
     expect(data.bookingTrend).toHaveLength(8)
     expect(data.revenueTrend).toHaveLength(6)
+  })
+
+  // --- Caching ---
+
+  it("returns cached data on cache hit", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
+
+    const cachedData = {
+      bookingTrend: [{ week: "v.8", completed: 5, cancelled: 0 }],
+      revenueTrend: [{ month: "feb", revenue: 4000 }],
+    }
+    mockGetCachedStats.mockResolvedValueOnce(cachedData)
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toEqual(cachedData)
+    expect(mockFindMany).not.toHaveBeenCalled()
+  })
+
+  it("calls setCachedDashboardStats after DB fetch", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockFindFirst.mockResolvedValue({ id: "provider-1" } as never)
+    mockFindMany.mockResolvedValue([])
+
+    await GET(createRequest())
+
+    expect(mockSetCachedStats).toHaveBeenCalledWith(
+      "provider-1",
+      expect.objectContaining({
+        bookingTrend: expect.any(Array),
+        revenueTrend: expect.any(Array),
+      })
+    )
   })
 
   it("should use select on booking query (not include)", async () => {

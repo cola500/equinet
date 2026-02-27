@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { getCachedProviderInsights, setCachedProviderInsights } from "@/lib/cache/provider-stats-cache"
 import { startOfMonth, subMonths, format, getDay } from "date-fns"
 import { sv } from "date-fns/locale"
 
@@ -19,7 +20,13 @@ export async function GET(request: NextRequest) {
     }
 
     const ip = getClientIP(request)
-    await rateLimiters.api(ip)
+    const isAllowed = await rateLimiters.api(ip)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar" },
+        { status: 429 }
+      )
+    }
 
     const provider = await prisma.provider.findFirst({
       where: { userId: session.user.id },
@@ -33,6 +40,12 @@ export async function GET(request: NextRequest) {
     // Parse and clamp months parameter
     const monthsParam = request.nextUrl.searchParams.get("months")
     const months = Math.min(12, Math.max(3, Number(monthsParam) || 6))
+
+    // Check cache
+    const cached = await getCachedProviderInsights(provider.id, months)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     const periodStart = subMonths(startOfMonth(new Date()), months - 1)
 
@@ -182,12 +195,17 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({
+    const responseData = {
       serviceBreakdown,
       timeHeatmap,
       customerRetention,
       kpis,
-    })
+    }
+
+    // Store in cache (fire-and-forget)
+    setCachedProviderInsights(provider.id, months, responseData).catch(() => {})
+
+    return NextResponse.json(responseData)
   } catch (error) {
     logger.error(
       "Error fetching provider insights",
