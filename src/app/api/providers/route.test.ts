@@ -91,6 +91,7 @@ describe('GET /api/providers', () => {
       }),
     })
     // Security assertion: sensitive data should NOT be exposed
+    expect(result.data[0].userId).toBeUndefined()
     expect(result.data[0].user.email).toBeUndefined()
     expect(result.data[0].user.phone).toBeUndefined()
     expect(result.data[0].user.passwordHash).toBeUndefined()

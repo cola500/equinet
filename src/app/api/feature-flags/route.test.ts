@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { GET } from "./route"
 import { NextRequest } from "next/server"
-import { _setRepositoryForTesting } from "@/lib/feature-flags"
+import { _setRepositoryForTesting, FEATURE_FLAGS } from "@/lib/feature-flags"
 import { MockFeatureFlagRepository } from "@/infrastructure/persistence/feature-flag"
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -81,5 +81,25 @@ describe("GET /api/feature-flags", () => {
     const response = await GET(request)
 
     expect(response.status).toBe(429)
+  })
+
+  it("only returns client-visible flags", async () => {
+    // Temporarily set one flag to clientVisible: false
+    const original = { ...FEATURE_FLAGS.voice_logging }
+    FEATURE_FLAGS.voice_logging = { ...original, clientVisible: false }
+
+    try {
+      const request = new NextRequest("http://localhost:3000/api/feature-flags")
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.flags.voice_logging).toBeUndefined()
+      // Other flags should still be present
+      expect(data.flags.route_planning).toBe(true)
+    } finally {
+      // Restore original
+      FEATURE_FLAGS.voice_logging = original
+    }
   })
 })

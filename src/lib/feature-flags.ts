@@ -81,6 +81,21 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
 }
 
 /**
+ * Get only client-visible feature flags.
+ * Used by the public API to avoid disclosing internal/admin-only flags.
+ */
+export async function getClientVisibleFlags(): Promise<Record<string, boolean>> {
+  const allFlags = await getFeatureFlags()
+  const result: Record<string, boolean> = {}
+  for (const [key, value] of Object.entries(allFlags)) {
+    if (FEATURE_FLAGS[key]?.clientVisible !== false) {
+      result[key] = value
+    }
+  }
+  return result
+}
+
+/**
  * Check if a specific feature flag is enabled.
  */
 export async function isFeatureEnabled(key: string): Promise<boolean> {

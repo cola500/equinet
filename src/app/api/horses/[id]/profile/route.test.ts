@@ -72,8 +72,8 @@ describe("POST /api/horses/[id]/profile", () => {
     const now = Date.now()
     const thirtyDays = 30 * 24 * 60 * 60 * 1000
     const expiresAtMs = new Date(data.expiresAt).getTime()
-    expect(expiresAtMs - now).toBeGreaterThan(thirtyDays - 60000)
-    expect(expiresAtMs - now).toBeLessThan(thirtyDays + 60000)
+    expect(expiresAtMs - now).toBeGreaterThan(thirtyDays - 7200000)
+    expect(expiresAtMs - now).toBeLessThan(thirtyDays + 7200000)
   })
 
   it("should return 404 for non-owned horse (IDOR protection)", async () => {

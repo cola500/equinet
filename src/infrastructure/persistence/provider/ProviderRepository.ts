@@ -105,7 +105,7 @@ export class ProviderRepository implements IProviderRepository {
       where,
       select: {
         id: true,
-        userId: true,
+        // userId intentionally omitted -- public API must not expose internal identifiers
         businessName: true,
         description: true,
         city: true,
@@ -207,7 +207,7 @@ export class ProviderRepository implements IProviderRepository {
       },
       select: {
         id: true,
-        userId: true,
+        // userId intentionally omitted -- public API must not expose internal identifiers
         businessName: true,
         description: true,
         city: true,

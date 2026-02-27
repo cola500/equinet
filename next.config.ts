@@ -6,6 +6,9 @@ import withSerwistInit from "@serwist/next";
 const revision = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ?? crypto.randomUUID();
 
 const nextConfig: NextConfig = {
+  // Suppress X-Powered-By: Next.js header (information disclosure)
+  poweredByHeader: false,
+
   // Disable source maps in production for security
   productionBrowserSourceMaps: false,
 

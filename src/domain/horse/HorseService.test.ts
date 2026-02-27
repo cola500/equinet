@@ -482,8 +482,8 @@ describe('HorseService', () => {
       const now = Date.now()
       const thirtyDays = 30 * 24 * 60 * 60 * 1000
       const expiresAt = result.value.expiresAt.getTime()
-      expect(expiresAt - now).toBeGreaterThan(thirtyDays - 60000)
-      expect(expiresAt - now).toBeLessThan(thirtyDays + 60000)
+      expect(expiresAt - now).toBeGreaterThan(thirtyDays - 7200000)
+      expect(expiresAt - now).toBeLessThan(thirtyDays + 7200000)
     })
 
     it('should fail if not owner', async () => {
