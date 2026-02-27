@@ -12,14 +12,9 @@ const nextConfig: NextConfig = {
   // Disable source maps in production for security
   productionBrowserSourceMaps: false,
 
-  experimental: {
-    // SRI generates integrity="sha256-..." on <script> tags at build time,
-    // allowing us to remove 'unsafe-inline' from script-src in production.
-    // Webpack-only (prod build uses webpack, dev uses Turbopack -- OK).
-    sri: {
-      algorithm: 'sha256',
-    },
-  },
+  // NOTE: experimental.sri removed -- SRI integrity hashes don't survive Vercel's
+  // post-build processing (compression/CDN), causing hash mismatches that block
+  // script loading entirely. unsafe-inline in CSP covers inline scripts instead.
 
   // TypeScript errors checked separately in CI - skip during build to avoid timeout
   typescript: {
