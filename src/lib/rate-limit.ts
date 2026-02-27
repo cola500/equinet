@@ -248,7 +248,7 @@ async function checkRateLimit(
   // Map limiter types to their configurations
   // Note: Higher limits in development/test to allow E2E test runs
   const configs: Record<string, { max: number; window: number }> = {
-    login: { max: 50, window: 15 * 60 * 1000 },
+    login: { max: 15, window: 15 * 60 * 1000 },
     registration: { max: 50, window: 60 * 60 * 1000 },
     api: { max: 1000, window: 60 * 1000 },
     passwordReset: { max: 50, window: 60 * 60 * 1000 },

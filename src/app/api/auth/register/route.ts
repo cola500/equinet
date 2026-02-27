@@ -59,20 +59,20 @@ export async function POST(request: NextRequest) {
       city: sanitizedCity,
     })
 
+    const genericMessage = "Om registreringen lyckades skickas ett verifieringsmail till din email."
+
     if (result.isFailure) {
+      if (result.error.type === 'EMAIL_ALREADY_EXISTS') {
+        logger.warn("Registration attempt with existing email", { email: sanitizedEmail })
+        return NextResponse.json({ message: genericMessage })
+      }
       return NextResponse.json(
         { error: result.error.message },
         { status: mapAuthErrorToStatus(result.error) }
       )
     }
 
-    return NextResponse.json(
-      {
-        message: "Användare skapad",
-        user: result.value.user,
-      },
-      { status: 201 }
-    )
+    return NextResponse.json({ message: genericMessage })
 
   } catch (error) {
     if (error instanceof z.ZodError) {

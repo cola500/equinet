@@ -50,9 +50,10 @@ describe('POST /api/auth/register', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(201)
-    expect(data.message).toBe('Användare skapad')
-    expect(data.user.email).toBe('test@example.com')
+    // Security: generic response to prevent email enumeration
+    expect(response.status).toBe(200)
+    expect(data.message).toBe('Om registreringen lyckades skickas ett verifieringsmail till din email.')
+    expect(data.user).toBeUndefined()
   })
 
   it('should register a new provider with business info', async () => {
@@ -85,12 +86,13 @@ describe('POST /api/auth/register', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(201)
-    expect(data.message).toBe('Användare skapad')
-    expect(data.user.userType).toBe('provider')
+    // Security: generic response to prevent email enumeration
+    expect(response.status).toBe(200)
+    expect(data.message).toBe('Om registreringen lyckades skickas ett verifieringsmail till din email.')
+    expect(data.user).toBeUndefined()
   })
 
-  it('should return 400 if user already exists', async () => {
+  it('should return generic 200 when email already exists (prevents enumeration)', async () => {
     mockRegister.mockResolvedValue(
       Result.fail({
         type: 'EMAIL_ALREADY_EXISTS',
@@ -112,8 +114,59 @@ describe('POST /api/auth/register', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(400)
-    expect(data.error).toContain('email finns redan')
+    // Security: identical response to successful registration
+    expect(response.status).toBe(200)
+    expect(data.message).toBe('Om registreringen lyckades skickas ett verifieringsmail till din email.')
+    expect(data.error).toBeUndefined()
+  })
+
+  it('should return identical response for new and existing email', async () => {
+    // First: successful registration
+    mockRegister.mockResolvedValueOnce(
+      Result.ok({
+        user: { id: '123', email: 'new@example.com', firstName: 'New', lastName: 'User', userType: 'customer' },
+      })
+    )
+
+    const successRequest = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'new@example.com',
+        password: 'Password123!',
+        firstName: 'New',
+        lastName: 'User',
+        userType: 'customer',
+      }),
+    })
+
+    const successResponse = await POST(successRequest)
+    const successData = await successResponse.json()
+
+    // Second: existing email
+    mockRegister.mockResolvedValueOnce(
+      Result.fail({
+        type: 'EMAIL_ALREADY_EXISTS',
+        message: 'En anvandare med denna email finns redan',
+      })
+    )
+
+    const existingRequest = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'Password123!',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+      }),
+    })
+
+    const existingResponse = await POST(existingRequest)
+    const existingData = await existingResponse.json()
+
+    // Security: responses must be indistinguishable
+    expect(successResponse.status).toBe(existingResponse.status)
+    expect(successData).toEqual(existingData)
   })
 
   it('should return 400 for invalid email', async () => {

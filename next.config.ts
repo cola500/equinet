@@ -6,8 +6,20 @@ import withSerwistInit from "@serwist/next";
 const revision = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ?? crypto.randomUUID();
 
 const nextConfig: NextConfig = {
+  // Suppress X-Powered-By: Next.js header (information disclosure)
+  poweredByHeader: false,
+
   // Disable source maps in production for security
   productionBrowserSourceMaps: false,
+
+  experimental: {
+    // SRI generates integrity="sha256-..." on <script> tags at build time,
+    // allowing us to remove 'unsafe-inline' from script-src in production.
+    // Webpack-only (prod build uses webpack, dev uses Turbopack -- OK).
+    sri: {
+      algorithm: 'sha256',
+    },
+  },
 
   // TypeScript errors checked separately in CI - skip during build to avoid timeout
   typescript: {
@@ -28,9 +40,9 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               isDev
-                ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-                : "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
+                ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: React DevTools need unsafe-eval
+                : "script-src 'self'", // Prod: SRI integrity hashes allow removal of unsafe-inline
+              "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
               "connect-src 'self' https://router.project-osrm.org", // Allow OSRM API
@@ -73,11 +85,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // Script sources - stricter in production
+              // Script sources - stricter in production (SRI integrity hashes replace unsafe-inline)
               isDev
                 ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: React DevTools need unsafe-eval
-                : "script-src 'self' 'unsafe-inline'", // Prod: Remove unsafe-eval
-              "style-src 'self' 'unsafe-inline'", // Tailwind requires unsafe-inline
+                : "script-src 'self'", // Prod: SRI integrity hashes allow removal of unsafe-inline
+              "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
               "connect-src 'self'", // API calls
