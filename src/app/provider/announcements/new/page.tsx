@@ -13,6 +13,7 @@ import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 
 interface ProviderService {
   id: string
@@ -127,12 +128,7 @@ export default function NewAnnouncementPage() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <ProfileSkeleton />
       </ProviderLayout>
     )
   }

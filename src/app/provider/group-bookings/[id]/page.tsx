@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/responsive-alert-dialog"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 interface Participant {
   id: string
@@ -182,12 +183,7 @@ export default function ProviderGroupBookingDetailPage({
   if (authLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }
@@ -195,10 +191,7 @@ export default function ProviderGroupBookingDetailPage({
   if (isLoading || !groupBooking) {
     return (
       <ProviderLayout>
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Laddar grupprequest...</p>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }

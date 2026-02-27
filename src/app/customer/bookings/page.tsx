@@ -21,6 +21,7 @@ import {
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ReviewDialog } from "@/components/review/ReviewDialog"
 import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
+import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { CustomerOnboardingChecklist } from "@/components/customer/CustomerOnboardingChecklist"
 import { RescheduleDialog } from "@/components/booking/RescheduleDialog"
 import { BookingCard } from "@/components/customer/bookings/BookingCard"
@@ -142,12 +143,7 @@ export default function CustomerBookingsPage() {
   if (isLoading || !isCustomer) {
     return (
       <CustomerLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <BookingCardSkeleton />
       </CustomerLayout>
     )
   }
@@ -271,6 +267,11 @@ export default function CustomerBookingsPage() {
             </CardContent>
           </Card>
         ) : (
+          <FirstUseTooltip
+            id="customer-bookings"
+            title="Dina bokningar"
+            description="Här ser du alla dina bokningar. Klicka på en för mer detaljer."
+          >
           <div className="space-y-4">
             {filteredBookings.map((booking, index) => (
               <BookingCard
@@ -287,6 +288,7 @@ export default function CustomerBookingsPage() {
               />
             ))}
           </div>
+          </FirstUseTooltip>
         )}
 
       {/* Reschedule Dialog */}

@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 interface RouteStop {
   id: string
@@ -163,12 +164,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }

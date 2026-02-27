@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
@@ -188,12 +189,7 @@ export default function CustomerProfilePage() {
   if (isLoading || !isCustomer || !profile) {
     return (
       <CustomerLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <ProfileSkeleton />
       </CustomerLayout>
     )
   }

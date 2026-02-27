@@ -24,6 +24,7 @@ import { SeriesResultDialog } from "@/components/booking/SeriesResultDialog"
 import { FollowButton } from "@/components/follow/FollowButton"
 import { useFollowProvider } from "@/hooks/useFollowProvider"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { ProviderCardSkeleton } from "@/components/loading/ProviderCardSkeleton"
 import type { CustomerHorse } from "@/hooks/useBookingFlow"
 
 interface Service {
@@ -237,11 +238,8 @@ export default function ProviderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Laddar...</p>
-        </div>
+      <div className="min-h-screen">
+        <ProviderCardSkeleton />
       </div>
     )
   }

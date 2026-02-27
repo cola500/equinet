@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 interface GroupBookingParticipant {
   id: string
@@ -100,12 +101,7 @@ export default function CustomerGroupBookingsPage() {
   if (authLoading || !isCustomer) {
     return (
       <CustomerLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <GenericListSkeleton />
       </CustomerLayout>
     )
   }

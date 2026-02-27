@@ -8,6 +8,7 @@ import { Mic, Info } from "lucide-react"
 import { toast } from "sonner"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useAuth } from "@/hooks/useAuth"
 import { useIsMobile } from "@/hooks/useMediaQuery"
@@ -25,6 +26,7 @@ import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDi
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
+import { CalendarSkeleton } from "@/components/loading/CalendarSkeleton"
 import { CalendarBooking, AvailabilityDay } from "@/types"
 
 export default function ProviderCalendarPage() {
@@ -304,12 +306,7 @@ function CalendarContent() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <CalendarSkeleton />
       </ProviderLayout>
     )
   }
@@ -334,14 +331,22 @@ function CalendarContent() {
         onBookingClick={handleBookingClick}
       />
 
-      <CalendarHeader
-        currentDate={currentDate}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        onToday={handleToday}
-      />
+      <FirstUseTooltip
+        id="calendar-views"
+        title="Byt vy"
+        description="Växla mellan vecko- och månadsvy för att se dina bokningar på olika sätt"
+      >
+        <div>
+          <CalendarHeader
+            currentDate={currentDate}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            onToday={handleToday}
+          />
+        </div>
+      </FirstUseTooltip>
 
       {viewMode === "month" ? (
         <MonthCalendar

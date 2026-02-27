@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 export default function ProviderExportPage() {
   const router = useRouter()
@@ -83,12 +84,7 @@ export default function ProviderExportPage() {
   if (authLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }

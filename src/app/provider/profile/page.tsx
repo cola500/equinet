@@ -14,6 +14,7 @@ import { ImageUpload } from "@/components/ui/image-upload"
 import { InfoPopover } from "@/components/ui/info-popover"
 import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
+import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard"
@@ -116,12 +117,7 @@ export default function ProviderProfilePage() {
   if (isLoading || !isProvider || !profile) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <ProfileSkeleton />
       </ProviderLayout>
     )
   }

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 
 interface Service {
@@ -195,12 +196,7 @@ export default function ProviderServicesPage() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }
