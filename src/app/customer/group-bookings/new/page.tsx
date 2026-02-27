@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
 
 export default function CreateGroupBookingPage() {
@@ -110,12 +111,7 @@ export default function CreateGroupBookingPage() {
   if (authLoading || !isCustomer) {
     return (
       <CustomerLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <ProfileSkeleton />
       </CustomerLayout>
     )
   }

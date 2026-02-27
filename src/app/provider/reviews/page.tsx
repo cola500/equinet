@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { ReviewList } from "@/components/review/ReviewList"
 import { StarRating } from "@/components/review/StarRating"
 import { toast } from "sonner"
@@ -108,12 +109,7 @@ export default function ProviderReviewsPage() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }

@@ -17,6 +17,8 @@ import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
 import { StarRating } from "@/components/review/StarRating"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { CalendarDays, Users, CalendarRange, Map, Mic, ChevronDown } from "lucide-react"
+import { DashboardSkeleton } from "@/components/loading/DashboardSkeleton"
+import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { DashboardCharts } from "@/components/provider/DashboardCharts"
 import { PriorityActionCard } from "@/components/provider/PriorityActionCard"
 import type { PriorityRoute } from "@/components/provider/PriorityActionCard"
@@ -152,12 +154,7 @@ export default function ProviderDashboard() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <DashboardSkeleton />
       </ProviderLayout>
     )
   }
@@ -186,11 +183,19 @@ export default function ProviderDashboard() {
         ) : (
           <>
             {/* Priority action -- "Vad ska jag göra nu?" */}
-            <PriorityActionCard
-              pendingCount={pendingCount}
-              routes={routes as PriorityRoute[]}
-              onboardingComplete={onboardingComplete}
-            />
+            <FirstUseTooltip
+              id="dashboard-priority"
+              title="Din nästa åtgärd"
+              description="Här visas det viktigaste just nu -- nya förfrågningar, dagens rutt eller nästa steg"
+            >
+              <div>
+                <PriorityActionCard
+                  pendingCount={pendingCount}
+                  routes={routes as PriorityRoute[]}
+                  onboardingComplete={onboardingComplete}
+                />
+              </div>
+            </FirstUseTooltip>
 
             {/* Onboarding Checklist for new providers */}
             <div className="mb-8">

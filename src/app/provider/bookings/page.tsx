@@ -31,6 +31,8 @@ import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
+import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 
 interface Payment {
@@ -174,12 +176,7 @@ export default function ProviderBookingsPage() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <BookingCardSkeleton />
       </ProviderLayout>
     )
   }
@@ -232,6 +229,11 @@ export default function ProviderBookingsPage() {
         </div>
 
         {/* Filter Tabs */}
+        <FirstUseTooltip
+          id="bookings-filters"
+          title="Filtrera bokningar"
+          description="Filtrera på status för att snabbt hitta nya förfrågningar eller genomförda bokningar"
+        >
         <div className="flex flex-wrap gap-2 md:gap-3 mb-6">
           {([
             { key: "all", label: "Alla" },
@@ -255,6 +257,7 @@ export default function ProviderBookingsPage() {
             </button>
           ))}
         </div>
+        </FirstUseTooltip>
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (

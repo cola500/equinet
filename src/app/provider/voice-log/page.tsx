@@ -25,6 +25,7 @@ import {
   Pencil,
   Plus,
 } from "lucide-react"
+import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 export default function VoiceLogPage() {
   const router = useRouter()
@@ -55,10 +56,7 @@ export default function VoiceLogPage() {
   if (isLoading || !isProvider) {
     return (
       <ProviderLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-4 text-gray-600">Laddar...</p>
-        </div>
+        <GenericListSkeleton />
       </ProviderLayout>
     )
   }

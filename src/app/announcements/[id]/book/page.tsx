@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
+import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
 import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
 import { useHorses } from "@/hooks/useHorses"
@@ -196,12 +197,7 @@ export default function BookAnnouncementPage() {
   if (authLoading || isLoading) {
     return (
       <CustomerLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Laddar...</p>
-          </div>
-        </div>
+        <ProfileSkeleton />
       </CustomerLayout>
     )
   }
