@@ -129,6 +129,7 @@ model Provider {
   manualCustomers        ProviderCustomer[]
   bookingSeries          BookingSeries[]
   followers              Follow[]
+  subscription           ProviderSubscription?
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -768,6 +769,27 @@ model FeatureFlag {
   updatedAt DateTime @updatedAt
   updatedBy String?
   createdAt DateTime @default(now())
+}
+
+// Provider subscription (Stripe billing)
+model ProviderSubscription {
+  id                    String    @id @default(uuid())
+  providerId            String    @unique
+  provider              Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  planId                String    @default("basic")
+  priceAmountCents      Int       @default(0)
+  currency              String    @default("SEK")
+  status                String    @default("trialing") // trialing, active, past_due, canceled, incomplete
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean   @default(false)
+  trialEndsAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([status])
 }
 
 // Municipality watch: customer watches a municipality + service type for notifications

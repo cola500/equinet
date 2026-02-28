@@ -20,6 +20,8 @@ import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard"
 import { RescheduleSettingsCard } from "@/components/provider/profile/RescheduleSettingsCard"
 import { RecurringBookingsCard } from "@/components/provider/profile/RecurringBookingsCard"
+import { SubscriptionCard } from "@/components/provider/profile/SubscriptionCard"
+import type { SubscriptionStatus } from "@/components/provider/profile/SubscriptionCard"
 import type { ProviderProfile } from "@/components/provider/profile/types"
 import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
 
@@ -40,6 +42,21 @@ export default function ProviderProfilePage() {
   const { guardMutation } = useOfflineGuard()
   const selfRescheduleEnabled = useFeatureFlag("self_reschedule")
   const recurringBookingsEnabled = useFeatureFlag("recurring_bookings")
+  const subscriptionEnabled = useFeatureFlag("provider_subscription")
+
+  // Subscription status (only fetched when flag is on)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+
+  useEffect(() => {
+    if (!subscriptionEnabled || !isProvider) return
+    setSubscriptionLoading(true)
+    fetch("/api/provider/subscription/status")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => setSubscriptionStatus(data))
+      .catch(() => setSubscriptionStatus(null))
+      .finally(() => setSubscriptionLoading(false))
+  }, [subscriptionEnabled, isProvider])
 
   // Sync form state when SWR profile data arrives or changes
   useEffect(() => {
@@ -358,6 +375,15 @@ export default function ProviderProfilePage() {
       {/* Tab: Inställningar */}
       {activeTab === "settings" && (
         <>
+      {/* Subscription Card */}
+      {subscriptionEnabled && (
+        <SubscriptionCard
+          status={subscriptionStatus}
+          isLoading={subscriptionLoading}
+          guardMutation={guardMutation}
+        />
+      )}
+
       {/* Booking Settings Card */}
       <Card>
         <CardContent className="py-4">

@@ -124,6 +124,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:login-ip",
       }),
+      subscription: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(5, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:subscription",
+      }),
     }
   }
 
@@ -259,6 +265,7 @@ async function checkRateLimit(
     resendVerification: { max: 50, window: 15 * 60 * 1000 },
     ai: { max: 200, window: 60 * 1000 },
     loginIp: { max: 200, window: 15 * 60 * 1000 },
+    subscription: { max: 50, window: 60 * 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -368,4 +375,9 @@ export const rateLimiters = {
    * Login attempts per IP: 30 attempts per 15 minutes (higher than per-email to handle shared IPs)
    */
   loginIp: async (identifier: string) => checkRateLimit('loginIp', identifier),
+
+  /**
+   * Subscription actions (checkout, portal): 5 attempts per hour
+   */
+  subscription: async (identifier: string) => checkRateLimit('subscription', identifier),
 }
