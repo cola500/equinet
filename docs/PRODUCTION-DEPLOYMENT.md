@@ -328,11 +328,11 @@ referrer-policy: strict-origin-when-cross-origin
 
 ## 📊 Steg 8: Setup Monitoring (10 min)
 
-### 8.1 Uptime Monitoring
+### 8.1 Uptime Monitoring (UptimeRobot)
 
-**Rekommendation:** [UptimeRobot](https://uptimerobot.com) (gratis tier: 50 monitors)
+**Tjänst:** [UptimeRobot](https://uptimerobot.com) (gratis tier: 50 monitors)
 
-1. Skapa account på uptimerobot.com
+1. Skapa konto på uptimerobot.com
 2. **Add New Monitor:**
    ```
    Monitor Type: HTTP(s)
@@ -341,21 +341,49 @@ referrer-policy: strict-origin-when-cross-origin
    Monitoring Interval: 5 minutes
    ```
 3. **Alert Contacts:** Lägg till din email
-4. **Expected HTTP Status Code:** 200
+4. **Advanced Settings:**
+   - Monitor Timeout: 30 seconds
+   - Alert after: 3 failed checks (= 15 min nertid)
+   - Aktivera "Alert When Up" (notis när sidan är uppe igen)
+5. Verifiera att monitorn visar grön status efter setup
 
-**Alerts:**
-- Email när sidan är nere >3 minuter
-- Email när sidan är uppe igen
+**Vad den overvakar:**
+- `GET /api/health` returnerar HTTP 200 med `{ status: "ok" }`
+- Databas-anslutning (inkluderad i health check)
+- Om status inte ar 200 efter 3 kontroller -> email-alert
 
 ### 8.2 Sentry Alerts
 
-1. Sentry Dashboard → **Alerts**
-2. **Create Alert Rule:**
-   ```
-   Alert Name: High Error Rate
-   Condition: Number of events > 10 in 1 hour
-   Action: Email to your-email@example.com
-   ```
+Konfigurera tva alertregler i Sentry Dashboard -> **Alerts** -> **Create Alert**:
+
+**Alert 1 -- Hog felfrekvens (Metric Alert):**
+```
+Alert Name: High Error Rate
+Type: Metric Alert
+Metric: count()
+Threshold: > 50 per 5 minutes
+Action: Send email to your-email@example.com
+```
+
+**Alert 2 -- Nya exceptions (Issue Alert):**
+```
+Alert Name: New Unhandled Exceptions
+Type: Issue Alert
+Condition: A new issue is created
+Category: Error
+Action: Send email to your-email@example.com
+```
+
+**Source maps (for readable stack traces):**
+
+Verifiera att dessa environment variables finns i Vercel:
+```bash
+SENTRY_AUTH_TOKEN="sntrys_..."    # Sentry Settings -> Auth Tokens -> Create New Token
+SENTRY_ORG="your-org-slug"        # Sentry -> Organization Settings -> Organization Slug
+SENTRY_PROJECT="equinet"          # Sentry -> Project Settings -> Project Slug
+```
+
+Source maps laddas upp automatiskt vid build (konfigurerat i `next.config.ts`).
 
 ### 8.3 Vercel Monitoring
 
@@ -384,10 +412,10 @@ Efter denna guide är klar:
 - [x] Security headers configured
 
 ### Should-Have 🟡
-- [ ] Uptime monitoring (UptimeRobot)
+- [x] Uptime monitoring (UptimeRobot) -- se steg 8.1
 - [ ] Custom domain configured
-- [ ] Email alerts för downtime
-- [ ] Sentry alert rules
+- [x] Email alerts för downtime -- se steg 8.1
+- [x] Sentry alert rules -- se steg 8.2
 
 ### Nice-to-Have ⚪
 - [ ] Vercel Pro (för better analytics)
@@ -522,6 +550,6 @@ Efter lyckad deployment:
 ---
 
 **Guide skapad:** 2026-01-21
-**Senast uppdaterad:** 2026-01-21
+**Senast uppdaterad:** 2026-02-28
 **Version:** 1.0
 **Production Readiness Score:** 9/10
