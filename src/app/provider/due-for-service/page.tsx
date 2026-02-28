@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { Clock, AlertTriangle, CheckCircle } from "lucide-react"
+import { HorseIcon } from "@/components/icons/HorseIcon"
 
 interface DueForServiceItem {
   horseId: string
@@ -115,7 +116,10 @@ export default function DueForServicePage() {
   return (
     <ProviderLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Besöksplanering</h1>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <HorseIcon className="h-8 w-8 text-primary" />
+          Besöksplanering
+        </h1>
         <p className="text-gray-600 mt-1">
           Hästar som snart behöver besök, sorterade efter angelägenhet
         </p>
@@ -163,7 +167,7 @@ export default function DueForServicePage() {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               filter === f
-                ? "bg-green-600 text-white"
+                ? "bg-primary text-primary-foreground"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >

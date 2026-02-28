@@ -81,11 +81,11 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
                 href={tab.href}
                 onClick={(e) => handleOfflineClick(e, tab.href, tab.matchPrefix, tab.offlineSafe)}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-all duration-200 ${
-                  active ? "text-green-700" : "text-gray-400"
+                  active ? "text-primary" : "text-gray-400"
                 }`}
               >
                 {active ? (
-                  <span className="flex flex-col items-center gap-0.5 bg-green-100/80 rounded-full px-3 py-1">
+                  <span className="flex flex-col items-center gap-0.5 bg-primary/10 rounded-full px-3 py-1">
                     <Icon className="h-[22px] w-[22px]" />
                     <span className="text-[10px] leading-tight font-medium">{tab.label}</span>
                   </span>
@@ -104,11 +104,11 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
             type="button"
             onClick={() => setMoreOpen(true)}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-all duration-200 ${
-              isMoreActive ? "text-green-700" : "text-gray-400"
+              isMoreActive ? "text-primary" : "text-gray-400"
             }`}
           >
             {isMoreActive ? (
-              <span className="flex flex-col items-center gap-0.5 bg-green-100/80 rounded-full px-3 py-1">
+              <span className="flex flex-col items-center gap-0.5 bg-primary/10 rounded-full px-3 py-1">
                 <MoreHorizontal className="h-[22px] w-[22px]" />
                 <span className="text-[10px] leading-tight font-medium">Mer</span>
               </span>
@@ -147,7 +147,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
                       onClick={(e) => handleOfflineClick(e, item.href, item.matchPrefix, item.offlineSafe)}
                       className={`flex items-center gap-3 px-4 py-3 min-h-[48px] ${
                         active
-                          ? "text-green-700 bg-green-50 font-medium"
+                          ? "text-primary bg-primary/5 font-medium"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >

@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { HorseIcon } from "@/components/icons/HorseIcon"
 import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 
@@ -25,7 +26,8 @@ export function Header() {
     <>
     <header className="bg-white border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="text-xl md:text-2xl font-bold text-green-800">
+        <Link href="/" className="flex items-center gap-1.5 text-xl md:text-2xl font-bold text-primary">
+          <HorseIcon className="h-6 w-6 md:h-7 md:w-7" />
           Equinet
         </Link>
         <div className="flex items-center gap-2 md:gap-4">

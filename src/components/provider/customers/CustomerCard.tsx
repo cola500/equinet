@@ -10,13 +10,13 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  PawPrint,
   StickyNote,
   Plus,
   Trash2,
   Pencil,
   Loader2,
 } from "lucide-react"
+import { HorseIcon } from "@/components/icons/HorseIcon"
 import type { Customer, CustomerHorse, CustomerNote } from "./types"
 
 interface CustomerCardProps {
@@ -129,8 +129,8 @@ export function CustomerCard({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-              <User className="h-5 w-5 text-green-600" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ export function CustomerCard({
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                <PawPrint className="h-3 w-3" />
+                <HorseIcon className="h-3 w-3" />
                 Hästar
                 {horses.length > 0 && (
                   <span className="text-gray-400">
@@ -239,7 +239,7 @@ export function CustomerCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onAddHorse(customer.id)}
-                className="h-7 text-xs text-green-600 hover:text-green-700"
+                className="h-7 text-xs text-primary hover:text-primary/80"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Lägg till häst
@@ -261,7 +261,7 @@ export function CustomerCard({
                       href={`/provider/horse-timeline/${horse.id}`}
                       className="flex items-center gap-2 hover:text-green-700 transition-colors min-w-0 flex-1"
                     >
-                      <PawPrint className="h-4 w-4 text-gray-400 shrink-0" />
+                      <HorseIcon className="h-4 w-4 text-gray-400 shrink-0" />
                       <div className="min-w-0">
                         <span className="font-medium">{horse.name}</span>
                         {horse.breed && (
@@ -316,7 +316,7 @@ export function CustomerCard({
                     setNewNoteContent("")
                     setEditingNote(null)
                   }}
-                  className="h-7 text-xs text-green-600 hover:text-green-700"
+                  className="h-7 text-xs text-primary hover:text-primary/80"
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Ny anteckning
