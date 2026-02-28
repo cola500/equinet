@@ -122,7 +122,7 @@ Läs filerna i `.claude/rules/` och kontrollera:
 
 1. **Saknade patterns** -- Upptäcktes nya patterns i denna session som borde finnas i en rule-fil?
 2. **Motsägelser** -- Motsäger något i rules-filerna det som faktiskt görs i kodbasen?
-3. **Nya gotchas** -- Stötte vi på en gotcha som inte finns dokumenterad i `docs/GOTCHAS.md` eller rules?
+3. **Nya gotchas** -- Stötte vi på en gotcha som inte finns dokumenterad i `docs/guides/gotchas.md` eller rules?
 
 Presentera med samma prefix: `[OK]`, `[SAKNAS]`, `[KONFLIKT]`
 
