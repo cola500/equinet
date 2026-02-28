@@ -2,7 +2,7 @@
 
 > Hur databasen fungerar idag och vad som behövs för production readiness.
 
-**Senast uppdaterad:** 2026-02-22
+**Senast uppdaterad:** 2026-02-28
 **Status:** Supabase PostgreSQL, single database för dev/prod
 
 ---
@@ -43,7 +43,7 @@
 ┌─────────────────┐
 │   Supabase      │
 │   PostgreSQL    │
-│   (24 tabeller) │
+│   (29 tabeller) │
 └─────────────────┘
 ```
 
@@ -104,7 +104,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### Databasschema
 
-**28 tabeller** med index optimerade för vanliga queries:
+**29 tabeller** med index optimerade för vanliga queries:
 
 | Tabell | Kritiska Index | Syfte |
 |--------|----------------|-------|
@@ -124,6 +124,7 @@ const prismaWithExtensions = basePrisma.$extends({
 | Follow | customerId+providerId (unique) | Kund följer leverantör |
 | NotificationDelivery | routeOrderId+customerId+channel (unique) | Dedup för ruttannons-notiser |
 | PushSubscription | endpoint (unique), userId | Web push-prenumerationer (stub) |
+| ProviderSubscription | providerId (unique), stripeCustomerId (unique), status | Stripe-prenumerationer för leverantörer |
 | (+ 12 andra) | ... | ... |
 
 **Viktiga patterns:**
@@ -134,7 +135,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### RLS Security Model
 
-**Status:** Aktiverat på alla 28 tabeller + `_prisma_migrations` sedan 2026-02-04
+**Status:** Aktiverat på alla 29 tabeller + `_prisma_migrations` sedan 2026-02-04
 
 ```sql
 -- Migration: 20260204120000_enable_rls
@@ -444,9 +445,13 @@ npm run db:backup
 npm run db:restore
 # -> interaktivt val av backup-fil + bekräftelse
 
-# Kolla om lokala migrationer matchar Supabase
+# Kolla om lokala migrationer matchar Supabase (namnbaserad)
 npm run db:drift-check
-# -> "Synkade (14/14)" eller "DRIFT DETECTED"
+# -> "Synkade (25/25)" eller "DRIFT DETECTED: <migrationsnamn>"
+
+# Fullstandig migrationsstatus (pending, drift, misslyckade)
+npm run migrate:status
+# -> Listar exakt vilka migrationer som saknas i respektive riktning
 ```
 
 **Vad backas upp:**
@@ -460,7 +465,7 @@ npm run db:drift-check
 **Säkerhetskontroller:**
 - `db:backup` skippar localhost (exit 2) -- lokala DB:n behöver inte backas upp
 - `db:restore` blockerar Supabase som target -- restore bara mot lokal databas
-- Drift-check blockerar deploy om Supabase har migrationer som inte finns lokalt
+- Drift-check blockerar deploy om Supabase har migrationer som inte finns lokalt (namnbaserad jämförelse, inte bara antal)
 
 ### Disaster Recovery Plan
 

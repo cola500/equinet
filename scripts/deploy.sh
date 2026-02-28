@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+source "$(dirname "$0")/_lib.sh"
+
 echo "=== Deploy Equinet ==="
 echo ""
 
@@ -36,30 +38,25 @@ bash scripts/drift-check.sh || {
 # 5. Migrationscheck + auto-backup om pending migrationer
 bash scripts/migrate-check.sh
 
-# Räkna pending migrationer (lokal vs Supabase)
-LOCAL_COUNT=$(ls -1d prisma/migrations/[0-9]* 2>/dev/null | wc -l | tr -d ' ')
+# Namnbaserad pending-beräkning
+PENDING_NAMES=""
+PENDING_COUNT=0
+DIRECT_URL=$(get_direct_url)
 
-DIRECT_URL=""
-if grep -q "^DIRECT_DATABASE_URL=" .env.local 2>/dev/null; then
-  DIRECT_URL=$(grep "^DIRECT_DATABASE_URL=" .env.local | head -1 | cut -d'"' -f2)
-elif grep -q "^DIRECT_DATABASE_URL=" .env 2>/dev/null; then
-  DIRECT_URL=$(grep "^DIRECT_DATABASE_URL=" .env | head -1 | cut -d'"' -f2)
-fi
-
-PENDING=0
-if [[ -n "$DIRECT_URL" ]] && [[ "$DIRECT_URL" != *"localhost"* ]] && [[ "$DIRECT_URL" != *"127.0.0.1"* ]]; then
+if [[ -n "$DIRECT_URL" ]] && ! is_localhost_url "$DIRECT_URL"; then
   if docker ps 2>/dev/null | grep -q equinet-db; then
-    REMOTE_COUNT=$(docker exec equinet-db psql "$DIRECT_URL" -t -A -c \
-      "SELECT COUNT(*) FROM _prisma_migrations" 2>/dev/null | tr -d ' ')
-    if [[ -n "$REMOTE_COUNT" ]] && [[ "$REMOTE_COUNT" =~ ^[0-9]+$ ]]; then
-      PENDING=$((LOCAL_COUNT - REMOTE_COUNT))
+    LOCAL_NAMES=$(get_local_migration_names)
+    REMOTE_NAMES=$(get_remote_migration_names "$DIRECT_URL")
+    if [[ -n "$REMOTE_NAMES" ]]; then
+      PENDING_NAMES=$(comm -23 <(echo "$LOCAL_NAMES") <(echo "$REMOTE_NAMES"))
+      PENDING_COUNT=$(echo "$PENDING_NAMES" | grep -c . || true)
     fi
   fi
 fi
 
-if [[ "$PENDING" -gt 0 ]]; then
+if [[ "$PENDING_COUNT" -gt 0 ]]; then
   echo ""
-  echo "  $PENDING nya migration(er) -- skapar backup innan deploy..."
+  echo "  $PENDING_COUNT nya migration(er) -- skapar backup innan deploy..."
   bash scripts/db-backup.sh --quiet && echo "  Backup klar." || echo "  Backup kunde inte skapas (fortsätter ändå)."
 fi
 
@@ -76,8 +73,11 @@ echo ""
 echo "Vercel deployer automatiskt. Verifiera:"
 echo "  1. Vercel Dashboard -- vänta på 'Ready'"
 echo "  2. /api/health -- ska returnera 200"
-if [[ "$PENDING" -gt 0 ]]; then
-  echo "  3. Kör: npm run migrate:supabase ($PENDING pending)"
+if [[ "$PENDING_COUNT" -gt 0 ]]; then
+  echo "  3. Kör: npm run migrate:supabase ($PENDING_COUNT pending)"
+  echo "$PENDING_NAMES" | while read -r name; do
+    echo "     - $name"
+  done
   echo "     En backup skapades automatiskt i backups/"
 else
   echo "  3. Inga nya migrationer"

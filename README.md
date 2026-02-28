@@ -96,7 +96,8 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | `npm run db:reset` | Återställ databas (raderar all data!) |
 | `npm run db:backup` | Backup av Supabase-data (kräver Docker) |
 | `npm run db:restore` | Återställ backup till lokal databas |
-| `npm run db:drift-check` | Jämför lokala migrationer med Supabase |
+| `npm run db:drift-check` | Jämför lokala migrationer med Supabase (namnbaserad) |
+| `npm run migrate:status` | Fullständig migrationsstatus (pending, drift, misslyckade) |
 | `npm test` | Unit/integration tester (watch mode) |
 | `npm run test:e2e` | E2E-tester med Playwright |
 | `npm run test:coverage` | Coverage report |
@@ -129,7 +130,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (2577+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (2783+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -149,7 +150,7 @@ equinet/
 │   │   ├── customer/         # Kundsidor
 │   │   └── provider/         # Leverantörssidor
 │   ├── components/           # React-komponenter (layout, provider, review, ui)
-│   ├── domain/               # Affärslogik (booking, due-for-service, group-booking, notification, payment, reminder)
+│   ├── domain/               # Affärslogik (booking, due-for-service, group-booking, notification, payment, reminder, subscription)
 │   ├── infrastructure/       # Repositories (Prisma-implementationer)
 │   ├── hooks/                # Custom hooks (useAuth, useNotifications)
 │   ├── lib/                  # Utilities (auth, email, prisma, rate-limit, validations)
@@ -173,7 +174,7 @@ src/
 
 ### Repository Pattern
 
-Kärndomäner (Booking, Provider, Service, CustomerReview, Horse) använder repository pattern:
+Kärndomäner (Booking, Provider, Service, CustomerReview, Horse, Subscription) använder repository pattern:
 
 - **IBookingRepository** - Interface för bokningsoperationer
 - **PrismaBookingRepository** - Prisma-implementation
@@ -185,7 +186,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**28 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
+**29 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
@@ -243,7 +244,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Bokningspåminnelser 24h före (med opt-out via unsubscribe-länk)
 
 ### Integrationer och säkerhet
-- Betalningsabstraktion (PaymentGateway)
+- Betalningsabstraktion (PaymentGateway) + Stripe-prenumerationer (SubscriptionGateway, feature flag-skyddad)
 - Bokföringsabstraktion (Fortnox)
 - Bilduppladdning (Supabase Storage)
 - Rate limiting, CSRF, XSS, SQL injection-skydd
@@ -255,7 +256,7 @@ Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade be
 
 ## Testning
 
-**2719+ tester** (325+ E2E desktop + mobil + 2394+ unit/integration) med **70% coverage**.
+**3108+ tester** (325+ E2E desktop + mobil + 2783+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -354,7 +355,7 @@ Se [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) för fullständig s
 ### Framtida Features
 - **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
 - **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
-- **Betalningsintegration** - Swish/Stripe via PaymentGateway
+- **Betalningsintegration** - Swish/Stripe via PaymentGateway (Stripe subscription-infrastruktur implementerad, väntar på konfiguration)
 
 Feature-backlog hanteras i Trello.
 

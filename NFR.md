@@ -81,7 +81,7 @@
 | HTTPS + Security headers | Klart | HSTS, CSP (SRI, no unsafe-inline), X-Frame-Options DENY, nosniff, COOP, CORP |
 | Lösenordskrav | Klart | Styrka-validering |
 | Audit logging | Klart | logger.security() för känsliga operationer |
-| Row Level Security | Klart | Deny-all på alla 22 tabeller (migration 20260204120000). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
+| Row Level Security | Klart | Deny-all på alla 29 tabeller (migration 20260204120000). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
 | GDPR data export | Klart | /api/export/my-data (JSON + CSV), GDPR Art. 20 |
 | Horse data export | Klart | /api/horses/[id]/export |
 | SRI (Subresource Integrity) | Klart | `integrity="sha256-..."` på alla script-taggar, tar bort `unsafe-inline` från CSP |
@@ -138,7 +138,7 @@
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 2577+ tester, 220 testfiler (2026-02-27) |
+| Unit/integration-tester | Klart | 2783+ tester, 241 testfiler (2026-02-28) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
@@ -220,7 +220,9 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 **Kategori:** Funktionell / Säkerhet
 **Effort:** XL (1v+)
 **Varför:** Ingen intäkt utan betalning. Säkerhetskritiskt -- PCI DSS-hantering.
+**Status:** Pågår -- Stripe subscription-infrastruktur implementerad (domain service, gateway, repository, API routes, webhook, UI). Väntar på Stripe-nycklar och aktivering via feature flag `stripe_subscriptions`.
 **Acceptance Criteria:**
+- [x] Stripe subscription-infrastruktur (checkout, portal, status, webhook)
 - [ ] Stripe- eller Swish-integration fungerar i produktion
 - [ ] Betalning genomförs vid bokning
 - [ ] Webhook hanterar betalningsstatus (success/failure/refund)
@@ -413,4 +415,4 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 ---
 
 **Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2026-02-27
+**Senast granskad**: 2026-02-28
