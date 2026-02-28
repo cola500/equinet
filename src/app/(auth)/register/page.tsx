@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
@@ -17,6 +17,14 @@ import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 
 export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
+  )
+}
+
+function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialRole = searchParams.get("role") === "provider" ? "provider" : "customer"
