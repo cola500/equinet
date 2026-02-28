@@ -65,6 +65,7 @@ model User {
   pushSubscriptions         PushSubscription[]
   notificationDeliveries    NotificationDelivery[]
   municipalityWatches       MunicipalityWatch[]
+  bugReports                BugReport[]
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
@@ -804,4 +805,44 @@ model MunicipalityWatch {
   @@unique([customerId, municipality, serviceTypeName])
   @@index([municipality, serviceTypeName])
   @@index([customerId])
+}
+
+enum BugReportStatus {
+  NEW
+  INVESTIGATING
+  PLANNED
+  FIXED
+  DISMISSED
+}
+
+enum BugReportPriority {
+  P0
+  P1
+  P2
+  P3
+}
+
+model BugReport {
+  id                String             @id @default(uuid())
+  title             String
+  description       String
+  reproductionSteps String?
+  pageUrl           String
+  userAgent         String?
+  platform          String?
+  userRole          String
+  status            BugReportStatus    @default(NEW)
+  priority          BugReportPriority  @default(P2)
+  internalNote      String?
+
+  userId            String?
+  user              User?              @relation(fields: [userId], references: [id])
+
+  updatedBy         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
 }
