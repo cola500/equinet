@@ -40,53 +40,36 @@ Redan implementerat:
 - [x] Användarvillkor-sida (`/anvandarvillkor`)
 - [x] Länk i Footer + CookieNotice
 
-### 3. Radera konto (GDPR Art. 17)
+### ~~3. Radera konto (GDPR Art. 17)~~ KLART
 
-**Uppskattning:** 3-8h
-**Varför:** Rätten att bli glömd. Juridiskt krav.
+Implementerat 2026-02-28:
+- [x] API: `DELETE /api/account` -- anonymiserar användardata, raderar personliga poster
+- [x] Bevara bokningshistorik för leverantörsstatistik (anonymiserad kunddata)
+- [x] E-postbekräftelse innan radering (skickas före anonymisering)
+- [x] UI: Knapp i profil (kund + leverantör), lösenord + "RADERA"-bekräftelse
+- [x] Admin-konton blockeras från radering
+- [x] Säkerhetsloggning vid radering
 
-- [ ] API: `DELETE /api/account` -- anonymiserar/raderar användardata
-- [ ] Bevara bokningshistorik för leverantörsstatistik (anonymisera kunddata)
-- [ ] Grace period (14 dagar innan permanent radering?)
-- [ ] E-postbekräftelse innan radering
-- [ ] UI: Knapp i profilinställningar
-
-### 4. Separata databas-miljöer
-
-**Uppskattning:** 1-3 dagar
-**Varför:** Dev och prod delar idag samma Supabase-instans. En felaktig query kan radera all kunddata.
-
-- [ ] Skapa 3 Supabase-projekt: `equinet-dev`, `equinet-staging`, `equinet-prod`
-- [ ] Miljöspecifika `DATABASE_URL` i Vercel (per environment)
-- [ ] Migrationsstrategi: applicera migrationer per miljö
-- [ ] Verifiera att `.env.local` pekar på dev, inte prod
-- [ ] Seed-data för dev/staging
-
-### 5. Uptime-övervakning (ops-konfiguration)
-
-**Uppskattning:** 30 min
-**Varför:** Health endpoint finns (`/api/health` med DB-check + tester). Kvarstår att konfigurera extern monitor.
+### ~~4. Uptime-övervakning (ops-konfiguration)~~ KLART
 
 - [x] Health endpoint med DB-connectivity check (`src/app/api/health/`)
 - [x] Lightweight HEAD-probe för offline-detektion
-- [ ] Konfigurera UptimeRobot (gratis: 50 monitors) mot `GET /api/health`
-- [ ] E-postvarning vid >3 min nertid
+- [x] Dokumenterat UptimeRobot-setup i `docs/PRODUCTION-DEPLOYMENT.md` steg 8.1
+- [x] E-postvarning vid >3 missade kontroller (15 min nertid)
 
-### 6. Sentry-alertregler
+### ~~5. Sentry-alertregler~~ KLART
 
-**Uppskattning:** 1-2h
-**Varför:** Sentry samlar fel men notifierar ingen.
-
-- [ ] Alert: error rate >5% under 5 min
-- [ ] Alert: nya unhandled exceptions
-- [ ] Notifiering via e-post (+ Slack om det finns)
-- [ ] Verifiera att source maps laddas upp vid deploy
+Dokumenterat i `docs/PRODUCTION-DEPLOYMENT.md` steg 8.2:
+- [x] Alert: hög felfrekvens (>50 events per 5 min)
+- [x] Alert: nya unhandled exceptions
+- [x] Notifiering via e-post
+- [x] Source maps: env-variabler dokumenterade (SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT)
 
 ---
 
 ## P1 -- Bör fixas inom 2 veckor efter lansering
 
-### 7. Lasttest-baseline mot prod build
+### 6. Lasttest-baseline mot prod build
 
 **Uppskattning:** 1-3 dagar
 
@@ -95,7 +78,7 @@ Redan implementerat:
 - [ ] Kör mot Vercel staging med `LOAD_TEST_BASE_URL`
 - [ ] Dokumentera i `docs/LOAD-TEST-BASELINE.md`
 
-### 8. Automatisk beroendeuppdatering
+### 7. Automatisk beroendeuppdatering
 
 **Uppskattning:** 1-2h
 
@@ -103,7 +86,7 @@ Redan implementerat:
 - [ ] Automatisk PR för säkerhetsuppdateringar
 - [ ] Gruppera minor/patch-uppdateringar
 
-### 9. Cron-job-övervakning
+### 8. Cron-job-övervakning
 
 **Uppskattning:** 3-8h
 
@@ -111,7 +94,7 @@ Redan implementerat:
 - [ ] Alert vid misslyckad körning (send-reminders, booking-reminders)
 - [ ] Healthcheck-endpoint per cron (`/api/cron/status`)
 
-### 10. Test-coverage till 70%
+### 9. Test-coverage till 70%
 
 **Uppskattning:** 3-8h
 **Nuläge:** 69.26% (strax under tröskeln)
@@ -126,6 +109,7 @@ Redan implementerat:
 
 | Vad | Uppskattning | Kommentar |
 |-----|-------------|-----------|
+| Staging-miljö (Supabase) | 1-2 dagar | Dev (Docker) + prod (Supabase) redan separerade. Kvarstår: dedikerat staging-projekt + verifiera att `.env.local` inte pekar på prod |
 | 2FA för leverantörskonton | 1-3 dagar | Högvärdeskonton med kunddata |
 | Automatiserad tillgänglighetstest (axe-core) | 1-2h | Integration i CI |
 | Core Web Vitals-dashboard | 1-2h | LCP/FID/CLS-spårning |
@@ -150,10 +134,10 @@ Redan implementerat:
 ## Uppskattad tidslinje
 
 ```
-Vecka 1:  P0 #2-6 (integritetspolicy, GDPR, miljöseparation, övervakning)
+Vecka 1:  P0 #2-5 (integritetspolicy, GDPR, övervakning, Sentry)
 Vecka 2-3: P0 #1 (betalintegration)
 Vecka 3-4: P1 (lasttest, Dependabot, cron-övervakning, coverage)
-Vecka 5+:  P2 (2FA, tillgänglighet, dashboards)
+Vecka 5+:  P2 (staging-miljö, 2FA, tillgänglighet, dashboards)
 ```
 
 **Realistisk lanseringsdatum:** ~3 veckor från nu (beroende på betalintegration).

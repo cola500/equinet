@@ -21,6 +21,7 @@ import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard
 import { RescheduleSettingsCard } from "@/components/provider/profile/RescheduleSettingsCard"
 import { RecurringBookingsCard } from "@/components/provider/profile/RecurringBookingsCard"
 import type { ProviderProfile } from "@/components/provider/profile/types"
+import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
 
 export default function ProviderProfilePage() {
   const { isLoading, isProvider, providerId } = useAuth()
@@ -28,6 +29,7 @@ export default function ProviderProfilePage() {
   const profile = swrProfile as ProviderProfile | null
   const [activeTab, setActiveTab] = useState<"profile" | "availability" | "settings">("profile")
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const [personalData, setPersonalData] = useState({
     firstName: "",
@@ -419,6 +421,29 @@ export default function ProviderProfilePage() {
           guardMutation={guardMutation}
         />
       )}
+
+      {/* Delete Account */}
+      <Card className="border-red-200 mt-6">
+        <CardHeader>
+          <CardTitle className="text-red-600">Radera konto</CardTitle>
+          <CardDescription>
+            Permanent radering av ditt konto och all personlig data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            Radera mitt konto
+          </Button>
+        </CardContent>
+      </Card>
+
+      <DeleteAccountDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+      />
 
         </>
       )}

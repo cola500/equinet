@@ -99,7 +99,7 @@ class EmailService {
 export const emailService = new EmailService()
 
 // --- Email Notifications ---
-import { emailVerificationEmail, passwordResetEmail } from "./templates"
+import { emailVerificationEmail, passwordResetEmail, accountDeletionConfirmationEmail } from "./templates"
 
 /**
  * Send email verification notification
@@ -149,6 +149,26 @@ export async function sendPasswordResetNotification(
   return await emailService.send({
     to: email,
     subject: "Återställ ditt lösenord - Equinet",
+    html,
+    text,
+  })
+}
+
+/**
+ * Send account deletion confirmation notification
+ *
+ * @param email - Recipient email (original, before anonymization)
+ * @param firstName - User's first name
+ */
+export async function sendAccountDeletionNotification(
+  email: string,
+  firstName: string
+) {
+  const { html, text } = accountDeletionConfirmationEmail({ firstName })
+
+  return await emailService.send({
+    to: email,
+    subject: "Ditt konto har raderats - Equinet",
     html,
     text,
   })

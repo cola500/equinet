@@ -14,6 +14,7 @@ import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { MunicipalityWatchCard } from "@/components/municipality-watch/MunicipalityWatchCard"
+import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
 
 interface Profile {
   id: string
@@ -46,6 +47,7 @@ export default function CustomerProfilePage() {
     longitude: null as number | null,
   })
   const [isGeocoding, setIsGeocoding] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isCustomer) {
@@ -420,6 +422,31 @@ export default function CustomerProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Account */}
+        <div className="max-w-2xl mt-6">
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-600">Radera konto</CardTitle>
+              <CardDescription>
+                Permanent radering av ditt konto och all personlig data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Radera mitt konto
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <DeleteAccountDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+        />
     </CustomerLayout>
   )
 }
