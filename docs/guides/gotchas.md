@@ -32,6 +32,7 @@
 26. [Lokal Offline/PWA-testning](#26-lokal-offlinepwa-testning)
 27. [Offline Sync Race Conditions](#27-offline-sync-race-conditions)
 28. [Radix Dialog onOpenChange vid Programmatisk Stängning](#28-radix-dialog-onopenchange-vid-programmatisk-stängning)
+29. [useSearchParams() Kräver Suspense-boundary](#29-usesearchparams-kräver-suspense-boundary)
 
 ---
 
@@ -1200,6 +1201,56 @@ useEffect(() => {
 **Gäller även:** vaul Drawer (`onOpenChange` beter sig likadant).
 
 **Filer:** `src/components/booking/DesktopBookingDialog.tsx`
+
+---
+
+## 29. useSearchParams() Kräver Suspense-boundary
+
+> **Learning: 2026-02-28** | **Severity: HIGH**
+
+**Problem:** `useSearchParams()` i en page-komponent kraschar vid production build utan `<Suspense>`-boundary.
+
+**Symptom:** Dev-servern visar bara en konsolvarning, men `next build` kraschar:
+```
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/register"
+Error occurred prerendering page "/register"
+Export encountered an error on /(auth)/register/page: /register, exiting the build.
+```
+
+```tsx
+// ❌ FEL - kraschar vid prerendering
+export default function RegisterPage() {
+  const searchParams = useSearchParams()
+  // ...
+}
+
+// ✅ RÄTT - wrappa i Suspense
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
+  )
+}
+
+function RegisterForm() {
+  const searchParams = useSearchParams()
+  // ...
+}
+```
+
+**Varför?**
+- Next.js App Router pre-renderar statiska sidor vid build
+- `useSearchParams()` kan inte köras server-side (sökparametrar finns inte vid byggtid)
+- `<Suspense>` ger Next.js en fallback att rendera istället vid prerendering
+- Dev-servern renderar alltid dynamiskt, så problemet syns inte lokalt
+
+**Pattern - Kör alltid `npm run build` lokalt vid ändringar i sidor som använder:**
+- `useSearchParams()`
+- `usePathname()` (i vissa edge cases)
+- Andra client-side navigation-hooks i page-komponenter
+
+**Impact:** Vercel preview/production build failar, men dev fungerar felfritt.
 
 ---
 

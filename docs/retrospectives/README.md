@@ -15,6 +15,7 @@
 | [2026-02-w3-voice-insights.md](2026-02-w3-voice-insights.md) | Feb 13-16 | 8 | Rostloggning, kundinsikter, Redis-flaggor |
 | [2026-02-w4-booking-offline.md](2026-02-w4-booking-offline.md) | Feb 17-21 | 14 | Bokning, offline PWA, ruttannonser, sync |
 | [2026-02-w4-ux-follow.md](2026-02-w4-ux-follow.md) | Feb 22-25 | 7 | UX, folj leverantor, per-service intervall |
-| [2026-02-w5-hardening.md](2026-02-w5-hardening.md) | Feb 26-28 | 3 | Lint cleanup, pentest, migrationssp&aring;rning |
+| [2026-02-w5-hardening.md](2026-02-w5-hardening.md) | Feb 26-28 | 3 | Lint cleanup, pentest, migrationsspårning |
+| [2026-02-28-graphical-profile.md](2026-02-28-graphical-profile.md) | Feb 28 | 1 | Grafisk profil, landningssida, Suspense-fix |
 
-**Totalt:** 67 sessioner, ~2800 tester, 0 regressioner.
+**Totalt:** 68 sessioner, ~2784 tester, 0 regressioner.
