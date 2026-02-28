@@ -43,7 +43,11 @@
     "db:restore": "bash scripts/db-restore.sh",
     "db:drift-check": "bash scripts/drift-check.sh",
     "deploy": "bash scripts/deploy.sh",
-    "migrate:supabase": "bash scripts/migrate-supabase.sh"
+    "migrate:supabase": "bash scripts/migrate-supabase.sh",
+    "loadtest": "k6 run load-tests/scenarios/providers-listing.js",
+    "loadtest:dashboard": "k6 run load-tests/scenarios/provider-dashboard.js",
+    "loadtest:insights": "k6 run load-tests/scenarios/provider-insights.js",
+    "loadtest:all": "k6 run load-tests/scenarios/providers-listing.js && k6 run load-tests/scenarios/provider-dashboard.js && k6 run load-tests/scenarios/provider-insights.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",

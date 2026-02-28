@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { logger } from "@/lib/logger"
 
-// Enrich providers with aggregated review data
+// Enrich providers with aggregated review data (single GROUP BY query)
 async function enrichWithReviewStats<T extends { id: string }>(
   providers: T[]
 ): Promise<(T & { reviewStats: { averageRating: number | null; totalCount: number } })[]> {
@@ -20,85 +20,64 @@ async function enrichWithReviewStats<T extends { id: string }>(
     return providers.map((p) => ({ ...p, reviewStats: { ...defaultStats } }))
   }
 
-  // Fetch all reviews for these providers (only rating + providerId)
-  const reviews = await prisma.review.findMany({
+  // Database does the aggregation -- returns 1 row per provider instead of all reviews
+  const stats = await prisma.review.groupBy({
+    by: ["providerId"],
     where: { providerId: { in: providerIds } },
-    select: { providerId: true, rating: true },
+    _avg: { rating: true },
+    _count: { _all: true },
   })
 
-  // Aggregate manually (avoids complex groupBy TS overloads)
-  const statsMap = new Map<string, { sum: number; count: number }>()
-  for (const review of reviews) {
-    const existing = statsMap.get(review.providerId)
-    if (existing) {
-      existing.sum += review.rating
-      existing.count += 1
-    } else {
-      statsMap.set(review.providerId, { sum: review.rating, count: 1 })
-    }
-  }
+  const statsMap = new Map(
+    stats.map((s) => [s.providerId, { averageRating: s._avg.rating, totalCount: s._count._all }])
+  )
 
-  return providers.map((provider) => {
-    const stats = statsMap.get(provider.id)
-    return {
-      ...provider,
-      reviewStats: stats
-        ? { averageRating: stats.sum / stats.count, totalCount: stats.count }
-        : { ...defaultStats },
-    }
-  })
+  return providers.map((provider) => ({
+    ...provider,
+    reviewStats: statsMap.get(provider.id) ?? { ...defaultStats },
+  }))
 }
 
-// Enrich providers with their next planned visit
+// Enrich providers with their next planned visit (DISTINCT ON -- 1 row per provider)
 async function enrichWithNextVisit<T extends { id: string }>(
   providers: T[]
 ): Promise<(T & { nextVisit: { date: string; location: string } | null })[]> {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  // Batch fetch all next visits in one query using raw SQL for efficiency
   const providerIds = providers.map((p) => p.id)
 
   if (providerIds.length === 0) {
     return providers.map((p) => ({ ...p, nextVisit: null }))
   }
 
-  // Use Prisma's grouped query to get the next visit for each provider
-  const nextVisits = await prisma.availabilityException.findMany({
-    where: {
-      providerId: { in: providerIds },
-      date: { gte: today },
-      location: { not: null },
-      isClosed: false,
-    },
-    orderBy: { date: "asc" },
-    select: {
-      providerId: true,
-      date: true,
-      location: true,
-    },
-  })
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-  // Group by provider and keep only the first (earliest) visit
-  const visitsByProvider = new Map<string, { date: Date; location: string }>()
-  for (const visit of nextVisits) {
-    if (!visitsByProvider.has(visit.providerId) && visit.location) {
-      visitsByProvider.set(visit.providerId, {
-        date: visit.date,
-        location: visit.location,
-      })
-    }
-  }
+  // DISTINCT ON returns exactly 1 row per provider (the earliest future visit)
+  // instead of fetching all exceptions and filtering in JS
+  const nextVisits = await prisma.$queryRawUnsafe<
+    { providerId: string; date: Date; location: string }[]
+  >(
+    `SELECT DISTINCT ON ("providerId")
+       "providerId", "date", "location"
+     FROM "AvailabilityException"
+     WHERE "providerId" = ANY($1::text[])
+       AND "date" >= $2
+       AND "location" IS NOT NULL
+       AND "isClosed" = false
+     ORDER BY "providerId", "date" ASC`,
+    providerIds,
+    today
+  )
+
+  const visitsByProvider = new Map(
+    nextVisits.map((v) => [v.providerId, { date: v.date, location: v.location }])
+  )
 
   return providers.map((provider) => {
     const visit = visitsByProvider.get(provider.id)
     return {
       ...provider,
       nextVisit: visit
-        ? {
-            date: format(visit.date, "yyyy-MM-dd"),
-            location: visit.location,
-          }
+        ? { date: format(visit.date, "yyyy-MM-dd"), location: visit.location }
         : null,
     }
   })

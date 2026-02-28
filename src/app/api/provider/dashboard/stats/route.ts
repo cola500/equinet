@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { getCachedDashboardStats, setCachedDashboardStats } from "@/lib/cache/provider-stats-cache"
 import {
   startOfWeek,
   subWeeks,
@@ -25,7 +26,13 @@ export async function GET(request: NextRequest) {
     }
 
     const ip = getClientIP(request)
-    await rateLimiters.api(ip)
+    const isAllowed = await rateLimiters.api(ip)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar" },
+        { status: 429 }
+      )
+    }
 
     const provider = await prisma.provider.findFirst({
       where: { userId: session.user.id },
@@ -34,6 +41,12 @@ export async function GET(request: NextRequest) {
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
+    }
+
+    // Check cache
+    const cached = await getCachedDashboardStats(provider.id)
+    if (cached) {
+      return NextResponse.json(cached)
     }
 
     const now = new Date()
@@ -92,7 +105,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ bookingTrend, revenueTrend })
+    const responseData = { bookingTrend, revenueTrend }
+
+    // Store in cache (fire-and-forget)
+    setCachedDashboardStats(provider.id, responseData).catch(() => {})
+
+    return NextResponse.json(responseData)
   } catch (error) {
     logger.error("Error fetching dashboard stats", error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json({ error: "Internt serverfel" }, { status: 500 })

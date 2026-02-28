@@ -38,6 +38,11 @@ Drop-in-replacement: byt import + andra `onChange` fran `(e) => setValue(e.targe
 
 `fixed bottom-20 right-4 md:hidden h-14 w-14 rounded-full shadow-lg bg-green-600 z-40`
 
+## Data Fetching
+
+- **SWR för client-side polling**: Ersätt manuell useState/setInterval med `useSWR(key, fetcher, { refreshInterval })` för deduplication och caching.
+- **Polling-providers**: Använd `setState(fn)` med shallow-compare -- returnera samma referens vid identiska värden så React skippar re-render.
+
 ## Design System
 
 - Primary: `green-600`, Background: `gray-50`, Text: `gray-900`/`gray-600`

@@ -137,7 +137,7 @@ src/
 
 ## Säkerhet
 
-**Implementerat:** bcrypt, HTTP-only cookies, CSRF (NextAuth + Origin-validering), Prisma (SQL injection), React (XSS), Zod, session + ownership checks, SRI (script integrity), error sanitering, rate limiting (Upstash Redis).
+**Implementerat:** bcrypt, HTTP-only cookies, CSRF (NextAuth + Origin-validering), Prisma (SQL injection), React (XSS), Zod, session + ownership checks, error sanitering, rate limiting (Upstash Redis).
 
 > Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
@@ -157,50 +157,36 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 ## Key Learnings (tvärgående)
 
-> Filspecifika learnings finns i `.claude/rules/`.
+> Domänspecifika learnings finns i `.claude/rules/` (API, test, E2E, Prisma, UI).
 
-- **TypeScript heap OOM**: Använd `npm run typecheck` (inte `npx tsc --noEmit`).
-- **`ignoreBuildErrors: true` i next.config.ts**: MEDVETEN -- ta INTE bort.
-- **Schema-först**: Prisma-schema -> API -> UI ger typsäkerhet hela vägen.
-- **Factory pattern vid 3+ dependencies**: Obligatoriskt för DI i routes.
+### Serverless & Deploy
+
 - **Serverless-begränsningar**: In-memory state, filesystem writes, long-running processes fungerar INTE.
-- **Vercel region MÅSTE matcha Supabase**: `regions: ["fra1"]` i `vercel.json` for `eu-central-2`.
-- **`connection_limit=1` i serverless**: Varje Vercel-instans hanterar en request.
+- **Vercel region MÅSTE matcha Supabase**: `regions: ["fra1"]` i `vercel.json` för `eu-central-2`.
 - **Commit innan deploy**: Deploya ALDRIG till Vercel utan att committa först.
 - **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
-- **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta. Lägg till redigering vid behov.
-- **AI Service-mönster**: Kopiera `VoiceInterpretationService`-mönstret vid nya AI-features.
-- **Polling-providers**: Anvand `setState(fn)` med shallow-compare -- returnera samma referens vid identiska vardet sa React skippar re-render.
-- **SWR for client-side polling**: Ersatt manuell useState/setInterval med `useSWR(key, fetcher, { refreshInterval })` for deduplication och caching.
-- **E2E cookie-consent dismissal**: `addInitScript(() => localStorage.setItem(...))` i `e2e/fixtures.ts` -- global fix istallet for per-test.
-- **E2E strict selectors**: `getByText('X', { exact: true })` nar delstrangar matchar (t.ex. "Bokningar" vs "Inga bokningar"). Scopa till `page.locator('table')` for att undvika dolda filter-options.
-- **E2E rate-limit reset**: ALLTID `page.request.post('/api/test/reset-rate-limit').catch(() => {})` i `beforeEach` -- saknad reset ar vanligaste orsaken till flaky E2E.
-- **CustomerLayout for alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`). Galler aven `/announcements/`-sidor.
-- **Offline-aware SWR**: Byt global fetcher i `SWRProvider` villkorligt (feature flag). Alla `useSWR`-hooks arver offline-stod automatiskt. Monstret: network-first -> write-through IndexedDB -> catch -> read cache -> throw.
-- **SW tsconfig-isolation**: `src/sw.ts` MASTE exkluderas fran BADA `tsconfig.json` OCH `tsconfig.typecheck.json` (barnets `exclude` overridar foralders).
-- **Error boundaries for offline**: `error.tsx` med `useOnlineStatus()` -- offline visar WifiOff-UI, online visar generisk error-UI. Importera ALDRIG layout-komponenter i error.tsx (kraschar error boundary:n ar vi tillbaka pa ruta ett).
-- **useSession vs navigator.onLine race condition**: `useSession()` rapporterar `"unauthenticated"` ~2s FORE `navigator.onLine` andras. Utfor ALDRIG destruktiva operationer (cache-rensning) baserat pa "unauthenticated + online" -- det kan betyda "natverk nere". Lat sessionStorage rensas naturligt vid flik-stangning.
-- **Offline-navigeringsskydd**: Blockera `Link`-klick med `e.preventDefault()` + `toast.error()` nar offline och ej pa aktiv sida. Forhindrar RSC-request som ger cache miss -> `/~offline` -> krasch. Pattern i `BottomTabBar.tsx` och `ProviderNav.tsx`.
-- **router.replace() triggar RSC-request**: `router.replace()`/`router.push()` i App Router ar INTE lokala URL-uppdateringar -- de triggar natverksanrop. Guard med `if (isOnline)` nar URL-uppdateringen bara ar for deep-linking (inte for att ladda nytt innehall). Pattern i `calendar/page.tsx`.
-- **Sequence over concurrency vid reconnect**: Nar tva system reagerar pa samma `online`-event (SWR revalidation + sync engine), inaktivera det automatiska (`revalidateOnReconnect: false`) och lat sync trigga SWR manuellt via `globalMutate()` EFTER slutford sync. Forhindrar bade request-burst (rate limiting) och context destruction (React ommountering).
-- **Exponentiell backoff for sync-motorn**: `getRetryDelay(attempt, response)` -- 1s/2s/4s default, respekterar `Retry-After`-header. 429 ar aterhamtningsbart (revert till "pending"), 5xx ar permanent ("failed" efter max retries).
-- **Modul-niva guard for async hooks**: `let syncInProgress = false` pa modul-niva istallet for `useRef` -- overlever komponent-ommountering (Suspense, error boundaries). Exportera `_resetSyncGuard()` for tester.
-- **E2E IndexedDB-lasningar: stang anslutningen**: `db.close()` efter `indexedDB.open()` i E2E-tester. Oppen ra-anslutning kan interferera med Dexie:s transaktioner. Krav `mutations.length > 0` i pollning for att undvika tomma snapshots under Dexie-skrivningar.
-- **iOS Safari falska online-events**: Lita ALDRIG blint pa browserns `online`-event nar `fetchFailed` ar true. Proba med HEAD-request forst, aterstall bara om proben lyckas. Pattern i `useOnlineStatus.ts` `handleOnline`.
-- **Fire-and-forget notifier med DI**: Injicera alla beroenden (repo, emailService, notificationService) via constructor, kör `.catch(logger.error)` i API-routen. Testbart med mocks, robust i prod. Pattern i `RouteAnnouncementNotifier.ts`.
-- **NotificationDelivery dedup-tabell**: Unique constraint `[routeOrderId, customerId, channel]` förhindrar dubbelnotiser vid retries/race conditions. Kontrollera `exists()` före `create()`.
-- **E2E feature flag env-var**: Feature-flag-gated E2E-tester kräver `FEATURE_X=true` i `.env` (lokal) + `playwright.config.ts` webServer.env (CI). Admin API-toggle räcker INTE -- dev mode module-isolation gör att inte alla API-routes ser flaggan. Env-variabler har högsta prioritet och delas av alla instanser.
-- **Migration med constraint-ändring + datamigrering**: Ordning: (1) Add nullable column + FK, (2) DROP old constraint, (3) Data migration DO-block, (4) SET NOT NULL + CREATE new constraint. Droppa ALLTID gamla constrainten FÖRE datamigreringssteget -- annars failar INSERT på duplicate key.
-- **Per-service override map**: När override-tabell utvidgas med `serviceId`, byt Map-nyckel från `horseId` till `` `${horseId}:${serviceId}` `` i ALLA konsumenter (DueForServiceService, DueForServiceLookup, provider due-for-service route, ReminderService).
-- **Kanonisk distance-modul**: `src/lib/geo/distance.ts` ar enda kallan for Haversine-berakningar. Importera `calculateDistance` och `filterByDistance` darifran -- duplicera ALDRIG i API routes.
-- **Error mapper per doman**: `domain/X/mapXErrorToStatus.ts` mappar domanfel till HTTP-statuskoder. Importeras av alla routes i domanen. Befintliga: horse, auth, group-booking, review, customer-review.
-- **Client-safe modulseparation**: Nar en server-only modul (med Prisma) exporterar metadata som behövs i `"use client"`-komponenter, extrahera till separat fil utan server-beroenden. Mönster: `feature-flag-definitions.ts` (klient-safe) + `feature-flags.ts` (server-only, re-exporterar). Next.js bundler respekterar inte runtime-gränsar -- allt importerbart KOMMER att bundlas.
-- **Radix Dialog `onOpenChange` triggar INTE programmatiskt**: Callback anropas bara vid användarinteraktion (X-knapp/overlay), inte vid `open`-prop-ändring. Återställ lokal state med `useEffect(() => { if (isOpen) reset() }, [isOpen])`. Gäller även vaul Drawer.
-- **Context > splitta hook vid prop-drilling**: När en hook returnerar 10+ värden som passas identiskt till 2+ komponenter, wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken -- problemet är konsumenterna, inte producenten.
-- **`as never` i testmockar**: Ersätt `as any` med `as never` i alla mock-returvärden. `never` är assignerbar till alla typer utan att trigga `no-explicit-any`. Universellt mönster.
-- **SessionUser-typ**: `(session.user as SessionUser)` från `@/types/auth` ersätter `session.user as any` i API routes. Behövs pga NextAuth-typinferens.
-- **Lint: 0 varningar (2026-02-26)**: Alla `no-explicit-any`, `no-unused-vars`, `exhaustive-deps`, `no-img-element` är lösta. Håll 0 -- introducera INTE nya `any`.
-- **SRI för CSP-hardening**: `experimental.sri` i `next.config.ts` genererar `integrity="sha256-..."` på alla `<script>` vid build. Tar bort `unsafe-inline` från prod `script-src`. Webpack-only (OK -- prod bygger med webpack). `style-src 'unsafe-inline'` kvarstår (Tailwind + dynamiska `style={}`).
+
+### Offline & Sync
+
+- **Offline-aware SWR**: Byt global fetcher i `SWRProvider` villkorligt (feature flag). Mönstret: network-first -> write-through IndexedDB -> catch -> read cache -> throw.
+- **SW tsconfig-isolation**: `src/sw.ts` MÅSTE exkluderas från BÅDA `tsconfig.json` OCH `tsconfig.typecheck.json`.
+- **Error boundaries för offline**: `error.tsx` med `useOnlineStatus()`. Importera ALDRIG layout-komponenter i error.tsx.
+- **useSession vs navigator.onLine race condition**: `useSession()` rapporterar `"unauthenticated"` ~2s FÖRE `navigator.onLine` ändras. Utför ALDRIG destruktiva operationer baserat på "unauthenticated + online".
+- **Offline-navigeringsskydd**: Blockera `Link`-klick med `e.preventDefault()` + `toast.error()` när offline. Förhindrar RSC-request som ger cache miss -> `/~offline` -> krasch.
+- **router.replace() triggar RSC-request**: Guard med `if (isOnline)` när URL-uppdateringen bara är för deep-linking.
+- **Sequence over concurrency vid reconnect**: `revalidateOnReconnect: false` i SWRProvider, sync först -> `globalMutate()` sedan.
+- **Exponentiell backoff för sync-motorn**: `getRetryDelay(attempt, response)`. 429 är återhämtningsbart, 5xx är permanent efter max retries.
+- **Modul-nivå guard för async hooks**: `let syncInProgress = false` på modul-nivå istället för `useRef` -- överlever komponent-ommountering.
+- **iOS Safari falska online-events**: Proba med HEAD-request först, återställ bara om proben lyckas. Pattern i `useOnlineStatus.ts`.
+
+### Domain Patterns
+
+- **Fire-and-forget notifier med DI**: Injicera alla beroenden via constructor, kör `.catch(logger.error)` i API-routen. Pattern i `RouteAnnouncementNotifier.ts`.
+- **NotificationDelivery dedup-tabell**: Unique constraint `[routeOrderId, customerId, channel]` förhindrar dubbelnotiser. Kontrollera `exists()` före `create()`.
+- **Per-service override map**: Byt Map-nyckel från `horseId` till `` `${horseId}:${serviceId}` `` i ALLA konsumenter vid serviceId-utvidgning.
+- **Kanonisk distance-modul**: `src/lib/geo/distance.ts` är enda källan för Haversine-beräkningar. Duplicera ALDRIG i API routes.
+- **CustomerLayout för alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`).
+- **Context > splitta hook vid prop-drilling**: Wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken.
 
 ---
 
@@ -225,12 +211,9 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-## Aktuell Sprint: Sprint 2
+## Sprintar
 
-**Theme:** E2E-stabilitet, UX-förbättringar, dokumentation
-**Goal:** 100% E2E pass rate + Ruttplanering/annonsering UX + Dokumentationssynk
-
-> Sprint detaljer: [docs/sprints/](docs/sprints/)
+> Se [docs/sprints/](docs/sprints/) för aktuell och tidigare sprintar.
 
 ---
 

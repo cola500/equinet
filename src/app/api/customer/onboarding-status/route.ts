@@ -16,7 +16,13 @@ export async function GET(request: NextRequest) {
     }
 
     const ip = getClientIP(request)
-    await rateLimiters.api(ip)
+    const isAllowed = await rateLimiters.api(ip)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar" },
+        { status: 429 }
+      )
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },

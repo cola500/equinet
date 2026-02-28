@@ -28,10 +28,12 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { auth } from "@/lib/auth-server"
+import { rateLimiters } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 import { GET } from "./route"
 
 const mockAuth = vi.mocked(auth)
+const mockRateLimiters = vi.mocked(rateLimiters)
 const mockFindUnique = vi.mocked(prisma.user.findUnique)
 
 function createRequest() {
@@ -51,6 +53,14 @@ describe("GET /api/customer/onboarding-status", () => {
 
     const response = await GET(createRequest())
     expect(response.status).toBe(401)
+  })
+
+  it("returns 429 when rate limited", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockRateLimiters.api.mockResolvedValueOnce(false)
+
+    const response = await GET(createRequest())
+    expect(response.status).toBe(429)
   })
 
   it("should return 404 when user not found", async () => {

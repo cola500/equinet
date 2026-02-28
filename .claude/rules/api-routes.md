@@ -71,6 +71,14 @@ src/app/api/[feature]/
 - [ ] `$transaction` kraver `@ts-expect-error` (kanda TS-inferensproblem)
 - [ ] Admin-routes: `requireAdmin()` fran `src/lib/admin-auth.ts` (kastar Response 401/403)
 
+## Patterns
+
+- **Factory pattern vid 3+ dependencies**: Obligatoriskt för DI i routes. Skapar service med alla beroenden injicerade.
+- **AI Service-mönster**: Kopiera `VoiceInterpretationService`-mönstret vid nya AI-features.
+- **Error mapper per domän**: `domain/X/mapXErrorToStatus.ts` mappar domänfel till HTTP-statuskoder. Importeras av alla routes i domänen. Befintliga: horse, auth, group-booking, review, customer-review.
+- **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta. Lägg till redigering vid behov.
+- **SessionUser-typ**: `(session.user as SessionUser)` från `@/types/auth` ersätter `session.user as any` i API routes. Behövs pga NextAuth-typinferens.
+
 ## AI-route-specifikt
 
 - LLM-output MASTE Zod-valideras: `safeParse()` + `.default()` + `.transform()`
