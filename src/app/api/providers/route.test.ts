@@ -11,11 +11,9 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       count: vi.fn(),
     },
-    availabilityException: {
-      findMany: vi.fn(),
-    },
+    $queryRawUnsafe: vi.fn(),
     review: {
-      findMany: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }))
@@ -23,10 +21,10 @@ vi.mock('@/lib/prisma', () => ({
 describe('GET /api/providers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Default: no upcoming visits
-    vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
-    // Default: no reviews
-    vi.mocked(prisma.review.findMany).mockResolvedValue([])
+    // Default: no upcoming visits (raw SQL returns empty array)
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([])
+    // Default: no reviews (groupBy returns empty array)
+    vi.mocked(prisma.review.groupBy).mockResolvedValue([])
   })
 
   it('should return all active providers with services', async () => {
@@ -464,13 +462,14 @@ describe('GET /api/providers', () => {
       ]
 
       vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
-      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([
+      // DISTINCT ON raw SQL returns exactly 1 row per provider
+      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([
         {
           providerId: 'provider1',
           date: new Date('2026-02-03'),
           location: 'Sollebrunn',
         },
-      ] as never)
+      ])
 
       const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -499,7 +498,8 @@ describe('GET /api/providers', () => {
       ]
 
       vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
-      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([])
+      // DISTINCT ON raw SQL returns empty when no visits
+      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([])
 
       const request = new NextRequest('http://localhost:3000/api/providers')
 
@@ -525,19 +525,14 @@ describe('GET /api/providers', () => {
       ]
 
       vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
-      // Note: Results are ordered by date ASC in the query
-      vi.mocked(prisma.availabilityException.findMany).mockResolvedValue([
+      // DISTINCT ON returns only the earliest visit per provider
+      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([
         {
           providerId: 'provider1',
           date: new Date('2026-02-03'),
           location: 'Sollebrunn',
         },
-        {
-          providerId: 'provider1',
-          date: new Date('2026-02-10'),
-          location: 'Uppsala',
-        },
-      ] as never)
+      ])
 
       const request = new NextRequest('http://localhost:3000/api/providers')
 

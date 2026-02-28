@@ -56,17 +56,26 @@ npm run loadtest:all
 
 ### Dev-server (next dev)
 
+**Baseline (2026-02-27, före optimering):**
+
 | Endpoint | VUs | p50 | p95 | Error rate | Req/s |
 |----------|-----|-----|-----|------------|-------|
 | GET /api/providers | 100 | 7.12s | 19.08s | 0% | 7.0 |
 | GET /api/provider/dashboard/stats | 50 | 457ms | 1.06s | 100%* | 19.2 |
 | GET /api/provider/insights | 50 | 440ms | 1.08s | 100%* | 19.1 |
 
+**Efter enrichment-optimering (2026-02-27):**
+
+| Endpoint | VUs | p50 | p95 | Error rate | Req/s |
+|----------|-----|-----|-----|------------|-------|
+| GET /api/providers | 100 | 7.18s | 16.0s | 0% | 7.2 |
+
 *\* Autentiserade endpoints utan session cookie returnerar 500 (auth() kastar utan cookie). Error rate avser HTTP-statuskod, inte serverstabilitet -- servern hanterade lasten utan krasch.*
 
 ### Analys
 
-- **Providers-listing** (publik, 100 VUs): Svarstiderna är höga pga Next.js dev-mode (on-the-fly kompilering). I production build förväntas p95 < 500ms.
+- **Providers-listing** (publik, 100 VUs): Svarstiderna är höga pga Next.js dev-mode (on-the-fly kompilering). Dev-server kompilerar API-routen vid varje request (~5-7s overhead), vilket döljer effekten av query-optimeringarna. I production build förväntas p95 < 500ms.
+- **Enrichment-optimering**: `enrichWithReviewStats` byttes från `findMany` + JS-aggregering till `groupBy` (1 rad per provider). `enrichWithNextVisit` byttes från `findMany` utan LIMIT till `DISTINCT ON` raw SQL (1 rad per provider). Minskar data från DB med 100-1000x, men effekten maskeras av dev-mode compilation overhead.
 - **Dashboard/Insights** (50 VUs, utan auth): ~460ms median visar att servern hanterar 50 concurrent utan problem. Med caching aktivt (Redis) förväntas cached requests < 50ms.
 - **Inga krascher** under hela testperioden (2 min per scenario).
 
@@ -87,6 +96,17 @@ npm run loadtest:all
 - `src/app/api/customer/onboarding-status/route.ts`
 
 **Fix**: Lade till `const isAllowed = ...` + `if (!isAllowed) return 429`.
+
+### Enrichment-funktioner i providers-listing
+
+`GET /api/providers` hade två enrichment-funktioner som hämtade obegränsade resultatmängder:
+
+| Funktion | Före | Efter | Förväntat |
+|----------|------|-------|-----------|
+| `enrichWithReviewStats` | `findMany` alla reviews + JS-aggregering | `groupBy` (1 rad per provider) | ~50-100ms |
+| `enrichWithNextVisit` | `findMany` alla AvailabilityExceptions + JS-filtrering | `DISTINCT ON` raw SQL (1 rad per provider) | ~50-100ms |
+
+Datamängd från DB minskas med 100-1000x (N providers istället för 10 000+ rader).
 
 ### Redis-caching på tunga analytics-routes
 
