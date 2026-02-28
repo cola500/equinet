@@ -95,4 +95,11 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     defaultEnabled: true,
     clientVisible: true,
   },
+  provider_subscription: {
+    key: "provider_subscription",
+    label: "Leverantörsprenumeration",
+    description: "Stripe-baserad prenumerationsavgift för leverantörer",
+    defaultEnabled: false,
+    clientVisible: true,
+  },
 }

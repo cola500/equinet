@@ -48,6 +48,7 @@ describe("GET /api/feature-flags", () => {
       offline_mode: true,
       follow_provider: true,
       municipality_watch: true,
+      provider_subscription: false,
     })
   })
 
