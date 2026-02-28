@@ -48,7 +48,8 @@ import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { useDueForService } from "@/hooks/useDueForService"
-import { PawPrint, AlertTriangle, Clock } from "lucide-react"
+import { AlertTriangle, Clock } from "lucide-react"
+import { HorseIcon } from "@/components/icons/HorseIcon"
 import type { DueForServiceResult } from "@/domain/due-for-service/DueForServiceCalculator"
 
 interface Horse {
@@ -199,7 +200,7 @@ export default function CustomerHorsesPage() {
         <HorseCardSkeleton count={3} />
       ) : horses.length === 0 ? (
         <EmptyState
-          icon={PawPrint}
+          icon={HorseIcon}
           title="Inga hästar registrerade"
           description="Lägg till dina hästar för att enkelt välja dem vid bokning och se deras vårdhistorik."
           action={{ label: "Lägg till din första häst", onClick: () => setAddDialogOpen(true) }}

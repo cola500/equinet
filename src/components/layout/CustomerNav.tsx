@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation"
 import {
   Search,
   CalendarDays,
-  PawPrint,
   MapPin,
   Users,
   HelpCircle,
   User,
   Shield,
 } from "lucide-react"
+import { HorseIcon } from "@/components/icons/HorseIcon"
 import { useAuth } from "@/hooks/useAuth"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
@@ -30,7 +30,7 @@ interface CustomerMoreItem extends MoreMenuItem {
 const customerTabs: TabItem[] = [
   { href: "/providers", label: "Sök", icon: Search, matchPrefix: "/providers" },
   { href: "/customer/bookings", label: "Bokningar", icon: CalendarDays },
-  { href: "/customer/horses", label: "Hästar", icon: PawPrint },
+  { href: "/customer/horses", label: "Hästar", icon: HorseIcon },
 ]
 
 const customerMoreItems: CustomerMoreItem[] = [
@@ -79,7 +79,7 @@ export function CustomerNav() {
     const active = isActive(item)
     return `py-3 ${
       active
-        ? "border-b-2 border-green-600 text-green-600 font-medium"
+        ? "border-b-2 border-primary text-primary font-medium"
         : "text-gray-600 hover:text-gray-900"
     }`
   }

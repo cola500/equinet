@@ -1,4 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="24" fill="#16a34a"/>
-  <text x="96" y="120" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="white" text-anchor="middle">E</text>
+  <rect width="192" height="192" rx="24" fill="#2d7a4e"/>
+  <!-- Horseshoe -->
+  <g transform="translate(96,88) scale(4.5)" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-7-9v6a7 7 0 0 0 14 0v-6"/>
+    <path d="M-9-9h4"/>
+    <path d="M5-9h4"/>
+  </g>
+  <!-- "E" text below horseshoe -->
+  <text x="96" y="155" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle">Equinet</text>
 </svg>

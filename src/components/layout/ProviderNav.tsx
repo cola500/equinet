@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   ClipboardList,
-  Wrench,
+  Stethoscope,
   Route,
   Megaphone,
   Users,
@@ -44,7 +44,7 @@ const providerTabs: TabItem[] = [
 ]
 
 const providerMoreItems: MoreItem[] = [
-  { href: "/provider/services", label: "Mina tjänster", icon: Wrench, section: "Dagligt arbete" },
+  { href: "/provider/services", label: "Mina tjänster", icon: Stethoscope, section: "Dagligt arbete" },
   { href: "/provider/voice-log", label: "Logga arbete", icon: Mic, matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
   { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers", section: "Dagligt arbete" },
   { href: "/provider/route-planning", label: "Ruttplanering", icon: Route, matchPrefix: "/provider/route", featureFlag: "route_planning", section: "Planering" },
@@ -176,7 +176,7 @@ export function ProviderNav() {
     const active = isActive(item)
     return `py-3 whitespace-nowrap ${
       active
-        ? "border-b-2 border-green-600 text-green-600 font-medium"
+        ? "border-b-2 border-primary text-primary font-medium"
         : "text-gray-600 hover:text-gray-900"
     }`
   }
@@ -205,7 +205,7 @@ export function ProviderNav() {
                   onClick={() => setMoreOpen(!moreOpen)}
                   className={`py-3 flex items-center gap-1 whitespace-nowrap ${
                     isSecondaryActive
-                      ? "border-b-2 border-green-600 text-green-600 font-medium"
+                      ? "border-b-2 border-primary text-primary font-medium"
                       : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
@@ -231,7 +231,7 @@ export function ProviderNav() {
                             onClick={(e) => handleOfflineClick(e, item)}
                             className={`block px-4 py-2 text-sm ${
                               isActive(item)
-                                ? "bg-green-50 text-green-700 font-medium"
+                                ? "bg-primary/5 text-primary font-medium"
                                 : "text-gray-700 hover:bg-gray-50"
                             }`}
                           >

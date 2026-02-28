@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import SessionProvider from "@/components/providers/SessionProvider";
@@ -13,6 +13,12 @@ import { getFeatureFlags } from "@/lib/feature-flags";
 
 const inter = Inter({
   subsets: ["latin"],
+});
+
+const dmSerif = DM_Serif_Display({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-heading",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +40,7 @@ export default async function RootLayout({
 
   return (
     <html lang="sv">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} ${dmSerif.variable} antialiased`}>
         <DevBanner />
         <SessionProvider>
           <FeatureFlagProvider initialFlags={initialFlags}>

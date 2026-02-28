@@ -19,7 +19,7 @@ describe("PWA Manifest", () => {
 
   it("has correct theme and background colors", () => {
     const m = manifest()
-    expect(m.theme_color).toBe("#16a34a")
+    expect(m.theme_color).toBe("#2d7a4e")
     expect(m.background_color).toBe("#ffffff")
   })
 
