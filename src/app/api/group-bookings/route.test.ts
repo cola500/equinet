@@ -185,6 +185,44 @@ describe('POST /api/group-bookings', () => {
     expect(data.error).toBe('Valideringsfel')
   })
 
+  it('should accept same-day dateFrom and dateTo', async () => {
+    const mockSession = {
+      user: { id: TEST_UUIDS.creator, userType: 'customer' },
+    }
+    vi.mocked(auth).mockResolvedValue(mockSession as never)
+
+    const mockCreated = {
+      id: TEST_UUIDS.groupRequest,
+      creatorId: TEST_UUIDS.creator,
+      serviceType: 'hovslagning',
+      locationName: 'Test',
+      address: 'Test',
+      dateFrom: FUTURE_DATE,
+      dateTo: FUTURE_DATE,
+      maxParticipants: 6,
+      status: 'open',
+      inviteCode: 'ABC12345',
+      participants: [],
+      _count: { participants: 1 },
+    }
+    mockService.createRequest.mockResolvedValue(Result.ok(mockCreated))
+
+    const request = new NextRequest('http://localhost:3000/api/group-bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        serviceType: 'hovslagning',
+        locationName: 'Test',
+        address: 'Test',
+        dateFrom: FUTURE_DATE.toISOString(),
+        dateTo: FUTURE_DATE.toISOString(),
+        maxParticipants: 6,
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(201)
+  })
+
   it('should return 400 when date span exceeds 30 days', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },

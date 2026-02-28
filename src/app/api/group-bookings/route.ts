@@ -44,9 +44,9 @@ const createGroupBookingSchema = z.object({
   (data) => {
     const from = new Date(data.dateFrom)
     const to = new Date(data.dateTo)
-    return to > from
+    return to >= from
   },
-  { message: "Slutdatum måste vara efter startdatum", path: ["dateTo"] }
+  { message: "Slutdatum kan inte vara före startdatum", path: ["dateTo"] }
 ).refine(
   (data) => {
     const from = new Date(data.dateFrom)
