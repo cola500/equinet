@@ -23,7 +23,7 @@ Denna plan beskriver framtida faser for att bygga ut offline-stodet.
 - Offline-navigeringsskydd i BottomTabBar + ProviderNav
 - 9 E2E-tester (offline-mutations.spec.ts)
 
-> Se [docs/OFFLINE-ARCHITECTURE.md](../OFFLINE-ARCHITECTURE.md) for fullstandig teknisk guide.
+> Se [docs/architecture/offline-pwa.md](../architecture/offline-pwa.md) for fullstandig teknisk guide.
 
 ---
 

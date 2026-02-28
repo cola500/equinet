@@ -22,12 +22,12 @@ Ga igenom varje fil och bedom om den behovs uppdateras. Las filen FORST, rediger
 
 | Fil | Uppdatera nar... |
 |-----|-------------------|
-| `docs/OFFLINE-ARCHITECTURE.md` | Offline-relaterade andringar (cache, sync, mutations, SW) |
-| `docs/DATABASE-ARCHITECTURE.md` | Schemaaandringar (nya tabeller, falt, relationer) |
-| `docs/ANVANDARDOKUMENTATION.md` | Ny eller andrad anvandarvand funktionalitet |
-| `docs/SERVICE-BOOKING-FLOW.md` | Andringar i bokningsflode (status, betalning, avbokning) |
+| `docs/architecture/offline-pwa.md` | Offline-relaterade andringar (cache, sync, mutations, SW) |
+| `docs/architecture/database.md` | Schemaaandringar (nya tabeller, falt, relationer) |
+| `docs/guides/feature-docs.md` | Ny eller andrad anvandarvand funktionalitet |
+| `docs/architecture/booking-flow.md` | Andringar i bokningsflode (status, betalning, avbokning) |
 | `docs/plans/*.md` | Planerade features som nu ar implementerade -- markera som KLAR |
-| `docs/GOTCHAS.md` | Ny gotcha upptackt under implementation |
+| `docs/guides/gotchas.md` | Ny gotcha upptackt under implementation |
 | `README.md` | Ny feature, uppdaterat testantal, nya npm scripts |
 | `NFR.md` | Ny production readiness-kapabilitet, uppdaterat testantal |
 | `CLAUDE.md` | Ny key learning, ny snabbreferenslank |

@@ -109,18 +109,18 @@ Review the changes and determine which files are relevant. Do NOT update files t
 
 | File | Update when... | Section to update |
 |------|---------------|-------------------|
-| `docs/api/*.md` | New or changed API routes | Add endpoint to relevant domain file + index in `docs/API.md` |
+| `docs/api/*.md` | New or changed API routes | Add endpoint to relevant domain file |
 | `CLAUDE.md` | New patterns, gotchas, or key learnings | "Key Learnings" section at the bottom |
-| `docs/DATABASE-ARCHITECTURE.md` | Schema changes (new tables, fields, relations) | Relevant schema section |
+| `docs/architecture/database.md` | Schema changes (new tables, fields, relations) | Relevant schema section |
 | `README.md` | New user-facing features | Features list or description |
-| `docs/ANVANDARDOKUMENTATION.md` | New or changed user-facing functionality | Relevant feature section |
+| `docs/guides/feature-docs.md` | New or changed user-facing functionality | Relevant feature section |
 
 **Decision criteria:**
-- Schema changed? -> DATABASE-ARCHITECTURE.md
-- New API endpoints? -> `docs/api/<domain>.md` + index row in `docs/API.md`
+- Schema changed? -> docs/architecture/database.md
+- New API endpoints? -> `docs/api/<domain>.md`
 - New patterns or gotchas discovered? -> CLAUDE.md "Key Learnings"
 - New user-visible feature? -> README.md
-- Changed how users interact with a feature? -> docs/ANVANDARDOKUMENTATION.md
+- Changed how users interact with a feature? -> docs/guides/feature-docs.md
 
 Read each file before editing to find the exact section to update. Make minimal, targeted edits.
 
@@ -135,10 +135,10 @@ For each file identified in step 3:
 
 ### docs/api/*.md (API-dokumentation)
 - Add new endpoints to the relevant domain file in `docs/api/` (auth, bookings, customers, horses, providers, admin, group-bookings, routes, voice-and-ai)
-- Add a row to the endpoint-index table in `docs/API.md`
+- Follow the existing format in each domain file
 - Include method, path, auth requirement, request/response shape
 
-### docs/DATABASE-ARCHITECTURE.md
+### docs/architecture/database.md
 - Document new tables, fields, or relations
 - Follow the existing format in the file
 
@@ -146,7 +146,7 @@ For each file identified in step 3:
 - Update features list if a new user-facing feature was added
 - Keep it brief -- one line per feature
 
-### docs/ANVANDARDOKUMENTATION.md
+### docs/guides/feature-docs.md
 - Update when user-facing functionality changes (new features, changed flows, new settings)
 - Add new sections or update existing ones to describe the feature from the user's perspective
 - Keep language non-technical -- this is for end users, not developers

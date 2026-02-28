@@ -10,6 +10,7 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
 - **npm**: v10 eller senare
 - **Docker Desktop**: För lokal PostgreSQL (rekommenderat)
 - **Git**: För version control
+- **VS Code** (rekommenderat) med: ESLint, Prettier, Prisma, Tailwind CSS IntelliSense
 
 ### Initial Setup
 
@@ -186,7 +187,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**29 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) för arkitekturbeskrivning.
+**29 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [docs/architecture/database.md](docs/architecture/database.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
@@ -252,7 +253,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Redis-backade feature flags med admin-toggle
 - Installbar PWA med offline-stöd (Serwist service worker + IndexedDB-cache + offline mutation queue med automatisk synk vid återanslutning)
 
-Se [ANVANDARDOKUMENTATION.md](docs/ANVANDARDOKUMENTATION.md) för detaljerade beskrivningar.
+Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade beskrivningar.
 
 ## Testning
 
@@ -311,6 +312,14 @@ npx prisma generate
 # Starta om TS server i VS Code: Cmd+Shift+P -> "TypeScript: Restart TS Server"
 ```
 
+### Prisma Studio zombie-processer (503-fel)
+```bash
+# MaxClientsInSessionMode: Prisma Studio-processer stängs inte automatiskt
+ps aux | grep prisma
+pkill -f "prisma studio"
+```
+Tips: Stäng alltid Prisma Studio med Ctrl+C. Kontrollera med `ps aux | grep prisma` vid 503-fel.
+
 ### Stale cache
 ```bash
 rm -rf .next && npm run dev
@@ -325,7 +334,7 @@ Kort sammanfattning:
 2. Importera repo på Vercel och lägg till environment variables
 3. Vercel kör automatiskt `prisma generate` och `next build`
 
-Se [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) för fullständig steg-för-steg guide.
+Se [docs/operations/deployment.md](docs/operations/deployment.md) för fullständig steg-för-steg guide.
 
 ## Dokumentation
 
@@ -334,18 +343,12 @@ Se [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) för fullständig s
 - **[CLAUDE.md](./CLAUDE.md)** - Utvecklingsguide, arbetsprocesser, patterns
 - **[NFR.md](./NFR.md)** - Non-Functional Requirements (säkerhet, performance, etc.)
 
-### Guider & Referens
-- **[docs/GOTCHAS.md](./docs/GOTCHAS.md)** - Vanliga problem och lösningar
-- **[docs/AGENTS.md](./docs/AGENTS.md)** - Agent-team guide för Claude Code
-- **[docs/PRODUCTION-DEPLOYMENT.md](./docs/PRODUCTION-DEPLOYMENT.md)** - Komplett deployment-guide
-- **[docs/OFFLINE-ARCHITECTURE.md](./docs/OFFLINE-ARCHITECTURE.md)** - Offline PWA-arkitektur (service worker, mutation queue, sync engine)
-- **[docs/skalning.md](./docs/skalning.md)** - Skalningsplan för 500 användare
-- **[docs/ANVANDARDOKUMENTATION.md](./docs/ANVANDARDOKUMENTATION.md)** - Detaljerade funktionsbeskrivningar
-
-### Säkerhet & Retrospectives
-- **[docs/SECURITY-REVIEW-2026-01-21.md](./docs/SECURITY-REVIEW-2026-01-21.md)** - Senaste säkerhetsgranskning
-- **[docs/retrospectives/](./docs/retrospectives/)** - Sprint retrospectives
-- **[docs/sprints/](./docs/sprints/)** - Sprint-planer och historik
+### Fullstandig dokumentation
+- **[docs/INDEX.md](./docs/INDEX.md)** - Centralt dokumentationsindex med alla sektioner
+- **[docs/guides/gotchas.md](./docs/guides/gotchas.md)** - Vanliga problem och losningar
+- **[docs/operations/deployment.md](./docs/operations/deployment.md)** - Komplett deployment-guide
+- **[docs/security/pentest-2026-02-15.md](./docs/security/pentest-2026-02-15.md)** - Pentest-rapport (feb 2026)
+- **[docs/retrospectives/](./docs/retrospectives/)** - Konsoliderade retrospectives
 
 ### Features
 - **[features/rutt-baserad-levering.md](./features/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen

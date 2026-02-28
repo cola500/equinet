@@ -7,17 +7,18 @@
 
 | Vad du söker | Gå till |
 |--------------|---------|
+| Dokumentationsindex | [docs/INDEX.md](docs/INDEX.md) |
 | Setup & Kommandon | [README.md](README.md) |
-| Vanliga Gotchas | [docs/GOTCHAS.md](docs/GOTCHAS.md) |
-| Agent-Team | [docs/AGENTS.md](docs/AGENTS.md) |
-| Production Deploy | [docs/PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) |
-| Bokningsflöde & Betalning | [docs/SERVICE-BOOKING-FLOW.md](docs/SERVICE-BOOKING-FLOW.md) |
+| Vanliga Gotchas | [docs/guides/gotchas.md](docs/guides/gotchas.md) |
+| Agent-Team | [docs/guides/agents.md](docs/guides/agents.md) |
+| Production Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
+| Bokningsflöde & Betalning | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
 | Tidigare Retros | [docs/retrospectives/](docs/retrospectives/) |
-| Databas-arkitektur | [docs/DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
-| Offline-arkitektur | [docs/OFFLINE-ARCHITECTURE.md](docs/OFFLINE-ARCHITECTURE.md) |
+| Databas-arkitektur | [docs/architecture/database.md](docs/architecture/database.md) |
+| Offline-arkitektur | [docs/architecture/offline-pwa.md](docs/architecture/offline-pwa.md) |
 | Production Readiness | [NFR.md](NFR.md) |
-| Röstloggning | [docs/VOICE-WORK-LOGGING.md](docs/VOICE-WORK-LOGGING.md) |
-| Pentest-rapport (feb 2026) | [docs/security/pentest-report-2026-02-15.md](docs/security/pentest-report-2026-02-15.md) |
+| Röstloggning | [docs/guides/voice-logging.md](docs/guides/voice-logging.md) |
+| Pentest-rapport (feb 2026) | [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) |
 
 ---
 
@@ -122,7 +123,7 @@ src/
 
 ## Gotchas
 
-> Se [docs/GOTCHAS.md](docs/GOTCHAS.md) för fullständig lista.
+> Se [docs/guides/gotchas.md](docs/guides/gotchas.md) för fullständig lista.
 
 ---
 
@@ -146,7 +147,7 @@ src/
 
 ## Agent-Team (3 agenter)
 
-> Se [docs/AGENTS.md](docs/AGENTS.md) för fullständig guide.
+> Se [docs/guides/agents.md](docs/guides/agents.md) för fullständig guide.
 
 ```
 Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
