@@ -162,9 +162,9 @@ describe("getSubscriptionGateway", () => {
     expect(gateway).toBeInstanceOf(MockSubscriptionGateway)
   })
 
-  it("should throw when SUBSCRIPTION_PROVIDER is 'stripe' (not yet implemented)", () => {
+  it("should throw when SUBSCRIPTION_PROVIDER is 'stripe' and gateway unavailable", () => {
     vi.stubEnv("SUBSCRIPTION_PROVIDER", "stripe")
 
-    expect(() => getSubscriptionGateway()).toThrow("Stripe not configured")
+    expect(() => getSubscriptionGateway()).toThrow()
   })
 })

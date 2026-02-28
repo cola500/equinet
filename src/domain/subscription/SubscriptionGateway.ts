@@ -149,15 +149,24 @@ export class MockSubscriptionGateway implements ISubscriptionGateway {
  * Factory function to get the appropriate subscription gateway.
  * Switch based on SUBSCRIPTION_PROVIDER env variable:
  *   undefined / "" / "mock" -> MockSubscriptionGateway
- *   "stripe" -> throws (not yet implemented)
+ *   "stripe" -> StripeSubscriptionGateway (requires STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET)
  */
 export function getSubscriptionGateway(): ISubscriptionGateway {
   const provider = process.env.SUBSCRIPTION_PROVIDER
 
   if (provider === "stripe") {
-    throw new Error(
-      "Stripe not configured. Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to use Stripe."
-    )
+    // Lazy import to avoid loading Stripe SDK in mock mode
+    const { StripeSubscriptionGateway } = (() => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        return require("./StripeSubscriptionGateway")
+      } catch {
+        throw new Error(
+          "Stripe gateway not available. Install stripe package: npm install stripe"
+        )
+      }
+    })()
+    return new StripeSubscriptionGateway()
   }
 
   return new MockSubscriptionGateway()
