@@ -39,6 +39,7 @@
     "release:first": "standard-version --first-release",
     "env:status": "bash scripts/env-status.sh",
     "migrate:check": "bash scripts/migrate-check.sh",
+    "migrate:status": "bash scripts/migrate-status.sh",
     "db:backup": "bash scripts/db-backup.sh",
     "db:restore": "bash scripts/db-restore.sh",
     "db:drift-check": "bash scripts/drift-check.sh",

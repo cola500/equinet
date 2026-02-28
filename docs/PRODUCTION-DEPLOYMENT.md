@@ -182,8 +182,8 @@ Nu är allt konfigurerat. Dags att deploya:
 **KRITISKT:** Om du har andrat `prisma/schema.prisma`, applicera migrationer INNAN deploy:
 
 ```bash
-# 1. Kolla pending migrationer
-npm run migrate:check
+# 1. Kolla pending migrationer (namnbaserad jamforelse)
+npm run migrate:status
 
 # 2. Applicera till Supabase (via MCP, SQL Editor, eller CLI)
 # Vercel-koden SELECT:ar ALLA kolumner utan explicit select-block.

@@ -52,7 +52,8 @@ git push --follow-tags origin main
 ```bash
 npm run deploy              # Kör kvalitetscheckar + push + påminnelse om Supabase-migration
 npm run env:status          # Visa vilken databas som är aktiv (lokal/Supabase)
-npm run migrate:check       # Visa migrationer som kan behöva appliceras på Supabase
+npm run migrate:check       # Visa senaste migrationer (lokalt + Supabase)
+npm run migrate:status      # Fullständig namnbaserad jämförelse (pending, drift, misslyckade)
 ```
 
 **Deploy-ordning vid schemaändring:** Se `.claude/rules/prisma.md`
@@ -97,7 +98,7 @@ src/
 
 ### Repository Pattern (OBLIGATORISKT för kärndomäner)
 
-**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`, `Horse`, `Follow`
+**Kärndomäner** (måste använda repository): `Booking`, `Provider`, `Service`, `CustomerReview`, `Horse`, `Follow`, `Subscription`
 **Stöddomäner** (Prisma OK): `AvailabilityException`, `AvailabilitySchedule`
 
 ### Checklista för ny feature
@@ -225,4 +226,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-02-27
+**Senast uppdaterad**: 2026-02-28

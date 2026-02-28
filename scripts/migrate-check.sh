@@ -1,10 +1,13 @@
 #!/bin/bash
-# Visa migrationer som finns lokalt men kanske inte på Supabase
+# Visa migrationer som finns lokalt och (om möjligt) jämför med Supabase.
+# Kör: npm run migrate:check
+
+source "$(dirname "$0")/_lib.sh"
 
 echo ""
 echo "  Senaste 5 migrationer (lokalt):"
-ls -1d prisma/migrations/[0-9]* 2>/dev/null | sort -r | head -5 | while read dir; do
-  echo "    $(basename "$dir")"
+get_local_migration_names | sort -r | head -5 | while read -r name; do
+  echo "    $name"
 done
 
 # Kolla om det finns ocommittade migrations
@@ -15,7 +18,21 @@ if [[ -n "$UNCOMMITTED" ]]; then
   echo "$UNCOMMITTED" | sed 's/^/    /'
 fi
 
+# Visa remote-info om Docker körs och URL inte pekar på localhost
+DIRECT_URL=$(get_direct_url)
+if [[ -n "$DIRECT_URL" ]] && ! is_localhost_url "$DIRECT_URL"; then
+  if docker ps 2>/dev/null | grep -q equinet-db; then
+    REMOTE_NAMES=$(get_remote_migration_names "$DIRECT_URL")
+    if [[ -n "$REMOTE_NAMES" ]]; then
+      echo ""
+      echo "  Senaste 5 migrationer (Supabase):"
+      echo "$REMOTE_NAMES" | sort -r | head -5 | while read -r name; do
+        echo "    $name"
+      done
+    fi
+  fi
+fi
+
 echo ""
-echo "  Tips: Kontrollera Supabase med:"
-echo "    execute_sql(project_id, \"SELECT version FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 5\")"
+echo "  Tips: Kör 'npm run migrate:status' för fullständig jämförelse."
 echo ""
