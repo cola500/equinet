@@ -192,7 +192,7 @@ npm run migrate:status
 # 3. Forst EFTER migration: deploya
 ```
 
-> Se [GOTCHAS.md #25](GOTCHAS.md#25-deploy-utan-migration--500-fel-i-produktion) for detaljer.
+> Se [guides/gotchas.md #25](guides/gotchas.md#25-deploy-utan-migration--500-fel-i-produktion) for detaljer.
 
 ### 5.2 Trigger Deployment
 
@@ -546,6 +546,18 @@ Efter lyckad deployment:
 **Supabase:**
 - Docs: https://supabase.com/docs
 - Dashboard: https://supabase.com/dashboard
+
+---
+
+## Kanda risker i produktion
+
+| Risk | Konsekvens | Befintlig mitigation |
+|------|-----------|---------------------|
+| Deploy utan migration | 500-fel pa alla requests | Dokumenterat i guides/gotchas.md #25. `npm run deploy` paminner. |
+| In-memory state pa Vercel | Feature flags nollstalls | Lost: PostgreSQL-backed feature flags |
+| NEXTAUTH_URL-mismatch | CSRF-token failure | Dokumenterat i guides/gotchas.md #23 |
+| Connection pool-utmattning | Timeouts under last | PgBouncer Session Pooler via Supabase |
+| Service Worker cache-korruption | Gammal JS kors | Serwist auto-uppdatering + skipWaiting |
 
 ---
 

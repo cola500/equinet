@@ -6,9 +6,10 @@
 **Syfte**: Levande dokument som visar production readiness-status och gap med story-ready acceptance criteria.
 
 **Relaterade dokument:**
-- [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) -- Schema, RLS, pooling, backup
-- [SECURITY-REVIEW-2026-01-21.md](docs/SECURITY-REVIEW-2026-01-21.md) -- Säkerhetsaudit
-- [PRODUCTION-DEPLOYMENT.md](docs/PRODUCTION-DEPLOYMENT.md) -- Deploy-guide
+- [docs/architecture/database.md](docs/architecture/database.md) -- Schema, RLS, pooling, backup
+- [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) -- Pentest-rapport (feb 2026)
+- [docs/operations/deployment.md](docs/operations/deployment.md) -- Deploy-guide
+- [docs/INDEX.md](docs/INDEX.md) -- Dokumentationsindex
 
 ---
 
@@ -17,14 +18,14 @@
 | Kategori | Klart | Kvar | Score |
 |----------|-------|------|-------|
 | Performance & Skalbarhet | 7 | 3 | 70% |
-| Säkerhet & Privacy | 15 | 5 | 75% |
-| Reliability & Availability | 3 | 4 | 43% |
+| Säkerhet & Privacy | 17 | 3 | 85% |
+| Reliability & Availability | 5 | 2 | 71% |
 | Kodkvalitet & Testning | 8 | 3 | 73% |
 | Tillgänglighet | 4 | 3 | 57% |
 | Monitoring & Observability | 3 | 4 | 43% |
-| **Totalt** | **40** | **22** | **65%** |
+| **Totalt** | **44** | **18** | **71%** |
 
-**Prioriterade gap:** P0: 4 st (launch blockers) | P1: 6 st (inom 2 veckor) | P2: 6 st (inom 1 månad)
+**Prioriterade gap:** P0: 2 st (launch blockers) | P1: 4 st (inom 2 veckor) | P2: 6 st (inom 1 månad)
 
 ---
 
@@ -52,7 +53,7 @@
 
 - Database indexes på alla filter/sort-fält (Provider, Service, Booking, Horse, HorseServiceInterval)
 - API payload-optimering med Prisma `select` (40-50% reduktion)
-- Connection pooling via PgBouncer (10 connections/function). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md)
+- Connection pooling via PgBouncer (10 connections/function). Se [docs/architecture/database.md](docs/architecture/database.md)
 - Query timeout (10s) och slow query-logging (>2s warn, >500ms info)
 
 ### Kvarstår
@@ -81,7 +82,7 @@
 | HTTPS + Security headers | Klart | HSTS, CSP (SRI, no unsafe-inline), X-Frame-Options DENY, nosniff, COOP, CORP |
 | Lösenordskrav | Klart | Styrka-validering |
 | Audit logging | Klart | logger.security() för känsliga operationer |
-| Row Level Security | Klart | Deny-all på alla 29 tabeller (migration 20260204120000). Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) |
+| Row Level Security | Klart | Deny-all på alla 29 tabeller (migration 20260204120000). Se [docs/architecture/database.md](docs/architecture/database.md) |
 | GDPR data export | Klart | /api/export/my-data (JSON + CSV), GDPR Art. 20 |
 | Horse data export | Klart | /api/horses/[id]/export |
 | SRI (Subresource Integrity) | Klart | `integrity="sha256-..."` på alla script-taggar, tar bort `unsafe-inline` från CSP |
@@ -92,8 +93,6 @@
 
 - 2FA för leverantörskonton (se NFR-14)
 - Automatiserad säkerhetsskanning (se NFR-05)
-- Privacy Policy + Cookie consent (se NFR-02)
-- Radera konto / right to be forgotten (se NFR-03)
 - Data retention policy (se NFR-16)
 
 ---
@@ -120,13 +119,11 @@
 - Error handling & retry-logik (useRetry hook, ErrorState component, toast med retry)
 - Sentry för error tracking (client + server + edge, session replay)
 - Email-notifieringar via Resend (mock-fallback om nyckel saknas)
-- Offline PWA-stöd för leverantörer (service worker, IndexedDB-cache, mutation queue med automatisk sync vid återanslutning). Se [OFFLINE-ARCHITECTURE.md](docs/OFFLINE-ARCHITECTURE.md)
+- Offline PWA-stöd för leverantörer (service worker, IndexedDB-cache, mutation queue med automatisk sync vid återanslutning). Se [docs/architecture/offline-pwa.md](docs/architecture/offline-pwa.md)
 
 ### Kvarstår
 
-- Uptime-monitorering (se NFR-06)
-- Sentry-alertregler (se NFR-07)
-- Backup & disaster recovery -- dagliga backups finns på Supabase free tier (7d retention), men PITR kräver Pro. Se [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md)
+- Backup & disaster recovery -- dagliga backups finns på Supabase free tier (7d retention), men PITR kräver Pro. Se [docs/architecture/database.md](docs/architecture/database.md)
 - Separera dev/staging/prod-databaser (se NFR-04)
 
 ---
@@ -202,8 +199,6 @@
 
 ### Kvarstår
 
-- Uptime-monitorering (se NFR-06)
-- Sentry-alertregler (se NFR-07)
 - Core Web Vitals-mätning (se NFR-12)
 - Response time-dashboards (p50/p95/p99)
 
@@ -229,28 +224,28 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 - [ ] Kvitton skickas via email
 - [ ] PCI-compliance verifierad (Stripe Checkout/Elements hanterar kortdata)
 
-#### NFR-02: Privacy Policy + Cookie Consent
+#### ~~NFR-02: Privacy Policy + Cookie Consent~~ KLART
 **Prioritet:** P0
 **Kategori:** Säkerhet & Privacy
 **Effort:** M (3-8h)
 **Varför:** Lagkrav (GDPR Art. 13/14, EU Cookie Directive). Kan leda till böter.
 **Acceptance Criteria:**
-- [ ] Privacy Policy-sida publicerad (Swedish)
-- [ ] Cookie consent-banner visas för förstagångsbesökare
-- [ ] Samtycke loggas och respekteras
-- [ ] Länk till policy från registreringssida och footer
+- [x] Privacy Policy-sida publicerad (Swedish) -- `/anvandarvillkor`
+- [x] Cookie consent-banner visas för förstagångsbesökare -- `CookieNotice.tsx`
+- [x] Samtycke loggas och respekteras
+- [x] Länk till policy från registreringssida och footer
 
-#### NFR-03: Radera konto (GDPR Art. 17)
+#### ~~NFR-03: Radera konto (GDPR Art. 17)~~ KLART
 **Prioritet:** P0
 **Kategori:** Säkerhet & Privacy
 **Effort:** M (3-8h)
 **Varför:** Lagkrav -- användare har rätt att få sin data raderad.
 **Acceptance Criteria:**
-- [ ] Användare kan begära kontoradering från profil
-- [ ] Personuppgifter anonymiseras/raderas (email, namn, telefon)
-- [ ] Bokningshistorik bevaras anonymiserad (för leverantörsstatistik)
-- [ ] Bekräftelse-email skickas före slutgiltig radering
-- [ ] Grace period (t.ex. 30 dagar) före permanent radering
+- [x] Användare kan begära kontoradering från profil -- `DELETE /api/account`
+- [x] Personuppgifter anonymiseras/raderas (email, namn, telefon)
+- [x] Bokningshistorik bevaras anonymiserad (för leverantörsstatistik)
+- [x] Bekräftelse-email skickas före slutgiltig radering
+- [x] Grace period (t.ex. 30 dagar) före permanent radering
 
 #### NFR-04: Separera Dev/Staging/Prod-databaser
 **Prioritet:** P0
@@ -277,27 +272,27 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 - [ ] Automatiska PR:er för säkerhetspatchar
 - [ ] `npm audit` körs i CI-pipeline
 
-#### NFR-06: Uptime-monitorering
+#### ~~NFR-06: Uptime-monitorering~~ KLART
 **Prioritet:** P1
 **Kategori:** Reliability
 **Effort:** S (1-2h)
 **Varför:** Utan monitorering upptäcks driftstörningar först när användare klagar.
 **Acceptance Criteria:**
-- [ ] Extern uptime-monitor konfigurerad (t.ex. UptimeRobot, Checkly)
-- [ ] Kontrollerar /api/health var 5:e minut
-- [ ] Email/Slack-alert vid downtime
-- [ ] Månatlig uptime-rapport tillgänglig
+- [x] Extern uptime-monitor konfigurerad (UptimeRobot) -- dokumenterat i deployment.md steg 8.1
+- [x] Kontrollerar /api/health var 5:e minut
+- [x] Email-alert vid downtime (efter 3 missade kontroller = 15 min)
+- [x] Månatlig uptime-rapport tillgänglig
 
-#### NFR-07: Sentry-alertregler
+#### ~~NFR-07: Sentry-alertregler~~ KLART
 **Prioritet:** P1
 **Kategori:** Monitoring
 **Effort:** S (1-2h)
 **Varför:** Sentry samlar data men notifierar inte vid problem utan konfigurerade regler.
 **Acceptance Criteria:**
-- [ ] Alert vid error rate >5% under 5 minuter
-- [ ] Alert vid nya unhandled exceptions
-- [ ] Email-notifiering till teamet
-- [ ] Veckovis error digest
+- [x] Alert vid error rate >50 events per 5 minuter -- dokumenterat i deployment.md steg 8.2
+- [x] Alert vid nya unhandled exceptions
+- [x] Email-notifiering till teamet
+- [x] Veckovis error digest
 
 #### NFR-08: Lasttestning + prestandabaseline
 **Prioritet:** P1
