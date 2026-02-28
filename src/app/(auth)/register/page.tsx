@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,7 +18,9 @@ import { useRetry } from "@/hooks/useRetry"
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [userType, setUserType] = useState<"customer" | "provider">("customer")
+  const searchParams = useSearchParams()
+  const initialRole = searchParams.get("role") === "provider" ? "provider" : "customer"
+  const [userType, setUserType] = useState<"customer" | "provider">(initialRole)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { retry, retryCount, isRetrying, canRetry } = useRetry({
@@ -36,7 +38,7 @@ export default function RegisterPage() {
       firstName: "",
       lastName: "",
       phone: "",
-      userType: "customer",
+      userType: initialRole,
       businessName: "",
       description: "",
       city: "",

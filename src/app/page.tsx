@@ -349,8 +349,8 @@ export default function Home() {
                   Kom igång gratis
                 </Button>
               </Link>
-              <Link href="/register">
-                <Button size="lg" variant="outline" className="text-lg px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+              <Link href="/register?role=provider">
+                <Button size="lg" variant="ghost" className="text-lg px-8 border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
                   Registrera som leverantör
                 </Button>
               </Link>
