@@ -66,6 +66,7 @@ model User {
   notificationDeliveries    NotificationDelivery[]
   municipalityWatches       MunicipalityWatch[]
   bugReports                BugReport[]
+  customerInviteTokens      CustomerInviteToken[]
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
@@ -131,6 +132,7 @@ model Provider {
   bookingSeries          BookingSeries[]
   followers              Follow[]
   subscription           ProviderSubscription?
+  customerInviteTokens   CustomerInviteToken[]
 
   @@index([isActive, createdAt])
   @@index([city])
@@ -484,6 +486,21 @@ model PasswordResetToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model CustomerInviteToken {
+  id                  String    @id @default(uuid())
+  token               String    @unique
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invitedByProviderId String
+  invitedByProvider   Provider  @relation(fields: [invitedByProviderId], references: [id], onDelete: Cascade)
+  expiresAt           DateTime
+  usedAt              DateTime?
+  createdAt           DateTime  @default(now())
 
   @@index([token])
   @@index([userId])

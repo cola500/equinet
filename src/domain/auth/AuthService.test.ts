@@ -121,6 +121,106 @@ describe('AuthService', () => {
       expect(result.isSuccess).toBe(true)
       expect('passwordHash' in result.value.user).toBe(false)
     })
+
+    // -------------------------------------------------------
+    // Ghost user upgrade
+    // -------------------------------------------------------
+
+    describe('ghost upgrade', () => {
+      beforeEach(() => {
+        authRepo.seedUser({
+          id: 'ghost-user-1',
+          email: 'test@example.com',
+          firstName: 'Ghost',
+          lastName: '',
+          userType: 'customer',
+          passwordHash: 'hashed:random-garbage',
+          emailVerified: false,
+          isManualCustomer: true,
+        })
+      })
+
+      it('should upgrade ghost user when email matches ghost account', async () => {
+        const result = await service.register(customerInput)
+
+        expect(result.isSuccess).toBe(true)
+        expect(result.value.user.email).toBe('test@example.com')
+        expect(result.value.user.firstName).toBe('Test')
+      })
+
+      it('should reuse the same User.id (no new row)', async () => {
+        const result = await service.register(customerInput)
+
+        expect(result.isSuccess).toBe(true)
+        expect(result.value.user.id).toBe('ghost-user-1')
+        expect(authRepo.getUsers()).toHaveLength(1)
+      })
+
+      it('should set isManualCustomer to false after upgrade', async () => {
+        await service.register(customerInput)
+
+        const users = authRepo.getUsers()
+        expect(users[0].isManualCustomer).toBe(false)
+      })
+
+      it('should hash the password for upgraded user', async () => {
+        await service.register(customerInput)
+
+        const users = authRepo.getUsers()
+        expect(users[0].passwordHash).toBe('hashed:Password123!')
+      })
+
+      it('should create a verification token for upgraded user', async () => {
+        await service.register(customerInput)
+
+        const tokens = authRepo.getTokens()
+        expect(tokens).toHaveLength(1)
+        expect(tokens[0].userId).toBe('ghost-user-1')
+      })
+
+      it('should send a verification email for upgraded user', async () => {
+        await service.register(customerInput)
+
+        expect(sentEmails).toHaveLength(1)
+        expect(sentEmails[0].email).toBe('test@example.com')
+        expect(sentEmails[0].firstName).toBe('Test')
+      })
+
+      it('should NOT return EMAIL_ALREADY_EXISTS for ghost accounts', async () => {
+        const result = await service.register(customerInput)
+
+        expect(result.isSuccess).toBe(true)
+        expect(result.isFailure).toBe(false)
+      })
+
+      it('should still return EMAIL_ALREADY_EXISTS for regular accounts', async () => {
+        authRepo.seedUser({
+          id: 'real-user',
+          email: 'real@example.com',
+          firstName: 'Real',
+          lastName: 'User',
+          userType: 'customer',
+          passwordHash: 'hashed:old',
+          emailVerified: true,
+          isManualCustomer: false,
+        })
+
+        const result = await service.register({
+          ...customerInput,
+          email: 'real@example.com',
+        })
+
+        expect(result.isFailure).toBe(true)
+        expect(result.error.type).toBe('EMAIL_ALREADY_EXISTS')
+      })
+
+      it('should keep emailVerified as false until token is used', async () => {
+        await service.register(customerInput)
+
+        const users = authRepo.getUsers()
+        expect(users[0].emailVerified).toBe(false)
+      })
+    })
   })
 
   // ===========================================================

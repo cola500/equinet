@@ -131,7 +131,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: NextAuth.js v5
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (2783+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (2851+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -187,7 +187,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**29 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [docs/architecture/database.md](docs/architecture/database.md) för arkitekturbeskrivning.
+**31 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [docs/architecture/database.md](docs/architecture/database.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
@@ -213,7 +213,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 ### Leverantörsverktyg
 - Ruttplanering med kartvy, optimering, Google Maps-navigation och geolokalisering
 - Ruttannonsering med kundvy (tjänstefilter, datumavgränsning, HorseSelect, "Via rutt"-badge)
-- Kundregister med manuell kundregistrering och privata anteckningar (CRUD)
+- Kundregister med manuell kundregistrering, inbjudan och kontoslagning, och privata anteckningar (CRUD)
 - Besöksplanering ("Dags för besök") med statusbadges
 - Kompetenser och verifiering (admin-granskning)
 - Stäng för nya kunder (befintliga kunder kan fortfarande boka)
@@ -257,7 +257,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**3108+ tester** (325+ E2E desktop + mobil + 2783+ unit/integration) med **70% coverage**.
+**3176+ tester** (325+ E2E desktop + mobil + 2851+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

@@ -41,6 +41,8 @@
   - [Kundrecensioner](#kundrecensioner)
   - [Kundregister](#kundregister)
   - [Manuell kundregistrering](#manuell-kundregistrering)
+  - [Bjud in manuell kund](#bjud-in-manuell-kund)
+  - [Slå ihop konton](#slå-ihop-konton)
   - [Kundanteckningar](#kundanteckningar)
   - [Kundinsikter](#kundinsikter)
   - [Besöksplanering](#besöksplanering)
@@ -786,6 +788,52 @@ Du kan lägga till kunder direkt i kundregistret utan att de behöver ha bokat v
 4. Klicka **Spara**
 
 Manuellt tillagda kunder visas i kundregistret med samma funktioner som bokningsgenererade kunder. Du kan ta bort en manuellt tillagd kund via kuvert-ikonen.
+
+---
+
+### Bjud in manuell kund
+
+Manuellt tillagda kunder (så kallade "spökkunder") har inget riktigt konto -- de kan inte logga in, boka själva eller se sin hälsotidslinje. Du kan bjuda in dem att skapa ett konto.
+
+**Krav:**
+- Kunden måste ha en giltig e-postadress registrerad
+
+**Så här gör du:**
+1. Gå till **Kunder** i leverantörsmenyn
+2. Klicka på den manuellt tillagda kunden
+3. Klicka **Skicka inbjudan**
+4. Kunden får ett e-postmeddelande med en aktiveringslänk
+5. Kunden klickar på länken och sätter ett lösenord
+6. Kontot aktiveras -- kunden kan nu logga in och boka själv
+
+**Bra att veta:**
+- Inbjudningslänken är giltig i 48 timmar
+- Om kunden inte aktiverar i tid kan du skicka en ny inbjudan
+- Kundens bokningshistorik och hästkopplingar bevaras vid aktiveringen
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar (`customer_invite`).
+
+---
+
+### Slå ihop konton
+
+Om en manuellt tillagd kund redan har skapat ett eget konto i Equinet (med en annan e-postadress eller separat registrering), kan du slå ihop de två kontona.
+
+**Så här gör du:**
+1. Gå till **Kunder** i leverantörsmenyn
+2. Klicka på den manuellt tillagda kunden
+3. Klicka **Slå ihop med befintligt konto**
+4. Sök efter det riktiga kontot (via namn eller e-post)
+5. Bekräfta sammanslagningen
+
+**Vad händer vid sammanslagning:**
+- Alla bokningar överförs till det riktiga kontot
+- Hästkopplingar bevaras
+- Anteckningar och historik slås ihop
+- Det manuella kontot tas bort
+- Sammanslagningen är atomär -- allt eller inget sker
+
+**Viktigt:** Sammanslagningen kan inte ångras. Kontrollera att du valt rätt konto innan du bekräftar.
 
 ---
 

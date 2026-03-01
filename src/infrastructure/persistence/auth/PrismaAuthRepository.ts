@@ -18,6 +18,7 @@ import type {
   CreateProviderData,
   CreateVerificationTokenData,
   CreatePasswordResetTokenData,
+  UpgradeGhostUserData,
 } from './IAuthRepository'
 
 // Safe user select (NEVER includes passwordHash)
@@ -66,10 +67,24 @@ const verificationTokenSelect = {
 } satisfies Prisma.EmailVerificationTokenSelect
 
 export class PrismaAuthRepository implements IAuthRepository {
-  async findUserByEmail(email: string): Promise<{ id: string } | null> {
+  async findUserByEmail(email: string): Promise<{ id: string; isManualCustomer: boolean } | null> {
     return prisma.user.findUnique({
       where: { email },
-      select: { id: true },
+      select: { id: true, isManualCustomer: true },
+    })
+  }
+
+  async upgradeGhostUser(data: UpgradeGhostUserData): Promise<AuthUser> {
+    return prisma.user.update({
+      where: { id: data.userId },
+      data: {
+        passwordHash: data.passwordHash,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        isManualCustomer: false,
+      },
+      select: authUserSelect,
     })
   }
 
