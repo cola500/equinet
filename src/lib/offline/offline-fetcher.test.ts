@@ -55,6 +55,58 @@ describe("offlineAwareFetcher", () => {
       expect(cached!.data).toEqual(mockData)
     })
 
+    it("should cache dynamic route detail URL", async () => {
+      const mockData = { id: "r1", routeName: "Rutt 1", stops: [] }
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+
+      await offlineAwareFetcher("/api/routes/abc-123")
+
+      await new Promise((r) => setTimeout(r, 50))
+
+      const cached = await offlineDb.endpointCache.get("/api/routes/abc-123")
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
+    })
+
+    it("should cache /api/provider/due-for-service", async () => {
+      const mockData = { items: [{ id: "h1", horseName: "Blansen" }] }
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+
+      await offlineAwareFetcher("/api/provider/due-for-service")
+
+      await new Promise((r) => setTimeout(r, 50))
+
+      const cached = await offlineDb.endpointCache.get(
+        "/api/provider/due-for-service"
+      )
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
+    })
+
+    it("should cache dynamic availability-schedule URL", async () => {
+      const mockData = [{ dayOfWeek: 1, startTime: "08:00" }]
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+
+      await offlineAwareFetcher("/api/providers/p1/availability-schedule")
+
+      await new Promise((r) => setTimeout(r, 50))
+
+      const cached = await offlineDb.endpointCache.get(
+        "/api/providers/p1/availability-schedule"
+      )
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
+    })
+
     it("should cache dynamic availability-exceptions URL", async () => {
       const mockData = [{ date: "2026-03-01", reason: "Semester" }]
       mockFetch.mockResolvedValue({

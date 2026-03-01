@@ -3,11 +3,13 @@
 import { useEffect, useState, useCallback } from "react"
 import { useDialogState } from "@/hooks/useDialogState"
 import { toast } from "sonner"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import type { Customer, CustomerHorse, CustomerNote, HorseFormData } from "@/components/provider/customers/types"
 
 export type StatusFilter = "all" | "active" | "inactive"
 
 export function useProviderCustomers(isProvider: boolean) {
+  const { guardMutation } = useOfflineGuard()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
@@ -115,267 +117,285 @@ export function useProviderCustomers(isProvider: boolean) {
   }
 
   const handleAddNote = async (customerId: string, content: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`/api/provider/customers/${customerId}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      })
-
-      if (response.ok) {
-        const note = await response.json()
-        setCustomerNotes((prev) => {
-          const updated = new Map(prev)
-          const existing = updated.get(customerId) || []
-          updated.set(customerId, [note, ...existing])
-          return updated
+    const result = await guardMutation(async () => {
+      try {
+        const response = await fetch(`/api/provider/customers/${customerId}/notes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
         })
-        return true
+
+        if (response.ok) {
+          const note = await response.json()
+          setCustomerNotes((prev) => {
+            const updated = new Map(prev)
+            const existing = updated.get(customerId) || []
+            updated.set(customerId, [note, ...existing])
+            return updated
+          })
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error("Failed to create note:", error)
+        return false
       }
-      return false
-    } catch (error) {
-      console.error("Failed to create note:", error)
-      return false
-    }
+    })
+    return result ?? false
   }
 
   const handleEditNote = async (note: CustomerNote, content: string): Promise<boolean> => {
-    try {
-      const response = await fetch(
-        `/api/provider/customers/${note.customerId}/notes/${note.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        }
-      )
+    const result = await guardMutation(async () => {
+      try {
+        const response = await fetch(
+          `/api/provider/customers/${note.customerId}/notes/${note.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content }),
+          }
+        )
 
-      if (response.ok) {
-        const updatedNote = await response.json()
-        setCustomerNotes((prev) => {
-          const updated = new Map(prev)
-          const existing = updated.get(note.customerId) || []
-          updated.set(
-            note.customerId,
-            existing.map((n) => (n.id === note.id ? updatedNote : n))
-          )
-          return updated
-        })
-        return true
+        if (response.ok) {
+          const updatedNote = await response.json()
+          setCustomerNotes((prev) => {
+            const updated = new Map(prev)
+            const existing = updated.get(note.customerId) || []
+            updated.set(
+              note.customerId,
+              existing.map((n) => (n.id === note.id ? updatedNote : n))
+            )
+            return updated
+          })
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error("Failed to update note:", error)
+        return false
       }
-      return false
-    } catch (error) {
-      console.error("Failed to update note:", error)
-      return false
-    }
+    })
+    return result ?? false
   }
 
   const handleDeleteNote = async (note: CustomerNote) => {
-    setIsDeletingNote(true)
-    try {
-      const response = await fetch(
-        `/api/provider/customers/${note.customerId}/notes/${note.id}`,
-        { method: "DELETE" }
-      )
+    await guardMutation(async () => {
+      setIsDeletingNote(true)
+      try {
+        const response = await fetch(
+          `/api/provider/customers/${note.customerId}/notes/${note.id}`,
+          { method: "DELETE" }
+        )
 
-      if (response.ok || response.status === 204) {
-        setCustomerNotes((prev) => {
-          const updated = new Map(prev)
-          const existing = updated.get(note.customerId) || []
-          updated.set(
-            note.customerId,
-            existing.filter((n) => n.id !== note.id)
-          )
-          return updated
-        })
+        if (response.ok || response.status === 204) {
+          setCustomerNotes((prev) => {
+            const updated = new Map(prev)
+            const existing = updated.get(note.customerId) || []
+            updated.set(
+              note.customerId,
+              existing.filter((n) => n.id !== note.id)
+            )
+            return updated
+          })
+        }
+      } catch (error) {
+        console.error("Failed to delete note:", error)
+      } finally {
+        setIsDeletingNote(false)
+        setNoteToDelete(null)
       }
-    } catch (error) {
-      console.error("Failed to delete note:", error)
-    } finally {
-      setIsDeletingNote(false)
-      setNoteToDelete(null)
-    }
+    })
   }
 
   const handleAddCustomer = async (form: { firstName: string; lastName: string; phone: string; email: string }) => {
     if (!form.firstName.trim() || isAddingCustomer) return
 
-    setIsAddingCustomer(true)
-    try {
-      const body: Record<string, string> = { firstName: form.firstName.trim() }
-      if (form.lastName.trim()) body.lastName = form.lastName.trim()
-      if (form.phone.trim()) body.phone = form.phone.trim()
-      if (form.email.trim()) body.email = form.email.trim()
+    await guardMutation(async () => {
+      setIsAddingCustomer(true)
+      try {
+        const body: Record<string, string> = { firstName: form.firstName.trim() }
+        if (form.lastName.trim()) body.lastName = form.lastName.trim()
+        if (form.phone.trim()) body.phone = form.phone.trim()
+        if (form.email.trim()) body.email = form.email.trim()
 
-      const response = await fetch("/api/provider/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
+        const response = await fetch("/api/provider/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
 
-      if (response.ok) {
-        addCustomerDialog.close()
-        toast.success(`${body.firstName} har lagts till i kundregistret`)
-        fetchCustomers()
-      } else {
-        const data = await response.json()
-        toast.error(data.error || "Kunde inte lägga till kund")
+        if (response.ok) {
+          addCustomerDialog.close()
+          toast.success(`${body.firstName} har lagts till i kundregistret`)
+          fetchCustomers()
+        } else {
+          const data = await response.json()
+          toast.error(data.error || "Kunde inte lägga till kund")
+        }
+      } catch (error) {
+        console.error("Failed to add customer:", error)
+        toast.error("Kunde inte lägga till kund")
+      } finally {
+        setIsAddingCustomer(false)
       }
-    } catch (error) {
-      console.error("Failed to add customer:", error)
-      toast.error("Kunde inte lägga till kund")
-    } finally {
-      setIsAddingCustomer(false)
-    }
+    })
   }
 
   const handleEditCustomer = async (customerId: string, form: { firstName: string; lastName: string; phone: string; email: string }) => {
     if (!form.firstName.trim() || isAddingCustomer) return
 
-    setIsAddingCustomer(true)
-    try {
-      const body: Record<string, string> = { firstName: form.firstName.trim() }
-      if (form.lastName.trim()) body.lastName = form.lastName.trim()
-      if (form.phone.trim()) body.phone = form.phone.trim()
-      if (form.email.trim()) body.email = form.email.trim()
+    await guardMutation(async () => {
+      setIsAddingCustomer(true)
+      try {
+        const body: Record<string, string> = { firstName: form.firstName.trim() }
+        if (form.lastName.trim()) body.lastName = form.lastName.trim()
+        if (form.phone.trim()) body.phone = form.phone.trim()
+        if (form.email.trim()) body.email = form.email.trim()
 
-      const response = await fetch(`/api/provider/customers/${customerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
+        const response = await fetch(`/api/provider/customers/${customerId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
 
-      if (response.ok) {
-        addCustomerDialog.close()
-        setCustomerToEdit(null)
-        toast.success("Kundinformationen har uppdaterats")
-        fetchCustomers()
-      } else {
-        const data = await response.json()
-        toast.error(data.error || "Kunde inte uppdatera kund")
+        if (response.ok) {
+          addCustomerDialog.close()
+          setCustomerToEdit(null)
+          toast.success("Kundinformationen har uppdaterats")
+          fetchCustomers()
+        } else {
+          const data = await response.json()
+          toast.error(data.error || "Kunde inte uppdatera kund")
+        }
+      } catch (error) {
+        console.error("Failed to edit customer:", error)
+        toast.error("Kunde inte uppdatera kund")
+      } finally {
+        setIsAddingCustomer(false)
       }
-    } catch (error) {
-      console.error("Failed to edit customer:", error)
-      toast.error("Kunde inte uppdatera kund")
-    } finally {
-      setIsAddingCustomer(false)
-    }
+    })
   }
 
   const handleDeleteCustomer = async (customer: Customer) => {
-    setIsDeletingCustomer(true)
-    try {
-      const response = await fetch(`/api/provider/customers/${customer.id}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        toast.success(`${customer.firstName} ${customer.lastName} har tagits bort`)
-        if (expandedCustomer === customer.id) {
-          setExpandedCustomer(null)
-        }
-        setCustomerNotes((prev) => {
-          const updated = new Map(prev)
-          updated.delete(customer.id)
-          return updated
+    await guardMutation(async () => {
+      setIsDeletingCustomer(true)
+      try {
+        const response = await fetch(`/api/provider/customers/${customer.id}`, {
+          method: "DELETE",
         })
-        fetchCustomers()
-      } else {
-        const data = await response.json()
-        toast.error(data.error || "Kunde inte ta bort kund")
+
+        if (response.ok) {
+          toast.success(`${customer.firstName} ${customer.lastName} har tagits bort`)
+          if (expandedCustomer === customer.id) {
+            setExpandedCustomer(null)
+          }
+          setCustomerNotes((prev) => {
+            const updated = new Map(prev)
+            updated.delete(customer.id)
+            return updated
+          })
+          fetchCustomers()
+        } else {
+          const data = await response.json()
+          toast.error(data.error || "Kunde inte ta bort kund")
+        }
+      } catch (error) {
+        console.error("Failed to delete customer:", error)
+        toast.error("Kunde inte ta bort kund")
+      } finally {
+        setIsDeletingCustomer(false)
+        setCustomerToDelete(null)
       }
-    } catch (error) {
-      console.error("Failed to delete customer:", error)
-      toast.error("Kunde inte ta bort kund")
-    } finally {
-      setIsDeletingCustomer(false)
-      setCustomerToDelete(null)
-    }
+    })
   }
 
   const handleSaveHorse = async (customerId: string, form: HorseFormData, isEdit: boolean, horseId?: string) => {
     if (!form.name.trim() || isSavingHorse) return
 
-    setIsSavingHorse(true)
-    try {
-      const body: Record<string, unknown> = { name: form.name.trim() }
-      if (form.breed.trim()) body.breed = form.breed.trim()
-      if (form.birthYear.trim()) body.birthYear = parseInt(form.birthYear, 10)
-      if (form.color.trim()) body.color = form.color.trim()
-      if (form.gender) body.gender = form.gender
-      if (form.specialNeeds.trim()) body.specialNeeds = form.specialNeeds.trim()
-      if (form.registrationNumber.trim()) body.registrationNumber = form.registrationNumber.trim()
-      if (form.microchipNumber.trim()) body.microchipNumber = form.microchipNumber.trim()
+    await guardMutation(async () => {
+      setIsSavingHorse(true)
+      try {
+        const body: Record<string, unknown> = { name: form.name.trim() }
+        if (form.breed.trim()) body.breed = form.breed.trim()
+        if (form.birthYear.trim()) body.birthYear = parseInt(form.birthYear, 10)
+        if (form.color.trim()) body.color = form.color.trim()
+        if (form.gender) body.gender = form.gender
+        if (form.specialNeeds.trim()) body.specialNeeds = form.specialNeeds.trim()
+        if (form.registrationNumber.trim()) body.registrationNumber = form.registrationNumber.trim()
+        if (form.microchipNumber.trim()) body.microchipNumber = form.microchipNumber.trim()
 
-      const url = isEdit
-        ? `/api/provider/customers/${customerId}/horses/${horseId}`
-        : `/api/provider/customers/${customerId}/horses`
+        const url = isEdit
+          ? `/api/provider/customers/${customerId}/horses/${horseId}`
+          : `/api/provider/customers/${customerId}/horses`
 
-      const response = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-
-      if (response.ok) {
-        const savedHorse = await response.json()
-        setCustomerHorses((prev) => {
-          const updated = new Map(prev)
-          const existing = updated.get(customerId) || []
-          if (isEdit) {
-            updated.set(customerId, existing.map((h) => (h.id === savedHorse.id ? savedHorse : h)))
-          } else {
-            updated.set(customerId, [...existing, savedHorse])
-          }
-          return updated
+        const response = await fetch(url, {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
         })
-        setShowHorseDialog(null)
-        setHorseToEdit(null)
-        toast.success(isEdit ? "Hästen har uppdaterats" : "Hästen har lagts till")
-      } else {
-        const data = await response.json()
-        toast.error(data.error || "Kunde inte spara häst")
+
+        if (response.ok) {
+          const savedHorse = await response.json()
+          setCustomerHorses((prev) => {
+            const updated = new Map(prev)
+            const existing = updated.get(customerId) || []
+            if (isEdit) {
+              updated.set(customerId, existing.map((h) => (h.id === savedHorse.id ? savedHorse : h)))
+            } else {
+              updated.set(customerId, [...existing, savedHorse])
+            }
+            return updated
+          })
+          setShowHorseDialog(null)
+          setHorseToEdit(null)
+          toast.success(isEdit ? "Hästen har uppdaterats" : "Hästen har lagts till")
+        } else {
+          const data = await response.json()
+          toast.error(data.error || "Kunde inte spara häst")
+        }
+      } catch (error) {
+        console.error("Failed to save horse:", error)
+        toast.error("Kunde inte spara häst")
+      } finally {
+        setIsSavingHorse(false)
       }
-    } catch (error) {
-      console.error("Failed to save horse:", error)
-      toast.error("Kunde inte spara häst")
-    } finally {
-      setIsSavingHorse(false)
-    }
+    })
   }
 
   const handleDeleteHorse = async () => {
     if (!horseToDelete || isDeletingHorse) return
 
-    setIsDeletingHorse(true)
-    try {
-      const response = await fetch(
-        `/api/provider/customers/${horseToDelete.customerId}/horses/${horseToDelete.horse.id}`,
-        { method: "DELETE" }
-      )
+    await guardMutation(async () => {
+      setIsDeletingHorse(true)
+      try {
+        const response = await fetch(
+          `/api/provider/customers/${horseToDelete.customerId}/horses/${horseToDelete.horse.id}`,
+          { method: "DELETE" }
+        )
 
-      if (response.ok) {
-        setCustomerHorses((prev) => {
-          const updated = new Map(prev)
-          const existing = updated.get(horseToDelete.customerId) || []
-          updated.set(
-            horseToDelete.customerId,
-            existing.filter((h) => h.id !== horseToDelete.horse.id)
-          )
-          return updated
-        })
-        toast.success("Hästen har tagits bort")
-      } else {
-        const data = await response.json()
-        toast.error(data.error || "Kunde inte ta bort häst")
+        if (response.ok) {
+          setCustomerHorses((prev) => {
+            const updated = new Map(prev)
+            const existing = updated.get(horseToDelete.customerId) || []
+            updated.set(
+              horseToDelete.customerId,
+              existing.filter((h) => h.id !== horseToDelete.horse.id)
+            )
+            return updated
+          })
+          toast.success("Hästen har tagits bort")
+        } else {
+          const data = await response.json()
+          toast.error(data.error || "Kunde inte ta bort häst")
+        }
+      } catch (error) {
+        console.error("Failed to delete horse:", error)
+        toast.error("Kunde inte ta bort häst")
+      } finally {
+        setIsDeletingHorse(false)
+        setHorseToDelete(null)
       }
-    } catch (error) {
-      console.error("Failed to delete horse:", error)
-      toast.error("Kunde inte ta bort häst")
-    } finally {
-      setIsDeletingHorse(false)
-      setHorseToDelete(null)
-    }
+    })
   }
 
   return {
