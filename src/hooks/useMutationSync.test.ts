@@ -25,8 +25,10 @@ vi.mock("@/lib/offline/sync-engine", () => ({
 }))
 
 const mockGetPendingCount = vi.fn(async () => 0)
+const mockGetUnsyncedMutations = vi.fn(async () => [])
 vi.mock("@/lib/offline/mutation-queue", () => ({
   getPendingCount: (...args: unknown[]) => mockGetPendingCount(...args),
+  getUnsyncedMutations: (...args: unknown[]) => mockGetUnsyncedMutations(...args),
 }))
 
 const mockGlobalMutate = vi.fn(async () => undefined)
@@ -47,6 +49,7 @@ beforeEach(() => {
   mockUseFeatureFlag.mockReturnValue(true)
   mockProcessQueue.mockResolvedValue({ synced: 0, failed: 0, conflicts: 0, rateLimited: 0 })
   mockGetPendingCount.mockResolvedValue(0)
+  mockGetUnsyncedMutations.mockResolvedValue([])
   mockGlobalMutate.mockResolvedValue(undefined)
 })
 
@@ -185,6 +188,101 @@ describe("useMutationSync", () => {
         undefined,
         { revalidate: true }
       )
+    })
+  })
+
+  it("should revalidate all keys when all mutations sync successfully", async () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockProcessQueue.mockResolvedValue({ synced: 2, failed: 0, conflicts: 0, rateLimited: 0 })
+    mockGetUnsyncedMutations.mockResolvedValue([]) // all synced
+
+    const { rerender } = renderHook(() => useMutationSync())
+
+    mockUseOnlineStatus.mockReturnValue(true)
+    rerender()
+
+    await waitFor(() => {
+      expect(mockGlobalMutate).toHaveBeenCalledWith(
+        expect.any(Function),
+        undefined,
+        { revalidate: true }
+      )
+      // The filter function should match ALL keys when no unsynced remain
+      const filterFn = mockGlobalMutate.mock.calls[0][0] as (key: string) => boolean
+      expect(filterFn("/api/bookings")).toBe(true)
+      expect(filterFn("/api/routes/my-routes")).toBe(true)
+    })
+  })
+
+  it("should skip revalidation for SWR keys with unsynced mutations after partial sync", async () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockProcessQueue.mockResolvedValue({ synced: 1, failed: 1, conflicts: 0, rateLimited: 0 })
+    mockGetUnsyncedMutations.mockResolvedValue([
+      { id: 1, method: "POST", url: "/api/bookings/manual", body: "{}", entityType: "manual-booking", entityId: "mb1", status: "failed", retryCount: 3, createdAt: Date.now() },
+    ])
+
+    const { rerender } = renderHook(() => useMutationSync())
+
+    // Clear any leaked calls from previous tests before triggering sync
+    mockGlobalMutate.mockClear()
+    mockUseOnlineStatus.mockReturnValue(true)
+    rerender()
+
+    await waitFor(() => {
+      expect(mockGlobalMutate).toHaveBeenCalled()
+      const lastCall = mockGlobalMutate.mock.calls[mockGlobalMutate.mock.calls.length - 1]
+      const filterFn = lastCall[0] as (key: string) => boolean
+      // /api/bookings should be SKIPPED (affected by failed manual-booking mutation)
+      expect(filterFn("/api/bookings")).toBe(false)
+      // /api/routes/my-routes should be revalidated (not affected)
+      expect(filterFn("/api/routes/my-routes")).toBe(true)
+    })
+  })
+
+  it("should filter out affected keys when some mutations remain pending", async () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockProcessQueue.mockResolvedValue({ synced: 0, failed: 0, conflicts: 0, rateLimited: 1 })
+    mockGetUnsyncedMutations.mockResolvedValue([
+      { id: 2, method: "PATCH", url: "/api/routes/r1/stops/s1", body: "{}", entityType: "route-stop", entityId: "s1", status: "pending", retryCount: 0, createdAt: Date.now() },
+      { id: 3, method: "DELETE", url: "/api/bookings/b1", body: "{}", entityType: "booking", entityId: "b1", status: "pending", retryCount: 0, createdAt: Date.now() },
+    ])
+
+    const { rerender } = renderHook(() => useMutationSync())
+
+    mockGlobalMutate.mockClear()
+    mockUseOnlineStatus.mockReturnValue(true)
+    rerender()
+
+    await waitFor(() => {
+      expect(mockGlobalMutate).toHaveBeenCalled()
+      const lastCall = mockGlobalMutate.mock.calls[mockGlobalMutate.mock.calls.length - 1]
+      const filterFn = lastCall[0] as (key: string) => boolean
+      // Both /api/bookings and /api/routes/my-routes should be skipped
+      expect(filterFn("/api/bookings")).toBe(false)
+      expect(filterFn("/api/routes/my-routes")).toBe(false)
+      // Other keys should still revalidate
+      expect(filterFn("/api/services")).toBe(true)
+    })
+  })
+
+  it("should map /api/bookings/manual to /api/bookings SWR key", async () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockProcessQueue.mockResolvedValue({ synced: 0, failed: 1, conflicts: 0, rateLimited: 0 })
+    mockGetUnsyncedMutations.mockResolvedValue([
+      { id: 1, method: "POST", url: "/api/bookings/manual", body: "{}", entityType: "manual-booking", entityId: "mb1", status: "failed", retryCount: 3, createdAt: Date.now() },
+    ])
+
+    const { rerender } = renderHook(() => useMutationSync())
+
+    mockGlobalMutate.mockClear()
+    mockUseOnlineStatus.mockReturnValue(true)
+    rerender()
+
+    await waitFor(() => {
+      expect(mockGlobalMutate).toHaveBeenCalled()
+      const lastCall = mockGlobalMutate.mock.calls[mockGlobalMutate.mock.calls.length - 1]
+      const filterFn = lastCall[0] as (key: string) => boolean
+      expect(filterFn("/api/bookings")).toBe(false)
     })
   })
 

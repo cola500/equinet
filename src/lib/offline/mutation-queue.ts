@@ -49,6 +49,15 @@ export async function getActiveMutationsByEntity(
     .toArray()
 }
 
+/** Get all mutations that have NOT been synced (pending, failed, conflict, syncing).
+ * Used to determine which SWR keys should skip revalidation after sync. */
+export async function getUnsyncedMutations(): Promise<PendingMutation[]> {
+  return await offlineDb.pendingMutations
+    .where("status")
+    .anyOf("pending", "failed", "conflict", "syncing")
+    .toArray()
+}
+
 /** Update the status (and optionally error message) of a mutation. */
 export async function updateMutationStatus(
   id: number,

@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useOnlineStatus } from "./useOnlineStatus"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { processMutationQueue, type SyncResult } from "@/lib/offline/sync-engine"
-import { getPendingCount } from "@/lib/offline/mutation-queue"
+import { getPendingCount, getUnsyncedMutations } from "@/lib/offline/mutation-queue"
 
 // Module-level guard -- survives component unmount/remount (e.g. from SWR
 // revalidation triggering React Suspense re-mounting).
@@ -60,7 +60,20 @@ export function useMutationSync() {
       // Sequence: sync first, THEN revalidate SWR cache.
       // This replaces SWR's implicit revalidateOnReconnect (which we disabled
       // to prevent request bursts and execution context destruction).
-      await globalMutate(() => true, undefined, { revalidate: true })
+      //
+      // If some mutations failed/conflicted, skip revalidation for their
+      // SWR keys so optimistic data is preserved until the user resolves them.
+      const remaining = await getUnsyncedMutations()
+      if (remaining.length === 0) {
+        await globalMutate(() => true, undefined, { revalidate: true })
+      } else {
+        const affectedKeys = new Set(remaining.map((m) => mapMutationUrlToSWRKey(m.url)))
+        await globalMutate(
+          (key) => typeof key === "string" && !affectedKeys.has(key),
+          undefined,
+          { revalidate: true }
+        )
+      }
     } finally {
       setIsSyncing(false)
       syncInProgress = false
@@ -101,4 +114,29 @@ export function useMutationSync() {
 /** Reset the module-level sync guard. Test-only. */
 export function _resetSyncGuard() {
   syncInProgress = false
+}
+
+/** Map a mutation URL to the SWR cache key it affects.
+ * Based on CACHEABLE_ENDPOINTS in offline-fetcher.ts. */
+function mapMutationUrlToSWRKey(url: string): string {
+  // Bookings: /api/bookings/manual, /api/bookings/{id}, /api/bookings/{id}/notes
+  if (url.startsWith("/api/bookings")) return "/api/bookings"
+
+  // Route stops: /api/routes/{id}/stops/{id}
+  if (/^\/api\/routes\/[^/]+\/stops\//.test(url)) return "/api/routes/my-routes"
+
+  // Availability exceptions: /api/providers/{id}/availability-exceptions/{date}
+  const exceptionsMatch = url.match(/^(\/api\/providers\/[^/]+\/availability-exceptions)/)
+  if (exceptionsMatch) return exceptionsMatch[1]
+
+  // Availability schedule: /api/providers/{id}/availability-schedule
+  const scheduleMatch = url.match(/^(\/api\/providers\/[^/]+\/availability-schedule)/)
+  if (scheduleMatch) return scheduleMatch[1]
+
+  // Direct matches: /api/services, /api/provider/customers
+  if (url === "/api/services" || url.startsWith("/api/services?")) return "/api/services"
+  if (url === "/api/provider/customers" || url.startsWith("/api/provider/customers?")) return "/api/provider/customers"
+
+  // Conservative fallback: use the URL itself
+  return url
 }
