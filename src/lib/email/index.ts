@@ -2,7 +2,7 @@
  * Email module exports
  */
 
-export { emailService, sendEmailVerificationNotification, sendPasswordResetNotification, sendAccountDeletionNotification } from "./email-service"
+export { emailService, sendEmailVerificationNotification, sendPasswordResetNotification, sendAccountDeletionNotification, sendCustomerInviteNotification } from "./email-service"
 export {
   emailVerificationEmail,
   passwordResetEmail,
@@ -13,6 +13,7 @@ export {
   bookingReminderEmail,
   bookingRescheduleEmail,
   accountDeletionConfirmationEmail,
+  customerInviteEmail,
 } from "./templates"
 export {
   sendBookingConfirmationNotification,
