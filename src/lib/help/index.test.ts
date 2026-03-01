@@ -141,6 +141,26 @@ describe("Help articles", () => {
       const results = searchArticles("   ", "customer")
       expect(results.length).toBe(all.length)
     })
+
+    it("matches content in paragraphs", () => {
+      // "PDF" appears in the "betalning-och-kvitto" article content but not in title/summary/keywords
+      const results = searchArticles("fakturanummer", "customer")
+      expect(results.length).toBeGreaterThan(0)
+      expect(results.some((a) => a.slug === "betalning-och-kvitto")).toBe(true)
+    })
+
+    it("matches content in steps", () => {
+      // "kalendern" appears in a step in "boka-en-tjänst" content
+      const results = searchArticles("kalendern", "customer")
+      expect(results.length).toBeGreaterThan(0)
+      expect(results.some((a) => a.slug === "boka-en-tjanst")).toBe(true)
+    })
+
+    it("matches content in bullets", () => {
+      // "profilbild" appears in bullets of "hitta-leverantorer"
+      const results = searchArticles("profilbild", "customer")
+      expect(results.length).toBeGreaterThan(0)
+    })
   })
 
   describe("article data integrity", () => {

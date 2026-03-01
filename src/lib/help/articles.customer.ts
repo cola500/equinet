@@ -209,7 +209,7 @@ export const customerArticles: HelpArticle[] = [
         ],
       },
       {
-        tip: "Bakom feature flag: Funktionen kan stängas av via admin-systeminställningar.",
+        tip: "Den här funktionen kan vara inaktiverad och kanske inte är tillgänglig i alla konton.",
       },
     ],
   },
@@ -402,7 +402,7 @@ export const customerArticles: HelpArticle[] = [
         paragraphs: [
           "Ditt eget intervall gäller före leverantörens rekommendation och tjänstens standardvärde. Om du inte har satt ett eget intervall används leverantörens rekommendation.",
         ],
-        tip: "Bakom feature flag: Funktionen kan stängas av via admin-systeminställningar.",
+        tip: "Den här funktionen kan vara inaktiverad och kanske inte är tillgänglig i alla konton.",
       },
     ],
   },
@@ -781,7 +781,7 @@ export const customerArticles: HelpArticle[] = [
         ],
       },
       {
-        tip: "Bakom feature flag: Funktionen kan stängas av via admin-systeminställningar.",
+        tip: "Den här funktionen kan vara inaktiverad och kanske inte är tillgänglig i alla konton.",
       },
     ],
   },

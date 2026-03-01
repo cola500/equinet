@@ -38,7 +38,14 @@ export function searchArticles(
     (a) =>
       a.title.toLowerCase().includes(q) ||
       a.summary.toLowerCase().includes(q) ||
-      a.keywords.some((k) => k.toLowerCase().includes(q))
+      a.keywords.some((k) => k.toLowerCase().includes(q)) ||
+      a.content.some((block) =>
+        [
+          ...(block.paragraphs ?? []),
+          ...(block.steps ?? []),
+          ...(block.bullets ?? []),
+        ].some((text) => text.toLowerCase().includes(q))
+      )
   )
 }
 

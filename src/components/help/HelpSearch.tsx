@@ -1,29 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 interface HelpSearchProps {
-  onSearch: (query: string) => void
+  query: string
+  onQueryChange: (query: string) => void
   resultCount: number
   totalCount: number
 }
 
 export function HelpSearch({
-  onSearch,
+  query,
+  onQueryChange,
   resultCount,
   totalCount,
 }: HelpSearchProps) {
-  const [query, setQuery] = useState("")
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onSearch(query)
-    }, 200)
-    return () => clearTimeout(timer)
-  }, [query, onSearch])
-
   const isFiltering = query.trim().length > 0
 
   return (
@@ -34,8 +26,9 @@ export function HelpSearch({
           type="search"
           placeholder="Sök bland artiklar..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => onQueryChange(e.target.value)}
           className="pl-9"
+          aria-label="Sök bland hjälpartiklar"
         />
       </div>
       {isFiltering && (

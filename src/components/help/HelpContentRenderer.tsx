@@ -17,13 +17,13 @@ export function HelpContentRenderer({ content }: HelpContentRendererProps) {
           )}
 
           {block.paragraphs?.map((p, j) => (
-            <p key={j} className="text-sm text-gray-700 leading-relaxed">
+            <p key={j} className="text-base text-gray-700 leading-relaxed">
               {p}
             </p>
           ))}
 
           {block.steps && (
-            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+            <ol className="list-decimal list-outside ml-5 space-y-2 text-base text-gray-700">
               {block.steps.map((step, j) => (
                 <li key={j} className="leading-relaxed">
                   {step}
@@ -33,7 +33,7 @@ export function HelpContentRenderer({ content }: HelpContentRendererProps) {
           )}
 
           {block.bullets && (
-            <ul className="list-disc list-inside space-y-1.5 text-sm text-gray-700">
+            <ul className="list-disc list-outside ml-5 space-y-1.5 text-base text-gray-700">
               {block.bullets.map((bullet, j) => (
                 <li key={j} className="leading-relaxed">
                   {bullet}
@@ -44,7 +44,7 @@ export function HelpContentRenderer({ content }: HelpContentRendererProps) {
 
           {block.tip && (
             <div className="flex gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-              <Lightbulb className="h-4 w-4 mt-0.5 shrink-0" />
+              <Lightbulb className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
               <p>{block.tip}</p>
             </div>
           )}

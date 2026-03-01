@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import type { HelpRole } from "@/lib/help/types"
 import {
   getAllArticles,
@@ -23,15 +23,20 @@ interface HelpCenterProps {
 
 export function HelpCenter({ role, basePath }: HelpCenterProps) {
   const allArticlesForRole = getAllArticles(role)
+  const [query, setQuery] = useState("")
   const [articles, setArticles] = useState(allArticlesForRole)
   const sections = getArticleSections(role)
 
-  const handleSearch = useCallback(
-    (query: string) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
       setArticles(searchArticles(query, role))
-    },
-    [role]
-  )
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [query, role])
+
+  const handleQueryChange = useCallback((newQuery: string) => {
+    setQuery(newQuery)
+  }, [])
 
   const visibleSections = sections.filter((section) =>
     articles.some((a) => a.section === section)
@@ -47,15 +52,24 @@ export function HelpCenter({ role, basePath }: HelpCenterProps) {
       </div>
 
       <HelpSearch
-        onSearch={handleSearch}
+        query={query}
+        onQueryChange={handleQueryChange}
         resultCount={articles.length}
         totalCount={allArticlesForRole.length}
       />
 
       {visibleSections.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-8">
-          Inga artiklar matchade din sökning.
-        </p>
+        <div className="text-center py-8 space-y-3">
+          <p className="text-sm text-gray-500">
+            Inga artiklar matchade din sökning.
+          </p>
+          <button
+            onClick={() => setQuery("")}
+            className="text-sm text-primary hover:underline"
+          >
+            Visa alla artiklar
+          </button>
+        </div>
       ) : (
         <Accordion type="multiple" defaultValue={visibleSections}>
           {visibleSections.map((section) => {

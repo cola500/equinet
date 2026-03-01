@@ -40,6 +40,7 @@ export default function ProviderProfilePage() {
   })
 
   const { guardMutation } = useOfflineGuard()
+  const helpEnabled = useFeatureFlag("help_center")
   const selfRescheduleEnabled = useFeatureFlag("self_reschedule")
   const recurringBookingsEnabled = useFeatureFlag("recurring_bookings")
   const subscriptionEnabled = useFeatureFlag("provider_subscription")
@@ -391,7 +392,7 @@ export default function ProviderProfilePage() {
             <div className="space-y-1">
               <Label htmlFor="accepting-new-customers" className="text-sm font-medium flex items-center gap-1.5">
                 Ta emot nya kunder
-                <InfoPopover text="När avaktiverad kan bara kunder som redan har genomförda bokningar hos dig boka nya tider" helpHref="/provider/help/stang-for-nya-kunder" />
+                <InfoPopover text="När avaktiverad kan bara kunder som redan har genomförda bokningar hos dig boka nya tider" helpHref={helpEnabled ? "/provider/help/stang-for-nya-kunder" : undefined} />
               </Label>
               <p className="text-xs text-gray-500">
                 {profile.acceptingNewCustomers

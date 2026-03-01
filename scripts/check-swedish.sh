@@ -12,7 +12,7 @@ PATTERN='\b(hastar|tjanst|oppna|oppet|anvand|losenord|genomford|sammanstall|inne
 
 # Source code (blocking)
 # Exclude lines with slug: or href containing URL slugs (ASCII by design)
-SRC_RESULTS=$(grep -rn --include="*.ts" --include="*.tsx" -iE "$PATTERN" src/ 2>/dev/null | grep -vE 'slug:|href.*help/|getArticle\(' )
+SRC_RESULTS=$(grep -rn --include="*.ts" --include="*.tsx" -iE "$PATTERN" src/ 2>/dev/null | grep -vE 'slug:|\.slug ===|href.*help/|getArticle\(' )
 
 # Markdown (warning only)
 MD_RESULTS=$(grep -rn --include="*.md" -iE "$PATTERN" docs/ *.md 2>/dev/null)

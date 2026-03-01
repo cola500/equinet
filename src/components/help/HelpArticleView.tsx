@@ -15,7 +15,7 @@ export function HelpArticleView({ article, backHref }: HelpArticleViewProps) {
     <div className="space-y-6">
       <Link
         href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2"
       >
         <ArrowLeft className="h-4 w-4" />
         Tillbaka till hjälp
@@ -23,10 +23,12 @@ export function HelpArticleView({ article, backHref }: HelpArticleViewProps) {
 
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{article.title}</h1>
-        <p className="text-sm text-gray-500 mt-1">{article.section}</p>
+        <span className="inline-block text-xs font-medium text-gray-500 bg-gray-100 rounded-full px-2.5 py-0.5 mt-1.5">
+          {article.section}
+        </span>
       </div>
 
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-white rounded-lg border p-6 max-w-2xl">
         <HelpContentRenderer content={article.content} />
       </div>
     </div>
