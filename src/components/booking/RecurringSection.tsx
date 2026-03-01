@@ -53,7 +53,7 @@ export function RecurringSection({ idSuffix = "" }: RecurringSectionProps) {
             <Label className="text-sm">Intervall</Label>
             <Select
               value={String(intervalWeeks)}
-              onValueChange={(v) => setIntervalWeeks(parseInt(v, 10))}
+              onValueChange={(v) => setIntervalWeeks(parseInt(v, 10) || 4)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -71,7 +71,7 @@ export function RecurringSection({ idSuffix = "" }: RecurringSectionProps) {
             <Label className="text-sm">Antal tillfällen</Label>
             <Select
               value={String(totalOccurrences)}
-              onValueChange={(v) => setTotalOccurrences(parseInt(v, 10))}
+              onValueChange={(v) => setTotalOccurrences(parseInt(v, 10) || 4)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />

@@ -232,7 +232,7 @@ describe("useBookingFlow", () => {
     expect(result.current.step).toBe("selectTime")
   })
 
-  it("handles server error gracefully", async () => {
+  it("handles server error by returning to selectTime step", async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -255,6 +255,48 @@ describe("useBookingFlow", () => {
     })
 
     expect(mockToastError).toHaveBeenCalledWith("Server error")
-    expect(result.current.step).toBe("selectHorse")
+    expect(result.current.step).toBe("selectTime")
+  })
+
+  it("rejects recurring booking with NaN intervalWeeks", async () => {
+    const { result } = renderHook(() => useBookingFlow(defaultOptions))
+
+    act(() => {
+      result.current.openBooking(testService)
+    })
+
+    act(() => {
+      result.current.handleSlotSelect("2026-03-15", "10:00", "11:00")
+      result.current.setIsRecurring(true)
+      result.current.setIntervalWeeks(NaN)
+    })
+
+    await act(async () => {
+      await result.current.handleSubmitBooking()
+    })
+
+    expect(mockToastError).toHaveBeenCalledWith("Ogiltiga värden för återkommande bokning")
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  it("rejects recurring booking with NaN totalOccurrences", async () => {
+    const { result } = renderHook(() => useBookingFlow(defaultOptions))
+
+    act(() => {
+      result.current.openBooking(testService)
+    })
+
+    act(() => {
+      result.current.handleSlotSelect("2026-03-15", "10:00", "11:00")
+      result.current.setIsRecurring(true)
+      result.current.setTotalOccurrences(NaN)
+    })
+
+    await act(async () => {
+      await result.current.handleSubmitBooking()
+    })
+
+    expect(mockToastError).toHaveBeenCalledWith("Ogiltiga värden för återkommande bokning")
+    expect(global.fetch).not.toHaveBeenCalled()
   })
 })

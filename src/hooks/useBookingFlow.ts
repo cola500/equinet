@@ -194,6 +194,13 @@ export function useBookingFlow({
         setIsOpen(false)
         router.push("/customer/bookings")
       } else if (isRecurring) {
+        // Client-side validation for recurring values
+        if (!Number.isFinite(intervalWeeks) || !Number.isFinite(totalOccurrences)) {
+          toast.error("Ogiltiga värden för återkommande bokning")
+          setStep("selectTime")
+          return
+        }
+
         // Recurring booking - create series
         const response = await fetch("/api/booking-series", {
           method: "POST",
@@ -269,7 +276,7 @@ export function useBookingFlow({
     } catch (error: unknown) {
       console.error("Error creating booking:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte skapa bokning")
-      setStep("selectHorse")
+      setStep("selectTime")
     }
   }
 
