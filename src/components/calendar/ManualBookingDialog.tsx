@@ -170,9 +170,12 @@ export function ManualBookingDialog({
     }
   }, [isOnline]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset form when dialog closes
+  // Sync prefill values when dialog opens, reset form when it closes
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setBookingDate(prefillDate || new Date().toISOString().slice(0, 10))
+      setStartTime(prefillTime || "")
+    } else {
       setServiceId("")
       setBookingDate(prefillDate || new Date().toISOString().slice(0, 10))
       setStartTime(prefillTime || "")

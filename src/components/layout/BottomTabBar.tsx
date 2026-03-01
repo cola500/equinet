@@ -128,7 +128,7 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
           <DrawerHeader>
             <DrawerTitle>Mer</DrawerTitle>
           </DrawerHeader>
-          <nav className="flex flex-col pb-6">
+          <nav className="flex flex-col pb-6 overflow-y-auto min-h-0">
             {moreItems.map((item, index) => {
               const active = isActive(item.href, item.matchPrefix)
               const Icon = item.icon
