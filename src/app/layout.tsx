@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Footer } from "@/components/layout/Footer";
 import { DevBanner } from "@/components/layout/DevBanner";
 import { CookieNotice } from "@/components/layout/CookieNotice";
+import { BugReportFab } from "@/components/provider/BugReportFab";
 import { getFeatureFlags } from "@/lib/feature-flags";
 
 const inter = Inter({
@@ -53,6 +54,7 @@ export default async function RootLayout({
               </div>
               <Toaster />
               <CookieNotice />
+              <BugReportFab />
             </SWRProvider>
           </FeatureFlagProvider>
         </SessionProvider>

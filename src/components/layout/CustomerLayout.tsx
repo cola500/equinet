@@ -3,7 +3,7 @@
 import { ReactNode } from "react"
 import { Header } from "./Header"
 import { OfflineBanner } from "@/components/provider/OfflineBanner"
-import { BugReportFab } from "@/components/provider/BugReportFab"
+
 
 interface CustomerLayoutProps {
   children: ReactNode
@@ -17,7 +17,6 @@ export function CustomerLayout({ children }: CustomerLayoutProps) {
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         {children}
       </main>
-      <BugReportFab />
     </div>
   )
 }
