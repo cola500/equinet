@@ -15,7 +15,19 @@ import {
   Trash2,
   Pencil,
   Loader2,
+  Send,
+  Merge,
 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import type { Customer, CustomerHorse, CustomerNote } from "./types"
 
@@ -92,6 +104,13 @@ export function CustomerCard({
   const [editingNote, setEditingNote] = useState<CustomerNote | null>(null)
   const [editNoteContent, setEditNoteContent] = useState("")
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [isInviting, setIsInviting] = useState(false)
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "sent" | "error">("idle")
+  const [showMergeDialog, setShowMergeDialog] = useState(false)
+  const [mergeEmail, setMergeEmail] = useState("")
+  const [isMerging, setIsMerging] = useState(false)
+  const [mergeError, setMergeError] = useState<string | null>(null)
+  const [mergeSuccess, setMergeSuccess] = useState(false)
 
   const handleAddNote = async () => {
     if (!newNoteContent.trim() || isSavingNote) return
@@ -118,6 +137,59 @@ export function CustomerCard({
       setEditNoteContent("")
     }
   }
+
+  const handleInvite = async () => {
+    if (isInviting) return
+    setIsInviting(true)
+    setInviteStatus("idle")
+
+    try {
+      const res = await fetch(`/api/provider/customers/${customer.id}/invite`, {
+        method: "POST",
+      })
+
+      if (res.ok) {
+        setInviteStatus("sent")
+      } else {
+        setInviteStatus("error")
+      }
+    } catch {
+      setInviteStatus("error")
+    } finally {
+      setIsInviting(false)
+    }
+  }
+
+  const handleMerge = async () => {
+    if (isMerging || !mergeEmail.trim()) return
+    setIsMerging(true)
+    setMergeError(null)
+
+    try {
+      const res = await fetch(`/api/provider/customers/${customer.id}/merge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetEmail: mergeEmail.trim() }),
+      })
+
+      if (res.ok) {
+        setMergeSuccess(true)
+      } else {
+        const data = await res.json()
+        setMergeError(data.error || "Något gick fel")
+      }
+    } catch {
+      setMergeError("Något gick fel. Försök igen.")
+    } finally {
+      setIsMerging(false)
+    }
+  }
+
+  const canInvite = customer.isManuallyAdded &&
+    !isSentinelEmail(customer.email) &&
+    flags.customer_invite
+
+  const canMerge = customer.isManuallyAdded && flags.customer_invite
 
   const horseCount = horses.length > 0 ? horses.length : customer.horses.length
 
@@ -459,7 +531,7 @@ export function CustomerCard({
           )}
 
           {/* Customer actions */}
-          <div className="mt-4 pt-4 border-t flex items-center gap-2">
+          <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -469,6 +541,41 @@ export function CustomerCard({
               <Pencil className="h-3.5 w-3.5 mr-1" />
               Redigera kund
             </Button>
+            {canInvite && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary/80"
+                onClick={handleInvite}
+                disabled={isInviting || inviteStatus === "sent"}
+              >
+                {isInviting ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5 mr-1" />
+                )}
+                {inviteStatus === "sent" ? "Inbjudan skickad" : "Skicka inbjudan"}
+              </Button>
+            )}
+            {inviteStatus === "error" && (
+              <span className="text-xs text-red-500">Kunde inte skicka inbjudan</span>
+            )}
+            {canMerge && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-gray-800"
+                onClick={() => {
+                  setShowMergeDialog(true)
+                  setMergeEmail("")
+                  setMergeError(null)
+                  setMergeSuccess(false)
+                }}
+              >
+                <Merge className="h-3.5 w-3.5 mr-1" />
+                Slå ihop
+              </Button>
+            )}
             {customer.isManuallyAdded && (
               <Button
                 variant="ghost"
@@ -483,6 +590,69 @@ export function CustomerCard({
           </div>
         </div>
       )}
+
+      {/* Merge dialog */}
+      <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Slå ihop med riktigt konto</DialogTitle>
+            <DialogDescription>
+              All data (bokningar, hästar, recensioner) från {customer.firstName} {customer.lastName} flyttas
+              till det riktiga kontot. Den manuella kundposten raderas sedan.
+            </DialogDescription>
+          </DialogHeader>
+
+          {mergeSuccess ? (
+            <div className="py-4">
+              <p className="text-sm text-green-600 font-medium">
+                Kunden har slagits ihop med det riktiga kontot.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4 py-2">
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-sm text-amber-800 font-medium">
+                    Den här åtgärden är permanent och kan inte ångras.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="merge-email">E-postadress för målkontot</Label>
+                  <Input
+                    id="merge-email"
+                    type="email"
+                    placeholder="kund@example.com"
+                    value={mergeEmail}
+                    onChange={(e) => setMergeEmail(e.target.value)}
+                    disabled={isMerging}
+                  />
+                </div>
+                {mergeError && (
+                  <p className="text-sm text-red-600">{mergeError}</p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowMergeDialog(false)}
+                  disabled={isMerging}
+                >
+                  Avbryt
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleMerge}
+                  disabled={isMerging || !mergeEmail.trim()}
+                >
+                  {isMerging && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Slå ihop
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
