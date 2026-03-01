@@ -1,7 +1,8 @@
+import Link from "next/link"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Info } from "lucide-react"
 
-export function InfoPopover({ text }: { text: string }) {
+export function InfoPopover({ text, helpHref }: { text: string; helpHref?: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -14,7 +15,12 @@ export function InfoPopover({ text }: { text: string }) {
         </button>
       </PopoverTrigger>
       <PopoverContent className="text-sm text-gray-600 max-w-[280px]">
-        {text}
+        <p>{text}</p>
+        {helpHref && (
+          <Link href={helpHref} className="text-xs text-primary mt-2 block hover:underline">
+            Läs mer i hjälpcentret
+          </Link>
+        )}
       </PopoverContent>
     </Popover>
   )

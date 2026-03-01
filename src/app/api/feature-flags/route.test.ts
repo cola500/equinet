@@ -49,6 +49,7 @@ describe("GET /api/feature-flags", () => {
       follow_provider: true,
       municipality_watch: true,
       provider_subscription: false,
+      help_center: true,
     })
   })
 

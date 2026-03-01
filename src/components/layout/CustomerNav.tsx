@@ -36,7 +36,7 @@ const customerTabs: TabItem[] = [
 const customerMoreItems: CustomerMoreItem[] = [
   { href: "/announcements", label: "Lediga tider", icon: MapPin, matchPrefix: "/announcements" },
   { href: "/customer/group-bookings", label: "Gruppbokningar", icon: Users, matchPrefix: "/customer/group-bookings", featureFlag: "group_bookings" },
-  { href: "/customer/faq", label: "Vanliga frågor", icon: HelpCircle },
+  { href: "/customer/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/customer/help", featureFlag: "help_center" },
   { href: "/customer/profile", label: "Min profil", icon: User },
 ]
 
@@ -46,7 +46,7 @@ const allNavItems: CustomerNavItem[] = [
   { href: "/announcements", label: "Lediga tider", matchPrefix: "/announcements" },
   { href: "/customer/group-bookings", label: "Gruppbokningar", matchPrefix: "/customer/group-bookings", featureFlag: "group_bookings" },
   { href: "/customer/horses", label: "Mina hästar" },
-  { href: "/customer/faq", label: "Vanliga frågor" },
+  { href: "/customer/help", label: "Hjälp", matchPrefix: "/customer/help", featureFlag: "help_center" },
   { href: "/customer/profile", label: "Min profil" },
 ]
 

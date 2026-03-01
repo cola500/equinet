@@ -26,6 +26,7 @@ import {
   Plus,
 } from "lucide-react"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { InfoPopover } from "@/components/ui/info-popover"
 
 export default function VoiceLogPage() {
   const router = useRouter()
@@ -66,8 +67,9 @@ export default function VoiceLogPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
             Logga utfört arbete
+            <InfoPopover text="Spela in eller skriv arbetsanteckningar. AI kopplar automatiskt till rätt bokning." helpHref="/provider/help/rostloggning" />
           </h1>
           <p className="text-gray-600 mt-1">
             {isSupported

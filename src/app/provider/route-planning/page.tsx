@@ -16,6 +16,7 @@ import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { InfoPopover } from "@/components/ui/info-popover"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
 import { getRoute } from "@/lib/routing"
 
@@ -273,7 +274,10 @@ export default function RoutePlanningPage() {
     <ProviderLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Rutt-planering</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            Rutt-planering
+            <InfoPopover text="Planera dina besöksrutter genom att välja beställningar och optimera ordningen." helpHref="/provider/help/ruttplanering" />
+          </h1>
           <p className="text-gray-600 mt-2">
             Välj tillgängliga beställningar och skapa en optimerad rutt
           </p>
