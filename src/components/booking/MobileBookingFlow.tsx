@@ -198,21 +198,24 @@ export function MobileBookingFlow() {
                 customerLocation={customerLocation}
               />
               {bookingForm.bookingDate && bookingForm.startTime && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm text-green-800">
-                    <span className="font-semibold">Vald tid:</span>{" "}
-                    {new Date(bookingForm.bookingDate).toLocaleDateString("sv-SE", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}{" "}
-                    kl. {bookingForm.startTime}
-                    <span className="text-gray-600 ml-1">
-                      ({selectedService.durationMinutes} min)
-                    </span>
-                  </p>
-                </div>
+                <>
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm text-green-800">
+                      <span className="font-semibold">Vald tid:</span>{" "}
+                      {new Date(bookingForm.bookingDate).toLocaleDateString("sv-SE", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}{" "}
+                      kl. {bookingForm.startTime}
+                      <span className="text-gray-600 ml-1">
+                        ({selectedService.durationMinutes} min)
+                      </span>
+                    </p>
+                  </div>
+                  <RecurringSection idSuffix="-mobile" />
+                </>
               )}
             </div>
           )}
@@ -240,7 +243,6 @@ export function MobileBookingFlow() {
               )}
 
               <HorseSelector idSuffix="-mobile" />
-              <RecurringSection idSuffix="-mobile" />
             </div>
           )}
 
