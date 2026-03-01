@@ -149,6 +149,70 @@ describe("OfflineBanner", () => {
     expect(screen.getByText(/synkade/i)).toBeInTheDocument()
   })
 
+  it("shows persistent error banner when sync has failures", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    const { rerender } = render(<OfflineBanner />)
+
+    // Come back online, sync completed with failures
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 2,
+      isSyncing: false,
+      lastSyncResult: { synced: 1, failed: 2, conflicts: 0 },
+      triggerSync: vi.fn(),
+    })
+    rerender(<OfflineBanner />)
+
+    // Wait for reconnected banner to dismiss
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+
+    // Error banner should persist
+    expect(screen.getByText(/kunde inte synkas/)).toBeInTheDocument()
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+  })
+
+  it("shows persistent error banner when sync has conflicts", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    const { rerender } = render(<OfflineBanner />)
+
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 1,
+      isSyncing: false,
+      lastSyncResult: { synced: 0, failed: 0, conflicts: 1 },
+      triggerSync: vi.fn(),
+    })
+    rerender(<OfflineBanner />)
+
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+
+    expect(screen.getByText(/kunde inte synkas/)).toBeInTheDocument()
+  })
+
+  it("shows correct count in error banner for single failure", () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    const { rerender } = render(<OfflineBanner />)
+
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 1,
+      isSyncing: false,
+      lastSyncResult: { synced: 0, failed: 1, conflicts: 0 },
+      triggerSync: vi.fn(),
+    })
+    rerender(<OfflineBanner />)
+
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+
+    expect(screen.getByText(/1 ändring kunde inte synkas/)).toBeInTheDocument()
+  })
+
   it("shows no pending info when offline with zero pending", () => {
     mockUseOnlineStatus.mockReturnValue(false)
     mockUseMutationSync.mockReturnValue({

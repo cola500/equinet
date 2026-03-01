@@ -5,6 +5,7 @@ import {
   queueMutation,
   getPendingMutations,
   getPendingMutationsByEntity,
+  getUnsyncedMutations,
   updateMutationStatus,
   incrementRetryCount,
   removeSyncedMutations,
@@ -257,6 +258,80 @@ describe("mutation-queue", () => {
       // id2 should be unaffected
       const mut2 = await offlineDb.pendingMutations.get(id2)
       expect(mut2?.status).toBe("pending")
+    })
+  })
+
+  describe("getUnsyncedMutations", () => {
+    it("should return pending, failed, and conflict mutations", async () => {
+      const id1 = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+      const id2 = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/b",
+        body: "{}",
+        entityType: "booking",
+        entityId: "b",
+      })
+      const id3 = await queueMutation({
+        method: "PATCH",
+        url: "/api/routes/r1/stops/s1",
+        body: "{}",
+        entityType: "route-stop",
+        entityId: "s1",
+      })
+
+      // id1 stays pending, id2 -> failed, id3 -> conflict
+      await updateMutationStatus(id2, "failed", "HTTP 500")
+      await updateMutationStatus(id3, "conflict", "HTTP 409")
+
+      const unsynced = await getUnsyncedMutations()
+      expect(unsynced).toHaveLength(3)
+      const statuses = unsynced.map((m) => m.status)
+      expect(statuses).toContain("pending")
+      expect(statuses).toContain("failed")
+      expect(statuses).toContain("conflict")
+    })
+
+    it("should return empty array when all mutations are synced", async () => {
+      const id1 = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+      await updateMutationStatus(id1, "synced")
+
+      const unsynced = await getUnsyncedMutations()
+      expect(unsynced).toHaveLength(0)
+    })
+
+    it("should not include synced mutations", async () => {
+      const syncedId = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/b",
+        body: "{}",
+        entityType: "booking",
+        entityId: "b",
+      })
+
+      await updateMutationStatus(syncedId, "synced")
+
+      const unsynced = await getUnsyncedMutations()
+      expect(unsynced).toHaveLength(1)
+      expect(unsynced[0].entityId).toBe("b")
     })
   })
 

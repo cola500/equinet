@@ -23,7 +23,7 @@ export interface EndpointCacheRecord {
 export interface DebugLogEntry {
   id?: number
   timestamp: number
-  category: "network" | "auth" | "navigation" | "error" | "sw" | "general" | "bugreport"
+  category: "network" | "auth" | "navigation" | "error" | "sw" | "general" | "bugreport" | "sync"
   level: "info" | "warn" | "error"
   message: string
   data?: string

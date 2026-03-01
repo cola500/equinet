@@ -4,6 +4,7 @@ import {
   incrementRetryCount,
   resetStaleSyncingMutations,
 } from "./mutation-queue"
+import { debugLog } from "./debug-logger"
 
 export interface SyncResult {
   synced: number
@@ -32,6 +33,8 @@ export async function processMutationQueue(): Promise<SyncResult> {
   const mutations = await getPendingMutations()
   const result: SyncResult = { synced: 0, failed: 0, conflicts: 0, rateLimited: 0 }
 
+  await debugLog("sync", "info", `Starting sync: ${mutations.length} mutations to process`)
+
   for (const mutation of mutations) {
     const id = mutation.id!
 
@@ -49,23 +52,24 @@ export async function processMutationQueue(): Promise<SyncResult> {
         await updateMutationStatus(id, "synced")
         result.synced++
         dispatchSyncedEvent(mutation.entityType, mutation.entityId)
+        await debugLog("sync", "info", `Mutation ${id} synced`, { entityType: mutation.entityType, url: mutation.url })
       } else if (outcome === "conflict") {
         result.conflicts++
-        // Status already set inside attemptWithRetry
+        await debugLog("sync", "warn", `Mutation ${id} conflict`, { entityType: mutation.entityType, url: mutation.url })
       } else if (outcome === "failed") {
         result.failed++
-        // Status already set inside attemptWithRetry
+        await debugLog("sync", "warn", `Mutation ${id} failed`, { entityType: mutation.entityType, url: mutation.url })
       } else if (outcome === "rate-limited") {
-        // Revert to pending (recoverable) and stop processing -- remaining
-        // mutations will hit the same rate limit.
         await updateMutationStatus(id, "pending")
         result.rateLimited++
+        await debugLog("sync", "warn", `Mutation ${id} rate-limited, aborting queue`, { entityType: mutation.entityType })
         break
       }
     } catch (error) {
       if (error instanceof TypeError) {
         // Network down -- revert to pending and abort
         await updateMutationStatus(id, "pending")
+        await debugLog("sync", "warn", `Network error at mutation ${id}, aborting queue`)
         break
       }
       // Unexpected error -- mark as failed
