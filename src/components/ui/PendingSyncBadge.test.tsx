@@ -18,7 +18,7 @@ describe("PendingSyncBadge", () => {
   it("should render amber badge when pending mutations exist", () => {
     vi.mocked(usePendingMutation).mockReturnValue({ hasPending: true, count: 1, hasConflict: false, hasFailed: false })
     render(<PendingSyncBadge entityId="abc" />)
-    expect(screen.getByText("Väntar på synk")).toBeInTheDocument()
+    expect(screen.getByText("Sparad lokalt")).toBeInTheDocument()
   })
 
   it("should show red badge when mutation has conflict status", () => {

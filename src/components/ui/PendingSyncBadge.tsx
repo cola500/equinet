@@ -34,7 +34,7 @@ export function PendingSyncBadge({ entityId }: PendingSyncBadgeProps) {
 
   return (
     <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800 whitespace-nowrap">
-      Väntar på synk
+      Sparad lokalt
     </span>
   )
 }

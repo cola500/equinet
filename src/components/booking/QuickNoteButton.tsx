@@ -111,7 +111,8 @@ export function QuickNoteButton({
         variant="outline"
         size={variant === "icon" ? "icon" : "sm"}
         onClick={handleMicClick}
-        title="Diktera en anteckning"
+        disabled={!isOnline}
+        title={isOnline ? "Diktera en anteckning" : "Röstanteckning kräver internetanslutning"}
         className={variant === "icon" ? "h-8 w-8" : ""}
       >
         <Mic className="h-4 w-4" />

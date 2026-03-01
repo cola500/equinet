@@ -85,7 +85,7 @@ export function BookingDetailDialog({
   const [providerNotes, setProviderNotes] = useState("")
   const [isEditingNotes, setIsEditingNotes] = useState(false)
   const [isSavingNotes, setIsSavingNotes] = useState(false)
-  const { guardMutation } = useOfflineGuard()
+  const { isOnline, guardMutation } = useOfflineGuard()
 
   if (!booking) return null
 
@@ -339,7 +339,7 @@ export function BookingDetailDialog({
                     {booking.providerNotes}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Klicka for att redigera
+                    Klicka för att redigera
                   </p>
                 </div>
               ) : (
@@ -351,7 +351,7 @@ export function BookingDetailDialog({
                     setIsEditingNotes(true)
                   }}
                 >
-                  Lagg till anteckning
+                  Lägg till anteckning
                 </Button>
               )}
             </div>
@@ -464,6 +464,11 @@ export function BookingDetailDialog({
             Kunden kommer att meddelas om avbokningen. Du kan skicka ett valfritt meddelande.
           </ResponsiveAlertDialogDescription>
         </ResponsiveAlertDialogHeader>
+        {!isOnline && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            Du är offline. Kunden notifieras automatiskt när du är online igen.
+          </div>
+        )}
         <div className="py-2">
           <Label htmlFor="cancel-message-calendar">Meddelande till kund (valfritt)</Label>
           <VoiceTextarea

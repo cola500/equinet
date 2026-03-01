@@ -403,6 +403,13 @@ export function ManualBookingDialog({
           <DialogTitle>Ny manuell bokning</DialogTitle>
         </DialogHeader>
 
+        {/* Offline notice */}
+        {!isOnline && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            Du är offline. Bokningen sparas lokalt och synkas automatiskt.
+          </div>
+        )}
+
         <div className="space-y-4">
           {/* -- Tjänst & Tid -- */}
           <div className="space-y-3">
@@ -482,13 +489,6 @@ export function ManualBookingDialog({
               </div>
             )}
           </div>
-
-          {/* Offline notice */}
-          {!isOnline && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-              Du är offline. Bokningen sparas lokalt och synkas automatiskt.
-            </div>
-          )}
 
           {/* -- Kund -- */}
           <div className="space-y-3 border-t pt-3">
@@ -666,11 +666,17 @@ export function ManualBookingDialog({
                     Skapa flera bokningar med regelbundna intervall
                   </p>
                 </div>
-                <Switch
-                  id="manual-recurring"
-                  checked={isRecurring}
-                  onCheckedChange={setIsRecurring}
-                />
+                <div className="flex flex-col items-end gap-0.5">
+                  <Switch
+                    id="manual-recurring"
+                    checked={isRecurring}
+                    onCheckedChange={setIsRecurring}
+                    disabled={!isOnline}
+                  />
+                  {!isOnline && (
+                    <span className="text-xs text-gray-500">Kräver internetanslutning</span>
+                  )}
+                </div>
               </div>
 
               {isRecurring && (
