@@ -264,32 +264,47 @@ function CalendarContent() {
   const handleAvailabilitySave = async (updatedDay: AvailabilityDay) => {
     if (!providerId) return
 
-    await guardMutation(async () => {
-      const updatedSchedule = availability.map((day) =>
-        day.dayOfWeek === updatedDay.dayOfWeek ? updatedDay : day
-      )
+    const updatedSchedule = availability.map((day) =>
+      day.dayOfWeek === updatedDay.dayOfWeek ? updatedDay : day
+    )
+    const body = JSON.stringify({ schedule: updatedSchedule })
 
-      try {
-        const response = await fetch(`/api/providers/${providerId}/availability-schedule`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ schedule: updatedSchedule }),
-        })
+    await guardMutation(
+      async () => {
+        try {
+          const response = await fetch(`/api/providers/${providerId}/availability-schedule`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body,
+          })
 
-        if (response.ok) {
-          mutateAvailability()
-          toast.success("Öppettider uppdaterade!")
-          availabilityDialog.close()
-        } else {
+          if (response.ok) {
+            mutateAvailability()
+            toast.success("Öppettider uppdaterade!")
+            availabilityDialog.close()
+          } else {
+            toast.error("Kunde inte spara öppettider")
+          }
+        } catch (error) {
+          console.error("Error saving availability:", error)
           toast.error("Kunde inte spara öppettider")
         }
-      } catch (error) {
-        console.error("Error saving availability:", error)
-        toast.error("Kunde inte spara öppettider")
+      },
+      {
+        method: "PUT",
+        url: `/api/providers/${providerId}/availability-schedule`,
+        body,
+        entityType: "availability-schedule",
+        entityId: `schedule:${providerId}`,
+        optimisticUpdate: () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          mutateAvailability(updatedSchedule as any, { revalidate: false })
+          availabilityDialog.close()
+        },
       }
-    })
+    )
   }
 
   const handleStatusUpdate = async (bookingId: string, status: string, cancellationMessage?: string) => {

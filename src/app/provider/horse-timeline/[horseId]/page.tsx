@@ -22,6 +22,7 @@ import {
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 // --- Types ---
@@ -85,6 +86,7 @@ export default function ProviderHorseTimelinePage() {
   const params = useParams()
   const horseId = params.horseId as string
   const { isLoading: authLoading, isProvider } = useAuth()
+  const { guardMutation } = useOfflineGuard()
 
   const [timeline, setTimeline] = useState<TimelineItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -207,54 +209,90 @@ export default function ProviderHorseTimelinePage() {
       toast.error("Välj ett intervall")
       return
     }
-    setIsSaving(true)
-    try {
-      const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
+
+    const body = JSON.stringify({
+      serviceId: editServiceId,
+      revisitIntervalWeeks: Number(editWeeks),
+      notes: editNotes.trim() || null,
+    })
+
+    await guardMutation(
+      async () => {
+        setIsSaving(true)
+        try {
+          const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body,
+          })
+          if (res.ok) {
+            await fetchIntervals()
+            setIsEditingInterval(false)
+            setEditingIntervalId(null)
+            toast.success("Intervall sparat")
+          } else {
+            const err = await res.json().catch(() => null)
+            toast.error(err?.error ?? "Kunde inte spara intervall")
+          }
+        } catch {
+          toast.error("Kunde inte spara intervall")
+        } finally {
+          setIsSaving(false)
+        }
+      },
+      {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId: editServiceId,
-          revisitIntervalWeeks: Number(editWeeks),
-          notes: editNotes.trim() || null,
-        }),
-      })
-      if (res.ok) {
-        await fetchIntervals()
-        setIsEditingInterval(false)
-        setEditingIntervalId(null)
-        toast.success("Intervall sparat")
-      } else {
-        const err = await res.json().catch(() => null)
-        toast.error(err?.error ?? "Kunde inte spara intervall")
+        url: `/api/provider/horses/${horseId}/interval`,
+        body,
+        entityType: "horse-interval",
+        entityId: `interval:${horseId}:${editServiceId}`,
+        optimisticUpdate: () => {
+          setIsEditingInterval(false)
+          setEditingIntervalId(null)
+        },
       }
-    } catch {
-      toast.error("Kunde inte spara intervall")
-    } finally {
-      setIsSaving(false)
-    }
+    )
   }
 
   const deleteInterval = async (serviceId: string) => {
-    setIsSaving(true)
-    try {
-      const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
+    const body = JSON.stringify({ serviceId })
+
+    await guardMutation(
+      async () => {
+        setIsSaving(true)
+        try {
+          const res = await fetch(`/api/provider/horses/${horseId}/interval`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body,
+          })
+          if (res.ok) {
+            await fetchIntervals()
+            setIsEditingInterval(false)
+            setEditingIntervalId(null)
+            toast.success("Intervall borttaget")
+          } else {
+            toast.error("Kunde inte ta bort intervall")
+          }
+        } catch {
+          toast.error("Kunde inte ta bort intervall")
+        } finally {
+          setIsSaving(false)
+        }
+      },
+      {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceId }),
-      })
-      if (res.ok) {
-        await fetchIntervals()
-        setIsEditingInterval(false)
-        setEditingIntervalId(null)
-        toast.success("Intervall borttaget")
-      } else {
-        toast.error("Kunde inte ta bort intervall")
+        url: `/api/provider/horses/${horseId}/interval`,
+        body,
+        entityType: "horse-interval",
+        entityId: `interval:${horseId}:${serviceId}`,
+        optimisticUpdate: () => {
+          setIntervals((prev) => prev.filter((i) => i.serviceId !== serviceId))
+          setIsEditingInterval(false)
+          setEditingIntervalId(null)
+        },
       }
-    } catch {
-      toast.error("Kunde inte ta bort intervall")
-    } finally {
-      setIsSaving(false)
-    }
+    )
   }
 
   useEffect(() => {

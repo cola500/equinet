@@ -11,11 +11,14 @@ export const CACHEABLE_ENDPOINTS = [
   "/api/provider/profile",
   "/api/services",
   "/api/provider/customers",
+  "/api/provider/due-for-service",
 ] as const
 
 /** Dynamic URL patterns that are also cacheable (matched via regex) */
 const CACHEABLE_PATTERNS = [
   /^\/api\/providers\/[^/]+\/availability-exceptions/,
+  /^\/api\/routes\/[^/]+$/,
+  /^\/api\/providers\/[^/]+\/availability-schedule$/,
 ]
 
 function isCacheable(url: string): boolean {

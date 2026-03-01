@@ -36,7 +36,7 @@ export interface PendingMutation {
   method: "PUT" | "PATCH" | "POST" | "DELETE"
   url: string
   body: string
-  entityType: "booking" | "booking-notes" | "route-stop" | "availability-exception" | "manual-booking"
+  entityType: "booking" | "booking-notes" | "route-stop" | "availability-exception" | "manual-booking" | "availability-schedule" | "horse-interval" | "customer" | "customer-note" | "customer-horse" | "service"
   entityId: string
   createdAt: number
   status: MutationStatus

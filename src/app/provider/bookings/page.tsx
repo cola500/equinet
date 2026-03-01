@@ -142,35 +142,57 @@ export default function ProviderBookingsPage() {
   const handleCancelBooking = async () => {
     if (!bookingToCancel) return
 
-    await guardMutation(async () => {
-      setIsCancelling(true)
-      try {
-        const body: { status: string; cancellationMessage?: string } = { status: "cancelled" }
-        if (cancellationMessage.trim()) {
-          body.cancellationMessage = cancellationMessage.trim()
+    const bookingId = bookingToCancel
+    const bodyObj: { status: string; cancellationMessage?: string } = { status: "cancelled" }
+    if (cancellationMessage.trim()) {
+      bodyObj.cancellationMessage = cancellationMessage.trim()
+    }
+    const body = JSON.stringify(bodyObj)
+
+    await guardMutation(
+      async () => {
+        setIsCancelling(true)
+        try {
+          const response = await fetch(`/api/bookings/${bookingId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body,
+          })
+
+          if (!response.ok) {
+            throw new Error("Failed to cancel booking")
+          }
+
+          toast.success("Bokningen har avbokats")
+          setBookingToCancel(null)
+          setCancellationMessage("")
+          mutateBookings()
+        } catch (error) {
+          console.error("Error cancelling booking:", error)
+          toast.error("Kunde inte avboka bokningen")
+        } finally {
+          setIsCancelling(false)
         }
-
-        const response = await fetch(`/api/bookings/${bookingToCancel}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to cancel booking")
-        }
-
-        toast.success("Bokningen har avbokats")
-        setBookingToCancel(null)
-        setCancellationMessage("")
-        mutateBookings()
-      } catch (error) {
-        console.error("Error cancelling booking:", error)
-        toast.error("Kunde inte avboka bokningen")
-      } finally {
-        setIsCancelling(false)
+      },
+      {
+        method: "PUT",
+        url: `/api/bookings/${bookingId}`,
+        body,
+        entityType: "booking",
+        entityId: bookingId,
+        optimisticUpdate: () => {
+          mutateBookings(
+            (current) =>
+              current?.map((b) =>
+                b.id === bookingId ? { ...b, status: "cancelled" } : b
+              ),
+            { revalidate: false }
+          )
+          setBookingToCancel(null)
+          setCancellationMessage("")
+        },
       }
-    })
+    )
   }
 
   if (isLoading || !isProvider) {

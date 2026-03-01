@@ -1,7 +1,8 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useState } from "react"
 import { useRouter } from "next/navigation"
+import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,38 +53,12 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
   const resolvedParams = use(params)
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const [route, setRoute] = useState<Route | null>(null)
-  const [isLoadingRoute, setIsLoadingRoute] = useState(true)
+  const { data: route, error: swrError, isLoading: isLoadingRoute, mutate: mutateRoute } = useSWR<Route>(
+    isProvider ? `/api/routes/${resolvedParams.id}` : null
+  )
   const [updatingStopId, setUpdatingStopId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const { guardMutation } = useOfflineGuard()
-
-  /* eslint-disable react-hooks/exhaustive-deps -- fetchRoute reads resolvedParams.id from closure; runs on mount/auth change */
-  useEffect(() => {
-    if (isProvider) {
-      fetchRoute()
-    }
-  }, [isProvider, resolvedParams.id])
-  /* eslint-enable react-hooks/exhaustive-deps */
-
-  const fetchRoute = async () => {
-    try {
-      setIsLoadingRoute(true)
-      setError(null)
-      const response = await fetch(`/api/routes/${resolvedParams.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setRoute(data)
-      } else {
-        setError("Kunde inte hämta rutt")
-      }
-    } catch (error) {
-      console.error("Error fetching route:", error)
-      setError("Något gick fel. Kontrollera din internetanslutning.")
-    } finally {
-      setIsLoadingRoute(false)
-    }
-  }
+  const error = swrError ? "Kunde inte hämta rutt" : null
 
   const updateStopStatus = async (stopId: string, status: string) => {
     setUpdatingStopId(stopId)
@@ -106,7 +81,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
           }
 
           toast.success(status === "completed" ? "Stopp markerat som klart!" : "Status uppdaterad")
-          await fetchRoute() // Refresh route data
+          await mutateRoute() // Refresh route data
         } catch (error: unknown) {
           const message = error instanceof Error ? error.message : "Något gick fel"
           console.error("Error updating stop:", error)
@@ -122,16 +97,18 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
         entityType: "route-stop",
         entityId: stopId,
         optimisticUpdate: () => {
-          // Optimistically update local state
-          setRoute((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  stops: prev.stops.map((s) =>
-                    s.id === stopId ? { ...s, status } : s
-                  ),
-                }
-              : prev
+          // Optimistically update the SWR cache
+          mutateRoute(
+            (prev) =>
+              prev
+                ? {
+                    ...prev,
+                    stops: prev.stops.map((s) =>
+                      s.id === stopId ? { ...s, status } : s
+                    ),
+                  }
+                : prev,
+            { revalidate: false }
           )
           setUpdatingStopId(null)
         },

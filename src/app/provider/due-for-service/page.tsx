@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
@@ -50,40 +51,14 @@ const statusConfig = {
 export default function DueForServicePage() {
   const { isLoading: authLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const [items, setItems] = useState<DueForServiceItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [fetchError, setFetchError] = useState(false)
   const [filter, setFilter] = useState<Filter>("all")
 
-  /* eslint-disable react-hooks/exhaustive-deps -- fetchDueItems reads filter from closure; intentionally triggered by filter changes */
-  useEffect(() => {
-    if (isProvider) {
-      fetchDueItems()
-    }
-  }, [isProvider, filter])
-  /* eslint-enable react-hooks/exhaustive-deps */
-
-  const fetchDueItems = async () => {
-    setIsLoading(true)
-    setFetchError(false)
-    try {
-      const params = new URLSearchParams()
-      if (filter !== "all") params.set("filter", filter)
-
-      const response = await fetch(`/api/provider/due-for-service?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setItems(data.items)
-      } else {
-        setFetchError(true)
-      }
-    } catch (error) {
-      console.error("Failed to fetch due-for-service:", error)
-      setFetchError(true)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const swrKey = isProvider
+    ? `/api/provider/due-for-service${filter !== "all" ? `?filter=${filter}` : ""}`
+    : null
+  const { data, error: swrError, isLoading, mutate: mutateDueItems } = useSWR<{ items: DueForServiceItem[] }>(swrKey)
+  const items = data?.items ?? []
+  const fetchError = !!swrError
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("sv-SE", {
@@ -127,7 +102,7 @@ export default function DueForServicePage() {
 
       {fetchError && !isOnline && (
         <div className="mb-6">
-          <OfflineErrorState onRetry={fetchDueItems} />
+          <OfflineErrorState onRetry={() => mutateDueItems()} />
         </div>
       )}
 
