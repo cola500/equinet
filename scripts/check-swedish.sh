@@ -11,7 +11,8 @@
 PATTERN='\b(hastar|tjanst|oppna|oppet|anvand|losenord|genomford|sammanstall|innehall|leverantor|arende|atgard|pagaende|tillganglig|losning|forfragan|foretag|oversikt|bedomning|forbereda|halsa|valkomm|nodvandig|mojlig|andr[ai]ng|forandr)\b'
 
 # Source code (blocking)
-SRC_RESULTS=$(grep -rn --include="*.ts" --include="*.tsx" -iE "$PATTERN" src/ 2>/dev/null)
+# Exclude lines with slug: or href containing URL slugs (ASCII by design)
+SRC_RESULTS=$(grep -rn --include="*.ts" --include="*.tsx" -iE "$PATTERN" src/ 2>/dev/null | grep -vE 'slug:|\.slug ===|href.*help/|getArticle\(' )
 
 # Markdown (warning only)
 MD_RESULTS=$(grep -rn --include="*.md" -iE "$PATTERN" docs/ *.md 2>/dev/null)
