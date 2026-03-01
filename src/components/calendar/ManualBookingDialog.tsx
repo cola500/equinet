@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import type { CalendarBooking } from "@/types"
 
 interface Service {
@@ -44,6 +45,8 @@ interface ManualBookingDialogProps {
   services: Service[]
   bookings?: CalendarBooking[]
   onBookingCreated: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mutateBookings?: (...args: any[]) => any
   prefillDate?: string   // YYYY-MM-DD
   prefillTime?: string   // HH:mm
 }
@@ -54,6 +57,7 @@ export function ManualBookingDialog({
   services,
   bookings,
   onBookingCreated,
+  mutateBookings,
   prefillDate,
   prefillTime,
 }: ManualBookingDialogProps) {
@@ -84,6 +88,8 @@ export function ManualBookingDialog({
   const [customerNotes, setCustomerNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+
+  const { isOnline, guardMutation } = useOfflineGuard()
 
   // Recurring booking state
   const recurringEnabled = useFeatureFlag("recurring_bookings")
@@ -154,6 +160,15 @@ export function ManualBookingDialog({
       setHorses([])
     }
   }, [selectedCustomer, fetchHorses])
+
+  // Auto-switch to manual customer mode when offline
+  useEffect(() => {
+    if (!isOnline && customerMode === "search") {
+      setCustomerMode("manual")
+      setSelectedCustomer(null)
+      setSearchQuery("")
+    }
+  }, [isOnline]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -233,6 +248,12 @@ export function ManualBookingDialog({
       }
     }
 
+    // Block recurring bookings offline
+    if (isRecurring && !isOnline) {
+      toast.error("Återkommande bokningar kräver internetanslutning")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -298,27 +319,72 @@ export function ManualBookingDialog({
         onOpenChange(false)
         onBookingCreated()
       } else {
-        const response = await fetch("/api/bookings/manual", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        })
+        const bodyStr = JSON.stringify(body)
+        const tempId = crypto.randomUUID()
+        const selectedService = services.find((s) => s.id === serviceId)
 
-        if (!response.ok) {
-          const data = await response.json()
-          if (data.details && Array.isArray(data.details)) {
-            // Zod validation errors -- show the first specific message
-            const firstIssue = data.details[0]
-            toast.error(firstIssue.message || data.error || "Kunde inte skapa bokning")
-          } else {
-            toast.error(data.error || "Kunde inte skapa bokning")
+        await guardMutation(async () => {
+          const response = await fetch("/api/bookings/manual", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: bodyStr,
+          })
+
+          if (!response.ok) {
+            const data = await response.json()
+            if (data.details && Array.isArray(data.details)) {
+              const firstIssue = data.details[0]
+              toast.error(firstIssue.message || data.error || "Kunde inte skapa bokning")
+            } else {
+              toast.error(data.error || "Kunde inte skapa bokning")
+            }
+            return
           }
-          return
-        }
 
-        toast.success("Bokning skapad!")
-        onOpenChange(false)
-        onBookingCreated()
+          toast.success("Bokning skapad!")
+          onOpenChange(false)
+          onBookingCreated()
+        }, {
+          method: "POST",
+          url: "/api/bookings/manual",
+          body: bodyStr,
+          entityType: "manual-booking",
+          entityId: tempId,
+          optimisticUpdate: () => {
+            // Add optimistic booking to SWR cache
+            if (mutateBookings) {
+              const optimisticBooking = {
+                id: tempId,
+                bookingDate,
+                startTime,
+                endTime: endTime || startTime,
+                status: "confirmed",
+                isManualBooking: true,
+                service: {
+                  name: selectedService?.name || "Tjänst",
+                  price: selectedService?.price || 0,
+                },
+                customer: {
+                  firstName: selectedCustomer?.firstName || customerName.trim().split(" ")[0] || "Kund",
+                  lastName: selectedCustomer?.lastName || customerName.trim().split(" ").slice(1).join(" ") || "",
+                  email: selectedCustomer?.email || customerEmail || "",
+                  phone: selectedCustomer?.phone || customerPhone || "",
+                },
+                horseName: horseName || undefined,
+                customerNotes: customerNotes || undefined,
+              }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              mutateBookings(
+                ((current: CalendarBooking[] | undefined) => [
+                  ...(current || []),
+                  optimisticBooking as CalendarBooking,
+                ]) as any,
+                { revalidate: false }
+              )
+            }
+            onOpenChange(false)
+          },
+        })
       }
     } catch {
       toast.error("Kunde inte skapa bokning")
@@ -417,6 +483,13 @@ export function ManualBookingDialog({
             )}
           </div>
 
+          {/* Offline notice */}
+          {!isOnline && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+              Du är offline. Bokningen sparas lokalt och synkas automatiskt.
+            </div>
+          )}
+
           {/* -- Kund -- */}
           <div className="space-y-3 border-t pt-3">
             <div className="flex items-center justify-between">
@@ -425,6 +498,7 @@ export function ManualBookingDialog({
                 <Button
                   variant={customerMode === "search" ? "default" : "ghost"}
                   size="sm"
+                  disabled={!isOnline}
                   onClick={() => {
                     setCustomerMode("search")
                     setCustomerName("")

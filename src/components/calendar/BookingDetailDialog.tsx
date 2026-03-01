@@ -27,6 +27,8 @@ import { CalendarBooking } from "@/types"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import Link from "next/link"
 
 interface BookingDetailDialogProps {
@@ -83,6 +85,7 @@ export function BookingDetailDialog({
   const [providerNotes, setProviderNotes] = useState("")
   const [isEditingNotes, setIsEditingNotes] = useState(false)
   const [isSavingNotes, setIsSavingNotes] = useState(false)
+  const { guardMutation } = useOfflineGuard()
 
   if (!booking) return null
 
@@ -135,6 +138,7 @@ export function BookingDetailDialog({
             >
               {getStatusLabel(booking.status, isPaid)}
             </span>
+            <PendingSyncBadge entityId={booking.id} />
             {booking.isManualBooking && (
               <span className="px-2 py-1 rounded text-sm bg-purple-100 text-purple-800">
                 Manuell bokning
@@ -279,23 +283,39 @@ export function BookingDetailDialog({
                         onClick={async () => {
                           setIsSavingNotes(true)
                           try {
-                            const res = await fetch(
-                              `/api/provider/bookings/${booking.id}/notes`,
-                              {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  providerNotes: providerNotes.trim() || null,
-                                }),
-                              }
-                            )
-                            if (res.ok) {
-                              setIsEditingNotes(false)
-                              onNotesUpdate?.(
-                                booking.id,
-                                providerNotes.trim() || null
+                            const notesBody = JSON.stringify({
+                              providerNotes: providerNotes.trim() || null,
+                            })
+                            await guardMutation(async () => {
+                              const res = await fetch(
+                                `/api/provider/bookings/${booking.id}/notes`,
+                                {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: notesBody,
+                                }
                               )
-                            }
+                              if (res.ok) {
+                                setIsEditingNotes(false)
+                                onNotesUpdate?.(
+                                  booking.id,
+                                  providerNotes.trim() || null
+                                )
+                              }
+                            }, {
+                              method: "PUT",
+                              url: `/api/provider/bookings/${booking.id}/notes`,
+                              body: notesBody,
+                              entityType: "booking-notes",
+                              entityId: booking.id,
+                              optimisticUpdate: () => {
+                                setIsEditingNotes(false)
+                                onNotesUpdate?.(
+                                  booking.id,
+                                  providerNotes.trim() || null
+                                )
+                              },
+                            })
                           } finally {
                             setIsSavingNotes(false)
                           }

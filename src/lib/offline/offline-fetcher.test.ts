@@ -38,6 +38,42 @@ describe("offlineAwareFetcher", () => {
     })
   })
 
+  describe("CACHEABLE_ENDPOINTS", () => {
+    it("should cache /api/services responses", async () => {
+      const mockData = [{ id: "s1", name: "Hovvård" }]
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+
+      await offlineAwareFetcher("/api/services")
+
+      await new Promise((r) => setTimeout(r, 50))
+
+      const cached = await offlineDb.endpointCache.get("/api/services")
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
+    })
+
+    it("should cache dynamic availability-exceptions URL", async () => {
+      const mockData = [{ date: "2026-03-01", reason: "Semester" }]
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockData),
+      })
+
+      await offlineAwareFetcher("/api/providers/p1/availability-exceptions")
+
+      await new Promise((r) => setTimeout(r, 50))
+
+      const cached = await offlineDb.endpointCache.get(
+        "/api/providers/p1/availability-exceptions"
+      )
+      expect(cached).toBeDefined()
+      expect(cached!.data).toEqual(mockData)
+    })
+  })
+
   describe("when online (network-first)", () => {
     it("returns data from network on success", async () => {
       const mockData = [{ id: "1", status: "confirmed" }]

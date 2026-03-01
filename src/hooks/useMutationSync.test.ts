@@ -109,6 +109,24 @@ describe("useMutationSync", () => {
     })
   })
 
+  it("should show conflict warning toast with longer duration", async () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockGetPendingCount.mockResolvedValue(3)
+    mockProcessQueue.mockResolvedValue({ synced: 1, failed: 0, conflicts: 2, rateLimited: 0 })
+
+    const { rerender } = renderHook(() => useMutationSync())
+
+    mockUseOnlineStatus.mockReturnValue(true)
+    rerender()
+
+    await waitFor(() => {
+      expect(toast.warning).toHaveBeenCalledWith(
+        expect.stringContaining("kunde inte synkas"),
+        expect.objectContaining({ duration: 8000 })
+      )
+    })
+  })
+
   it("should not sync when feature flag is off", async () => {
     mockUseFeatureFlag.mockReturnValue(false)
     mockUseOnlineStatus.mockReturnValue(false)

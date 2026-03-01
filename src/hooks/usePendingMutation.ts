@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { getPendingMutationsByEntity } from "@/lib/offline/mutation-queue"
+import { getActiveMutationsByEntity } from "@/lib/offline/mutation-queue"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 /**
@@ -10,12 +10,16 @@ import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
  */
 export function usePendingMutation(entityId: string) {
   const [count, setCount] = useState(0)
+  const [hasConflict, setHasConflict] = useState(false)
+  const [hasFailed, setHasFailed] = useState(false)
   const isOfflineEnabled = useFeatureFlag("offline_mode")
 
   const refresh = useCallback(async () => {
     if (!isOfflineEnabled) return
-    const mutations = await getPendingMutationsByEntity(entityId)
+    const mutations = await getActiveMutationsByEntity(entityId)
     setCount(mutations.length)
+    setHasConflict(mutations.some((m) => m.status === "conflict"))
+    setHasFailed(mutations.some((m) => m.status === "failed"))
   }, [entityId, isOfflineEnabled])
 
   useEffect(() => {
@@ -31,5 +35,5 @@ export function usePendingMutation(entityId: string) {
     }
   }, [refresh])
 
-  return { hasPending: count > 0, count }
+  return { hasPending: count > 0, count, hasConflict, hasFailed }
 }

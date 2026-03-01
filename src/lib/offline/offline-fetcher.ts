@@ -9,10 +9,21 @@ export const CACHEABLE_ENDPOINTS = [
   "/api/bookings",
   "/api/routes/my-routes",
   "/api/provider/profile",
+  "/api/services",
+  "/api/provider/customers",
 ] as const
 
+/** Dynamic URL patterns that are also cacheable (matched via regex) */
+const CACHEABLE_PATTERNS = [
+  /^\/api\/providers\/[^/]+\/availability-exceptions/,
+]
+
 function isCacheable(url: string): boolean {
-  return CACHEABLE_ENDPOINTS.some((ep) => url === ep || url.startsWith(ep + "?"))
+  const baseUrl = url.split("?")[0]
+  if (CACHEABLE_ENDPOINTS.some((ep) => url === ep || url.startsWith(ep + "?"))) {
+    return true
+  }
+  return CACHEABLE_PATTERNS.some((pattern) => pattern.test(baseUrl))
 }
 
 /**

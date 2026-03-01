@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { AvailabilityException } from "@/types"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 
 interface DayExceptionDialogProps {
   date: string | null // YYYY-MM-DD
@@ -126,7 +127,10 @@ export function DayExceptionDialog({
             {exception ? "Redigera undantag" : "Lägg till undantag"}
           </DialogTitle>
           <DialogDescription className="capitalize">
-            {formatDate(date)}
+            <span className="flex items-center gap-2">
+              {formatDate(date)}
+              <PendingSyncBadge entityId={`exception:${date}`} />
+            </span>
           </DialogDescription>
         </DialogHeader>
 

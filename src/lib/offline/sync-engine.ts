@@ -88,10 +88,10 @@ async function attemptWithRetry(
   let lastStatus = 0
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const isDelete = method === "DELETE"
     const response = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
-      body,
+      ...(isDelete ? {} : { headers: { "Content-Type": "application/json" }, body }),
     })
 
     lastStatus = response.status

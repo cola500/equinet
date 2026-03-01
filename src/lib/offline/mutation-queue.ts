@@ -1,7 +1,7 @@
 import { offlineDb, type MutationStatus, type PendingMutation } from "./db"
 
 interface QueueMutationInput {
-  method: "PUT" | "PATCH"
+  method: PendingMutation["method"]
   url: string
   body: string
   entityType: PendingMutation["entityType"]
@@ -27,7 +27,7 @@ export async function getPendingMutations(): Promise<PendingMutation[]> {
     .sortBy("createdAt")
 }
 
-/** Get pending/failed mutations for a specific entity. */
+/** Get pending/failed mutations for a specific entity (used for dedup checks). */
 export async function getPendingMutationsByEntity(
   entityId: string
 ): Promise<PendingMutation[]> {
@@ -35,6 +35,17 @@ export async function getPendingMutationsByEntity(
     .where("entityId")
     .equals(entityId)
     .filter((m) => m.status === "pending" || m.status === "failed")
+    .toArray()
+}
+
+/** Get all non-synced mutations for a specific entity (used for UI badges). */
+export async function getActiveMutationsByEntity(
+  entityId: string
+): Promise<PendingMutation[]> {
+  return await offlineDb.pendingMutations
+    .where("entityId")
+    .equals(entityId)
+    .filter((m) => m.status !== "synced")
     .toArray()
 }
 

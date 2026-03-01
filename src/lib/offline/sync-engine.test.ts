@@ -386,6 +386,54 @@ describe("sync-engine", () => {
       expect(second?.status).toBe("pending")
     })
 
+    it("should send DELETE without body and Content-Type header", async () => {
+      await queueMutation({
+        method: "DELETE",
+        url: "/api/providers/p1/availability-exceptions/2026-03-01",
+        body: "",
+        entityType: "availability-exception",
+        entityId: "exception:2026-03-01",
+      })
+
+      const fetchSpy = mockFetch([{ status: 200 }])
+
+      const result = await processMutationQueue()
+
+      expect(result.synced).toBe(1)
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/providers/p1/availability-exceptions/2026-03-01",
+        expect.objectContaining({ method: "DELETE" })
+      )
+      // DELETE should NOT have body or Content-Type
+      const fetchOptions = fetchSpy.mock.calls[0][1] as RequestInit
+      expect(fetchOptions.body).toBeUndefined()
+      expect(fetchOptions.headers).toBeUndefined()
+    })
+
+    it("should handle POST 201 as success", async () => {
+      await queueMutation({
+        method: "POST",
+        url: "/api/bookings/manual",
+        body: JSON.stringify({ service: "hoof-trim" }),
+        entityType: "manual-booking",
+        entityId: "temp-123",
+      })
+
+      const fetchSpy = mockFetch([{ status: 201 }])
+
+      const result = await processMutationQueue()
+
+      expect(result.synced).toBe(1)
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/bookings/manual",
+        expect.objectContaining({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ service: "hoof-trim" }),
+        })
+      )
+    })
+
     it("should reset stale syncing mutations before processing", async () => {
       // Simulate a mutation stuck in "syncing" from a previous interrupted run
       const id = await queueMutation({

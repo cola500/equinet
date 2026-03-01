@@ -181,16 +181,18 @@ function CalendarContent() {
     latitude?: number | null
     longitude?: number | null
   }) => {
-    await guardMutation(async () => {
-      if (!providerId) {
-        toast.error("Kunde inte spara - profilen har inte laddats ännu. Försök igen.")
-        throw new Error("Provider ID not available")
-      }
+    if (!providerId) {
+      toast.error("Kunde inte spara - profilen har inte laddats ännu. Försök igen.")
+      return
+    }
 
+    const bodyStr = JSON.stringify(data)
+
+    await guardMutation(async () => {
       const response = await fetch(`/api/providers/${providerId}/availability-exceptions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: bodyStr,
       })
 
       if (response.ok) {
@@ -207,6 +209,22 @@ function CalendarContent() {
         toast.error(errorMessage)
         throw new Error("Failed to save exception")
       }
+    }, {
+      method: "POST",
+      url: `/api/providers/${providerId}/availability-exceptions`,
+      body: bodyStr,
+      entityType: "availability-exception",
+      entityId: `exception:${data.date}`,
+      optimisticUpdate: () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mutateExceptions(
+          ((current: any[] | undefined) => [
+            ...(current || []),
+            { ...data, providerId },
+          ]) as any,
+          { revalidate: false }
+        )
+      },
     })
   }
 
@@ -226,6 +244,20 @@ function CalendarContent() {
         toast.error("Kunde inte ta bort undantag")
         throw new Error("Failed to delete exception")
       }
+    }, {
+      method: "DELETE",
+      url: `/api/providers/${providerId}/availability-exceptions/${date}`,
+      body: "",
+      entityType: "availability-exception",
+      entityId: `exception:${date}`,
+      optimisticUpdate: () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mutateExceptions(
+          ((current: any[] | undefined) =>
+            current?.filter((e: any) => e.date !== date)) as any,
+          { revalidate: false }
+        )
+      },
     })
   }
 
@@ -261,13 +293,13 @@ function CalendarContent() {
   }
 
   const handleStatusUpdate = async (bookingId: string, status: string, cancellationMessage?: string) => {
+    const body: { status: string; cancellationMessage?: string } = { status }
+    if (cancellationMessage) {
+      body.cancellationMessage = cancellationMessage
+    }
+
     await guardMutation(async () => {
       try {
-        const body: { status: string; cancellationMessage?: string } = { status }
-        if (cancellationMessage) {
-          body.cancellationMessage = cancellationMessage
-        }
-
         const response = await fetch(`/api/bookings/${bookingId}`, {
           method: "PUT",
           headers: {
@@ -287,6 +319,21 @@ function CalendarContent() {
         console.error("Error updating booking:", error)
         toast.error("Kunde inte uppdatera bokning")
       }
+    }, {
+      method: "PUT",
+      url: `/api/bookings/${bookingId}`,
+      body: JSON.stringify(body),
+      entityType: "booking",
+      entityId: bookingId,
+      optimisticUpdate: () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mutateBookings(
+          ((current: CalendarBooking[] | undefined) =>
+            current?.map((b) => b.id === bookingId ? { ...b, status } : b)) as any,
+          { revalidate: false }
+        )
+        handleDialogClose(false)
+      },
     })
   }
 
@@ -482,6 +529,7 @@ function CalendarContent() {
         services={services}
         bookings={bookings}
         onBookingCreated={() => mutateBookings()}
+        mutateBookings={mutateBookings}
         prefillDate={prefillDate}
         prefillTime={prefillTime}
       />
