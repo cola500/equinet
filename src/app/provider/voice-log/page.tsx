@@ -26,10 +26,13 @@ import {
   Plus,
 } from "lucide-react"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { InfoPopover } from "@/components/ui/info-popover"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 export default function VoiceLogPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const helpEnabled = useFeatureFlag("help_center")
   const {
     transcript,
     setTranscript,
@@ -66,8 +69,9 @@ export default function VoiceLogPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
             Logga utfört arbete
+            <InfoPopover text="Spela in eller skriv arbetsanteckningar. AI kopplar automatiskt till rätt bokning." helpHref={helpEnabled ? "/provider/help/rostloggning" : undefined} />
           </h1>
           <p className="text-gray-600 mt-1">
             {isSupported

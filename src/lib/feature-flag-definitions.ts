@@ -109,4 +109,11 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     defaultEnabled: false,
     clientVisible: false,
   },
+  help_center: {
+    key: "help_center",
+    label: "Hjälpcentral",
+    description: "Inbyggd hjälpcentral med sökbara artiklar per roll",
+    defaultEnabled: true,
+    clientVisible: true,
+  },
 }

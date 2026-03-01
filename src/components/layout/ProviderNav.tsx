@@ -18,6 +18,7 @@ import {
   Mic,
   BarChart3,
   ChevronDown,
+  HelpCircle,
 } from "lucide-react"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
@@ -53,6 +54,7 @@ const providerMoreItems: MoreItem[] = [
   { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings", section: "Planering" },
   { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", featureFlag: "business_insights", section: "Mitt företag" },
   { href: "/provider/reviews", label: "Recensioner", icon: Star, section: "Mitt företag" },
+  { href: "/provider/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center", section: "Mitt företag" },
   { href: "/provider/profile", label: "Min profil", icon: User, section: "Mitt företag" },
 ]
 
@@ -74,6 +76,7 @@ const secondaryNavItems: (NavItem & { section?: string })[] = [
   { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service", section: "Planering" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings", section: "Planering" },
   { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", featureFlag: "business_insights", section: "Mitt företag" },
+  { href: "/provider/help", label: "Hjälp", matchPrefix: "/provider/help", featureFlag: "help_center", section: "Mitt företag" },
   { href: "/provider/profile", label: "Min profil", section: "Mitt företag" },
 ]
 
