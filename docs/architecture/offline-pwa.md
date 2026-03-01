@@ -167,8 +167,17 @@ Systemet består av 5 lager som samverkar:
 | Uppdatera bokningsanteckning | `/api/provider/bookings/:id/notes` | PUT | Implementerad |
 | Uppdatera ruttstopp-status | `/api/routes/:id/stops` | PATCH | Implementerad |
 | Skapa manuell bokning | `/api/bookings/manual` | POST | Implementerad |
-| Avboka bokning | `/api/bookings/:id` | PATCH | Implementerad |
+| Avboka bokning | `/api/bookings/:id` | PUT | Implementerad |
 | Skapa/ändra tillgänglighetsundantag | `/api/availability-exceptions` | POST/PUT | Implementerad |
+| Ändra öppettider | `/api/providers/:id/availability-schedule` | PUT | Implementerad |
+| Spara häst-intervall | `/api/provider/horses/:id/interval` | PUT | Implementerad |
+| Ta bort häst-intervall | `/api/provider/horses/:id/interval` | DELETE | Implementerad |
+
+### Blocking mode (vänlig offline-toast, köas ej)
+
+| Operation | Hook/Sida |
+|-----------|-----------|
+| Alla kundmutationer (8 st) | `useProviderCustomers.ts` |
 
 ---
 
