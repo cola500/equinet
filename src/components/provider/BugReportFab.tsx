@@ -81,7 +81,7 @@ export function BugReportFab() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Rapportera fel"
-        className="fixed right-4 bottom-20 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-colors hover:bg-red-700 md:bottom-6"
+        className="fixed right-4 bottom-40 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-colors hover:bg-red-700 md:bottom-6"
       >
         <Bug className="h-5 w-5" />
       </button>
