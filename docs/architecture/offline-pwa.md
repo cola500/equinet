@@ -117,7 +117,7 @@ Systemet består av 5 lager som samverkar:
 |-----------|-----|-------------|
 | OfflineBanner | `src/components/provider/OfflineBanner.tsx` | Gul banner offline, grön "Återansluten" i 3s |
 | InstallPrompt | `src/components/provider/InstallPrompt.tsx` | Installationsbanner (Android + iOS-instruktioner) |
-| PendingSyncBadge | `src/components/ui/PendingSyncBadge.tsx` | Gul badge "Väntar på synk" på enskilda bokningar |
+| PendingSyncBadge | `src/components/ui/PendingSyncBadge.tsx` | Gul badge "Sparad lokalt" på enskilda bokningar (röd vid konflikt/fel) |
 
 ### Error Boundaries
 
@@ -164,8 +164,11 @@ Systemet består av 5 lager som samverkar:
 | Operation | Endpoint | Metod | Status |
 |-----------|----------|-------|--------|
 | Markera bokning genomförd | `/api/bookings/:id` | PATCH | Implementerad |
-| Uppdatera bokningsanteckning | `/api/bookings/:id` | PATCH | Implementerad |
+| Uppdatera bokningsanteckning | `/api/provider/bookings/:id/notes` | PUT | Implementerad |
 | Uppdatera ruttstopp-status | `/api/routes/:id/stops` | PATCH | Implementerad |
+| Skapa manuell bokning | `/api/bookings/manual` | POST | Implementerad |
+| Avboka bokning | `/api/bookings/:id` | PATCH | Implementerad |
+| Skapa/ändra tillgänglighetsundantag | `/api/availability-exceptions` | POST/PUT | Implementerad |
 
 ---
 
@@ -211,7 +214,7 @@ npm run build:pwa && npm run start:pwa
 ## Kända begränsningar
 
 - **Bara leverantörer**: Kunder har inget offline-stöd ännu (se roadmap fas 4)
-- **Bara läs + 3 operationer**: Nya bokningar, betalningar, meddelanden fungerar inte offline
+- **Inga betalningar/meddelanden offline**: Betalningar och meddelanden fungerar inte offline
 - **4h cache-staleness**: Data äldre än 4 timmar visas inte
 - **Last-write-wins**: Ingen konfliktdetektering -- om annan användare ändrar samma bokning vinner den sista skrivningen
 - **Safari Background Sync**: Stöds inte -- sync sker vid app-focus/manuell refresh
@@ -237,4 +240,4 @@ Se [docs/plans/offline-pwa-roadmap.md](plans/offline-pwa-roadmap.md) för framti
 
 ---
 
-**Senast uppdaterad**: 2026-02-21
+**Senast uppdaterad**: 2026-03-01
