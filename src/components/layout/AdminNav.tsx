@@ -12,6 +12,7 @@ import {
   Activity,
   Bell,
   ClipboardCheck,
+  Bug,
 } from "lucide-react"
 import { BottomTabBar } from "./BottomTabBar"
 import type { TabItem, MoreMenuItem } from "./BottomTabBar"
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/admin/bookings", label: "Bokningar", icon: CalendarDays },
   { href: "/admin/reviews", label: "Recensioner", icon: Star },
   { href: "/admin/verifications", label: "Verifieringar", icon: ShieldCheck },
+  { href: "/admin/bug-reports", label: "Buggrapporter", icon: Bug },
   { href: "/admin/integrations", label: "Integrationer", icon: Plug },
   { href: "/admin/system", label: "System", icon: Activity },
   { href: "/admin/notifications", label: "Notifikationer", icon: Bell },
@@ -38,6 +40,7 @@ const mobileTabs: TabItem[] = [
 const mobileMoreItems: MoreMenuItem[] = [
   { href: "/admin/reviews", label: "Recensioner", icon: Star, matchPrefix: "/admin/reviews" },
   { href: "/admin/verifications", label: "Verifieringar", icon: ShieldCheck, matchPrefix: "/admin/verifications" },
+  { href: "/admin/bug-reports", label: "Buggar", icon: Bug, matchPrefix: "/admin/bug-reports" },
   { href: "/admin/integrations", label: "Integrationer", icon: Plug, matchPrefix: "/admin/integrations" },
   { href: "/admin/notifications", label: "Notifikationer", icon: Bell, matchPrefix: "/admin/notifications" },
   { href: "/admin/testing-guide", label: "Testguide", icon: ClipboardCheck, matchPrefix: "/admin/testing-guide" },
