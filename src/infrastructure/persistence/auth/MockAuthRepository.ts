@@ -15,6 +15,7 @@ import type {
   CreateProviderData,
   CreateVerificationTokenData,
   CreatePasswordResetTokenData,
+  UpgradeGhostUserData,
 } from './IAuthRepository'
 
 interface StoredUser {
@@ -25,6 +26,7 @@ interface StoredUser {
   userType: string
   isAdmin?: boolean
   isBlocked?: boolean
+  isManualCustomer?: boolean
   passwordHash: string
   emailVerified: boolean
   phone?: string
@@ -65,11 +67,28 @@ export class MockAuthRepository implements IAuthRepository {
   // IAuthRepository implementation
   // -----------------------------------------------------------
 
-  async findUserByEmail(email: string): Promise<{ id: string } | null> {
+  async findUserByEmail(email: string): Promise<{ id: string; isManualCustomer: boolean } | null> {
     for (const user of this.users.values()) {
-      if (user.email === email) return { id: user.id }
+      if (user.email === email) return { id: user.id, isManualCustomer: user.isManualCustomer ?? false }
     }
     return null
+  }
+
+  async upgradeGhostUser(data: UpgradeGhostUserData): Promise<AuthUser> {
+    const user = this.users.get(data.userId)
+    if (!user) throw new Error(`User not found: ${data.userId}`)
+    user.passwordHash = data.passwordHash
+    user.firstName = data.firstName
+    user.lastName = data.lastName
+    user.phone = data.phone
+    user.isManualCustomer = false
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userType: user.userType,
+    }
   }
 
   async findUserWithCredentials(email: string): Promise<AuthUserWithCredentials | null> {

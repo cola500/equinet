@@ -101,11 +101,26 @@ export interface CreatePasswordResetTokenData {
   expiresAt: Date
 }
 
+/** Data for upgrading a ghost user to a real account */
+export interface UpgradeGhostUserData {
+  userId: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  phone?: string
+}
+
 export interface IAuthRepository {
   /**
-   * Find user by email (only returns { id } for duplicate check)
+   * Find user by email (returns id + ghost status for duplicate/upgrade check)
    */
-  findUserByEmail(email: string): Promise<{ id: string } | null>
+  findUserByEmail(email: string): Promise<{ id: string; isManualCustomer: boolean } | null>
+
+  /**
+   * Upgrade a ghost user to a real account (in-place update).
+   * Sets isManualCustomer=false and updates profile fields.
+   */
+  upgradeGhostUser(data: UpgradeGhostUserData): Promise<AuthUser>
 
   /**
    * Find user with credentials for login.

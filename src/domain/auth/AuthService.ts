@@ -110,9 +110,14 @@ export class AuthService {
     // 1. Check for duplicate email
     const existing = await this.repo.findUserByEmail(input.email)
     if (existing) {
+      // Ghost user upgrade: in-place upgrade instead of blocking registration
+      if (existing.isManualCustomer) {
+        return this.upgradeGhostUser(existing.id, input)
+      }
+
       return Result.fail({
         type: 'EMAIL_ALREADY_EXISTS',
-        message: 'En anvandare med denna email finns redan',
+        message: 'En användare med denna email finns redan',
       })
     }
 
@@ -150,6 +155,46 @@ export class AuthService {
     })
 
     // 6. Send verification email (fire-and-forget)
+    if (this.emailService) {
+      this.emailService.sendVerification(input.email, input.firstName, token).catch(() => {
+        // Logged at infrastructure level
+      })
+    }
+
+    return Result.ok({ user })
+  }
+
+  /**
+   * Upgrade a ghost user (isManualCustomer=true) to a real account.
+   * Reuses the same User row -- no new user is created.
+   */
+  private async upgradeGhostUser(
+    ghostUserId: string,
+    input: RegisterInput
+  ): Promise<Result<RegisterResult, AuthError>> {
+    // 1. Hash password
+    const passwordHash = await this.hashPassword(input.password)
+
+    // 2. Upgrade in place
+    const user = await this.repo.upgradeGhostUser({
+      userId: ghostUserId,
+      passwordHash,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+    })
+
+    // 3. Create verification token
+    const token = this.generateToken()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await this.repo.createVerificationToken({
+      token,
+      userId: ghostUserId,
+      expiresAt,
+    })
+
+    // 4. Send verification email (fire-and-forget)
     if (this.emailService) {
       this.emailService.sendVerification(input.email, input.firstName, token).catch(() => {
         // Logged at infrastructure level

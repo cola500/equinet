@@ -102,4 +102,11 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     defaultEnabled: false,
     clientVisible: true,
   },
+  customer_invite: {
+    key: "customer_invite",
+    label: "Kundinbjudningar",
+    description: "Leverantörer kan bjuda in manuellt tillagda kunder att skapa konto",
+    defaultEnabled: false,
+    clientVisible: false,
+  },
 }
