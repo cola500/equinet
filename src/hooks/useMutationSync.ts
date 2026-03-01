@@ -54,7 +54,7 @@ export function useMutationSync() {
         if (result.conflicts > 0) parts.push(`${result.conflicts} kunde inte synkas`)
         if (result.failed > 0) parts.push(`${result.failed} misslyckades`)
         if (result.rateLimited > 0) parts.push(`${result.rateLimited} begränsade av hastighet`)
-        toast.warning(parts.join(", "))
+        toast.warning(parts.join(", "), { duration: 8000 })
       }
 
       // Sequence: sync first, THEN revalidate SWR cache.

@@ -27,6 +27,8 @@ import { CalendarBooking } from "@/types"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
 import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import Link from "next/link"
 
 interface BookingDetailDialogProps {
@@ -83,6 +85,7 @@ export function BookingDetailDialog({
   const [providerNotes, setProviderNotes] = useState("")
   const [isEditingNotes, setIsEditingNotes] = useState(false)
   const [isSavingNotes, setIsSavingNotes] = useState(false)
+  const { isOnline, guardMutation } = useOfflineGuard()
 
   if (!booking) return null
 
@@ -135,6 +138,7 @@ export function BookingDetailDialog({
             >
               {getStatusLabel(booking.status, isPaid)}
             </span>
+            <PendingSyncBadge entityId={booking.id} />
             {booking.isManualBooking && (
               <span className="px-2 py-1 rounded text-sm bg-purple-100 text-purple-800">
                 Manuell bokning
@@ -279,23 +283,39 @@ export function BookingDetailDialog({
                         onClick={async () => {
                           setIsSavingNotes(true)
                           try {
-                            const res = await fetch(
-                              `/api/provider/bookings/${booking.id}/notes`,
-                              {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  providerNotes: providerNotes.trim() || null,
-                                }),
-                              }
-                            )
-                            if (res.ok) {
-                              setIsEditingNotes(false)
-                              onNotesUpdate?.(
-                                booking.id,
-                                providerNotes.trim() || null
+                            const notesBody = JSON.stringify({
+                              providerNotes: providerNotes.trim() || null,
+                            })
+                            await guardMutation(async () => {
+                              const res = await fetch(
+                                `/api/provider/bookings/${booking.id}/notes`,
+                                {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: notesBody,
+                                }
                               )
-                            }
+                              if (res.ok) {
+                                setIsEditingNotes(false)
+                                onNotesUpdate?.(
+                                  booking.id,
+                                  providerNotes.trim() || null
+                                )
+                              }
+                            }, {
+                              method: "PUT",
+                              url: `/api/provider/bookings/${booking.id}/notes`,
+                              body: notesBody,
+                              entityType: "booking-notes",
+                              entityId: booking.id,
+                              optimisticUpdate: () => {
+                                setIsEditingNotes(false)
+                                onNotesUpdate?.(
+                                  booking.id,
+                                  providerNotes.trim() || null
+                                )
+                              },
+                            })
                           } finally {
                             setIsSavingNotes(false)
                           }
@@ -319,7 +339,7 @@ export function BookingDetailDialog({
                     {booking.providerNotes}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Klicka for att redigera
+                    Klicka för att redigera
                   </p>
                 </div>
               ) : (
@@ -331,7 +351,7 @@ export function BookingDetailDialog({
                     setIsEditingNotes(true)
                   }}
                 >
-                  Lagg till anteckning
+                  Lägg till anteckning
                 </Button>
               )}
             </div>
@@ -444,6 +464,11 @@ export function BookingDetailDialog({
             Kunden kommer att meddelas om avbokningen. Du kan skicka ett valfritt meddelande.
           </ResponsiveAlertDialogDescription>
         </ResponsiveAlertDialogHeader>
+        {!isOnline && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            Du är offline. Kunden notifieras automatiskt när du är online igen.
+          </div>
+        )}
         <div className="py-2">
           <Label htmlFor="cancel-message-calendar">Meddelande till kund (valfritt)</Label>
           <VoiceTextarea

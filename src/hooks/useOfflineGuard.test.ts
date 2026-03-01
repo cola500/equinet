@@ -167,6 +167,62 @@ describe("useOfflineGuard", () => {
     )
   })
 
+  it("should queue POST mutation when offline", async () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    const action = vi.fn().mockResolvedValue(undefined)
+    const optimisticUpdate = vi.fn()
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "POST",
+        url: "/api/bookings/manual",
+        body: JSON.stringify({ service: "hoof-trim" }),
+        entityType: "manual-booking",
+        entityId: "temp-123",
+        optimisticUpdate,
+      })
+    })
+
+    expect(action).not.toHaveBeenCalled()
+    expect(mockQueueMutation).toHaveBeenCalledWith({
+      method: "POST",
+      url: "/api/bookings/manual",
+      body: JSON.stringify({ service: "hoof-trim" }),
+      entityType: "manual-booking",
+      entityId: "temp-123",
+    })
+    expect(optimisticUpdate).toHaveBeenCalled()
+    expect(toast.info).toHaveBeenCalledWith(
+      expect.stringContaining("sparas offline")
+    )
+  })
+
+  it("should queue DELETE mutation when offline", async () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    const action = vi.fn().mockResolvedValue(undefined)
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "DELETE",
+        url: "/api/providers/p1/availability-exceptions/2026-03-01",
+        body: "",
+        entityType: "availability-exception",
+        entityId: "exception:2026-03-01",
+      })
+    })
+
+    expect(action).not.toHaveBeenCalled()
+    expect(mockQueueMutation).toHaveBeenCalledWith({
+      method: "DELETE",
+      url: "/api/providers/p1/availability-exceptions/2026-03-01",
+      body: "",
+      entityType: "availability-exception",
+      entityId: "exception:2026-03-01",
+    })
+  })
+
   it("should execute action normally when online even with offlineOptions", async () => {
     const action = vi.fn().mockResolvedValue("ok")
     const { result } = renderHook(() => useOfflineGuard())

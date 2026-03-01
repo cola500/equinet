@@ -240,7 +240,7 @@ test.describe('Offline Mutations', () => {
       hasText: 'E2E OfflineMut1',
     })
     await expect(
-      updatedCard.getByText('Väntar på synk', { exact: true })
+      updatedCard.getByText('Sparad lokalt', { exact: true })
     ).toBeVisible({ timeout: 5000 })
 
     // 8. Verify the mutation was queued in IndexedDB with correct data.
@@ -317,10 +317,10 @@ test.describe('Offline Mutations', () => {
       page.getByText(/sparas offline/i)
     ).toBeVisible({ timeout: 5000 })
 
-    // 7. Assert: PendingSyncBadge shows "Väntar på synk"
-    //    Use exact:true to avoid matching OfflineBanner ("1 ändring väntar på synk")
+    // 7. Assert: PendingSyncBadge shows "Sparad lokalt"
+    //    Use exact:true to avoid matching OfflineBanner
     await expect(
-      page.getByText('Väntar på synk', { exact: true })
+      page.getByText('Sparad lokalt', { exact: true })
     ).toBeVisible({ timeout: 5000 })
 
     // 8. Go back online

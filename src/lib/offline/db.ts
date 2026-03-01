@@ -33,10 +33,10 @@ export type MutationStatus = "pending" | "syncing" | "synced" | "failed" | "conf
 
 export interface PendingMutation {
   id?: number
-  method: "PUT" | "PATCH"
+  method: "PUT" | "PATCH" | "POST" | "DELETE"
   url: string
   body: string
-  entityType: "booking" | "booking-notes" | "route-stop"
+  entityType: "booking" | "booking-notes" | "route-stop" | "availability-exception" | "manual-booking"
   entityId: string
   createdAt: number
   status: MutationStatus
