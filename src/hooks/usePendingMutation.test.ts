@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { renderHook, act, waitFor } from "@testing-library/react"
 import { usePendingMutation } from "./usePendingMutation"
 
-const mockGetPendingMutationsByEntity = vi.fn(async () => [])
+const mockGetActiveMutationsByEntity = vi.fn(async () => [])
 vi.mock("@/lib/offline/mutation-queue", () => ({
-  getPendingMutationsByEntity: (...args: unknown[]) =>
-    mockGetPendingMutationsByEntity(...args),
+  getActiveMutationsByEntity: (...args: unknown[]) =>
+    mockGetActiveMutationsByEntity(...args),
 }))
 
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
@@ -13,7 +13,7 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
 }))
 
 beforeEach(() => {
-  mockGetPendingMutationsByEntity.mockResolvedValue([])
+  mockGetActiveMutationsByEntity.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -31,7 +31,7 @@ describe("usePendingMutation", () => {
   })
 
   it("should return hasPending=true when entity has pending mutations", async () => {
-    mockGetPendingMutationsByEntity.mockResolvedValue([
+    mockGetActiveMutationsByEntity.mockResolvedValue([
       { id: 1, entityId: "abc", status: "pending" },
     ])
 
@@ -50,7 +50,7 @@ describe("usePendingMutation", () => {
       expect(result.current.hasPending).toBe(false)
     })
 
-    mockGetPendingMutationsByEntity.mockResolvedValue([
+    mockGetActiveMutationsByEntity.mockResolvedValue([
       { id: 1, entityId: "abc", status: "pending" },
     ])
     act(() => {
@@ -62,8 +62,34 @@ describe("usePendingMutation", () => {
     })
   })
 
+  it("should return hasConflict when entity has conflict mutations", async () => {
+    mockGetActiveMutationsByEntity.mockResolvedValue([
+      { id: 1, entityId: "abc", status: "conflict" },
+    ])
+
+    const { result } = renderHook(() => usePendingMutation("abc"))
+
+    await waitFor(() => {
+      expect(result.current.hasConflict).toBe(true)
+      expect(result.current.hasFailed).toBe(false)
+    })
+  })
+
+  it("should return hasFailed when entity has failed mutations", async () => {
+    mockGetActiveMutationsByEntity.mockResolvedValue([
+      { id: 1, entityId: "abc", status: "failed" },
+    ])
+
+    const { result } = renderHook(() => usePendingMutation("abc"))
+
+    await waitFor(() => {
+      expect(result.current.hasFailed).toBe(true)
+      expect(result.current.hasConflict).toBe(false)
+    })
+  })
+
   it("should refresh on mutation-synced event", async () => {
-    mockGetPendingMutationsByEntity.mockResolvedValue([
+    mockGetActiveMutationsByEntity.mockResolvedValue([
       { id: 1, entityId: "abc", status: "pending" },
     ])
 
@@ -73,7 +99,7 @@ describe("usePendingMutation", () => {
       expect(result.current.hasPending).toBe(true)
     })
 
-    mockGetPendingMutationsByEntity.mockResolvedValue([])
+    mockGetActiveMutationsByEntity.mockResolvedValue([])
     act(() => {
       window.dispatchEvent(new CustomEvent("mutation-synced"))
     })

@@ -11,7 +11,7 @@ import {
 import type { PendingMutation } from "@/lib/offline/db"
 
 export interface OfflineMutationOptions {
-  method: "PUT" | "PATCH"
+  method: "PUT" | "PATCH" | "POST" | "DELETE"
   url: string
   body: string
   entityType: PendingMutation["entityType"]

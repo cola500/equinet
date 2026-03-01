@@ -5,6 +5,7 @@ import { Mic, MicOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { toast } from "sonner"
 
 interface QuickNoteButtonProps {
@@ -25,8 +26,14 @@ export function QuickNoteButton({
   const [isSaving, setIsSaving] = useState(false)
   const { isListening, isSupported, startListening, stopListening } =
     useSpeechRecognition()
+  const isOnline = useOnlineStatus()
 
   const handleMicClick = useCallback(() => {
+    if (!isOnline) {
+      toast.error("Röstanteckning kräver internetanslutning")
+      return
+    }
+
     if (!isSupported) {
       // Fallback: show text input
       setIsOpen(true)
@@ -39,7 +46,7 @@ export function QuickNoteButton({
       setIsOpen(true)
       startListening()
     }
-  }, [isSupported, isListening, startListening, stopListening])
+  }, [isOnline, isSupported, isListening, startListening, stopListening])
 
   const handleSave = useCallback(async () => {
     const text = transcript.trim()
@@ -104,7 +111,8 @@ export function QuickNoteButton({
         variant="outline"
         size={variant === "icon" ? "icon" : "sm"}
         onClick={handleMicClick}
-        title="Diktera en anteckning"
+        disabled={!isOnline}
+        title={isOnline ? "Diktera en anteckning" : "Röstanteckning kräver internetanslutning"}
         className={variant === "icon" ? "h-8 w-8" : ""}
       >
         <Mic className="h-4 w-4" />
