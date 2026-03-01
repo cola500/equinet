@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { sendBugReportAdminNotification } from "@/lib/email/notifications"
 
 const createBugReportSchema = z
   .object({
@@ -62,6 +63,17 @@ export async function POST(request: NextRequest) {
     })
 
     logger.info("Bug report created", { bugReportId: bugReport.id })
+
+    // Fire-and-forget -- blockerar inte svaret
+    sendBugReportAdminNotification({
+      id: bugReport.id,
+      title: validated.title,
+      description: validated.description,
+      userRole,
+      pageUrl: validated.pageUrl,
+    }).catch((err) =>
+      logger.error("Failed to send bug report admin notification", err as Error)
+    )
 
     return NextResponse.json(
       { id: bugReport.id, status: bugReport.status },

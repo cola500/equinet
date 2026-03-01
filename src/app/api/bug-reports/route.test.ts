@@ -14,11 +14,17 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }))
+vi.mock("@/lib/email/notifications", () => ({
+  sendBugReportAdminNotification: vi.fn().mockResolvedValue(undefined),
+}))
 
 import { POST } from "./route"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
+import { sendBugReportAdminNotification } from "@/lib/email/notifications"
+
+const mockSendNotification = vi.mocked(sendBugReportAdminNotification)
 
 const mockAuth = vi.mocked(auth)
 const mockCreate = vi.mocked(prisma.bugReport.create)
@@ -143,5 +149,28 @@ describe("POST /api/bug-reports", () => {
     mockCreate.mockRejectedValue(new Error("DB down"))
     const res = await POST(createRequest(validBody))
     expect(res.status).toBe(500)
+  })
+
+  it("sends admin notification after successful creation", async () => {
+    await POST(createRequest(validBody))
+
+    expect(mockSendNotification).toHaveBeenCalledWith({
+      id: "bug-1",
+      title: validBody.title,
+      description: validBody.description,
+      userRole: "CUSTOMER",
+      pageUrl: validBody.pageUrl,
+    })
+  })
+
+  it("does not send notification on validation error", async () => {
+    await POST(createRequest({ ...validBody, title: "" }))
+    expect(mockSendNotification).not.toHaveBeenCalled()
+  })
+
+  it("does not send notification when rate limited", async () => {
+    mockRateLimit.mockResolvedValue(false)
+    await POST(createRequest(validBody))
+    expect(mockSendNotification).not.toHaveBeenCalled()
   })
 })

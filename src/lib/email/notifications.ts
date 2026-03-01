@@ -26,6 +26,48 @@ const statusLabels: Record<string, string> = {
   no_show: "Ej infunnit",
 }
 
+export async function sendBugReportAdminNotification(bugReport: {
+  id: string
+  title: string
+  description: string
+  userRole: string
+  pageUrl: string
+}) {
+  const admins = await prisma.user.findMany({
+    where: { isAdmin: true },
+    select: { email: true, firstName: true },
+  })
+
+  const adminEmails = admins
+    .map((a) => a.email)
+    .filter((e): e is string => !!e)
+
+  if (adminEmails.length === 0) return
+
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const adminUrl = `${baseUrl}/admin/bug-reports/${bugReport.id}`
+  const truncatedDesc =
+    bugReport.description.length > 200
+      ? bugReport.description.slice(0, 200) + "..."
+      : bugReport.description
+
+  await Promise.allSettled(
+    adminEmails.map((email) =>
+      emailService.send({
+        to: email,
+        subject: `Ny buggrapport: ${bugReport.title}`,
+        html: `<h2>Ny buggrapport</h2>
+<p><strong>Titel:</strong> ${bugReport.title}</p>
+<p><strong>Beskrivning:</strong> ${truncatedDesc}</p>
+<p><strong>Roll:</strong> ${bugReport.userRole}</p>
+<p><strong>Sida:</strong> ${bugReport.pageUrl}</p>
+<p><a href="${adminUrl}">Visa i admin-panelen</a></p>`,
+        text: `Ny buggrapport: ${bugReport.title}\n\nBeskrivning: ${truncatedDesc}\nRoll: ${bugReport.userRole}\nSida: ${bugReport.pageUrl}\n\nVisa: ${adminUrl}`,
+      })
+    )
+  )
+}
+
 export async function sendBookingConfirmationNotification(bookingId: string) {
   try {
     const booking = await prisma.booking.findUnique({
