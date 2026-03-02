@@ -1,3 +1,20 @@
+---
+title: "Prenumerationer (Subscriptions)"
+description: "API-dokumentation for Stripe-baserade prenumerationer: checkout, portal, status och webhooks"
+category: api
+tags: [api, stripe, subscriptions, webhooks, feature-flag]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+sections:
+  - POST /api/provider/subscription/checkout
+  - POST /api/provider/subscription/portal
+  - GET /api/provider/subscription/status
+  - POST /api/webhooks/stripe
+  - Arkitektur
+---
+
 # Prenumerationer (Subscriptions)
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

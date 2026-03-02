@@ -1,3 +1,23 @@
+---
+title: "Foljare (Follows)"
+description: "API-dokumentation for att folja leverantorer och fa ruttannonseringsnotiser"
+category: api
+tags: [api, follows, notifications, feature-flag]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+related:
+  - notifications.md
+  - municipality-watches.md
+sections:
+  - POST /api/follows
+  - GET /api/follows
+  - GET /api/follows/[providerId]
+  - DELETE /api/follows/[providerId]
+  - Koppling till ruttannonseringar
+---
+
 # Foljare (Follows)
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

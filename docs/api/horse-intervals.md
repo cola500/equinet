@@ -1,3 +1,19 @@
+---
+title: "Hastintervall (Horse Service Intervals)"
+description: "API-dokumentation for hast-tjanstintervall med tre prioritetsnivaer: kund, leverantor, tjanstestandard"
+category: api
+tags: [api, horse, intervals, due-for-service, feature-flag]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+sections:
+  - Intervallprioritering (3 nivaer)
+  - Kundintervall
+  - Leverantorsintervall
+  - GET /api/provider/due-for-service
+---
+
 # Hastintervall (Horse Service Intervals)
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

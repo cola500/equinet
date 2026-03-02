@@ -1,3 +1,22 @@
+---
+title: "Monitoring & Loggning"
+description: "Oversikt av overvakningsverktyg, loggning, viktiga metrics och kanda begransningar"
+category: operations
+tags: [monitoring, logging, vercel, supabase, sentry, cron]
+status: active
+last_updated: 2026-03-02
+related:
+  - deployment.md
+  - incident-runbook.md
+  - ../../NFR.md
+sections:
+  - Overvakning idag
+  - Loggning
+  - Viktiga metrics att folja
+  - Cron-jobb
+  - Kanda begransningar
+---
+
 # Monitoring & Loggning
 
 > Relaterat: [NFR.md](../../NFR.md) (43% monitoring-tacking), [deployment.md](deployment.md)

@@ -1,3 +1,18 @@
+---
+title: "Leverantorsanteckningar (Provider Notes)"
+description: "API-dokumentation for leverantorers privata kundanteckningar med kundrelationskrav"
+category: api
+tags: [api, provider, notes, customer-relationship]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+sections:
+  - GET /api/provider/customers/[customerId]/notes
+  - POST /api/provider/customers/[customerId]/notes
+  - Kundrelation
+---
+
 # Leverantorsanteckningar (Provider Notes)
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

@@ -1,3 +1,29 @@
+---
+title: "API -- Gemensamma monster"
+description: "Gemensamma patterns for alla API-endpoints: autentisering, felkoder, rate limiting, sakerhet"
+category: api
+tags: [api, auth, rate-limiting, security, zod]
+status: active
+last_updated: 2026-03-02
+related:
+  - api/follows.md
+  - api/horse-intervals.md
+  - api/integrations.md
+  - api/municipality-watches.md
+  - api/notifications.md
+  - api/provider-notes.md
+  - api/subscriptions.md
+sections:
+  - Autentisering
+  - Request-format
+  - Response-format
+  - Felkoder
+  - Rate Limiting
+  - Feature Flag-gating
+  - Obligatorisk route-struktur
+  - CORS & Sakerhet
+---
+
 # API -- Gemensamma monster
 
 > Detta dokument beskriver gemensamma monster for alla API-endpoints i Equinet. Specifika endpoints dokumenteras i [docs/api/](api/).

@@ -1,3 +1,29 @@
+---
+title: "Onboarding -- Kom igang med Equinet"
+description: "Steg-for-steg guide for att satta upp utvecklingsmiljon fran kloning till testkorning"
+category: guide
+tags: [onboarding, setup, docker, prisma, testing]
+status: active
+last_updated: 2026-03-02
+related:
+  - gotchas.md
+  - ../INDEX.md
+  - ../../CLAUDE.md
+sections:
+  - Forutsattningar
+  - 1. Klona och installera
+  - 2. Starta lokal databas
+  - 3. Konfigurera miljovariabler
+  - 4. Kor databasmigrationer
+  - 5. Seed-data (valfritt)
+  - 6. Starta dev-server
+  - 7. Kor tester
+  - 8. Typkontroll och lint
+  - Vanliga problem
+  - Nyttiga kommandon
+  - Nasta steg
+---
+
 # Onboarding -- Kom igang med Equinet
 
 Steg-for-steg guide for att satta upp utvecklingsmiljon.

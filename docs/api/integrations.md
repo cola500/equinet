@@ -1,3 +1,17 @@
+---
+title: "Integrationer"
+description: "API-dokumentation for Fortnox-integration: OAuth-flode, fakturasynk och konfiguration"
+category: api
+tags: [api, fortnox, oauth, integration, invoicing]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+sections:
+  - Fortnox
+  - Konfiguration
+---
+
 # Integrationer
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

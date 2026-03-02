@@ -1,3 +1,22 @@
+---
+title: "Kommunbevakningar (Municipality Watches)"
+description: "API-dokumentation for kommunbevakningar som notifierar kunder vid matchande ruttannonseringar"
+category: api
+tags: [api, municipality-watch, notifications, feature-flag]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+related:
+  - notifications.md
+  - follows.md
+sections:
+  - POST /api/municipality-watches
+  - GET /api/municipality-watches
+  - DELETE /api/municipality-watches/[id]
+  - Koppling till ruttannonseringar
+---
+
 # Kommunbevakningar (Municipality Watches)
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

@@ -1,3 +1,24 @@
+---
+title: "Notiser (Notifications)"
+description: "API-dokumentation for notiser: hamtning, markering som last, notistyper och dedup-logik"
+category: api
+tags: [api, notifications, dedup, email, in-app]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - API.md
+related:
+  - follows.md
+  - municipality-watches.md
+sections:
+  - GET /api/notifications
+  - POST /api/notifications
+  - PUT /api/notifications/[id]
+  - GET /api/notifications/unread-count
+  - Notistyper
+  - Ruttannonseringsnotiser
+---
+
 # Notiser (Notifications)
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).

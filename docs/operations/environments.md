@@ -1,3 +1,22 @@
+---
+title: "Miljoer (Environments)"
+description: "Konfiguration och skillnader mellan lokal utveckling och produktion (Vercel + Supabase)"
+category: operations
+tags: [environments, vercel, supabase, docker, config]
+status: active
+last_updated: 2026-03-02
+related:
+  - deployment.md
+  - ../../NFR.md
+sections:
+  - Oversikt
+  - Lokal utveckling
+  - Produktion (Vercel + Supabase)
+  - Miljovariabler per miljo
+  - Deploy-ordning vid schemaandring
+  - .env.local-fallgropen
+---
+
 # Miljoer (Environments)
 
 ---

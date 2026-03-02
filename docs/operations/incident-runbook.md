@@ -1,3 +1,25 @@
+---
+title: "Incident Runbook"
+description: "Vanliga driftstorningar och steg-for-steg-losningar for databas, Stripe, rate limiting, e-post och cron"
+category: operations
+tags: [incidents, runbook, troubleshooting, rollback, escalation]
+status: active
+last_updated: 2026-03-02
+related:
+  - deployment.md
+  - environments.md
+  - monitoring.md
+sections:
+  - 1. Databasanslutningsfel
+  - 2. Misslyckade migrationer
+  - 3. Stripe webhook-problem
+  - 4. Rate limiting-problem
+  - 5. E-postleveransproblem
+  - 6. Cron-jobb kor inte
+  - Rollback-procedurer
+  - Eskalering
+---
+
 # Incident Runbook
 
 Vanliga driftstorningar och hur de loses.
