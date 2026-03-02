@@ -89,3 +89,30 @@ db.version(4).stores({
 })
 
 export { db as offlineDb }
+
+export interface DbHealthResult {
+  healthy: boolean
+  error?: string
+  tableCounts?: Record<string, number>
+}
+
+/** Verify all IndexedDB tables are accessible. Run once at app start. */
+export async function verifyOfflineDbHealth(): Promise<DbHealthResult> {
+  try {
+    const tableCounts: Record<string, number> = {
+      bookings: await db.bookings.count(),
+      routes: await db.routes.count(),
+      profile: await db.profile.count(),
+      metadata: await db.metadata.count(),
+      debugLogs: await db.debugLogs.count(),
+      endpointCache: await db.endpointCache.count(),
+      pendingMutations: await db.pendingMutations.count(),
+    }
+    return { healthy: true, tableCounts }
+  } catch (error) {
+    return {
+      healthy: false,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+}

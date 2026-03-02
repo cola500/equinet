@@ -1,4 +1,23 @@
-# 🚀 Sprint 1: UX Quick Wins
+---
+title: "Sprint 1: UX Quick Wins"
+description: "Sprint for 4 UX-forbattringar: losenordsindikator, retry-knappar, avbokning och onboarding"
+category: sprint
+tags: [sprint, ux, onboarding, error-handling]
+status: archived
+last_updated: 2026-03-02
+sections:
+  - Sprint Overview
+  - Daily Plan
+  - "F-3.1: Lösenordskrav-Indikator"
+  - "F-3.3: Försök igen-Knappar"
+  - "F-3.4: Performance-Optimering Provider Loading"
+  - "F-3.2: Avboka-Funktion"
+  - "F-3.4: Onboarding Checklist"
+  - Sprint Retrospective Template
+  - Sprint Complete Checklist
+---
+
+# Sprint 1: UX Quick Wins
 
 **Sprint Duration:** 3 dagar (15-21 timmar)
 **Sprint Goal:** Förbättra användarupplevelsen genom 4 högt prioriterade UX-fixes utan stora arkitekturförändringar

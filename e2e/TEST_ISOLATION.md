@@ -1,3 +1,22 @@
+---
+title: "E2E Test Isolation Strategy"
+description: "Test data management strategi for 100% E2E pass rate med serial execution och cleanup"
+category: testing
+tags: [e2e, test-isolation, playwright, cleanup, flaky-tests]
+status: active
+last_updated: 2026-03-02
+related:
+  - e2e/README.md
+sections:
+  - Problem
+  - Root Cause Analysis
+  - Solution
+  - Results
+  - Test Isolation Checklist
+  - Performance Impact
+  - References
+---
+
 # E2E Test Isolation Strategy
 
 **Sprint 2 F2-5**: Test Data Management Strategy för 100% E2E pass rate

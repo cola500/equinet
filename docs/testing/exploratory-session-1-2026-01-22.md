@@ -1,3 +1,23 @@
+---
+title: "Exploratory Testing Session 1 - POST /api/bookings"
+description: "First exploratory testing session finding 13 bugs in booking creation endpoint (all fixed)"
+category: testing
+tags: [exploratory-testing, bookings, security, validation, bugs]
+status: archived
+last_updated: 2026-03-02
+related:
+  - docs/testing/exploratory-coverage.md
+  - docs/api/bookings.md
+sections:
+  - Executive Summary
+  - Test Approach
+  - HIGH PRIORITY BUGS
+  - MEDIUM PRIORITY BUGS
+  - LOW PRIORITY BUGS
+  - Test Coverage Gaps
+  - Summary & Recommendations
+---
+
 # Exploratory Testing Session 1 - POST /api/bookings
 
 **Date:** 2026-01-22

@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto"
-import { describe, it, expect, beforeEach } from "vitest"
-import { offlineDb } from "./db"
+import { describe, it, expect, beforeEach, vi } from "vitest"
+import { offlineDb, verifyOfflineDbHealth } from "./db"
 
 describe("offlineDb", () => {
   beforeEach(async () => {
@@ -90,5 +90,32 @@ describe("offlineDb", () => {
     await offlineDb.bookings.clear()
     const count = await offlineDb.bookings.count()
     expect(count).toBe(0)
+  })
+})
+
+describe("verifyOfflineDbHealth", () => {
+  it("returns healthy when all tables are accessible", async () => {
+    const result = await verifyOfflineDbHealth()
+    expect(result.healthy).toBe(true)
+    expect(result.error).toBeUndefined()
+  })
+
+  it("reports table counts", async () => {
+    await offlineDb.bookings.put({ id: "b1", data: {}, cachedAt: Date.now() })
+    await offlineDb.metadata.put({ key: "test", lastSyncedAt: Date.now(), version: 1 })
+
+    const result = await verifyOfflineDbHealth()
+    expect(result.healthy).toBe(true)
+    expect(result.tableCounts).toBeDefined()
+    expect(result.tableCounts!.bookings).toBe(1)
+    expect(result.tableCounts!.metadata).toBe(1)
+  })
+
+  it("returns unhealthy when DB access fails", async () => {
+    vi.spyOn(offlineDb.bookings, "count").mockRejectedValueOnce(new Error("DB error"))
+
+    const result = await verifyOfflineDbHealth()
+    expect(result.healthy).toBe(false)
+    expect(result.error).toContain("DB error")
   })
 })

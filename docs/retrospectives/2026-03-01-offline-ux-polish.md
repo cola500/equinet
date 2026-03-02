@@ -1,3 +1,21 @@
+---
+title: "Retrospektiv: UX-polish offline-upplevelse"
+description: "Tydligare offline-feedback, visuellt inaktiverade kontroller och varningsmeddelanden"
+category: retro
+tags: [offline, ux, accessibility, feedback]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/offline-pwa.md
+sections:
+  - Resultat
+  - Vad som byggdes
+  - Vad gick bra
+  - Vad kan forbattras
+  - Patterns att spara
+  - Larandeeffekt
+---
+
 # Retrospektiv: UX-polish offline-upplevelse
 
 **Datum:** 2026-03-01

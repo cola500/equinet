@@ -1,3 +1,21 @@
+---
+title: "Agent-Team Guide"
+description: "Guide for the 3 specialized review agents: security-reviewer, tech-architect, cx-ux-reviewer"
+category: guide
+tags: [agents, security-review, architecture, ux-review, workflow]
+status: active
+last_updated: 2026-03-02
+related:
+  - CLAUDE.md
+  - docs/guides/gotchas.md
+sections:
+  - Agent-Översikt
+  - Trigger-kriterier
+  - Best Practices
+  - Quick Reference
+  - Relaterade Dokument
+---
+
 # Agent-Team Guide
 
 > Equinet har **3 specialiserade agenter** som kompletterar den automatiserade kvalitetspipelinen.

@@ -1,3 +1,26 @@
+---
+title: "Produkttestningsguide"
+description: "Systematic manual testing guide for all Equinet features covering customer, provider and admin flows"
+category: testing
+tags: [manual-testing, qa, checklist, customer, provider, admin, feature-flags]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Innehåll
+  - 1. Förberedelser
+  - 2. Startsida & Offentliga sidor
+  - 3. Registrering & Inloggning
+  - 4. Kundflöden
+  - 5. Leverantörsflöden
+  - 6. Adminflöden
+  - 7. Feature-flaggade funktioner
+  - 8. Notifikationer & E-post
+  - 9. Mobil & Responsivitet
+  - 10. Gradvis utrullning - Checklista
+  - Testlogg
+  - Tips för effektiv testning
+---
+
 # Produkttestningsguide - Equinet
 
 > **Syfte:** Systematisk genomgång av alla funktioner i Equinet, avsedd att köras av produktägare innan vi släpper på riktiga användare. Varje avsnitt har checkboxar som kan bockas av under testningen.

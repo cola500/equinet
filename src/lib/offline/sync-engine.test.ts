@@ -2,10 +2,11 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import "fake-indexeddb/auto"
 import { offlineDb } from "./db"
 import { queueMutation, updateMutationStatus } from "./mutation-queue"
-import { processMutationQueue } from "./sync-engine"
+import { _processMutationQueueInternal as processMutationQueue, _resetTabCoordinator } from "./sync-engine"
 
 beforeEach(async () => {
   await offlineDb.pendingMutations.clear()
+  _resetTabCoordinator()
   vi.restoreAllMocks()
 })
 
@@ -217,11 +218,11 @@ describe("sync-engine", () => {
 
       await processMutationQueue()
 
-      expect(fetchSpy).toHaveBeenCalledWith("/api/bookings/a", {
+      expect(fetchSpy).toHaveBeenCalledWith("/api/bookings/a", expect.objectContaining({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed" }),
-      })
+      }))
     })
 
     it("should handle 429 as retryable", async () => {
@@ -457,6 +458,60 @@ describe("sync-engine", () => {
       expect(result.synced).toBe(1)
       const all = await offlineDb.pendingMutations.toArray()
       expect(all[0].status).toBe("synced")
+    })
+    it("should dispatch sync-progress events during processing", async () => {
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/b",
+        body: "{}",
+        entityType: "booking",
+        entityId: "b",
+      })
+
+      mockFetch([{ status: 200 }, { status: 200 }])
+
+      const events: CustomEvent[] = []
+      const handler = (e: Event) => events.push(e as CustomEvent)
+      window.addEventListener("sync-progress", handler)
+
+      await processMutationQueue()
+
+      window.removeEventListener("sync-progress", handler)
+      expect(events.length).toBeGreaterThanOrEqual(2)
+      expect(events[0].detail).toMatchObject({ current: 1, total: 2 })
+      expect(events[1].detail).toMatchObject({ current: 2, total: 2 })
+    })
+
+    it("should timeout individual mutation after 30s and revert to pending", async () => {
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      // Simulate a fetch that never resolves (timeout scenario)
+      vi.spyOn(globalThis, "fetch").mockImplementation(() => {
+        return new Promise((_, reject) => {
+          // AbortController will call abort, which creates AbortError
+          setTimeout(() => reject(new DOMException("Aborted", "AbortError")), 0)
+        })
+      })
+
+      const result = await processMutationQueue()
+
+      // Timeout should revert to pending, not mark as failed
+      const all = await offlineDb.pendingMutations.toArray()
+      expect(all[0].status).toBe("pending")
+      expect(result.failed).toBe(0)
     })
   })
 })

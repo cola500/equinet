@@ -1,3 +1,24 @@
+---
+title: "Vecka 2 Februari: Features"
+description: "Kundrecensioner, E2E seed, kundregister, mobil-först och svenska felmeddelanden"
+category: retro
+tags: [customer-reviews, e2e, mobile-first, serverless, i18n]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Sammanfattning
+  - Nyckelmetriker
+  - Viktiga Learnings
+  - Features Byggt
+  - Patterns som Sparades
+  - Gotchas & Lärdomar
+  - Nästa Steg (Prioriterat)
+  - Kodkvalitet denna Vecka
+  - Session-sammanfattning per Dag
+  - Impact på Produktion
+  - Dokument & Referenser
+---
+
 # Vecka 2 Februari: Features (2026-02-05 -- 2026-02-09)
 
 > Konsoliderad sammanfattning av 8 retrospectives: kundrecensioner, E2E seed, kundregister, leverantörsanteckningar, mobil-först redesign, Vercel/Supabase performance, E2E seed-fixar, och svenska felmeddelanden.

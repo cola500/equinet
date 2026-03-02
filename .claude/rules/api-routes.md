@@ -1,6 +1,18 @@
 ---
+title: "API Route Requirements"
+description: "Obligatorisk struktur, sakerhetschecklist och patterns for API routes"
+category: rule
+status: active
+last_updated: 2026-03-02
+tags: [api, security, zod, rate-limiting, auth]
 paths:
   - "src/app/api/**/route.ts"
+sections:
+  - Obligatorisk struktur
+  - Filstruktur
+  - Checklist
+  - Patterns
+  - AI-route-specifikt
 ---
 
 # API Route Requirements

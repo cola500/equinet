@@ -1,3 +1,33 @@
+---
+title: "Admin API"
+description: "Admin endpoints for dashboard stats, user management, bookings, reviews, settings and cron jobs"
+category: api
+tags: [admin, api, dashboard, users, bookings, reviews, cron, verification]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/bookings.md
+  - docs/api/providers.md
+sections:
+  - GET /api/admin/stats
+  - GET /api/admin/users
+  - PATCH /api/admin/users
+  - GET /api/admin/bookings
+  - PATCH /api/admin/bookings
+  - GET /api/admin/providers
+  - GET /api/admin/integrations
+  - GET /api/admin/system
+  - GET /api/admin/reviews
+  - DELETE /api/admin/reviews
+  - POST /api/admin/notifications
+  - Verifieringshantering
+  - GET /api/admin/settings
+  - PATCH /api/admin/settings
+  - Cron-endpoints
+---
+
 # Admin
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

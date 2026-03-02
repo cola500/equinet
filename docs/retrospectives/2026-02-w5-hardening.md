@@ -1,3 +1,21 @@
+---
+title: "Vecka 5 Februari: Hardening"
+description: "Lint cleanup (1187 till 0 varningar), pentest-hardening och migrationsspårning"
+category: retro
+tags: [lint, pentest, csp, sri, migration, security]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/security/pentest-2026-02-15.md
+sections:
+  - Sammanfattning
+  - Viktiga learnings
+  - Nyckelmetrik
+  - Arkitektura & Mönster
+  - 5 Whys -- Key Problems Fixed
+  - Vad Kommer Härnäst
+---
+
 # Vecka 5 Februari: Hardening (2026-02-26 -- 2026-02-28)
 
 > Konsoliderad sammanfattning av 3 retrospectives: lint cleanup, pentest-hardening, och migrationsspårning.

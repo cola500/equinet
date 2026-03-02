@@ -1,3 +1,21 @@
+---
+title: "Vecka 4 Februari del 2: UX & Följ leverantör"
+description: "UX-förbättringar, följ-leverantör, per-service intervall, feature flag hardening och context-refaktor"
+category: retro
+tags: [ux, follow-provider, feature-flags, context, refactoring]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Sammanfattning
+  - Viktiga learnings
+  - Nyckelmetrik
+  - Root Cause Analysis: 5 Whys per session
+  - Patterns att spara
+  - Tekniska skuld identifierad (men avsatt)
+  - Reflektioner
+  - Affärsvärde
+---
+
 # Vecka 4 Februari del 2: UX & Följ leverantör (2026-02-22 -- 2026-02-25)
 
 > Konsoliderad sammanfattning av 7 retrospectives från session 52-58: UX-förbättringar, följ-leverantör-system, per-service intervall, feature flag hardening, refaktorering och hook-refaktorering.

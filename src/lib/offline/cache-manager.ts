@@ -107,6 +107,7 @@ export async function getCachedEndpoint(url: string): Promise<any | null> {
   // Try exact match
   const exact = await offlineDb.endpointCache.get(url)
   if (exact && now - exact.cachedAt <= MAX_AGE_MS) {
+    if (!isValidCachedData(exact.data)) return null
     return exact.data
   }
 
@@ -116,6 +117,7 @@ export async function getCachedEndpoint(url: string): Promise<any | null> {
     const baseUrl = url.substring(0, qIndex)
     const base = await offlineDb.endpointCache.get(baseUrl)
     if (base && now - base.cachedAt <= MAX_AGE_MS) {
+      if (!isValidCachedData(base.data)) return null
       return base.data
     }
   }
@@ -131,6 +133,47 @@ export async function invalidateEndpointCache(urlPrefix: string): Promise<void> 
     .map((e) => e.url)
   if (keysToDelete.length > 0) {
     await offlineDb.endpointCache.bulkDelete(keysToDelete)
+  }
+}
+
+// -- Validation --
+
+/** Lightweight check that cached data is not null/undefined */
+function isValidCachedData(data: unknown): boolean {
+  return data !== null && data !== undefined
+}
+
+// -- Stats --
+
+export interface CacheStats {
+  totalEntries: number
+  oldestEntryAge: number
+  pendingMutations: number
+  estimatedSizeBytes: number
+}
+
+export async function getCacheStats(): Promise<CacheStats> {
+  const entries = await offlineDb.endpointCache.toArray()
+  const pendingMutations = await offlineDb.pendingMutations
+    .where("status")
+    .anyOf("pending", "failed")
+    .count()
+
+  const now = Date.now()
+  let oldestAge = 0
+  let estimatedSize = 0
+
+  for (const entry of entries) {
+    const age = now - entry.cachedAt
+    if (age > oldestAge) oldestAge = age
+    estimatedSize += JSON.stringify(entry.data).length * 2 // rough UTF-16 estimate
+  }
+
+  return {
+    totalEntries: entries.length,
+    oldestEntryAge: oldestAge,
+    pendingMutations,
+    estimatedSizeBytes: estimatedSize,
   }
 }
 

@@ -1,3 +1,24 @@
+---
+title: "Customers API"
+description: "Customer search, horse lookup, provider customer registry and private notes endpoints"
+category: api
+tags: [customers, api, customer-notes, horses, provider]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/horses.md
+  - docs/api/providers.md
+sections:
+  - GET /api/customers/search
+  - GET /api/customers/[id]/horses
+  - GET /api/provider/customers
+  - POST /api/provider/customers
+  - DELETE /api/provider/customers/[customerId]
+  - Kundanteckningar
+---
+
 # Kunder
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

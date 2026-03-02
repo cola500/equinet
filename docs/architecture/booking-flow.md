@@ -1,3 +1,21 @@
+---
+title: "Service Booking Flow"
+description: "Komplett bokningsflode fran kundbehov till betalning med API-endpoints och restidsvalidering"
+category: architecture
+tags: [booking, payment, api, travel-time]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Översikt
+  - Implementerade Komponenter
+  - "Nästa Steg: Produktion"
+  - Testning
+  - Säkerhet
+  - Restid mellan bokningar
+  - Kända begränsningar
+  - Relaterad dokumentation
+---
+
 # Service Booking Flow
 
 > Dokumentation för det kompletta bokningsflödet från kundbehov till betalning.

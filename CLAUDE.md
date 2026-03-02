@@ -1,3 +1,41 @@
+---
+title: "CLAUDE.md - Utvecklingsguide för Equinet"
+description: "Arbetsprocesser, patterns, arkitektur och key learnings för utveckling"
+category: root
+tags: [development, workflow, architecture, patterns]
+status: active
+last_updated: 2026-03-02
+related:
+  - README.md
+  - NFR.md
+  - docs/INDEX.md
+  - docs/guides/gotchas.md
+  - docs/guides/agents.md
+  - docs/operations/deployment.md
+  - docs/architecture/booking-flow.md
+  - docs/architecture/database.md
+  - docs/architecture/offline-pwa.md
+  - docs/security/pentest-2026-02-15.md
+  - docs/guides/voice-logging.md
+sections:
+  - Snabbreferens
+  - Projekt
+  - Workflow
+  - "Testing (TDD är Obligatoriskt!)"
+  - "Arkitektur (DDD-Light)"
+  - Refactoring Guidelines
+  - Gotchas
+  - Definition of Done
+  - Säkerhet
+  - "Agent-Team (3 agenter)"
+  - "Key Learnings (tvärgående)"
+  - "Debugging: 5 Whys"
+  - "Version & SDK Policy"
+  - Automated Quality Gates
+  - Sprintar
+  - Resurser
+---
+
 # CLAUDE.md - Utvecklingsguide för Equinet
 
 > **Hur** vi arbetar i projektet. För **vad** som är byggt, se README.md.

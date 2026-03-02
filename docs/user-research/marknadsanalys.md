@@ -1,3 +1,20 @@
+---
+title: "Marknadsanalys -- Svensk Hästtjänstmarknad"
+description: "Marknadsstorlek, aktorer, konkurrenter, betalningsvanor och mojligheter for Equinet"
+category: research
+tags: [market-analysis, competitors, pricing, gdpr, farrier]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Marknadsöversikt
+  - Målgrupper
+  - Konkurrensbild
+  - Marknadsluckor
+  - Betalningsvanor
+  - Regulatoriskt
+  - Möjligheter för Equinet
+---
+
 # Marknadsanalys -- Svensk Hästtjänstmarknad
 
 ## Marknadsöversikt

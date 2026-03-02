@@ -1,4 +1,17 @@
-# Feature: "Due for service" + Ruttannons → Hyperrelevant notis
+---
+title: "Due for service + Ruttannons -- Hyperrelevant notis"
+description: "Feature-ide som kombinerar hastens service-status med ruttannons for smartare notifieringar"
+category: idea
+tags: [due-for-service, notifications, push, route-announcement]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/ideas/due-for-service-plan.md
+sections:
+  - Framtida Utbyggnad (Valfri)
+---
+
+# Feature: "Due for service" + Ruttannons -- Hyperrelevant notis
 
 Syfte:  
 Skapa en unik och hyperrelevant notifiering genom att kombinera:

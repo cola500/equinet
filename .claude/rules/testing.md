@@ -1,7 +1,19 @@
 ---
+title: "Unit Test Requirements"
+description: "TDD-cykeln, coverage-mal, behavior-based testing och mock-patterns"
+category: rule
+status: active
+last_updated: 2026-03-02
+tags: [testing, tdd, vitest, mocking, behavior-based]
 paths:
   - "**/*.test.ts"
   - "**/*.test.tsx"
+sections:
+  - TDD-cykeln
+  - Coverage-mal
+  - Behavior-Based Testing (API Routes)
+  - Mock-patterns
+  - Gotchas
 ---
 
 # Unit Test Requirements

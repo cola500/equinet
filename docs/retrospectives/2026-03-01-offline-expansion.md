@@ -1,3 +1,21 @@
+---
+title: "Retrospektiv: Offline-expansion"
+description: "Cachning, mutationsköer och felhantering -- 9 filer, 3 nya tester, 2865 totalt"
+category: retro
+tags: [offline, cache, mutation-queue, swr, indexeddb]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/offline-pwa.md
+sections:
+  - Resultat
+  - Vad som byggdes
+  - Vad gick bra
+  - Vad kan förbättras
+  - Patterns att spara
+  - Lärandeeffekt
+---
+
 # Retrospektiv: Offline-expansion -- cachning, mutationsköer och felhantering
 
 **Datum:** 2026-03-01

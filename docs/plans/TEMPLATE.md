@@ -1,3 +1,17 @@
+---
+title: "Plan Template"
+description: "Template for feature implementation plans with quality dimensions and verification"
+category: plan
+status: active
+last_updated: 2026-03-02
+sections:
+  - Kontext
+  - Approach
+  - Kvalitetsdimensioner
+  - Faser
+  - Verifiering
+---
+
 # Plan: [Feature]
 
 ## Kontext

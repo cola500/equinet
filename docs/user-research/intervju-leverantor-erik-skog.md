@@ -1,3 +1,24 @@
+---
+title: "Djupintervju -- Erik Skog, Hovslagare"
+description: "Hypotetisk djupintervju med hovslagarepersona om bokning, ruttplanering och administration"
+category: research
+tags: [user-research, interview, provider, persona, farrier]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/user-research/insikter-och-koppling.md
+sections:
+  - Persona
+  - 1. Bakgrund och vardag
+  - 2. Schema och bokning
+  - 3. Rutter och logistik
+  - 4. Administration och ekonomi
+  - 5. Kundrelationer och kvalitet
+  - 6. Hästar och journal
+  - 7. Digital framtid
+  - Sammanfattning av nyckelinsikter
+---
+
 # Djupintervju -- Erik Skog, Hovslagare
 
 > **Typ:** Hypotetisk halvstrukturerad djupintervju

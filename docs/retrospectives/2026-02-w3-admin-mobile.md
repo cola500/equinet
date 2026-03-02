@@ -1,3 +1,18 @@
+---
+title: "Vecka 3 Februari del 1: Admin & Mobil"
+description: "Hästidentifiering, admin dashboard, mobil UI och leverantörsfeatures -- 1337 till 1500 tester"
+category: retro
+tags: [admin, mobile, horse-ueln, docker, provider-notes]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Sammanfattning
+  - Viktiga learnings
+  - Nyckelmetrik
+  - Arkitektur-highlights
+  - Öppna förbättringsområden
+---
+
 # Vecka 3 Februari del 1: Admin & Mobil (2026-02-10 -- 2026-02-12)
 
 > Konsoliderad sammanfattning av 10 retrospectives: hästidentifiering, admin dashboard, mobil UI & leverantörsfeatures.

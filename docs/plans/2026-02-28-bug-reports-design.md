@@ -1,3 +1,22 @@
+---
+title: "Design: Buggrapporter backend + admin triage"
+description: "Architecture design for bug report backend storage and admin triage UI"
+category: plan
+tags: [bug-reports, admin, design, api]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/plans/2026-02-28-bug-reports.md
+sections:
+  - Bakgrund
+  - Arkitekturbeslut
+  - Datamodell
+  - API-endpoints
+  - UI-andringar
+  - Sakerhet
+  - Testning
+---
+
 # Design: Buggrapporter backend + admin triage
 
 **Datum:** 2026-02-28

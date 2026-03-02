@@ -1,3 +1,21 @@
+---
+title: "Användarforskning -- Equinet"
+description: "Index for anvandarforskning: marknadsanalys och hypotetiska djupintervjuer"
+category: research
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/user-research/marknadsanalys.md
+  - docs/user-research/intervju-leverantor-erik-skog.md
+  - docs/user-research/intervju-kund-anna-lindqvist.md
+  - docs/user-research/insikter-och-koppling.md
+sections:
+  - Syfte
+  - Metod
+  - Dokument
+  - Datum
+---
+
 # Användarforskning -- Equinet
 
 ## Syfte

@@ -1,3 +1,15 @@
+---
+title: "Retrospectives -- Index"
+description: "Konsoliderade sammanfattningar av 67+ sessioner (november 2025 -- mars 2026)"
+category: retro
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/archive/retrospectives-raw/
+sections:
+  - Sammanfattningar
+---
+
 # Retrospectives -- Index
 
 > Konsoliderade sammanfattningar av 67 sessions (november 2025 -- februari 2026).

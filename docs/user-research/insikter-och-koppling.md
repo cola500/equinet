@@ -1,3 +1,23 @@
+---
+title: "Insikter och koppling till Equinet"
+description: "Syntesanalys: 10 toppinsikter, feature-validering och prioriteringsrekommendationer"
+category: research
+tags: [user-research, insights, prioritization, go-to-market]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/user-research/marknadsanalys.md
+  - docs/user-research/intervju-leverantor-erik-skog.md
+  - docs/user-research/intervju-kund-anna-lindqvist.md
+sections:
+  - Topp 10 insikter
+  - Redan implementerat
+  - Backlog-items som valideras
+  - Nya möjligheter
+  - Prioriteringsrekommendation
+  - Strategiska insikter
+---
+
 # Insikter och koppling till Equinet
 
 > Syntesanalys baserad på marknadsanalys och hypotetiska intervjuer med hovslagaren Erik Skog och hästägaren Anna Lindqvist.

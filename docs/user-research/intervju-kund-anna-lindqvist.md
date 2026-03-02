@@ -1,3 +1,24 @@
+---
+title: "Djupintervju -- Anna Lindqvist, Hästägare"
+description: "Hypotetisk djupintervju med hastagarepersona om bokning, halsohistorik och betalning"
+category: research
+tags: [user-research, interview, customer, persona]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/user-research/insikter-och-koppling.md
+sections:
+  - Persona
+  - 1. Bakgrund och hästägande
+  - 2. Hitta och välja leverantörer
+  - 3. Bokning och schemaläggning
+  - 4. Hästarnas hälsa och historik
+  - 5. Betalning och kvitton
+  - 6. Kommunikation och uppföljning
+  - 7. Drömappen
+  - Sammanfattning av nyckelinsikter
+---
+
 # Djupintervju -- Anna Lindqvist, Hästägare
 
 > **Typ:** Hypotetisk halvstrukturerad djupintervju

@@ -276,7 +276,7 @@ describe("offlineAwareFetcher", () => {
       await expect(offlineAwareFetcher("/api/bookings")).rejects.toThrow()
     })
 
-    it("throws when network fails and cache is stale", async () => {
+    it("returns stale data instead of throwing when network fails and cache is expired", async () => {
       const staleTime = Date.now() - 5 * 60 * 60 * 1000
       await offlineDb.endpointCache.put({
         url: "/api/bookings",
@@ -286,7 +286,9 @@ describe("offlineAwareFetcher", () => {
 
       mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
 
-      await expect(offlineAwareFetcher("/api/bookings")).rejects.toThrow()
+      // With stale fallback, expired cache is still returned with _isStale flag
+      const result = await offlineAwareFetcher("/api/bookings")
+      expect(result._isStale).toBe(true)
     })
 
     it("throws for non-cacheable endpoints when offline", async () => {
@@ -295,6 +297,46 @@ describe("offlineAwareFetcher", () => {
       await expect(
         offlineAwareFetcher("/api/admin/settings")
       ).rejects.toThrow()
+    })
+  })
+
+  describe("stale data fallback", () => {
+    it("returns stale data with _isStale flag when cache is expired and offline", async () => {
+      const staleTime = Date.now() - 5 * 60 * 60 * 1000 // 5h ago (>4h TTL)
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "stale-1" }],
+        cachedAt: staleTime,
+      })
+
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      const result = await offlineAwareFetcher("/api/bookings")
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({ id: "stale-1" })
+      expect(result._isStale).toBe(true)
+    })
+
+    it("does not return stale data for non-cacheable endpoints", async () => {
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      await expect(
+        offlineAwareFetcher("/api/not-cacheable")
+      ).rejects.toThrow()
+    })
+
+    it("returns fresh cached data without _isStale flag", async () => {
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "fresh-1" }],
+        cachedAt: Date.now(),
+      })
+
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      const result = await offlineAwareFetcher("/api/bookings")
+      expect(result).toEqual([{ id: "fresh-1" }])
+      expect(result._isStale).toBeUndefined()
     })
   })
 

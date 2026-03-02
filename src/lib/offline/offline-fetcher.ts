@@ -1,4 +1,5 @@
 import { cacheEndpoint, getCachedEndpoint } from "./cache-manager"
+import { offlineDb } from "./db"
 import {
   reportConnectivityLoss,
   reportConnectivityRestored,
@@ -64,15 +65,38 @@ export async function offlineAwareFetcher(url: string): Promise<any> {
       reportConnectivityLoss()
     }
 
-    // 3. Network failed -- try cache fallback
+    // 3. Network failed -- try cache fallback (fresh data)
     if (isCacheable(url)) {
       const cached = await getCachedEndpoint(url)
       if (cached !== null) {
         return cached
+      }
+
+      // 3b. Try stale fallback -- return expired data with _isStale marker
+      const stale = await getStaleEndpoint(url)
+      if (stale !== null) {
+        stale._isStale = true
+        return stale
       }
     }
 
     // 4. No cache available
     throw networkError
   }
+}
+
+/** Get cached data regardless of TTL (for stale fallback when offline). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getStaleEndpoint(url: string): Promise<any | null> {
+  const exact = await offlineDb.endpointCache.get(url)
+  if (exact?.data != null) return exact.data
+
+  const qIndex = url.indexOf("?")
+  if (qIndex > 0) {
+    const baseUrl = url.substring(0, qIndex)
+    const base = await offlineDb.endpointCache.get(baseUrl)
+    if (base?.data != null) return base.data
+  }
+
+  return null
 }

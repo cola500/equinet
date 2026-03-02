@@ -1,3 +1,24 @@
+---
+title: "Equinet -- Dokumentationsindex"
+description: "Centralt navigeringsdokument for all projektdokumentation"
+category: root
+status: active
+last_updated: 2026-03-02
+sections:
+  - Arkitektur
+  - Operations
+  - Sakerhet
+  - Testning
+  - Guider
+  - API-dokumentation
+  - Planer (aktiva)
+  - Retrospectives
+  - Ideer & Backlog
+  - Anvandarforskning
+  - Sprintar
+  - Arkiv
+---
+
 # Equinet -- Dokumentationsindex
 
 > Centralt navigeringsdokument. For projektsetup, se [README.md](../README.md).

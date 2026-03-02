@@ -1,3 +1,19 @@
+---
+title: "Vecka 1 Februari: DDD-Light-migrering"
+description: "Migrering av 7 kärndomäner till DDD-Light pattern -- 915 till 1164 tester"
+category: retro
+tags: [ddd, repository-pattern, value-objects, domain-events, tdd]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Sammanfattning
+  - Viktiga learnings
+  - Nyckelmetrik
+  - Sessionsammanfattning per domän
+  - Rekommendationer för nästa fas
+  - Kumulativ status efter vecka 1
+---
+
 # Vecka 1 Februari: DDD-Light-migrering (2026-02-01 -- 2026-02-02)
 
 > Konsoliderad sammanfattning av 8 retrospectives: DDD-Light-migrering av 7 kärndomäner + kompetenscertifikat-feature.

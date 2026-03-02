@@ -1,3 +1,25 @@
+---
+title: "Exploratory Test Coverage Mapping"
+description: "Mapping between 11-phase exploratory test plan and automated E2E tests with coverage percentages"
+category: testing
+tags: [exploratory-testing, e2e, coverage, feature-flags, test-mapping]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/testing/exploratory-session-1-2026-01-22.md
+  - docs/testing/manual-testing.md
+sections:
+  - Sammanfattning
+  - Nya E2E-specs (skapade)
+  - "Fas 1: Baseline (alla flaggor AV)"
+  - "Fas 2: self_reschedule PA"
+  - "Fas 3: customer_insights PA"
+  - "Fas 4-10: Feature flag toggles"
+  - "Fas 11: Alla flaggor PA"
+  - Kvarvarande manuella tester
+  - "Observerad bugg: In-memory flag isolation i Next.js dev"
+---
+
 # Exploratory Test Coverage Mapping
 
 Mapping mellan exploratorisk testplan (11 faser) och automatiserade E2E-tester.

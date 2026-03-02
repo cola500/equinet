@@ -1,3 +1,27 @@
+---
+title: "Skalningsplan: 500 användare"
+description: "Plan och implementation for att skala Equinet till 500 samtidiga anvandare"
+category: architecture
+tags: [scaling, performance, caching, rate-limiting, connection-pooling]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/database.md
+  - docs/operations/load-testing.md
+  - NFR.md
+sections:
+  - Sammanfattning
+  - Identifierade flaskhalsar
+  - "Fas 1: Kritiska åtgärder (Vecka 1)"
+  - "Fas 2: Optimering (Vecka 2)"
+  - Säkerhetsaspekter
+  - DevOps-aspekter
+  - Tidplan
+  - Definition of Done
+  - Signeringar
+  - Appendix
+---
+
 # Skalningsplan: 500 användare
 
 > **Status:** FAS 2 IMPLEMENTERAD ✅

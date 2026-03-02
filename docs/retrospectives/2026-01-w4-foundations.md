@@ -1,3 +1,21 @@
+---
+title: "Vecka 4 Januari: Foundations"
+description: "Säkerhet, CI/CD, kalender, E2E, gruppbokning -- 420 till 887 tester"
+category: retro
+tags: [security, ci-cd, e2e, calendar, group-booking, rate-limiting]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Sammanfattning
+  - Viktiga Learnings
+  - Nyckelmetrik
+  - Process Improvements Introducerade
+  - Teknikval & Patterns Etablerade
+  - Action Items Sprint 3+ (Prioriterad)
+  - Reflektioner
+  - Framåtblick
+---
+
 # Vecka 4 Januari: Foundations (2026-01-21 -- 2026-01-30)
 
 > Konsoliderad sammanfattning av 8 retrospectives från grundläggande arkitektur, säkerhet, CI/CD och feature implementation.

@@ -1,3 +1,24 @@
+---
+title: "Offline-arkitektur"
+description: "Teknisk guide for Equinets offline PWA-stod med service worker, IndexedDB och mutation queue"
+category: architecture
+tags: [offline, pwa, service-worker, indexeddb, sync, swr]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/guides/gotchas.md
+sections:
+  - Översikt
+  - Arkitektur
+  - Komponenter
+  - Dataflöde
+  - "Stödda operationer (offline-mutations)"
+  - Testning
+  - Kända begränsningar
+  - Roadmap
+  - Relaterade dokument
+---
+
 # Offline-arkitektur
 
 > Centraliserad teknisk guide för Equinets offline PWA-stöd.

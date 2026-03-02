@@ -1,7 +1,21 @@
 ---
+title: "Prisma & Databas Requirements"
+description: "Migration workflow, checklista vid schemaandring och repository pattern"
+category: rule
+status: active
+last_updated: 2026-03-02
+tags: [prisma, database, migration, repository-pattern]
 paths:
   - "prisma/**"
   - "src/infrastructure/**"
+sections:
+  - Migration Workflow
+  - Checklista vid schemaandring
+  - Gotchas
+  - Repository Pattern
+  - Schema-först
+  - Migration med constraint-ändring + datamigrering
+  - Nytt falt pa befintlig modell
 ---
 
 # Prisma & Databas Requirements
