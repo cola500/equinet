@@ -5,7 +5,7 @@ import { mutate as globalMutate } from "swr"
 import { toast } from "sonner"
 import { useOnlineStatus } from "./useOnlineStatus"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { processMutationQueue, type SyncResult } from "@/lib/offline/sync-engine"
+import { processMutationQueue, getTabCoordinator, type SyncResult } from "@/lib/offline/sync-engine"
 import { getPendingCount, getUnsyncedMutations } from "@/lib/offline/mutation-queue"
 
 // Module-level guard -- survives component unmount/remount (e.g. from SWR
@@ -92,7 +92,7 @@ export function useMutationSync() {
     }
   }, [isOnline, isOfflineEnabled, triggerSync])
 
-  // Listen for queue changes
+  // Listen for queue changes + cross-tab cache updates
   useEffect(() => {
     if (!isOfflineEnabled) return
 
@@ -101,6 +101,13 @@ export function useMutationSync() {
     const handleQueueChange = () => refreshCount()
     window.addEventListener("mutation-queued", handleQueueChange)
     window.addEventListener("mutation-synced", handleQueueChange)
+
+    // Cross-tab: when another tab finishes sync, revalidate SWR + refresh count
+    const coordinator = getTabCoordinator()
+    coordinator.onCacheUpdated(() => {
+      refreshCount()
+      globalMutate(() => true, undefined, { revalidate: true })
+    })
 
     return () => {
       window.removeEventListener("mutation-queued", handleQueueChange)

@@ -5,17 +5,36 @@ import {
   resetStaleSyncingMutations,
 } from "./mutation-queue"
 import { debugLog } from "./debug-logger"
+import { createTabCoordinator, type TabCoordinator } from "./tab-coordinator"
 
 export interface SyncResult {
   synced: number
   failed: number
   conflicts: number
   rateLimited: number
+  skippedByLock?: boolean
+}
+
+// Singleton tab coordinator -- one per browser tab
+let tabCoordinator: TabCoordinator | null = null
+
+export function getTabCoordinator(): TabCoordinator {
+  if (!tabCoordinator) {
+    tabCoordinator = createTabCoordinator()
+  }
+  return tabCoordinator
+}
+
+/** Reset the tab coordinator. Test-only. */
+export function _resetTabCoordinator(): void {
+  tabCoordinator?.destroy()
+  tabCoordinator = null
 }
 
 const MAX_RETRIES = 3
 const CONFLICT_STATUSES = new Set([400, 403, 404, 409])
 const BASE_RETRY_DELAY_MS = 1000
+const PER_MUTATION_TIMEOUT_MS = 30_000
 
 /**
  * Process the mutation queue in FIFO order.
@@ -27,6 +46,22 @@ const BASE_RETRY_DELAY_MS = 1000
  * - TypeError (network down): abort entire queue, revert to "pending"
  */
 export async function processMutationQueue(): Promise<SyncResult> {
+  const coordinator = getTabCoordinator()
+  const acquired = await coordinator.acquireSyncLock()
+  if (!acquired) {
+    await debugLog("sync", "info", "Sync lock denied -- another tab is syncing")
+    return { synced: 0, failed: 0, conflicts: 0, rateLimited: 0, skippedByLock: true }
+  }
+
+  try {
+    return await _processMutationQueueInternal()
+  } finally {
+    coordinator.releaseSyncLock()
+  }
+}
+
+/** Internal queue processing (called after lock is acquired). Exported for testing. */
+export async function _processMutationQueueInternal(): Promise<SyncResult> {
   // Recover any mutations stuck in "syncing" from a previous interrupted run
   await resetStaleSyncingMutations()
 
@@ -35,8 +70,11 @@ export async function processMutationQueue(): Promise<SyncResult> {
 
   await debugLog("sync", "info", `Starting sync: ${mutations.length} mutations to process`)
 
-  for (const mutation of mutations) {
+  for (let i = 0; i < mutations.length; i++) {
+    const mutation = mutations[i]
     const id = mutation.id!
+
+    dispatchProgressEvent(i + 1, mutations.length, "processing")
 
     try {
       await updateMutationStatus(id, "syncing")
@@ -72,6 +110,12 @@ export async function processMutationQueue(): Promise<SyncResult> {
         await debugLog("sync", "warn", `Network error at mutation ${id}, aborting queue`)
         break
       }
+      if (error instanceof DOMException && error.name === "AbortError") {
+        // Per-mutation timeout -- revert to pending, continue with next
+        await updateMutationStatus(id, "pending")
+        await debugLog("sync", "warn", `Mutation ${id} timed out, reverting to pending`)
+        continue
+      }
       // Unexpected error -- mark as failed
       await updateMutationStatus(id, "failed", String(error))
       result.failed++
@@ -93,10 +137,19 @@ async function attemptWithRetry(
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const isDelete = method === "DELETE"
-    const response = await fetch(url, {
-      method,
-      ...(isDelete ? {} : { headers: { "Content-Type": "application/json" }, body }),
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), PER_MUTATION_TIMEOUT_MS)
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method,
+        signal: controller.signal,
+        ...(isDelete ? {} : { headers: { "Content-Type": "application/json" }, body }),
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     lastStatus = response.status
 
@@ -150,6 +203,16 @@ function getRetryDelay(attempt: number, response?: Response): number {
 
   // Exponential backoff: 1s, 2s, 4s, ...
   return BASE_RETRY_DELAY_MS * Math.pow(2, attempt)
+}
+
+function dispatchProgressEvent(current: number, total: number, status: string) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("sync-progress", {
+        detail: { current, total, status },
+      })
+    )
+  }
 }
 
 function dispatchSyncedEvent(entityType: string, entityId: string) {

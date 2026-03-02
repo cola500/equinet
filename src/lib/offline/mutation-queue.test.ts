@@ -335,6 +335,78 @@ describe("mutation-queue", () => {
     })
   })
 
+  describe("validateMutation", () => {
+    it("should detect corrupt mutation with missing method", async () => {
+      const { validateMutation } = await import("./mutation-queue")
+      // @ts-expect-error -- testing invalid data
+      const result = validateMutation({ url: "/api/test", body: "{}", entityType: "booking", entityId: "1" })
+      expect(result).toBe(false)
+    })
+
+    it("should detect corrupt mutation with missing url", async () => {
+      const { validateMutation } = await import("./mutation-queue")
+      // @ts-expect-error -- testing invalid data
+      const result = validateMutation({ method: "PUT", body: "{}", entityType: "booking", entityId: "1" })
+      expect(result).toBe(false)
+    })
+
+    it("should detect corrupt mutation with missing entityType", async () => {
+      const { validateMutation } = await import("./mutation-queue")
+      // @ts-expect-error -- testing invalid data
+      const result = validateMutation({ method: "PUT", url: "/api/test", body: "{}", entityId: "1" })
+      expect(result).toBe(false)
+    })
+
+    it("should accept valid mutation", async () => {
+      const { validateMutation } = await import("./mutation-queue")
+      const result = validateMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+        createdAt: Date.now(),
+        status: "pending",
+        retryCount: 0,
+      })
+      expect(result).toBe(true)
+    })
+
+    it("should mark corrupt mutations as failed during getPendingMutations", async () => {
+      // Insert corrupt mutation directly into DB
+      await offlineDb.pendingMutations.add({
+        // @ts-expect-error -- testing invalid data
+        method: null,
+        url: "/api/test",
+        body: "{}",
+        entityType: "booking",
+        entityId: "corrupt-1",
+        createdAt: Date.now(),
+        status: "pending",
+        retryCount: 0,
+      })
+      // Insert valid mutation
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "valid-1",
+      })
+
+      const pending = await getPendingMutations()
+      // Only the valid mutation should be returned
+      expect(pending).toHaveLength(1)
+      expect(pending[0].entityId).toBe("valid-1")
+
+      // Corrupt one should be marked as failed
+      const all = await offlineDb.pendingMutations.toArray()
+      const corrupt = all.find((m) => m.entityId === "corrupt-1")
+      expect(corrupt?.status).toBe("failed")
+      expect(corrupt?.error).toContain("Corrupt mutation")
+    })
+  })
+
   describe("clearAllMutations", () => {
     it("should remove all mutations regardless of status", async () => {
       await queueMutation({

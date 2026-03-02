@@ -1,4 +1,16 @@
 import { offlineDb, type MutationStatus, type PendingMutation } from "./db"
+import { debugLog } from "./debug-logger"
+
+/** Validate that a mutation has all required fields.
+ * Used to detect corrupted data read from IndexedDB. */
+export function validateMutation(mutation: Partial<PendingMutation>): boolean {
+  return (
+    typeof mutation.method === "string" &&
+    typeof mutation.url === "string" &&
+    typeof mutation.entityType === "string" &&
+    typeof mutation.entityId === "string"
+  )
+}
 
 interface QueueMutationInput {
   method: PendingMutation["method"]
@@ -19,12 +31,27 @@ export async function queueMutation(input: QueueMutationInput): Promise<number> 
   return id as number
 }
 
-/** Get all processable mutations (pending + failed) in FIFO order. */
+/** Get all processable mutations (pending + failed) in FIFO order.
+ * Corrupt mutations are marked as failed and excluded. */
 export async function getPendingMutations(): Promise<PendingMutation[]> {
-  return await offlineDb.pendingMutations
+  const all = await offlineDb.pendingMutations
     .where("status")
     .anyOf("pending", "failed")
     .sortBy("createdAt")
+
+  const valid: PendingMutation[] = []
+  for (const m of all) {
+    if (validateMutation(m)) {
+      valid.push(m)
+    } else {
+      await offlineDb.pendingMutations.update(m.id!, {
+        status: "failed" as MutationStatus,
+        error: "Corrupt mutation: missing required fields",
+      })
+      debugLog("sync", "warn", `Corrupt mutation ${m.id} marked as failed`).catch(() => {})
+    }
+  }
+  return valid
 }
 
 /** Get pending/failed mutations for a specific entity (used for dedup checks). */
