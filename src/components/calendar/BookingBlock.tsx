@@ -54,14 +54,16 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
   const bottomPercent = getTimePosition(booking.endTime)
   const heightPercent = bottomPercent - topPercent
   const isPaid = booking.payment?.status === "succeeded"
+  const isOfflinePending = booking._isOfflinePending
 
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick() }}
-      className={`absolute left-1 right-1 rounded border-l-4 px-2 py-1 text-left text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${getStatusStyles(
-        booking.status,
-        isPaid
-      )}`}
+      className={`absolute left-1 right-1 rounded border-l-4 px-2 py-1 text-left text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${
+        isOfflinePending
+          ? "bg-amber-50 border-amber-400 border-dashed text-amber-900"
+          : getStatusStyles(booking.status, isPaid)
+      }`}
       style={{
         top: `${topPercent}%`,
         height: `${heightPercent}%`,
@@ -74,7 +76,10 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
         {booking.bookingSeriesId && (
           <span title="Återkommande bokning"><Repeat className="h-3 w-3 mr-0.5 flex-shrink-0" /></span>
         )}
-        {booking.isManualBooking && (
+        {isOfflinePending && (
+          <span className="inline-block bg-amber-200 text-amber-800 text-[10px] font-bold rounded px-1 mr-1" title="Sparad lokalt">Lokalt</span>
+        )}
+        {booking.isManualBooking && !isOfflinePending && (
           <span className="inline-block bg-white/30 text-[10px] font-bold rounded px-1 mr-1" title="Manuell bokning">M</span>
         )}
         <span className="truncate">{booking.service.name}</span>

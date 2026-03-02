@@ -90,6 +90,7 @@ export function ManualBookingDialog({
   const [isSearching, setIsSearching] = useState(false)
 
   const { isOnline, guardMutation } = useOfflineGuard()
+  const isOfflineEnabled = useFeatureFlag("offline_mode")
 
   // Recurring booking state
   const recurringEnabled = useFeatureFlag("recurring_bookings")
@@ -363,6 +364,7 @@ export function ManualBookingDialog({
                 endTime: endTime || startTime,
                 status: "confirmed",
                 isManualBooking: true,
+                _isOfflinePending: true,
                 service: {
                   name: selectedService?.name || "Tjänst",
                   price: selectedService?.price || 0,
@@ -407,9 +409,14 @@ export function ManualBookingDialog({
         </DialogHeader>
 
         {/* Offline notice */}
-        {!isOnline && (
+        {!isOnline && isOfflineEnabled && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
             Du är offline. Bokningen sparas lokalt och synkas automatiskt.
+          </div>
+        )}
+        {!isOnline && !isOfflineEnabled && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+            Du är offline. Bokningen kan inte skapas utan internetanslutning.
           </div>
         )}
 

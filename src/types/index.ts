@@ -131,6 +131,7 @@ export interface CalendarBooking {
   customer: CalendarCustomer
   payment?: CalendarPayment | null
   customerReview?: CalendarCustomerReview | null
+  _isOfflinePending?: boolean  // UI-only, aldrig från server
 }
 
 export interface AvailabilityDay {
