@@ -24,6 +24,9 @@ export interface OfflineMutationOptions {
  *
  * Without offlineOptions: blocks with error toast (original behavior).
  * With offlineOptions + offline_mode flag: queues to IndexedDB for later sync.
+ *
+ * Order: optimisticUpdate -> toast -> dedup (non-POST) -> queueMutation
+ * This gives immediate UI feedback before the async IndexedDB operations.
  */
 export function useOfflineGuard() {
   const isOnline = useOnlineStatus()
@@ -41,37 +44,46 @@ export function useOfflineGuard() {
 
       // Offline + queueable mutation + feature enabled
       if (offlineOptions && isOfflineEnabled) {
-        // Deduplication: check if identical mutation already pending
-        const existing = await getPendingMutationsByEntity(
-          offlineOptions.entityId
-        )
-        const isDuplicate = existing.some(
-          (m) =>
-            m.method === offlineOptions.method &&
-            m.url === offlineOptions.url &&
-            m.body === offlineOptions.body
-        )
-
-        if (isDuplicate) {
-          toast.info("Ändringen är redan sparad offline")
-          return undefined
-        }
-
-        await queueMutation({
-          method: offlineOptions.method,
-          url: offlineOptions.url,
-          body: offlineOptions.body,
-          entityType: offlineOptions.entityType,
-          entityId: offlineOptions.entityId,
-        })
-
-        // Dispatch event so useMutationSync updates its count
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("mutation-queued"))
-        }
-
+        // 1. Immediate feedback (before any async IndexedDB work)
         offlineOptions.optimisticUpdate?.()
-        toast.info("Ändringen sparas offline och synkas när du är online igen")
+        toast.success("Sparad lokalt -- synkas automatiskt")
+
+        // 2. Dedup check (only for non-POST -- POST always has unique entityId)
+        if (offlineOptions.method !== "POST") {
+          const existing = await getPendingMutationsByEntity(
+            offlineOptions.entityId
+          )
+          const isDuplicate = existing.some(
+            (m) =>
+              m.method === offlineOptions.method &&
+              m.url === offlineOptions.url &&
+              m.body === offlineOptions.body
+          )
+
+          if (isDuplicate) {
+            toast.info("Ändringen är redan sparad offline")
+            return undefined
+          }
+        }
+
+        // 3. Queue to IndexedDB
+        try {
+          await queueMutation({
+            method: offlineOptions.method,
+            url: offlineOptions.url,
+            body: offlineOptions.body,
+            entityType: offlineOptions.entityType,
+            entityId: offlineOptions.entityId,
+          })
+
+          // Dispatch event so useMutationSync updates its count
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("mutation-queued"))
+          }
+        } catch {
+          toast.error("Kunde inte spara offline. Försök igen.")
+        }
+
         return undefined
       }
 
