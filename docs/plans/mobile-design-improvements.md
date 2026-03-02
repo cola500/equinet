@@ -1,3 +1,21 @@
+---
+title: "Mobile Design Improvements Plan"
+description: "Plan for skeleton loaders, collapsed filters, brand colors, tab bar polish and stagger animations"
+category: plan
+tags: [mobile, design, ux, skeleton-loaders, brand-colors, animations]
+status: draft
+last_updated: 2026-03-02
+sections:
+  - "Phase 1: Skeleton Loaders (replace spinners)"
+  - "Phase 2: Collapse search filters on providers page (mobile)"
+  - "Phase 3: Booking card visual hierarchy with left-border status"
+  - "Phase 4: Brand colors and warm palette"
+  - "Phase 5: Tab bar polish"
+  - "Phase 6: Stagger animations on lists"
+  - Out of Scope (future work)
+  - Definition of Done
+---
+
 # Mobile Design Improvements Plan
 
 ## Overview

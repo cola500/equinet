@@ -1,3 +1,23 @@
+---
+title: "Horses API"
+description: "Horse registry CRUD, health notes, timeline, shareable profile, and GDPR data export"
+category: api
+tags: [horses, api, health-notes, timeline, gdpr, export]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/customers.md
+  - docs/api/bookings.md
+sections:
+  - Hästregister (CRUD)
+  - Hästanteckningar (Hälsohistorik)
+  - Tidslinje
+  - Delbar hästprofil
+  - Dataexport (GDPR)
+---
+
 # Hästar
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

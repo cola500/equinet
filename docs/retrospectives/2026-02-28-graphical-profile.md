@@ -1,3 +1,20 @@
+---
+title: "Retrospektiv: Grafisk profil och landningssida"
+description: "Hästsko-ikon, varm palett, omskriven landningssida och Suspense-fix"
+category: retro
+tags: [ui, branding, landing-page, suspense]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Resultat
+  - Vad som byggdes
+  - Vad gick bra
+  - Vad kan förbättras
+  - Patterns att spara
+  - 5 Whys (Root-Cause Analysis)
+  - Lärandeeffekt
+---
+
 # Retrospektiv: Grafisk profil och landningssida
 
 **Datum:** 2026-02-28

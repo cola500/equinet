@@ -1,3 +1,20 @@
+---
+title: "Equinet - Användardokumentation"
+description: "End-user documentation for horse owners and service providers using the Equinet platform"
+category: guide
+tags: [user-docs, customer-guide, provider-guide, admin-guide, faq]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Innehåll
+  - Vad är Equinet?
+  - Komma igång
+  - Guide för hästägare
+  - Guide för leverantörer
+  - Guide för administratörer
+  - Vanliga frågor
+---
+
 # Equinet - Användardokumentation
 
 > Equinet kopplar samman hästägare med hovslagare, veterinärer, massörer och andra hästtjänster.

@@ -1,3 +1,22 @@
+---
+title: "Vecka 4 Februari del 1: Bokning & Offline"
+description: "Ombokning, påminnelser, återkommande bokningar, offline PWA och sync-motor -- 1890 till 2235 tester"
+category: retro
+tags: [booking, offline, pwa, sync, service-worker, swr]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/offline-pwa.md
+sections:
+  - Sammanfattning
+  - Nyckelresultat
+  - Viktiga learnings
+  - Nyckelmetrik
+  - Patterns att spara
+  - 5 Whys sammanfattning
+  - Missade förbättringar
+---
+
 # Vecka 4 Februari del 1: Bokning & Offline (2026-02-17 -- 2026-02-21)
 
 > Konsoliderad sammanfattning av 14 retrospectives: bokningsfeatures, offline PWA, sync-motorn och infrastrukturfix.

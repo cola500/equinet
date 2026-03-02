@@ -1,3 +1,46 @@
+---
+title: "Vanliga Gotchas"
+description: "Collection of common pitfalls and solutions encountered during Equinet development"
+category: guide
+tags: [gotchas, debugging, next-js, prisma, serverless, offline, security]
+status: active
+last_updated: 2026-03-02
+related:
+  - CLAUDE.md
+  - docs/guides/agents.md
+sections:
+  - 1. Next.js 16 Dynamic Params
+  - 2. Zod Error Handling
+  - 3. Turbopack Cache
+  - 4. NextAuth Session Update
+  - 5. Rate Limiting i Serverless
+  - 6. IDOR med Race Condition
+  - 7. Prisma Over-Fetching
+  - 8. Saknade Database Indexes
+  - 9. NextAuth v5 Migration
+  - 10. TypeScript Memory Issues
+  - 11. Frontend Data Normalisering
+  - 12. Generiska Felmeddelanden
+  - 13. Connection Pool Exhaustion
+  - 14. Prisma DATE-kolumner och Timezone
+  - 15. Safari Date Parsing
+  - 16. Serverless State & Storage
+  - 17. Upsert för Race Conditions
+  - 18. Behavior-Based vs Implementation-Based Testing
+  - 19. E2E Tests Fångar API-Buggar
+  - 20. Vercel Build Timeout (ignoreBuildErrors)
+  - 21. CSP Blockerar Web Workers (browser-image-compression)
+  - 22. Mock-uploads Måste Servas av Next.js
+  - 23. Vercel env pull Overskrider Lokal Config
+  - 24. Prisma Migration Workflow (db push -> migrate dev)
+  - 25. Deploy utan Migration = 500-fel i Produktion
+  - 26. Lokal Offline/PWA-testning
+  - 27. Offline Sync Race Conditions
+  - 28. Radix Dialog onOpenChange vid Programmatisk Stängning
+  - 29. useSearchParams() Kräver Suspense-boundary
+  - Relaterade Dokument
+---
+
 # Vanliga Gotchas
 
 > Samling av vanliga problem och deras lösningar. Uppdateras löpande med nya learnings.

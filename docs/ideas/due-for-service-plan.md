@@ -1,3 +1,22 @@
+---
+title: "Implementeringsplan: Due for Service + Ruttannons-notifiering"
+description: "3-fas implementeringsplan: kund-synlig status, hyperrelevant notis, push-notiser"
+category: plan
+tags: [due-for-service, notifications, push, route-announcement]
+status: wip
+last_updated: 2026-03-02
+depends_on:
+  - docs/ideas/due for service+ notice.md
+sections:
+  - Status
+  - Kontext
+  - Fas 1: Kund-synlig "due for service"-status -- KLAR
+  - Fas 2: Hyperrelevant notis (Due + Ruttannons)
+  - Fas 3: Push-notiser
+  - Verifiering per fas
+  - Oversikt
+---
+
 # Implementeringsplan: "Due for Service" + Ruttannons-notifiering
 
 > Baserat på: `docs/ideas/due for service+ notice.md`

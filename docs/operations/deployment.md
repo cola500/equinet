@@ -1,3 +1,31 @@
+---
+title: "Production Deployment Guide"
+description: "Steg-for-steg guide for att deploya Equinet till Vercel med Supabase, Upstash och Sentry"
+category: operations
+tags: [deployment, vercel, supabase, upstash, sentry, monitoring]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/database.md
+  - docs/guides/gotchas.md
+  - NFR.md
+sections:
+  - "Översikt"
+  - "Steg 1: Vercel Deployment (5 min)"
+  - "Steg 2: Environment Variables"
+  - "Steg 3: Upstash Redis Setup (5 min)"
+  - "Steg 4: Sentry Setup (5 min)"
+  - "Steg 5: Deploy! (2 min)"
+  - "Steg 6: Post-Deployment Verification (5 min)"
+  - "Steg 7: Security Checklist"
+  - "Steg 8: Setup Monitoring (10 min)"
+  - "Production Readiness Checklist"
+  - "Troubleshooting"
+  - "Next Steps"
+  - "Support & Resources"
+  - Kanda risker i produktion
+---
+
 # Production Deployment Guide
 
 > **Snabbstart för att deploya Equinet till Vercel med full säkerhet och monitoring.**

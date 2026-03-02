@@ -1,3 +1,20 @@
+---
+title: "Routes & Route Orders API"
+description: "Route orders (customer requests and provider announcements) and route management endpoints"
+category: api
+tags: [routes, api, route-orders, announcements, route-planning]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/bookings.md
+  - docs/api/providers.md
+sections:
+  - Ruttbeställningar
+  - Rutter
+---
+
 # Rutter & Ruttbeställningar
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

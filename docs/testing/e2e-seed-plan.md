@@ -1,3 +1,19 @@
+---
+title: "E2E Seed Plan"
+description: "Plan for a unified E2E seed script with controlled cleanup, environment safety and idempotent seeding"
+category: testing
+tags: [e2e, seed, cleanup, playwright, testing]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Sammanfattning
+  - Nuläge (problem)
+  - Nya/ändrade filer
+  - Implementationsordning
+  - Verifiering
+  - Nyckelprinciper
+---
+
 # Plan: Stabilt E2E seed-script med kontrollerad cleanup
 
 ## Sammanfattning

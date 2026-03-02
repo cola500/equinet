@@ -1,3 +1,21 @@
+---
+title: "Feature Flags"
+description: "Prioritetsordning, standardmonster och checklista for feature flags"
+category: rule
+status: active
+last_updated: 2026-03-02
+tags: [feature-flags, server, client, testing]
+sections:
+  - Prioritetsordning
+  - Filer
+  - "Standardmönster: Server-side (API route)"
+  - "Standardmönster: Klient-side (UI)"
+  - Test-mock
+  - "Checklista: Ny feature flag"
+  - Dual gating (route-level + service-level)
+  - Viktigt
+---
+
 # Feature Flags
 
 ## Prioritetsordning

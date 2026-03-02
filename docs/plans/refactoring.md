@@ -1,3 +1,18 @@
+---
+title: "Refaktoreringsplan"
+description: "Prioritized refactoring plan covering code duplication, large files, missing tests and pattern compliance"
+category: plan
+tags: [refactoring, code-quality, testing, repository-pattern, hooks]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Kritiskt (hog paverkan, tydlig vinst)
+  - Hog prioritet
+  - Medium prioritet
+  - Detaljerade fynd
+  - Implementation (prioritetsordning)
+---
+
 # Refaktoreringsplan -- Equinet
 
 > Genererad 2026-02-24 baserat på bred kodanalys.

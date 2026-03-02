@@ -1,3 +1,21 @@
+---
+title: "Bug Reports Implementation Plan"
+description: "Step-by-step TDD implementation plan for bug reports backend, admin API, and UI"
+category: plan
+tags: [bug-reports, admin, implementation, tdd]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/plans/2026-02-28-bug-reports-design.md
+sections:
+  - "Fas 1: Datamodell + Migration"
+  - "Fas 2: API - Skapa buggrapport (POST)"
+  - "Fas 3: Admin API - Lista + Detalj + Uppdatera"
+  - "Fas 4: Refaktorera BugReportFab"
+  - "Fas 5: Admin UI"
+  - "Fas 6: Verifiering + Cleanup"
+---
+
 # Bug Reports Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

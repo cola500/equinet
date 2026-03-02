@@ -1,3 +1,22 @@
+---
+title: "Lasttestning -- Baseline-dokumentation"
+description: "Lasttestning med k6 -- scenarios, baseline-resultat och prestandaoptimeringar"
+category: operations
+tags: [load-testing, k6, performance, baseline]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/scaling.md
+  - NFR.md
+sections:
+  - Verktyg
+  - Hur man kör
+  - Scenarios
+  - Baseline-resultat
+  - Prestandaoptimeringar implementerade
+  - Anteckningar
+---
+
 # Lasttestning -- Baseline-dokumentation
 
 > NFR-08: Lasttestverktyg, baseline för kritiska endpoints, 100 concurrent users utan degradering.

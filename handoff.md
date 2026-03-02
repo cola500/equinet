@@ -1,3 +1,20 @@
+---
+title: "Handoff: Bug Reports Feature"
+description: "Handoff-dokument for bug reports feature -- status, kvarstaende faser och projektkontext"
+category: plan
+tags: [handoff, bug-reports, wip]
+status: wip
+last_updated: 2026-03-02
+depends_on:
+  - docs/plans/2026-02-28-bug-reports.md
+sections:
+  - Status
+  - Vad som ar klart
+  - "Vad som aterkstar (i ordning)"
+  - Projektkontext
+  - Nyckel-filer att referera
+---
+
 # Handoff: Bug Reports Feature
 
 ## Status

@@ -1,3 +1,34 @@
+---
+title: "Equinet - Bokningsplattform för Hästtjänster"
+description: "Projektöversikt, setup-guide, teknisk stack och implementerade funktioner"
+category: root
+tags: [setup, overview, getting-started]
+status: active
+last_updated: 2026-03-02
+related:
+  - CLAUDE.md
+  - NFR.md
+  - docs/architecture/database.md
+  - docs/operations/deployment.md
+  - docs/guides/gotchas.md
+  - docs/guides/feature-docs.md
+sections:
+  - Getting Started
+  - Viktiga Kommandon
+  - Quality Gates
+  - Teknisk Stack
+  - Projektstruktur
+  - Arkitektur
+  - Databasschema
+  - Implementerade Funktioner
+  - Testning
+  - Testa Appen Manuellt
+  - Felsökning
+  - Deploy till Produktion
+  - Dokumentation
+  - Roadmap
+---
+
 # Equinet - Bokningsplattform för Hästtjänster
 
 Equinet är en modern bokningsplattform som kopplar samman hästägare med tjänsteleverantörer som hovslagare, veterinärer och andra hästspecialister.

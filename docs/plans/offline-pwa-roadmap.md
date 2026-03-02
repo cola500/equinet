@@ -1,3 +1,23 @@
+---
+title: "Offline PWA Roadmap"
+description: "Multi-phase roadmap for offline PWA capabilities from cache to conflict handling to smart pre-fetching"
+category: plan
+tags: [offline, pwa, service-worker, indexeddb, sync, conflict-handling]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/offline-pwa.md
+sections:
+  - Kontext
+  - "Fas 2: Offline-mutations -- KLAR"
+  - "Fas 3: Konflikthantering + Sync-status"
+  - "Fas 4: Kund-offline (visa bokningar, annonser)"
+  - "Fas 5: Smart Pre-fetching"
+  - "Fas 6: Offline-kartdata (Leaflet tiles)"
+  - Prioritering
+  - Framtida utforskningsideer
+---
+
 # Plan: Offline PWA -- Roadmap
 
 ## Kontext

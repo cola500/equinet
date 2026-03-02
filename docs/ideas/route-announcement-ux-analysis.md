@@ -1,3 +1,21 @@
+---
+title: "Rutt-annonsering: UX-genomlysning + omvärldsanalys"
+description: "Konkurrentanalys och 10 framtida feature-ideer for ruttannonsering"
+category: idea
+tags: [ux, route-announcement, competitor-analysis, marketplace]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Equinets unika position
+  - UX-styrkor att bevara
+  - Identifierade UX-problem
+  - Omvärldsanalys -- Närmaste analogier
+  - Top 10 framtida feature-idéer
+  - Konverteringskedja
+  - Marketplace loop
+  - Källor
+---
+
 # Rutt-annonsering: UX-genomlysning + omvärldsanalys
 
 > Genomförd 2026-02-19. Underlag för framtida förbättringar.

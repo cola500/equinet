@@ -1,3 +1,26 @@
+---
+title: "Feature Flag Hardening"
+description: "Plan to standardize feature flag enforcement across all API routes and client gates"
+category: plan
+tags: [feature-flags, security, standardization, api, e2e]
+status: active
+last_updated: 2026-03-02
+related:
+  - .claude/rules/feature-flags.md
+sections:
+  - Context
+  - Standardmönster
+  - "Fas 1: Kritisk fix -- group_bookings server-gating (TDD)"
+  - "Fas 2: Server-gating -- voice_logging + route_planning (TDD)"
+  - "Fas 3: Klient-gating -- döda flaggor"
+  - "Fas 4: Standardisera befintliga checks"
+  - "Fas 5: E2E-tester -- API-enforcement"
+  - "Fas 6: Dokumentation + regler"
+  - "Fas 7: Agent-review"
+  - Filer som INTE ändras
+  - Verifiering
+---
+
 # Feature Flag Hardening: Genomgång och Standardisering
 
 ## Context

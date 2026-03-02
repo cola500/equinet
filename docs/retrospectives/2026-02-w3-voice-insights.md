@@ -1,3 +1,24 @@
+---
+title: "Vecka 3 Februari del 2: Röstloggning & Insikter"
+description: "Röstloggning, kundinsikter, Redis feature flags och kalender-UX"
+category: retro
+tags: [voice-logging, ai, customer-insights, redis, feature-flags, calendar]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/guides/voice-logging.md
+  - docs/security/pentest-2026-02-15.md
+sections:
+  - Sammanfattning
+  - Viktiga Learnings
+  - Nyckelmetrik
+  - Arkitektoniska Förbättringar
+  - 5 Whys från Session 8
+  - Patterns Att Spara
+  - Öppna Förbättringar
+  - Relaterade Dokument
+---
+
 # Vecka 3 Februari del 2: Röstloggning & Insikter (2026-02-13 -- 2026-02-16)
 
 > Konsoliderad sammanfattning av 8 retrospectives från röstloggning, kundinsikter, infrastruktur och UX-förbättringar.

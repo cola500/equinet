@@ -1,3 +1,26 @@
+---
+title: "Bookings API"
+description: "Booking CRUD, manual bookings, recurring booking series and cancellation endpoints"
+category: api
+tags: [bookings, api, recurring-bookings, manual-booking, booking-series]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/providers.md
+  - docs/architecture/booking-flow.md
+sections:
+  - GET /api/bookings
+  - POST /api/bookings
+  - POST /api/bookings/manual
+  - PUT /api/bookings/[id]
+  - DELETE /api/bookings/[id]
+  - POST /api/booking-series
+  - GET /api/booking-series/[id]
+  - POST /api/booking-series/[id]/cancel
+---
+
 # Bokningar
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

@@ -1,3 +1,17 @@
+---
+title: "UX-förbättringar -- Backlog"
+description: "UX-backlog fran branschjamforelse med Booksy, Acuity och Calendly"
+category: idea
+tags: [ux, backlog, booking, recurring, waitlist, calendar-sync]
+status: active
+last_updated: 2026-03-02
+sections:
+  - Implementerat
+  - B-kategori -- Medelstor insats
+  - C-kategori -- Större insats
+  - Prioriteringsförslag
+---
+
 # UX-förbättringar -- Backlog
 
 > Idéer från UX-analys 2026-02-17, jämförelse mot branschledande bokningsappar (Booksy, Acuity, Calendly).

@@ -1,3 +1,20 @@
+---
+title: "Voice & AI API"
+description: "Voice logging (dictation) interpretation/confirmation and AI-driven customer insights endpoints"
+category: api
+tags: [voice-logging, ai, customer-insights, anthropic, llm]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/guides/voice-logging.md
+  - docs/api/providers.md
+sections:
+  - Röstloggning
+  - Kundinsikter
+---
+
 # Röst & AI
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

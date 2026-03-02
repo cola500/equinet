@@ -1,3 +1,20 @@
+---
+title: "Parallella Claude Code-sessioner med Git Worktrees"
+description: "Guide for att kora flera Claude Code-instanser samtidigt med git worktrees"
+category: operations
+tags: [git, worktrees, parallel-sessions, workflow]
+status: active
+last_updated: 2026-03-02
+sections:
+  - "Varför Worktrees?"
+  - Steg-för-steg Setup
+  - Praktiska Exempel
+  - Städa Upp
+  - Tips och Best Practices
+  - Begränsningar
+  - Snabbreferens
+---
+
 # Parallella Claude Code-sessioner med Git Worktrees
 
 Guide för att köra flera Claude Code-instanser samtidigt på samma projekt.

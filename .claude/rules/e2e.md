@@ -1,7 +1,18 @@
 ---
+title: "E2E Test Requirements"
+description: "Seed, cleanup, selektorer och obligatoriska patterns for Playwright E2E-tester"
+category: rule
+status: active
+last_updated: 2026-03-02
+tags: [e2e, playwright, testing, selectors]
 paths:
   - "e2e/**/*.spec.ts"
   - "e2e/**/*.ts"
+sections:
+  - Seed & Cleanup
+  - Selektorer
+  - Obligatoriska patterns
+  - Gotchas
 ---
 
 # E2E Test Requirements

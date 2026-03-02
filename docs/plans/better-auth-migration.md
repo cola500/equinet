@@ -1,3 +1,18 @@
+---
+title: "Better Auth Migration Plan"
+description: "Phase-by-phase migration plan from NextAuth v5 to Better Auth with minimal API route changes"
+category: plan
+tags: [auth, migration, better-auth, nextauth, database-sessions]
+status: draft
+last_updated: 2026-03-02
+sections:
+  - Summary of Findings
+  - Phase-by-Phase Migration Plan
+  - Impact Assessment
+  - Risks and Mitigations
+  - Sources
+---
+
 # Better Auth Migration Plan: NextAuth v5 -> Better Auth
 
 > Skapad: 2026-02-12 (Session 20)

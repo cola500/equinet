@@ -1,7 +1,21 @@
 ---
+title: "UI & Komponent Requirements"
+description: "Mobil-forst, touch targets, ResponsiveAlertDialog, VoiceTextarea och design system"
+category: rule
+status: active
+last_updated: 2026-03-02
+tags: [ui, mobile-first, touch-targets, shadcn, swr]
 paths:
   - "src/app/**/page.tsx"
   - "src/components/**/*.tsx"
+sections:
+  - Mobil-forst
+  - Touch targets
+  - ResponsiveAlertDialog -- KRITISKA regler
+  - VoiceTextarea
+  - FAB-monster for mobil
+  - Data Fetching
+  - Design System
 ---
 
 # UI & Komponent Requirements

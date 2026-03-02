@@ -1,3 +1,21 @@
+---
+title: "Auth & Profile API"
+description: "Authentication endpoints for registration, login, password reset and user profile management"
+category: api
+tags: [auth, registration, login, password-reset, profile]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+sections:
+  - POST /api/auth/register
+  - GET/POST /api/auth/[...nextauth]
+  - POST /api/auth/forgot-password
+  - POST /api/auth/reset-password
+  - GET /api/profile
+  - PUT /api/profile
+---
+
 # Auth & Profil
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

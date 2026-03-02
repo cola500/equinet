@@ -1,3 +1,28 @@
+---
+title: "Providers API"
+description: "Provider search, profile management, availability, services, revisit intervals, verification and integrations"
+category: api
+tags: [providers, api, services, availability, verification, fortnox, revisit-interval]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/bookings.md
+  - docs/api/customers.md
+sections:
+  - Sökning & Detaljer
+  - Provider-profil (inloggad)
+  - Tillgänglighet
+  - Tjänster (Services)
+  - Återbesöksintervall (per tjänst)
+  - Besöksplanering
+  - Leverantörsanteckningar på bokningar
+  - Verifieringsansökningar
+  - Bilduppladdning
+  - Fortnox-integration
+---
+
 # Leverantörer
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).

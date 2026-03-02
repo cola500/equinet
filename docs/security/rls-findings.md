@@ -1,3 +1,23 @@
+---
+title: "Row Level Security (RLS) -- Findings & Implementation"
+description: "RLS deny-all implementation pa alla tabeller -- bakgrund, riskbedomning och verifiering"
+category: security
+tags: [rls, supabase, postgresql, authorization, defense-in-depth]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/database.md
+  - docs/security/pentest-2026-02-15.md
+sections:
+  - Background
+  - Risk Assessment
+  - "Tables Covered (All 21)"
+  - Implementation
+  - Verification Checklist
+  - Future Considerations
+  - References
+---
+
 # Row Level Security (RLS) -- Findings & Implementation
 
 ## Background

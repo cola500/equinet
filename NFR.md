@@ -1,3 +1,28 @@
+---
+title: "Production Readiness Scorecard"
+description: "Non-functional requirements med status, gap-analys och story-ready acceptance criteria"
+category: root
+tags: [nfr, production-readiness, security, performance, monitoring]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/architecture/database.md
+  - docs/security/pentest-2026-02-15.md
+  - docs/operations/deployment.md
+  - docs/INDEX.md
+  - docs/architecture/offline-pwa.md
+sections:
+  - Sammanfattning
+  - "1. Performance & Skalbarhet"
+  - "2. Säkerhet & Privacy"
+  - "3. Reliability & Availability"
+  - "4. Kodkvalitet & Testning"
+  - "5. Tillgänglighet"
+  - "6. Monitoring & Observability"
+  - "Tekniska Stories -- Production Gaps"
+  - Underhållsschema
+---
+
 # Production Readiness Scorecard
 
 **Projekt**: Equinet - Bokningsplattform för hästtjänster

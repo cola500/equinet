@@ -1,3 +1,28 @@
+---
+title: "Databas-arkitektur - Equinet"
+description: "Databasarkitektur med connection management, RLS, migrationer, backup och monitoring"
+category: architecture
+tags: [database, prisma, supabase, postgresql, rls, backup]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/security/rls-findings.md
+  - docs/operations/deployment.md
+  - NFR.md
+  - CLAUDE.md
+sections:
+  - Nuvarande Arkitektur
+  - Connection Management
+  - "Miljöseparation (Dev/Staging/Prod)"
+  - Migration Workflow
+  - "Backup & Återställning"
+  - "Monitoring & Performance"
+  - Säkerhetslager
+  - "Kända Problem & Gotchas"
+  - Action Items
+  - Relaterade Dokument
+---
+
 # Databas-arkitektur - Equinet
 
 > Hur databasen fungerar idag och vad som behövs för production readiness.

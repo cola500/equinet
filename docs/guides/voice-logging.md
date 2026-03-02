@@ -1,3 +1,23 @@
+---
+title: "Röstloggning / Arbetslogg"
+description: "Voice logging feature guide -- AI-powered dictation for field workers to log completed work"
+category: guide
+tags: [voice-logging, ai, dictation, web-speech-api, anthropic]
+status: active
+last_updated: 2026-03-02
+related:
+  - docs/api/voice-and-ai.md
+sections:
+  - Problemet
+  - Flödet steg för steg
+  - Exempelscenario
+  - Teknisk arkitektur
+  - Säkerhet
+  - Beroenden
+  - Kostnad
+  - Kända begränsningar
+---
+
 # Röstloggning / Arbetslogg
 
 Leverantörer (hovslagare, veterinärer etc.) kan snabbt logga utfört arbete genom att diktera eller skriva fritt. AI tolkar texten och mappar till rätt bokning.

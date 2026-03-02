@@ -1,3 +1,25 @@
+---
+title: "E2E-tester med Playwright"
+description: "Snabbstart, teststruktur, seed-strategi, selektorer och debugging for E2E"
+category: testing
+tags: [e2e, playwright, testing, seed, fixtures]
+status: active
+last_updated: 2026-03-02
+related:
+  - e2e/TEST_ISOLATION.md
+sections:
+  - Snabbstart
+  - Teststruktur
+  - Viewports
+  - Test Data (Seed)
+  - Test Isolation med Fixtures
+  - Selektorer
+  - Debugging
+  - Konfiguration
+  - Test Coverage Pyramid
+  - Tips
+---
+
 # E2E-tester med Playwright
 
 Detta projekt använder **Playwright** för end-to-end-tester som testar hela användarflöden i en riktig webbläsare.

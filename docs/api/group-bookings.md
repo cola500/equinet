@@ -1,3 +1,25 @@
+---
+title: "Group Bookings API"
+description: "Group booking requests with invite codes, participant management and provider matching"
+category: api
+tags: [group-bookings, api, invite-code, matching]
+status: active
+last_updated: 2026-03-02
+depends_on:
+  - docs/api/README.md
+related:
+  - docs/api/bookings.md
+sections:
+  - POST /api/group-bookings
+  - GET /api/group-bookings
+  - GET /api/group-bookings/[id]
+  - PUT /api/group-bookings/[id]
+  - POST /api/group-bookings/join
+  - GET /api/group-bookings/available
+  - POST /api/group-bookings/[id]/match
+  - DELETE /api/group-bookings/[id]/participants/[pid]
+---
+
 # Gruppbokningar
 
 > Se [API.md](../API.md) för gemensamma mönster (autentisering, felkoder, säkerhetsprinciper).
