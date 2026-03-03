@@ -13,6 +13,7 @@ export interface SyncResult {
   conflicts: number
   rateLimited: number
   skippedByLock?: boolean
+  circuitBroken?: boolean
 }
 
 // Singleton tab coordinator -- one per browser tab
@@ -32,6 +33,8 @@ export function _resetTabCoordinator(): void {
 }
 
 const MAX_RETRIES = 3
+const MAX_TOTAL_RETRIES = 10
+const CIRCUIT_BREAKER_THRESHOLD = 3
 const CONFLICT_STATUSES = new Set([400, 403, 404, 409])
 const BASE_RETRY_DELAY_MS = 1000
 const PER_MUTATION_TIMEOUT_MS = 30_000
@@ -70,9 +73,19 @@ export async function _processMutationQueueInternal(): Promise<SyncResult> {
 
   await debugLog("sync", "info", `Starting sync: ${mutations.length} mutations to process`)
 
+  let consecutiveServerErrors = 0
+
   for (let i = 0; i < mutations.length; i++) {
     const mutation = mutations[i]
     const id = mutation.id!
+
+    // Max total retries guard -- skip mutations that have been retried too many times
+    if (mutation.retryCount >= MAX_TOTAL_RETRIES) {
+      await updateMutationStatus(id, "failed", `Max retries (${MAX_TOTAL_RETRIES}) exceeded`)
+      result.failed++
+      await debugLog("sync", "error", `Mutation ${id} exceeded max total retries`)
+      continue
+    }
 
     dispatchProgressEvent(i + 1, mutations.length, "processing")
 
@@ -89,14 +102,22 @@ export async function _processMutationQueueInternal(): Promise<SyncResult> {
       if (outcome === "synced") {
         await updateMutationStatus(id, "synced")
         result.synced++
+        consecutiveServerErrors = 0
         dispatchSyncedEvent(mutation.entityType, mutation.entityId)
         await debugLog("sync", "info", `Mutation ${id} synced`, { entityType: mutation.entityType, url: mutation.url })
       } else if (outcome === "conflict") {
         result.conflicts++
+        consecutiveServerErrors = 0
         await debugLog("sync", "warn", `Mutation ${id} conflict`, { entityType: mutation.entityType, url: mutation.url })
       } else if (outcome === "failed") {
         result.failed++
+        consecutiveServerErrors++
         await debugLog("sync", "warn", `Mutation ${id} failed`, { entityType: mutation.entityType, url: mutation.url })
+        if (consecutiveServerErrors >= CIRCUIT_BREAKER_THRESHOLD) {
+          result.circuitBroken = true
+          await debugLog("sync", "error", "Circuit breaker: 3 consecutive 5xx, pausing queue")
+          break
+        }
       } else if (outcome === "rate-limited") {
         await updateMutationStatus(id, "pending")
         result.rateLimited++
@@ -158,11 +179,16 @@ async function attemptWithRetry(
     }
 
     if (CONFLICT_STATUSES.has(response.status)) {
-      await updateMutationStatus(
-        mutationId,
-        "conflict",
-        `HTTP ${response.status}`
-      )
+      let errorMessage = `HTTP ${response.status}`
+      try {
+        const body = await response.json()
+        if (body?.error) {
+          errorMessage = `HTTP ${response.status}: ${body.error}`
+        }
+      } catch {
+        // Response not JSON -- keep generic message
+      }
+      await updateMutationStatus(mutationId, "conflict", errorMessage)
       return "conflict"
     }
 
@@ -201,8 +227,9 @@ function getRetryDelay(attempt: number, response?: Response): number {
     }
   }
 
-  // Exponential backoff: 1s, 2s, 4s, ...
-  return BASE_RETRY_DELAY_MS * Math.pow(2, attempt)
+  // Exponential backoff with ±50% jitter: prevents thundering herd
+  const base = BASE_RETRY_DELAY_MS * Math.pow(2, attempt)
+  return Math.round(base * (0.5 + Math.random()))
 }
 
 function dispatchProgressEvent(current: number, total: number, status: string) {

@@ -7,6 +7,8 @@ import {
   stopProbing,
 } from "./useOnlineStatus"
 
+vi.mock("@/lib/offline/debug-logger", () => ({ debugLog: vi.fn() }))
+
 describe("useOnlineStatus", () => {
   let originalNavigator: boolean
 
@@ -458,6 +460,84 @@ describe("useOnlineStatus", () => {
       })
 
       expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("increases probe interval after failed probe (15s -> 30s)", async () => {
+      const fetchMock = vi.spyOn(globalThis, "fetch")
+      // Initial probe succeeds
+      fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
+
+      renderHook(() => useOnlineStatus())
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      fetchMock.mockClear()
+
+      // Go offline
+      fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+      act(() => {
+        reportConnectivityLoss()
+      })
+
+      // First probe at 15s
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000)
+      })
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      fetchMock.mockClear()
+
+      // Second probe should be at 30s (not 15s)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000)
+      })
+      // At 30s total since first probe: if interval increased, no call at 15s
+      expect(fetchMock).not.toHaveBeenCalled()
+
+      // But at 30s from first probe it should fire
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000)
+      })
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("resets probe interval when connectivity is restored", async () => {
+      const fetchMock = vi.spyOn(globalThis, "fetch")
+      fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
+
+      renderHook(() => useOnlineStatus())
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      // Go offline with failed probes to increase interval
+      fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+      act(() => {
+        reportConnectivityLoss()
+      })
+
+      // First probe at 15s (fails, increases to 30s)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000)
+      })
+
+      // Restore connectivity
+      act(() => {
+        reportConnectivityRestored()
+      })
+
+      fetchMock.mockClear()
+
+      // Go offline again -- should start at 15s interval again
+      fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+      act(() => {
+        reportConnectivityLoss()
+      })
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000)
+      })
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
     it("recovery probe restores online when fetch succeeds", async () => {

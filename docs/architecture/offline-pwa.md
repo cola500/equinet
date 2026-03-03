@@ -73,7 +73,7 @@ Systemet består av 5 lager som samverkar:
 **`src/hooks/useOnlineStatus.ts`** -- 5 strategier kombinerade:
 1. `navigator.onLine` (snabb men opålitlig)
 2. `online`/`offline` window events
-3. HEAD-poll mot `/api/health` var 30s
+3. HEAD-probe mot `/api/health` med eskalerande backoff (15s → 30s → 60s → 120s)
 4. Service worker connectivity notifier
 5. `useSyncExternalStore` för SSR-kompatibilitet
 
@@ -86,6 +86,9 @@ Systemet består av 5 lager som samverkar:
 - `cacheRoutes()` / `getCachedRoutes()` -- sparar/hämtar ruttdata
 - `cacheProfile()` / `getCachedProfile()` -- sparar/hämtar profil
 - Stale data (>4h) returneras inte -- användaren uppmanas ansluta
+- `withQuotaRecovery()` -- hanterar `QuotaExceededError` graciöst (evict stale, retry)
+- `evictStaleCache()` / `maybeEvictStaleCache()` -- proaktiv rensning av utgångna entries (throttlad var 5 min)
+- Datavalidering vid läsning: filtrerar bort records med `null` data
 
 ### Mutation Queue
 
@@ -97,10 +100,13 @@ Systemet består av 5 lager som samverkar:
 ### Sync Engine
 
 **`src/lib/offline/sync-engine.ts`** -- Bearbetar mutation-kön vid återanslutning:
-- Exponentiell backoff: 1s, 2s, 4s (max 3 retries)
-- Respekterar `Retry-After`-header från servern
+- Exponentiell backoff med ±50% jitter (förhindrar thundering herd vid mass-återanslutning)
+- Respekterar `Retry-After`-header från servern (utan jitter)
 - **429 (rate limited)**: Återställer mutation till `pending` (inte `failed`) -- försöker igen
-- **5xx**: Permanent `failed` efter max retries
+- **5xx**: Permanent `failed` efter max retries (3 per runda)
+- **Circuit breaker**: 3 konsekutiva 5xx → pausa kön, sätter `circuitBroken: true` i SyncResult
+- **Max total retries**: Mutation med `retryCount >= 10` markeras `failed` utan fetch-försök
+- **Server error message**: Vid 409/4xx sparas serverens error-body (t.ex. "Bokningen har ändrats")
 - `resetStaleSyncingMutations()` körs först i varje sync-runda (återställer stuck `syncing` -> `pending`)
 
 ### SWR-integration
@@ -136,7 +142,8 @@ Systemet består av 5 lager som samverkar:
 
 | Komponent | Fil | Beskrivning |
 |-----------|-----|-------------|
-| OfflineBanner | `src/components/provider/OfflineBanner.tsx` | Gul banner offline, grön "Återansluten" i 3s |
+| OfflineBanner | `src/components/provider/OfflineBanner.tsx` | Gul banner offline, grön "Återansluten" i 3s, röd persistent badge vid konflikter |
+| MutationQueueViewer | `src/components/provider/MutationQueueViewer.tsx` | Sheet med retry-knapp (failed), bekräftelsedialog vid discard |
 | InstallPrompt | `src/components/provider/InstallPrompt.tsx` | Installationsbanner (Android + iOS-instruktioner) |
 | PendingSyncBadge | `src/components/ui/PendingSyncBadge.tsx` | Gul badge "Sparad lokalt" på enskilda bokningar (röd vid konflikt/fel) |
 
@@ -245,8 +252,8 @@ npm run build:pwa && npm run start:pwa
 
 - **Bara leverantörer**: Kunder har inget offline-stöd ännu (se roadmap fas 4)
 - **Inga betalningar/meddelanden offline**: Betalningar och meddelanden fungerar inte offline
-- **4h cache-staleness**: Data äldre än 4 timmar visas inte
-- **Last-write-wins**: Ingen konfliktdetektering -- om annan användare ändrar samma bokning vinner den sista skrivningen
+- **4h cache-staleness**: Data äldre än 4 timmar visas inte (stale data returneras med `_isStale`-flag som fallback)
+- **Last-write-wins**: Ingen automatisk konfliktlösning -- 409-konflikter sparas med servermeddelande och visas i MutationQueueViewer
 - **Safari Background Sync**: Stöds inte -- sync sker vid app-focus/manuell refresh
 - **Kartdata**: Leaflet-tiles cachas inte offline (se roadmap fas 6)
 
@@ -270,4 +277,4 @@ Se [docs/plans/offline-pwa-roadmap.md](plans/offline-pwa-roadmap.md) för framti
 
 ---
 
-**Senast uppdaterad**: 2026-03-01
+**Senast uppdaterad**: 2026-03-03

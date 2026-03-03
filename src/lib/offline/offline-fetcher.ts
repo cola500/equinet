@@ -1,5 +1,6 @@
-import { cacheEndpoint, getCachedEndpoint } from "./cache-manager"
+import { cacheEndpoint, getCachedEndpoint, maybeEvictStaleCache } from "./cache-manager"
 import { offlineDb } from "./db"
+import { debugLog } from "./debug-logger"
 import {
   reportConnectivityLoss,
   reportConnectivityRestored,
@@ -53,9 +54,11 @@ export async function offlineAwareFetcher(url: string): Promise<any> {
 
     // 2. Write-through to IndexedDB (fire-and-forget)
     if (isCacheable(url)) {
+      debugLog("sync", "info", "Cache WRITE: " + url)
       cacheEndpoint(url, data).catch(() => {
         // Silently fail -- cache write is best-effort
       })
+      maybeEvictStaleCache().catch(() => {})
     }
 
     return data
@@ -69,18 +72,21 @@ export async function offlineAwareFetcher(url: string): Promise<any> {
     if (isCacheable(url)) {
       const cached = await getCachedEndpoint(url)
       if (cached !== null) {
+        debugLog("sync", "info", "Cache HIT: " + url)
         return cached
       }
 
       // 3b. Try stale fallback -- return expired data with _isStale marker
       const stale = await getStaleEndpoint(url)
       if (stale !== null) {
+        debugLog("sync", "warn", "Cache STALE fallback: " + url)
         stale._isStale = true
         return stale
       }
     }
 
     // 4. No cache available
+    debugLog("sync", "info", "Cache MISS: " + url)
     throw networkError
   }
 }

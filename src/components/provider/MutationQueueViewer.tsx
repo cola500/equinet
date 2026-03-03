@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { AlertTriangle, Clock, XCircle, Trash2 } from "lucide-react"
+import { AlertTriangle, Clock, XCircle, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import {
   Sheet,
@@ -10,6 +10,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { getUnsyncedMutations, updateMutationStatus } from "@/lib/offline/mutation-queue"
 import type { PendingMutation, MutationStatus } from "@/lib/offline/db"
 
@@ -41,6 +51,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; Icon: typeof
 
 export function MutationQueueViewer({ open, onOpenChange }: Props) {
   const [mutations, setMutations] = useState<PendingMutation[]>([])
+  const [confirmDismissId, setConfirmDismissId] = useState<number | null>(null)
 
   const refresh = useCallback(async () => {
     const unsynced = await getUnsyncedMutations()
@@ -54,6 +65,13 @@ export function MutationQueueViewer({ open, onOpenChange }: Props) {
   const handleDismiss = async (id: number) => {
     await updateMutationStatus(id, "synced" as MutationStatus)
     toast.info("Ändring borttagen")
+    setConfirmDismissId(null)
+    refresh()
+  }
+
+  const handleRetry = async (id: number) => {
+    await updateMutationStatus(id, "pending" as MutationStatus)
+    toast.info("Ändringen försöks igen vid nästa synk")
     refresh()
   }
 
@@ -98,17 +116,30 @@ export function MutationQueueViewer({ open, onOpenChange }: Props) {
                     </span>
                   </div>
 
-                  {(m.status === "conflict" || m.status === "failed") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDismiss(m.id!)}
-                      aria-label="Ignorera"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Ignorera</span>
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {m.status === "failed" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRetry(m.id!)}
+                        aria-label="Försök igen"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        <span className="sr-only">Försök igen</span>
+                      </Button>
+                    )}
+                    {(m.status === "conflict" || m.status === "failed") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setConfirmDismissId(m.id!)}
+                        aria-label="Ignorera"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Ignorera</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-xs text-muted-foreground truncate">
@@ -123,6 +154,23 @@ export function MutationQueueViewer({ open, onOpenChange }: Props) {
           })}
         </div>
       </SheetContent>
+
+      <AlertDialog open={confirmDismissId !== null} onOpenChange={(open) => { if (!open) setConfirmDismissId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ignorera ändring?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ändringen tas bort permanent och kan inte synkas igen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDismissId !== null && handleDismiss(confirmDismissId)}>
+              Ja, ignorera
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   )
 }
