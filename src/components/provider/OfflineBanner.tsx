@@ -10,7 +10,7 @@ import { MutationQueueViewer } from "./MutationQueueViewer"
 export function OfflineBanner() {
   const isOnline = useOnlineStatus()
   const isOfflineEnabled = useFeatureFlag("offline_mode")
-  const { pendingCount, isSyncing, lastSyncResult } = useMutationSync()
+  const { pendingCount, conflictCount, isSyncing, lastSyncResult } = useMutationSync()
   const [showReconnected, setShowReconnected] = useState(false)
   const [queueViewerOpen, setQueueViewerOpen] = useState(false)
   const wasOffline = useRef(false)
@@ -104,9 +104,13 @@ export function OfflineBanner() {
     )
   }
 
-  // Persistent error banner for failed/conflicted syncs (shown after reconnected phase)
-  if (lastSyncResult && (lastSyncResult.conflicts > 0 || lastSyncResult.failed > 0)) {
-    const total = lastSyncResult.conflicts + lastSyncResult.failed
+  // Persistent error banner for failed/conflicted syncs
+  // Uses conflictCount (from IndexedDB) so it persists across page navigations,
+  // unlike lastSyncResult which is reset on component mount.
+  const errorTotal = conflictCount > 0 ? conflictCount
+    : lastSyncResult ? lastSyncResult.conflicts + lastSyncResult.failed : 0
+  if (errorTotal > 0) {
+    const total = errorTotal
     return (
       <>
         <button

@@ -15,7 +15,7 @@ vi.mock("@/lib/offline/sync-engine", () => ({
 }))
 
 vi.mock("sonner", () => ({
-  toast: { success: vi.fn(), info: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), info: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }))
 
 import { MutationQueueViewer } from "./MutationQueueViewer"
@@ -111,7 +111,7 @@ describe("MutationQueueViewer", () => {
     })
   })
 
-  it("dismiss button removes a mutation", async () => {
+  it("dismiss button opens confirmation dialog and removes on confirm", async () => {
     mockGetUnsynced
       .mockResolvedValueOnce([
         makeMutation({ id: 1, status: "conflict", error: "HTTP 409" }),
@@ -124,11 +124,93 @@ describe("MutationQueueViewer", () => {
       expect(screen.getByText(/konflikt/i)).toBeInTheDocument()
     })
 
+    // Click dismiss button -- should open confirmation dialog
     const dismissBtn = screen.getByRole("button", { name: /ignorera/i })
     fireEvent.click(dismissBtn)
 
     await waitFor(() => {
+      expect(screen.getByText(/ignorera ändring/i)).toBeInTheDocument()
+    })
+
+    // Confirm discard
+    const confirmBtn = screen.getByRole("button", { name: /ja, ignorera/i })
+    fireEvent.click(confirmBtn)
+
+    await waitFor(() => {
       expect(mockUpdateStatus).toHaveBeenCalledWith(1, "synced")
+    })
+  })
+
+  it("cancel in confirmation dialog does not remove mutation", async () => {
+    mockGetUnsynced.mockResolvedValue([
+      makeMutation({ id: 1, status: "conflict", error: "HTTP 409" }),
+    ])
+
+    render(<MutationQueueViewer open={true} onOpenChange={vi.fn()} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/konflikt/i)).toBeInTheDocument()
+    })
+
+    // Click dismiss button
+    const dismissBtn = screen.getByRole("button", { name: /ignorera/i })
+    fireEvent.click(dismissBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/ignorera ändring/i)).toBeInTheDocument()
+    })
+
+    // Cancel
+    const cancelBtn = screen.getByRole("button", { name: /avbryt/i })
+    fireEvent.click(cancelBtn)
+
+    // Should NOT have called updateStatus
+    expect(mockUpdateStatus).not.toHaveBeenCalled()
+  })
+
+  it("shows retry button for failed mutations", async () => {
+    mockGetUnsynced.mockResolvedValue([
+      makeMutation({ id: 1, status: "failed", error: "HTTP 500 after 3 retries" }),
+    ])
+
+    render(<MutationQueueViewer open={true} onOpenChange={vi.fn()} />)
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /försök igen/i })).toBeInTheDocument()
+    })
+  })
+
+  it("does not show retry button for conflict mutations", async () => {
+    mockGetUnsynced.mockResolvedValue([
+      makeMutation({ id: 1, status: "conflict", error: "HTTP 409" }),
+    ])
+
+    render(<MutationQueueViewer open={true} onOpenChange={vi.fn()} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/konflikt/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole("button", { name: /försök igen/i })).not.toBeInTheDocument()
+  })
+
+  it("retry button sets status to pending and shows toast", async () => {
+    mockGetUnsynced
+      .mockResolvedValueOnce([
+        makeMutation({ id: 1, status: "failed", error: "HTTP 500" }),
+      ])
+      .mockResolvedValueOnce([])
+
+    render(<MutationQueueViewer open={true} onOpenChange={vi.fn()} />)
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /försök igen/i })).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: /försök igen/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateStatus).toHaveBeenCalledWith(1, "pending")
     })
   })
 

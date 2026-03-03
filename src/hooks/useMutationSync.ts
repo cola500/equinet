@@ -24,14 +24,17 @@ export function useMutationSync() {
   const isOnline = useOnlineStatus()
   const isOfflineEnabled = useFeatureFlag("offline_mode")
   const [pendingCount, setPendingCount] = useState(0)
+  const [conflictCount, setConflictCount] = useState(0)
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSyncResult, setLastSyncResult] = useState<SyncResult | null>(null)
   const wasOfflineRef = useRef(false)
 
-  // Refresh pending count
+  // Refresh pending + conflict count
   const refreshCount = useCallback(async () => {
     const count = await getPendingCount()
     setPendingCount(count)
+    const unsynced = await getUnsyncedMutations()
+    setConflictCount(unsynced.filter((m) => m.status === "conflict" || m.status === "failed").length)
   }, [])
 
   // Run sync, then trigger SWR revalidation (replaces revalidateOnReconnect)
@@ -115,7 +118,7 @@ export function useMutationSync() {
     }
   }, [isOfflineEnabled, refreshCount])
 
-  return { pendingCount, isSyncing, lastSyncResult, triggerSync }
+  return { pendingCount, conflictCount, isSyncing, lastSyncResult, triggerSync }
 }
 
 /** Reset the module-level sync guard. Test-only. */

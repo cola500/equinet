@@ -1,4 +1,5 @@
 import { offlineDb } from "./db"
+import { debugLog } from "./debug-logger"
 
 /** Maximum cache age: 4 hours (providers may be offline for extended periods) */
 export const MAX_AGE_MS = 4 * 60 * 60 * 1000
@@ -26,8 +27,9 @@ export async function getCachedBookings(): Promise<any[] | null> {
     return null
   }
   const records = await offlineDb.bookings.toArray()
-  if (records.length === 0) return null
-  return records.map((r) => r.data)
+  const valid = records.filter((r) => isValidCachedData(r.data))
+  if (valid.length === 0) return null
+  return valid.map((r) => r.data)
 }
 
 // -- Routes --
@@ -53,8 +55,9 @@ export async function getCachedRoutes(): Promise<any[] | null> {
     return null
   }
   const records = await offlineDb.routes.toArray()
-  if (records.length === 0) return null
-  return records.map((r) => r.data)
+  const valid = records.filter((r) => isValidCachedData(r.data))
+  if (valid.length === 0) return null
+  return valid.map((r) => r.data)
 }
 
 // -- Profile --
@@ -85,13 +88,40 @@ export async function getCachedProfile(): Promise<any | null> {
   return record.data
 }
 
+// -- Quota recovery --
+
+function isQuotaError(error: unknown): boolean {
+  if (error instanceof DOMException) {
+    return error.name === "QuotaExceededError" || error.code === 22 // Safari
+  }
+  return String(error).includes("QuotaExceededError")
+}
+
+async function withQuotaRecovery(operation: () => Promise<void>): Promise<void> {
+  try {
+    await operation()
+  } catch (error) {
+    if (isQuotaError(error)) {
+      debugLog("sync", "warn", "Quota exceeded, evicting stale cache")
+      await evictStaleCache()
+      try {
+        await operation()
+      } catch {
+        debugLog("sync", "error", "Quota still exceeded after eviction")
+      }
+      return
+    }
+    throw error
+  }
+}
+
 // -- Generic endpoint cache --
 
 /** Cache any endpoint response by full URL (including query string) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function cacheEndpoint(url: string, data: any): Promise<void> {
   const now = Date.now()
-  await offlineDb.endpointCache.put({ url, data, cachedAt: now })
+  await withQuotaRecovery(() => offlineDb.endpointCache.put({ url, data, cachedAt: now }).then(() => {}))
 }
 
 /**
@@ -175,6 +205,36 @@ export async function getCacheStats(): Promise<CacheStats> {
     pendingMutations,
     estimatedSizeBytes: estimatedSize,
   }
+}
+
+// -- Stale cache eviction --
+
+/** Remove all endpoint cache entries older than MAX_AGE_MS. */
+export async function evictStaleCache(): Promise<number> {
+  const now = Date.now()
+  const allEntries = await offlineDb.endpointCache.toArray()
+  const staleKeys = allEntries.filter((e) => now - e.cachedAt > MAX_AGE_MS).map((e) => e.url)
+  if (staleKeys.length > 0) {
+    await offlineDb.endpointCache.bulkDelete(staleKeys)
+    debugLog("sync", "info", `Evicted ${staleKeys.length} stale cache entries`)
+  }
+  return staleKeys.length
+}
+
+/** Throttled eviction -- max once per 5 minutes. */
+let lastEvictionTime = 0
+const EVICTION_THROTTLE_MS = 5 * 60 * 1000
+
+export async function maybeEvictStaleCache(): Promise<void> {
+  const now = Date.now()
+  if (now - lastEvictionTime < EVICTION_THROTTLE_MS) return
+  lastEvictionTime = now
+  await evictStaleCache()
+}
+
+/** Reset eviction throttle. Test-only. */
+export function _resetEvictionThrottle(): void {
+  lastEvictionTime = 0
 }
 
 // -- Cleanup --

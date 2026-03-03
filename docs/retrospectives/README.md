@@ -3,7 +3,7 @@ title: "Retrospectives -- Index"
 description: "Konsoliderade sammanfattningar av 67+ sessioner (november 2025 -- mars 2026)"
 category: retro
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-03
 related:
   - docs/archive/retrospectives-raw/
 sections:
@@ -29,5 +29,6 @@ sections:
 | [2026-02-w4-ux-follow.md](2026-02-w4-ux-follow.md) | Feb 22-25 | 7 | UX, folj leverantor, per-service intervall |
 | [2026-02-w5-hardening.md](2026-02-w5-hardening.md) | Feb 26-28 | 3 | Lint cleanup, pentest, migrationsspårning |
 | [2026-02-28-graphical-profile.md](2026-02-28-graphical-profile.md) | Feb 28 | 1 | Grafisk profil, landningssida, Suspense-fix |
+| [2026-03-03-offline-hardening.md](2026-03-03-offline-hardening.md) | Mar 3 | 1 | Offline-härdning: jitter, circuit breaker, kvothantering, konflikt-UI |
 
-**Totalt:** 68 sessioner, ~2784 tester, 0 regressioner.
+**Totalt:** 69 sessioner, ~3003 tester, 0 regressioner.

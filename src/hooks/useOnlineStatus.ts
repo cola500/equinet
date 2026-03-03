@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react"
+import { debugLog } from "@/lib/offline/debug-logger"
 
 /**
  * Module-level state tracking actual connectivity.
@@ -31,6 +32,7 @@ export function reportConnectivityLoss() {
 export function reportConnectivityRestored() {
   if (fetchFailed) {
     fetchFailed = false
+    probeAttempt = 0
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("connectivity-change"))
     }
@@ -50,10 +52,11 @@ export function reportConnectivityRestored() {
 // ---------------------------------------------------------------------------
 
 const PROBE_TIMEOUT_MS = 5_000
-const RECOVERY_INTERVAL_MS = 15_000
+const PROBE_INTERVALS = [15_000, 30_000, 60_000, 120_000]
 
 let probeInFlight = false
-let recoveryInterval: ReturnType<typeof setInterval> | null = null
+let recoveryInterval: ReturnType<typeof setTimeout> | null = null
+let probeAttempt = 0
 
 async function probeConnectivity(): Promise<void> {
   if (typeof window === "undefined") return
@@ -70,9 +73,11 @@ async function probeConnectivity(): Promise<void> {
     })
     clearTimeout(timeout)
     // Network reachable -- restore if we were marked offline
+    debugLog("network", "info", "Probe OK")
     reportConnectivityRestored()
   } catch {
     // Network unreachable -- mark offline
+    debugLog("network", "warn", "Probe FAILED", { attempt: probeAttempt })
     reportConnectivityLoss()
   } finally {
     probeInFlight = false
@@ -87,12 +92,23 @@ function handleVisibilityChange() {
 
 function startRecoveryInterval() {
   if (recoveryInterval) return
-  recoveryInterval = setInterval(() => probeConnectivity(), RECOVERY_INTERVAL_MS)
+  const scheduleNext = () => {
+    const delay = PROBE_INTERVALS[Math.min(probeAttempt, PROBE_INTERVALS.length - 1)]
+    recoveryInterval = setTimeout(async () => {
+      await probeConnectivity()
+      if (fetchFailed) {
+        probeAttempt++
+        recoveryInterval = null
+        scheduleNext()
+      }
+    }, delay)
+  }
+  scheduleNext()
 }
 
 function stopRecoveryInterval() {
   if (recoveryInterval) {
-    clearInterval(recoveryInterval)
+    clearTimeout(recoveryInterval)
     recoveryInterval = null
   }
 }

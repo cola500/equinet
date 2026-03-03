@@ -215,9 +215,14 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Offline-navigeringsskydd**: Blockera `Link`-klick med `e.preventDefault()` + `toast.error()` när offline. Förhindrar RSC-request som ger cache miss -> `/~offline` -> krasch.
 - **router.replace() triggar RSC-request**: Guard med `if (isOnline)` när URL-uppdateringen bara är för deep-linking.
 - **Sequence over concurrency vid reconnect**: `revalidateOnReconnect: false` i SWRProvider, sync först -> `globalMutate()` sedan.
-- **Exponentiell backoff för sync-motorn**: `getRetryDelay(attempt, response)`. 429 är återhämtningsbart, 5xx är permanent efter max retries.
+- **Exponentiell backoff med jitter**: `getRetryDelay` applicerar ±50% jitter (`base * (0.5 + Math.random())`) för att undvika thundering herd. Retry-After-header respekteras utan jitter.
+- **Circuit breaker i sync-kö**: 3 konsekutiva 5xx-failures → pausa kön med `circuitBroken: true`. Resettas vid `synced` eller `conflict`. Förhindrar bombardering av trasig server.
+- **Max total retries**: Mutation med `retryCount >= 10` markeras `failed` utan fetch-försök. Förhindrar eviga retries.
 - **Modul-nivå guard för async hooks**: `let syncInProgress = false` på modul-nivå istället för `useRef` -- överlever komponent-ommountering.
 - **iOS Safari falska online-events**: Proba med HEAD-request först, återställ bara om proben lyckas. Pattern i `useOnlineStatus.ts`.
+- **Probe backoff**: Recovery-probes eskalerar `[15s, 30s, 60s, 120s]` vid upprepade misslyckanden. Resettas vid `reportConnectivityRestored()`.
+- **withQuotaRecovery**: Wrappa IndexedDB-skrivningar -- vid `QuotaExceededError`: evict stale cache, försök igen, ge upp tyst. Pattern i `cache-manager.ts`.
+- **Tab-koordinering max duration**: Sync-lås som hållits > 5 min släpps automatiskt (hängande tab). `safeBroadcast()` fångar BroadcastChannel-fel graciöst.
 
 ### Domain Patterns
 

@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import "fake-indexeddb/auto"
 import { offlineDb } from "./db"
-import { queueMutation, updateMutationStatus } from "./mutation-queue"
+import { queueMutation, updateMutationStatus, incrementRetryCount } from "./mutation-queue"
 import { _processMutationQueueInternal as processMutationQueue, _resetTabCoordinator } from "./sync-engine"
+
+vi.mock("./debug-logger", () => ({ debugLog: vi.fn() }))
 
 beforeEach(async () => {
   await offlineDb.pendingMutations.clear()
@@ -267,7 +269,8 @@ describe("sync-engine", () => {
       expect(result).toEqual({ synced: 1, failed: 0, conflicts: 1, rateLimited: 0 })
     })
 
-    it("should use exponential backoff on 5xx retry", async () => {
+    it("should use exponential backoff with jitter on 5xx retry", async () => {
+      vi.spyOn(Math, "random").mockReturnValue(0.5)
       const delays: number[] = []
       vi.spyOn(globalThis, "setTimeout").mockImplementation((fn: TimerHandler, ms?: number) => {
         delays.push(ms ?? 0)
@@ -291,8 +294,8 @@ describe("sync-engine", () => {
 
       await processMutationQueue()
 
-      // 2 delays (between attempt 0->1 and 1->2, not after last)
-      // Exponential backoff: 1000ms * 2^0 = 1000, 1000ms * 2^1 = 2000
+      // With random=0.5: jitter factor = 0.5 + 0.5 = 1.0
+      // Exponential backoff: 1000ms * 2^0 * 1.0 = 1000, 1000ms * 2^1 * 1.0 = 2000
       expect(delays).toContain(1000)
       expect(delays).toContain(2000)
     })
@@ -487,6 +490,241 @@ describe("sync-engine", () => {
       expect(events.length).toBeGreaterThanOrEqual(2)
       expect(events[0].detail).toMatchObject({ current: 1, total: 2 })
       expect(events[1].detail).toMatchObject({ current: 2, total: 2 })
+    })
+
+    it("should apply jitter to retry delay within [base*0.5, base*1.5] range", async () => {
+      // Use a specific random value to verify jitter calculation
+      vi.spyOn(Math, "random").mockReturnValue(0.0) // factor = 0.5
+      const delays: number[] = []
+      vi.spyOn(globalThis, "setTimeout").mockImplementation((fn: TimerHandler, ms?: number) => {
+        delays.push(ms ?? 0)
+        if (typeof fn === "function") fn()
+        return 0 as unknown as ReturnType<typeof setTimeout>
+      })
+
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      mockFetch([
+        { status: 500 },
+        { status: 500 },
+        { status: 500 },
+      ])
+
+      await processMutationQueue()
+
+      // With random=0: factor = 0.5 + 0.0 = 0.5
+      // base=1000, attempt 0: 1000 * 0.5 = 500
+      // base=1000, attempt 1: 2000 * 0.5 = 1000
+      expect(delays).toContain(500)
+      expect(delays).toContain(1000)
+    })
+
+    it("should not apply jitter when Retry-After header is present", async () => {
+      const delays: number[] = []
+      vi.spyOn(globalThis, "setTimeout").mockImplementation((fn: TimerHandler, ms?: number) => {
+        delays.push(ms ?? 0)
+        if (typeof fn === "function") fn()
+        return 0 as unknown as ReturnType<typeof setTimeout>
+      })
+
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      mockFetch([
+        { status: 429, headers: { "Retry-After": "5" } },
+        { status: 200 },
+      ])
+
+      await processMutationQueue()
+
+      // Retry-After: 5 -> exactly 5000ms (no jitter)
+      expect(delays).toContain(5000)
+    })
+
+    it("should trip circuit breaker after 3 consecutive 5xx failures", async () => {
+      mockDelays()
+
+      // Queue 4 mutations
+      for (let i = 0; i < 4; i++) {
+        await queueMutation({
+          method: "PUT",
+          url: `/api/bookings/${i}`,
+          body: "{}",
+          entityType: "booking",
+          entityId: String(i),
+        })
+      }
+
+      // All return 5xx (each mutation fails 3 retries = failed)
+      mockFetch(Array(12).fill({ status: 500 }))
+
+      const result = await processMutationQueue()
+
+      // Circuit breaker should trip after 3 consecutive failures
+      expect(result.circuitBroken).toBe(true)
+      expect(result.failed).toBe(3)
+
+      // 4th mutation should remain pending (not attempted)
+      const all = await offlineDb.pendingMutations.toArray()
+      const fourth = all.find(m => m.entityId === "3")
+      expect(fourth?.status).toBe("pending")
+    })
+
+    it("should reset circuit breaker counter when mutation syncs", async () => {
+      mockDelays()
+
+      // Queue 5 mutations
+      for (let i = 0; i < 5; i++) {
+        await queueMutation({
+          method: "PUT",
+          url: `/api/bookings/${i}`,
+          body: "{}",
+          entityType: "booking",
+          entityId: String(i),
+        })
+      }
+
+      // Pattern: fail, fail, success, fail, fail -- should NOT trip (reset at success)
+      mockFetch([
+        // Mutation 0: 3 retries -> failed
+        { status: 500 }, { status: 500 }, { status: 500 },
+        // Mutation 1: 3 retries -> failed
+        { status: 500 }, { status: 500 }, { status: 500 },
+        // Mutation 2: success -> resets counter
+        { status: 200 },
+        // Mutation 3: 3 retries -> failed
+        { status: 500 }, { status: 500 }, { status: 500 },
+        // Mutation 4: 3 retries -> failed
+        { status: 500 }, { status: 500 }, { status: 500 },
+      ])
+
+      const result = await processMutationQueue()
+
+      // Counter reset at mutation 2 (synced), so:
+      // 0: failed (count=1), 1: failed (count=2), 2: synced (count=0),
+      // 3: failed (count=1), 4: failed (count=2) -- no trip
+      expect(result.circuitBroken).toBeUndefined()
+      expect(result.synced).toBe(1)
+      expect(result.failed).toBe(4)
+    })
+
+    it("should set circuitBroken in SyncResult when circuit breaks", async () => {
+      mockDelays()
+
+      for (let i = 0; i < 3; i++) {
+        await queueMutation({
+          method: "PUT",
+          url: `/api/bookings/${i}`,
+          body: "{}",
+          entityType: "booking",
+          entityId: String(i),
+        })
+      }
+
+      mockFetch(Array(9).fill({ status: 500 }))
+
+      const result = await processMutationQueue()
+
+      expect(result.circuitBroken).toBe(true)
+    })
+
+    it("should mark mutation as failed when retryCount >= MAX_TOTAL_RETRIES", async () => {
+      const id = await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      // Simulate 10 prior retries
+      for (let i = 0; i < 10; i++) {
+        await incrementRetryCount(id)
+      }
+
+      // Should not even attempt fetch
+      const fetchSpy = mockFetch([{ status: 200 }])
+
+      const result = await processMutationQueue()
+
+      expect(result.failed).toBe(1)
+      expect(fetchSpy).not.toHaveBeenCalled()
+
+      const mutation = await offlineDb.pendingMutations.get(id)
+      expect(mutation?.status).toBe("failed")
+      expect(mutation?.error).toContain("Max retries")
+    })
+
+    it("should save server error message on 409 with JSON body", async () => {
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: JSON.stringify({ status: "completed" }),
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      mockFetch([{ status: 409, body: { error: "Bokningen har ändrats" } }])
+
+      await processMutationQueue()
+
+      const all = await offlineDb.pendingMutations.toArray()
+      expect(all[0].error).toBe("HTTP 409: Bokningen har ändrats")
+    })
+
+    it("should fall back to generic HTTP message when response has no JSON body", async () => {
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: "{}",
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      // Return 400 with non-JSON body
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("Bad Request", { status: 400 })
+      )
+
+      await processMutationQueue()
+
+      const all = await offlineDb.pendingMutations.toArray()
+      expect(all[0].error).toBe("HTTP 400")
+    })
+
+    it("should log to debugLog when circuit breaker trips", async () => {
+      const { debugLog } = await import("./debug-logger")
+      mockDelays()
+
+      for (let i = 0; i < 3; i++) {
+        await queueMutation({
+          method: "PUT",
+          url: `/api/bookings/${i}`,
+          body: "{}",
+          entityType: "booking",
+          entityId: String(i),
+        })
+      }
+
+      mockFetch(Array(9).fill({ status: 500 }))
+
+      await processMutationQueue()
+
+      expect(debugLog).toHaveBeenCalledWith(
+        "sync", "error",
+        expect.stringContaining("Circuit breaker")
+      )
     })
 
     it("should timeout individual mutation after 30s and revert to pending", async () => {

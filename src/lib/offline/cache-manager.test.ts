@@ -12,9 +12,14 @@ import {
   getCachedEndpoint,
   invalidateEndpointCache,
   getCacheStats,
+  evictStaleCache,
+  maybeEvictStaleCache,
+  _resetEvictionThrottle,
   MAX_AGE_MS,
 } from "./cache-manager"
 import { offlineDb } from "./db"
+
+vi.mock("./debug-logger", () => ({ debugLog: vi.fn() }))
 
 describe("cache-manager", () => {
   beforeEach(async () => {
@@ -23,6 +28,7 @@ describe("cache-manager", () => {
     await offlineDb.profile.clear()
     await offlineDb.metadata.clear()
     await offlineDb.endpointCache.clear()
+    _resetEvictionThrottle()
     vi.restoreAllMocks()
   })
 
@@ -209,14 +215,122 @@ describe("cache-manager", () => {
   })
 
   describe("quota handling", () => {
-    it("cacheEndpoint handles write errors gracefully", async () => {
-      // Simulate quota exceeded by making put throw
-      vi.spyOn(offlineDb.endpointCache, "put").mockRejectedValueOnce(
-        new DOMException("QuotaExceededError", "QuotaExceededError")
-      )
+    it("cacheEndpoint recovers gracefully from QuotaExceededError", async () => {
+      // First put fails with quota, second succeeds (after eviction)
+      vi.spyOn(offlineDb.endpointCache, "put")
+        .mockRejectedValueOnce(new DOMException("QuotaExceededError", "QuotaExceededError"))
+        .mockResolvedValueOnce("" as never)
 
-      // Should not throw -- quota errors are handled
-      await expect(cacheEndpoint("/api/bookings", [{ id: "1" }])).rejects.toThrow()
+      // Should not throw -- quota errors are handled with eviction + retry
+      await expect(cacheEndpoint("/api/bookings", [{ id: "1" }])).resolves.toBeUndefined()
+    })
+
+    it("withQuotaRecovery succeeds on first attempt", async () => {
+      // Normal case: no quota error
+      await expect(cacheEndpoint("/api/bookings", [{ id: "1" }])).resolves.toBeUndefined()
+
+      const cached = await getCachedEndpoint("/api/bookings")
+      expect(cached).toEqual([{ id: "1" }])
+    })
+
+    it("withQuotaRecovery evicts stale + retries on quota error", async () => {
+      // Add stale entry to evict
+      const staleTime = Date.now() - MAX_AGE_MS - 1000
+      await offlineDb.endpointCache.put({
+        url: "/api/old",
+        data: "old",
+        cachedAt: staleTime,
+      })
+
+      // First put fails, second succeeds
+      const putSpy = vi.spyOn(offlineDb.endpointCache, "put")
+        .mockRejectedValueOnce(new DOMException("QuotaExceededError", "QuotaExceededError"))
+        .mockResolvedValueOnce("" as never)
+
+      await cacheEndpoint("/api/new", [{ id: "new" }])
+
+      // Should have been called twice (first fail, then retry)
+      expect(putSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it("withQuotaRecovery does not throw if quota still exceeded after eviction", async () => {
+      // Both attempts fail with quota error
+      vi.spyOn(offlineDb.endpointCache, "put")
+        .mockRejectedValueOnce(new DOMException("QuotaExceededError", "QuotaExceededError"))
+        .mockRejectedValueOnce(new DOMException("QuotaExceededError", "QuotaExceededError"))
+
+      // Should NOT throw -- graceful degradation
+      await expect(cacheEndpoint("/api/bookings", [{ id: "1" }])).resolves.toBeUndefined()
+    })
+
+    it("isQuotaError identifies QuotaExceededError correctly", async () => {
+      // Safari-style code=22
+      const safariError = new DOMException("Quota exceeded", "QuotaExceededError")
+      vi.spyOn(offlineDb.endpointCache, "put").mockRejectedValueOnce(safariError).mockResolvedValueOnce("" as never)
+      await expect(cacheEndpoint("/api/test", "data")).resolves.toBeUndefined()
+    })
+  })
+
+  describe("data validation on read", () => {
+    it("getCachedBookings filters out records with null data", async () => {
+      await offlineDb.metadata.put({
+        key: "bookings",
+        lastSyncedAt: Date.now(),
+        version: 1,
+      })
+      // Add one valid and one corrupt record
+      await offlineDb.bookings.bulkPut([
+        { id: "valid", data: { id: "1", status: "confirmed" }, cachedAt: Date.now() },
+        { id: "corrupt", data: null, cachedAt: Date.now() },
+      ])
+
+      const result = await getCachedBookings()
+      expect(result).toHaveLength(1)
+      expect(result![0]).toEqual({ id: "1", status: "confirmed" })
+    })
+  })
+
+  describe("stale cache eviction", () => {
+    it("evictStaleCache removes entries older than MAX_AGE_MS", async () => {
+      const staleTime = Date.now() - MAX_AGE_MS - 1000
+      await offlineDb.endpointCache.put({ url: "/api/old", data: "old", cachedAt: staleTime })
+      await offlineDb.endpointCache.put({ url: "/api/fresh", data: "fresh", cachedAt: Date.now() })
+
+      const evicted = await evictStaleCache()
+
+      expect(evicted).toBe(1)
+      const remaining = await offlineDb.endpointCache.toArray()
+      expect(remaining).toHaveLength(1)
+      expect(remaining[0].url).toBe("/api/fresh")
+    })
+
+    it("evictStaleCache keeps entries younger than MAX_AGE_MS", async () => {
+      await offlineDb.endpointCache.put({ url: "/api/a", data: "a", cachedAt: Date.now() })
+      await offlineDb.endpointCache.put({ url: "/api/b", data: "b", cachedAt: Date.now() })
+
+      const evicted = await evictStaleCache()
+
+      expect(evicted).toBe(0)
+      const remaining = await offlineDb.endpointCache.toArray()
+      expect(remaining).toHaveLength(2)
+    })
+
+    it("maybeEvictStaleCache throttles to max once per 5 minutes", async () => {
+      const staleTime = Date.now() - MAX_AGE_MS - 1000
+      await offlineDb.endpointCache.put({ url: "/api/stale1", data: "s1", cachedAt: staleTime })
+
+      // First call: should evict
+      await maybeEvictStaleCache()
+      let remaining = await offlineDb.endpointCache.toArray()
+      expect(remaining).toHaveLength(0)
+
+      // Add another stale entry
+      await offlineDb.endpointCache.put({ url: "/api/stale2", data: "s2", cachedAt: staleTime })
+
+      // Second call (within 5 min): should be throttled
+      await maybeEvictStaleCache()
+      remaining = await offlineDb.endpointCache.toArray()
+      expect(remaining).toHaveLength(1) // Not evicted because throttled
     })
   })
 

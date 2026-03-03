@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 
+vi.mock("./debug-logger", () => ({ debugLog: vi.fn() }))
+
 // Mock BroadcastChannel before importing module
 class MockBroadcastChannel {
   static instances: MockBroadcastChannel[] = []
@@ -231,6 +233,86 @@ describe("tab-coordinator", () => {
       tabA.destroy()
       tabB.destroy()
       tabC.destroy()
+    })
+  })
+
+  describe("max sync duration guard", () => {
+    it("releases lock after 5 minutes (expired lock)", async () => {
+      const tabA = createTabCoordinator()
+      const tabB = createTabCoordinator()
+
+      const acquiredA = await tabA.acquireSyncLock()
+      expect(acquiredA).toBe(true)
+
+      // Fast-forward 5+ minutes by manipulating Date.now
+      const realNow = Date.now
+      let offset = 0
+      vi.spyOn(Date, "now").mockImplementation(() => realNow() + offset)
+
+      // Advance past MAX_SYNC_DURATION
+      offset = 5 * 60 * 1000 + 1
+
+      // Tab B should now be able to get lock (tab A's lock expired)
+      const acquiredB = await tabB.acquireSyncLock()
+      expect(acquiredB).toBe(true)
+
+      vi.restoreAllMocks()
+      tabA.destroy()
+      tabB.destroy()
+    })
+
+    it("denies lock when sync is within 5 minutes", async () => {
+      const tabA = createTabCoordinator()
+      const tabB = createTabCoordinator()
+
+      const acquiredA = await tabA.acquireSyncLock()
+      expect(acquiredA).toBe(true)
+
+      // Within 5 minutes -- lock should still hold
+      const acquiredB = await tabB.acquireSyncLock()
+      expect(acquiredB).toBe(false)
+
+      tabA.destroy()
+      tabB.destroy()
+    })
+  })
+
+  describe("safeBroadcast error handling", () => {
+    it("catches postMessage errors gracefully", async () => {
+      const tabA = createTabCoordinator()
+
+      // Make the channel's postMessage throw
+      const instance = MockBroadcastChannel.instances.find(i => !i.closed)
+      if (instance) {
+        const origPost = instance.postMessage.bind(instance)
+        instance.postMessage = () => { throw new Error("Channel broken") }
+        // releaseSyncLock calls postMessage -- should not throw
+        await tabA.acquireSyncLock()
+        expect(() => tabA.releaseSyncLock()).not.toThrow()
+        instance.postMessage = origPost
+      }
+
+      tabA.destroy()
+    })
+  })
+
+  describe("ACK timeout", () => {
+    it("waits 300ms for ACK before granting lock", async () => {
+      const delays: number[] = []
+      vi.spyOn(globalThis, "setTimeout").mockImplementation((fn: TimerHandler, ms?: number) => {
+        delays.push(ms ?? 0)
+        if (typeof fn === "function") fn()
+        return 0 as unknown as ReturnType<typeof setTimeout>
+      })
+
+      const tab = createTabCoordinator()
+      await tab.acquireSyncLock()
+      tab.destroy()
+
+      // Should have waited 300ms for ACK
+      expect(delays).toContain(300)
+
+      vi.restoreAllMocks()
     })
   })
 })

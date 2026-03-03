@@ -6,11 +6,14 @@ import {
   reportConnectivityLoss,
   reportConnectivityRestored,
 } from "@/hooks/useOnlineStatus"
+import { debugLog } from "./debug-logger"
 
 vi.mock("@/hooks/useOnlineStatus", () => ({
   reportConnectivityLoss: vi.fn(),
   reportConnectivityRestored: vi.fn(),
 }))
+
+vi.mock("./debug-logger", () => ({ debugLog: vi.fn() }))
 
 // Mock global fetch
 const mockFetch = vi.fn()
@@ -337,6 +340,34 @@ describe("offlineAwareFetcher", () => {
       const result = await offlineAwareFetcher("/api/bookings")
       expect(result).toEqual([{ id: "fresh-1" }])
       expect(result._isStale).toBeUndefined()
+    })
+  })
+
+  describe("debug logging", () => {
+    it("logs Cache HIT on cache fallback", async () => {
+      await offlineDb.endpointCache.put({
+        url: "/api/bookings",
+        data: [{ id: "1" }],
+        cachedAt: Date.now(),
+      })
+
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      await offlineAwareFetcher("/api/bookings")
+
+      expect(debugLog).toHaveBeenCalledWith("sync", "info", expect.stringContaining("Cache HIT"))
+    })
+
+    it("logs Cache MISS when no cache available", async () => {
+      mockFetch.mockRejectedValue(new TypeError("Failed to fetch"))
+
+      try {
+        await offlineAwareFetcher("/api/bookings")
+      } catch {
+        // expected
+      }
+
+      expect(debugLog).toHaveBeenCalledWith("sync", "info", expect.stringContaining("Cache MISS"))
     })
   })
 
