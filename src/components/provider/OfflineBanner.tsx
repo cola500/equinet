@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { WifiOff, Wifi, Loader2, AlertTriangle, ChevronRight } from "lucide-react"
+import { WifiOff, Wifi, Loader2, AlertTriangle, ChevronRight, RefreshCw } from "lucide-react"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useMutationSync } from "@/hooks/useMutationSync"
@@ -10,7 +10,7 @@ import { MutationQueueViewer } from "./MutationQueueViewer"
 export function OfflineBanner() {
   const isOnline = useOnlineStatus()
   const isOfflineEnabled = useFeatureFlag("offline_mode")
-  const { pendingCount, conflictCount, isSyncing, lastSyncResult } = useMutationSync()
+  const { pendingCount, conflictCount, isSyncing, lastSyncResult, triggerSync } = useMutationSync()
   const [showReconnected, setShowReconnected] = useState(false)
   const [queueViewerOpen, setQueueViewerOpen] = useState(false)
   const wasOffline = useRef(false)
@@ -99,6 +99,32 @@ export function OfflineBanner() {
         <div className="container mx-auto flex items-center gap-2 text-sm text-green-800">
           <Wifi className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span className="font-medium">Återansluten</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Pending mutations banner -- shown when online with unsynced mutations
+  // (e.g. after iOS Safari page refresh where no offline->online transition was detected)
+  if (!isSyncing && pendingCount > 0 && conflictCount === 0) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="bg-blue-50 border-b border-blue-200 px-4 py-2"
+      >
+        <div className="container mx-auto flex items-center gap-2 text-sm text-blue-800">
+          <RefreshCw className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>
+            {pendingCount} {pendingCount === 1 ? "ändring väntar" : "ändringar väntar"} på synk
+          </span>
+          <button
+            type="button"
+            onClick={triggerSync}
+            className="ml-auto text-blue-700 hover:text-blue-900 font-medium underline underline-offset-2"
+          >
+            Synka nu
+          </button>
         </div>
       </div>
     )
