@@ -28,6 +28,7 @@ export function useMutationSync() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSyncResult, setLastSyncResult] = useState<SyncResult | null>(null)
   const wasOfflineRef = useRef(false)
+  const didCheckOrphansRef = useRef(false)
 
   // Refresh pending + conflict count
   const refreshCount = useCallback(async () => {
@@ -82,6 +83,20 @@ export function useMutationSync() {
       syncInProgress = false
     }
   }, [refreshCount])
+
+  // Sync orphan mutations on mount (iOS Safari fix).
+  // After a page refresh, wasOfflineRef is false and no offline->online transition
+  // is detected, so pending mutations in IndexedDB would never sync.
+  useEffect(() => {
+    if (!isOfflineEnabled || !isOnline || didCheckOrphansRef.current) return
+    didCheckOrphansRef.current = true
+
+    getPendingCount().then((count) => {
+      if (count > 0) {
+        triggerSync()
+      }
+    })
+  }, [isOfflineEnabled, isOnline, triggerSync])
 
   // Track offline->online transitions
   useEffect(() => {

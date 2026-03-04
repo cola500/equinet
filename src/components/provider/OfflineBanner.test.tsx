@@ -13,6 +13,7 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
 vi.mock("@/hooks/useMutationSync", () => ({
   useMutationSync: vi.fn(() => ({
     pendingCount: 0,
+    conflictCount: 0,
     isSyncing: false,
     lastSyncResult: null,
   })),
@@ -34,6 +35,7 @@ describe("OfflineBanner", () => {
     mockUseOnlineStatus.mockReturnValue(true)
     mockUseMutationSync.mockReturnValue({
       pendingCount: 0,
+      conflictCount: 0,
       isSyncing: false,
       lastSyncResult: null,
       triggerSync: vi.fn(),
@@ -213,10 +215,82 @@ describe("OfflineBanner", () => {
     expect(screen.getByText(/1 ändring kunde inte synkas/)).toBeInTheDocument()
   })
 
+  // -- Pending mutations banner (online) --
+
+  it("shows pending banner when online with pending mutations", () => {
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 2,
+      conflictCount: 0,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    render(<OfflineBanner />)
+    expect(screen.getByText(/2 ändringar väntar på synk/)).toBeInTheDocument()
+  })
+
+  it("shows 'Synka nu' button in pending banner", () => {
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 1,
+      conflictCount: 0,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    render(<OfflineBanner />)
+    expect(screen.getByRole("button", { name: /synka nu/i })).toBeInTheDocument()
+  })
+
+  it("calls triggerSync when 'Synka nu' is clicked", async () => {
+    const mockTrigger = vi.fn()
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 2,
+      conflictCount: 0,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: mockTrigger,
+    })
+    render(<OfflineBanner />)
+    const button = screen.getByRole("button", { name: /synka nu/i })
+    button.click()
+    expect(mockTrigger).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides pending banner when syncing is in progress", () => {
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 2,
+      conflictCount: 0,
+      isSyncing: true,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    render(<OfflineBanner />)
+    // Should show syncing state, not pending banner
+    expect(screen.queryByText(/Synka nu/i)).not.toBeInTheDocument()
+  })
+
+  it("uses singular form for single pending mutation", () => {
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockUseMutationSync.mockReturnValue({
+      pendingCount: 1,
+      conflictCount: 0,
+      isSyncing: false,
+      lastSyncResult: null,
+      triggerSync: vi.fn(),
+    })
+    render(<OfflineBanner />)
+    expect(screen.getByText(/1 ändring väntar på synk/)).toBeInTheDocument()
+  })
+
   it("shows no pending info when offline with zero pending", () => {
     mockUseOnlineStatus.mockReturnValue(false)
     mockUseMutationSync.mockReturnValue({
       pendingCount: 0,
+      conflictCount: 0,
       isSyncing: false,
       lastSyncResult: null,
       triggerSync: vi.fn(),

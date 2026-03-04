@@ -306,6 +306,52 @@ describe("useMutationSync", () => {
     })
   })
 
+  it("should sync orphan mutations on mount when online with pending count > 0", async () => {
+    // Simulates iOS Safari scenario: page refreshes while mutations are in IndexedDB.
+    // wasOfflineRef starts as false, isOnline is true -> no transition detected.
+    // The mount-check should detect pending mutations and trigger sync.
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockGetPendingCount.mockResolvedValue(3)
+    mockProcessQueue.mockResolvedValue({ synced: 3, failed: 0, conflicts: 0, rateLimited: 0 })
+    mockProcessQueue.mockClear()
+
+    renderHook(() => useMutationSync())
+
+    await waitFor(() => {
+      expect(mockProcessQueue).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it("should not sync on mount when there are no pending mutations", async () => {
+    mockUseOnlineStatus.mockReturnValue(true)
+    mockGetPendingCount.mockResolvedValue(0)
+    mockProcessQueue.mockClear()
+
+    renderHook(() => useMutationSync())
+
+    // Give async code time to run
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50))
+    })
+
+    expect(mockProcessQueue).not.toHaveBeenCalled()
+  })
+
+  it("should not sync orphans on mount when offline", async () => {
+    mockUseOnlineStatus.mockReturnValue(false)
+    mockGetPendingCount.mockResolvedValue(3)
+    mockProcessQueue.mockClear()
+
+    renderHook(() => useMutationSync())
+
+    // Give async code time to run
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50))
+    })
+
+    expect(mockProcessQueue).not.toHaveBeenCalled()
+  })
+
   it("should prevent concurrent syncs via module-level guard", async () => {
     // Make the first sync block until we explicitly resolve
     let resolveFirst!: () => void
