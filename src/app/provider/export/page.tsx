@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -14,11 +15,13 @@ import {
 } from "@/components/ui/card"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 export default function ProviderExportPage() {
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const [isExporting, setIsExporting] = useState<string | null>(null)
 
   useEffect(() => {
@@ -85,6 +88,14 @@ export default function ProviderExportPage() {
     return (
       <ProviderLayout>
         <GenericListSkeleton />
+      </ProviderLayout>
+    )
+  }
+
+  if (!isOnline) {
+    return (
+      <ProviderLayout>
+        <OfflineNotAvailable pageName="Dataexport" />
       </ProviderLayout>
     )
   }

@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useDialogState } from "@/hooks/useDialogState"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -105,6 +107,7 @@ const emptyForm = {
 
 export default function ProviderVerificationPage() {
   const { isLoading: authLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
 
   const [requests, setRequests] = useState<VerificationRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -262,6 +265,14 @@ export default function ProviderVerificationPage() {
     return (
       <ProviderLayout>
         <GenericListSkeleton />
+      </ProviderLayout>
+    )
+  }
+
+  if (!isOnline) {
+    return (
+      <ProviderLayout>
+        <OfflineNotAvailable pageName="Verifiering" />
       </ProviderLayout>
     )
   }

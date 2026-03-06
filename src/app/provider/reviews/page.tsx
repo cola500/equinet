@@ -18,6 +18,7 @@ import { ReviewList } from "@/components/review/ReviewList"
 import { StarRating } from "@/components/review/StarRating"
 import { toast } from "sonner"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 
 export default function ProviderReviewsPage() {
   const { isLoading, isProvider } = useAuth()
@@ -164,7 +165,10 @@ export default function ProviderReviewsPage() {
       <Dialog open={!!replyingToReview} onOpenChange={(open) => { if (!open) setReplyingToReview(null) }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Svara på recension</DialogTitle>
+            <div className="flex items-center gap-2">
+              <DialogTitle>Svara på recension</DialogTitle>
+              {replyingToReview && <PendingSyncBadge entityId={replyingToReview} />}
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             <VoiceTextarea

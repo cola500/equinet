@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { calculateDistance } from "@/lib/geo/distance"
 import { X } from "lucide-react"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
@@ -52,6 +54,7 @@ function formatDate(dateStr: string): string {
 
 export default function ProviderGroupBookingsPage() {
   const { isLoading: authLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const [groupBookings, setGroupBookings] = useState<GroupBookingRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -177,6 +180,14 @@ export default function ProviderGroupBookingsPage() {
     return (
       <ProviderLayout>
         <GenericListSkeleton />
+      </ProviderLayout>
+    )
+  }
+
+  if (!isOnline) {
+    return (
+      <ProviderLayout>
+        <OfflineNotAvailable pageName="Grupprequests" />
       </ProviderLayout>
     )
   }

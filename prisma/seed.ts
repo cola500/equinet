@@ -237,6 +237,22 @@ async function main() {
   })
   console.log(`Created customer: ${customer.firstName} ${customer.lastName}`)
 
+  // Create an admin user
+  const admin = await prisma.user.create({
+    data: {
+      email: 'admin@equinet.se',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'Adminsson',
+      userType: 'customer',
+      phone: '070-999 99 99',
+      isAdmin: true,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+  })
+  console.log(`Created admin: ${admin.firstName} ${admin.lastName}`)
+
   console.log('\nSeeding complete!')
   console.log('Test accounts:')
   console.log('- Provider: erik@hovslagare-uppsala.se / test123')
@@ -245,6 +261,7 @@ async function main() {
   console.log('- Provider: maria@hovservice-alingsas.se / test123')
   console.log('- Provider: karin@test-stall.se / test123')
   console.log('- Customer: kund@test.se / test123')
+  console.log('- Admin:    admin@equinet.se / test123')
 }
 
 main()

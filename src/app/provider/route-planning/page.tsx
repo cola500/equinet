@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useRouteOrders } from "@/hooks/useRouteOrders"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +19,7 @@ import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { InfoPopover } from "@/components/ui/info-popover"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
 import { getRoute } from "@/lib/routing"
 
@@ -30,6 +32,7 @@ const RouteMapVisualization = dynamic(
 export default function RoutePlanningPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const helpEnabled = useFeatureFlag("help_center")
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [isCreatingRoute, setIsCreatingRoute] = useState(false)
@@ -268,6 +271,14 @@ export default function RoutePlanningPage() {
             <p className="mt-4 text-gray-600">Laddar...</p>
           </div>
         </div>
+      </ProviderLayout>
+    )
+  }
+
+  if (!isOnline) {
+    return (
+      <ProviderLayout>
+        <OfflineNotAvailable pageName="Ruttplanering" />
       </ProviderLayout>
     )
   }

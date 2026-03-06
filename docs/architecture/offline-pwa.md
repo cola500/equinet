@@ -146,6 +146,7 @@ Systemet består av 5 lager som samverkar:
 | MutationQueueViewer | `src/components/provider/MutationQueueViewer.tsx` | Sheet med retry-knapp (failed), bekräftelsedialog vid discard |
 | InstallPrompt | `src/components/provider/InstallPrompt.tsx` | Installationsbanner (Android + iOS-instruktioner) |
 | PendingSyncBadge | `src/components/ui/PendingSyncBadge.tsx` | Gul badge "Sparad lokalt" på enskilda bokningar (röd vid konflikt/fel) |
+| OfflineNotAvailable | `src/components/ui/OfflineNotAvailable.tsx` | Informativ placeholder för sidor som inte stöds offline |
 
 ### Error Boundaries
 
@@ -206,6 +207,19 @@ Systemet består av 5 lager som samverkar:
 | Operation | Hook/Sida |
 |-----------|-----------|
 | Alla kundmutationer (8 st) | `useProviderCustomers.ts` |
+| Snabbanteckning (QuickNoteButton) | `QuickNoteButton.tsx` |
+
+### Offline-blockerade sidor (OfflineNotAvailable)
+
+Dessa sidor visar en informativ placeholder istället för sitt innehåll offline:
+
+| Sida | Fil |
+|------|-----|
+| Exportera data | `src/app/provider/export/page.tsx` |
+| Gruppbokningar | `src/app/provider/group-bookings/page.tsx` |
+| Insikter | `src/app/provider/insights/page.tsx` |
+| Ruttplanering | `src/app/provider/route-planning/page.tsx` |
+| Verifiering | `src/app/provider/verification/page.tsx` |
 
 ---
 
@@ -245,6 +259,10 @@ npm run build:pwa && npm run start:pwa
 | Offline guard hook | `src/hooks/useOfflineGuard.test.ts` |
 | E2E: PWA + offline | `e2e/offline-pwa.spec.ts` |
 | E2E: Mutations | `e2e/offline-mutations.spec.ts` |
+| OfflineNotAvailable | `src/components/ui/OfflineNotAvailable.test.tsx` |
+| QuickNoteButton | `src/components/booking/QuickNoteButton.test.tsx` |
+| useProviderCustomers | `src/hooks/useProviderCustomers.test.ts` |
+| Offline-gated sidor (5 st) | `src/app/provider/*/page.test.tsx` |
 
 ---
 
@@ -277,4 +295,4 @@ Se [docs/plans/offline-pwa-roadmap.md](plans/offline-pwa-roadmap.md) för framti
 
 ---
 
-**Senast uppdaterad**: 2026-03-03
+**Senast uppdaterad**: 2026-03-06

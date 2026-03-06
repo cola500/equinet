@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HorseIcon } from "@/components/icons/HorseIcon"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import type { Customer, CustomerHorse, CustomerNote } from "./types"
 
 interface CustomerCardProps {
@@ -481,11 +482,12 @@ export function CustomerCard({
                       /* Display mode */
                       <>
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
                             {formatDateTime(note.createdAt)}
                             {isEdited(note) && (
                               <span className="ml-1 text-gray-400">(redigerad)</span>
                             )}
+                            <PendingSyncBadge entityId={note.id} />
                           </span>
                           <div className="flex items-center gap-1 shrink-0">
                             <button

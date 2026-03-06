@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { InsightsChartSkeleton } from "@/components/loading/InsightsChartSkeleton"
 import { InsightsCharts } from "@/components/provider/InsightsCharts"
 import { ErrorState } from "@/components/ui/error-state"
+import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
@@ -34,6 +36,7 @@ const EMPTY_DATA: InsightsData = {
 
 export default function ProviderInsightsPage() {
   const { isLoading: authLoading, isProvider } = useAuth()
+  const isOnline = useOnlineStatus()
   const businessInsightsEnabled = useFeatureFlag("business_insights")
   const [data, setData] = useState<InsightsData>(EMPTY_DATA)
   const [isLoading, setIsLoading] = useState(true)
@@ -75,6 +78,14 @@ export default function ProviderInsightsPage() {
     return (
       <ProviderLayout>
         <InsightsChartSkeleton />
+      </ProviderLayout>
+    )
+  }
+
+  if (!isOnline) {
+    return (
+      <ProviderLayout>
+        <OfflineNotAvailable pageName="Affärsinsikter" />
       </ProviderLayout>
     )
   }
