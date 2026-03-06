@@ -328,11 +328,15 @@ export function ManualBookingDialog({
         const selectedService = services.find((s) => s.id === serviceId)
 
         await guardMutation(async () => {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 10_000)
           const response = await fetch("/api/bookings/manual", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: bodyStr,
+            signal: controller.signal,
           })
+          clearTimeout(timeout)
 
           if (!response.ok) {
             const data = await response.json()
