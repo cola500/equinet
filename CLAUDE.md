@@ -223,6 +223,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Probe backoff**: Recovery-probes eskalerar `[15s, 30s, 60s, 120s]` vid upprepade misslyckanden. Resettas vid `reportConnectivityRestored()`.
 - **withQuotaRecovery**: Wrappa IndexedDB-skrivningar -- vid `QuotaExceededError`: evict stale cache, försök igen, ge upp tyst. Pattern i `cache-manager.ts`.
 - **Tab-koordinering max duration**: Sync-lås som hållits > 5 min släpps automatiskt (hängande tab). `safeBroadcast()` fångar BroadcastChannel-fel graciöst.
+- **guardMutation nätverksfel-fallback**: `guardMutation` online-path fångar TypeError/AbortError, anropar `reportConnectivityLoss()`, och faller tillbaka till offline-köning. Skyddar mot `navigator.onLine` som ljuger. Lägg alltid till AbortController-timeout på fetch i mutationer med offlineOptions.
 
 ### Domain Patterns
 

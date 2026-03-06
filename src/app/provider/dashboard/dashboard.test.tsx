@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 
 // Mock auth
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ isLoading: false, isProvider: true, isCustomer: false }),
+  useAuth: () => ({ isLoading: false, isAuthenticated: true, isProvider: true, isCustomer: false, isAdmin: false, user: { name: "Test Provider" } }),
 }))
 
 // Mock services
@@ -68,7 +68,8 @@ import ProviderDashboard from "./page"
 async function renderAndWait() {
   render(<ProviderDashboard />)
   await waitFor(() => {
-    expect(screen.getByText("Välkommen tillbaka!")).toBeInTheDocument()
+    // Wait for loading to complete -- "Snabblänkar" only renders after all fetches resolve
+    expect(screen.getByText("Snabblänkar")).toBeInTheDocument()
   })
 }
 
