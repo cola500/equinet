@@ -4,7 +4,7 @@ description: "End-user documentation for horse owners and service providers usin
 category: guide
 tags: [user-docs, customer-guide, provider-guide, admin-guide, faq]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-06
 sections:
   - Innehåll
   - Vad är Equinet?
@@ -487,7 +487,7 @@ När du skapar ett leverantörskonto möts du av en **checklista** på din dashb
 4. Verifiera din e-postadress
 5. (Valfritt) Ansök om verifiering
 
-Du ser din framgång som en procent-indikator. När alla steg är klara är du redo att ta emot bokningar.
+Du ser din framgång som en procent-indikator. När alla steg är klara är du redo att ta emot bokningar. Om du stänger checklistan utan att slutföra alla steg visas den igen efter 7 dagar.
 
 ---
 
@@ -577,7 +577,7 @@ Kalendern visar en veckoöversikt med:
 
 ### Hantera bokningar (leverantör)
 
-Under **Bokningar** ser du alla inkommande och befintliga bokningar.
+Under **Bokningar** ser du alla inkommande och befintliga bokningar. Du kan filtrera på status -- länken är delbar (t.ex. `/provider/bookings?filter=pending` visar väntande). Antal väntande förfrågningar visas som en röd badge på Bokningar-ikonen i mobilnavigeringen.
 
 **Statusar:**
 | Status | Åtgärd |
@@ -919,6 +919,8 @@ Under **Besöksplanering** ser du vilka hästar som snart behöver besök, sorte
 - **Alla** - visa samtliga hästar med återbesöksintervall
 - **Försenade** - enbart hästar som passerat sitt datum
 - **Inom 2 veckor** - hästar som snart behöver besök
+
+Varje kort har en **Boka**-knapp som tar dig direkt till bokningsflödet med kund och häst ifyllt.
 
 **Individuella intervall per häst och tjänst:**
 
