@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 type RouteParams = { params: Promise<{ id: string; pid: string }> }
 
@@ -11,6 +12,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
     const { id, pid } = await params
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     if (!(await isFeatureEnabled("group_bookings"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

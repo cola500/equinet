@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const VERIFICATION_TYPES = ["education", "organization", "certificate", "experience", "license"] as const
 
@@ -24,6 +25,12 @@ export async function PUT(
   try {
     const session = await auth()
     const { id } = await params
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Find provider for this user
     const provider = await prisma.provider.findFirst({
@@ -121,6 +128,12 @@ export async function DELETE(
   try {
     const session = await auth()
     const { id } = await params
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Find provider for this user
     const provider = await prisma.provider.findFirst({

@@ -38,7 +38,7 @@ describe("getPriorityAction", () => {
     expect(result).toEqual({
       type: "pending",
       message: "Du har 3 nya förfrågningar",
-      href: "/provider/bookings",
+      href: "/provider/bookings?filter=pending",
       variant: "warning",
     })
   })

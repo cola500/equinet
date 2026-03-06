@@ -35,7 +35,7 @@ export function getPriorityAction(
         pendingCount === 1
           ? "Du har 1 ny förfrågan"
           : `Du har ${pendingCount} nya förfrågningar`,
-      href: "/provider/bookings",
+      href: "/provider/bookings?filter=pending",
       variant: "warning",
     }
   }

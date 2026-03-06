@@ -99,7 +99,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
       }),
     ])
 
-    return NextResponse.json({ intervals, availableServices })
+    // Fetch horse name (non-critical, won't fail the request)
+    let horseName: string | null = null
+    try {
+      const horse = await prisma.horse.findUnique({
+        where: { id: horseId },
+        select: { name: true },
+      })
+      horseName = horse?.name ?? null
+    } catch {
+      // Non-critical -- horse name is a UX enhancement
+    }
+
+    return NextResponse.json({ intervals, availableServices, horseName })
   } catch (error) {
     if (error instanceof Response) return error
 

@@ -93,7 +93,6 @@ export default function ProviderRoutesPage() {
 
   return (
     <ProviderLayout>
-      <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Mina Rutter</h1>
@@ -221,7 +220,6 @@ export default function ProviderRoutesPage() {
           </div>
           </FirstUseTooltip>
         )}
-      </div>
     </ProviderLayout>
   )
 }

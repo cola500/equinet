@@ -233,6 +233,11 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **CustomerLayout för alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`).
 - **Context > splitta hook vid prop-drilling**: Wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken.
 
+### Utvecklingsmönster
+
+- **Rate limiting sweep-mönster**: 4-raders tillägg per route (import + getClientIP + check + 429-response). Lägg EFTER auth, FÖRE JSON-parsing. Vid signaturändring (handler får `request`-param): uppdatera ALLA testanrop också.
+- **BottomTabBar badge**: `TabItem.badge?: number` + villkorlig rendering med absolut positionerad `<span>`. Drivs av SWR-data via `useMemo` i `ProviderNav`.
+
 ---
 
 ## Debugging: 5 Whys
@@ -270,4 +275,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-02-28
+**Senast uppdaterad**: 2026-03-06

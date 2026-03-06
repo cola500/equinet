@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const VERIFICATION_TYPES = ["education", "organization", "certificate", "experience", "license"] as const
 const MAX_PENDING_REQUESTS = 5
@@ -18,9 +19,15 @@ const verificationRequestSchema = z.object({
 })
 
 // GET - List own verification requests
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Find provider for this user
     const provider = await prisma.provider.findFirst({
@@ -77,6 +84,12 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Find provider for this user
     const provider = await prisma.provider.findFirst({

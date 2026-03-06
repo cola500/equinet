@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -51,6 +52,7 @@ export default function ProviderServicesPage() {
   })
 
   const { guardMutation } = useOfflineGuard()
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,8 +100,7 @@ export default function ProviderServicesPage() {
         serviceDialog.close()
         resetForm()
         mutateServices()
-      } catch (error) {
-        console.error("Error saving service:", error)
+      } catch {
         toast.error("Kunde inte spara tjänst")
       }
     })
@@ -118,10 +119,6 @@ export default function ProviderServicesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Är du säker på att du vill ta bort denna tjänst?")) {
-      return
-    }
-
     await guardMutation(async () => {
       try {
         const response = await fetch(`/api/services/${id}`, {
@@ -134,8 +131,7 @@ export default function ProviderServicesPage() {
 
         toast.success("Tjänst borttagen!")
         mutateServices()
-      } catch (error) {
-        console.error("Error deleting service:", error)
+      } catch {
         toast.error("Kunde inte ta bort tjänst")
       }
     })
@@ -152,8 +148,6 @@ export default function ProviderServicesPage() {
           isActive: !service.isActive,
         }
 
-        console.log("Toggling service with payload:", payload)
-
         const response = await fetch(`/api/services/${service.id}`, {
           method: "PUT",
           headers: {
@@ -163,12 +157,6 @@ export default function ProviderServicesPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          console.error("API error response:", {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorData
-          })
           throw new Error(`Failed to update service: ${response.status}`)
         }
 
@@ -176,8 +164,7 @@ export default function ProviderServicesPage() {
           service.isActive ? "Tjänst inaktiverad" : "Tjänst aktiverad"
         )
         mutateServices()
-      } catch (error) {
-        console.error("Error toggling service:", error)
+      } catch {
         toast.error("Kunde inte uppdatera tjänst")
       }
     })
@@ -436,7 +423,7 @@ export default function ProviderServicesPage() {
                       Redigera
                     </Button>
                     <Button
-                      onClick={() => handleDelete(service.id)}
+                      onClick={() => setDeleteConfirm(service.id)}
                       variant="destructive"
                       size="sm"
                       className="flex-1"
@@ -449,6 +436,28 @@ export default function ProviderServicesPage() {
             ))}
           </div>
         )}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort tjänst</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort denna tjänst? Denna åtgärd kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirm) handleDelete(deleteConfirm)
+                setDeleteConfirm(null)
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ProviderLayout>
   )
 }

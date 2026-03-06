@@ -117,6 +117,7 @@ export default function ProviderInsightsPage() {
             <button
               key={p}
               onClick={() => setPeriod(p)}
+              aria-pressed={period === p}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 period === p
                   ? "bg-green-600 text-white"

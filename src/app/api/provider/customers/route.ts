@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { bookingDate: "desc" },
+      take: 10000,
     })
 
     // Aggregate: group by customer

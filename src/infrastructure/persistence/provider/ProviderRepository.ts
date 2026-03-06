@@ -141,36 +141,24 @@ export class ProviderRepository implements IProviderRepository {
   }
 
   async save(entity: Provider): Promise<Provider> {
-    // Check if provider exists
-    const exists = await this.exists(entity.id)
-
-    if (exists) {
-      // Update existing
-      const updated = await prisma.provider.update({
-        where: { id: entity.id },
-        data: {
-          businessName: entity.businessName,
-          description: entity.description,
-          city: entity.city,
-          isActive: entity.isActive,
-          updatedAt: new Date(),
-        },
-      })
-      return updated
-    } else {
-      // Create new
-      const created = await prisma.provider.create({
-        data: {
-          id: entity.id,
-          userId: entity.userId,
-          businessName: entity.businessName,
-          description: entity.description,
-          city: entity.city,
-          isActive: entity.isActive,
-        },
-      })
-      return created
-    }
+    return prisma.provider.upsert({
+      where: { id: entity.id },
+      update: {
+        businessName: entity.businessName,
+        description: entity.description,
+        city: entity.city,
+        isActive: entity.isActive,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: entity.id,
+        userId: entity.userId,
+        businessName: entity.businessName,
+        description: entity.description,
+        city: entity.city,
+        isActive: entity.isActive,
+      },
+    })
   }
 
   async delete(id: string): Promise<void> {

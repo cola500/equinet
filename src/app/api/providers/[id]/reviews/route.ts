@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // GET - Public endpoint: fetch reviews for a provider with pagination
 export async function GET(
@@ -8,6 +9,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id: providerId } = await params
 
     // Check provider exists

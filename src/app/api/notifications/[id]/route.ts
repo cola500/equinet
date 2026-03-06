@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { notificationService } from "@/domain/notification/NotificationService"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // PUT - Mark a single notification as read
 export async function PUT(
@@ -11,6 +12,12 @@ export async function PUT(
   try {
     const { id } = await params
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     const notification = await notificationService.markAsRead(id, session.user.id)
 

@@ -21,6 +21,7 @@ export interface TabItem {
   icon: LucideIcon
   matchPrefix?: string
   offlineSafe?: boolean
+  badge?: number
 }
 
 export interface MoreMenuItem {
@@ -86,12 +87,26 @@ export function BottomTabBar({ tabs, moreItems }: BottomTabBarProps) {
               >
                 {active ? (
                   <span className="flex flex-col items-center gap-0.5 bg-primary/10 rounded-full px-3 py-1">
-                    <Icon className="h-[22px] w-[22px]" />
+                    <span className="relative">
+                      <Icon className="h-[22px] w-[22px]" />
+                      {!!tab.badge && tab.badge > 0 && (
+                        <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 flex items-center justify-center rounded-full px-1">
+                          {tab.badge > 99 ? "99+" : tab.badge}
+                        </span>
+                      )}
+                    </span>
                     <span className="text-[10px] leading-tight font-medium">{tab.label}</span>
                   </span>
                 ) : (
                   <>
-                    <Icon className="h-5 w-5" />
+                    <span className="relative">
+                      <Icon className="h-5 w-5" />
+                      {!!tab.badge && tab.badge > 0 && (
+                        <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 flex items-center justify-center rounded-full px-1">
+                          {tab.badge > 99 ? "99+" : tab.badge}
+                        </span>
+                      )}
+                    </span>
                     <span className="text-[10px] leading-tight">{tab.label}</span>
                   </>
                 )}

@@ -68,12 +68,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const totalBookings = await prisma.booking.count({
-      where: {
-        providerId: provider.id,
-        bookingDate: { gte: periodStart },
-      },
-    })
+    const totalBookings = bookings.length
 
     // --- KPIs ---
     const completedBookings = bookings.filter((b) => b.status === "completed")

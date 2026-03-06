@@ -3,9 +3,10 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import type { SessionUser } from "@/types/auth"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // POST /api/integrations/fortnox/disconnect - Remove Fortnox connection
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth()
 
@@ -14,6 +15,12 @@ export async function POST(_request: NextRequest) {
         { error: "Bara leverantorer kan hantera Fortnox-koppling" },
         { status: 403 }
       )
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const providerId = (session.user as SessionUser).providerId

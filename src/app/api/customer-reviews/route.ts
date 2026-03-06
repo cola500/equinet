@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger"
 import { CustomerReviewService } from "@/domain/customer-review/CustomerReviewService"
 import { mapCustomerReviewErrorToStatus } from "@/domain/customer-review/mapCustomerReviewErrorToStatus"
 import { CustomerReviewRepository } from "@/infrastructure/persistence/customer-review/CustomerReviewRepository"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const createCustomerReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
@@ -20,6 +21,12 @@ export async function POST(request: NextRequest) {
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const providerId = session.user.providerId
@@ -105,6 +112,12 @@ export async function GET(_request: NextRequest) {
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(_request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const repository = new CustomerReviewRepository()

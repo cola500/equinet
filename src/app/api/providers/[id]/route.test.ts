@@ -1,11 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
 import { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-server'
 import * as geocoding from '@/lib/geocoding'
 
 // Mock dependencies
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
+vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 

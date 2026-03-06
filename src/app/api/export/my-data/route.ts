@@ -17,18 +17,20 @@ import type { SessionUser } from "@/types/auth"
 
 // GET /api/export/my-data - Export all user data (GDPR Art 20)
 export async function GET(request: NextRequest) {
-  const clientIp = getClientIP(request)
-  const isAllowed = await rateLimiters.api(clientIp)
-  if (!isAllowed) {
-    return NextResponse.json(
-      { error: "För många förfrågningar. Försök igen om en minut." },
-      { status: 429 }
-    )
-  }
-
   try {
+    // 1. Auth first
     const session = await auth()
     const userId = session.user.id
+
+    // 2. Rate limiting (after auth to avoid unauthenticated abuse)
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar. Försök igen om en minut." },
+        { status: 429 }
+      )
+    }
     const isProvider = session.user.userType === "provider"
 
     const { searchParams } = new URL(request.url)

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useBookings as useSWRBookings } from "@/hooks/useBookings"
 import { Button } from "@/components/ui/button"
@@ -30,6 +30,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
@@ -80,18 +81,50 @@ interface Booking {
   } | null
 }
 
+const VALID_FILTERS: BookingFilter[] = ["all", "pending", "confirmed", "completed", "no_show", "cancelled"]
+
 export default function ProviderBookingsPage() {
+  return (
+    <Suspense fallback={<ProviderLayout><BookingCardSkeleton /></ProviderLayout>}>
+      <ProviderBookingsContent />
+    </Suspense>
+  )
+}
+
+function ProviderBookingsContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isOnline = useOnlineStatus()
   const { isLoading, isProvider } = useAuth()
   const { bookings: rawBookings, mutate: mutateBookings } = useSWRBookings()
   const bookings = rawBookings as unknown as Booking[]
-  const [filter, setFilter] = useState<BookingFilter>("all")
+
+  const initialFilter = searchParams.get("filter") as BookingFilter | null
+  const [filter, setFilter] = useState<BookingFilter>(
+    initialFilter && VALID_FILTERS.includes(initialFilter) ? initialFilter : "all"
+  )
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
   const { guardMutation } = useOfflineGuard()
+
+  // Sync filter to URL (guard with isOnline to avoid RSC request when offline)
+  useEffect(() => {
+    if (!isOnline) return
+    const current = searchParams.get("filter")
+    const target = filter === "all" ? null : filter
+    if (current !== target) {
+      const params = new URLSearchParams(searchParams.toString())
+      if (target) {
+        params.set("filter", target)
+      } else {
+        params.delete("filter")
+      }
+      router.replace(`?${params.toString()}`, { scroll: false })
+    }
+  }, [filter, isOnline]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
     const body = JSON.stringify({ status })

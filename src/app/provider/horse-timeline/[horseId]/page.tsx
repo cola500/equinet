@@ -93,6 +93,9 @@ export default function ProviderHorseTimelinePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
 
+  // Horse name (loaded from interval endpoint)
+  const [horseName, setHorseName] = useState<string | null>(null)
+
   // Interval state (now a list per service)
   const [intervals, setIntervals] = useState<ProviderHorseInterval[]>([])
   const [availableServices, setAvailableServices] = useState<AvailableService[]>([])
@@ -124,21 +127,7 @@ export default function ProviderHorseTimelinePage() {
     }
   }, [horseId, activeFilter, router])
 
-  // Fetch horse name separately
-  useEffect(() => {
-    if (!isProvider || !horseId) return
-    fetch(`/api/horses/${horseId}/timeline`)
-      .then((res) => {
-        if (res.ok) {
-          // We don't have a separate endpoint for horse name from provider perspective,
-          // so we use the timeline data to infer it
-          // The horse name could be passed via query params in the future
-        }
-      })
-      .catch(() => {})
-  }, [isProvider, horseId])
-
-  // Fetch intervals (now returns list + available services)
+  // Fetch intervals (now returns list + available services + horseName)
   const fetchIntervals = useCallback(async () => {
     try {
       const res = await fetch(`/api/provider/horses/${horseId}/interval`)
@@ -146,6 +135,7 @@ export default function ProviderHorseTimelinePage() {
         const data = await res.json()
         setIntervals(data.intervals ?? [])
         setAvailableServices(data.availableServices ?? [])
+        if (data.horseName) setHorseName(data.horseName)
       }
     } catch {
       // Interval is non-critical -- silently fail
@@ -322,7 +312,7 @@ export default function ProviderHorseTimelinePage() {
           </button>
         </div>
 
-        <h1 className="text-2xl font-bold mb-2">Hästens hälsohistorik</h1>
+        <h1 className="text-2xl font-bold mb-2">{horseName ? `${horseName} \u2013 hälsohistorik` : "Hästens hälsohistorik"}</h1>
         <p className="text-gray-600 mb-6 text-sm">
           Du ser medicinsk historik för hästar du har behandlat.
           Av integritetsskäl visas bara veterinär-, hovslagare- och medicinanteckningar.
@@ -463,6 +453,7 @@ export default function ProviderHorseTimelinePage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setActiveFilter(null)}
+            aria-pressed={activeFilter === null}
             className={`px-3 py-1 rounded-full text-sm border transition-colors ${
               activeFilter === null
                 ? "bg-green-600 text-white border-green-600"
@@ -477,6 +468,7 @@ export default function ProviderHorseTimelinePage() {
               onClick={() =>
                 setActiveFilter(activeFilter === opt.value ? null : opt.value)
               }
+              aria-pressed={activeFilter === opt.value}
               className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                 activeFilter === opt.value
                   ? "bg-green-600 text-white border-green-600"

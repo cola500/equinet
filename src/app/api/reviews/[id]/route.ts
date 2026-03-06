@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const updateReviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
@@ -18,6 +19,13 @@ export async function PUT(
 ) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id: reviewId } = await params
 
     if (session.user.userType !== "customer") {
@@ -78,6 +86,13 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id: reviewId } = await params
 
     if (session.user.userType !== "customer") {

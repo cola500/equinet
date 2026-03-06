@@ -7,6 +7,7 @@ import { notificationService } from "@/domain/notification/NotificationService"
 import { customerName } from "@/lib/notification-helpers"
 import { getPaymentGateway } from "@/domain/payment/PaymentGateway"
 import { createBookingEventDispatcher, createBookingPaymentReceivedEvent } from "@/domain/booking"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // Generate unique invoice number
 function generateInvoiceNumber(): string {
@@ -25,6 +26,12 @@ export async function POST(
   try {
     const { id: bookingId } = await params
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Verify booking belongs to customer and is in correct status
     const booking = await prisma.booking.findUnique({
@@ -184,6 +191,12 @@ export async function GET(
   try {
     const { id: bookingId } = await params
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Verify booking belongs to customer or provider
     const booking = await prisma.booking.findFirst({

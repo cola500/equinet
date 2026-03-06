@@ -1,18 +1,25 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 /**
  * GET /api/provider/onboarding-status
  * Returns the onboarding completion status for the current provider
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
 
     if (!session?.user?.id) {
       return new Response("Unauthorized", { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const provider = await prisma.provider.findFirst({

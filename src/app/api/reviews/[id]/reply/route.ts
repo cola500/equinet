@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger"
 import { ReviewService } from "@/domain/review/ReviewService"
 import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const replySchema = z.object({
   reply: z.string().min(1, "Svar krävs").max(500, "Svar kan vara max 500 tecken"),
@@ -18,6 +19,13 @@ export async function POST(
 ) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id: reviewId } = await params
 
     if (session.user.userType !== "provider") {
@@ -91,6 +99,13 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id: reviewId } = await params
 
     if (session.user.userType !== "provider") {

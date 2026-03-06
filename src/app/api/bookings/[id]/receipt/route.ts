@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { logger } from "@/lib/logger"
 import { escapeHtml } from "@/lib/sanitize"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // GET - Get receipt HTML for a paid booking
 export async function GET(
@@ -14,6 +15,12 @@ export async function GET(
   try {
     const { id: bookingId } = await params
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Verify booking belongs to customer and has payment
     const booking = await prisma.booking.findFirst({

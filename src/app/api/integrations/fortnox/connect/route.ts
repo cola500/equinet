@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { logger } from "@/lib/logger"
 import { randomBytes } from "crypto"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // GET /api/integrations/fortnox/connect - Start OAuth flow
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
 
@@ -13,6 +14,12 @@ export async function GET(_request: NextRequest) {
         { error: "Bara leverantorer kan koppla Fortnox" },
         { status: 403 }
       )
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const clientId = process.env.FORTNOX_CLIENT_ID

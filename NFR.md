@@ -4,7 +4,7 @@ description: "Non-functional requirements med status, gap-analys och story-ready
 category: root
 tags: [nfr, production-readiness, security, performance, monitoring]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-06
 related:
   - docs/architecture/database.md
   - docs/security/pentest-2026-02-15.md
@@ -103,7 +103,7 @@ sections:
 | Input-validering | Klart | Zod på både client & server (.strict()) |
 | Auktoriseringskontroller | Klart | Session + ownership i WHERE clause |
 | GDPR-compliant API | Klart | Email/phone ej exponerat |
-| Rate limiting | Klart | Upstash Redis (5/h login, 10/h bookings, 100/h publikt) |
+| Rate limiting | Klart | Upstash Redis på alla API-routes (5/h login, 10/h bookings, 100/h publikt) |
 | HTTPS + Security headers | Klart | HSTS, CSP (SRI, no unsafe-inline), X-Frame-Options DENY, nosniff, COOP, CORP |
 | Lösenordskrav | Klart | Styrka-validering |
 | Audit logging | Klart | logger.security() för känsliga operationer |
@@ -160,7 +160,7 @@ sections:
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 2783+ tester, 241 testfiler (2026-02-28) |
+| Unit/integration-tester | Klart | 3030+ tester, 257 testfiler (2026-03-06) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { geocodeAddress } from "@/lib/geocoding"
 import { z } from "zod"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { invalidateProviderCache } from "@/lib/cache/provider-cache"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // GET single provider with services and availability
 export async function GET(
@@ -12,6 +13,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id } = await params
 
     // Use repository instead of direct Prisma access
@@ -56,6 +63,12 @@ export async function PUT(
     const session = await auth()
     if (!session || !session.user) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const { id } = await params

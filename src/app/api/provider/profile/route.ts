@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { invalidateProviderCache } from "@/lib/cache/provider-cache"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const providerProfileSchema = z.object({
   businessName: z.string().min(1, "Företagsnamn krävs"),
@@ -33,6 +34,12 @@ export async function GET(_request: NextRequest) {
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(_request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     const provider = await prisma.provider.findUnique({
@@ -101,6 +108,12 @@ export async function PUT(request: NextRequest) {
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     // Parse request body with error handling

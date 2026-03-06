@@ -35,10 +35,17 @@ export function OnboardingChecklist() {
   const [isDismissed, setIsDismissed] = useState(false)
 
   useEffect(() => {
-    // Check localStorage for dismissed state
-    const dismissed = localStorage.getItem(STORAGE_KEY)
-    if (dismissed === "true") {
-      setIsDismissed(true)
+    // Check localStorage for dismissed state (with 7-day timeout)
+    const dismissedAt = localStorage.getItem(STORAGE_KEY)
+    if (dismissedAt) {
+      const dismissedTime = Number(dismissedAt)
+      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      if (!isNaN(dismissedTime) && Date.now() - dismissedTime < sevenDays) {
+        setIsDismissed(true)
+      } else {
+        // Expired or legacy "true" value -- clear it
+        localStorage.removeItem(STORAGE_KEY)
+      }
     }
     fetchStatus()
   }, [])
@@ -51,15 +58,15 @@ export function OnboardingChecklist() {
         const data = await response.json()
         setStatus(data)
       }
-    } catch (error) {
-      console.error("Error fetching onboarding status:", error)
+    } catch {
+      // Silently fail -- checklist is non-critical
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, "true")
+    localStorage.setItem(STORAGE_KEY, String(Date.now()))
     setIsDismissed(true)
   }
 
