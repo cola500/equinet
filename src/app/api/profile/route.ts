@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { isValidMunicipality } from "@/lib/geo/municipalities"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "Förnamn krävs"),
@@ -25,6 +26,12 @@ export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    const clientIp = getClientIP(_request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -75,6 +82,12 @@ export async function PUT(request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Parse request body with error handling
     let body

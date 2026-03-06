@@ -1,6 +1,7 @@
 import type { IDomainEvent } from './IDomainEvent'
 import type { IEventHandler } from './IEventHandler'
 import type { IEventDispatcher } from './IEventDispatcher'
+import { logger } from '@/lib/logger'
 
 /**
  * In-memory event dispatcher. Serverless-safe: create per request, no globals.
@@ -26,9 +27,8 @@ export class InMemoryEventDispatcher implements IEventDispatcher {
     for (const handler of handlers) {
       try {
         await handler.handle(event)
-      } catch {
-        // Handler failure is isolated -- logged by the handler itself.
-        // We intentionally swallow the error to avoid blocking other handlers.
+      } catch (error) {
+        logger.error(`Event handler failed for ${event.eventType}`, error instanceof Error ? error : new Error(String(error)))
       }
     }
   }

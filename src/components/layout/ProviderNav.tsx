@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -23,6 +23,7 @@ import {
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { useBookings } from "@/hooks/useBookings"
 import { toast } from "sonner"
 
 interface NavItem {
@@ -119,6 +120,15 @@ export function ProviderNav() {
   const isOnline = useOnlineStatus()
   const [moreOpen, setMoreOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
+  const { bookings } = useBookings()
+  const pendingCount = (bookings as Array<{ status: string }>).filter((b) => b.status === "pending").length
+
+  const tabsWithBadge = useMemo(() =>
+    providerTabs.map((tab) =>
+      tab.href === "/provider/bookings" ? { ...tab, badge: pendingCount } : tab
+    ),
+    [pendingCount]
+  )
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -252,7 +262,7 @@ export function ProviderNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={providerTabs} moreItems={visibleMoreItems} />
+      <BottomTabBar tabs={tabsWithBadge} moreItems={visibleMoreItems} />
     </>
   )
 }

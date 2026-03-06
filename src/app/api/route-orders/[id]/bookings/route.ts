@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 /**
  * GET /api/route-orders/[id]/bookings
@@ -17,6 +18,12 @@ export async function GET(
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     if (!(await isFeatureEnabled("route_planning"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

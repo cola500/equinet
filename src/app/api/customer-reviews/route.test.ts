@@ -25,6 +25,7 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
     api: vi.fn().mockResolvedValue(true),
   },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
 const mockBooking = {

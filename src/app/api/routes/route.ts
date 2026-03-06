@@ -5,6 +5,7 @@ import { z } from "zod"
 import { calculateDistance } from "@/lib/geo/distance"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // Validation schema for creating route
 const createRouteSchema = z.object({
@@ -23,6 +24,12 @@ export async function POST(request: Request) {
 
     // Auth handled by middleware - get session
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Parse and validate
     const body = await request.json()

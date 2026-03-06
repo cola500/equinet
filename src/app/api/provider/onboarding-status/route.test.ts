@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
+  getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+}))
 vi.mock("@/lib/auth", () => ({ auth: vi.fn() }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -11,6 +15,11 @@ vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }))
 import { GET } from "./route"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { NextRequest } from "next/server"
+
+function mockRequest() {
+  return new NextRequest("http://localhost:3000/api/provider/onboarding-status")
+}
 
 const mockAuth = vi.mocked(auth)
 const mockFindFirst = vi.mocked(prisma.provider.findFirst)
@@ -46,7 +55,7 @@ describe("GET /api/provider/onboarding-status", () => {
   it("returns 401 when session is null", async () => {
     mockAuth.mockResolvedValueOnce(null)
 
-    const res = await GET()
+    const res = await GET(mockRequest())
 
     expect(res.status).toBe(401)
     expect(await res.text()).toBe("Unauthorized")
@@ -55,7 +64,7 @@ describe("GET /api/provider/onboarding-status", () => {
   it("returns 401 when session.user.id is missing", async () => {
     mockAuth.mockResolvedValueOnce({ user: {} } as never)
 
-    const res = await GET()
+    const res = await GET(mockRequest())
 
     expect(res.status).toBe(401)
   })
@@ -65,7 +74,7 @@ describe("GET /api/provider/onboarding-status", () => {
   it("returns 404 when provider not found", async () => {
     mockFindFirst.mockResolvedValueOnce(null)
 
-    const res = await GET()
+    const res = await GET(mockRequest())
 
     expect(res.status).toBe(404)
     expect(await res.text()).toBe("Provider not found")
@@ -88,7 +97,7 @@ describe("GET /api/provider/onboarding-status", () => {
       }) as never
     )
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(res.status).toBe(200)
@@ -102,7 +111,7 @@ describe("GET /api/provider/onboarding-status", () => {
   })
 
   it("returns profileComplete=true when all profile fields filled", async () => {
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(data.profileComplete).toBe(true)
@@ -113,7 +122,7 @@ describe("GET /api/provider/onboarding-status", () => {
       makeProvider({ description: null }) as never
     )
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(data.profileComplete).toBe(false)
@@ -124,28 +133,28 @@ describe("GET /api/provider/onboarding-status", () => {
       makeProvider({ latitude: null, longitude: null }) as never
     )
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(data.profileComplete).toBe(false)
   })
 
   it("returns hasServices=true when at least one active service", async () => {
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(data.hasServices).toBe(true)
   })
 
   it("returns hasAvailability=true when at least one active availability", async () => {
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(data.hasAvailability).toBe(true)
   })
 
   it("returns allComplete=true when everything is complete", async () => {
-    const res = await GET()
+    const res = await GET(mockRequest())
     const data = await res.json()
 
     expect(data).toEqual({

@@ -69,6 +69,7 @@ export default function ProviderCustomersPage() {
             <button
               key={status}
               onClick={() => c.setStatusFilter(status)}
+              aria-pressed={c.statusFilter === status}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 c.statusFilter === status
                   ? "bg-green-600 text-white"

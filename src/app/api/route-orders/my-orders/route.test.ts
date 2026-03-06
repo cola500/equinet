@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
+  getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+}))
 vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
 vi.mock("@/lib/feature-flags", () => ({
   isFeatureEnabled: vi.fn().mockResolvedValue(true),
@@ -15,6 +19,10 @@ import { GET } from "./route"
 import { auth } from "@/lib/auth-server"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
+
+function mockRequest() {
+  return new Request("http://localhost:3000/api/route-orders/my-orders")
+}
 
 const mockAuth = vi.mocked(auth)
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
@@ -44,14 +52,14 @@ describe("GET /api/route-orders/my-orders", () => {
       })
     )
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     expect(res.status).toBe(401)
   })
 
   it("returns 404 when route_planning flag is disabled", async () => {
     mockIsFeatureEnabled.mockResolvedValueOnce(false)
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const body = await res.json()
 
     expect(res.status).toBe(404)
@@ -59,7 +67,7 @@ describe("GET /api/route-orders/my-orders", () => {
   })
 
   it("verifies isFeatureEnabled called with 'route_planning'", async () => {
-    await GET()
+    await GET(mockRequest())
 
     expect(mockIsFeatureEnabled).toHaveBeenCalledWith("route_planning")
   })
@@ -67,7 +75,7 @@ describe("GET /api/route-orders/my-orders", () => {
   it("returns 403 when user is a provider", async () => {
     mockAuth.mockResolvedValue(mockProviderSession)
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const body = await res.json()
 
     expect(res.status).toBe(403)
@@ -94,7 +102,7 @@ describe("GET /api/route-orders/my-orders", () => {
     ]
     mockFindMany.mockResolvedValue(mockOrders as never)
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const body = await res.json()
 
     expect(res.status).toBe(200)
@@ -104,7 +112,7 @@ describe("GET /api/route-orders/my-orders", () => {
   it("returns 200 with empty array when no orders", async () => {
     mockFindMany.mockResolvedValue([])
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const body = await res.json()
 
     expect(res.status).toBe(200)
@@ -112,7 +120,7 @@ describe("GET /api/route-orders/my-orders", () => {
   })
 
   it("verifies prisma.routeOrder.findMany called with correct customerId", async () => {
-    await GET()
+    await GET(mockRequest())
 
     expect(mockFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -125,7 +133,7 @@ describe("GET /api/route-orders/my-orders", () => {
   it("returns 500 on unexpected error", async () => {
     mockFindMany.mockRejectedValue(new Error("DB connection lost"))
 
-    const res = await GET()
+    const res = await GET(mockRequest())
     const text = await res.text()
 
     expect(res.status).toBe(500)

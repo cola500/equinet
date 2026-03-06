@@ -6,6 +6,7 @@ import { isValidMunicipality } from "@/lib/geo/municipalities"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { createRouteAnnouncementNotifier } from "@/domain/notification/RouteAnnouncementNotifierFactory"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // Validation schema for customer-initiated route order
 const createRouteOrderSchema = z.object({
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     if (!(await isFeatureEnabled("route_planning"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
@@ -317,6 +324,12 @@ export async function GET(request: Request) {
   try {
     // Auth handled by middleware
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     if (!(await isFeatureEnabled("route_planning"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

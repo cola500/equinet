@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth-server"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // Validation schema for PATCH updates
 const updateStatusSchema = z.object({
@@ -20,6 +21,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     if (!(await isFeatureEnabled("route_planning"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
@@ -104,6 +111,12 @@ export async function PATCH(
 ) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     if (!(await isFeatureEnabled("route_planning"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

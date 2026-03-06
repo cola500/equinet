@@ -5,10 +5,12 @@ import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
-import { Clock, AlertTriangle, CheckCircle } from "lucide-react"
+import { Clock, AlertTriangle, CheckCircle, CalendarPlus } from "lucide-react"
+import Link from "next/link"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 
 interface DueForServiceItem {
@@ -140,6 +142,7 @@ export default function DueForServicePage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
+            aria-pressed={filter === f}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               filter === f
                 ? "bg-primary text-primary-foreground"
@@ -199,25 +202,46 @@ export default function DueForServicePage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 gap-4 text-sm text-gray-500">
-                    <div>
-                      <span className="block text-xs uppercase tracking-wider">
-                        Senaste besök
-                      </span>
-                      <span>{formatDate(item.lastServiceDate)}</span>
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <div className="grid grid-cols-3 gap-4 text-sm text-gray-500 flex-1">
+                      <div>
+                        <span className="block text-xs uppercase tracking-wider">
+                          Senaste besök
+                        </span>
+                        <span>{formatDate(item.lastServiceDate)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs uppercase tracking-wider">
+                          Intervall
+                        </span>
+                        <span>{item.intervalWeeks} veckor</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs uppercase tracking-wider">
+                          Nästa besök
+                        </span>
+                        <span>{formatDate(item.dueDate)}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="block text-xs uppercase tracking-wider">
-                        Intervall
-                      </span>
-                      <span>{item.intervalWeeks} veckor</span>
-                    </div>
-                    <div>
-                      <span className="block text-xs uppercase tracking-wider">
-                        Nästa besök
-                      </span>
-                      <span>{formatDate(item.dueDate)}</span>
-                    </div>
+                    {isOnline ? (
+                      <Button size="sm" variant="outline" asChild className="shrink-0">
+                        <Link href="/provider/calendar">
+                          <CalendarPlus className="h-4 w-4 mr-1" />
+                          Boka
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0"
+                        disabled
+                        title="Inte tillgängligt offline"
+                      >
+                        <CalendarPlus className="h-4 w-4 mr-1" />
+                        Boka
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

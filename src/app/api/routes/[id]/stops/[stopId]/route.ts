@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // Validation schema for updating stop
 const updateStopSchema = z.object({
@@ -25,6 +26,12 @@ export async function PATCH(
 
     // Auth handled by middleware
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     // Only providers can update stops
     if (session.user.userType !== "provider" || !session.user.providerId) {

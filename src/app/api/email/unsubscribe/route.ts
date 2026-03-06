@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyUnsubscribeToken } from "@/lib/email/unsubscribe-token"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 /**
  * Unsubscribe from booking reminders via email link.
@@ -9,6 +10,12 @@ import { verifyUnsubscribeToken } from "@/lib/email/unsubscribe-token"
  * No login required -- the token proves the user received the email.
  */
 export async function GET(request: NextRequest) {
+  const clientIp = getClientIP(request)
+  const isAllowed = await rateLimiters.api(clientIp)
+  if (!isAllowed) {
+    return new NextResponse("För många förfrågningar", { status: 429 })
+  }
+
   const { searchParams } = new URL(request.url)
   const userId = searchParams.get("userId")
   const token = searchParams.get("token")

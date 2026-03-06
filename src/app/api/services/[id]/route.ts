@@ -4,6 +4,7 @@ import { z } from "zod"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { logger } from "@/lib/logger"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Tjänstens namn krävs"),
@@ -26,6 +27,12 @@ export async function PUT(
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     // Use repositories instead of direct Prisma access
@@ -94,6 +101,12 @@ export async function DELETE(
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     // Use repositories instead of direct Prisma access

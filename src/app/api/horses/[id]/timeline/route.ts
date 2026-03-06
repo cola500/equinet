@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { logger } from "@/lib/logger"
 import { createHorseService } from "@/domain/horse/HorseService"
 import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const NOTE_CATEGORIES = [
   "veterinary",
@@ -19,6 +20,13 @@ type RouteContext = { params: Promise<{ id: string }> }
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
     const { id: horseId } = await context.params
 
     // Optional category filter

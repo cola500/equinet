@@ -7,6 +7,7 @@ import { ReviewService } from "@/domain/review/ReviewService"
 import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
 import { notificationService } from "@/domain/notification/NotificationService"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const createReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
@@ -18,6 +19,12 @@ const createReviewSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
 
     if (session.user.userType !== "customer") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
