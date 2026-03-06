@@ -11,8 +11,10 @@ vi.mock("sonner", () => ({
   },
 }))
 
+const mockReportConnectivityLoss = vi.fn()
 vi.mock("./useOnlineStatus", () => ({
   useOnlineStatus: vi.fn(() => true),
+  reportConnectivityLoss: (...args: unknown[]) => mockReportConnectivityLoss(...args),
 }))
 
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
@@ -33,6 +35,7 @@ describe("useOfflineGuard", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useOnlineStatus).mockReturnValue(true)
+    mockReportConnectivityLoss.mockClear()
     vi.mocked(useFeatureFlag).mockReturnValue(true)
     mockQueueMutation.mockResolvedValue(1)
     mockGetPendingMutationsByEntity.mockResolvedValue([])
@@ -277,5 +280,107 @@ describe("useOfflineGuard", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "Kunde inte spara offline. Försök igen."
     )
+  })
+
+  // -- Network error fallback (online but fetch fails) --
+
+  it("should fall back to offline queue when action throws TypeError (network error) while online", async () => {
+    const action = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    const optimisticUpdate = vi.fn()
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "POST",
+        url: "/api/bookings/manual",
+        body: JSON.stringify({ service: "hoof-trim" }),
+        entityType: "manual-booking",
+        entityId: "temp-123",
+        optimisticUpdate,
+      })
+    })
+
+    expect(mockReportConnectivityLoss).toHaveBeenCalled()
+    expect(optimisticUpdate).toHaveBeenCalled()
+    expect(mockQueueMutation).toHaveBeenCalled()
+    expect(toast.success).toHaveBeenCalledWith(
+      expect.stringContaining("Sparad lokalt")
+    )
+  })
+
+  it("should fall back to offline queue when action throws AbortError (timeout) while online", async () => {
+    const abortError = new DOMException("The operation was aborted", "AbortError")
+    const action = vi.fn().mockRejectedValue(abortError)
+    const optimisticUpdate = vi.fn()
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await act(async () => {
+      await result.current.guardMutation(action, {
+        method: "POST",
+        url: "/api/bookings/manual",
+        body: JSON.stringify({ service: "hoof-trim" }),
+        entityType: "manual-booking",
+        entityId: "temp-123",
+        optimisticUpdate,
+      })
+    })
+
+    expect(mockReportConnectivityLoss).toHaveBeenCalled()
+    expect(optimisticUpdate).toHaveBeenCalled()
+    expect(mockQueueMutation).toHaveBeenCalled()
+  })
+
+  it("should re-throw non-network errors even with offlineOptions", async () => {
+    const action = vi.fn().mockRejectedValue(new Error("Validation failed"))
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await expect(
+      act(async () => {
+        await result.current.guardMutation(action, {
+          method: "POST",
+          url: "/api/bookings/manual",
+          body: JSON.stringify({ service: "hoof-trim" }),
+          entityType: "manual-booking",
+          entityId: "temp-123",
+        })
+      })
+    ).rejects.toThrow("Validation failed")
+
+    expect(mockReportConnectivityLoss).not.toHaveBeenCalled()
+    expect(mockQueueMutation).not.toHaveBeenCalled()
+  })
+
+  it("should re-throw TypeError when online without offlineOptions", async () => {
+    const action = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await expect(
+      act(async () => {
+        await result.current.guardMutation(action)
+      })
+    ).rejects.toThrow("Failed to fetch")
+
+    expect(mockReportConnectivityLoss).not.toHaveBeenCalled()
+  })
+
+  it("should re-throw TypeError when offline_mode flag is off", async () => {
+    vi.mocked(useFeatureFlag).mockReturnValue(false)
+    const action = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    const { result } = renderHook(() => useOfflineGuard())
+
+    await expect(
+      act(async () => {
+        await result.current.guardMutation(action, {
+          method: "POST",
+          url: "/api/bookings/manual",
+          body: JSON.stringify({ service: "hoof-trim" }),
+          entityType: "manual-booking",
+          entityId: "temp-123",
+        })
+      })
+    ).rejects.toThrow("Failed to fetch")
+
+    expect(mockReportConnectivityLoss).not.toHaveBeenCalled()
+    expect(mockQueueMutation).not.toHaveBeenCalled()
   })
 })

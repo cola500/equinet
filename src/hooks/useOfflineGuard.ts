@@ -2,13 +2,19 @@
 
 import { useCallback } from "react"
 import { toast } from "sonner"
-import { useOnlineStatus } from "./useOnlineStatus"
+import { useOnlineStatus, reportConnectivityLoss } from "./useOnlineStatus"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import {
   queueMutation,
   getPendingMutationsByEntity,
 } from "@/lib/offline/mutation-queue"
 import type { PendingMutation } from "@/lib/offline/db"
+
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true
+  if (error instanceof DOMException && error.name === "AbortError") return true
+  return false
+}
 
 export interface OfflineMutationOptions {
   method: "PUT" | "PATCH" | "POST" | "DELETE"
@@ -37,12 +43,23 @@ export function useOfflineGuard() {
       action: () => Promise<T>,
       offlineOptions?: OfflineMutationOptions
     ): Promise<T | undefined> => {
-      // Online: always execute normally
+      // Online: try to execute normally
       if (isOnline) {
-        return action()
+        try {
+          return await action()
+        } catch (error) {
+          // Network error while "online" -- browser lied about connectivity.
+          // Fall through to offline queueing if supported.
+          if (offlineOptions && isOfflineEnabled && isNetworkError(error)) {
+            reportConnectivityLoss()
+            // Fall through to offline queue below
+          } else {
+            throw error
+          }
+        }
       }
 
-      // Offline + queueable mutation + feature enabled
+      // Offline (or fell through from network error) + queueable mutation + feature enabled
       if (offlineOptions && isOfflineEnabled) {
         // 1. Immediate feedback (before any async IndexedDB work)
         offlineOptions.optimisticUpdate?.()
