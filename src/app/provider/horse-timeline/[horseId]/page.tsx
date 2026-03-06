@@ -23,6 +23,7 @@ import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 // --- Types ---
@@ -416,7 +417,10 @@ export default function ProviderHorseTimelinePage() {
                   {intervals.map((interval) => (
                     <div key={interval.id} className="flex items-start justify-between border-b border-gray-100 pb-3 last:border-0 last:pb-0">
                       <div>
-                        <p className="text-sm font-medium">{interval.service.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">{interval.service.name}</p>
+                          <PendingSyncBadge entityId={`interval:${horseId}:${interval.serviceId}`} />
+                        </div>
                         <p className="text-sm text-gray-600">
                           {interval.revisitIntervalWeeks} veckor
                           {interval.service.recommendedIntervalWeeks && (

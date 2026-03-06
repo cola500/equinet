@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { toast } from "sonner"
 
 interface QuickNoteButtonProps {
@@ -27,10 +28,12 @@ export function QuickNoteButton({
   const { isListening, isSupported, startListening, stopListening } =
     useSpeechRecognition()
   const isOnline = useOnlineStatus()
+  const { guardMutation } = useOfflineGuard()
 
-  const handleMicClick = useCallback(() => {
+  const handleButtonClick = useCallback(() => {
     if (!isOnline) {
-      toast.error("Röstanteckning kräver internetanslutning")
+      // Offline: open text input directly (no mic)
+      setIsOpen(true)
       return
     }
 
@@ -52,51 +55,70 @@ export function QuickNoteButton({
     const text = transcript.trim()
     if (!text) return
 
-    setIsSaving(true)
-    try {
-      const res = await fetch(
-        `/api/provider/bookings/${bookingId}/quick-note`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ transcript: text }),
+    const body = JSON.stringify({ transcript: text })
+
+    await guardMutation(
+      async () => {
+        setIsSaving(true)
+        try {
+          const res = await fetch(
+            `/api/provider/bookings/${bookingId}/quick-note`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+            }
+          )
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            throw new Error(data.error || "Kunde inte spara anteckningen")
+          }
+
+          const data = await res.json()
+
+          const messages: string[] = ["Anteckning sparad"]
+          if (data.actions?.includes("horseNote")) {
+            messages.push("Hästnotering skapad")
+          }
+
+          if (data.suggestedNextWeeks) {
+            toast.success(messages.join(" - "), {
+              description: `Föreslår nästa besök om ${data.suggestedNextWeeks} veckor`,
+            })
+          } else {
+            toast.success(messages.join(" - "))
+          }
+
+          onNoteSaved?.(data.cleanedText, data.actions)
+          setTranscript("")
+          setIsOpen(false)
+          if (isListening) stopListening()
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Kunde inte spara anteckningen"
+          )
+        } finally {
+          setIsSaving(false)
         }
-      )
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Kunde inte spara anteckningen")
+      },
+      {
+        method: "POST",
+        url: `/api/provider/bookings/${bookingId}/quick-note`,
+        body,
+        entityType: "booking-notes",
+        entityId: crypto.randomUUID(),
+        optimisticUpdate: () => {
+          onNoteSaved?.(text, [])
+          setTranscript("")
+          setIsOpen(false)
+          if (isListening) stopListening()
+        },
       }
-
-      const data = await res.json()
-
-      const messages: string[] = ["Anteckning sparad"]
-      if (data.actions?.includes("horseNote")) {
-        messages.push("Hästnotering skapad")
-      }
-
-      if (data.suggestedNextWeeks) {
-        toast.success(messages.join(" - "), {
-          description: `Föreslår nästa besök om ${data.suggestedNextWeeks} veckor`,
-        })
-      } else {
-        toast.success(messages.join(" - "))
-      }
-
-      onNoteSaved?.(data.cleanedText, data.actions)
-      setTranscript("")
-      setIsOpen(false)
-      if (isListening) stopListening()
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Kunde inte spara anteckningen"
-      )
-    } finally {
-      setIsSaving(false)
-    }
-  }, [transcript, bookingId, onNoteSaved, isListening, stopListening])
+    )
+  }, [transcript, bookingId, onNoteSaved, isListening, stopListening, guardMutation])
 
   const handleCancel = useCallback(() => {
     setTranscript("")
@@ -104,15 +126,14 @@ export function QuickNoteButton({
     if (isListening) stopListening()
   }, [isListening, stopListening])
 
-  // Compact mic button (not expanded)
+  // Compact button (not expanded)
   if (!isOpen) {
     return (
       <Button
         variant="outline"
         size={variant === "icon" ? "icon" : "sm"}
-        onClick={handleMicClick}
-        disabled={!isOnline}
-        title={isOnline ? "Diktera en anteckning" : "Röstanteckning kräver internetanslutning"}
+        onClick={handleButtonClick}
+        title="Skriv eller diktera en anteckning"
         className={variant === "icon" ? "h-8 w-8" : ""}
       >
         <Mic className="h-4 w-4" />
@@ -134,6 +155,8 @@ export function QuickNoteButton({
           variant="ghost"
           size="icon"
           className="h-7 w-7"
+          disabled={!isOnline}
+          title={isOnline ? undefined : "Röstloggning kräver internet"}
           onClick={() => {
             if (isListening) {
               stopListening()
@@ -145,7 +168,7 @@ export function QuickNoteButton({
           {isListening ? (
             <MicOff className="h-4 w-4 text-red-500" />
           ) : (
-            <Mic className="h-4 w-4 text-blue-600" />
+            <Mic className={`h-4 w-4 ${isOnline ? "text-blue-600" : "text-gray-400"}`} />
           )}
         </Button>
       </div>
@@ -159,9 +182,11 @@ export function QuickNoteButton({
         value={transcript}
         onChange={(value) => setTranscript(value)}
         placeholder={
-          isSupported
-            ? "Diktera eller skriv din anteckning..."
-            : "Skriv din anteckning..."
+          !isOnline
+            ? "Skriv din anteckning (röst ej tillgängligt offline)..."
+            : isSupported
+              ? "Diktera eller skriv din anteckning..."
+              : "Skriv din anteckning..."
         }
         rows={2}
         maxLength={2000}

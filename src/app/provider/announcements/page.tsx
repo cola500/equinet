@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 
 interface RouteStop {
@@ -210,6 +211,7 @@ export default function ProviderAnnouncementsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <CardTitle>{announcement.serviceType}</CardTitle>
+                      <PendingSyncBadge entityId={announcement.id} />
                       <span className={`text-xs px-2 py-1 rounded ${getStatusColor(announcement.status)}`}>
                         {getStatusText(announcement.status)}
                       </span>

@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 
 interface Service {
   id: string
@@ -385,7 +386,10 @@ export default function ProviderServicesPage() {
               <Card key={service.id} data-testid="service-item">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle>{service.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle>{service.name}</CardTitle>
+                      <PendingSyncBadge entityId={service.id} />
+                    </div>
                     <button
                       onClick={() => toggleActive(service)}
                       className={`text-xs px-2 py-1 rounded ${
