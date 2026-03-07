@@ -146,7 +146,8 @@ const navigationCaching: RuntimeCaching[] = [
       cacheName: "supabase-images",
       plugins: [
         new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }),
-        connectivityNotifier,
+        // No connectivityNotifier: a failed image fetch to Supabase does NOT
+        // mean we're offline. Including it causes false offline detection.
       ],
     }),
   },
