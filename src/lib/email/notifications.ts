@@ -5,6 +5,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 import { emailService } from "./email-service"
 import {
   bookingConfirmationEmail,
@@ -100,7 +101,7 @@ export async function sendBookingConfirmationNotification(bookingId: string) {
     })
 
     if (!booking || !booking.customer.email) {
-      console.warn(`Cannot send booking confirmation: booking ${bookingId} not found or no email`)
+      logger.warn("Cannot send booking confirmation: booking not found or no email", { bookingId })
       return { success: false, error: "Booking not found or no email" }
     }
 
@@ -128,7 +129,7 @@ export async function sendBookingConfirmationNotification(bookingId: string) {
       text,
     })
   } catch (error) {
-    console.error("Error sending booking confirmation:", error)
+    logger.error("Error sending booking confirmation", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
   }
 }
@@ -165,7 +166,7 @@ export async function sendPaymentConfirmationNotification(bookingId: string) {
     })
 
     if (!booking || !booking.customer.email || !booking.payment) {
-      console.warn(`Cannot send payment confirmation: booking ${bookingId} not found, no email, or no payment`)
+      logger.warn("Cannot send payment confirmation: booking not found, no email, or no payment", { bookingId })
       return { success: false, error: "Booking, email, or payment not found" }
     }
 
@@ -191,7 +192,7 @@ export async function sendPaymentConfirmationNotification(bookingId: string) {
       text,
     })
   } catch (error) {
-    console.error("Error sending payment confirmation:", error)
+    logger.error("Error sending payment confirmation", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
   }
 }
@@ -231,7 +232,7 @@ export async function sendBookingStatusChangeNotification(
     })
 
     if (!booking || !booking.customer.email) {
-      console.warn(`Cannot send status change notification: booking ${bookingId} not found or no email`)
+      logger.warn("Cannot send status change notification: booking not found or no email", { bookingId })
       return { success: false, error: "Booking not found or no email" }
     }
 
@@ -259,7 +260,7 @@ export async function sendBookingStatusChangeNotification(
       text,
     })
   } catch (error) {
-    console.error("Error sending status change notification:", error)
+    logger.error("Error sending status change notification", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
   }
 }
@@ -284,7 +285,7 @@ export async function sendRebookingReminderNotification(
     })
 
     if (!customer || !customer.email) {
-      console.warn(`Cannot send rebooking reminder: customer ${customerId} not found or no email`)
+      logger.warn("Cannot send rebooking reminder: customer not found or no email", { customerId })
       return { success: false, error: "Customer not found or no email" }
     }
 
@@ -305,7 +306,7 @@ export async function sendRebookingReminderNotification(
       text,
     })
   } catch (error) {
-    console.error("Error sending rebooking reminder:", error)
+    logger.error("Error sending rebooking reminder", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
   }
 }
@@ -340,7 +341,7 @@ export async function sendBookingReminderNotification(bookingId: string) {
     })
 
     if (!booking || !booking.customer.email) {
-      console.warn(`Cannot send booking reminder: booking ${bookingId} not found or no email`)
+      logger.warn("Cannot send booking reminder: booking not found or no email", { bookingId })
       return { success: false, error: "Booking not found or no email" }
     }
 
@@ -371,7 +372,7 @@ export async function sendBookingReminderNotification(bookingId: string) {
       text,
     })
   } catch (error) {
-    console.error("Error sending booking reminder:", error)
+    logger.error("Error sending booking reminder", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
   }
 }
@@ -416,7 +417,7 @@ export async function sendBookingRescheduleNotification(
     })
 
     if (!booking || !booking.customer.email) {
-      console.warn(`Cannot send reschedule notification: booking ${bookingId} not found or no email`)
+      logger.warn("Cannot send reschedule notification: booking not found or no email", { bookingId })
       return { success: false, error: "Booking not found or no email" }
     }
 
@@ -467,7 +468,7 @@ export async function sendBookingRescheduleNotification(
 
     return { success: true, error: undefined }
   } catch (error) {
-    console.error("Error sending reschedule notification:", error)
+    logger.error("Error sending reschedule notification", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
   }
 }

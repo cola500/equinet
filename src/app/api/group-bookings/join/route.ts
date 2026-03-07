@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (rateLimitError) {
       logger.error("Rate limiter error", rateLimitError instanceof Error ? rateLimitError : new Error(String(rateLimitError)))
+      return NextResponse.json({ error: "Tjänsten är tillfälligt otillgänglig" }, { status: 503 })
     }
 
     // Parse JSON

@@ -70,6 +70,7 @@ model User {
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
+  @@index([createdAt]) // For admin user listing (orderBy: createdAt desc)
   providerCustomerLinks ProviderCustomer[]
 }
 

@@ -13,6 +13,7 @@
 
 import { Redis } from "@upstash/redis"
 import crypto from "crypto"
+import { logger } from "@/lib/logger"
 
 // Lazy initialization of Redis client
 let redis: Redis | null = null
@@ -66,7 +67,7 @@ export async function getCachedGeocode(
     const cached = await client.get<CachedGeocodingResult>(key)
     return cached
   } catch (error) {
-    console.error("[Geocoding Cache] Read error:", error)
+    logger.error("[Geocoding Cache] Read error", error instanceof Error ? error : new Error(String(error)))
     return null // Fail open - continue without cache
   }
 }
@@ -100,7 +101,7 @@ export async function setCachedGeocode(
     const TTL_SECONDS = 30 * 24 * 60 * 60
     await client.setex(key, TTL_SECONDS, data)
   } catch (error) {
-    console.error("[Geocoding Cache] Write error:", error)
+    logger.error("[Geocoding Cache] Write error", error instanceof Error ? error : new Error(String(error)))
     // Fail silently - caching is not critical
   }
 }

@@ -94,7 +94,7 @@ export async function checkDatabaseHealth(): Promise<{
       responseTimeMs: Date.now() - start,
     }
   } catch (error) {
-    console.error('[Database Health Check Failed]', error)
+    logger.error('[Database Health Check Failed]', error instanceof Error ? error : new Error(String(error)))
     return {
       healthy: false,
       responseTimeMs: Date.now() - start,

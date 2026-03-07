@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react"
+import { clientLogger } from "@/lib/client-logger"
 
 export interface GeoLocation {
   lat: number
@@ -34,7 +35,7 @@ export function useGeoFiltering() {
         setLocationLoading(false)
       },
       (err) => {
-        console.error("Geolocation error:", err)
+        clientLogger.error("Geolocation error", err)
         switch (err.code) {
           case err.PERMISSION_DENIED:
             setLocationError(

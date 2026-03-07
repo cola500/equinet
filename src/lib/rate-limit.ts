@@ -10,6 +10,18 @@
 
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
+import { logger } from "@/lib/logger"
+
+/**
+ * Thrown when the rate limiting service (Redis) is unavailable.
+ * Routes should catch this and return 503.
+ */
+export class RateLimitServiceError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message)
+    this.name = "RateLimitServiceError"
+  }
+}
 
 /**
  * In-memory fallback for development (DO NOT USE IN PRODUCTION)
@@ -192,7 +204,7 @@ export async function resetRateLimit(
         await limiter.resetUsedTokens(identifier)
       }
     } catch (error) {
-      console.error("Failed to reset Upstash rate limit:", error)
+      logger.error("Failed to reset Upstash rate limit", error instanceof Error ? error : new Error(String(error)))
     }
   }
 }
@@ -241,21 +253,22 @@ async function checkRateLimit(
       const limiter = limiters[limiterType]
 
       if (!limiter) {
-        console.error(`Rate limiter type "${limiterType}" not found`)
+        logger.error("Rate limiter type not found", { limiterType })
         return true // Fail open
       }
 
       const { success } = await limiter.limit(identifier)
       return success
     } catch (error) {
-      console.error("Upstash rate limiter error:", error)
-      // Fail open for availability (log but allow request)
-      return true
+      throw new RateLimitServiceError(
+        "Rate limiting service unavailable",
+        error
+      )
     }
   }
 
   // Fallback to in-memory for development
-  console.warn("⚠️  Using in-memory rate limiting (NOT suitable for production)")
+  logger.warn("Using in-memory rate limiting (NOT suitable for production)")
 
   // Map limiter types to their configurations
   // Note: Higher limits in development/test to allow E2E test runs
@@ -277,7 +290,7 @@ async function checkRateLimit(
 
   const config = configs[limiterType]
   if (!config) {
-    console.error(`Rate limiter type "${limiterType}" not found in fallback`)
+    logger.error("Rate limiter type not found in fallback", { limiterType })
     return true // Fail open
   }
 

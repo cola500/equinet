@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react"
 import { toast } from "sonner"
 import { useDialogState } from "@/hooks/useDialogState"
+import { clientLogger } from "@/lib/client-logger"
 import type { Horse } from "@/app/customer/horses/[id]/types"
 import { emptyHorseForm } from "@/app/customer/horses/[id]/types"
 
@@ -55,7 +56,7 @@ export function useHorseEdit(horse: Horse | null, onEditComplete: () => void) {
       setEditForm(emptyHorseForm)
       onEditComplete()
     } catch (error) {
-      console.error("Error updating horse:", error)
+      clientLogger.error("Error updating horse", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte uppdatera häst")
     } finally {
       setIsSavingEdit(false)

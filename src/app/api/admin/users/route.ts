@@ -66,12 +66,12 @@ export async function GET(request: NextRequest) {
     const providerSelect = isProviderFilter
       ? {
           select: {
+            id: true,
             businessName: true,
             isVerified: true,
             isActive: true,
             city: true,
             _count: { select: { bookings: true, services: true } },
-            reviews: { select: { rating: true } },
             fortnoxConnection: { select: { id: true } },
           },
         }
@@ -105,6 +105,26 @@ export async function GET(request: NextRequest) {
       prisma.user.count({ where }),
     ])
 
+    // Aggregera review-statistik via groupBy (istället för att hämta alla reviews)
+    let reviewStatsMap = new Map<string, { avg: number | null; count: number }>()
+    if (isProviderFilter) {
+      const providerIds = usersRaw
+        .filter((u) => u.provider)
+        .map((u) => (u.provider as { id: string }).id)
+
+      if (providerIds.length > 0) {
+        const reviewStats = await prisma.review.groupBy({
+          by: ["providerId"],
+          where: { providerId: { in: providerIds } },
+          _avg: { rating: true },
+          _count: { _all: true },
+        })
+        reviewStatsMap = new Map(
+          reviewStats.map((s) => [s.providerId, { avg: s._avg.rating, count: s._count._all }])
+        )
+      }
+    }
+
     // Mappa utökad provider-data
     type UserRow = (typeof usersRaw)[number]
     const users = usersRaw.map((user: UserRow) => {
@@ -112,18 +132,15 @@ export async function GET(request: NextRequest) {
 
       // Cast to the extended provider shape (only present when isProviderFilter)
       const p = user.provider as {
+        id: string
         businessName: string
         isVerified: boolean
         isActive: boolean
         city?: string | null
         _count: { bookings: number; services: number }
-        reviews: { rating: number }[]
         fortnoxConnection: { id: string } | null
       }
-      const avgRating =
-        p.reviews?.length > 0
-          ? p.reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / p.reviews.length
-          : null
+      const stats = reviewStatsMap.get(p.id)
 
       return {
         ...user,
@@ -134,7 +151,7 @@ export async function GET(request: NextRequest) {
           city: p.city,
           bookingCount: p._count.bookings,
           serviceCount: p._count.services,
-          averageRating: avgRating,
+          averageRating: stats?.avg ?? null,
           hasFortnox: !!p.fortnoxConnection,
         },
       }

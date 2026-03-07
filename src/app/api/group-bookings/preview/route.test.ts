@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
 import { auth } from "@/lib/auth-server"
+import { rateLimiters } from "@/lib/rate-limit"
 import { NextRequest } from "next/server"
 import { Result } from "@/domain/shared"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -135,5 +136,22 @@ describe("GET /api/group-bookings/preview", () => {
     const response = await GET(request)
 
     expect(response.status).toBe(401)
+  })
+
+  it("returns 503 when rate limiter throws", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.customer, userType: "customer" },
+      expires: "",
+    } as never)
+    vi.mocked(rateLimiters.api).mockRejectedValueOnce(new Error("Redis down"))
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/group-bookings/preview?code=ABC12345"
+    )
+
+    const response = await GET(request)
+    expect(response.status).toBe(503)
+    const data = await response.json()
+    expect(data.error).toContain("tillfälligt")
   })
 })

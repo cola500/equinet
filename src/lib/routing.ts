@@ -4,6 +4,8 @@
  * Fetches actual driving routes instead of straight lines between coordinates.
  */
 
+import { logger } from "@/lib/logger"
+
 export interface RouteResult {
   coordinates: [number, number][]
   distance: number // in meters
@@ -45,7 +47,7 @@ export async function getRoute(
       duration: data.duration, // seconds
     }
   } catch (error) {
-    console.error('Routing error:', error)
+    logger.error('Routing error', error instanceof Error ? error : new Error(String(error)))
     throw error
   }
 }
@@ -59,8 +61,8 @@ export async function getRouteWithFallback(
   try {
     const result = await getRoute(coordinates)
     return result.coordinates
-  } catch (error) {
-    console.warn('Routing failed, using straight lines as fallback:', error)
+  } catch {
+    logger.warn('Routing failed, using straight lines as fallback')
     // Return original coordinates as fallback
     return coordinates
   }

@@ -278,12 +278,11 @@ describe("rate-limit (Upstash mode)", () => {
     expect(result).toBe(false)
   })
 
-  it("should fail-open when Upstash throws an error", async () => {
+  it("should throw RateLimitServiceError when Upstash throws an error", async () => {
     const { __mockLimit } = await import("@upstash/ratelimit") as never
     __mockLimit.mockRejectedValue(new Error("Upstash connection failed"))
 
-    const { rateLimiters } = await import("./rate-limit")
-    const result = await rateLimiters.login("test@example.com")
-    expect(result).toBe(true) // fail-open
+    const { rateLimiters, RateLimitServiceError } = await import("./rate-limit")
+    await expect(rateLimiters.login("test@example.com")).rejects.toThrow(RateLimitServiceError)
   })
 })

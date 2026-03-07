@@ -16,6 +16,9 @@ vi.mock("@/lib/prisma", () => ({
       count: vi.fn(),
       update: vi.fn(),
     },
+    review: {
+      groupBy: vi.fn(),
+    },
     notification: {
       create: vi.fn(),
     },
@@ -165,7 +168,7 @@ describe("GET /api/admin/users", () => {
     expect(response.status).toBe(429)
   })
 
-  it("should include extended provider data when type=provider", async () => {
+  it("returns correct averageRating using database aggregation", async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       {
         id: "user-p1",
@@ -177,17 +180,20 @@ describe("GET /api/admin/users", () => {
         createdAt: new Date("2026-01-10"),
         emailVerified: new Date("2026-01-10"),
         provider: {
+          id: "prov-1",
           businessName: "Hästkliniken",
           isVerified: true,
           isActive: true,
           city: "Stockholm",
           _count: { bookings: 15, services: 3 },
-          reviews: [{ rating: 5 }, { rating: 4 }],
           fortnoxConnection: { id: "fc-1" },
         },
       },
     ] as never)
     vi.mocked(prisma.user.count).mockResolvedValue(1)
+    vi.mocked(prisma.review.groupBy).mockResolvedValue([
+      { providerId: "prov-1", _avg: { rating: 4.5 }, _count: { _all: 2 } },
+    ] as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider")
     const response = await GET(request)
@@ -204,9 +210,15 @@ describe("GET /api/admin/users", () => {
       averageRating: 4.5,
       hasFortnox: true,
     })
+    expect(prisma.review.groupBy).toHaveBeenCalledWith({
+      by: ["providerId"],
+      where: { providerId: { in: ["prov-1"] } },
+      _avg: { rating: true },
+      _count: { _all: true },
+    })
   })
 
-  it("should handle provider with no reviews (null averageRating)", async () => {
+  it("handles providers with 0 reviews (null rating)", async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       {
         id: "user-p2",
@@ -218,17 +230,19 @@ describe("GET /api/admin/users", () => {
         createdAt: new Date("2026-02-01"),
         emailVerified: null,
         provider: {
+          id: "prov-2",
           businessName: "Ny Klinik",
           isVerified: false,
           isActive: true,
           city: null,
           _count: { bookings: 0, services: 0 },
-          reviews: [],
           fortnoxConnection: null,
         },
       },
     ] as never)
     vi.mocked(prisma.user.count).mockResolvedValue(1)
+    // groupBy returns empty array when no reviews exist
+    vi.mocked(prisma.review.groupBy).mockResolvedValue([] as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/users?type=provider")
     const response = await GET(request)
