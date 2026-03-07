@@ -1,1 +1,2 @@
+. "$HOME/.nvm/nvm.sh" 2>/dev/null
 npm test
