@@ -156,7 +156,7 @@ export function ImageUpload({
             ) : (
               <Image
                 src={preview}
-                alt="Forhandsvisning"
+                alt="Förhandsvisning"
                 width={192}
                 height={192}
                 className={`object-cover ${
@@ -165,6 +165,7 @@ export function ImageUpload({
                     : "mx-auto max-h-48 rounded"
                 }`}
                 unoptimized
+                onError={() => setPreview(null)}
               />
             )}
             {isUploading && (

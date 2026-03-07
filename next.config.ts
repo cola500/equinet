@@ -7,6 +7,16 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 const revision = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ?? crypto.randomUUID();
 
 const nextConfig: NextConfig = {
+  // Allow external images from Supabase Storage
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+    ],
+  },
+
   // Suppress X-Powered-By: Next.js header (information disclosure)
   poweredByHeader: false,
 
