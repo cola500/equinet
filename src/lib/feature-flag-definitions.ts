@@ -1,6 +1,8 @@
 // CLIENT-SAFE: This file must NOT import server-only modules (Prisma, fs, etc).
 // It is imported by both server code (feature-flags.ts) and client components (admin UI).
 
+export type FeatureFlagCategory = "provider" | "customer" | "shared"
+
 export interface FeatureFlag {
   key: string
   label: string
@@ -8,6 +10,7 @@ export interface FeatureFlag {
   defaultEnabled: boolean
   /** Whether this flag should be exposed via the public API. Defaults to true. */
   clientVisible: boolean
+  category: FeatureFlagCategory
 }
 
 export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
@@ -17,6 +20,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Röstbaserad arbetsloggning med AI-tolkning",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   route_planning: {
     key: "route_planning",
@@ -24,6 +28,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Ruttplaneringsverktyg för leverantörer",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   route_announcements: {
     key: "route_announcements",
@@ -31,6 +36,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Publicera och hantera rutt-annonser",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   customer_insights: {
     key: "customer_insights",
@@ -38,6 +44,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "AI-genererade kundinsikter i kundregistret",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   due_for_service: {
     key: "due_for_service",
@@ -45,6 +52,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Planera och följ upp återkommande besök",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   group_bookings: {
     key: "group_bookings",
@@ -52,6 +60,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Gruppbokningsfunktionalitet",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   business_insights: {
     key: "business_insights",
@@ -59,6 +68,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Utökad analytics-sida med tjänsteanalys, tidsanalys och kundretention",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   self_reschedule: {
     key: "self_reschedule",
@@ -66,6 +76,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Kunder kan boka om sina bokningar utan att kontakta leverantören",
     defaultEnabled: true,
     clientVisible: true,
+    category: "customer",
   },
   recurring_bookings: {
     key: "recurring_bookings",
@@ -73,6 +84,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Möjlighet att skapa återkommande bokningsserier",
     defaultEnabled: true,
     clientVisible: true,
+    category: "provider",
   },
   offline_mode: {
     key: "offline_mode",
@@ -80,6 +92,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "PWA-stöd med offline-cachning av bokningar och rutter",
     defaultEnabled: true,
     clientVisible: true,
+    category: "shared",
   },
   follow_provider: {
     key: "follow_provider",
@@ -87,6 +100,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Kunder kan följa leverantörer och få notiser vid nya rutt-annonser",
     defaultEnabled: true,
     clientVisible: true,
+    category: "customer",
   },
   municipality_watch: {
     key: "municipality_watch",
@@ -94,6 +108,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Kunder kan bevaka kommun + tjänstetyp och få notiser vid nya rutt-annonser",
     defaultEnabled: true,
     clientVisible: true,
+    category: "customer",
   },
   provider_subscription: {
     key: "provider_subscription",
@@ -101,6 +116,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Stripe-baserad prenumerationsavgift för leverantörer",
     defaultEnabled: false,
     clientVisible: true,
+    category: "provider",
   },
   customer_invite: {
     key: "customer_invite",
@@ -108,6 +124,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Leverantörer kan bjuda in manuellt tillagda kunder att skapa konto",
     defaultEnabled: false,
     clientVisible: false,
+    category: "provider",
   },
   help_center: {
     key: "help_center",
@@ -115,5 +132,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Inbyggd hjälpcentral med sökbara artiklar per roll",
     defaultEnabled: true,
     clientVisible: true,
+    category: "shared",
   },
 }

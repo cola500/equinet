@@ -8,7 +8,15 @@ import { Switch } from "@/components/ui/switch"
 import { Activity, Database, Clock, Mail, Flag } from "lucide-react"
 import { InfoPopover } from "@/components/ui/info-popover"
 import { toast } from "sonner"
-import { FEATURE_FLAGS } from "@/lib/feature-flag-definitions"
+import { FEATURE_FLAGS, type FeatureFlagCategory } from "@/lib/feature-flag-definitions"
+
+const CATEGORY_LABELS: Record<FeatureFlagCategory, string> = {
+  provider: "Leverantör",
+  customer: "Kund",
+  shared: "Gemensamt",
+}
+
+const CATEGORY_ORDER: FeatureFlagCategory[] = ["provider", "customer", "shared"]
 import { FEATURE_FLAGS_CHANGED_EVENT } from "@/components/providers/FeatureFlagProvider"
 
 interface SystemData {
@@ -276,40 +284,56 @@ export default function AdminSystemPage() {
                 <Flag className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {Object.values(FEATURE_FLAGS).map((flag) => {
-                    const envOverrides = settings?.env?.featureFlagOverrides ?? {}
-                    const hasEnvOverride = flag.key in envOverrides
-                    const enabled = isFlagEnabled(flag.key)
-
+                <div className="space-y-6">
+                  {CATEGORY_ORDER.map((category) => {
+                    const flags = Object.values(FEATURE_FLAGS).filter(
+                      (f) => f.category === category
+                    )
                     return (
-                      <div
-                        key={flag.key}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="space-y-1">
-                          <label
-                            htmlFor={`flag-${flag.key}`}
-                            className="text-sm font-medium"
-                          >
-                            {flag.label}
-                          </label>
-                          <p className="text-xs text-gray-500">
-                            {hasEnvOverride
-                              ? `Styrs av miljövariabel FEATURE_${flag.key.toUpperCase()}`
-                              : flag.description}
-                          </p>
+                      <div key={category}>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">
+                          {CATEGORY_LABELS[category]}
+                        </h4>
+                        <div className="space-y-3">
+                          {flags.map((flag) => {
+                            const envOverrides =
+                              settings?.env?.featureFlagOverrides ?? {}
+                            const hasEnvOverride = flag.key in envOverrides
+                            const enabled = isFlagEnabled(flag.key)
+
+                            return (
+                              <div
+                                key={flag.key}
+                                className="flex items-center justify-between"
+                              >
+                                <div className="space-y-1">
+                                  <label
+                                    htmlFor={`flag-${flag.key}`}
+                                    className="text-sm font-medium"
+                                  >
+                                    {flag.label}
+                                  </label>
+                                  <p className="text-xs text-gray-500">
+                                    {hasEnvOverride
+                                      ? `Styrs av miljövariabel FEATURE_${flag.key.toUpperCase()}`
+                                      : flag.description}
+                                  </p>
+                                </div>
+                                <Switch
+                                  id={`flag-${flag.key}`}
+                                  checked={enabled}
+                                  disabled={
+                                    hasEnvOverride ||
+                                    flagToggleLoading === flag.key
+                                  }
+                                  onCheckedChange={(checked) =>
+                                    handleFlagToggle(flag.key, checked)
+                                  }
+                                />
+                              </div>
+                            )
+                          })}
                         </div>
-                        <Switch
-                          id={`flag-${flag.key}`}
-                          checked={enabled}
-                          disabled={
-                            hasEnvOverride || flagToggleLoading === flag.key
-                          }
-                          onCheckedChange={(checked) =>
-                            handleFlagToggle(flag.key, checked)
-                          }
-                        />
                       </div>
                     )
                   })}
