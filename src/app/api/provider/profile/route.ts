@@ -65,9 +65,6 @@ export async function GET(_request: NextRequest) {
         recurringEnabled: true,
         maxSeriesOccurrences: true,
         isVerified: true,
-        verifiedAt: true,
-        createdAt: true,
-        updatedAt: true,
         user: {
           select: {
             firstName: true,
@@ -157,9 +154,6 @@ export async function PUT(request: NextRequest) {
         recurringEnabled: true,
         maxSeriesOccurrences: true,
         isVerified: true,
-        verifiedAt: true,
-        createdAt: true,
-        updatedAt: true,
         user: {
           select: {
             firstName: true,

@@ -67,75 +67,83 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get("status") || "all"
     const query = request.nextUrl.searchParams.get("q")?.trim().toLowerCase()
 
-    // Fetch all completed and no_show bookings for this provider (IDOR protection: providerId filter)
-    const bookings = await prisma.booking.findMany({
+    // DB-aggregation: booking stats per customer (replaces take:10000 + JS loop)
+    const stats = await prisma.booking.groupBy({
+      by: ['customerId'],
       where: {
         providerId: provider.id,
-        status: { in: ["completed", "no_show"] },
+        status: { in: ['completed', 'no_show'] },
       },
-      select: {
-        id: true,
-        customerId: true,
-        bookingDate: true,
-        status: true,
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        horse: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        service: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: { bookingDate: "desc" },
-      take: 10000,
+      _count: { id: true },
+      _max: { bookingDate: true },
     })
 
-    // Aggregate: group by customer
-    const customerMap = new Map<string, CustomerSummary>()
+    const noShows = await prisma.booking.groupBy({
+      by: ['customerId'],
+      where: {
+        providerId: provider.id,
+        status: 'no_show',
+      },
+      _count: { id: true },
+    })
 
-    for (const booking of bookings) {
-      const existing = customerMap.get(booking.customerId)
-      const isNoShow = booking.status === "no_show"
+    const customerIds = stats.map((s) => s.customerId)
+    const noShowMap = new Map(noShows.map((n) => [n.customerId, n._count.id]))
 
-      if (existing) {
-        existing.bookingCount++
-        if (isNoShow) existing.noShowCount++
-        // Update lastBookingDate if this is more recent
-        if (!existing.lastBookingDate || booking.bookingDate.toISOString() > existing.lastBookingDate) {
-          existing.lastBookingDate = booking.bookingDate.toISOString()
-        }
-        // Add horse if unique
-        if (booking.horse && !existing.horses.some((h) => h.id === booking.horse!.id)) {
-          existing.horses.push({ id: booking.horse.id, name: booking.horse.name })
-        }
-      } else {
-        customerMap.set(booking.customerId, {
-          id: booking.customer.id,
-          firstName: booking.customer.firstName,
-          lastName: booking.customer.lastName,
-          email: booking.customer.email,
-          phone: booking.customer.phone,
-          bookingCount: 1,
-          noShowCount: isNoShow ? 1 : 0,
-          lastBookingDate: booking.bookingDate.toISOString(),
-          horses: booking.horse
-            ? [{ id: booking.horse.id, name: booking.horse.name }]
-            : [],
+    // Fetch customer details for aggregated IDs
+    const customerRows = customerIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: customerIds } },
+          select: { id: true, firstName: true, lastName: true, email: true, phone: true },
         })
-      }
+      : []
+
+    // Fetch unique horses per customer
+    const horseRows = customerIds.length > 0
+      ? await prisma.booking.findMany({
+          where: {
+            providerId: provider.id,
+            customerId: { in: customerIds },
+            horseId: { not: null },
+          },
+          select: {
+            customerId: true,
+            horse: { select: { id: true, name: true } },
+          },
+          distinct: ['customerId', 'horseId'],
+        })
+      : []
+
+    // Build horse map: customerId -> unique horses
+    const horseMap = new Map<string, { id: string; name: string }[]>()
+    for (const row of horseRows) {
+      if (!row.horse) continue
+      const list = horseMap.get(row.customerId) || []
+      list.push({ id: row.horse.id, name: row.horse.name })
+      horseMap.set(row.customerId, list)
+    }
+
+    // Build customer lookup
+    const customerLookup = new Map(customerRows.map((c) => [c.id, c]))
+
+    // Assemble CustomerSummary map
+    const customerMap = new Map<string, CustomerSummary>()
+    for (const stat of stats) {
+      const cust = customerLookup.get(stat.customerId)
+      if (!cust) continue
+      customerMap.set(stat.customerId, {
+        id: cust.id,
+        firstName: cust.firstName,
+        lastName: cust.lastName,
+        email: cust.email,
+        phone: cust.phone,
+        bookingCount: stat._count.id,
+        noShowCount: noShowMap.get(stat.customerId) || 0,
+        lastBookingDate: stat._max.bookingDate
+          ? stat._max.bookingDate.toISOString()
+          : null,
+        horses: horseMap.get(stat.customerId) || [],
+      })
     }
 
     // Fetch manually added customers (ProviderCustomer junction table)

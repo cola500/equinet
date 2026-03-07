@@ -363,8 +363,6 @@ export class PrismaBookingRepository
         routeOrderId: true,
         isManualBooking: true,
         createdByProviderId: true,
-        createdAt: true,
-        updatedAt: true,
 
         // Relations - minimal data needed for provider view
         customer: {
@@ -387,7 +385,6 @@ export class PrismaBookingRepository
             id: true,
             name: true,
             breed: true,
-            gender: true,
           },
         },
         // Payment information for provider view
@@ -476,7 +473,6 @@ export class PrismaBookingRepository
             id: true,
             name: true,
             breed: true,
-            gender: true,
           },
         },
         // Payment information for customer view

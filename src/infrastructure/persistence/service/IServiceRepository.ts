@@ -17,7 +17,7 @@ export interface Service {
   durationMinutes: number
   isActive: boolean
   recommendedIntervalWeeks: number | null
-  createdAt: Date
+  createdAt?: Date
 }
 
 export interface ServiceFilters {
