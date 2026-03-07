@@ -51,6 +51,16 @@ export class ServiceRepository implements IServiceRepository {
   async findByProviderId(providerId: string): Promise<Service[]> {
     const services = await prisma.service.findMany({
       where: { providerId },
+      select: {
+        id: true,
+        providerId: true,
+        name: true,
+        description: true,
+        price: true,
+        durationMinutes: true,
+        isActive: true,
+        recommendedIntervalWeeks: true,
+      },
       orderBy: { createdAt: 'desc' },
     })
 

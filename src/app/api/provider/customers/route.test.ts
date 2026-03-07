@@ -30,8 +30,11 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     booking: {
-      findMany: vi.fn(),
-      groupBy: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
     },
     providerCustomer: {
       findMany: vi.fn(),
@@ -105,64 +108,31 @@ describe('GET /api/provider/customers', () => {
   // --- Customer list ---
 
   it('should return unique customers from completed bookings', async () => {
-    const mockBookings = [
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: '070-1234567',
-        },
-        horse: { id: 'horse-1', name: 'Blansen' },
-        service: { name: 'Hovslagning' },
-      },
-      {
-        id: 'booking-2',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-20'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: '070-1234567',
-        },
-        horse: { id: 'horse-1', name: 'Blansen' },
-        service: { name: 'Hovslagning' },
-      },
-      {
-        id: 'booking-3',
-        customerId: TEST_UUIDS.customer2,
-        status: 'completed',
-        bookingDate: new Date('2025-06-01'),
-        customer: {
-          id: TEST_UUIDS.customer2,
-          firstName: 'Erik',
-          lastName: 'Johansson',
-          email: 'erik@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Massage' },
-      },
-    ]
+    // Mock groupBy for all completed+no_show
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 2 }, _max: { bookingDate: new Date('2026-01-20') } },
+        { customerId: TEST_UUIDS.customer2, _count: { id: 1 }, _max: { bookingDate: new Date('2025-06-01') } },
+      ] as never)
+      // Mock groupBy for no_show only
+      .mockResolvedValueOnce([] as never)
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: '070-1234567' },
+      { id: TEST_UUIDS.customer2, firstName: 'Erik', lastName: 'Johansson', email: 'erik@test.com', phone: null },
+    ] as never)
+
+    // Mock horse query
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([
+      { customerId: TEST_UUIDS.customer1, horse: { id: 'horse-1', name: 'Blansen' } },
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    // Should deduplicate: 3 bookings -> 2 unique customers
     expect(data.customers).toHaveLength(2)
 
-    // First customer
     const anna = data.customers.find((c: Record<string, unknown>) => c.firstName === 'Anna')
     expect(anna).toBeDefined()
     expect(anna.email).toBe('anna@test.com')
@@ -170,7 +140,6 @@ describe('GET /api/provider/customers', () => {
     expect(anna.bookingCount).toBe(2)
     expect(anna.lastBookingDate).toBeDefined()
 
-    // Second customer
     const erik = data.customers.find((c: Record<string, unknown>) => c.firstName === 'Erik')
     expect(erik).toBeDefined()
     expect(erik.bookingCount).toBe(1)
@@ -181,47 +150,27 @@ describe('GET /api/provider/customers', () => {
   })
 
   it('should include horse information per customer', async () => {
-    const mockBookings = [
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: { id: 'horse-1', name: 'Blansen' },
-        service: { name: 'Hovslagning' },
-      },
-      {
-        id: 'booking-2',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-20'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: { id: 'horse-2', name: 'Pransen' },
-        service: { name: 'Massage' },
-      },
-    ]
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 2 }, _max: { bookingDate: new Date('2026-01-20') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
+    ] as never)
+
+    // Two distinct horses for same customer
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([
+      { customerId: TEST_UUIDS.customer1, horse: { id: 'horse-1', name: 'Blansen' } },
+      { customerId: TEST_UUIDS.customer1, horse: { id: 'horse-2', name: 'Pransen' } },
+    ] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
 
     expect(response.status).toBe(200)
     const anna = data.customers[0]
-    // Should have 2 unique horses
     expect(anna.horses).toHaveLength(2)
     expect(anna.horses.map((h: Record<string, unknown>) => h.name)).toContain('Blansen')
     expect(anna.horses.map((h: Record<string, unknown>) => h.name)).toContain('Pransen')
@@ -230,94 +179,47 @@ describe('GET /api/provider/customers', () => {
   // --- Filtering ---
 
   it('should filter active customers (booking within 12 months)', async () => {
-    const twelveMonthsAgo = new Date()
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+        { customerId: TEST_UUIDS.customer2, _count: { id: 1 }, _max: { bookingDate: new Date('2024-06-01') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
 
-    const mockBookings = [
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'), // Recent
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
-      {
-        id: 'booking-2',
-        customerId: TEST_UUIDS.customer2,
-        status: 'completed',
-        bookingDate: new Date('2024-06-01'), // Old
-        customer: {
-          id: TEST_UUIDS.customer2,
-          firstName: 'Erik',
-          lastName: 'Johansson',
-          email: 'erik@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Massage' },
-      },
-    ]
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
+      { id: TEST_UUIDS.customer2, firstName: 'Erik', lastName: 'Johansson', email: 'erik@test.com', phone: null },
+    ] as never)
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
 
     const response = await GET(makeRequest('?status=active'))
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    // Only Anna should be active (recent booking)
     expect(data.customers).toHaveLength(1)
     expect(data.customers[0].firstName).toBe('Anna')
   })
 
   it('should filter inactive customers (no booking within 12 months)', async () => {
-    const mockBookings = [
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'), // Recent
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
-      {
-        id: 'booking-2',
-        customerId: TEST_UUIDS.customer2,
-        status: 'completed',
-        bookingDate: new Date('2024-06-01'), // Old
-        customer: {
-          id: TEST_UUIDS.customer2,
-          firstName: 'Erik',
-          lastName: 'Johansson',
-          email: 'erik@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Massage' },
-      },
-    ]
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+        { customerId: TEST_UUIDS.customer2, _count: { id: 1 }, _max: { bookingDate: new Date('2024-06-01') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
+      { id: TEST_UUIDS.customer2, firstName: 'Erik', lastName: 'Johansson', email: 'erik@test.com', phone: null },
+    ] as never)
+
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
 
     const response = await GET(makeRequest('?status=inactive'))
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    // Only Erik should be inactive (old booking)
     expect(data.customers).toHaveLength(1)
     expect(data.customers[0].firstName).toBe('Erik')
   })
@@ -325,40 +227,19 @@ describe('GET /api/provider/customers', () => {
   // --- Search ---
 
   it('should filter by search query on name', async () => {
-    const mockBookings = [
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
-      {
-        id: 'booking-2',
-        customerId: TEST_UUIDS.customer2,
-        status: 'completed',
-        bookingDate: new Date('2026-01-10'),
-        customer: {
-          id: TEST_UUIDS.customer2,
-          firstName: 'Erik',
-          lastName: 'Johansson',
-          email: 'erik@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Massage' },
-      },
-    ]
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+        { customerId: TEST_UUIDS.customer2, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-10') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
+      { id: TEST_UUIDS.customer2, firstName: 'Erik', lastName: 'Johansson', email: 'erik@test.com', phone: null },
+    ] as never)
+
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
 
     const response = await GET(makeRequest('?q=anna'))
     const data = await response.json()
@@ -369,25 +250,17 @@ describe('GET /api/provider/customers', () => {
   })
 
   it('should filter by search query on email', async () => {
-    const mockBookings = [
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
-    ]
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
 
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
+    ] as never)
+
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
 
     const response = await GET(makeRequest('?q=anna@test'))
     const data = await response.json()
@@ -399,7 +272,9 @@ describe('GET /api/provider/customers', () => {
   // --- IDOR protection ---
 
   it('should only return customers from bookings with the authenticated provider', async () => {
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -407,8 +282,8 @@ describe('GET /api/provider/customers', () => {
     expect(response.status).toBe(200)
     expect(data.customers).toHaveLength(0)
 
-    // Verify the query used the correct provider ID filter
-    expect(prisma.booking.findMany).toHaveBeenCalledWith(
+    // Verify the groupBy used the correct provider ID filter
+    expect(prisma.booking.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           providerId: TEST_UUIDS.provider,
@@ -420,7 +295,9 @@ describe('GET /api/provider/customers', () => {
   // --- Empty state ---
 
   it('should return empty list for provider with no bookings', async () => {
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never)
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -432,7 +309,9 @@ describe('GET /api/provider/customers', () => {
   // --- Manual customers ---
 
   it('should include manually added customers without bookings', async () => {
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never)
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer1,
@@ -458,23 +337,18 @@ describe('GET /api/provider/customers', () => {
   })
 
   it('should deduplicate: customer with BOTH booking + ProviderCustomer shows once', async () => {
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: '070-1234567',
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: '070-1234567' },
     ] as never)
+
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
+
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer1,
@@ -498,23 +372,18 @@ describe('GET /api/provider/customers', () => {
   })
 
   it('should sort manually added customers (null date) last', async () => {
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
     ] as never)
+
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
+
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer2,
@@ -540,23 +409,18 @@ describe('GET /api/provider/customers', () => {
   })
 
   it('should set isManuallyAdded correctly', async () => {
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([
-      {
-        id: 'booking-1',
-        customerId: TEST_UUIDS.customer1,
-        status: 'completed',
-        bookingDate: new Date('2026-01-15'),
-        customer: {
-          id: TEST_UUIDS.customer1,
-          firstName: 'Anna',
-          lastName: 'Svensson',
-          email: 'anna@test.com',
-          phone: null,
-        },
-        horse: null,
-        service: { name: 'Hovslagning' },
-      },
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([
+        { customerId: TEST_UUIDS.customer1, _count: { id: 1 }, _max: { bookingDate: new Date('2026-01-15') } },
+      ] as never)
+      .mockResolvedValueOnce([] as never)
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: TEST_UUIDS.customer1, firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: null },
     ] as never)
+
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([] as never)
+
     vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
       {
         customerId: TEST_UUIDS.customer2,

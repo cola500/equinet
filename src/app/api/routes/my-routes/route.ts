@@ -29,30 +29,40 @@ export async function GET(request: Request) {
       )
     }
 
-    // 2. Fetch routes
+    // 2. Fetch routes with explicit select (no include)
     const routes = await prisma.route.findMany({
       where: {
         providerId: session.user.providerId,
       },
-      include: {
+      select: {
+        id: true,
+        routeName: true,
+        routeDate: true,
+        startTime: true,
+        status: true,
+        totalDistanceKm: true,
+        totalDurationMinutes: true,
         stops: {
-          include: {
+          select: {
+            id: true,
+            stopOrder: true,
+            status: true,
             routeOrder: {
-              include: {
+              select: {
+                serviceType: true,
+                address: true,
                 customer: {
                   select: {
                     firstName: true,
                     lastName: true,
                     phone: true,
-                  }
-                }
-              }
-            }
+                  },
+                },
+              },
+            },
           },
-          orderBy: {
-            stopOrder: 'asc'
-          }
-        }
+          orderBy: { stopOrder: 'asc' },
+        },
       },
       orderBy: {
         routeDate: 'desc'

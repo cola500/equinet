@@ -78,6 +78,20 @@ describe('GET /api/provider/profile', () => {
     }
   })
 
+  it('should NOT include verifiedAt, createdAt, updatedAt in response', async () => {
+    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile')
+    await GET(request)
+
+    const call = vi.mocked(prisma.provider.findUnique).mock.calls[0][0]
+    const selectBlock = call.select as Record<string, unknown>
+    expect(selectBlock.verifiedAt).toBeFalsy()
+    expect(selectBlock.createdAt).toBeFalsy()
+    expect(selectBlock.updatedAt).toBeFalsy()
+  })
+
   it('should return 401 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },

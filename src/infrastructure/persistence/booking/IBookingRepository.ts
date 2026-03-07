@@ -117,8 +117,8 @@ export interface BookingWithRelations {
   bookingSeriesId?: string | null
   isManualBooking?: boolean
   createdByProviderId?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt?: Date
+  updatedAt?: Date
 
   // Relations data (selectively loaded based on user type)
   customer?: {
@@ -145,7 +145,6 @@ export interface BookingWithRelations {
     id: string
     name: string
     breed?: string | null
-    gender?: string | null
   } | null
   // Payment information (for customer view)
   payment?: {
