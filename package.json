@@ -18,6 +18,7 @@
     "db:nuke": "docker compose down -v",
     "db:studio": "prisma studio",
     "test": "vitest",
+    "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -49,7 +50,9 @@
     "loadtest:dashboard": "k6 run load-tests/scenarios/provider-dashboard.js",
     "loadtest:insights": "k6 run load-tests/scenarios/provider-insights.js",
     "loadtest:all": "k6 run load-tests/scenarios/providers-listing.js && k6 run load-tests/scenarios/provider-dashboard.js && k6 run load-tests/scenarios/provider-insights.js",
-    "docs:validate": "node scripts/validate-frontmatter.mjs"
+    "docs:validate": "node scripts/validate-frontmatter.mjs",
+    "analyze": "ANALYZE=true next build --webpack",
+    "cache:clear": "rm -rf .next .tsbuildinfo"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
@@ -99,6 +102,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
+    "@next/bundle-analyzer": "^16.1.6",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",

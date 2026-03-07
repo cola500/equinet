@@ -31,7 +31,10 @@ export async function GET(
           { provider: { userId: session.user.id } }
         ]
       },
-      include: {
+      select: {
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
         customer: {
           select: {
             firstName: true,
@@ -40,9 +43,15 @@ export async function GET(
             address: true,
           },
         },
-        service: true,
+        service: {
+          select: {
+            name: true,
+            description: true,
+          },
+        },
         provider: {
-          include: {
+          select: {
+            businessName: true,
             user: {
               select: {
                 firstName: true,
@@ -51,7 +60,15 @@ export async function GET(
             },
           },
         },
-        payment: true,
+        payment: {
+          select: {
+            status: true,
+            invoiceNumber: true,
+            paidAt: true,
+            amount: true,
+            currency: true,
+          },
+        },
       },
     })
 

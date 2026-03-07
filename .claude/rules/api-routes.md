@@ -77,6 +77,7 @@ src/app/api/[feature]/
 - [ ] Zod med `.strict()` (avvisar okanda falt)
 - [ ] `providerId`/`customerId` fran session, ALDRIG request body
 - [ ] `select` (aldrig `include`) -- forhindrar PII-exponering (t.ex. passwordHash)
+- [ ] Minimal `select` -- returnera BARA falt som UI:t faktiskt anvander. Inkludera aldrig `createdAt`, `updatedAt` eller andra metadata-falt i list-queries utan bekraftad konsument.
 - [ ] Felmeddelanden pa svenska: "Ej inloggad", "Atkomst nekad", "Ogiltig JSON", "Valideringsfel", "Internt serverfel"
 - [ ] `logger` (INTE `console.*`)
 - [ ] Karndomaner (Booking, Provider, Service, CustomerReview, Horse) via repository, inte Prisma direkt
@@ -90,6 +91,7 @@ src/app/api/[feature]/
 - **Error mapper per domän**: `domain/X/mapXErrorToStatus.ts` mappar domänfel till HTTP-statuskoder. Importeras av alla routes i domänen. Befintliga: horse, auth, group-booking, review, customer-review.
 - **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta. Lägg till redigering vid behov.
 - **SessionUser-typ**: `(session.user as SessionUser)` från `@/types/auth` ersätter `session.user as any` i API routes. Behövs pga NextAuth-typinferens.
+- **Payload-minimering**: Varje `select`-block ska bara inkludera falt som klienten faktiskt renderar. For list-queries: granska UI-komponenten och bekrafta vilka falt som anvands. For single-entity-queries: fler falt ar OK. Anvand `groupBy` istallet for att hamta alla rader + JS-aggregering. Regler: (1) aldrig `include`, (2) aldrig `take: 10000`, (3) granska UI fore select-block.
 
 ## AI-route-specifikt
 

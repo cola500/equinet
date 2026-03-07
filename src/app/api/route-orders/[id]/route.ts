@@ -35,7 +35,22 @@ export async function GET(
 
     const routeOrder = await prisma.routeOrder.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        serviceType: true,
+        address: true,
+        municipality: true,
+        latitude: true,
+        longitude: true,
+        numberOfHorses: true,
+        dateFrom: true,
+        dateTo: true,
+        priority: true,
+        status: true,
+        specialInstructions: true,
+        contactPhone: true,
+        announcementType: true,
+        createdAt: true,
         provider: {
           select: {
             id: true,

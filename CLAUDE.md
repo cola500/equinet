@@ -238,6 +238,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 - **Rate limiting sweep-mönster**: 4-raders tillägg per route (import + getClientIP + check + 429-response). Lägg EFTER auth, FÖRE JSON-parsing. Vid signaturändring (handler får `request`-param): uppdatera ALLA testanrop också.
 - **BottomTabBar badge**: `TabItem.badge?: number` + villkorlig rendering med absolut positionerad `<span>`. Drivs av SWR-data via `useMemo` i `ProviderNav`.
+- **Payload-minimering i select-block**: List-queries ska BARA returnera fält som UI:t använder. Granska komponenten före varje ny `select`-block. Använd `groupBy` för aggregering istället för att hämta alla rader + JS-loop. Undvik `createdAt`/`updatedAt` i list-responses om de inte renderas.
 
 ---
 

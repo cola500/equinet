@@ -46,11 +46,11 @@ describe("GET /api/route-orders/[id]", () => {
     await GET(req, { params })
 
     const call = mockedFindUnique.mock.calls[0][0]
-    // routeStops must use select (not return all fields including full addresses)
-    const include = (call as never).include
-    expect(include.routeStops).toHaveProperty("select")
+    // Now uses top-level select instead of include
+    const select = (call as never).select
+    expect(select.routeStops).toHaveProperty("select")
     // Should NOT include problemNote or actualArrival/actualDeparture
-    const routeStopSelect = include.routeStops.select
+    const routeStopSelect = select.routeStops.select
     expect(routeStopSelect.problemNote).toBeFalsy()
     expect(routeStopSelect.actualArrival).toBeFalsy()
     expect(routeStopSelect.actualDeparture).toBeFalsy()

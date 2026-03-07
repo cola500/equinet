@@ -34,11 +34,35 @@ export async function GET(request: Request) {
       where: {
         customerId: session.user.id,
       },
-      include: {
+      select: {
+        id: true,
+        serviceType: true,
+        address: true,
+        municipality: true,
+        dateFrom: true,
+        dateTo: true,
+        priority: true,
+        status: true,
+        specialInstructions: true,
+        announcementType: true,
+        createdAt: true,
+        customerId: true,
         routeStops: {
-          include: {
+          select: {
+            id: true,
+            stopOrder: true,
+            locationName: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            estimatedArrival: true,
+            status: true,
             route: {
-              include: {
+              select: {
+                id: true,
+                routeName: true,
+                routeDate: true,
+                status: true,
                 provider: {
                   select: {
                     businessName: true,

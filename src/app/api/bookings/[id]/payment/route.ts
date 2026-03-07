@@ -39,9 +39,22 @@ export async function POST(
         id: bookingId,
         customerId: session.user.id
       },
-      include: {
-        service: true,
-        payment: true,
+      select: {
+        id: true,
+        status: true,
+        providerId: true,
+        bookingDate: true,
+        service: {
+          select: {
+            price: true,
+            name: true,
+          }
+        },
+        payment: {
+          select: {
+            status: true,
+          }
+        },
         customer: {
           select: {
             firstName: true,
@@ -49,7 +62,8 @@ export async function POST(
           },
         },
         provider: {
-          include: {
+          select: {
+            userId: true,
             user: {
               select: {
                 firstName: true,
@@ -207,9 +221,23 @@ export async function GET(
           { provider: { userId: session.user.id } }
         ]
       },
-      include: {
-        payment: true,
-        service: true,
+      select: {
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            currency: true,
+            paidAt: true,
+            invoiceNumber: true,
+            invoiceUrl: true,
+          }
+        },
+        service: {
+          select: {
+            price: true,
+          }
+        },
       }
     })
 

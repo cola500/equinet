@@ -93,7 +93,16 @@ export async function GET(
       where: {
         routeOrderId: announcementId,
       },
-      include: {
+      select: {
+        id: true,
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        horseName: true,
+        horseInfo: true,
+        customerNotes: true,
+        createdAt: true,
         customer: {
           select: {
             id: true,

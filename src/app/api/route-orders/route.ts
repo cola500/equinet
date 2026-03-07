@@ -161,7 +161,22 @@ async function handleCustomerOrder(body: unknown, session: { user: { id: string;
       status: "pending",
       announcementType: "customer_initiated",
     },
-    include: {
+    select: {
+      id: true,
+      serviceType: true,
+      address: true,
+      latitude: true,
+      longitude: true,
+      numberOfHorses: true,
+      dateFrom: true,
+      dateTo: true,
+      priority: true,
+      status: true,
+      specialInstructions: true,
+      contactPhone: true,
+      announcementType: true,
+      createdAt: true,
+      customerId: true,
       customer: {
         select: {
           firstName: true,

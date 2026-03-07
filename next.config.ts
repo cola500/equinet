@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { spawnSync } from "node:child_process";
 import { withSentryConfig } from "@sentry/nextjs";
 import withSerwistInit from "@serwist/next";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const revision = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ?? crypto.randomUUID();
 
@@ -164,5 +165,10 @@ const withSerwist = withSerwistInit({
   additionalPrecacheEntries: [{ url: "/~offline", revision }],
 })
 
+// Bundle analyzer (opt-in via ANALYZE=true)
+const analyzeBundles = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
 // Wrap with Sentry config (outermost wrapper)
-export default withSentryConfig(withSerwist(nextConfig), sentryWebpackPluginOptions);
+export default withSentryConfig(analyzeBundles(withSerwist(nextConfig)), sentryWebpackPluginOptions);

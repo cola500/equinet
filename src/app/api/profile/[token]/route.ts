@@ -26,8 +26,23 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Find token with horse data
     const profileToken = await prisma.horseProfileToken.findUnique({
       where: { token },
-      include: {
-        horse: true,
+      select: {
+        id: true,
+        expiresAt: true,
+        horse: {
+          select: {
+            id: true,
+            name: true,
+            breed: true,
+            birthYear: true,
+            color: true,
+            gender: true,
+            specialNeeds: true,
+            registrationNumber: true,
+            microchipNumber: true,
+            isActive: true,
+          },
+        },
       },
     })
 

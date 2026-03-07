@@ -280,14 +280,24 @@ describe('GET /api/providers/visiting-area', () => {
           },
           isClosed: false,
         },
-        include: {
-          provider: {
-            include: {
-              services: { where: { isActive: true } },
+        select: expect.objectContaining({
+          id: true,
+          providerId: true,
+          date: true,
+          location: true,
+          startTime: true,
+          endTime: true,
+          isClosed: true,
+          provider: expect.objectContaining({
+            select: expect.objectContaining({
+              id: true,
+              isActive: true,
+              businessName: true,
+              services: expect.objectContaining({ where: { isActive: true } }),
               user: { select: { firstName: true, lastName: true } },
-            },
-          },
-        },
+            }),
+          }),
+        }),
         orderBy: { date: 'asc' },
       })
     )

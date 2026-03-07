@@ -100,8 +100,20 @@ export async function PATCH(
       const stop = await tx.routeStop.update({
         where: { id: stopId },
         data: updateData,
-        include: {
-          routeOrder: true
+        select: {
+          id: true,
+          status: true,
+          routeOrderId: true,
+          stopOrder: true,
+          locationName: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          estimatedArrival: true,
+          actualArrival: true,
+          actualDeparture: true,
+          problemNote: true,
+          estimatedDurationMin: true,
         }
       })
 

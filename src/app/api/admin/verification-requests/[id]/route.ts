@@ -53,7 +53,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     // Fetch verification request
     const verification = await prisma.providerVerification.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        providerId: true,
+        status: true,
+        title: true,
         provider: { select: { userId: true } },
       },
     })

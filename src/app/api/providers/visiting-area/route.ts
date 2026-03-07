@@ -46,11 +46,30 @@ export async function GET(request: NextRequest) {
         },
         isClosed: false, // Only show visits where they're working
       },
-      include: {
+      select: {
+        id: true,
+        providerId: true,
+        date: true,
+        location: true,
+        startTime: true,
+        endTime: true,
+        isClosed: true,
         provider: {
-          include: {
+          select: {
+            id: true,
+            isActive: true,
+            businessName: true,
+            description: true,
+            city: true,
             services: {
               where: { isActive: true },
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                durationMinutes: true,
+                isActive: true,
+              },
             },
             user: {
               select: {
