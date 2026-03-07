@@ -4,6 +4,8 @@
  * Integrerar med Modal.com API från Experiment 001 för att optimera hovslagarrutter.
  */
 
+import { logger } from "@/lib/logger"
+
 const MODAL_API_URL = process.env.MODAL_API_URL || 'https://johanlin--route-optimizer-fastapi-app.modal.run'
 
 export interface Location {
@@ -53,7 +55,7 @@ export async function optimizeRoute(
 
     return await response.json();
   } catch (error) {
-    console.error('Route optimization error:', error);
+    logger.error('Route optimization error', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -88,13 +90,13 @@ export async function testApiConnection(): Promise<boolean> {
 
     if (response.ok) {
       const data = await response.json();
-      console.log('Modal API health check:', data);
+      logger.info('Modal API health check', { data });
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error('API connection test failed:', error);
+    logger.error('API connection test failed', error instanceof Error ? error : new Error(String(error)));
     return false;
   }
 }

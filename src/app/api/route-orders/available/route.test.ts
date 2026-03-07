@@ -45,6 +45,15 @@ vi.mock('@/lib/geo/distance', () => ({
   calculateDistance: vi.fn().mockReturnValue(12.5),
 }))
 
+vi.mock('@/lib/geo/bounding-box', () => ({
+  calculateBoundingBox: vi.fn().mockReturnValue({
+    minLat: 57.0,
+    maxLat: 58.0,
+    minLng: 11.0,
+    maxLng: 13.0,
+  }),
+}))
+
 const mockAuth = vi.mocked(auth)
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 const mockRateLimiters = vi.mocked(rateLimiters)
@@ -98,6 +107,9 @@ describe('GET /api/route-orders/available', () => {
     mockRateLimiters.api.mockResolvedValue(true)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
+      latitude: 57.71,
+      longitude: 11.97,
+      serviceAreaKm: 50,
     } as never)
   })
 
@@ -567,7 +579,65 @@ describe('GET /api/route-orders/available', () => {
     // Assert
     expect(prisma.provider.findUnique).toHaveBeenCalledWith({
       where: { id: 'provider-1' },
+      select: { id: true, latitude: true, longitude: true, serviceAreaKm: true },
     })
+  })
+
+  // -------------------------------------------------------
+  // Geo: provider coordinates + bounding box
+  // -------------------------------------------------------
+  it('uses provider coordinates for distance calculation', async () => {
+    const { calculateDistance } = await import('@/lib/geo/distance')
+    vi.mocked(calculateDistance).mockReturnValue(10.0)
+
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
+      mockRouteOrder({ id: 'order-1', latitude: 57.93, longitude: 12.53 }),
+    ] as never)
+
+    const request = new NextRequest('http://localhost:3000/api/route-orders/available')
+    await GET(request)
+
+    expect(calculateDistance).toHaveBeenCalledWith(57.71, 11.97, 57.93, 12.53)
+  })
+
+  it('applies bounding box filter to query', async () => {
+    const { calculateBoundingBox } = await import('@/lib/geo/bounding-box')
+    vi.mocked(calculateBoundingBox).mockReturnValue({
+      minLat: 57.0, maxLat: 58.0, minLng: 11.0, maxLng: 13.0,
+    })
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([])
+
+    const request = new NextRequest('http://localhost:3000/api/route-orders/available')
+    await GET(request)
+
+    expect(calculateBoundingBox).toHaveBeenCalledWith(57.71, 11.97, 50)
+    expect(prisma.routeOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          latitude: { gte: 57.0, lte: 58.0 },
+          longitude: { gte: 11.0, lte: 13.0 },
+        }),
+      })
+    )
+  })
+
+  it('returns orders without distance when provider has no coordinates', async () => {
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+      id: 'provider-1',
+      latitude: null,
+      longitude: null,
+      serviceAreaKm: null,
+    } as never)
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
+      mockRouteOrder({ id: 'order-1' }),
+    ] as never)
+
+    const request = new NextRequest('http://localhost:3000/api/route-orders/available')
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data[0].distanceKm).toBeNull()
   })
 
   it('does not apply serviceType or priority filter when no query params', async () => {
@@ -581,9 +651,7 @@ describe('GET /api/route-orders/available', () => {
 
     // Assert
     const callArgs = vi.mocked(prisma.routeOrder.findMany).mock.calls[0][0] as never
-    expect(callArgs.where).toEqual({
-      status: { in: ['open', 'pending'] },
-    })
+    expect(callArgs.where.status).toEqual({ in: ['open', 'pending'] })
     expect(callArgs.where.serviceType).toBeUndefined()
     expect(callArgs.where.priority).toBeUndefined()
   })

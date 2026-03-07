@@ -21,6 +21,7 @@ import {
   setCachedGeocode,
   isGeocodingCacheAvailable,
 } from "./cache/geocoding-cache"
+import { logger } from "@/lib/logger"
 
 export interface GeocodingResult {
   latitude: number
@@ -41,7 +42,7 @@ export interface GeocodingResult {
  */
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
   if (!address || address.trim().length === 0) {
-    console.error('geocodeAddress: No address provided')
+    logger.error('geocodeAddress: No address provided')
     return null
   }
 
@@ -66,13 +67,13 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     )
 
     if (!response.ok) {
-      console.error(`Geocoding request failed with status ${response.status}`)
+      logger.error("Geocoding request failed", { status: response.status })
       return null
     }
 
     const data = await response.json()
     if (data.length === 0) {
-      console.warn(`No geocoding results for address: ${address}`)
+      logger.warn("No geocoding results for address", { address })
       return null
     }
 
@@ -86,7 +87,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
 
     return result
   } catch (error) {
-    console.error('Geocoding error:', error)
+    logger.error('Geocoding error', error instanceof Error ? error : new Error(String(error)))
     return null
   }
 }

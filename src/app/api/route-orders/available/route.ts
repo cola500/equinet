@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@prisma/client"
 import { calculateDistance } from "@/lib/geo/distance"
+import { calculateBoundingBox } from "@/lib/geo/bounding-box"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -35,9 +36,10 @@ export async function GET(request: Request) {
       )
     }
 
-    // Get provider location (use their address)
+    // Get provider location
     const provider = await prisma.provider.findUnique({
-      where: { id: session.user.providerId }
+      where: { id: session.user.providerId },
+      select: { id: true, latitude: true, longitude: true, serviceAreaKm: true },
     })
 
     if (!provider) {
@@ -53,6 +55,9 @@ export async function GET(request: Request) {
     const priority = searchParams.get('priority')
 
     // 3. Fetch available route orders (status = open or pending)
+    const hasProviderCoords = provider.latitude != null && provider.longitude != null
+    const radiusKm = provider.serviceAreaKm ?? 50
+
     const whereClause: Prisma.RouteOrderWhereInput = {
       status: { in: ['open', 'pending'] }
     }
@@ -63,6 +68,13 @@ export async function GET(request: Request) {
 
     if (priority) {
       whereClause.priority = priority
+    }
+
+    // Apply bounding box pre-filter when provider has coordinates
+    if (hasProviderCoords) {
+      const bbox = calculateBoundingBox(provider.latitude!, provider.longitude!, radiusKm)
+      whereClause.latitude = { gte: bbox.minLat, lte: bbox.maxLat }
+      whereClause.longitude = { gte: bbox.minLng, lte: bbox.maxLng }
     }
 
     const routeOrders = await prisma.routeOrder.findMany({
@@ -102,19 +114,17 @@ export async function GET(request: Request) {
     })
 
     // 4. Calculate distance from provider for each order
-    // For MVP, we use Göteborg centrum as provider location
-    const providerLat = 57.7089 // Göteborg centrum
-    const providerLon = 11.9746
-
     const ordersWithDistance = routeOrders.map((order) => {
-      // Only calculate distance if coordinates exist
-      const distance = (order.latitude != null && order.longitude != null)
-        ? calculateDistance(providerLat, providerLon, order.latitude, order.longitude)
-        : Infinity // Orders without coordinates sorted last
-
+      if (!hasProviderCoords || order.latitude == null || order.longitude == null) {
+        return { ...order, distanceKm: null }
+      }
+      const distance = calculateDistance(
+        provider.latitude!, provider.longitude!,
+        order.latitude, order.longitude
+      )
       return {
         ...order,
-        distanceKm: distance === Infinity ? null : Math.round(distance * 10) / 10
+        distanceKm: Math.round(distance * 10) / 10
       }
     })
 

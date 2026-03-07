@@ -13,6 +13,7 @@ import type {
   ProviderWithFullDetails,
   ProviderForEdit,
 } from './IProviderRepository'
+import { logger } from '@/lib/logger'
 
 export class ProviderRepository implements IProviderRepository {
   async findById(id: string): Promise<Provider | null> {
@@ -320,7 +321,7 @@ export class ProviderRepository implements IProviderRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }
-      console.error(`Failed to update provider ${id}:`, error)
+      logger.error("Failed to update provider", error instanceof Error ? error : new Error(String(error)), { providerId: id })
       throw error
     }
   }

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
 import { auth } from '@/lib/auth-server'
+import { rateLimiters } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
@@ -1155,5 +1156,23 @@ describe('POST /api/bookings', () => {
 
     expect(response.status).toBe(400)
     expect(data.error).toContain('Semester')
+  })
+
+  it('returns 503 when rate limiter throws', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.customer, role: 'CUSTOMER' },
+      expires: '',
+    } as never)
+    vi.mocked(rateLimiters.booking).mockRejectedValueOnce(new Error('Redis down'))
+
+    const request = new NextRequest('http://localhost:3000/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(503)
+    const data = await response.json()
+    expect(data.error).toContain('tillfälligt')
   })
 })

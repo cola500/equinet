@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useDialogState } from "@/hooks/useDialogState"
 import { toast } from "sonner"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { clientLogger } from "@/lib/client-logger"
 import type { Customer, CustomerHorse, CustomerNote, HorseFormData } from "@/components/provider/customers/types"
 
 export type StatusFilter = "all" | "active" | "inactive"
@@ -57,7 +58,7 @@ export function useProviderCustomers(isProvider: boolean) {
         setFetchError(true)
       }
     } catch (error) {
-      console.error("Failed to fetch customers:", error)
+      clientLogger.error("Failed to fetch customers", error)
       setFetchError(true)
     } finally {
       setIsLoading(false)
@@ -83,7 +84,7 @@ export function useProviderCustomers(isProvider: boolean) {
         setCustomerNotes((prev) => new Map(prev).set(customerId, data.notes))
       }
     } catch (error) {
-      console.error("Failed to fetch notes:", error)
+      clientLogger.error("Failed to fetch notes", error)
     } finally {
       setNotesLoading(null)
     }
@@ -100,7 +101,7 @@ export function useProviderCustomers(isProvider: boolean) {
         setCustomerHorses((prev) => new Map(prev).set(customerId, data.horses))
       }
     } catch (error) {
-      console.error("Failed to fetch horses:", error)
+      clientLogger.error("Failed to fetch horses", error)
     } finally {
       setHorsesLoading(null)
     }
@@ -141,7 +142,7 @@ export function useProviderCustomers(isProvider: boolean) {
           }
           return false
         } catch (error) {
-          console.error("Failed to create note:", error)
+          clientLogger.error("Failed to create note", error)
           return false
         }
       },
@@ -197,7 +198,7 @@ export function useProviderCustomers(isProvider: boolean) {
           }
           return false
         } catch (error) {
-          console.error("Failed to update note:", error)
+          clientLogger.error("Failed to update note", error)
           return false
         }
       },
@@ -245,7 +246,7 @@ export function useProviderCustomers(isProvider: boolean) {
             })
           }
         } catch (error) {
-          console.error("Failed to delete note:", error)
+          clientLogger.error("Failed to delete note", error)
         } finally {
           setIsDeletingNote(false)
           setNoteToDelete(null)
@@ -303,7 +304,7 @@ export function useProviderCustomers(isProvider: boolean) {
             toast.error(data.error || "Kunde inte lägga till kund")
           }
         } catch (error) {
-          console.error("Failed to add customer:", error)
+          clientLogger.error("Failed to add customer", error)
           toast.error("Kunde inte lägga till kund")
         } finally {
           setIsAddingCustomer(false)
@@ -352,7 +353,7 @@ export function useProviderCustomers(isProvider: boolean) {
             toast.error(data.error || "Kunde inte uppdatera kund")
           }
         } catch (error) {
-          console.error("Failed to edit customer:", error)
+          clientLogger.error("Failed to edit customer", error)
           toast.error("Kunde inte uppdatera kund")
         } finally {
           setIsAddingCustomer(false)
@@ -405,7 +406,7 @@ export function useProviderCustomers(isProvider: boolean) {
             toast.error(data.error || "Kunde inte ta bort kund")
           }
         } catch (error) {
-          console.error("Failed to delete customer:", error)
+          clientLogger.error("Failed to delete customer", error)
           toast.error("Kunde inte ta bort kund")
         } finally {
           setIsDeletingCustomer(false)
@@ -484,7 +485,7 @@ export function useProviderCustomers(isProvider: boolean) {
             toast.error(data.error || "Kunde inte spara häst")
           }
         } catch (error) {
-          console.error("Failed to save horse:", error)
+          clientLogger.error("Failed to save horse", error)
           toast.error("Kunde inte spara häst")
         } finally {
           setIsSavingHorse(false)
@@ -535,7 +536,7 @@ export function useProviderCustomers(isProvider: boolean) {
             toast.error(data.error || "Kunde inte ta bort häst")
           }
         } catch (error) {
-          console.error("Failed to delete horse:", error)
+          clientLogger.error("Failed to delete horse", error)
           toast.error("Kunde inte ta bort häst")
         } finally {
           setIsDeletingHorse(false)

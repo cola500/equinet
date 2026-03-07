@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import type { GeoLocation } from "./useGeoFiltering"
+import { clientLogger } from "@/lib/client-logger"
 
 export interface ProviderData {
   id: string
@@ -121,7 +122,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
           }
         }
       } catch (fetchError) {
-        console.error("Error fetching providers:", fetchError)
+        clientLogger.error("Error fetching providers", fetchError)
         setError("Något gick fel. Kontrollera din internetanslutning.")
       } finally {
         setIsLoading(false)
@@ -172,7 +173,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
           setVisitingProviders(result.data)
         }
       } catch (fetchError) {
-        console.error("Error fetching visiting providers:", fetchError)
+        clientLogger.error("Error fetching visiting providers", fetchError)
       } finally {
         setIsSearching(false)
       }

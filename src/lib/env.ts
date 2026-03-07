@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 /**
  * Schema for environment variables
@@ -50,35 +51,25 @@ function validateEnv(): Env {
     if (env.NODE_ENV === "production") {
       // Ensure HTTPS in production
       if (env.NEXTAUTH_URL && !env.NEXTAUTH_URL.startsWith("https://")) {
-        console.warn(
-          "⚠️  WARNING: NEXTAUTH_URL should use HTTPS in production for security"
-        )
+        logger.warn("WARNING: NEXTAUTH_URL should use HTTPS in production for security")
       }
 
       // Ensure strong secret in production
       if (env.NEXTAUTH_SECRET.length < 64) {
-        console.warn(
-          "⚠️  WARNING: NEXTAUTH_SECRET should be at least 64 characters in production for enhanced security"
-        )
+        logger.warn("WARNING: NEXTAUTH_SECRET should be at least 64 characters in production for enhanced security")
       }
 
       // Warn if using SQLite in production
       if (env.DATABASE_URL.includes("file:")) {
-        console.warn(
-          "⚠️  WARNING: Using SQLite in production. Consider using PostgreSQL for better performance and reliability."
-        )
+        logger.warn("WARNING: Using SQLite in production. Consider using PostgreSQL for better performance and reliability.")
       }
     }
 
     return env
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("❌ Invalid environment variables:")
-      error.issues.forEach((issue) => {
-        console.error(`  - ${issue.path.join(".")}: ${issue.message}`)
-      })
-      console.error("\n💡 Make sure you have a .env.local file with all required variables.")
-      console.error("See .env.example for reference.\n")
+      logger.error("Invalid environment variables", { issues: error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`) })
+      logger.error("Make sure you have a .env.local file with all required variables. See .env.example for reference.")
     }
     throw new Error("Environment validation failed")
   }

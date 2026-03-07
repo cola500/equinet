@@ -134,8 +134,9 @@ describe('useRetry', () => {
     })
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Retry 1/3 failed:',
-      expect.any(Error)
+      expect.stringContaining('ERROR'),
+      expect.any(Error),
+      expect.objectContaining({ attempt: 1, maxRetries: 3 })
     )
 
     consoleErrorSpy.mockRestore()

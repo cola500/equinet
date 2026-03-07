@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { format, addDays, startOfWeek } from "date-fns"
+import { clientLogger } from "@/lib/client-logger"
 
 export interface BookedSlot {
   startTime: string
@@ -120,7 +121,7 @@ export function useWeekAvailability(
       const data = await Promise.all(responses.map((r) => r.json()))
       setWeekData(data)
     } catch (err) {
-      console.error("Error fetching week availability:", err)
+      clientLogger.error("Error fetching week availability", err)
       setError("Kunde inte hämta tillgänglighet")
       setWeekData([])
     } finally {

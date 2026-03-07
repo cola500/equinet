@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { clientLogger } from '@/lib/client-logger'
 
 interface UseRetryOptions {
   maxRetries?: number
@@ -27,7 +28,7 @@ export function useRetry(options: UseRetryOptions = {}) {
         await fn()
         setRetryCount(0) // Success - reset
       } catch (error) {
-        console.error(`Retry ${retryCount + 1}/${maxRetries} failed:`, error)
+        clientLogger.error("Retry failed", error, { attempt: retryCount + 1, maxRetries })
       } finally {
         setIsRetrying(false)
       }

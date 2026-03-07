@@ -5,6 +5,8 @@
  * This allows development without email credentials.
  */
 
+import { logger } from "@/lib/logger"
+
 interface EmailOptions {
   to: string
   subject: string
@@ -37,15 +39,13 @@ class EmailService {
 
   async send(options: EmailOptions): Promise<SendResult> {
     // Log all emails in development or when not configured
-    console.log("=== EMAIL ===")
-    console.log(`To: ${options.to}`)
-    console.log(`Subject: ${options.subject}`)
-    console.log(`From: ${this.fromEmail}`)
+    logger.info("=== EMAIL ===")
+    logger.info("Email details", { to: options.to, subject: options.subject, from: this.fromEmail })
 
     if (!this.isConfigured) {
-      console.log("--- EMAIL CONTENT (mock mode - RESEND_API_KEY not configured) ---")
-      console.log(options.text || options.html)
-      console.log("=== END EMAIL ===")
+      logger.info("--- EMAIL CONTENT (mock mode - RESEND_API_KEY not configured) ---")
+      logger.debug("Email content", { content: options.text || options.html })
+      logger.info("=== END EMAIL ===")
       return {
         success: true,
         messageId: `mock-${Date.now()}`,
@@ -70,7 +70,7 @@ class EmailService {
 
       if (!response.ok) {
         const error = await response.json()
-        console.error("Email send failed:", error)
+        logger.error("Email send failed", { error })
         return {
           success: false,
           error: error.message || "Failed to send email",
@@ -78,15 +78,15 @@ class EmailService {
       }
 
       const data = await response.json()
-      console.log(`Email sent successfully: ${data.id}`)
-      console.log("=== END EMAIL ===")
+      logger.info("Email sent successfully", { messageId: data.id })
+      logger.info("=== END EMAIL ===")
 
       return {
         success: true,
         messageId: data.id,
       }
     } catch (error) {
-      console.error("Email send error:", error)
+      logger.error("Email send error", error instanceof Error ? error : new Error(String(error)))
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

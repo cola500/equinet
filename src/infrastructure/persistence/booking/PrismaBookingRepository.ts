@@ -12,6 +12,7 @@ import {
   BookingWithCustomerLocation,
 } from './IBookingRepository'
 import { BookingMapper } from './BookingMapper'
+import { logger } from '@/lib/logger'
 
 export class PrismaBookingRepository
   extends BaseRepository<Booking>
@@ -314,7 +315,7 @@ export class PrismaBookingRepository
       }
 
       // Re-throw other errors
-      console.error('Failed to create booking with overlap check:', error)
+      logger.error('Failed to create booking with overlap check', error instanceof Error ? error : new Error(String(error)))
       throw error
     }
   }
@@ -594,7 +595,7 @@ export class PrismaBookingRepository
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }
-      console.error(`Failed to update booking ${id}:`, error)
+      logger.error("Failed to update booking", error instanceof Error ? error : new Error(String(error)), { bookingId: id })
       throw error
     }
   }
@@ -842,7 +843,7 @@ export class PrismaBookingRepository
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return false
       }
-      console.error(`Failed to delete booking ${id}:`, error)
+      logger.error("Failed to delete booking", error instanceof Error ? error : new Error(String(error)), { bookingId: id })
       throw error
     }
   }

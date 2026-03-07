@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format, addDays } from "date-fns"
 import { toast } from "sonner"
+import { clientLogger } from "@/lib/client-logger"
 
 export type BookingStep = "selectType" | "selectTime" | "selectHorse" | "confirm" | "submitting"
 
@@ -274,7 +275,7 @@ export function useBookingFlow({
         router.push("/customer/bookings")
       }
     } catch (error: unknown) {
-      console.error("Error creating booking:", error)
+      clientLogger.error("Error creating booking", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte skapa bokning")
       setStep("selectTime")
     }

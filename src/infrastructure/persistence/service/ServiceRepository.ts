@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import type { IServiceRepository, Service, ServiceFilters } from './IServiceRepository'
+import { logger } from '@/lib/logger'
 
 export class ServiceRepository implements IServiceRepository {
   async findById(id: string): Promise<Service | null> {
@@ -163,7 +164,7 @@ export class ServiceRepository implements IServiceRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return null
       }
-      console.error(`Failed to update service ${id}:`, error)
+      logger.error("Failed to update service", error instanceof Error ? error : new Error(String(error)), { serviceId: id })
       throw error
     }
   }
@@ -186,7 +187,7 @@ export class ServiceRepository implements IServiceRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         return false
       }
-      console.error(`Failed to delete service ${id}:`, error)
+      logger.error("Failed to delete service", error instanceof Error ? error : new Error(String(error)), { serviceId: id })
       throw error
     }
   }
