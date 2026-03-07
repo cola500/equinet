@@ -136,12 +136,13 @@ const navigationCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Supabase Storage images: CacheFirst since filenames include unique timestamps.
-  // Without this rule, defaultCache intercepts cross-origin image requests but
-  // returns "no-response", causing broken images.
+  // Supabase Storage images: NetworkFirst for cross-origin compatibility.
+  // Cross-origin fetches return opaque responses (status 0) which CacheFirst
+  // can't cache, causing "no-response" errors. NetworkFirst serves the opaque
+  // response directly and caches when possible.
   {
     matcher: ({ url }) => url.hostname.endsWith(".supabase.co") && url.pathname.startsWith("/storage/"),
-    handler: new CacheFirst({
+    handler: new NetworkFirst({
       cacheName: "supabase-images",
       plugins: [
         new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }),

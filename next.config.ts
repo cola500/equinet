@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://router.project-osrm.org", // Allow OSRM API
+              "connect-src 'self' https://router.project-osrm.org https://*.supabase.co https://*.sentry.io", // Allow OSRM API + Supabase + Sentry
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -98,7 +98,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
-              "connect-src 'self'", // API calls
+              "connect-src 'self' https://*.supabase.co https://*.sentry.io", // API calls + Supabase Storage + Sentry
               "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection
               "base-uri 'self'",
