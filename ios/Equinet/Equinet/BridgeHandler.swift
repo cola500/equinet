@@ -35,6 +35,7 @@ enum BridgeMessageType: String {
     case calendarSyncEnabled = "calendarSyncEnabled"
     case calendarSyncDenied = "calendarSyncDenied"
     case calendarSyncStatus = "calendarSyncStatus"
+    case userDidLogout = "userDidLogout"
 }
 
 @MainActor
@@ -43,9 +44,11 @@ final class BridgeHandler {
 
     private weak var webView: WKWebView?
     private let speechRecognizer = SpeechRecognizer()
+    private weak var authManager: AuthManager?
 
-    func attach(to webView: WKWebView) {
+    func attach(to webView: WKWebView, authManager: AuthManager? = nil) {
         self.webView = webView
+        if let authManager { self.authManager = authManager }
         setupSpeechCallbacks()
     }
 
@@ -72,6 +75,8 @@ final class BridgeHandler {
             handleMobileTokenReceived(body["payload"] as? [String: Any])
         case BridgeMessageType.requestCalendarSync.rawValue:
             handleCalendarSyncRequest()
+        case BridgeMessageType.userDidLogout.rawValue:
+            handleUserDidLogout()
         default:
             print("[Bridge] Unknown message type: \(type)")
         }
@@ -190,11 +195,18 @@ final class BridgeHandler {
     /// Clear token, widget data, and calendar sync (called on logout)
     func clearMobileToken() {
         KeychainHelper.clearMobileToken()
+        KeychainHelper.clearSessionCookie()
         SharedDataManager.clearWidgetData()
         SharedDataManager.clearCalendarCache()
         SharedDataManager.reloadWidgets()
         CalendarSyncManager.shared.removeAllSyncedEvents()
-        print("[Bridge] Mobile token, widget data, calendar cache, and calendar sync cleared")
+        print("[Bridge] Mobile token, session cookie, widget data, calendar cache, and calendar sync cleared")
+    }
+
+    /// Handle logout message from web app
+    private func handleUserDidLogout() {
+        print("[Bridge] User logged out from web")
+        authManager?.logout()
     }
 
     // MARK: - Calendar Sync

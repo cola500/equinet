@@ -14,6 +14,7 @@ enum KeychainHelper {
     private static let accessGroup = "group.com.equinet.shared"
 
     /// Save a string value to Keychain
+    @discardableResult
     static func save(key: String, value: String) -> Bool {
         guard let data = value.data(using: .utf8) else { return false }
 
@@ -119,5 +120,35 @@ extension KeychainHelper {
     static func clearMobileToken() {
         delete(key: mobileTokenKey)
         delete(key: tokenExpiresAtKey)
+    }
+
+    // MARK: - Session Cookie
+
+    static let sessionCookieNameKey = "session_cookie_name"
+    static let sessionCookieValueKey = "session_cookie_value"
+    static let sessionCookieSecureKey = "session_cookie_secure"
+
+    /// Save session cookie data for WKWebView injection
+    static func saveSessionCookie(name: String, value: String, secure: Bool) {
+        save(key: sessionCookieNameKey, value: name)
+        save(key: sessionCookieValueKey, value: value)
+        save(key: sessionCookieSecureKey, value: secure ? "true" : "false")
+    }
+
+    /// Load session cookie data (returns nil if not stored)
+    static func loadSessionCookie() -> (name: String, value: String, secure: Bool)? {
+        guard let name = load(key: sessionCookieNameKey),
+              let value = load(key: sessionCookieValueKey),
+              let secureStr = load(key: sessionCookieSecureKey) else {
+            return nil
+        }
+        return (name, value, secureStr == "true")
+    }
+
+    /// Clear session cookie data
+    static func clearSessionCookie() {
+        delete(key: sessionCookieNameKey)
+        delete(key: sessionCookieValueKey)
+        delete(key: sessionCookieSecureKey)
     }
 }

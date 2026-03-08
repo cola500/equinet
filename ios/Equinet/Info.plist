@@ -54,6 +54,8 @@
 	<string>Equinet använder taligenkänning för att logga ditt arbete med rösten.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Equinet behöver tillgång till mikrofonen för röstloggning.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Equinet använder Face ID för att logga in dig snabbt och säkert.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Equinet synkar dina bekräftade bokningar till Kalender-appen så du får påminnelser och kan se dem på Apple Watch.</string>
 </dict>

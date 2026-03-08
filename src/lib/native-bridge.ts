@@ -44,6 +44,14 @@ export function sendToNative(type: string, payload?: Record<string, unknown>): v
 }
 
 /**
+ * Notify the native app that the user has logged out.
+ * Called from Header.tsx after signOut() completes.
+ */
+export function notifyNativeLogout(): void {
+  sendToNative("userDidLogout")
+}
+
+/**
  * Request a mobile token from the server and send it to the native app.
  * Called after successful login when running in WKWebView.
  */

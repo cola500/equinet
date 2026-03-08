@@ -2,14 +2,18 @@
 //  ContentView.swift
 //  Equinet
 //
-//  Main content view that wraps the WebView with navigation controls
-//  and an offline banner.
+//  Main content view with state-driven navigation:
+//  - .checking: SplashView (checking Keychain)
+//  - .loggedOut: NativeLoginView (email + password)
+//  - .biometricPrompt: BiometricPromptView (Face ID / Touch ID)
+//  - .authenticated: WebView with injected session cookie
 //
 
 import SwiftUI
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @State private var authManager = AuthManager()
     @State private var canGoBack = false
     @State private var isLoading = false
     @State private var hasNavigationError = false
@@ -22,6 +26,48 @@ struct ContentView: View {
 
     var body: some View {
         #if os(iOS)
+        Group {
+            switch authManager.state {
+            case .checking:
+                SplashView()
+
+            case .loggedOut:
+                NativeLoginView(authManager: authManager)
+
+            case .biometricPrompt:
+                BiometricPromptView(authManager: authManager)
+
+            case .authenticated:
+                authenticatedView
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: authManager.state == .authenticated)
+        .onAppear {
+            authManager.checkExistingAuth()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard authManager.state == .authenticated else { return }
+            switch newPhase {
+            case .active:
+                bridge.sendToWeb(type: .appDidBecomeActive)
+                Task { await bridge.refreshTokenIfNeeded() }
+                PendingActionStore.retryAll()
+                calendarViewModel.loadDataForSelectedDate()
+            case .background:
+                bridge.sendToWeb(type: .appDidEnterBackground)
+            default:
+                break
+            }
+        }
+        #else
+        Text("Equinet is available on iOS")
+            .padding()
+        #endif
+    }
+
+    // MARK: - Authenticated View (WebView + overlays)
+
+    private var authenticatedView: some View {
         ZStack(alignment: .top) {
             if showNativeCalendar {
                 // Native calendar view with tab bar
@@ -35,12 +81,12 @@ struct ContentView: View {
                     }
                 }
             } else if hasNavigationError {
-                // Error view -- shown when page failed to load (offline or server down)
                 errorView
             } else {
                 WebView(
-                    url: AppConfig.startURL,
+                    url: AppConfig.dashboardURL,
                     bridge: bridge,
+                    authManager: authManager,
                     canGoBack: $canGoBack,
                     isLoading: $isLoading,
                     hasNavigationError: $hasNavigationError,
@@ -53,14 +99,12 @@ struct ContentView: View {
             // Top overlays (only on WebView)
             if !showNativeCalendar {
                 VStack(spacing: 0) {
-                    // Offline / reconnected banner
                     if !networkMonitor.isConnected {
                         offlineBanner
                     } else if showReconnectedBanner {
                         reconnectedBanner
                     }
 
-                    // Linear progress indicator (only visible after splash is dismissed)
                     if isLoading && webViewReady {
                         ProgressView()
                             .progressViewStyle(.linear)
@@ -86,18 +130,15 @@ struct ContentView: View {
                 bridge.sendNetworkStatus(isOnline: isOnline)
 
                 if isOnline {
-                    // Show green "reconnected" banner for 3 seconds
                     showReconnectedBanner = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                         showReconnectedBanner = false
                     }
 
-                    // Auto-retry when coming back online after a navigation error
                     if hasNavigationError {
                         hasNavigationError = false
                     }
 
-                    // Retry pending booking actions (confirm/decline from notifications)
                     PendingActionStore.retryAll()
                 }
             }
@@ -106,26 +147,6 @@ struct ContentView: View {
         .onDisappear {
             networkMonitor.stop()
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            switch newPhase {
-            case .active:
-                bridge.sendToWeb(type: .appDidBecomeActive)
-                // Refresh mobile token and widget data when app becomes active
-                Task { await bridge.refreshTokenIfNeeded() }
-                // Retry pending booking actions from notifications
-                PendingActionStore.retryAll()
-                // Re-sync calendar to catch push-action changes
-                calendarViewModel.loadDataForSelectedDate()
-            case .background:
-                bridge.sendToWeb(type: .appDidEnterBackground)
-            default:
-                break
-            }
-        }
-        #else
-        Text("Equinet is available on iOS")
-            .padding()
-        #endif
     }
 
     // MARK: - Offline Banner

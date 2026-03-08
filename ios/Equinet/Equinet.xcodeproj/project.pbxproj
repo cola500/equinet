@@ -10,6 +10,7 @@
 		2E66F0AE2F5D833100BEEF5F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */; };
 		2E66F0B02F5D833100BEEF5F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */; };
 		2E66F0BF2F5D833200BEEF5F /* EquinetWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E66F0AB2F5D833100BEEF5F /* EquinetWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2EEA7A672F5E09D000462C9D /* LocalAuthentication.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EEA7A662F5E09D000462C9D /* LocalAuthentication.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +43,7 @@
 		2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		2E66F0CE2F5D84B300BEEF5F /* EquinetWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EquinetWidgetExtension.entitlements; sourceTree = "<group>"; };
+		2EEA7A662F5E09D000462C9D /* LocalAuthentication.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthentication.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/LocalAuthentication.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EEA7A672F5E09D000462C9D /* LocalAuthentication.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,6 +129,7 @@
 		2E66F0AC2F5D833100BEEF5F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2EEA7A662F5E09D000462C9D /* LocalAuthentication.framework */,
 				2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */,
 				2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */,
 			);

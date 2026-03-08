@@ -14,11 +14,13 @@ import {
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
+import { notifyNativeLogout } from "@/lib/native-bridge"
 
 export function Header() {
   const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin } = useAuth()
 
   const handleLogout = async () => {
+    notifyNativeLogout()
     await signOut({ callbackUrl: "/" })
   }
 

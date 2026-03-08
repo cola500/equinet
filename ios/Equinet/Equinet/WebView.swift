@@ -13,6 +13,7 @@ import WebKit
 struct WebView: UIViewRepresentable {
     let url: URL
     let bridge: BridgeHandler
+    let authManager: AuthManager
     @Binding var canGoBack: Bool
     @Binding var isLoading: Bool
     @Binding var hasNavigationError: Bool
@@ -120,15 +121,18 @@ struct WebView: UIViewRepresentable {
         // Disable link preview (peek/pop on long press)
         webView.allowsLinkPreview = false
 
-        // Attach bridge to WebView
-        bridge.attach(to: webView)
+        // Attach bridge to WebView (with authManager for logout handling)
+        bridge.attach(to: webView, authManager: authManager)
         PushManager.shared.bridge = bridge
 
         // Store reference for navigation from push notifications
         context.coordinator.webView = webView
 
-        // Load the initial URL
-        webView.load(URLRequest(url: url))
+        // Inject session cookie BEFORE loading the page
+        Task {
+            await authManager.injectSessionCookie(into: webView.configuration.websiteDataStore.httpCookieStore)
+            webView.load(URLRequest(url: url))
+        }
 
         return webView
     }
@@ -287,10 +291,19 @@ struct WebView: UIViewRepresentable {
                     return
                 }
 
-                // Block navigation to the marketing landing page -- redirect to login
+                // Detect navigation to /login -- means session expired or user logged out in web
+                if url.path == "/login" {
+                    decisionHandler(.cancel)
+                    Task { @MainActor in
+                        parent.authManager.logout()
+                    }
+                    return
+                }
+
+                // Block navigation to the marketing landing page -- redirect to dashboard
                 if url.path == "/" || url.path.isEmpty {
                     decisionHandler(.cancel)
-                    webView.load(URLRequest(url: AppConfig.startURL))
+                    webView.load(URLRequest(url: AppConfig.dashboardURL))
                     return
                 }
                 decisionHandler(.allow)
