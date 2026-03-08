@@ -9,9 +9,12 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var canGoBack = false
     @State private var isLoading = false
     @State private var hasNavigationError = false
+    @State private var webViewReady = false
+    @State private var showReconnectedBanner = false
     @State private var bridge = BridgeHandler()
     @State private var networkMonitor = NetworkMonitor()
 
@@ -23,46 +26,75 @@ struct ContentView: View {
                 errorView
             } else {
                 WebView(
-                    url: AppConfig.baseURL,
+                    url: AppConfig.startURL,
                     bridge: bridge,
                     canGoBack: $canGoBack,
                     isLoading: $isLoading,
-                    hasNavigationError: $hasNavigationError
+                    hasNavigationError: $hasNavigationError,
+                    webViewReady: $webViewReady
                 )
                 .ignoresSafeArea()
             }
 
             // Top overlays
             VStack(spacing: 0) {
-                // Offline banner
+                // Offline / reconnected banner
                 if !networkMonitor.isConnected {
                     offlineBanner
+                } else if showReconnectedBanner {
+                    reconnectedBanner
                 }
 
-                // Loading indicator
-                if isLoading {
+                // Linear progress indicator (only visible after splash is dismissed)
+                if isLoading && webViewReady {
                     ProgressView()
-                        .progressViewStyle(.circular)
+                        .progressViewStyle(.linear)
                         .tint(.accentColor)
-                        .padding(.top, 4)
                 }
 
                 Spacer()
             }
+
+            // Splash overlay -- shown until WebView finishes first load
+            if !webViewReady {
+                SplashView()
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: webViewReady)
+        .animation(.easeInOut(duration: 0.3), value: networkMonitor.isConnected)
+        .animation(.easeInOut(duration: 0.3), value: showReconnectedBanner)
         .onAppear {
             networkMonitor.onStatusChanged = { isOnline in
                 bridge.sendNetworkStatus(isOnline: isOnline)
 
-                // Auto-retry when coming back online after a navigation error
-                if isOnline && hasNavigationError {
-                    hasNavigationError = false
+                if isOnline {
+                    // Show green "reconnected" banner for 3 seconds
+                    showReconnectedBanner = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                        showReconnectedBanner = false
+                    }
+
+                    // Auto-retry when coming back online after a navigation error
+                    if hasNavigationError {
+                        hasNavigationError = false
+                    }
                 }
             }
             networkMonitor.start()
         }
         .onDisappear {
             networkMonitor.stop()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .active:
+                bridge.sendToWeb(type: .appDidBecomeActive)
+            case .background:
+                bridge.sendToWeb(type: .appDidEnterBackground)
+            default:
+                break
+            }
         }
         #else
         Text("Equinet is available on iOS")
@@ -84,6 +116,25 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 6)
         .background(Color.orange)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Ingen internetanslutning")
+    }
+
+    // MARK: - Reconnected Banner
+
+    private var reconnectedBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "wifi")
+                .font(.caption)
+            Text("Ansluten igen")
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(Color.green)
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     // MARK: - Error View
@@ -101,7 +152,7 @@ struct ContentView: View {
                 .fontWeight(.semibold)
 
             Text(networkMonitor.isConnected
-                ? "Servern svarar inte. Kontrollera att den ar igång och försök igen."
+                ? "Servern svarar inte. Kontrollera att den är igång och försök igen."
                 : "Kontrollera din internetanslutning och försök igen.")
                 .font(.body)
                 .foregroundStyle(.secondary)
@@ -115,6 +166,7 @@ struct ContentView: View {
                     .fontWeight(.medium)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)
+                    .frame(minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
 

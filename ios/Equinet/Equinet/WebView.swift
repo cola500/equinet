@@ -16,6 +16,7 @@ struct WebView: UIViewRepresentable {
     @Binding var canGoBack: Bool
     @Binding var isLoading: Bool
     @Binding var hasNavigationError: Bool
+    @Binding var webViewReady: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -44,7 +45,7 @@ struct WebView: UIViewRepresentable {
                 // Disable long-press context menu (save image, copy link etc)
                 document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
-                // Disable text selection on non-input elements
+                // Disable text selection on non-input elements + extend to safe area
                 var style = document.createElement('style');
                 style.textContent = `
                     * {
@@ -56,8 +57,20 @@ struct WebView: UIViewRepresentable {
                         -webkit-user-select: auto;
                         user-select: auto;
                     }
+                    body {
+                        padding-bottom: env(safe-area-inset-bottom);
+                    }
                 `;
                 document.head.appendChild(style);
+
+                // Ensure viewport covers safe areas
+                var viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport) {
+                    var content = viewport.getAttribute('content');
+                    if (!content.includes('viewport-fit=cover')) {
+                        viewport.setAttribute('content', content + ', viewport-fit=cover');
+                    }
+                }
                 """,
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
@@ -81,15 +94,17 @@ struct WebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .systemBackground
         webView.scrollView.backgroundColor = .systemBackground
+        webView.underPageBackgroundColor = .systemBackground
 
         // Disable zoom (apps don't pinch-to-zoom)
         webView.scrollView.minimumZoomScale = 1.0
         webView.scrollView.maximumZoomScale = 1.0
         webView.scrollView.bouncesZoom = false
 
-        // Smooth scrolling
-        webView.scrollView.bounces = true
-        webView.scrollView.contentInsetAdjustmentBehavior = .always
+        // Scrolling -- no bounce to avoid revealing background
+        webView.scrollView.bounces = false
+        webView.scrollView.alwaysBounceVertical = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.showsHorizontalScrollIndicator = false
 
         // Pull-to-refresh
@@ -158,12 +173,27 @@ struct WebView: UIViewRepresentable {
 
         // MARK: - Pull-to-refresh
 
+        private var refreshTimeoutWork: DispatchWorkItem?
+
         @objc func handleRefresh(_ refreshControl: UIRefreshControl) {
+            // Haptic feedback
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
             webView?.reload()
-            // End refreshing after a short delay (page load will handle the rest)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                refreshControl.endRefreshing()
+
+            // Timeout safety -- end refreshing after 10s max
+            refreshTimeoutWork?.cancel()
+            let timeout = DispatchWorkItem { [weak refreshControl] in
+                refreshControl?.endRefreshing()
             }
+            refreshTimeoutWork = timeout
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0, execute: timeout)
+        }
+
+        private func endRefreshingIfNeeded() {
+            refreshTimeoutWork?.cancel()
+            refreshTimeoutWork = nil
+            webView?.scrollView.refreshControl?.endRefreshing()
         }
 
         // MARK: - WKNavigationDelegate
@@ -176,6 +206,12 @@ struct WebView: UIViewRepresentable {
             parent.canGoBack = webView.canGoBack
             parent.isLoading = false
             lastLoadFailed = false
+            endRefreshingIfNeeded()
+
+            // Signal first load complete (dismisses splash screen)
+            if !parent.webViewReady {
+                parent.webViewReady = true
+            }
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -213,6 +249,24 @@ struct WebView: UIViewRepresentable {
             print("[WebView] Provisional navigation failed: \(error.localizedDescription)")
         }
 
+        // Catch HTTP 5xx errors and show native error view
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationResponse: WKNavigationResponse,
+            decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
+        ) {
+            if let httpResponse = navigationResponse.response as? HTTPURLResponse,
+               httpResponse.statusCode >= 500 {
+                parent.isLoading = false
+                lastLoadFailed = true
+                parent.hasNavigationError = true
+                decisionHandler(.cancel)
+                print("[WebView] Server error: \(httpResponse.statusCode)")
+                return
+            }
+            decisionHandler(.allow)
+        }
+
         // Keep navigation within the app (don't open external links in Safari)
         func webView(
             _ webView: WKWebView,
@@ -224,8 +278,13 @@ struct WebView: UIViewRepresentable {
                 return
             }
 
-            // Allow navigation within the Equinet domain
+            // Block navigation to the marketing landing page -- redirect to login
             if url.host == AppConfig.baseURL.host || url.host == "localhost" {
+                if url.path == "/" || url.path.isEmpty {
+                    decisionHandler(.cancel)
+                    webView.load(URLRequest(url: AppConfig.startURL))
+                    return
+                }
                 decisionHandler(.allow)
                 return
             }

@@ -14,5 +14,8 @@ enum AppConfig {
     static let baseURL = URL(string: "https://equinet.vercel.app")!
     #endif
 
+    /// Start URL -- skip landing page, go straight to login/dashboard
+    static let startURL = baseURL.appendingPathComponent("login")
+
     static let bridgeHandlerName = "equinet"
 }
