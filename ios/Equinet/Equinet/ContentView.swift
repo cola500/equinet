@@ -90,6 +90,8 @@ struct ContentView: View {
             switch newPhase {
             case .active:
                 bridge.sendToWeb(type: .appDidBecomeActive)
+                // Refresh mobile token and widget data when app becomes active
+                Task { await bridge.refreshTokenIfNeeded() }
             case .background:
                 bridge.sendToWeb(type: .appDidEnterBackground)
             default:

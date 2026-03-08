@@ -1297,6 +1297,23 @@ function RegisterForm() {
 
 ---
 
+## 30. jose v6 + jsdom Vitest-inkompatibilitet
+
+**Problem:** `TypeError: payload must be an instance of Uint8Array` vid jose JWT-operationer i tester.
+
+**Orsak:** jose v6:s `FlattenedSign` kraver native `Uint8Array`. Vitest:s jsdom-miljo laddar jose:s webapi-build som har inkompatibel hantering.
+
+**Fix:** Lagg till `@vitest-environment node` som kommentardirektiv langst upp i testfilen:
+```typescript
+/**
+ * @vitest-environment node
+ */
+```
+
+**Galler for:** Alla testfiler som anvander `jose`, `crypto`, eller annan Node.js-specifik kryptografi.
+
+---
+
 ## Relaterade Dokument
 
 - [CLAUDE.md](../CLAUDE.md) - Utvecklingsguide

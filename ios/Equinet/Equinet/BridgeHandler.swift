@@ -26,6 +26,9 @@ enum BridgeMessageType: String {
     case speechTranscript = "speechTranscript"
     case speechRecognitionEnded = "speechRecognitionEnded"
     case speechRecognitionError = "speechRecognitionError"
+    case requestMobileToken = "requestMobileToken"
+    case mobileTokenReceived = "mobileTokenReceived"
+    case mobileTokenError = "mobileTokenError"
 }
 
 @MainActor
@@ -59,6 +62,8 @@ final class BridgeHandler {
             speechRecognizer.start()
         case BridgeMessageType.stopSpeechRecognition.rawValue:
             speechRecognizer.stop()
+        case BridgeMessageType.requestMobileToken.rawValue:
+            handleMobileTokenReceived(body["payload"] as? [String: Any])
         default:
             print("[Bridge] Unknown message type: \(type)")
         }
@@ -110,6 +115,76 @@ final class BridgeHandler {
         speechRecognizer.onError = { [weak self] error in
             self?.sendToWeb(type: .speechRecognitionError, payload: ["error": error.rawValue])
         }
+    }
+
+    // MARK: - Mobile Token
+
+    private func handleMobileTokenReceived(_ payload: [String: Any]?) {
+        guard let token = payload?["token"] as? String,
+              let expiresAt = payload?["expiresAt"] as? String else {
+            print("[Bridge] Invalid mobile token payload")
+            sendToWeb(type: .mobileTokenError, payload: ["error": "Invalid payload"])
+            return
+        }
+
+        KeychainHelper.saveMobileToken(jwt: token, expiresAt: expiresAt)
+        print("[Bridge] Mobile token stored in Keychain")
+
+        // Confirm to web
+        sendToWeb(type: .mobileTokenReceived)
+
+        // Fetch widget data in background
+        Task {
+            await fetchAndStoreWidgetData()
+        }
+    }
+
+    /// Fetch next booking from API and store in App Group for widget
+    func fetchAndStoreWidgetData() async {
+        do {
+            let response = try await APIClient.shared.fetchNextBooking()
+            let widgetData = WidgetData(
+                booking: response.booking,
+                updatedAt: Date(),
+                hasAuth: true
+            )
+            SharedDataManager.saveWidgetData(widgetData)
+            SharedDataManager.reloadWidgets()
+            print("[Bridge] Widget data updated")
+        } catch APIError.noToken, APIError.unauthorized {
+            let widgetData = WidgetData(booking: nil, updatedAt: Date(), hasAuth: false)
+            SharedDataManager.saveWidgetData(widgetData)
+            SharedDataManager.reloadWidgets()
+            print("[Bridge] No valid token for widget data")
+        } catch {
+            print("[Bridge] Failed to fetch widget data: \(error)")
+        }
+    }
+
+    /// Refresh token if nearing expiry and update widget data
+    func refreshTokenIfNeeded() async {
+        // Refresh if expiring within 7 days
+        guard KeychainHelper.tokenExpiresWithinDays(7),
+              KeychainHelper.loadMobileToken() != nil else {
+            return
+        }
+
+        do {
+            try await APIClient.shared.refreshToken()
+            print("[Bridge] Mobile token refreshed")
+        } catch {
+            print("[Bridge] Token refresh failed: \(error)")
+        }
+
+        await fetchAndStoreWidgetData()
+    }
+
+    /// Clear token and widget data (called on logout)
+    func clearMobileToken() {
+        KeychainHelper.clearMobileToken()
+        SharedDataManager.clearWidgetData()
+        SharedDataManager.reloadWidgets()
+        print("[Bridge] Mobile token and widget data cleared")
     }
 
     func sendPushToken(_ token: String) {
