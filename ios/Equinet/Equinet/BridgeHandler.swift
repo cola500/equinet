@@ -29,6 +29,8 @@ enum BridgeMessageType: String {
     case requestMobileToken = "requestMobileToken"
     case mobileTokenReceived = "mobileTokenReceived"
     case mobileTokenError = "mobileTokenError"
+    case navigateToNativeCalendar = "navigateToNativeCalendar"
+    case navigateToWebView = "navigateToWebView"
 }
 
 @MainActor
@@ -183,8 +185,15 @@ final class BridgeHandler {
     func clearMobileToken() {
         KeychainHelper.clearMobileToken()
         SharedDataManager.clearWidgetData()
+        SharedDataManager.clearCalendarCache()
         SharedDataManager.reloadWidgets()
-        print("[Bridge] Mobile token and widget data cleared")
+        print("[Bridge] Mobile token, widget data, and calendar cache cleared")
+    }
+
+    /// Navigate the WebView to a specific path (called from native views)
+    func navigateWebView(to path: String) {
+        guard let url = URL(string: path, relativeTo: AppConfig.baseURL) else { return }
+        webView?.load(URLRequest(url: url))
     }
 
     func sendPushToken(_ token: String) {

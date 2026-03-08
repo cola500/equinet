@@ -35,6 +35,14 @@ actor APIClient {
         )
     }
 
+    /// Fetch calendar data for a date range (native calendar view)
+    func fetchCalendar(from: String, to: String) async throws -> CalendarResponse {
+        return try await authenticatedRequest(
+            path: "/api/native/calendar?from=\(from)&to=\(to)",
+            responseType: CalendarResponse.self
+        )
+    }
+
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
     func refreshToken() async throws {
         guard let currentJwt = KeychainHelper.loadMobileToken() else {

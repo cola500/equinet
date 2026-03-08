@@ -55,6 +55,7 @@
 		2E66F0D02F5D851700BEEF5F /* Exceptions for "Equinet" folder in "EquinetWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				CalendarModels.swift,
 				KeychainHelper.swift,
 				SharedDataManager.swift,
 				WidgetBooking.swift,
