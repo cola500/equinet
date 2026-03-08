@@ -31,7 +31,7 @@ export interface ILoggerLike {
 // --- Status label / notification type mappings ---
 
 const STATUS_LABELS: Record<string, string> = {
-  confirmed: 'bekraftad',
+  confirmed: 'bekräftad',
   cancelled: 'avbokad',
   completed: 'markerad som genomförd',
   no_show: 'markerad som ej infunnit',
@@ -176,12 +176,77 @@ export class PaymentReceivedNotificationHandler implements IEventHandler<Booking
   }
 }
 
+// --- Push handlers ---
+
+export interface IPushDeliveryServiceLike {
+  sendToUser(userId: string, payload: {
+    title: string
+    body: string
+    url?: string
+    category?: string
+    bookingId?: string
+  }): Promise<void>
+}
+
+export class BookingCreatedPushHandler implements IEventHandler<BookingCreatedEvent> {
+  constructor(private pushService: IPushDeliveryServiceLike) {}
+
+  async handle(event: BookingCreatedEvent): Promise<void> {
+    const p = event.payload
+    const dateStr = formatNotifDate(p.bookingDate)
+
+    try {
+      await this.pushService.sendToUser(p.providerUserId, {
+        title: 'Ny bokning',
+        body: `${p.customerName} har bokat ${p.serviceName} den ${dateStr} kl ${p.startTime}`,
+        url: '/provider/bookings',
+        category: 'BOOKING_REQUEST',
+        bookingId: p.bookingId,
+      })
+    } catch {
+      // Isolated
+    }
+  }
+}
+
+export class StatusChangedPushHandler implements IEventHandler<BookingStatusChangedEvent> {
+  constructor(private pushService: IPushDeliveryServiceLike) {}
+
+  async handle(event: BookingStatusChangedEvent): Promise<void> {
+    const p = event.payload
+    const dateStr = formatNotifDate(p.bookingDate)
+    const statusLabel = STATUS_LABELS[p.newStatus] || p.newStatus
+
+    try {
+      if (p.changedByUserType === 'provider') {
+        await this.pushService.sendToUser(p.customerId, {
+          title: `Bokning ${statusLabel}`,
+          body: `${p.serviceName} hos ${p.providerName} den ${dateStr} har blivit ${statusLabel}`,
+          url: '/customer/bookings',
+          bookingId: p.bookingId,
+        })
+      } else {
+        await this.pushService.sendToUser(p.providerUserId, {
+          title: `Bokning ${statusLabel}`,
+          body: `${p.customerName} har ${statusLabel} ${p.serviceName} den ${dateStr}`,
+          url: '/provider/bookings',
+          category: p.newStatus === 'pending' ? 'BOOKING_REQUEST' : undefined,
+          bookingId: p.bookingId,
+        })
+      }
+    } catch {
+      // Isolated
+    }
+  }
+}
+
 // --- Factory ---
 
 export function createBookingEventDispatcher(deps: {
   emailService: IBookingEmailService
   notificationService: INotificationServiceLike
   logger: ILoggerLike
+  pushService?: IPushDeliveryServiceLike
 }) {
   const dispatcher = new InMemoryEventDispatcher()
 
@@ -197,6 +262,12 @@ export function createBookingEventDispatcher(deps: {
   // BOOKING_PAYMENT_RECEIVED
   dispatcher.register(BOOKING_EVENT_TYPES.BOOKING_PAYMENT_RECEIVED, new PaymentReceivedEmailHandler(deps.emailService))
   dispatcher.register(BOOKING_EVENT_TYPES.BOOKING_PAYMENT_RECEIVED, new PaymentReceivedNotificationHandler(deps.notificationService))
+
+  // Push handlers (optional -- backwards compatible)
+  if (deps.pushService) {
+    dispatcher.register(BOOKING_EVENT_TYPES.BOOKING_CREATED, new BookingCreatedPushHandler(deps.pushService))
+    dispatcher.register(BOOKING_EVENT_TYPES.BOOKING_STATUS_CHANGED, new StatusChangedPushHandler(deps.pushService))
+  }
 
   return dispatcher
 }

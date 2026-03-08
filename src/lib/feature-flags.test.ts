@@ -85,6 +85,7 @@ describe("feature-flags", () => {
         municipality_watch: true,
         provider_subscription: false,
         customer_invite: false,
+        push_notifications: false,
         help_center: true,
       })
     })

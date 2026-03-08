@@ -43,6 +43,33 @@ actor APIClient {
         )
     }
 
+    /// Register APNs device token with backend
+    func registerDeviceToken(_ token: String) async throws {
+        _ = try await performRequest(
+            method: "POST",
+            path: "/api/device-tokens",
+            body: ["token": token, "platform": "ios"]
+        )
+    }
+
+    /// Unregister device token on logout
+    func unregisterDeviceToken(_ token: String) async throws {
+        _ = try await performRequest(
+            method: "DELETE",
+            path: "/api/device-tokens",
+            body: ["token": token]
+        )
+    }
+
+    /// Update booking status (confirm/decline from notification action)
+    func updateBookingStatus(bookingId: String, newStatus: String) async throws {
+        _ = try await performRequest(
+            method: "PUT",
+            path: "/api/bookings/\(bookingId)",
+            body: ["status": newStatus]
+        )
+    }
+
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
     func refreshToken() async throws {
         guard let currentJwt = KeychainHelper.loadMobileToken() else {
@@ -75,17 +102,25 @@ actor APIClient {
 
     // MARK: - Private
 
-    private func authenticatedRequest<T: Decodable>(
+    /// Generic authenticated request with token refresh on 401
+    private func performRequest(
+        method: String,
         path: String,
-        responseType: T.Type
-    ) async throws -> T {
+        body: [String: String]? = nil
+    ) async throws -> (Data, HTTPURLResponse) {
         guard let jwt = KeychainHelper.loadMobileToken() else {
             throw APIError.noToken
         }
 
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        request.httpMethod = method
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
+
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        }
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -100,8 +135,7 @@ actor APIClient {
 
             do {
                 try await refreshToken()
-                // Retry with new token
-                return try await authenticatedRequest(path: path, responseType: responseType)
+                return try await performRequest(method: method, path: path, body: body)
             } catch {
                 KeychainHelper.clearMobileToken()
                 throw APIError.unauthorized
@@ -111,6 +145,16 @@ actor APIClient {
         guard (200...299).contains(httpResponse.statusCode) else {
             throw APIError.serverError(httpResponse.statusCode)
         }
+
+        return (data, httpResponse)
+    }
+
+    /// Authenticated GET request with JSON decoding
+    private func authenticatedRequest<T: Decodable>(
+        path: String,
+        responseType: T.Type
+    ) async throws -> T {
+        let (data, _) = try await performRequest(method: "GET", path: path)
 
         do {
             return try JSONDecoder().decode(T.self, from: data)

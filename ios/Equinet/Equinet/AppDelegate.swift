@@ -2,7 +2,8 @@
 //  AppDelegate.swift
 //  Equinet
 //
-//  UIApplicationDelegate for handling APNs callbacks and notification presentation.
+//  UIApplicationDelegate for handling APNs callbacks, notification categories,
+//  and actionable notification responses.
 //
 
 #if os(iOS)
@@ -16,6 +17,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        registerNotificationCategories()
         return true
     }
 
@@ -35,6 +37,33 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         PushManager.shared.didFailToRegisterForRemoteNotifications(with: error)
     }
 
+    // MARK: - Notification Categories
+
+    private func registerNotificationCategories() {
+        let confirmAction = UNNotificationAction(
+            identifier: "CONFIRM_ACTION",
+            title: "Bekräfta",
+            options: []
+        )
+
+        let declineAction = UNNotificationAction(
+            identifier: "DECLINE_ACTION",
+            title: "Avvisa",
+            options: [.destructive]
+        )
+
+        let bookingRequestCategory = UNNotificationCategory(
+            identifier: "BOOKING_REQUEST",
+            actions: [confirmAction, declineAction],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        UNUserNotificationCenter.current().setNotificationCategories([
+            bookingRequestCategory,
+        ])
+    }
+
     // MARK: - Notification Presentation (foreground)
 
     nonisolated func userNotificationCenter(
@@ -46,7 +75,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         completionHandler([.banner, .badge, .sound])
     }
 
-    // MARK: - Notification Tap
+    // MARK: - Notification Tap & Actions
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -54,19 +83,70 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+        let actionIdentifier = response.actionIdentifier
 
-        // If the push contains a URL, navigate to it in the WebView
-        if let urlString = userInfo["url"] as? String {
-            Task { @MainActor in
-                NotificationCenter.default.post(
-                    name: .navigateToURL,
-                    object: nil,
-                    userInfo: ["url": urlString]
-                )
+        switch actionIdentifier {
+        case "CONFIRM_ACTION":
+            handleBookingAction(userInfo: userInfo, newStatus: "confirmed")
+        case "DECLINE_ACTION":
+            handleBookingAction(userInfo: userInfo, newStatus: "cancelled")
+        case UNNotificationDefaultActionIdentifier:
+            // Standard tap -- navigate to URL in WebView
+            if let urlString = userInfo["url"] as? String {
+                Task { @MainActor in
+                    NotificationCenter.default.post(
+                        name: .navigateToURL,
+                        object: nil,
+                        userInfo: ["url": urlString]
+                    )
+                }
             }
+        default:
+            break
         }
 
         completionHandler()
+    }
+
+    // MARK: - Booking Actions
+
+    private nonisolated func handleBookingAction(
+        userInfo: [AnyHashable: Any],
+        newStatus: String
+    ) {
+        guard let bookingId = userInfo["bookingId"] as? String else {
+            print("[Push] No bookingId in notification payload")
+            return
+        }
+
+        Task.detached {
+            do {
+                try await APIClient.shared.updateBookingStatus(
+                    bookingId: bookingId,
+                    newStatus: newStatus
+                )
+                print("[Push] Booking \(bookingId) -> \(newStatus)")
+
+                // Show local confirmation notification
+                let content = UNMutableNotificationContent()
+                content.title = newStatus == "confirmed" ? "Bokning bekräftad" : "Bokning avvisad"
+                content.body = newStatus == "confirmed"
+                    ? "Bokningen har bekräftats."
+                    : "Bokningen har avvisats."
+                content.sound = .default
+
+                let request = UNNotificationRequest(
+                    identifier: "feedback-\(bookingId)",
+                    content: content,
+                    trigger: nil
+                )
+                try? await UNUserNotificationCenter.current().add(request)
+            } catch {
+                print("[Push] Failed to update booking: \(error)")
+                // Save for retry when network returns
+                PendingActionStore.save(bookingId: bookingId, status: newStatus)
+            }
+        }
     }
 }
 

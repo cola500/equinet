@@ -7,6 +7,8 @@ import {
   StatusChangedNotificationHandler,
   PaymentReceivedEmailHandler,
   PaymentReceivedNotificationHandler,
+  BookingCreatedPushHandler,
+  StatusChangedPushHandler,
   createBookingEventDispatcher,
 } from './BookingEventHandlers'
 import type { BookingCreatedEvent, BookingStatusChangedEvent, BookingPaymentReceivedEvent } from './BookingEvents'
@@ -90,6 +92,12 @@ function createMockEmailService() {
 function createMockNotificationService() {
   return {
     createAsync: vi.fn().mockResolvedValue(undefined),
+  }
+}
+
+function createMockPushService() {
+  return {
+    sendToUser: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -276,6 +284,84 @@ describe('PaymentReceivedNotificationHandler', () => {
   })
 })
 
+describe('BookingCreatedPushHandler', () => {
+  it('sends push to provider with booking details', async () => {
+    const pushService = createMockPushService()
+    const handler = new BookingCreatedPushHandler(pushService)
+
+    await handler.handle(createdEvent())
+
+    expect(pushService.sendToUser).toHaveBeenCalledWith(
+      'provider-user-1',
+      expect.objectContaining({
+        title: 'Ny bokning',
+        category: 'BOOKING_REQUEST',
+        bookingId: 'booking-1',
+        url: '/provider/bookings',
+      })
+    )
+    const call = pushService.sendToUser.mock.calls[0][1]
+    expect(call.body).toContain('Anna Svensson')
+    expect(call.body).toContain('Hovslagar')
+  })
+
+  it('does not throw when push service fails', async () => {
+    const pushService = createMockPushService()
+    pushService.sendToUser.mockRejectedValue(new Error('Push failed'))
+    const handler = new BookingCreatedPushHandler(pushService)
+
+    await expect(handler.handle(createdEvent())).resolves.toBeUndefined()
+  })
+})
+
+describe('StatusChangedPushHandler', () => {
+  it('sends push to customer when provider changes status', async () => {
+    const pushService = createMockPushService()
+    const handler = new StatusChangedPushHandler(pushService)
+
+    await handler.handle(statusChangedEvent({
+      changedByUserType: 'provider',
+      newStatus: 'confirmed',
+    }))
+
+    expect(pushService.sendToUser).toHaveBeenCalledWith(
+      'customer-1',
+      expect.objectContaining({
+        url: '/customer/bookings',
+        bookingId: 'booking-1',
+      })
+    )
+    const call = pushService.sendToUser.mock.calls[0][1]
+    expect(call.title).toContain('bekräftad')
+  })
+
+  it('sends push to provider when customer changes status', async () => {
+    const pushService = createMockPushService()
+    const handler = new StatusChangedPushHandler(pushService)
+
+    await handler.handle(statusChangedEvent({
+      changedByUserType: 'customer',
+      newStatus: 'cancelled',
+    }))
+
+    expect(pushService.sendToUser).toHaveBeenCalledWith(
+      'provider-user-1',
+      expect.objectContaining({
+        url: '/provider/bookings',
+        bookingId: 'booking-1',
+      })
+    )
+  })
+
+  it('does not throw when push service fails', async () => {
+    const pushService = createMockPushService()
+    pushService.sendToUser.mockRejectedValue(new Error('Push failed'))
+    const handler = new StatusChangedPushHandler(pushService)
+
+    await expect(handler.handle(statusChangedEvent())).resolves.toBeUndefined()
+  })
+})
+
 describe('createBookingEventDispatcher', () => {
   it('creates dispatcher that handles BOOKING_CREATED events', async () => {
     const emailService = createMockEmailService()
@@ -327,5 +413,43 @@ describe('createBookingEventDispatcher', () => {
 
     expect(emailService.sendPaymentConfirmation).toHaveBeenCalled()
     expect(notifService.createAsync).toHaveBeenCalled()
+  })
+
+  it('registers push handlers when pushService is provided', async () => {
+    const emailService = createMockEmailService()
+    const notifService = createMockNotificationService()
+    const logger = createMockLogger()
+    const pushService = createMockPushService()
+
+    const dispatcher = createBookingEventDispatcher({
+      emailService,
+      notificationService: notifService,
+      logger,
+      pushService,
+    })
+
+    await dispatcher.dispatch(createdEvent())
+    expect(pushService.sendToUser).toHaveBeenCalled()
+
+    pushService.sendToUser.mockClear()
+    await dispatcher.dispatch(statusChangedEvent({ newStatus: 'confirmed' }))
+    expect(pushService.sendToUser).toHaveBeenCalled()
+  })
+
+  it('works without pushService (backwards compatible)', async () => {
+    const emailService = createMockEmailService()
+    const notifService = createMockNotificationService()
+    const logger = createMockLogger()
+
+    const dispatcher = createBookingEventDispatcher({
+      emailService,
+      notificationService: notifService,
+      logger,
+      // No pushService
+    })
+
+    // Should not throw
+    await dispatcher.dispatch(createdEvent())
+    expect(emailService.sendBookingConfirmation).toHaveBeenCalled()
   })
 })

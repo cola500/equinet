@@ -16,6 +16,7 @@ import {
   mapBookingErrorToMessage,
 } from "@/domain/booking"
 import { notificationService } from "@/domain/notification/NotificationService"
+import { pushDeliveryService } from "@/domain/notification/PushDeliveryService"
 import { customerName } from "@/lib/notification-helpers"
 
 // Input schema - endTime is optional (will be calculated from service duration if missing)
@@ -199,6 +200,7 @@ export async function POST(request: NextRequest) {
         },
         notificationService,
         logger,
+        pushService: pushDeliveryService,
       })
 
       await dispatcher.dispatch(createBookingCreatedEvent({

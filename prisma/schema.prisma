@@ -68,6 +68,7 @@ model User {
   bugReports                BugReport[]
   customerInviteTokens      CustomerInviteToken[]
   mobileTokens              MobileToken[]
+  deviceTokens              DeviceToken[]
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
@@ -520,6 +521,18 @@ model MobileToken {
   createdAt  DateTime  @default(now())
 
   @@index([token])
+  @@index([userId])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique          // APNs device token (hex string)
+  platform  String   @default("ios")  // "ios" | "web" (future)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
 }
 
