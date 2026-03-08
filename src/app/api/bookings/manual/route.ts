@@ -15,6 +15,7 @@ import {
   mapBookingErrorToMessage,
 } from "@/domain/booking"
 import { notificationService } from "@/domain/notification/NotificationService"
+import { pushDeliveryService } from "@/domain/notification/PushDeliveryService"
 import { customerName } from "@/lib/notification-helpers"
 
 // Zod schema for manual booking input
@@ -144,6 +145,7 @@ export async function POST(request: NextRequest) {
         },
         notificationService,
         logger,
+        pushService: pushDeliveryService,
       })
 
       await dispatcher.dispatch(createBookingCreatedEvent({

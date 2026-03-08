@@ -1,18 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { auth } from '@/lib/auth-server'
+import { auth, getSession } from '@/lib/auth-server'
+import { authFromMobileToken } from '@/lib/mobile-auth'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared/types/Result'
 
 // Mock dependencies
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
+  getSession: vi.fn(),
+}))
+
+vi.mock('@/lib/mobile-auth', () => ({
+  authFromMobileToken: vi.fn().mockResolvedValue(null),
 }))
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     provider: {
       findUnique: vi.fn().mockResolvedValue({ userId: 'provider-user-1' }),
+    },
+    user: {
+      findUnique: vi.fn(),
     },
   },
 }))
@@ -521,5 +530,104 @@ describe('DELETE /api/bookings/[id]', () => {
 
     expect(response.status).toBe(404)
     expect(data.error).toBe('Provider not found')
+  })
+})
+
+describe('PUT /api/bookings/[id] - Dual auth (MobileToken)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should accept MobileToken bearer auth for provider', async () => {
+    const mockUpdatedBooking = {
+      id: 'booking1',
+      customerId: 'customer123',
+      providerId: 'provider123',
+      status: 'confirmed',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
+      customer: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
+      provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
+    }
+
+    // Mobile token auth returns userId
+    vi.mocked(authFromMobileToken).mockResolvedValue({ userId: 'user123', tokenId: 'tok-1' })
+    // User lookup returns provider type
+    const { prisma } = await import('@/lib/prisma')
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: 'user123',
+      userType: 'provider',
+    } as never)
+    mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
+    mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer test-jwt' },
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mockUpdateStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: 'booking1',
+        newStatus: 'confirmed',
+        providerId: 'provider123',
+      })
+    )
+  })
+
+  it('should return 401 when MobileToken user not found', async () => {
+    vi.mocked(authFromMobileToken).mockResolvedValue({ userId: 'nonexistent', tokenId: 'tok-1' })
+    const { prisma } = await import('@/lib/prisma')
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer test-jwt' },
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(401)
+  })
+
+  it('should fall back to session auth when no bearer token', async () => {
+    vi.mocked(authFromMobileToken).mockResolvedValue(null)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'customer123', userType: 'customer' },
+    } as never)
+
+    const mockUpdatedBooking = {
+      id: 'booking1',
+      customerId: 'customer123',
+      providerId: 'provider123',
+      status: 'cancelled',
+      bookingDate: new Date('2026-02-15'),
+      startTime: '10:00',
+      service: { name: 'Hovslagning', price: 500, durationMinutes: 60 },
+      customer: { firstName: 'Jane', lastName: 'Doe' },
+    }
+    mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'cancelled' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(auth).toHaveBeenCalled()
   })
 })

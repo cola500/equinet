@@ -126,6 +126,14 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: false,
     category: "provider",
   },
+  push_notifications: {
+    key: "push_notifications",
+    label: "Push-notiser",
+    description: "Skicka push-notiser via APNs till iOS-appen",
+    defaultEnabled: false,
+    clientVisible: false,
+    category: "shared",
+  },
   help_center: {
     key: "help_center",
     label: "Hjälpcentral",

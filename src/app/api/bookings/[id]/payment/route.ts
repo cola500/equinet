@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { logger } from "@/lib/logger"
 import { notificationService } from "@/domain/notification/NotificationService"
+import { pushDeliveryService } from "@/domain/notification/PushDeliveryService"
 import { customerName } from "@/lib/notification-helpers"
 import { getPaymentGateway } from "@/domain/payment/PaymentGateway"
 import { createBookingEventDispatcher, createBookingPaymentReceivedEvent } from "@/domain/booking"
@@ -150,6 +151,7 @@ export async function POST(
       },
       notificationService,
       logger,
+      pushService: pushDeliveryService,
     })
 
     const cName = booking.customer

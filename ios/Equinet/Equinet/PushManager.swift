@@ -57,6 +57,16 @@ final class PushManager {
         self.deviceToken = token
         print("[Push] Device token: \(token)")
         bridge?.sendPushToken(token)
+
+        // Register token with backend directly (fire-and-forget)
+        Task.detached {
+            do {
+                try await APIClient.shared.registerDeviceToken(token)
+                print("[Push] Token registered with backend")
+            } catch {
+                print("[Push] Failed to register token with backend: \(error)")
+            }
+        }
     }
 
     func didFailToRegisterForRemoteNotifications(with error: Error) {

@@ -96,6 +96,9 @@ struct ContentView: View {
                     if hasNavigationError {
                         hasNavigationError = false
                     }
+
+                    // Retry pending booking actions (confirm/decline from notifications)
+                    PendingActionStore.retryAll()
                 }
             }
             networkMonitor.start()
@@ -109,6 +112,8 @@ struct ContentView: View {
                 bridge.sendToWeb(type: .appDidBecomeActive)
                 // Refresh mobile token and widget data when app becomes active
                 Task { await bridge.refreshTokenIfNeeded() }
+                // Retry pending booking actions from notifications
+                PendingActionStore.retryAll()
             case .background:
                 bridge.sendToWeb(type: .appDidEnterBackground)
             default:

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { authFromMobileToken } from "@/lib/mobile-auth"
 import { z } from "zod"
 import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
@@ -8,6 +9,7 @@ import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { notificationService } from "@/domain/notification/NotificationService"
+import { pushDeliveryService } from "@/domain/notification/PushDeliveryService"
 import { customerName } from "@/lib/notification-helpers"
 import { sanitizeString } from "@/lib/sanitize"
 import {
@@ -30,7 +32,27 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const session = await auth()
+
+    // Dual auth: try MobileToken (bearer) first, then session
+    const mobileAuth = await authFromMobileToken(request)
+    let userId: string
+    let userType: string
+
+    if (mobileAuth) {
+      const user = await prisma.user.findUnique({
+        where: { id: mobileAuth.userId },
+        select: { id: true, userType: true },
+      })
+      if (!user) {
+        return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+      }
+      userId = user.id
+      userType = user.userType
+    } else {
+      const session = await auth()
+      userId = session.user.id
+      userType = session.user.userType
+    }
 
     // Rate limiting before request parsing
     const clientIp = getClientIP(request)
@@ -61,8 +83,8 @@ export async function PUT(
     let providerId: string | undefined
     let customerId: string | undefined
 
-    if (session.user.userType === "provider") {
-      const provider = await providerRepo.findByUserId(session.user.id)
+    if (userType === "provider") {
+      const provider = await providerRepo.findByUserId(userId)
 
       if (!provider) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 })
@@ -70,7 +92,7 @@ export async function PUT(
 
       providerId = provider.id
     } else {
-      customerId = session.user.id
+      customerId = userId
     }
 
     // Only include cancellationMessage when actually cancelling
@@ -111,6 +133,7 @@ export async function PUT(
         },
         notificationService,
         logger,
+        pushService: pushDeliveryService,
       })
 
       const cName = updatedBooking.customer
@@ -131,7 +154,7 @@ export async function PUT(
         startTime: updatedBooking.startTime,
         oldStatus: updatedBooking.status, // Note: already updated by service
         newStatus: validatedData.status,
-        changedByUserType: session.user.userType as 'provider' | 'customer',
+        changedByUserType: userType as 'provider' | 'customer',
         cancellationMessage,
       }))
     }
