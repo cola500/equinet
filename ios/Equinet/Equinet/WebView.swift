@@ -15,6 +15,7 @@ struct WebView: UIViewRepresentable {
     let bridge: BridgeHandler
     @Binding var canGoBack: Bool
     @Binding var isLoading: Bool
+    @Binding var hasNavigationError: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -48,6 +49,9 @@ struct WebView: UIViewRepresentable {
         // Allow inline media playback (useful for video content)
         config.allowsInlineMediaPlayback = true
 
+        // Enable offline application cache
+        config.websiteDataStore = .default()
+
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
@@ -70,7 +74,11 @@ struct WebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        // No dynamic updates needed
+        // Retry loading when hasNavigationError is cleared (user tapped "retry" or came back online)
+        if !hasNavigationError && context.coordinator.lastLoadFailed {
+            context.coordinator.lastLoadFailed = false
+            webView.load(URLRequest(url: url))
+        }
     }
 
     // MARK: - Coordinator
@@ -78,6 +86,7 @@ struct WebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         let parent: WebView
         weak var webView: WKWebView?
+        var lastLoadFailed = false
         private var navigationObserver: NSObjectProtocol?
 
         init(parent: WebView) {
@@ -112,6 +121,7 @@ struct WebView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             parent.canGoBack = webView.canGoBack
             parent.isLoading = false
+            lastLoadFailed = false
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -125,6 +135,27 @@ struct WebView: UIViewRepresentable {
             withError error: Error
         ) {
             parent.isLoading = false
+            let nsError = error as NSError
+
+            // Network-related errors -> show offline error view
+            if nsError.domain == NSURLErrorDomain {
+                let networkErrors: Set<Int> = [
+                    NSURLErrorNotConnectedToInternet,
+                    NSURLErrorNetworkConnectionLost,
+                    NSURLErrorTimedOut,
+                    NSURLErrorCannotFindHost,
+                    NSURLErrorCannotConnectToHost,
+                    NSURLErrorDNSLookupFailed,
+                ]
+
+                if networkErrors.contains(nsError.code) {
+                    lastLoadFailed = true
+                    parent.hasNavigationError = true
+                    print("[WebView] Network error: \(nsError.code) - \(error.localizedDescription)")
+                    return
+                }
+            }
+
             print("[WebView] Provisional navigation failed: \(error.localizedDescription)")
         }
 
