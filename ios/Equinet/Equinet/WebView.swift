@@ -3,7 +3,7 @@
 //  Equinet
 //
 //  WKWebView wrapper that loads the Equinet web app.
-//  Includes native-web bridge via WKScriptMessageHandler.
+//  Configured to feel native rather than browser-like.
 //
 
 #if os(iOS)
@@ -30,23 +30,41 @@ struct WebView: UIViewRepresentable {
             name: AppConfig.bridgeHandlerName
         )
 
-        // Inject bridge detection script so the web app knows it's running in native
+        // Inject bridge detection + native-feel CSS/JS
         let bridgeScript = WKUserScript(
             source: """
+                // Bridge setup
                 window.isEquinetApp = true;
                 window.equinetNative = {
                     onMessage: function(msg) {
-                        // Override this in the web app to receive messages from Swift
                         console.log('[EquinetNative] Received:', JSON.stringify(msg));
                     }
                 };
+
+                // Disable long-press context menu (save image, copy link etc)
+                document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+                // Disable text selection on non-input elements
+                var style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        -webkit-user-select: none;
+                        user-select: none;
+                        -webkit-touch-callout: none;
+                    }
+                    input, textarea, [contenteditable="true"] {
+                        -webkit-user-select: auto;
+                        user-select: auto;
+                    }
+                `;
+                document.head.appendChild(style);
                 """,
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         )
         config.userContentController.addUserScript(bridgeScript)
 
-        // Allow inline media playback (useful for video content)
+        // Allow inline media playback
         config.allowsInlineMediaPlayback = true
 
         // Enable offline application cache
@@ -54,11 +72,37 @@ struct WebView: UIViewRepresentable {
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
 
-        // Make WebView scrolling feel native
+        // -- Native feel --
+
+        // Match background color to app (prevents white flash on bounce/scroll)
+        webView.isOpaque = false
+        webView.backgroundColor = .systemBackground
+        webView.scrollView.backgroundColor = .systemBackground
+
+        // Disable zoom (apps don't pinch-to-zoom)
+        webView.scrollView.minimumZoomScale = 1.0
+        webView.scrollView.maximumZoomScale = 1.0
+        webView.scrollView.bouncesZoom = false
+
+        // Smooth scrolling
         webView.scrollView.bounces = true
         webView.scrollView.contentInsetAdjustmentBehavior = .always
+        webView.scrollView.showsHorizontalScrollIndicator = false
+
+        // Pull-to-refresh
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.handleRefresh(_:)),
+            for: .valueChanged
+        )
+        webView.scrollView.refreshControl = refreshControl
+
+        // Disable link preview (peek/pop on long press)
+        webView.allowsLinkPreview = false
 
         // Attach bridge to WebView
         bridge.attach(to: webView)
@@ -83,7 +127,7 @@ struct WebView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         let parent: WebView
         weak var webView: WKWebView?
         var lastLoadFailed = false
@@ -112,6 +156,16 @@ struct WebView: UIViewRepresentable {
             }
         }
 
+        // MARK: - Pull-to-refresh
+
+        @objc func handleRefresh(_ refreshControl: UIRefreshControl) {
+            webView?.reload()
+            // End refreshing after a short delay (page load will handle the rest)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                refreshControl.endRefreshing()
+            }
+        }
+
         // MARK: - WKNavigationDelegate
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -137,7 +191,7 @@ struct WebView: UIViewRepresentable {
             parent.isLoading = false
             let nsError = error as NSError
 
-            // Network-related errors -> show offline error view
+            // Network-related errors -> show error view
             if nsError.domain == NSURLErrorDomain {
                 let networkErrors: Set<Int> = [
                     NSURLErrorNotConnectedToInternet,

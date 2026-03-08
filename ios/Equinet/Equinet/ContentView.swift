@@ -29,7 +29,7 @@ struct ContentView: View {
                     isLoading: $isLoading,
                     hasNavigationError: $hasNavigationError
                 )
-                .ignoresSafeArea(edges: .bottom)
+                .ignoresSafeArea()
             }
 
             // Top overlays
