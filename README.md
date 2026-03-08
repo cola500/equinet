@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-08
 related:
   - CLAUDE.md
   - NFR.md
@@ -173,6 +173,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 
 ```
 equinet/
+├── ios/                     # iOS-app (Swift/SwiftUI, WKWebView hybrid)
 ├── prisma/                   # Databasschema & migrationer
 ├── src/
 │   ├── app/                  # Next.js App Router
@@ -256,6 +257,17 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - AI-drivna kundinsikter (frekvens, VIP-score, riskflaggor)
 - Dashboard med trendgrafer och onboarding-checklista
 - Affärsinsikter (populära tjänster, tidsanalys, kundretention)
+
+### iOS-app (hybrid)
+- WKWebView-baserad hybrid-app som laddar webbappen
+- Native-Web bridge (JS <-> Swift) för push-notiser och nätverksstatus
+- Branded splash screen med mjuk övergång
+- Pull-to-refresh med haptic feedback
+- Native offline-detektion (NWPathMonitor) med amber/grön banner
+- HTTP 5xx-felhantering med native felvy
+- VoiceOver-stöd och 44pt touch targets
+- App lifecycle-events (`appDidBecomeActive`/`appDidEnterBackground`) via bridge
+- Portrait-låst, ingen zoom/länkförhandsgranskning
 
 ### Admin-gränssnitt
 - Dashboard med KPI-kort (användare, bokningar, leverantörer, intäkter)

@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
+import { requestMobileTokenForNative } from "@/lib/native-bridge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -61,6 +62,8 @@ function LoginForm() {
           setError("Ogiltig email eller lösenord")
         }
       } else {
+        // Request mobile token for iOS widget (fire-and-forget)
+        requestMobileTokenForNative().catch(() => {})
         router.push("/dashboard")
         router.refresh()
       }

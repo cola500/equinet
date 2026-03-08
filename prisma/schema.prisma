@@ -67,6 +67,7 @@ model User {
   municipalityWatches       MunicipalityWatch[]
   bugReports                BugReport[]
   customerInviteTokens      CustomerInviteToken[]
+  mobileTokens              MobileToken[]
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
@@ -502,6 +503,21 @@ model CustomerInviteToken {
   expiresAt           DateTime
   usedAt              DateTime?
   createdAt           DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model MobileToken {
+  id         String    @id @default(uuid())
+  token      String    @unique          // SHA-256 hash of JWT
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceName String?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
 
   @@index([token])
   @@index([userId])

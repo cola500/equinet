@@ -233,6 +233,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Kanonisk distance-modul**: `src/lib/geo/distance.ts` är enda källan för Haversine-beräkningar. Duplicera ALDRIG i API routes.
 - **CustomerLayout för alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`).
 - **Context > splitta hook vid prop-drilling**: Wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken.
+- **MobileToken JWT-auth**: `src/domain/auth/MobileTokenService.ts` -- jose HS256, SHA-256 hash i DB, 90d expiry, max 5 aktiva per user, atomisk rotation via `revokeAndCreate` (`$transaction`). Bearer-auth helper: `authFromMobileToken(request)` i `src/lib/mobile-auth.ts`.
 
 ### Utvecklingsmönster
 

@@ -148,6 +148,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:bug-report",
       }),
+      mobileToken: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(5, "1 h"),
+        analytics: true,
+        prefix: "ratelimit:mobile-token",
+      }),
     }
   }
 
@@ -286,6 +292,7 @@ async function checkRateLimit(
     loginIp: { max: 200, window: 15 * 60 * 1000 },
     subscription: { max: 50, window: 60 * 60 * 1000 },
     bugReport: { max: 50, window: 60 * 60 * 1000 },
+    mobileToken: { max: 50, window: 60 * 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -405,4 +412,9 @@ export const rateLimiters = {
    * Bug reports: 5 reports per hour per user
    */
   bugReport: async (identifier: string) => checkRateLimit('bugReport', identifier),
+
+  /**
+   * Mobile token generation: 5 attempts per hour per user
+   */
+  mobileToken: async (identifier: string) => checkRateLimit('mobileToken', identifier),
 }
