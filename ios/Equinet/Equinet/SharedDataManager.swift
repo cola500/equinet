@@ -41,6 +41,48 @@ enum SharedDataManager {
         userDefaults?.removeObject(forKey: widgetDataKey)
     }
 
+    // MARK: - Calendar Cache
+
+    private static let calendarCacheKey = "calendar_cache_data"
+
+    /// Cached calendar data with metadata
+    struct CalendarCache: Codable {
+        let response: CalendarResponse
+        let from: String
+        let to: String
+        let cachedAt: Date
+    }
+
+    /// Save calendar data for offline use
+    static func saveCalendarCache(_ response: CalendarResponse, from: String, to: String) {
+        guard let defaults = userDefaults else { return }
+        let cache = CalendarCache(response: response, from: from, to: to, cachedAt: Date())
+        if let encoded = try? JSONEncoder().encode(cache) {
+            defaults.set(encoded, forKey: calendarCacheKey)
+        }
+    }
+
+    /// Load cached calendar data (max 4 hours old)
+    static func loadCalendarCache() -> CalendarCache? {
+        guard let defaults = userDefaults,
+              let data = defaults.data(forKey: calendarCacheKey),
+              let cache = try? JSONDecoder().decode(CalendarCache.self, from: data) else {
+            return nil
+        }
+        // Expire after 4 hours
+        let maxAge: TimeInterval = 4 * 60 * 60
+        guard Date().timeIntervalSince(cache.cachedAt) < maxAge else {
+            defaults.removeObject(forKey: calendarCacheKey)
+            return nil
+        }
+        return cache
+    }
+
+    /// Clear calendar cache (on logout)
+    static func clearCalendarCache() {
+        userDefaults?.removeObject(forKey: calendarCacheKey)
+    }
+
     // MARK: - Token Convenience
 
     /// Check if we have a valid mobile token

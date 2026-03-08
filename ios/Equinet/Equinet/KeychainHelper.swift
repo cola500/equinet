@@ -77,17 +77,28 @@ extension KeychainHelper {
     static let mobileTokenKey = "mobile_token_jwt"
     static let tokenExpiresAtKey = "mobile_token_expires_at"
 
+    /// ISO8601 formatter that handles fractional seconds (e.g. "2026-06-06T00:00:00.000Z")
+    /// JavaScript's toISOString() always includes milliseconds -- default ISO8601DateFormatter does NOT parse them.
+    private static var iso8601Formatter: ISO8601DateFormatter {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }
+
     /// Save mobile token JWT and expiry
     static func saveMobileToken(jwt: String, expiresAt: String) {
-        _ = save(key: mobileTokenKey, value: jwt)
-        _ = save(key: tokenExpiresAtKey, value: expiresAt)
+        let jwtSaved = save(key: mobileTokenKey, value: jwt)
+        let expirySaved = save(key: tokenExpiresAtKey, value: expiresAt)
+        if !jwtSaved || !expirySaved {
+            print("[Keychain] Failed to save mobile token (jwt: \(jwtSaved), expiry: \(expirySaved))")
+        }
     }
 
     /// Load mobile token JWT (nil if not stored or expired)
     static func loadMobileToken() -> String? {
         guard let jwt = load(key: mobileTokenKey),
               let expiresAtStr = load(key: tokenExpiresAtKey),
-              let expiresAt = ISO8601DateFormatter().date(from: expiresAtStr),
+              let expiresAt = iso8601Formatter.date(from: expiresAtStr),
               expiresAt > Date() else {
             return nil
         }
@@ -97,7 +108,7 @@ extension KeychainHelper {
     /// Check if token expires within given days
     static func tokenExpiresWithinDays(_ days: Int) -> Bool {
         guard let expiresAtStr = load(key: tokenExpiresAtKey),
-              let expiresAt = ISO8601DateFormatter().date(from: expiresAtStr) else {
+              let expiresAt = iso8601Formatter.date(from: expiresAtStr) else {
             return true // No token = treat as expired
         }
         let threshold = Date().addingTimeInterval(TimeInterval(days * 24 * 60 * 60))

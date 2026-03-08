@@ -15,13 +15,26 @@ struct ContentView: View {
     @State private var hasNavigationError = false
     @State private var webViewReady = false
     @State private var showReconnectedBanner = false
+    @State private var showNativeCalendar = false
     @State private var bridge = BridgeHandler()
     @State private var networkMonitor = NetworkMonitor()
+    @State private var calendarViewModel = CalendarViewModel()
 
     var body: some View {
         #if os(iOS)
         ZStack(alignment: .top) {
-            if hasNavigationError {
+            if showNativeCalendar {
+                // Native calendar view with tab bar
+                VStack(spacing: 0) {
+                    NativeCalendarView(viewModel: calendarViewModel)
+                    NativeTabBar(activeTab: .calendar) { tab in
+                        if let path = tab.webPath {
+                            showNativeCalendar = false
+                            bridge.navigateWebView(to: path)
+                        }
+                    }
+                }
+            } else if hasNavigationError {
                 // Error view -- shown when page failed to load (offline or server down)
                 errorView
             } else {
@@ -31,32 +44,35 @@ struct ContentView: View {
                     canGoBack: $canGoBack,
                     isLoading: $isLoading,
                     hasNavigationError: $hasNavigationError,
-                    webViewReady: $webViewReady
+                    webViewReady: $webViewReady,
+                    showNativeCalendar: $showNativeCalendar
                 )
                 .ignoresSafeArea()
             }
 
-            // Top overlays
-            VStack(spacing: 0) {
-                // Offline / reconnected banner
-                if !networkMonitor.isConnected {
-                    offlineBanner
-                } else if showReconnectedBanner {
-                    reconnectedBanner
-                }
+            // Top overlays (only on WebView)
+            if !showNativeCalendar {
+                VStack(spacing: 0) {
+                    // Offline / reconnected banner
+                    if !networkMonitor.isConnected {
+                        offlineBanner
+                    } else if showReconnectedBanner {
+                        reconnectedBanner
+                    }
 
-                // Linear progress indicator (only visible after splash is dismissed)
-                if isLoading && webViewReady {
-                    ProgressView()
-                        .progressViewStyle(.linear)
-                        .tint(.accentColor)
-                }
+                    // Linear progress indicator (only visible after splash is dismissed)
+                    if isLoading && webViewReady {
+                        ProgressView()
+                            .progressViewStyle(.linear)
+                            .tint(.accentColor)
+                    }
 
-                Spacer()
+                    Spacer()
+                }
             }
 
             // Splash overlay -- shown until WebView finishes first load
-            if !webViewReady {
+            if !webViewReady && !showNativeCalendar {
                 SplashView()
                     .transition(.opacity)
             }
@@ -64,6 +80,7 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.3), value: webViewReady)
         .animation(.easeInOut(duration: 0.3), value: networkMonitor.isConnected)
         .animation(.easeInOut(duration: 0.3), value: showReconnectedBanner)
+        .animation(.easeInOut(duration: 0.2), value: showNativeCalendar)
         .onAppear {
             networkMonitor.onStatusChanged = { isOnline in
                 bridge.sendNetworkStatus(isOnline: isOnline)

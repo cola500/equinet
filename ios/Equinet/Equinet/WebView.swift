@@ -17,6 +17,7 @@ struct WebView: UIViewRepresentable {
     @Binding var isLoading: Bool
     @Binding var hasNavigationError: Bool
     @Binding var webViewReady: Bool
+    @Binding var showNativeCalendar: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -278,8 +279,15 @@ struct WebView: UIViewRepresentable {
                 return
             }
 
-            // Block navigation to the marketing landing page -- redirect to login
+            // Intercept calendar URL -- show native calendar instead
             if url.host == AppConfig.baseURL.host || url.host == "localhost" {
+                if url.path == "/provider/calendar" || url.path.hasPrefix("/provider/calendar/") {
+                    decisionHandler(.cancel)
+                    parent.showNativeCalendar = true
+                    return
+                }
+
+                // Block navigation to the marketing landing page -- redirect to login
                 if url.path == "/" || url.path.isEmpty {
                     decisionHandler(.cancel)
                     webView.load(URLRequest(url: AppConfig.startURL))

@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
+    logger.info("Widget next-booking query", {
+      userId: authResult.userId,
+      today: today.toISOString(),
+    })
+
     const booking = await prisma.booking.findFirst({
       where: {
         provider: { userId: authResult.userId },
@@ -47,6 +52,11 @@ export async function GET(request: NextRequest) {
           },
         },
       },
+    })
+
+    logger.info("Widget next-booking result", {
+      found: !!booking,
+      bookingId: booking?.id ?? null,
     })
 
     return NextResponse.json({
