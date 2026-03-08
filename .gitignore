@@ -80,3 +80,8 @@ public/sw.js.map
 
 # Git worktrees
 .worktrees/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
