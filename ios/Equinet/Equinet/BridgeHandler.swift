@@ -20,6 +20,12 @@ enum BridgeMessageType: String {
     case networkStatus = "networkStatus"
     case appDidBecomeActive = "appDidBecomeActive"
     case appDidEnterBackground = "appDidEnterBackground"
+    case startSpeechRecognition = "startSpeechRecognition"
+    case stopSpeechRecognition = "stopSpeechRecognition"
+    case speechRecognitionStarted = "speechRecognitionStarted"
+    case speechTranscript = "speechTranscript"
+    case speechRecognitionEnded = "speechRecognitionEnded"
+    case speechRecognitionError = "speechRecognitionError"
 }
 
 @MainActor
@@ -27,9 +33,11 @@ enum BridgeMessageType: String {
 final class BridgeHandler {
 
     private weak var webView: WKWebView?
+    private let speechRecognizer = SpeechRecognizer()
 
     func attach(to webView: WKWebView) {
         self.webView = webView
+        setupSpeechCallbacks()
     }
 
     // MARK: - Incoming (JS -> Swift)
@@ -47,6 +55,10 @@ final class BridgeHandler {
         switch type {
         case BridgeMessageType.requestPush.rawValue:
             PushManager.shared.requestPermission()
+        case BridgeMessageType.startSpeechRecognition.rawValue:
+            speechRecognizer.start()
+        case BridgeMessageType.stopSpeechRecognition.rawValue:
+            speechRecognizer.stop()
         default:
             print("[Bridge] Unknown message type: \(type)")
         }
@@ -76,6 +88,27 @@ final class BridgeHandler {
             if let error {
                 print("[Bridge] JS eval error: \(error.localizedDescription)")
             }
+        }
+    }
+
+    private func setupSpeechCallbacks() {
+        speechRecognizer.onStarted = { [weak self] in
+            self?.sendToWeb(type: .speechRecognitionStarted)
+        }
+
+        speechRecognizer.onTranscript = { [weak self] text, isFinal in
+            self?.sendToWeb(type: .speechTranscript, payload: [
+                "text": text,
+                "isFinal": isFinal,
+            ])
+        }
+
+        speechRecognizer.onEnded = { [weak self] reason in
+            self?.sendToWeb(type: .speechRecognitionEnded, payload: ["reason": reason])
+        }
+
+        speechRecognizer.onError = { [weak self] error in
+            self?.sendToWeb(type: .speechRecognitionError, payload: ["error": error.rawValue])
         }
     }
 

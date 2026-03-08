@@ -50,18 +50,94 @@ interface WindowWithSpeechRecognition extends Window {
   webkitSpeechRecognition?: new () => SpeechRecognitionInstance
 }
 
+// Native bridge types
+interface BridgeMessage {
+  type: string
+  payload?: Record<string, unknown>
+}
+
+// Helpers for native iOS bridge
+function isNativeApp(): boolean {
+  return typeof window !== "undefined" && (window as Window & { isEquinetApp?: boolean }).isEquinetApp === true
+}
+
+function sendBridgeMessage(type: string, payload?: Record<string, unknown>): void {
+  const w = window as Window & {
+    webkit?: { messageHandlers: { equinet: { postMessage: (msg: BridgeMessage) => void } } }
+  }
+  w.webkit?.messageHandlers?.equinet?.postMessage(
+    payload ? { type, payload } : { type }
+  )
+}
+
+const NATIVE_ERROR_MESSAGES: Record<string, string> = {
+  permission_denied: "Taligenkänning nekades. Ge tillåtelse i Inställningar.",
+  not_available: "Taligenkänning är inte tillgänglig på denna enhet.",
+  audio_engine_error: "Kunde inte starta mikrofonen.",
+  recognition_failed: "Taligenkänningen misslyckades. Försök igen.",
+}
+
 export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [transcript, setTranscript] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
 
-  // Check browser support
+  // Check browser support (native app OR Web Speech API)
   const isSupported =
     typeof window !== "undefined" &&
-    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+    (isNativeApp() || "SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+
+  // Native bridge: intercept onMessage for speech events
+  useEffect(() => {
+    if (!isNativeApp()) return
+
+    const w = window as Window & {
+      equinetNative?: { onMessage: (msg: BridgeMessage) => void }
+    }
+    if (!w.equinetNative) return
+
+    const originalHandler = w.equinetNative.onMessage
+
+    w.equinetNative.onMessage = (message: BridgeMessage) => {
+      switch (message.type) {
+        case "speechRecognitionStarted":
+          setIsListening(true)
+          break
+        case "speechTranscript":
+          setTranscript((message.payload?.text as string) ?? "")
+          break
+        case "speechRecognitionEnded":
+          setIsListening(false)
+          break
+        case "speechRecognitionError": {
+          const errorKey = (message.payload?.error as string) ?? "recognition_failed"
+          setError(NATIVE_ERROR_MESSAGES[errorKey] ?? NATIVE_ERROR_MESSAGES.recognition_failed)
+          setIsListening(false)
+          break
+        }
+        default:
+          // Delegate non-speech events to original handler
+          originalHandler?.(message)
+      }
+    }
+
+    return () => {
+      // Restore original handler on cleanup
+      if (w.equinetNative) {
+        w.equinetNative.onMessage = originalHandler
+      }
+      sendBridgeMessage("stopSpeechRecognition")
+    }
+  }, [])
 
   const startListening = useCallback(() => {
+    if (isNativeApp()) {
+      setError(null)
+      sendBridgeMessage("startSpeechRecognition")
+      return
+    }
+
     if (!isSupported) {
       setError("Taligenkänning stöds inte i denna webbläsare")
       return
@@ -122,6 +198,12 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, [isSupported])
 
   const stopListening = useCallback(() => {
+    if (isNativeApp()) {
+      sendBridgeMessage("stopSpeechRecognition")
+      setIsListening(false)
+      return
+    }
+
     if (recognitionRef.current) {
       recognitionRef.current.stop()
       recognitionRef.current = null
