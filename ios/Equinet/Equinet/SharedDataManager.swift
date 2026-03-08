@@ -83,6 +83,41 @@ enum SharedDataManager {
         userDefaults?.removeObject(forKey: calendarCacheKey)
     }
 
+    // MARK: - Calendar Sync
+
+    private static let calendarSyncMappingKey = "calendar_sync_mapping"
+    private static let equinetCalendarIdKey = "equinet_calendar_id"
+    private static let calendarSyncEnabledKey = "calendar_sync_enabled"
+
+    /// Mapping from bookingId -> EKEvent identifier
+    static var calendarSyncMapping: [String: String] {
+        get {
+            userDefaults?.dictionary(forKey: calendarSyncMappingKey) as? [String: String] ?? [:]
+        }
+        set {
+            userDefaults?.set(newValue, forKey: calendarSyncMappingKey)
+        }
+    }
+
+    /// Identifier of the dedicated Equinet calendar
+    static var equinetCalendarIdentifier: String? {
+        get { userDefaults?.string(forKey: equinetCalendarIdKey) }
+        set { userDefaults?.set(newValue, forKey: equinetCalendarIdKey) }
+    }
+
+    /// Whether calendar sync is enabled by the user
+    static var calendarSyncEnabled: Bool {
+        get { userDefaults?.bool(forKey: calendarSyncEnabledKey) ?? false }
+        set { userDefaults?.set(newValue, forKey: calendarSyncEnabledKey) }
+    }
+
+    /// Clear all calendar sync data (on logout)
+    static func clearCalendarSyncData() {
+        userDefaults?.removeObject(forKey: calendarSyncMappingKey)
+        userDefaults?.removeObject(forKey: equinetCalendarIdKey)
+        userDefaults?.removeObject(forKey: calendarSyncEnabledKey)
+    }
+
     // MARK: - Token Convenience
 
     /// Check if we have a valid mobile token

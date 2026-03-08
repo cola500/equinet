@@ -114,6 +114,8 @@ struct ContentView: View {
                 Task { await bridge.refreshTokenIfNeeded() }
                 // Retry pending booking actions from notifications
                 PendingActionStore.retryAll()
+                // Re-sync calendar to catch push-action changes
+                calendarViewModel.loadDataForSelectedDate()
             case .background:
                 bridge.sendToWeb(type: .appDidEnterBackground)
             default:
