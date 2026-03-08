@@ -2,94 +2,48 @@
 //  EquinetWidget.swift
 //  EquinetWidget
 //
-//  Entry point for the Equinet WidgetKit extension.
-//  Shows the provider's next upcoming booking.
+//  Entry point and configuration for the Equinet iOS widget.
+//  Shows the provider's next upcoming booking on the home screen.
 //
 
-import SwiftUI
 import WidgetKit
-
-struct EquinetWidget: Widget {
-    let kind: String = "EquinetNextBooking"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: NextBookingProvider()) { entry in
-            EquinetWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
-        }
-        .configurationDisplayName("Nästa bokning")
-        .description("Visar din nästa kommande bokning")
-        .supportedFamilies([.systemSmall, .systemMedium])
-    }
-}
-
-struct EquinetWidgetEntryView: View {
-    @Environment(\.widgetFamily) var family
-    let entry: NextBookingEntry
-
-    var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallWidgetView(entry: entry)
-        case .systemMedium:
-            MediumWidgetView(entry: entry)
-        default:
-            SmallWidgetView(entry: entry)
-        }
-    }
-}
-
-// MARK: - Widget Bundle
+import SwiftUI
 
 @main
 struct EquinetWidgetBundle: WidgetBundle {
     var body: some Widget {
-        EquinetWidget()
+        NextBookingWidget()
     }
 }
 
-// MARK: - Previews
+struct NextBookingWidget: Widget {
+    let kind: String = "NextBookingWidget"
 
-#Preview("Small - Booking", as: .systemSmall) {
-    EquinetWidget()
-} timeline: {
-    NextBookingEntry(date: Date(), state: .hasBooking(WidgetBooking(
-        id: "1",
-        bookingDate: "2026-03-10T00:00:00.000Z",
-        startTime: "10:00",
-        endTime: "11:00",
-        status: "confirmed",
-        horseName: "Blansen",
-        customerFirstName: "Anna",
-        customerLastName: "Andersson",
-        serviceName: "Hovslagare"
-    )))
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: NextBookingProvider()) { entry in
+            if #available(iOS 17.0, *) {
+                widgetView(for: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                widgetView(for: entry)
+                    .padding()
+                    .background()
+            }
+        }
+        .configurationDisplayName("Nästa bokning")
+        .description("Visa din nästa kommande bokning")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+
+    @ViewBuilder
+    private func widgetView(for entry: NextBookingEntry) -> some View {
+        SmallWidgetView(entry: entry)
+    }
 }
 
-#Preview("Small - Empty", as: .systemSmall) {
-    EquinetWidget()
+#Preview(as: .systemSmall) {
+    NextBookingWidget()
 } timeline: {
-    NextBookingEntry(date: Date(), state: .noBooking)
-}
-
-#Preview("Medium - Booking", as: .systemMedium) {
-    EquinetWidget()
-} timeline: {
-    NextBookingEntry(date: Date(), state: .hasBooking(WidgetBooking(
-        id: "1",
-        bookingDate: "2026-03-10T00:00:00.000Z",
-        startTime: "10:00",
-        endTime: "11:00",
-        status: "confirmed",
-        horseName: "Blansen",
-        customerFirstName: "Anna",
-        customerLastName: "Andersson",
-        serviceName: "Hovslagare"
-    )))
-}
-
-#Preview("Medium - Auth Needed", as: .systemMedium) {
-    EquinetWidget()
-} timeline: {
-    NextBookingEntry(date: Date(), state: .authNeeded)
+    NextBookingEntry(date: .now, state: .authNeeded)
+    NextBookingEntry(date: .now, state: .noBooking)
 }

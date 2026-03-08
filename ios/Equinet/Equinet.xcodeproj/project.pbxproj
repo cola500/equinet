@@ -6,14 +6,78 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2E66F0AE2F5D833100BEEF5F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */; };
+		2E66F0B02F5D833100BEEF5F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */; };
+		2E66F0BF2F5D833200BEEF5F /* EquinetWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E66F0AB2F5D833100BEEF5F /* EquinetWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2E66F0BD2F5D833200BEEF5F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E66F0562F5CA7B300BEEF5F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2E66F0AA2F5D833100BEEF5F;
+			remoteInfo = EquinetWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2E66F0C42F5D833200BEEF5F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2E66F0BF2F5D833200BEEF5F /* EquinetWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		2E66F05E2F5CA7B300BEEF5F /* Equinet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Equinet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E66F0AB2F5D833100BEEF5F /* EquinetWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = EquinetWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		2E66F0CE2F5D84B300BEEF5F /* EquinetWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EquinetWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2E66F0C02F5D833200BEEF5F /* Exceptions for "EquinetWidget" folder in "EquinetWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2E66F0AA2F5D833100BEEF5F /* EquinetWidgetExtension */;
+		};
+		2E66F0D02F5D851700BEEF5F /* Exceptions for "Equinet" folder in "EquinetWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				KeychainHelper.swift,
+				SharedDataManager.swift,
+				WidgetBooking.swift,
+			);
+			target = 2E66F0AA2F5D833100BEEF5F /* EquinetWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2E66F0602F5CA7B300BEEF5F /* Equinet */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2E66F0D02F5D851700BEEF5F /* Exceptions for "Equinet" folder in "EquinetWidgetExtension" target */,
+			);
 			path = Equinet;
+			sourceTree = "<group>";
+		};
+		2E66F0B12F5D833100BEEF5F /* EquinetWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2E66F0C02F5D833200BEEF5F /* Exceptions for "EquinetWidget" folder in "EquinetWidgetExtension" target */,
+			);
+			path = EquinetWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,13 +90,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2E66F0A82F5D833100BEEF5F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E66F0B02F5D833100BEEF5F /* SwiftUI.framework in Frameworks */,
+				2E66F0AE2F5D833100BEEF5F /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		2E66F0552F5CA7B300BEEF5F = {
 			isa = PBXGroup;
 			children = (
+				2E66F0CE2F5D84B300BEEF5F /* EquinetWidgetExtension.entitlements */,
 				2E66F0602F5CA7B300BEEF5F /* Equinet */,
+				2E66F0B12F5D833100BEEF5F /* EquinetWidget */,
+				2E66F0AC2F5D833100BEEF5F /* Frameworks */,
 				2E66F05F2F5CA7B300BEEF5F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +117,18 @@
 			isa = PBXGroup;
 			children = (
 				2E66F05E2F5CA7B300BEEF5F /* Equinet.app */,
+				2E66F0AB2F5D833100BEEF5F /* EquinetWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		2E66F0AC2F5D833100BEEF5F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */,
+				2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +141,12 @@
 				2E66F05A2F5CA7B300BEEF5F /* Sources */,
 				2E66F05B2F5CA7B300BEEF5F /* Frameworks */,
 				2E66F05C2F5CA7B300BEEF5F /* Resources */,
+				2E66F0C42F5D833200BEEF5F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				2E66F0BE2F5D833200BEEF5F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2E66F0602F5CA7B300BEEF5F /* Equinet */,
@@ -69,6 +157,28 @@
 			productName = Equinet;
 			productReference = 2E66F05E2F5CA7B300BEEF5F /* Equinet.app */;
 			productType = "com.apple.product-type.application";
+		};
+		2E66F0AA2F5D833100BEEF5F /* EquinetWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2E66F0C12F5D833200BEEF5F /* Build configuration list for PBXNativeTarget "EquinetWidgetExtension" */;
+			buildPhases = (
+				2E66F0A72F5D833100BEEF5F /* Sources */,
+				2E66F0A82F5D833100BEEF5F /* Frameworks */,
+				2E66F0A92F5D833100BEEF5F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2E66F0B12F5D833100BEEF5F /* EquinetWidget */,
+			);
+			name = EquinetWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = EquinetWidgetExtension;
+			productReference = 2E66F0AB2F5D833100BEEF5F /* EquinetWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +191,9 @@
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					2E66F05D2F5CA7B300BEEF5F = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					2E66F0AA2F5D833100BEEF5F = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -100,12 +213,20 @@
 			projectRoot = "";
 			targets = (
 				2E66F05D2F5CA7B300BEEF5F /* Equinet */,
+				2E66F0AA2F5D833100BEEF5F /* EquinetWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		2E66F05C2F5CA7B300BEEF5F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2E66F0A92F5D833100BEEF5F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +243,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2E66F0A72F5D833100BEEF5F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2E66F0BE2F5D833200BEEF5F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2E66F0AA2F5D833100BEEF5F /* EquinetWidgetExtension */;
+			targetProxy = 2E66F0BD2F5D833200BEEF5F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2E66F0672F5CA7B300BEEF5F /* Debug */ = {
@@ -244,6 +380,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Equinet/Equinet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H27H3M6Q9H;
@@ -280,6 +417,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Equinet/Equinet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H27H3M6Q9H;
@@ -311,6 +449,73 @@
 			};
 			name = Release;
 		};
+		2E66F0C22F5D833200BEEF5F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = EquinetWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H27H3M6Q9H;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EquinetWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = EquinetWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.equinet.Equinet.EquinetWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2E66F0C32F5D833200BEEF5F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = EquinetWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H27H3M6Q9H;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EquinetWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = EquinetWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.equinet.Equinet.EquinetWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -328,6 +533,15 @@
 			buildConfigurations = (
 				2E66F06A2F5CA7B300BEEF5F /* Debug */,
 				2E66F06B2F5CA7B300BEEF5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2E66F0C12F5D833200BEEF5F /* Build configuration list for PBXNativeTarget "EquinetWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E66F0C22F5D833200BEEF5F /* Debug */,
+				2E66F0C32F5D833200BEEF5F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
