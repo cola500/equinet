@@ -245,6 +245,10 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS import OSLog gotcha**: `os.Logger`-stränginterpolering kräver `import OSLog` i den anropande filen, inte bara där Logger definieras. Swift resolvar `OSLogMessage` vid call-site.
 - **iOS widget extension target-membership**: Nya .swift-filer som används av delade filer (KeychainHelper, SharedDataManager) MÅSTE läggas till i `membershipExceptions` i `project.pbxproj` för widget extension target.
 - **iOS Xcode target-skapande förstör pbxproj**: Xcode re-serialiserar PBXFileSystemSynchronizedRootGroup vid ny target och tappar befintliga `PBXFileSystemSynchronizedBuildFileExceptionSet`. ALLTID spara backup + diff efter manuella Xcode-steg.
+- **iOS optimistisk UI**: Spara `oldState` före mutation, uppdatera UI direkt, reverta vid error. Kräver `withStatus()`-copy-metod på Codable struct. Haptic `.success`/`.error` efter resultat.
+- **iOS nya Codable-fält bakåtkompatibla**: Nya fält som `serviceId` måste vara optionella (`String?`) om cachad data kan sakna dem. API:t skickar alltid, men SharedDataManager-cache kan ha äldre format.
+- **iOS context menu > swipeActions i kalender**: `contextMenu` undviker krock med TabView page-swipe. Ger native long-press-meny med haptic.
+- **iOS callback-pattern för navigering**: NativeCalendarView tar `onNavigateToWeb: ((String) -> Void)?` istället för att exponera ContentViews state-binding. Ägaren (ContentView) styr navigeringslogiken.
 - **iOS test bundle ID prefix**: Test-target MÅSTE ha bundle ID som är prefix av parent app (`com.equinet.Equinet.EquinetTests`), annars: "Embedded binary's bundle identifier is not prefixed".
 - **iOS Xcode 26 kräver explicit .xctestplan**: `shouldAutocreateTestPlan` är otillförlitligt. Skapa ALLTID `EquinetTests.xctestplan` manuellt och referera med `container:EquinetTests.xctestplan` i schemat. Utan fysisk fil: "test plan could not be read".
 - **iOS XCTest setup**: `xcodebuild test -project ... -scheme Equinet -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:EquinetTests`
