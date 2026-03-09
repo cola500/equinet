@@ -66,6 +66,7 @@ export interface VerifyCredentialsResult {
   userType: string
   isAdmin: boolean
   providerId: string | null
+  stableId: string | null
 }
 
 // Error types
@@ -321,6 +322,7 @@ export class AuthService {
       userType: user.userType,
       isAdmin: user.isAdmin,
       providerId: user.provider?.id || null,
+      stableId: user.stable?.id || null,
     })
   }
 

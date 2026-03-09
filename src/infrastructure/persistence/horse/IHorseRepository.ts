@@ -22,6 +22,8 @@ export interface Horse {
   microchipNumber: string | null
   photoUrl: string | null
   isActive: boolean
+  stableId: string | null
+  stable: { id: string; name: string; municipality: string | null } | null
   createdAt: Date
   updatedAt: Date
 }
@@ -90,6 +92,7 @@ export interface UpdateHorseData {
   specialNeeds?: string | null
   registrationNumber?: string | null
   microchipNumber?: string | null
+  stableId?: string | null
 }
 
 export interface CreateNoteData {

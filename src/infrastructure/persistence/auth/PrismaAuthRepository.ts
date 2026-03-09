@@ -44,6 +44,9 @@ const credentialsSelect = {
   provider: {
     select: { id: true },
   },
+  stable: {
+    select: { id: true },
+  },
 } satisfies Prisma.UserSelect
 
 // Minimal select for resend-verification

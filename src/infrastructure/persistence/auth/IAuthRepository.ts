@@ -34,6 +34,7 @@ export interface AuthUserWithCredentials {
   passwordHash: string
   emailVerified: boolean
   provider: { id: string } | null
+  stable: { id: string } | null
 }
 
 /** Minimal user data for resend-verification */

@@ -32,8 +32,9 @@ interface Profile {
 
 export default function CustomerProfilePage() {
   const router = useRouter()
-  const { isLoading, isCustomer } = useAuth()
+  const { isLoading, isCustomer, isStableOwner } = useAuth()
   const municipalityWatchEnabled = useFeatureFlag("municipality_watch")
+  const stableEnabled = useFeatureFlag("stable_profiles")
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
@@ -398,6 +399,29 @@ export default function CustomerProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Stable Profile */}
+        {stableEnabled && (
+          <div className="max-w-2xl mt-6">
+            <Card className="border-emerald-200">
+              <CardHeader>
+                <CardTitle>Stallprofil</CardTitle>
+                <CardDescription>
+                  {isStableOwner
+                    ? "Hantera ditt stall, stallplatser och inbjudningar"
+                    : "Registrera ditt stall och bjud in hästägare"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href={isStableOwner ? "/stable/dashboard" : "/stable/profile"}>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    {isStableOwner ? "Gå till mitt stall" : "Skapa stallprofil"}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Municipality Watch */}
         {municipalityWatchEnabled && (

@@ -39,6 +39,8 @@ const horseSelect = {
   microchipNumber: true,
   photoUrl: true,
   isActive: true,
+  stableId: true,
+  stable: { select: { id: true, name: true, municipality: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.HorseSelect

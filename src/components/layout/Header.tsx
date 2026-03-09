@@ -15,9 +15,11 @@ import { HorseIcon } from "@/components/icons/HorseIcon"
 import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 export function Header() {
   const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin } = useAuth()
+  const stableEnabled = useFeatureFlag("stable_profiles")
 
   const handleLogout = async () => {
     notifyNativeLogout()
@@ -35,6 +37,11 @@ export function Header() {
         <div className="flex items-center gap-2 md:gap-4">
           {isLoading ? null : !isAuthenticated ? (
             <>
+              {stableEnabled && (
+                <Link href="/stables" className="text-sm text-gray-600 hover:text-gray-900 hidden sm:inline">
+                  Hitta stall
+                </Link>
+              )}
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="h-11 px-3 md:px-4">
                   Logga in

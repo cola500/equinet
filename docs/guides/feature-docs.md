@@ -41,6 +41,10 @@ sections:
   - [Dataexport](#dataexport)
   - [Notifikationer](#notifikationer)
   - [Bokningspåminnelser](#bokningspåminnelser)
+  - [Hitta stallplatser](#hitta-stallplatser)
+- [Guide för stallägare](#guide-för-stallägare)
+  - [Stallprofil](#stallprofil)
+  - [Hantera stallplatser](#hantera-stallplatser)
 - [Guide för leverantörer](#guide-för-leverantörer)
   - [Komma igång som leverantör](#komma-igång-som-leverantör)
   - [Företagsprofil](#företagsprofil)
@@ -470,6 +474,53 @@ För att få relevanta ruttannonser behöver du ange vilken kommun du befinner d
 När en leverantör du följer annonserar en rutt i din kommun får du en notifikation. Om din häst dessutom är försenad för service får du ett personligt meddelande med information om både hästens servicebehov och leverantörens lediga tider.
 
 Exempel: *"Blansen behövde skoning för 2 veckor sedan. Anna har lediga tider i Kungsbacka nästa vecka."*
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
+
+### Hitta stallplatser
+
+Sök bland stall med lediga stallplatser i hela Sverige.
+
+**Sök och filtrera:**
+- Fritextsökning på stallnamn
+- Filtrera på kommun (med autocomplete bland alla 290 svenska kommuner)
+- Visa bara stall med lediga platser
+
+**Stallprofil:**
+Klicka på ett stall för att se:
+- Beskrivning av stallet
+- Lediga stallplatser med pris per månad
+- Kontaktuppgifter (telefon, e-post)
+- Kommun och stad
+
+**Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
+
+---
+
+## Guide för stallägare
+
+### Stallprofil
+
+Skapa en stallprofil för att synas i sökningen och marknadsföra lediga platser.
+
+**Profilinformation:**
+- Stallnamn (obligatoriskt)
+- Beskrivning
+- Kommun och stad
+- Kontaktuppgifter (e-post, telefon)
+
+### Hantera stallplatser
+
+Registrera stallplatser och markera dem som lediga eller uthyrda.
+
+**Stallplats innehåller:**
+- Namn/etikett (t.ex. "Box 3", "Spilta A")
+- Status: ledig eller uthyrd
+- Pris per månad (valfritt)
+- Tillgänglig från datum (valfritt)
+- Anteckningar
+
+Lediga platser visas automatiskt på din publika stallprofil.
 
 **Bakom feature flag:** Funktionen kan stängas av via admin-systeminställningar.
 

@@ -9,6 +9,8 @@ export interface Horse {
   registrationNumber: string | null
   microchipNumber: string | null
   photoUrl: string | null
+  stableId: string | null
+  stable: { id: string; name: string; municipality: string | null } | null
 }
 
 export interface TimelineItem {

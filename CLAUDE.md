@@ -234,6 +234,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **CustomerLayout för alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`).
 - **Context > splitta hook vid prop-drilling**: Wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken.
 - **MobileToken JWT-auth**: `src/domain/auth/MobileTokenService.ts` -- jose HS256, SHA-256 hash i DB, 90d expiry, max 5 aktiva per user, atomisk rotation via `revokeAndCreate` (`$transaction`). Bearer-auth helper: `authFromMobileToken(request)` i `src/lib/mobile-auth.ts`.
+- **Publik vs skyddad URL-konvention**: `/api/stable/*` = auth-skyddad (singularis), `/api/stables/*` = publik (pluralis). Auth.config: `startsWith('/stable/')` + `=== '/stable'` -- ALDRIG `startsWith('/stable')` som matchar båda.
+- **Publik data-allowlist**: `toPublicStable()` returnerar bara tillåtna fält (allowlist > blocklist). Nya fält exponeras inte oavsiktligt.
 
 ### Utvecklingsmönster
 

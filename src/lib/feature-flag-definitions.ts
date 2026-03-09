@@ -142,4 +142,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
+  stable_profiles: {
+    key: "stable_profiles",
+    label: "Stallprofiler",
+    description: "Stallägare kan skapa profiler, publicera stallplatser och bjuda in hästägare",
+    defaultEnabled: false,
+    clientVisible: true,
+    category: "shared",
+  },
 }
