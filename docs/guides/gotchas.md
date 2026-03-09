@@ -2,9 +2,9 @@
 title: "Vanliga Gotchas"
 description: "Collection of common pitfalls and solutions encountered during Equinet development"
 category: guide
-tags: [gotchas, debugging, next-js, prisma, serverless, offline, security]
+tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-09
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -1316,7 +1316,33 @@ function RegisterForm() {
 
 ---
 
-## 31. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
+## 31. Xcode Tappar pbxproj Exception Sets vid Ny Target
+
+**Symptom:** Widget-extension kompilerar inte efter att nytt test-target skapats i Xcode. Felet: `Cannot find type 'WidgetBooking' in scope`.
+
+**Orsak:** Xcode 26 re-serialiserar `PBXFileSystemSynchronizedRootGroup`-sektionen vid ny target och tappar befintliga `PBXFileSystemSynchronizedBuildFileExceptionSet`-poster. Dessa styr vilka filer som delas mellan targets (t.ex. WidgetBooking.swift, KeychainHelper.swift).
+
+**Fix:**
+1. Spara ALLTID backup: `cp project.pbxproj project.pbxproj.backup`
+2. Skapa target i Xcode GUI
+3. Jämför: `diff project.pbxproj.backup project.pbxproj`
+4. Återställ saknade exception sets manuellt
+
+**Relaterat:**
+- Test bundle ID MÅSTE ha parent-app prefix: `com.equinet.Equinet.EquinetTests`
+- `Info.plist` i `PBXFileSystemSynchronizedRootGroup` måste exkluderas via `membershipExceptions`
+
+## 32. Xcode 26 Kräver Explicit .xctestplan-fil
+
+**Symptom:** "Tests cannot be run because the test plan could not be read" i Xcode GUI. CLI (`xcodebuild test`) fungerar.
+
+**Orsak:** Xcode 26 skapar en `TestPlans`-referens i schemat (`container:EquinetTests`) vid target-skapande, men genererar inte alltid den fysiska `.xctestplan`-filen. `shouldAutocreateTestPlan = "YES"` är otillförlitligt.
+
+**Fix:** Skapa `EquinetTests.xctestplan` manuellt med korrekt JSON-format och referera med `container:EquinetTests.xctestplan` i schemats `TestPlanReference`.
+
+**Impact:** Blockerar all testning i Xcode GUI tills fixat.
+
+## 33. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
 
 > **Learning: 2026-03-09** | **Severity: SECURITY**
 

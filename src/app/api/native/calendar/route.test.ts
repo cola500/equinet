@@ -58,9 +58,12 @@ const mockBooking = {
   status: "confirmed",
   horseName: "Blansen",
   customer: { firstName: "Anna", lastName: "Andersson" },
-  service: { name: "Hovslagare", price: 1500 },
+  service: { id: "service-1", name: "Hovslagare", price: 1500 },
   isManualBooking: false,
   payment: null,
+  bookingSeriesId: null,
+  customerNotes: "Var snäll mot Luna",
+  providerNotes: null,
 }
 
 const mockAvailability = {
@@ -201,6 +204,24 @@ describe("GET /api/native/calendar", () => {
         orderBy: [{ bookingDate: "asc" }, { startTime: "asc" }],
       })
     )
+  })
+
+  it("includes serviceId, bookingSeriesId, and notes in response", async () => {
+    const res = await GET(createRequest({ from: "2026-03-10", to: "2026-03-16" }))
+    const body = await res.json()
+    expect(body.bookings[0].serviceId).toBe("service-1")
+    expect(body.bookings[0].bookingSeriesId).toBeNull()
+    expect(body.bookings[0].customerNotes).toBe("Var snäll mot Luna")
+    expect(body.bookings[0].providerNotes).toBeNull()
+  })
+
+  it("includes bookingSeriesId when booking is part of a series", async () => {
+    mockFindBookings.mockResolvedValue([
+      { ...mockBooking, bookingSeriesId: "series-1" },
+    ] as never)
+    const res = await GET(createRequest({ from: "2026-03-10", to: "2026-03-16" }))
+    const body = await res.json()
+    expect(body.bookings[0].bookingSeriesId).toBe("series-1")
   })
 
   it("returns isPaid true when booking has a payment", async () => {

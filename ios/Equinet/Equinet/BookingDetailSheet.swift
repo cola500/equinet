@@ -10,6 +10,8 @@ import SwiftUI
 
 struct BookingDetailSheet: View {
     let booking: NativeBooking
+    var onAction: ((_ bookingId: String, _ newStatus: String) -> Void)?
+    var onOpenInApp: ((_ bookingId: String) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -59,6 +61,84 @@ struct BookingDetailSheet: View {
                             Spacer()
                             Text("Manuell bokning")
                                 .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                // Notes
+                if booking.customerNotes != nil || booking.providerNotes != nil {
+                    Section("Anteckningar") {
+                        if let notes = booking.customerNotes {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Kundens meddelande")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(notes)
+                                    .font(.body)
+                            }
+                        }
+                        if let notes = booking.providerNotes {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Dina anteckningar")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(notes)
+                                    .font(.body)
+                            }
+                        }
+                    }
+                }
+
+                // Recurring badge
+                if booking.bookingSeriesId != nil {
+                    Section {
+                        Label("Återkommande bokning", systemImage: "arrow.triangle.2.circlepath")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Action buttons for pending bookings
+                if booking.status == "pending", let onAction {
+                    Section {
+                        Button {
+                            onAction(booking.id, "confirmed")
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Bekräfta bokning", systemImage: "checkmark.circle.fill")
+                                    .fontWeight(.semibold)
+                                Spacer()
+                            }
+                        }
+                        .tint(.green)
+
+                        Button(role: .destructive) {
+                            onAction(booking.id, "cancelled")
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Avvisa bokning", systemImage: "xmark.circle.fill")
+                                    .fontWeight(.semibold)
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+
+                // Open in web app
+                if let onOpenInApp {
+                    Section {
+                        Button {
+                            onOpenInApp(booking.id)
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Visa i appen", systemImage: "arrow.up.forward.app")
+                                Spacer()
+                            }
                         }
                     }
                 }
