@@ -64,7 +64,10 @@ function LoginForm() {
       } else {
         // Request mobile token for iOS widget (fire-and-forget)
         requestMobileTokenForNative().catch(() => {})
-        router.push("/dashboard")
+        // Redirect to callbackUrl if provided (must start with / to prevent open redirect)
+        const callbackUrl = searchParams.get("callbackUrl")
+        const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard"
+        router.push(redirectTo)
         router.refresh()
       }
     } catch (error) {
@@ -100,7 +103,9 @@ function LoginForm() {
                 if (result?.error) {
                   throw new Error("Ogiltig email eller lösenord")
                 }
-                router.push("/dashboard")
+                const retryCallbackUrl = searchParams.get("callbackUrl")
+                const retryRedirectTo = retryCallbackUrl && retryCallbackUrl.startsWith("/") ? retryCallbackUrl : "/dashboard"
+                router.push(retryRedirectTo)
                 router.refresh()
               })}
               isRetrying={isRetrying}
