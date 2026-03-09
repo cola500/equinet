@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "D4E7A3B2-1F5C-4A8E-B9D1-6E3F2A7C8D01",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Equinet.xcodeproj",
+        "identifier" : "2EEA7B3E2F5EC1AC00462C9D",
+        "name" : "EquinetTests"
+      }
+    }
+  ],
+  "version" : 1
+}

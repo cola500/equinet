@@ -31,11 +31,18 @@ final class AuthManager {
     private(set) var sessionCookieValue: String?
     private(set) var sessionCookieSecure: Bool = false
 
+    /// Keychain abstraction for testability.
+    let keychain: KeychainStorable
+
+    init(keychain: KeychainStorable = KeychainHelper.shared) {
+        self.keychain = keychain
+    }
+
     // MARK: - Check existing auth
 
     /// Called on app launch. Checks Keychain for a valid mobile token.
     func checkExistingAuth() {
-        guard KeychainHelper.loadMobileToken() != nil else {
+        guard keychain.load(key: KeychainHelper.mobileTokenKey) != nil else {
             state = .loggedOut
             return
         }
@@ -45,7 +52,7 @@ final class AuthManager {
         var error: NSError?
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
             // Has saved session cookie? If so, go to biometric prompt
-            if KeychainHelper.load(key: KeychainHelper.sessionCookieValueKey) != nil {
+            if keychain.load(key: KeychainHelper.sessionCookieValueKey) != nil {
                 state = .biometricPrompt
             } else {
                 // Token exists but no session cookie -- need fresh login
@@ -53,7 +60,7 @@ final class AuthManager {
             }
         } else {
             // No biometric hardware -- check for session cookie
-            if KeychainHelper.load(key: KeychainHelper.sessionCookieValueKey) != nil {
+            if keychain.load(key: KeychainHelper.sessionCookieValueKey) != nil {
                 loadSessionCookieFromKeychain()
                 state = .authenticated
             } else {
@@ -73,17 +80,13 @@ final class AuthManager {
             let response = try await performLogin(email: email, password: password)
 
             // Save mobile token
-            KeychainHelper.saveMobileToken(
-                jwt: response.token,
-                expiresAt: response.expiresAt
-            )
+            keychain.save(key: KeychainHelper.mobileTokenKey, value: response.token)
+            keychain.save(key: KeychainHelper.tokenExpiresAtKey, value: response.expiresAt)
 
             // Save session cookie
-            KeychainHelper.saveSessionCookie(
-                name: response.sessionCookie.name,
-                value: response.sessionCookie.value,
-                secure: response.sessionCookie.secure
-            )
+            keychain.save(key: KeychainHelper.sessionCookieNameKey, value: response.sessionCookie.name)
+            keychain.save(key: KeychainHelper.sessionCookieValueKey, value: response.sessionCookie.value)
+            keychain.save(key: KeychainHelper.sessionCookieSecureKey, value: response.sessionCookie.secure ? "true" : "false")
 
             sessionCookieName = response.sessionCookie.name
             sessionCookieValue = response.sessionCookie.value
@@ -124,8 +127,11 @@ final class AuthManager {
     // MARK: - Logout
 
     func logout() {
-        KeychainHelper.clearMobileToken()
-        KeychainHelper.clearSessionCookie()
+        keychain.delete(key: KeychainHelper.mobileTokenKey)
+        keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
+        keychain.delete(key: KeychainHelper.sessionCookieNameKey)
+        keychain.delete(key: KeychainHelper.sessionCookieValueKey)
+        keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
         sessionCookieName = nil
         sessionCookieValue = nil
         sessionCookieSecure = false
@@ -190,9 +196,9 @@ final class AuthManager {
     // MARK: - Private
 
     private func loadSessionCookieFromKeychain() {
-        sessionCookieName = KeychainHelper.load(key: KeychainHelper.sessionCookieNameKey)
-        sessionCookieValue = KeychainHelper.load(key: KeychainHelper.sessionCookieValueKey)
-        sessionCookieSecure = KeychainHelper.load(key: KeychainHelper.sessionCookieSecureKey) == "true"
+        sessionCookieName = keychain.load(key: KeychainHelper.sessionCookieNameKey)
+        sessionCookieValue = keychain.load(key: KeychainHelper.sessionCookieValueKey)
+        sessionCookieSecure = keychain.load(key: KeychainHelper.sessionCookieSecureKey) == "true"
     }
 
     private func performLogin(email: String, password: String) async throws -> NativeLoginResponse {

@@ -9,6 +9,13 @@
 import Foundation
 import Security
 
+/// Protocol for Keychain operations, enabling test doubles.
+protocol KeychainStorable {
+    func save(key: String, value: String) -> Bool
+    func load(key: String) -> String?
+    func delete(key: String) -> Bool
+}
+
 enum KeychainHelper {
     private static let service = "com.equinet.mobile-token"
     private static let accessGroup = "group.com.equinet.shared"
@@ -69,6 +76,28 @@ enum KeychainHelper {
 
         let status = SecItemDelete(query as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
+    }
+}
+
+// MARK: - KeychainStorable conformance (instance wrapper around static methods)
+
+extension KeychainHelper {
+    /// Shared instance for production use with KeychainStorable protocol.
+    static let shared = KeychainHelperAdapter()
+}
+
+/// Adapter that wraps KeychainHelper's static methods as an instance conforming to KeychainStorable.
+struct KeychainHelperAdapter: KeychainStorable {
+    func save(key: String, value: String) -> Bool {
+        KeychainHelper.save(key: key, value: value)
+    }
+
+    func load(key: String) -> String? {
+        KeychainHelper.load(key: key)
+    }
+
+    func delete(key: String) -> Bool {
+        KeychainHelper.delete(key: key)
     }
 }
 
