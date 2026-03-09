@@ -7,8 +7,9 @@ import {
   MapPin,
   Mail,
   User,
+  ArrowLeftRight,
 } from "lucide-react"
-import { BottomTabBar, type TabItem } from "./BottomTabBar"
+import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { toast } from "sonner"
@@ -17,14 +18,14 @@ const stableTabs: TabItem[] = [
   { href: "/stable/dashboard", label: "Översikt", icon: Home },
   { href: "/stable/spots", label: "Platser", icon: MapPin },
   { href: "/stable/invites", label: "Inbjudningar", icon: Mail },
-  { href: "/stable/profile", label: "Profil", icon: User },
+  { href: "/stable/profile", label: "Stallprofil", icon: User },
 ]
 
 const navItems = [
   { href: "/stable/dashboard", label: "Översikt" },
   { href: "/stable/spots", label: "Stallplatser" },
   { href: "/stable/invites", label: "Inbjudningar" },
-  { href: "/stable/profile", label: "Min profil" },
+  { href: "/stable/profile", label: "Stallprofil" },
 ]
 
 export function StableNav() {
@@ -32,6 +33,11 @@ export function StableNav() {
   const router = useRouter()
   const { isProvider, isCustomer } = useAuth()
   const isOnline = useOnlineStatus()
+
+  const stableMoreItems: MoreMenuItem[] = [
+    ...(isProvider ? [{ href: "/provider/dashboard", label: "Leverantörsvy", icon: ArrowLeftRight, section: "Byt vy" }] : []),
+    ...(isCustomer ? [{ href: "/dashboard", label: "Kundvy", icon: ArrowLeftRight, section: "Byt vy" }] : []),
+  ]
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!isOnline) {
@@ -52,14 +58,15 @@ export function StableNav() {
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-1 h-12">
             {/* Role switcher */}
-            <div className="mr-4 flex items-center gap-2">
-              <span className="text-sm font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+            <div className="mr-4 flex items-center bg-gray-100 rounded-lg p-1">
+              <span className="text-sm font-medium bg-white rounded-md shadow-sm px-3 py-1.5">
                 Stall
               </span>
               {isProvider && (
                 <button
                   onClick={() => router.push("/provider/dashboard")}
-                  className="text-xs text-gray-500 hover:text-gray-700"
+                  aria-label="Byt till leverantörsvy"
+                  className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-md min-h-[36px] flex items-center"
                 >
                   Leverantör
                 </button>
@@ -67,7 +74,8 @@ export function StableNav() {
               {isCustomer && (
                 <button
                   onClick={() => router.push("/dashboard")}
-                  className="text-xs text-gray-500 hover:text-gray-700"
+                  aria-label="Byt till kundvy"
+                  className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-md min-h-[36px] flex items-center"
                 >
                   Kund
                 </button>
@@ -98,7 +106,7 @@ export function StableNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={stableTabs} moreItems={[]} />
+      <BottomTabBar tabs={stableTabs} moreItems={stableMoreItems} />
     </>
   )
 }

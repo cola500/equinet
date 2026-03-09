@@ -39,8 +39,8 @@ export class MockStableInviteRepository implements IStableInviteRepository {
     return Array.from(this.tokens.values())
       .filter((t) => t.stableId === stableId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .map(({ id, email, expiresAt, usedAt, createdAt }) => ({
-        id, email, expiresAt, usedAt, createdAt,
+      .map(({ id, token, email, expiresAt, usedAt, createdAt }) => ({
+        id, token, email, expiresAt, usedAt, createdAt,
       }))
   }
 

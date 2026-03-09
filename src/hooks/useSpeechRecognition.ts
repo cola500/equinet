@@ -19,6 +19,10 @@ interface UseSpeechRecognitionReturn {
   setTranscript: (text: string) => void
   /** Error message if any */
   error: string | null
+  /** Audio level from native bridge (0.0 - 1.0) */
+  audioLevel: number
+  /** Confidence score from native bridge (0.0 - 1.0) */
+  confidence: number | null
 }
 
 // SpeechRecognition instance interface (Web Speech API)
@@ -81,6 +85,8 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [transcript, setTranscript] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [audioLevel, setAudioLevel] = useState(0)
+  const [confidence, setConfidence] = useState<number | null>(null)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
 
   // Check browser support (native app OR Web Speech API)
@@ -106,14 +112,22 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
           break
         case "speechTranscript":
           setTranscript((message.payload?.text as string) ?? "")
+          if (message.payload?.confidence != null) {
+            setConfidence(message.payload.confidence as number)
+          }
+          break
+        case "speechAudioLevel":
+          setAudioLevel((message.payload?.level as number) ?? 0)
           break
         case "speechRecognitionEnded":
           setIsListening(false)
+          setAudioLevel(0)
           break
         case "speechRecognitionError": {
           const errorKey = (message.payload?.error as string) ?? "recognition_failed"
           setError(NATIVE_ERROR_MESSAGES[errorKey] ?? NATIVE_ERROR_MESSAGES.recognition_failed)
           setIsListening(false)
+          setAudioLevel(0)
           break
         }
         default:
@@ -234,5 +248,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     clearTranscript,
     setTranscript,
     error,
+    audioLevel,
+    confidence,
   }
 }

@@ -10,6 +10,9 @@
 import Foundation
 import OSLog
 import Observation
+#if os(iOS)
+import UIKit
+#endif
 
 // MARK: - DI Protocols
 
@@ -203,7 +206,7 @@ final class CalendarViewModel {
         }
     }
 
-    /// Update booking status with optimistic UI
+    /// Update booking status with optimistic UI and offline fallback
     func updateBookingStatus(bookingId: String, newStatus: String) {
         guard actionInProgress == nil else { return }
 
@@ -218,13 +221,21 @@ final class CalendarViewModel {
         Task {
             do {
                 try await fetcher.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 sync.syncAfterStatusChange(bookingId: bookingId, newStatus: newStatus)
+
+                // Invalidate cache to pick up changes on next fetch
+                cache.removeAll()
             } catch {
                 // Revert on failure
                 if let idx = bookings.firstIndex(where: { $0.id == bookingId }) {
                     bookings[idx] = bookings[idx].withStatus(oldStatus)
                 }
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
                 AppLogger.calendar.error("Failed to update booking status: \(error.localizedDescription)")
+
+                // Save for offline retry
+                PendingActionStore.save(bookingId: bookingId, status: newStatus)
             }
             actionInProgress = nil
         }

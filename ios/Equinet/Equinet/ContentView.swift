@@ -53,6 +53,7 @@ struct ContentView: View {
                 Task { await bridge.refreshTokenIfNeeded() }
                 PendingActionStore.retryAll()
                 calendarViewModel.loadDataForSelectedDate()
+                UIApplication.shared.applicationIconBadgeNumber = 0
             case .background:
                 bridge.sendToWeb(type: .appDidEnterBackground)
             default:
@@ -72,7 +73,10 @@ struct ContentView: View {
             if showNativeCalendar {
                 // Native calendar view with tab bar
                 VStack(spacing: 0) {
-                    NativeCalendarView(viewModel: calendarViewModel)
+                    NativeCalendarView(viewModel: calendarViewModel) { path in
+                        showNativeCalendar = false
+                        bridge.navigateWebView(to: path)
+                    }
                     NativeTabBar(activeTab: .calendar) { tab in
                         if let path = tab.webPath {
                             showNativeCalendar = false

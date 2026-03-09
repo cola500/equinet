@@ -30,6 +30,7 @@ export interface StableInviteTokenWithStable {
 
 export interface StableInviteListItem {
   id: string
+  token: string
   email: string
   expiresAt: Date
   usedAt: Date | null

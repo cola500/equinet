@@ -63,6 +63,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             identifier: "BOOKING_REQUEST",
             actions: [confirmAction, declineAction],
             intentIdentifiers: [],
+            hiddenPreviewsBodyPlaceholder: "Ny bokningsförfrågan",
             options: []
         )
 
@@ -186,10 +187,24 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 )
                 AppLogger.push.info("Booking \(bookingId) -> \(newStatus)")
 
+                // Haptic feedback -- success
+                await MainActor.run {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                }
+
                 // Sync calendar event after status change
                 await MainActor.run {
                     CalendarSyncManager.shared.syncAfterStatusChange(
                         bookingId: bookingId, newStatus: newStatus
+                    )
+                }
+
+                // Navigate to bookings view
+                await MainActor.run {
+                    NotificationCenter.default.post(
+                        name: .navigateToURL,
+                        object: nil,
+                        userInfo: ["url": "/provider/bookings"]
                     )
                 }
 
@@ -207,8 +222,35 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                     trigger: nil
                 )
                 try? await UNUserNotificationCenter.current().add(request)
+
+                // Decrement badge
+                await MainActor.run {
+                    let current = UIApplication.shared.applicationIconBadgeNumber
+                    if current > 0 {
+                        UIApplication.shared.applicationIconBadgeNumber = current - 1
+                    }
+                }
             } catch {
                 AppLogger.push.error("Failed to update booking \(bookingId): \(error.localizedDescription)")
+
+                // Haptic feedback -- error
+                await MainActor.run {
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+
+                // Show error notification
+                let content = UNMutableNotificationContent()
+                content.title = "Uppdatering misslyckades"
+                content.body = "Kunde inte uppdatera bokning \u{2013} försök igen i appen"
+                content.sound = .default
+
+                let request = UNNotificationRequest(
+                    identifier: "error-\(bookingId)",
+                    content: content,
+                    trigger: nil
+                )
+                try? await UNUserNotificationCenter.current().add(request)
+
                 // Save for retry when network returns
                 PendingActionStore.save(bookingId: bookingId, status: newStatus)
             }

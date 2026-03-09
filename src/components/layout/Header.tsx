@@ -15,9 +15,15 @@ import { HorseIcon } from "@/components/icons/HorseIcon"
 import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
-export function Header() {
-  const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin } = useAuth()
+interface HeaderProps {
+  hideSecondaryNav?: boolean
+}
+
+export function Header({ hideSecondaryNav = false }: HeaderProps) {
+  const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin, isStableOwner } = useAuth()
+  const stableEnabled = useFeatureFlag("stable_profiles")
 
   const handleLogout = async () => {
     notifyNativeLogout()
@@ -35,6 +41,11 @@ export function Header() {
         <div className="flex items-center gap-2 md:gap-4">
           {isLoading ? null : !isAuthenticated ? (
             <>
+              {stableEnabled && (
+                <Link href="/stables" className="text-sm text-gray-600 hover:text-gray-900 hidden sm:inline">
+                  Hitta stall
+                </Link>
+              )}
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="h-11 px-3 md:px-4">
                   Logga in
@@ -67,6 +78,11 @@ export function Header() {
                     Min profil
                   </Link>
                 </DropdownMenuItem>
+                {isStableOwner && stableEnabled && (
+                  <DropdownMenuItem asChild className="py-3 px-4">
+                    <Link href="/stable/profile">Stallprofil</Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
@@ -88,7 +104,7 @@ export function Header() {
         </div>
       </div>
     </header>
-    {isAuthenticated && isCustomer && <CustomerNav />}
+    {isAuthenticated && isCustomer && !hideSecondaryNav && <CustomerNav />}
     </>
   )
 }

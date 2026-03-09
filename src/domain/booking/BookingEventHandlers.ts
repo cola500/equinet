@@ -194,11 +194,12 @@ export class BookingCreatedPushHandler implements IEventHandler<BookingCreatedEv
   async handle(event: BookingCreatedEvent): Promise<void> {
     const p = event.payload
     const dateStr = formatNotifDate(p.bookingDate)
+    const horsePart = p.horseName ? ` (${p.horseName})` : ''
 
     try {
       await this.pushService.sendToUser(p.providerUserId, {
         title: 'Ny bokning',
-        body: `${p.customerName} har bokat ${p.serviceName} den ${dateStr} kl ${p.startTime}`,
+        body: `${p.customerName} \u2013 ${p.serviceName}${horsePart}, ${p.startTime} ${dateStr}`,
         url: '/provider/bookings',
         category: 'BOOKING_REQUEST',
         bookingId: p.bookingId,

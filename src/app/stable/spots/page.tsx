@@ -6,6 +6,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Plus, Trash2 } from "lucide-react"
+import {
+  ResponsiveAlertDialog,
+  ResponsiveAlertDialogContent,
+  ResponsiveAlertDialogHeader,
+  ResponsiveAlertDialogTitle,
+  ResponsiveAlertDialogDescription,
+  ResponsiveAlertDialogFooter,
+  ResponsiveAlertDialogAction,
+  ResponsiveAlertDialogCancel,
+} from "@/components/ui/responsive-alert-dialog"
 
 interface Spot {
   id: string
@@ -22,6 +32,8 @@ export default function StableSpotsPage() {
   const [newLabel, setNewLabel] = useState("")
   const [newPrice, setNewPrice] = useState("")
   const [isCreating, setIsCreating] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchSpots = useCallback(async () => {
     try {
@@ -32,7 +44,7 @@ export default function StableSpotsPage() {
         setCounts(data._count)
       }
     } catch {
-      toast.error("Kunde inte hamta stallplatser")
+      toast.error("Kunde inte hämta stallplatser")
     } finally {
       setIsLoading(false)
     }
@@ -87,11 +99,11 @@ export default function StableSpotsPage() {
     }
   }
 
-  const handleDelete = async (spotId: string) => {
-    if (!confirm("Ar du saker pa att du vill ta bort denna stallplats?")) return
-
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
     try {
-      const res = await fetch(`/api/stable/spots/${spotId}`, {
+      const res = await fetch(`/api/stable/spots/${deleteTarget}`, {
         method: "DELETE",
       })
       if (res.ok) {
@@ -102,6 +114,9 @@ export default function StableSpotsPage() {
       }
     } catch {
       toast.error("Kunde inte ta bort stallplats")
+    } finally {
+      setIsDeleting(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -126,7 +141,7 @@ export default function StableSpotsPage() {
 
       {/* Create new spot */}
       <div className="bg-white rounded-lg border p-4 mb-6">
-        <h2 className="font-semibold mb-3">Lagg till stallplats</h2>
+        <h2 className="font-semibold mb-3">Lägg till stallplats</h2>
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <Label htmlFor="spotLabel">Namn/etikett</Label>
@@ -138,7 +153,7 @@ export default function StableSpotsPage() {
             />
           </div>
           <div className="w-32">
-            <Label htmlFor="spotPrice">Pris/man</Label>
+            <Label htmlFor="spotPrice">Pris/mån</Label>
             <Input
               id="spotPrice"
               type="number"
@@ -149,7 +164,7 @@ export default function StableSpotsPage() {
           </div>
           <Button onClick={handleCreate} disabled={isCreating} className="shrink-0">
             <Plus className="h-4 w-4 mr-1" />
-            {isCreating ? "Skapar..." : "Lagg till"}
+            {isCreating ? "Skapar..." : "Lägg till"}
           </Button>
         </div>
       </div>
@@ -157,7 +172,7 @@ export default function StableSpotsPage() {
       {/* Spots list */}
       {spots.length === 0 ? (
         <p className="text-gray-500 text-center py-8">
-          Inga stallplatser registrerade an. Lagg till din forsta stallplats ovan.
+          Inga stallplatser registrerade än. Lägg till din första stallplats ovan.
         </p>
       ) : (
         <div className="space-y-3">
@@ -172,22 +187,25 @@ export default function StableSpotsPage() {
                 </span>
                 {spot.pricePerMonth && (
                   <span className="ml-2 text-sm text-gray-500">
-                    {spot.pricePerMonth} kr/man
+                    {spot.pricePerMonth} kr/mån
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant={spot.status === "available" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleToggleStatus(spot)}
-                >
+                <span className={`text-xs px-2 py-1 rounded ${
+                  spot.status === "available"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-600"
+                }`}>
                   {spot.status === "available" ? "Ledig" : "Uthyrd"}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => handleToggleStatus(spot)}>
+                  {spot.status === "available" ? "Markera uthyrd" : "Markera ledig"}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleDelete(spot.id)}
+                  onClick={() => setDeleteTarget(spot.id)}
                   className="text-red-500 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -197,6 +215,32 @@ export default function StableSpotsPage() {
           ))}
         </div>
       )}
+      {/* Delete confirmation dialog */}
+      <ResponsiveAlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+      >
+        <ResponsiveAlertDialogContent>
+          <ResponsiveAlertDialogHeader>
+            <ResponsiveAlertDialogTitle>Ta bort stallplats</ResponsiveAlertDialogTitle>
+            <ResponsiveAlertDialogDescription>
+              Är du säker på att du vill ta bort denna stallplats? Åtgärden kan inte ångras.
+            </ResponsiveAlertDialogDescription>
+          </ResponsiveAlertDialogHeader>
+          <ResponsiveAlertDialogFooter>
+            <ResponsiveAlertDialogCancel onClick={() => setDeleteTarget(null)}>
+              Avbryt
+            </ResponsiveAlertDialogCancel>
+            <ResponsiveAlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? "Tar bort..." : "Ta bort"}
+            </ResponsiveAlertDialogAction>
+          </ResponsiveAlertDialogFooter>
+        </ResponsiveAlertDialogContent>
+      </ResponsiveAlertDialog>
     </div>
   )
 }
