@@ -11,6 +11,7 @@ import SwiftUI
 
 struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
+    var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
     @State private var currentPage: Int = 3  // Center of 7-day window (index 3 = selected date)
 
@@ -26,6 +27,11 @@ struct NativeCalendarView: View {
         VStack(spacing: 0) {
             // Date header
             dateHeader
+
+            // Service filter pills
+            if !viewModel.availableServices.isEmpty {
+                serviceFilterBar
+            }
 
             // Offline banner
             if viewModel.isOffline {
@@ -61,8 +67,16 @@ struct NativeCalendarView: View {
             viewModel.loadDataForSelectedDate()
         }
         .sheet(item: $selectedBooking) { booking in
-            BookingDetailSheet(booking: booking)
-                .presentationDetents([.medium])
+            BookingDetailSheet(
+                booking: booking,
+                onAction: { bookingId, newStatus in
+                    viewModel.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
+                },
+                onOpenInApp: { bookingId in
+                    onNavigateToWeb?("/provider/bookings/\(bookingId)")
+                }
+            )
+            .presentationDetents([.medium, .large])
         }
     }
 
@@ -190,9 +204,31 @@ struct NativeCalendarView: View {
         let dayBookings = viewModel.bookingsForDate(date)
         return ForEach(dayBookings) { booking in
             bookingBlock(booking)
+                .overlay {
+                    if viewModel.actionInProgress == booking.id {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(.ultraThinMaterial)
+                            .overlay(ProgressView())
+                    }
+                }
                 .onTapGesture {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     selectedBooking = booking
+                }
+                .contextMenu {
+                    if booking.status == "pending" {
+                        Button {
+                            viewModel.updateBookingStatus(bookingId: booking.id, newStatus: "confirmed")
+                        } label: {
+                            Label("Bekräfta", systemImage: "checkmark.circle")
+                        }
+
+                        Button(role: .destructive) {
+                            viewModel.updateBookingStatus(bookingId: booking.id, newStatus: "cancelled")
+                        } label: {
+                            Label("Avvisa", systemImage: "xmark.circle")
+                        }
+                    }
                 }
         }
     }
@@ -231,6 +267,11 @@ struct NativeCalendarView: View {
 
             // Status indicators
             VStack(spacing: 2) {
+                if booking.bookingSeriesId != nil {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 if booking.isPaid {
                     Image(systemName: "creditcard.fill")
                         .font(.caption2)
@@ -358,6 +399,45 @@ struct NativeCalendarView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Service Filter Bar
+
+    private var serviceFilterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                // "Alla" pill
+                filterPill(label: "Alla", isSelected: viewModel.selectedServiceFilter == nil) {
+                    viewModel.selectedServiceFilter = nil
+                }
+
+                ForEach(viewModel.availableServices, id: \.id) { service in
+                    filterPill(
+                        label: service.name,
+                        isSelected: viewModel.selectedServiceFilter == service.id
+                    ) {
+                        viewModel.selectedServiceFilter = service.id
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+        }
+        .background(Color(.systemBackground))
+    }
+
+    private func filterPill(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color(.systemGray5))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .clipShape(Capsule())
+        }
+        .frame(minHeight: 36)
     }
 
     // MARK: - Offline Banner

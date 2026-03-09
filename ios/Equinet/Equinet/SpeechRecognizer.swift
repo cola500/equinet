@@ -22,7 +22,8 @@ final class SpeechRecognizer {
 
     // Callbacks -- set by BridgeHandler
     var onStarted: (() -> Void)?
-    var onTranscript: ((_ text: String, _ isFinal: Bool) -> Void)?
+    var onTranscript: ((_ text: String, _ isFinal: Bool, _ confidence: Float?) -> Void)?
+    var onAudioLevel: ((_ level: Float) -> Void)?
     var onEnded: ((_ reason: String) -> Void)?
     var onError: ((_ error: RecognitionError) -> Void)?
 
@@ -32,6 +33,7 @@ final class SpeechRecognizer {
     private let audioEngine = AVAudioEngine()
     private var silenceTimer: Timer?
     private let silenceTimeout: TimeInterval = 30.0
+    private var lastAudioLevelTime: TimeInterval = 0
 
     init() {
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "sv-SE"))
@@ -65,6 +67,7 @@ final class SpeechRecognizer {
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest = nil
+        lastAudioLevelTime = 0
     }
 
     // MARK: - Private
@@ -111,8 +114,29 @@ final class SpeechRecognizer {
 
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             request.append(buffer)
+
+            // Calculate RMS audio level, throttle to ~10 Hz
+            let now = CACurrentMediaTime()
+            guard let self, now - self.lastAudioLevelTime >= 0.1 else { return }
+            self.lastAudioLevelTime = now
+
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+            let frameLength = Int(buffer.frameLength)
+            guard frameLength > 0 else { return }
+
+            var sum: Float = 0
+            for i in 0..<frameLength {
+                sum += channelData[i] * channelData[i]
+            }
+            let rms = sqrt(sum / Float(frameLength))
+            // Normalize to 0-1 range (typical speech RMS is 0.01-0.3)
+            let normalized = min(1.0, rms * 5.0)
+
+            Task { @MainActor in
+                self.onAudioLevel?(normalized)
+            }
         }
 
         do {
@@ -132,7 +156,8 @@ final class SpeechRecognizer {
                 if let result {
                     let text = result.bestTranscription.formattedString
                     let isFinal = result.isFinal
-                    self.onTranscript?(text, isFinal)
+                    let confidence = result.bestTranscription.segments.last?.confidence
+                    self.onTranscript?(text, isFinal, confidence)
                     self.resetSilenceTimer()
 
                     if isFinal {

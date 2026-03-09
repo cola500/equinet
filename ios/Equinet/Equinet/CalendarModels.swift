@@ -18,12 +18,38 @@ struct NativeBooking: Codable, Identifiable {
     let customerFirstName: String
     let customerLastName: String
     let serviceName: String
+    let serviceId: String?       // nil for cached data before this field was added
     let servicePrice: Double
     let isManualBooking: Bool
     let isPaid: Bool
+    let bookingSeriesId: String?
+    let customerNotes: String?
+    let providerNotes: String?
 
     var customerFullName: String {
         "\(customerFirstName) \(customerLastName)"
+    }
+
+    /// Return a copy with updated status (for optimistic UI updates)
+    func withStatus(_ newStatus: String) -> NativeBooking {
+        NativeBooking(
+            id: id,
+            bookingDate: bookingDate,
+            startTime: startTime,
+            endTime: endTime,
+            status: newStatus,
+            horseName: horseName,
+            customerFirstName: customerFirstName,
+            customerLastName: customerLastName,
+            serviceName: serviceName,
+            serviceId: serviceId,
+            servicePrice: servicePrice,
+            isManualBooking: isManualBooking,
+            isPaid: isPaid,
+            bookingSeriesId: bookingSeriesId,
+            customerNotes: customerNotes,
+            providerNotes: providerNotes
+        )
     }
 
     /// Parse bookingDate string to Date

@@ -26,6 +26,7 @@ enum BridgeMessageType: String {
     case speechTranscript = "speechTranscript"
     case speechRecognitionEnded = "speechRecognitionEnded"
     case speechRecognitionError = "speechRecognitionError"
+    case speechAudioLevel = "speechAudioLevel"
     case requestMobileToken = "requestMobileToken"
     case mobileTokenReceived = "mobileTokenReceived"
     case mobileTokenError = "mobileTokenError"
@@ -114,11 +115,19 @@ final class BridgeHandler {
             self?.sendToWeb(type: .speechRecognitionStarted)
         }
 
-        speechRecognizer.onTranscript = { [weak self] text, isFinal in
-            self?.sendToWeb(type: .speechTranscript, payload: [
+        speechRecognizer.onTranscript = { [weak self] text, isFinal, confidence in
+            var payload: [String: Any] = [
                 "text": text,
                 "isFinal": isFinal,
-            ])
+            ]
+            if let confidence {
+                payload["confidence"] = confidence
+            }
+            self?.sendToWeb(type: .speechTranscript, payload: payload)
+        }
+
+        speechRecognizer.onAudioLevel = { [weak self] level in
+            self?.sendToWeb(type: .speechAudioLevel, payload: ["level": level])
         }
 
         speechRecognizer.onEnded = { [weak self] reason in

@@ -90,6 +90,51 @@ describe("useSpeechRecognition - native bridge", () => {
     expect(result.current.transcript).toBe("Hej hästskötare")
   })
 
+  it("extracts confidence from speechTranscript payload", () => {
+    const { result } = renderHook(() => useSpeechRecognition())
+
+    act(() => {
+      window.equinetNative!.onMessage({
+        type: "speechTranscript",
+        payload: { text: "Hovvård klar", isFinal: true, confidence: 0.92 },
+      })
+    })
+
+    expect(result.current.confidence).toBe(0.92)
+  })
+
+  it("updates audioLevel on speechAudioLevel bridge event", () => {
+    const { result } = renderHook(() => useSpeechRecognition())
+
+    expect(result.current.audioLevel).toBe(0)
+
+    act(() => {
+      window.equinetNative!.onMessage({
+        type: "speechAudioLevel",
+        payload: { level: 0.75 },
+      })
+    })
+
+    expect(result.current.audioLevel).toBe(0.75)
+  })
+
+  it("resets audioLevel to 0 when recognition ends", () => {
+    const { result } = renderHook(() => useSpeechRecognition())
+
+    act(() => {
+      window.equinetNative!.onMessage({
+        type: "speechAudioLevel",
+        payload: { level: 0.5 },
+      })
+    })
+    expect(result.current.audioLevel).toBe(0.5)
+
+    act(() => {
+      window.equinetNative!.onMessage({ type: "speechRecognitionEnded" })
+    })
+    expect(result.current.audioLevel).toBe(0)
+  })
+
   it("sets isListening on speechRecognitionStarted/Ended events", () => {
     const { result } = renderHook(() => useSpeechRecognition())
 
