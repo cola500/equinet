@@ -8,6 +8,9 @@
 
 import Foundation
 import Observation
+#if os(iOS)
+import UIKit
+#endif
 
 @Observable
 @MainActor
@@ -22,6 +25,8 @@ final class CalendarViewModel {
     var isLoading = false
     var error: String?
     var isOffline = false
+    var actionInProgress: String?  // bookingId currently being updated
+    var selectedServiceFilter: String?  // nil = show all services
 
     // MARK: - Private
 
@@ -93,14 +98,73 @@ final class CalendarViewModel {
         }
     }
 
+    // MARK: - Booking Actions
+
+    /// Update booking status with optimistic UI update and offline fallback
+    func updateBookingStatus(bookingId: String, newStatus: String) {
+        guard actionInProgress == nil else { return }
+        actionInProgress = bookingId
+
+        // Optimistic update
+        let oldBookings = bookings
+        if let index = bookings.firstIndex(where: { $0.id == bookingId }) {
+            bookings[index] = bookings[index].withStatus(newStatus)
+        }
+
+        Task {
+            do {
+                try await APIClient.shared.updateBookingStatus(
+                    bookingId: bookingId,
+                    newStatus: newStatus
+                )
+                print("[Calendar] Booking \(bookingId) -> \(newStatus)")
+
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+
+                // Sync calendar
+                CalendarSyncManager.shared.syncAfterStatusChange(
+                    bookingId: bookingId, newStatus: newStatus
+                )
+
+                // Invalidate cache to pick up changes on next fetch
+                cache.removeAll()
+            } catch {
+                print("[Calendar] Failed to update booking: \(error)")
+                // Revert optimistic update
+                bookings = oldBookings
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+
+                // Save for offline retry
+                PendingActionStore.save(bookingId: bookingId, status: newStatus)
+            }
+            actionInProgress = nil
+        }
+    }
+
     // MARK: - Helpers
 
-    /// Get bookings for a specific date
+    /// Distinct services from current bookings (for filter pills)
+    var availableServices: [(id: String, name: String)] {
+        var seen = Set<String>()
+        var result: [(id: String, name: String)] = []
+        for booking in bookings {
+            guard let serviceId = booking.serviceId else { continue }
+            if seen.insert(serviceId).inserted {
+                result.append((id: serviceId, name: booking.serviceName))
+            }
+        }
+        return result
+    }
+
+    /// Get bookings for a specific date, filtered by selected service
     func bookingsForDate(_ date: Date) -> [NativeBooking] {
         let dateString = dateFormatter.string(from: date)
         return bookings.filter { booking in
-            // Compare by date string prefix (bookingDate might be ISO 8601 with time)
-            booking.bookingDate.hasPrefix(dateString)
+            guard booking.bookingDate.hasPrefix(dateString) else { return false }
+            if let filter = selectedServiceFilter {
+                return booking.serviceId == filter
+            }
+            return true
         }
     }
 

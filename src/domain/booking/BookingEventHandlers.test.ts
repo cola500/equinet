@@ -303,6 +303,17 @@ describe('BookingCreatedPushHandler', () => {
     const call = pushService.sendToUser.mock.calls[0][1]
     expect(call.body).toContain('Anna Svensson')
     expect(call.body).toContain('Hovslagar')
+    expect(call.body).toContain('09:00')
+  })
+
+  it('includes horse name in push body when present', async () => {
+    const pushService = createMockPushService()
+    const handler = new BookingCreatedPushHandler(pushService)
+
+    await handler.handle(createdEvent({ horseName: 'Luna' }))
+
+    const call = pushService.sendToUser.mock.calls[0][1]
+    expect(call.body).toContain('Luna')
   })
 
   it('does not throw when push service fails', async () => {
