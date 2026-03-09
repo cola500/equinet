@@ -33,5 +33,6 @@ sections:
 
 | [2026-03-09-publik-stallsokning.md](2026-03-09-publik-stallsokning.md) | Mar 9 | 1 | Publik stallsokning, stallprofil, auth-fix |
 | [2026-03-09-ux-polish-stallagare.md](2026-03-09-ux-polish-stallagare.md) | Mar 9 | 1 | UX-polish: navigation, discovery, a11y, ASCII-fix |
+| [2026-03-09-fix-ios-ci-workflow.md](2026-03-09-fix-ios-ci-workflow.md) | Mar 9 | 1 | Fix iOS CI: dynamiskt Xcode-val, simulator-destination |
 
-**Totalt:** 71+ sessioner, ~3276 tester, 0 regressioner.
+**Totalt:** 72+ sessioner, ~3282 tester, 0 regressioner.
