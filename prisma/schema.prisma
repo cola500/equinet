@@ -69,6 +69,7 @@ model User {
   customerInviteTokens      CustomerInviteToken[]
   mobileTokens              MobileToken[]
   deviceTokens              DeviceToken[]
+  stable                    Stable?
 
   @@index([latitude, longitude]) // For geo-queries
   @@index([municipality])
@@ -278,6 +279,10 @@ model Horse {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Stable link (optional - horse can be at a stable)
+  stableId     String?
+  stable       Stable?  @relation(fields: [stableId], references: [id], onDelete: SetNull)
+
   bookings     Booking[]
   notes        HorseNote[]
   groupBookingParticipants GroupBookingParticipant[]
@@ -287,6 +292,7 @@ model Horse {
   bookingSeries BookingSeries[]
 
   @@index([ownerId, isActive])
+  @@index([stableId])
 }
 
 model HorseProfileToken {
@@ -892,4 +898,62 @@ model BugReport {
   @@index([status])
   @@index([priority])
   @@index([createdAt])
+}
+
+// Stable profile (marketplace expansion)
+model Stable {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  address         String?
+  city            String?
+  postalCode      String?
+  municipality    String?
+  latitude        Float?
+  longitude       Float?
+  contactEmail    String?
+  contactPhone    String?
+  profileImageUrl String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  spots        StableSpot[]
+  inviteTokens StableInviteToken[]
+  horses       Horse[]
+
+  @@index([municipality, isActive])
+  @@index([latitude, longitude])
+  @@index([isActive, createdAt])
+}
+
+model StableSpot {
+  id             String    @id @default(uuid())
+  stableId       String
+  stable         Stable    @relation(fields: [stableId], references: [id], onDelete: Cascade)
+  label          String?   // "Box 3", "Spilta A"
+  status         String    @default("available") // "available" | "rented"
+  pricePerMonth  Float?
+  availableFrom  DateTime? @db.Date
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([stableId, status])
+}
+
+model StableInviteToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  email     String
+  stableId  String
+  stable    Stable    @relation(fields: [stableId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([stableId])
 }

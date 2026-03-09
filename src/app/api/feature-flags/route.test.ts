@@ -50,6 +50,7 @@ describe("GET /api/feature-flags", () => {
       municipality_watch: true,
       provider_subscription: false,
       help_center: true,
+      stable_profiles: false,
     })
   })
 

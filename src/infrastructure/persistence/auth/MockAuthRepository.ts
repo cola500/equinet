@@ -106,6 +106,7 @@ export class MockAuthRepository implements IAuthRepository {
           passwordHash: user.passwordHash,
           emailVerified: user.emailVerified,
           provider: provider ? { id: provider.id } : null,
+          stable: null,
         }
       }
     }

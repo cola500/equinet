@@ -87,6 +87,7 @@ describe("feature-flags", () => {
         customer_invite: false,
         push_notifications: false,
         help_center: true,
+        stable_profiles: false,
       })
     })
 

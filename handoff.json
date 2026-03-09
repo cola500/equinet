@@ -1,134 +1,184 @@
 {
-  "project": "equinet",
-  "plan": "Kognitiv last-reduktion för kunder och leverantörer",
-  "branch": "feature/cognitive-load-reduction",
-  "created": "2026-02-27",
-  "status": "Sprint 1 KLAR (committad). Sprint 2 NÄSTA. Sprint 3-4 kvar.",
+  "title": "Stallprofiler och Stallplatser - Marketplace Expansion",
+  "branch": "feature/stallagare",
+  "date": "2026-03-09",
+  "plan": "docs/plans/stallagare.md",
 
   "completed": {
-    "sprint_1": {
-      "name": "Quick Wins",
-      "status": "DONE",
-      "commit": "1146065 feat: reduce cognitive load - Sprint 1 quick wins",
-      "tasks": [
-        { "id": "1.1", "name": "Gruppera Mer-menyn med sektioner", "files": ["src/components/layout/ProviderNav.tsx", "src/components/layout/BottomTabBar.tsx"] },
-        { "id": "1.2", "name": "Synlig rensa-filter + scrollbara chips", "files": ["src/app/providers/page.tsx"] },
-        { "id": "1.3", "name": "Kalenderlegend bakom popover", "files": ["src/app/provider/calendar/page.tsx"] },
-        { "id": "1.4", "name": "Intervall -> Besöksschema", "files": ["src/app/customer/horses/[id]/page.tsx"] }
-      ]
-    }
-  },
-
-  "next_sprint": {
-    "sprint_2": {
-      "name": "Dashboard-fokus",
-      "status": "READY TO IMPLEMENT",
-      "instruction": "Kör /implement med denna fil som plan. Branch: feature/cognitive-load-reduction (redan utcheckad).",
-      "tasks": [
-        {
-          "id": "2.1",
-          "name": "Dashboard progressive disclosure för statistik",
-          "files": ["src/app/provider/dashboard/page.tsx"],
-          "detailed_steps": [
-            "1. Lägg till useState<boolean|null>(null) showCharts. useEffect: om bookings.length >= 10 -> true, annars false. Kör bara en gång (null-check).",
-            "2. Wrappa DashboardCharts (rad 247-253) i en collapsible: button 'Visa statistik' / 'Dölj statistik' med ChevronDown-icon + animation.",
-            "3. Ta bort 'Dina tjänster'-sektionen helt (rad 373-418). Den duplicerar /provider/services.",
-            "4. Minska quick-actions (rad 316-371): Behåll Se bokningar (badge), Kalender, Kundregister + 1 dynamisk (voice log ELLER ruttplanering, inte båda). Ta bort 'Hantera tjänster' (nåbar via nav).",
-            "5. Ta bort Wrench från lucide-react import (rad 19). Lägg till ChevronDown."
-          ],
-          "test_strategy": "UI-only, verifieras med typecheck"
-        },
-        {
-          "id": "2.2",
-          "name": "PriorityActionCard -- 'Vad ska jag göra nu?'",
-          "files": [
-            "src/components/provider/PriorityActionCard.tsx (NY FIL)",
-            "src/app/provider/dashboard/page.tsx"
-          ],
-          "detailed_steps": [
-            "1. Skapa PriorityActionCard.tsx med props: { pendingCount: number, routes: Route[], onboardingComplete: boolean }",
-            "2. Prioritetslogik (visa FÖRSTA matchande):",
-            "   a) pendingCount > 0 -> gul Card: 'Du har {N} nya förfrågningar' + Link till /provider/bookings",
-            "   b) routes har rutt idag -> grön Card: 'Du har en rutt idag' + Link till /provider/routes/{id}. Använd isToday() från date-fns.",
-            "   c) routes har rutt imorgon -> blå Card: 'Du har en rutt imorgon' + Link till /provider/routes/{id}. Använd isTomorrow() från date-fns.",
-            "   d) !onboardingComplete -> Card med CTA 'Slutför din profil'. Länka till /provider/profile.",
-            "   e) Inget matchar -> returnera null (visa inget kort)",
-            "3. I dashboard/page.tsx: Hämta onboarding-status (fetch /api/provider/onboarding-status). Rendera PriorityActionCard OVANFÖR OnboardingChecklist.",
-            "4. Route-typ: { id: string, routeName: string, routeDate: string, startTime: string, status: string, stops?: Array<{status: string}> }"
-          ],
-          "test_strategy": "TDD för prioritetslogiken. Extrahera getPriorityAction(pendingCount, routes, onboardingComplete) som en ren funktion och skriv unit-tester.",
-          "data_sources": {
-            "pending_bookings": "Redan tillgängligt som pendingCount i dashboard",
-            "routes": "Redan tillgängligt som routes[] i dashboard (från /api/routes/my-routes). Har routeDate (ISO string), status, stops[].",
-            "onboarding": "Fetcha /api/provider/onboarding-status. Returnerar { allComplete: boolean, profileComplete, hasServices, hasAvailability, isActive }."
-          }
-        },
-        {
-          "id": "2.3",
-          "name": "Konsekvent destruktiv-action-bekräftelse",
-          "files_to_migrate": {
-            "from_AlertDialog_to_ResponsiveAlertDialog": [
-              {
-                "file": "src/components/calendar/BookingDetailDialog.tsx",
-                "what": "Avboka-bekräftelse (showCancelDialog state, rad ~439-473). Byt AlertDialog* -> ResponsiveAlertDialog*.",
-                "imports_to_change": "AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle -> ResponsiveAlertDialog-varianter från @/components/ui/responsive-alert-dialog"
-              },
-              {
-                "file": "src/app/provider/bookings/page.tsx",
-                "what": "Avboka-bekräftelse (bookingToCancel state). Byt AlertDialog* -> ResponsiveAlertDialog*."
-              },
-              {
-                "file": "src/app/provider/announcements/page.tsx",
-                "what": "Avbryt rutt-annons. Byt AlertDialog* -> ResponsiveAlertDialog*."
-              }
-            ],
-            "reference_implementation": "src/components/provider/customers/DeleteConfirmDialogs.tsx -- detta är mönstret att följa. Använder ResponsiveAlertDialog med röda action-buttons."
-          },
-          "test_strategy": "UI-only, verifieras med typecheck. Ingen logik ändras -- bara dialog-komponent byts.",
-          "already_correct": [
-            "DeleteConfirmDialogs.tsx (kunder) -- redan ResponsiveAlertDialog",
-            "customer/bookings/page.tsx -- redan ResponsiveAlertDialog",
-            "customer/horses/page.tsx -- redan ResponsiveAlertDialog",
-            "customer/group-bookings/[id]/page.tsx -- redan ResponsiveAlertDialog"
-          ]
-        }
-      ]
-    }
-  },
-
-  "remaining_after_sprint_2": {
-    "sprint_3": {
-      "name": "Flödesförenkling",
-      "status": "NOT STARTED",
-      "tasks": [
-        { "id": "3.1", "name": "Gruppbokning: dela formuläret i 2 steg", "files": ["src/app/customer/group-bookings/new/page.tsx"] },
-        { "id": "3.2", "name": "Bokningsflöde: auto-välj häst om kunden har 1", "files": ["src/hooks/useBookingFlow.ts", "MobileBookingFlow.tsx", "DesktopBookingDialog.tsx", "BookingSummaryCard.tsx"] },
-        { "id": "3.3", "name": "Kundsida hook-extrahering + förenad dialog", "files": ["src/hooks/useCustomerPage.ts (NY)", "customers/page.tsx", "AddCustomerDialog.tsx"] }
+    "fas1": {
+      "name": "Schema + Auth + Repository",
+      "status": "done",
+      "tests": 8,
+      "summary": "Prisma-modeller (Stable, StableSpot, StableInviteToken), migration, feature flag stable_profiles, stableId i JWT/session/types, useAuth med isStableOwner/stableId, IStableRepository + MockStableRepository + PrismaStableRepository, StableService med TDD, Zod-validering",
+      "files_created": [
+        "prisma/migrations/20260309120609_add_stable_models/migration.sql",
+        "src/infrastructure/persistence/stable/IStableRepository.ts",
+        "src/infrastructure/persistence/stable/MockStableRepository.ts",
+        "src/infrastructure/persistence/stable/PrismaStableRepository.ts",
+        "src/domain/stable/StableService.ts",
+        "src/domain/stable/StableService.test.ts",
+        "src/domain/stable/StableServiceFactory.ts",
+        "src/lib/validations/stable.ts"
+      ],
+      "files_modified": [
+        "prisma/schema.prisma",
+        "src/types/next-auth.d.ts",
+        "src/lib/auth.config.ts",
+        "src/domain/auth/AuthService.ts",
+        "src/hooks/useAuth.ts",
+        "src/lib/feature-flag-definitions.ts",
+        "src/infrastructure/persistence/auth/IAuthRepository.ts",
+        "src/infrastructure/persistence/auth/PrismaAuthRepository.ts",
+        "src/infrastructure/persistence/auth/MockAuthRepository.ts",
+        "src/lib/feature-flags.test.ts",
+        "src/app/api/feature-flags/route.test.ts"
       ]
     },
-    "sprint_4": {
-      "name": "Infrastruktur + polish",
-      "status": "NOT STARTED",
-      "tasks": [
-        { "id": "4.1", "name": "Standardisera laddningstillstånd med skeletons", "files": ["~4 nya skeleton-filer", "~15 page.tsx"] },
-        { "id": "4.2", "name": "FirstUseTooltip för kontextuell hjälp", "files": ["first-use-tooltip.tsx (NY)", "5 page.tsx-filer"] }
+    "fas2": {
+      "name": "Stallprofil - skapa och redigera",
+      "status": "done",
+      "tests": 13,
+      "summary": "API: POST/GET/PUT /api/stable/profile med feature flag gating, auth, rate limiting, Zod. StableLayout, StableNav (desktop + mobil BottomTabBar, rollvaxlare), /stable/profile sida med create/edit form, /stable/dashboard sida, session-refresh via useSession().update()",
+      "files_created": [
+        "src/app/api/stable/profile/route.ts",
+        "src/app/api/stable/profile/route.test.ts",
+        "src/components/layout/StableLayout.tsx",
+        "src/components/layout/StableNav.tsx",
+        "src/app/stable/layout.tsx",
+        "src/app/stable/profile/page.tsx",
+        "src/app/stable/dashboard/page.tsx"
+      ]
+    },
+    "fas3": {
+      "name": "Stallplatser - CRUD",
+      "status": "done",
+      "tests": 21,
+      "summary": "StableSpotService med TDD (7 tester), API: POST/GET /api/stable/spots (8 tester), PUT/DELETE /api/stable/spots/[spotId] (6 tester), ownership via stableId. /stable/spots sida med create, toggle status, delete",
+      "files_created": [
+        "src/domain/stable/StableSpotService.ts",
+        "src/domain/stable/StableSpotService.test.ts",
+        "src/domain/stable/StableSpotServiceFactory.ts",
+        "src/app/api/stable/spots/route.ts",
+        "src/app/api/stable/spots/route.test.ts",
+        "src/app/api/stable/spots/[spotId]/route.ts",
+        "src/app/api/stable/spots/[spotId]/route.test.ts",
+        "src/app/stable/spots/page.tsx"
       ]
     }
   },
 
-  "quality_gates": {
-    "typecheck": "npm run typecheck -- 0 errors",
-    "lint": "npm run lint -- 0 errors",
-    "tests": "npm run test:run -- alla gröna",
-    "swedish": "npm run check:swedish"
+  "remaining": {
+    "fas4": {
+      "name": "Publik sokning + stallprofil",
+      "status": "todo",
+      "description": "Publik sokning av stall och stallplatser, SEO-optimerade sidor",
+      "tasks": [
+        "API: GET /api/stables (publik, municipality/city/search-filter, hasAvailableSpots) med rate limiting",
+        "API: GET /api/stables/[stableId] (publik stallprofil + lediga platser)",
+        "useStableSearch hook (debounce + URL-state, kopiera useProviderSearch)",
+        "UI: /stables soksida med filter (kommun autocomplete, stad)",
+        "UI: /stables/[stableId] publik profilsida med generateMetadata for SEO",
+        "Tester: explicit test att unauthenticated GET lyckas"
+      ],
+      "files_to_create": [
+        "src/app/api/stables/route.ts",
+        "src/app/api/stables/route.test.ts",
+        "src/app/api/stables/[stableId]/route.ts",
+        "src/app/api/stables/[stableId]/route.test.ts",
+        "src/hooks/useStableSearch.ts",
+        "src/app/stables/page.tsx",
+        "src/app/stables/[stableId]/page.tsx"
+      ],
+      "important_notes": [
+        "/api/stables ska INTE vara i auth.config.ts protected routes (publik endpoint)",
+        "Ateranvand src/lib/geo/municipalities.ts for kommun-autocomplete",
+        "Ateranvand src/lib/geo/distance.ts for geo-filtrering",
+        "DB-aggregering for available spots (_count), inte JS-loop"
+      ]
+    },
+    "fas5": {
+      "name": "Koppla hast till stall",
+      "status": "todo",
+      "description": "Hastagare kan ange vilket stall hasten star pa",
+      "tasks": [
+        "API: PATCH /api/horses/[horseId]/stable (set/remove stableId) med ownership-check",
+        "StableSelector-komponent (autocomplete mot GET /api/stables?search=...&limit=10)",
+        "Integrera StableSelector i hastformularet (/customer/horses/[horseId])",
+        "Visa stall-info pa hastprofil (namn + kommun, lank till stallprofil)"
+      ],
+      "files_to_create": [
+        "src/app/api/horses/[horseId]/stable/route.ts",
+        "src/app/api/horses/[horseId]/stable/route.test.ts",
+        "src/components/stable/StableSelector.tsx"
+      ],
+      "important_notes": [
+        "Horse.stableId redan tillagt i schema (fas 1)",
+        "Ownership-check: horseId maste tillhora session user",
+        "Validera att stableId finns och ar aktivt"
+      ]
+    },
+    "fas6": {
+      "name": "Inbjudningssystem",
+      "status": "todo",
+      "description": "Stallagare kan bjuda in hastagare via email",
+      "tasks": [
+        "Repository-triad: IStableInviteRepository + Mock + Prisma (kopiera CustomerInviteToken-monstret)",
+        "StableInviteService (domain): skapa, validera, acceptera inbjudan",
+        "API: POST /api/stable/invites (skapa inbjudan, skicka email)",
+        "API: GET /api/stable/invites/[token] (visa inbjudan - publik)",
+        "API: POST /api/stable/invites/[token]/accept (ny user: skapa konto + koppla, befintlig: koppla direkt)",
+        "UI: /stable/invites - hantera inbjudningar",
+        "UI: /invite/stable/[token] - publik accept-sida",
+        "Email-template for inbjudan"
+      ],
+      "files_to_create": [
+        "src/infrastructure/persistence/stable-invite/IStableInviteRepository.ts",
+        "src/infrastructure/persistence/stable-invite/MockStableInviteRepository.ts",
+        "src/infrastructure/persistence/stable-invite/PrismaStableInviteRepository.ts",
+        "src/domain/stable/StableInviteService.ts",
+        "src/domain/stable/StableInviteService.test.ts",
+        "src/app/api/stable/invites/route.ts",
+        "src/app/api/stable/invites/route.test.ts",
+        "src/app/api/stable/invites/[token]/route.ts",
+        "src/app/api/stable/invites/[token]/accept/route.ts",
+        "src/app/api/stable/invites/[token]/accept/route.test.ts",
+        "src/app/stable/invites/page.tsx",
+        "src/app/invite/stable/[token]/page.tsx"
+      ],
+      "important_notes": [
+        "StableInviteToken modell redan i schema (fas 1)",
+        "Invalidera gamla tokens for samma email+stall innan ny skapas",
+        "Token: randomBytes(32), 7 dagars expiry",
+        "Horse.stableId satts INTE automatiskt vid accept - hastagaren valjer sjalv (fas 5)",
+        "Kopiera pattern fran src/infrastructure/persistence/invite/"
+      ]
+    },
+    "e2e_tests": {
+      "description": "E2E-tester efter alla faser",
+      "env_setup": "FEATURE_STABLE_PROFILES=true i .env + playwright.config.ts webServer.env",
+      "specs": [
+        "e2e/stable-profile.spec.ts",
+        "e2e/stable-spots.spec.ts",
+        "e2e/stable-search.spec.ts",
+        "e2e/stable-horse-link.spec.ts",
+        "e2e/stable-invite.spec.ts"
+      ]
+    }
   },
 
-  "notes": [
-    "Sprint 2.2 har testbar logik (getPriorityAction) -- TDD rekommenderas",
-    "Sprint 2.1 + 2.3 är ren UI -- typecheck räcker",
-    "date-fns redan i kodbasen: isToday(), isTomorrow() tillgängliga",
-    "ResponsiveAlertDialog finns i src/components/ui/responsive-alert-dialog.tsx",
-    "OnboardingChecklist hämtar från /api/provider/onboarding-status, returnerar { allComplete: boolean }",
-    "Pre-existing lint warnings (7 st, alla i e2e/) -- inte från våra ändringar"
-  ]
+  "verification": {
+    "tests_total": 3211,
+    "tests_new": 42,
+    "tests_all_green": true,
+    "typecheck": "0 errors",
+    "lint": "0 errors (25 pre-existing warnings)",
+    "migration_applied": "20260309120609_add_stable_models"
+  },
+
+  "architecture_notes": {
+    "url_convention": "/api/stable/* = auth-skyddad (agarens stall), /api/stables/* = publik (sok)",
+    "auth_flow": "stableId i JWT/session, refreshas via useSession().update() efter stallskapande",
+    "ownership_pattern": "Alla CRUD: session.user.id -> findByUserId -> stableId, aldrig stableId fran request",
+    "feature_flag": "stable_profiles gatar alla routes (server 404) och alla sidor (client FeatureFlagProvider)"
+  }
 }
