@@ -127,6 +127,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 )
                 print("[Push] Booking \(bookingId) -> \(newStatus)")
 
+                // Sync calendar event after status change
+                await MainActor.run {
+                    CalendarSyncManager.shared.syncAfterStatusChange(
+                        bookingId: bookingId, newStatus: newStatus
+                    )
+                }
+
                 // Show local confirmation notification
                 let content = UNMutableNotificationContent()
                 content.title = newStatus == "confirmed" ? "Bokning bekräftad" : "Bokning avvisad"

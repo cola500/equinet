@@ -127,5 +127,8 @@ final class CalendarViewModel {
         bookings = response.bookings
         availability = response.availability
         exceptions = response.exceptions
+
+        // Sync confirmed bookings to iOS Calendar if enabled
+        CalendarSyncManager.shared.syncBookings(response.bookings)
     }
 }

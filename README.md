@@ -260,7 +260,12 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ### iOS-app (hybrid)
 - WKWebView-baserad hybrid-app som laddar webbappen
-- Native-Web bridge (JS <-> Swift) för push-notiser och nätverksstatus
+- Native-Web bridge (JS <-> Swift) för push-notiser, kalendersynk och nätverksstatus
+- Push-notiser via APNs med actionable notifications (bekräfta/avvisa bokningar)
+- EventKit-kalendersynk -- bekräftade bokningar synkas till iOS Kalender (Apple Watch-påminnelser, Siri-förslag)
+- WidgetKit -- Small/Medium widget som visar nästa bokning på hemskärmen
+- Native taligenkänning (Speech framework) för röstloggning i appen
+- JWT-baserad mobiltoken-auth (jose HS256, 90 dagars livstid, Keychain-lagring)
 - Branded splash screen med mjuk övergång
 - Pull-to-refresh med haptic feedback
 - Native offline-detektion (NWPathMonitor) med amber/grön banner

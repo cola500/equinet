@@ -31,6 +31,11 @@ enum BridgeMessageType: String {
     case mobileTokenError = "mobileTokenError"
     case navigateToNativeCalendar = "navigateToNativeCalendar"
     case navigateToWebView = "navigateToWebView"
+    case requestCalendarSync = "requestCalendarSync"
+    case calendarSyncEnabled = "calendarSyncEnabled"
+    case calendarSyncDenied = "calendarSyncDenied"
+    case calendarSyncStatus = "calendarSyncStatus"
+    case userDidLogout = "userDidLogout"
 }
 
 @MainActor
@@ -39,9 +44,11 @@ final class BridgeHandler {
 
     private weak var webView: WKWebView?
     private let speechRecognizer = SpeechRecognizer()
+    private weak var authManager: AuthManager?
 
-    func attach(to webView: WKWebView) {
+    func attach(to webView: WKWebView, authManager: AuthManager? = nil) {
         self.webView = webView
+        if let authManager { self.authManager = authManager }
         setupSpeechCallbacks()
     }
 
@@ -66,6 +73,10 @@ final class BridgeHandler {
             speechRecognizer.stop()
         case BridgeMessageType.requestMobileToken.rawValue:
             handleMobileTokenReceived(body["payload"] as? [String: Any])
+        case BridgeMessageType.requestCalendarSync.rawValue:
+            handleCalendarSyncRequest()
+        case BridgeMessageType.userDidLogout.rawValue:
+            handleUserDidLogout()
         default:
             print("[Bridge] Unknown message type: \(type)")
         }
@@ -181,13 +192,36 @@ final class BridgeHandler {
         await fetchAndStoreWidgetData()
     }
 
-    /// Clear token and widget data (called on logout)
+    /// Clear token, widget data, and calendar sync (called on logout)
     func clearMobileToken() {
         KeychainHelper.clearMobileToken()
+        KeychainHelper.clearSessionCookie()
         SharedDataManager.clearWidgetData()
         SharedDataManager.clearCalendarCache()
         SharedDataManager.reloadWidgets()
-        print("[Bridge] Mobile token, widget data, and calendar cache cleared")
+        CalendarSyncManager.shared.removeAllSyncedEvents()
+        print("[Bridge] Mobile token, session cookie, widget data, calendar cache, and calendar sync cleared")
+    }
+
+    /// Handle logout message from web app
+    private func handleUserDidLogout() {
+        print("[Bridge] User logged out from web")
+        authManager?.logout()
+    }
+
+    // MARK: - Calendar Sync
+
+    private func handleCalendarSyncRequest() {
+        Task {
+            let granted = await CalendarSyncManager.shared.requestAccess()
+            if granted {
+                sendToWeb(type: .calendarSyncEnabled)
+            } else {
+                sendToWeb(type: .calendarSyncDenied, payload: [
+                    "hint": "Öppna Inställningar > Equinet > Kalendrar för att aktivera",
+                ])
+            }
+        }
     }
 
     /// Navigate the WebView to a specific path (called from native views)
