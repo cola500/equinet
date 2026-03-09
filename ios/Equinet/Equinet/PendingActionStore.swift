@@ -17,20 +17,20 @@ struct PendingBookingAction: Codable {
 enum PendingActionStore {
     private static let key = "pending_booking_actions"
 
-    static func save(bookingId: String, status: String) {
-        var actions = load()
+    static func save(bookingId: String, status: String, to defaults: UserDefaults = .standard) {
+        var actions = load(from: defaults)
         actions.append(PendingBookingAction(
             bookingId: bookingId,
             status: status,
             createdAt: Date()
         ))
         if let data = try? JSONEncoder().encode(actions) {
-            UserDefaults.standard.set(data, forKey: key)
+            defaults.set(data, forKey: key)
         }
     }
 
-    static func load() -> [PendingBookingAction] {
-        guard let data = UserDefaults.standard.data(forKey: key),
+    static func load(from defaults: UserDefaults = .standard) -> [PendingBookingAction] {
+        guard let data = defaults.data(forKey: key),
               let actions = try? JSONDecoder().decode([PendingBookingAction].self, from: data) else {
             return []
         }
@@ -38,8 +38,8 @@ enum PendingActionStore {
         return actions.filter { Date().timeIntervalSince($0.createdAt) < 86400 }
     }
 
-    static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
+    static func clear(from defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key)
     }
 
     /// Retry all pending actions. Called on network restored and app-start.
