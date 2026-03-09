@@ -93,7 +93,7 @@ export default function StableProfilePage() {
       const data = await res.json()
       setProfile(data)
       // Refresh session to include stableId
-      await updateSession()
+      await updateSession({ stableId: data.stableId || data.id })
       toast.success("Stallprofil skapad!")
     } catch {
       toast.error("Kunde inte skapa stallprofil")
