@@ -9,6 +9,7 @@ export function mapHorseErrorToStatus(error: HorseError): number {
     case 'HORSE_NOT_FOUND':
     case 'NOTE_NOT_FOUND':
     case 'NO_PROVIDER_ACCESS':
+    case 'STABLE_NOT_FOUND':
       return 404
     case 'UNAUTHORIZED':
       return 403

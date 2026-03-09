@@ -26,6 +26,7 @@ import type {
   ExportBookingData,
 } from '@/infrastructure/persistence/horse/IHorseRepository'
 import { HorseRepository } from '@/infrastructure/persistence/horse/HorseRepository'
+import { createStableService } from '@/domain/stable/StableServiceFactory'
 
 // -----------------------------------------------------------
 // Types
@@ -36,6 +37,7 @@ export type HorseErrorType =
   | 'NOTE_NOT_FOUND'
   | 'UNAUTHORIZED'
   | 'NO_PROVIDER_ACCESS'
+  | 'STABLE_NOT_FOUND'
 
 export interface HorseError {
   type: HorseErrorType
@@ -123,6 +125,42 @@ export class HorseService {
       return Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
     }
     return Result.ok(undefined as void)
+  }
+
+  // ==========================================
+  // STABLE LINK
+  // ==========================================
+
+  async setStable(
+    horseId: string,
+    stableId: string | null,
+    ownerId: string
+  ): Promise<Result<Horse, HorseError>> {
+    // Verify horse ownership
+    const horse = await this.repo.findByIdForOwner(horseId, ownerId)
+    if (!horse) {
+      return Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hästen hittades inte' })
+    }
+
+    // If setting a stable, validate it exists and is active
+    if (stableId) {
+      const stableService = createStableService()
+      const stable = await stableService.getById(stableId)
+      if (!stable || !stable.isActive) {
+        return Result.fail({ type: 'STABLE_NOT_FOUND', message: 'Stallet hittades inte' })
+      }
+    }
+
+    const updated = await this.repo.updateWithAuth(
+      horseId,
+      { stableId },
+      ownerId
+    )
+    if (!updated) {
+      return Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hästen hittades inte' })
+    }
+
+    return Result.ok(updated)
   }
 
   // ==========================================
