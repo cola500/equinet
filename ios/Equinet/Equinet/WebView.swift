@@ -7,6 +7,7 @@
 //
 
 #if os(iOS)
+import OSLog
 import SwiftUI
 import WebKit
 
@@ -128,6 +129,9 @@ struct WebView: UIViewRepresentable {
         // Store reference for navigation from push notifications
         context.coordinator.webView = webView
 
+        // Observe cookie changes for session expiry detection
+        context.coordinator.startObservingCookies(for: webView)
+
         // Inject session cookie BEFORE loading the page
         Task {
             await authManager.injectSessionCookie(into: webView.configuration.websiteDataStore.httpCookieStore)
@@ -147,7 +151,7 @@ struct WebView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, WKHTTPCookieStoreObserver {
         let parent: WebView
         weak var webView: WKWebView?
         var lastLoadFailed = false
@@ -173,6 +177,32 @@ struct WebView: UIViewRepresentable {
         deinit {
             if let observer = navigationObserver {
                 NotificationCenter.default.removeObserver(observer)
+            }
+            // Unregister cookie observer
+            webView?.configuration.websiteDataStore.httpCookieStore.remove(self)
+        }
+
+        /// Start observing cookie changes (called after webView is set up)
+        func startObservingCookies(for webView: WKWebView) {
+            webView.configuration.websiteDataStore.httpCookieStore.add(self)
+        }
+
+        // MARK: - WKHTTPCookieStoreObserver
+
+        func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
+            Task { @MainActor in
+                let cookies = await cookieStore.allCookies()
+                let hasSessionCookie = cookies.contains { cookie in
+                    cookie.name == "authjs.session-token"
+                        && (cookie.domain.hasSuffix(AppConfig.baseURL.host ?? "")
+                            || cookie.domain == "localhost")
+                }
+
+                // Session cookie disappeared -> user logged out or session expired
+                if !hasSessionCookie && parent.webViewReady {
+                    AppLogger.auth.info("Session cookie removed, triggering logout")
+                    parent.authManager.logout()
+                }
             }
         }
 
@@ -221,7 +251,7 @@ struct WebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             parent.isLoading = false
-            print("[WebView] Navigation failed: \(error.localizedDescription)")
+            AppLogger.webview.warning("Navigation failed: \(error.localizedDescription)")
         }
 
         func webView(
@@ -246,28 +276,40 @@ struct WebView: UIViewRepresentable {
                 if networkErrors.contains(nsError.code) {
                     lastLoadFailed = true
                     parent.hasNavigationError = true
-                    print("[WebView] Network error: \(nsError.code) - \(error.localizedDescription)")
+                    AppLogger.webview.warning("Network error \(nsError.code): \(error.localizedDescription)")
                     return
                 }
             }
 
-            print("[WebView] Provisional navigation failed: \(error.localizedDescription)")
+            AppLogger.webview.warning("Provisional navigation failed: \(error.localizedDescription)")
         }
 
-        // Catch HTTP 5xx errors and show native error view
+        // Catch HTTP 401/5xx errors
         func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationResponse: WKNavigationResponse,
             decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
         ) {
-            if let httpResponse = navigationResponse.response as? HTTPURLResponse,
-               httpResponse.statusCode >= 500 {
-                parent.isLoading = false
-                lastLoadFailed = true
-                parent.hasNavigationError = true
-                decisionHandler(.cancel)
-                print("[WebView] Server error: \(httpResponse.statusCode)")
-                return
+            if let httpResponse = navigationResponse.response as? HTTPURLResponse {
+                // 401 -> session expired, auto-logout
+                if httpResponse.statusCode == 401 {
+                    AppLogger.auth.info("HTTP 401 detected, triggering logout")
+                    decisionHandler(.cancel)
+                    Task { @MainActor in
+                        parent.authManager.logout()
+                    }
+                    return
+                }
+
+                // 5xx -> show native error view
+                if httpResponse.statusCode >= 500 {
+                    parent.isLoading = false
+                    lastLoadFailed = true
+                    parent.hasNavigationError = true
+                    decisionHandler(.cancel)
+                    AppLogger.webview.error("Server error: \(httpResponse.statusCode)")
+                    return
+                }
             }
             decisionHandler(.allow)
         }

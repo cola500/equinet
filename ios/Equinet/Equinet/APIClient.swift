@@ -14,6 +14,8 @@ enum APIError: Error {
     case networkError(Error)
     case serverError(Int)
     case decodingError(Error)
+    case rateLimited(retryAfter: Int?)
+    case timeout
 }
 
 actor APIClient {
@@ -122,7 +124,15 @@ actor APIClient {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch let urlError as URLError where urlError.code == .timedOut {
+            throw APIError.timeout
+        } catch {
+            throw APIError.networkError(error)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
@@ -140,6 +150,13 @@ actor APIClient {
                 KeychainHelper.clearMobileToken()
                 throw APIError.unauthorized
             }
+        }
+
+        // Handle 429: rate limited
+        if httpResponse.statusCode == 429 {
+            let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After")
+                .flatMap { Int($0) }
+            throw APIError.rateLimited(retryAfter: retryAfter)
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {

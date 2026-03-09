@@ -7,11 +7,38 @@
 //
 
 import Foundation
+import OSLog
 import Speech
 import AVFoundation
 
+// MARK: - Audio Session Protocol for DI
+
 @MainActor
-final class SpeechRecognizer {
+protocol AudioSessionConfigurable {
+    func setCategory(_ category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions) throws
+    func setActive(_ active: Bool, options: AVAudioSession.SetActiveOptions) throws
+}
+
+extension AVAudioSession: AudioSessionConfigurable {}
+
+// MARK: - Protocol for DI
+
+@MainActor
+protocol SpeechRecognizable: AnyObject {
+    var onStarted: (() -> Void)? { get set }
+    var onTranscript: ((_ text: String, _ isFinal: Bool, _ confidence: Float?) -> Void)? { get set }
+    var onAudioLevel: ((_ level: Float) -> Void)? { get set }
+    var onEnded: ((_ reason: String) -> Void)? { get set }
+    var onError: ((_ error: SpeechRecognizer.RecognitionError) -> Void)? { get set }
+
+    func start()
+    func stop()
+}
+
+// MARK: - Implementation
+
+@MainActor
+final class SpeechRecognizer: SpeechRecognizable {
 
     enum RecognitionError: String {
         case notAvailable = "not_available"
@@ -22,7 +49,8 @@ final class SpeechRecognizer {
 
     // Callbacks -- set by BridgeHandler
     var onStarted: (() -> Void)?
-    var onTranscript: ((_ text: String, _ isFinal: Bool) -> Void)?
+    var onTranscript: ((_ text: String, _ isFinal: Bool, _ confidence: Float?) -> Void)?
+    var onAudioLevel: ((_ level: Float) -> Void)?
     var onEnded: ((_ reason: String) -> Void)?
     var onError: ((_ error: RecognitionError) -> Void)?
 
@@ -32,8 +60,11 @@ final class SpeechRecognizer {
     private let audioEngine = AVAudioEngine()
     private var silenceTimer: Timer?
     private let silenceTimeout: TimeInterval = 30.0
+    private var lastAudioLevelTime: TimeInterval = 0
+    private let audioSession: AudioSessionConfigurable
 
-    init() {
+    init(audioSession: AudioSessionConfigurable? = nil) {
+        self.audioSession = audioSession ?? AVAudioSession.sharedInstance()
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "sv-SE"))
     }
 
@@ -65,6 +96,7 @@ final class SpeechRecognizer {
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest = nil
+        lastAudioLevelTime = 0
     }
 
     // MARK: - Private
@@ -101,7 +133,6 @@ final class SpeechRecognizer {
         self.recognitionRequest = request
 
         do {
-            let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
@@ -111,8 +142,29 @@ final class SpeechRecognizer {
 
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             request.append(buffer)
+
+            // Calculate RMS audio level, throttle to ~10 Hz
+            let now = CACurrentMediaTime()
+            guard let self, now - self.lastAudioLevelTime >= 0.1 else { return }
+            self.lastAudioLevelTime = now
+
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+            let frameLength = Int(buffer.frameLength)
+            guard frameLength > 0 else { return }
+
+            var sum: Float = 0
+            for i in 0..<frameLength {
+                sum += channelData[i] * channelData[i]
+            }
+            let rms = sqrt(sum / Float(frameLength))
+            // Normalize to 0-1 range (typical speech RMS is 0.01-0.3)
+            let normalized = min(1.0, rms * 5.0)
+
+            Task { @MainActor in
+                self.onAudioLevel?(normalized)
+            }
         }
 
         do {
@@ -132,7 +184,8 @@ final class SpeechRecognizer {
                 if let result {
                     let text = result.bestTranscription.formattedString
                     let isFinal = result.isFinal
-                    self.onTranscript?(text, isFinal)
+                    let confidence = result.bestTranscription.segments.last?.confidence
+                    self.onTranscript?(text, isFinal, confidence)
                     self.resetSilenceTimer()
 
                     if isFinal {
@@ -149,7 +202,7 @@ final class SpeechRecognizer {
                         self.onEnded?("silence")
                         return
                     }
-                    print("[SpeechRecognizer] Error: \(error.localizedDescription)")
+                    AppLogger.speech.error("Recognition error: \(error.localizedDescription)")
                     self.stop()
                     self.onError?(.recognitionFailed)
                 }
