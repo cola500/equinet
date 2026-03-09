@@ -63,6 +63,7 @@ export class PrismaStableInviteRepository implements IStableInviteRepository {
       where: { stableId },
       select: {
         id: true,
+        token: true,
         email: true,
         expiresAt: true,
         usedAt: true,

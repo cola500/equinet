@@ -10,6 +10,7 @@ import { Header } from "@/components/layout/Header"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useStableSearch, type StableData } from "@/hooks/useStableSearch"
 import { searchMunicipalities } from "@/lib/geo/municipalities"
+import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Search } from "lucide-react"
 
 export default function StablesPage() {
@@ -122,13 +123,23 @@ function StablesContent() {
                   onChange={(e) => handleMunicipalityInput(e.target.value)}
                   onFocus={() => municipalitySuggestions.length > 0 && setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  role="combobox"
+                  aria-expanded={showSuggestions && municipalitySuggestions.length > 0}
+                  aria-controls="municipality-listbox"
+                  aria-autocomplete="list"
                 />
                 {showSuggestions && municipalitySuggestions.length > 0 && (
-                  <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  <div
+                    id="municipality-listbox"
+                    role="listbox"
+                    className="absolute z-10 top-full mt-1 w-full bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto"
+                  >
                     {municipalitySuggestions.map((name) => (
                       <button
                         key={name}
                         type="button"
+                        role="option"
+                        aria-selected={municipality === name}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                         onMouseDown={() => selectMunicipality(name)}
                       >
@@ -139,15 +150,16 @@ function StablesContent() {
                 )}
               </div>
 
-              <label className="flex items-center gap-2 text-sm whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="available-spots"
                   checked={hasAvailableSpots}
-                  onChange={(e) => setHasAvailableSpots(e.target.checked)}
-                  className="rounded border-gray-300"
+                  onCheckedChange={(checked) => setHasAvailableSpots(checked === true)}
                 />
-                Lediga platser
-              </label>
+                <label htmlFor="available-spots" className="text-sm whitespace-nowrap cursor-pointer">
+                  Lediga platser
+                </label>
+              </div>
 
               {hasActiveFilters && (
                 <Button variant="outline" onClick={clearSearch}>

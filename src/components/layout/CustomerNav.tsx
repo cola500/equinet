@@ -10,6 +10,7 @@ import {
   HelpCircle,
   User,
   Shield,
+  Home,
 } from "lucide-react"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import { useAuth } from "@/hooks/useAuth"
@@ -52,7 +53,7 @@ const allNavItems: CustomerNavItem[] = [
 
 export function CustomerNav() {
   const pathname = usePathname()
-  const { isAdmin } = useAuth()
+  const { isAdmin, isStableOwner } = useAuth()
   const flags = useFeatureFlags()
 
   const isVisible = (item: { featureFlag?: string }) =>
@@ -60,11 +61,19 @@ export function CustomerNav() {
 
   const navItems = [
     ...allNavItems.filter(isVisible),
+    ...(flags["stable_profiles"] ? [
+      { href: "/stables", label: "Hitta stall", matchPrefix: "/stables" },
+      ...(isStableOwner ? [{ href: "/stable/dashboard", label: "Mitt stall", matchPrefix: "/stable" }] : []),
+    ] : []),
     ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", matchPrefix: "/admin" }] : []),
   ]
 
   const moreItems: MoreMenuItem[] = [
     ...customerMoreItems.filter(isVisible),
+    ...(flags["stable_profiles"] ? [
+      { href: "/stables", label: "Hitta stall", icon: Search, matchPrefix: "/stables", section: "Stall" },
+      ...(isStableOwner ? [{ href: "/stable/dashboard", label: "Mitt stall", icon: Home, matchPrefix: "/stable", section: "Stall" }] : []),
+    ] : []),
     ...(isAdmin ? [{ href: "/admin/verifications", label: "Admin", icon: Shield, matchPrefix: "/admin" }] : []),
   ]
 

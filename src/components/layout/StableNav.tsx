@@ -7,8 +7,9 @@ import {
   MapPin,
   Mail,
   User,
+  ArrowLeftRight,
 } from "lucide-react"
-import { BottomTabBar, type TabItem } from "./BottomTabBar"
+import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { toast } from "sonner"
@@ -32,6 +33,11 @@ export function StableNav() {
   const router = useRouter()
   const { isProvider, isCustomer } = useAuth()
   const isOnline = useOnlineStatus()
+
+  const stableMoreItems: MoreMenuItem[] = [
+    ...(isProvider ? [{ href: "/provider/dashboard", label: "Leverantörsvy", icon: ArrowLeftRight, section: "Byt vy" }] : []),
+    ...(isCustomer ? [{ href: "/dashboard", label: "Kundvy", icon: ArrowLeftRight, section: "Byt vy" }] : []),
+  ]
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!isOnline) {
@@ -98,7 +104,7 @@ export function StableNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={stableTabs} moreItems={[]} />
+      <BottomTabBar tabs={stableTabs} moreItems={stableMoreItems} />
     </>
   )
 }

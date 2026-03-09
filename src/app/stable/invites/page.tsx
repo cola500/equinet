@@ -29,6 +29,7 @@ import { clientLogger } from "@/lib/client-logger"
 
 interface Invite {
   id: string
+  token: string
   email: string
   expiresAt: string
   usedAt: string | null
@@ -403,6 +404,20 @@ function InviteRow({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {isPending && (
+                    <DropdownMenuItem onClick={async () => {
+                      const url = `${window.location.origin}/invite/stable/${invite.token}`
+                      try {
+                        await navigator.clipboard.writeText(url)
+                        toast.success("Länken kopierad!")
+                      } catch {
+                        toast.error("Kunde inte kopiera länken")
+                      }
+                    }}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Kopiera länk
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => onResend(invite)}>
                     Skicka igen
                   </DropdownMenuItem>

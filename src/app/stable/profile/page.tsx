@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import { toast } from "sonner"
 
 interface StableProfile {
@@ -178,11 +179,11 @@ export default function StableProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="municipality">Kommun</Label>
-            <Input
+            <MunicipalitySelect
               id="municipality"
               value={municipality}
-              onChange={(e) => setMunicipality(e.target.value)}
-              placeholder="T.ex. Alingsas"
+              onChange={setMunicipality}
+              placeholder="Sök kommun..."
             />
           </div>
           <div className="space-y-2">
@@ -203,7 +204,7 @@ export default function StableProfilePage() {
               id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Stallvagen 1"
+              placeholder="Stallvägen 1"
             />
           </div>
           <div className="space-y-2">
@@ -241,7 +242,7 @@ export default function StableProfilePage() {
 
         <Button type="submit" disabled={isSaving || isCreating || !name}>
           {isEdit
-            ? isSaving ? "Sparar..." : "Spara andringar"
+            ? isSaving ? "Sparar..." : "Spara ändringar"
             : isCreating ? "Skapar..." : "Skapa stallprofil"
           }
         </Button>

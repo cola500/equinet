@@ -31,4 +31,7 @@ sections:
 | [2026-02-28-graphical-profile.md](2026-02-28-graphical-profile.md) | Feb 28 | 1 | Grafisk profil, landningssida, Suspense-fix |
 | [2026-03-03-offline-hardening.md](2026-03-03-offline-hardening.md) | Mar 3 | 1 | Offline-härdning: jitter, circuit breaker, kvothantering, konflikt-UI |
 
-**Totalt:** 69 sessioner, ~3003 tester, 0 regressioner.
+| [2026-03-09-publik-stallsokning.md](2026-03-09-publik-stallsokning.md) | Mar 9 | 1 | Publik stallsokning, stallprofil, auth-fix |
+| [2026-03-09-ux-polish-stallagare.md](2026-03-09-ux-polish-stallagare.md) | Mar 9 | 1 | UX-polish: navigation, discovery, a11y, ASCII-fix |
+
+**Totalt:** 71+ sessioner, ~3276 tester, 0 regressioner.
