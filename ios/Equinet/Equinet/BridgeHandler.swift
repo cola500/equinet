@@ -14,6 +14,14 @@ import Observation
 import OSLog
 import WebKit
 
+/// Protocol to abstract WKScriptMessage for testability.
+/// WKScriptMessage cannot be subclassed safely (no public init).
+protocol ScriptMessageProtocol {
+    var body: Any { get }
+}
+
+extension WKScriptMessage: ScriptMessageProtocol {}
+
 enum BridgeMessageType: String {
     case requestPush = "requestPush"
     case pushTokenReceived = "pushTokenReceived"
@@ -60,7 +68,7 @@ final class BridgeHandler {
 
     // MARK: - Incoming (JS -> Swift)
 
-    func handleMessage(_ message: WKScriptMessage) {
+    func handleMessage(_ message: ScriptMessageProtocol) {
         guard let body = message.body as? [String: Any],
               let type = body["type"] as? String else {
             AppLogger.bridge.warning("Invalid message format")

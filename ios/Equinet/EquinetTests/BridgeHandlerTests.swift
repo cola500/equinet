@@ -134,17 +134,10 @@ final class BridgeHandlerTests: XCTestCase {
 
 // MARK: - Fakes
 
-/// Minimal WKScriptMessage substitute for testing.
-/// WKScriptMessage can't be directly instantiated, so we subclass it.
-private class FakeScriptMessage: WKScriptMessage {
-    private let _body: Any
-
-    init(body: Any) {
-        _body = body
-        super.init()
-    }
-
-    override var body: Any { _body }
+/// Lightweight ScriptMessageProtocol conformance for testing.
+/// WKScriptMessage cannot be safely subclassed (no public init).
+private struct FakeScriptMessage: ScriptMessageProtocol {
+    let body: Any
 }
 
 /// Minimal WKWebView for testing attach().
