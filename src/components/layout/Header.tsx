@@ -17,8 +17,12 @@ import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
-export function Header() {
-  const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin } = useAuth()
+interface HeaderProps {
+  hideSecondaryNav?: boolean
+}
+
+export function Header({ hideSecondaryNav = false }: HeaderProps) {
+  const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin, isStableOwner } = useAuth()
   const stableEnabled = useFeatureFlag("stable_profiles")
 
   const handleLogout = async () => {
@@ -74,6 +78,11 @@ export function Header() {
                     Min profil
                   </Link>
                 </DropdownMenuItem>
+                {isStableOwner && stableEnabled && (
+                  <DropdownMenuItem asChild className="py-3 px-4">
+                    <Link href="/stable/profile">Stallprofil</Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
@@ -95,7 +104,7 @@ export function Header() {
         </div>
       </div>
     </header>
-    {isAuthenticated && isCustomer && <CustomerNav />}
+    {isAuthenticated && isCustomer && !hideSecondaryNav && <CustomerNav />}
     </>
   )
 }

@@ -11,7 +11,7 @@ interface StableLayoutProps {
 export function StableLayout({ children }: StableLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header hideSecondaryNav />
       <StableNav />
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         {children}

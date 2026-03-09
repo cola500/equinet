@@ -44,7 +44,7 @@ export default function StableDashboardPage() {
           href="/stable/profile"
           className="p-6 bg-white rounded-lg border hover:border-primary transition-colors"
         >
-          <h2 className="font-semibold mb-1">Min profil</h2>
+          <h2 className="font-semibold mb-1">Stallprofil</h2>
           <p className="text-sm text-gray-500">Redigera stallprofil</p>
         </Link>
       </div>

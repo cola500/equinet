@@ -10,7 +10,7 @@ export const authConfig: NextAuthConfig = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session: updateData }) {
       if (user) {
         token.id = user.id
         token.userType = user.userType
@@ -19,8 +19,8 @@ export const authConfig: NextAuthConfig = {
         token.stableId = user.stableId
       }
       // Support session refresh after stable creation
-      if (trigger === "update" && token.id) {
-        // stableId will be set via session.update() from client
+      if (trigger === "update" && updateData?.stableId) {
+        token.stableId = updateData.stableId as string
       }
       return token
     },
