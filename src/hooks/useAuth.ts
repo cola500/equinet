@@ -12,6 +12,7 @@ interface CachedAuthUser {
   userType: string
   isAdmin?: boolean
   providerId?: string | null
+  stableId?: string | null
 }
 
 interface CachedAuth {
@@ -19,7 +20,9 @@ interface CachedAuth {
   isProvider: boolean
   isCustomer: boolean
   isAdmin: boolean
+  isStableOwner: boolean
   providerId: string | null
+  stableId: string | null
 }
 
 export function useAuth() {
@@ -36,7 +39,9 @@ export function useAuth() {
           isProvider: session.user.userType === "provider",
           isCustomer: session.user.userType === "customer",
           isAdmin: session.user.isAdmin === true,
+          isStableOwner: !!session.user.stableId,
           providerId: session.user.providerId ?? null,
+          stableId: session.user.stableId ?? null,
         })
       )
     } catch {
@@ -63,7 +68,9 @@ export function useAuth() {
           isProvider: parsed.isProvider,
           isCustomer: parsed.isCustomer,
           isAdmin: parsed.isAdmin,
+          isStableOwner: parsed.isStableOwner,
           providerId: parsed.providerId,
+          stableId: parsed.stableId,
         }
       }
     } catch {
@@ -78,7 +85,9 @@ export function useAuth() {
       isProvider: false,
       isCustomer: false,
       isAdmin: false,
+      isStableOwner: false,
       providerId: null,
+      stableId: null,
     }
   }
 
@@ -90,6 +99,8 @@ export function useAuth() {
     isProvider: session?.user?.userType === "provider",
     isCustomer: session?.user?.userType === "customer",
     isAdmin: session?.user?.isAdmin === true,
+    isStableOwner: !!session?.user?.stableId,
     providerId: session?.user?.providerId ?? null,
+    stableId: session?.user?.stableId ?? null,
   }
 }

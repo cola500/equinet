@@ -83,6 +83,8 @@ export class MockHorseRepository implements IHorseRepository {
       microchipNumber: data.microchipNumber ?? null,
       photoUrl: null,
       isActive: true,
+      stableId: null,
+      stable: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     }

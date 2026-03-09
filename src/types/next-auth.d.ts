@@ -6,6 +6,7 @@ declare module "next-auth" {
     userType: string
     isAdmin?: boolean
     providerId?: string | null
+    stableId?: string | null
   }
 
   interface Session {
@@ -16,6 +17,7 @@ declare module "next-auth" {
       userType: string
       isAdmin?: boolean
       providerId?: string | null
+      stableId?: string | null
     }
   }
 }
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     userType: string
     isAdmin?: boolean
     providerId?: string | null
+    stableId?: string | null
   }
 }

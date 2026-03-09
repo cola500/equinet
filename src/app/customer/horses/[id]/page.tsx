@@ -321,6 +321,7 @@ export default function HorseDetailPage() {
               isSaving={edit.isSavingEdit}
               onOpenEdit={edit.openEditDialog}
               onSave={edit.handleEditHorse}
+              onHorseChanged={fetchHorse}
             />
           )}
         </TabsContent>

@@ -68,7 +68,7 @@ sections:
 ┌─────────────────┐
 │   Supabase      │
 │   PostgreSQL    │
-│   (32 tabeller) │
+│   (35 tabeller) │
 └─────────────────┘
 ```
 
@@ -129,7 +129,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### Databasschema
 
-**32 tabeller** med index optimerade för vanliga queries:
+**35 tabeller** med index optimerade för vanliga queries:
 
 | Tabell | Kritiska Index | Syfte |
 |--------|----------------|-------|
@@ -153,6 +153,9 @@ const prismaWithExtensions = basePrisma.$extends({
 | CustomerInviteToken | token (unique), userId+usedAt | Inbjudningstokens för spökkunder |
 | BugReport | createdAt, status | Buggrapporter från användare |
 | MobileToken | token (unique), userId | JWT-hash for iOS widget/native auth (90d expiry, rotation) |
+| Stable | userId (unique), municipality+isActive, lat/long, isActive+createdAt | Stallprofiler (marketplace) |
+| StableSpot | stableId+status | Stallplatser (ledig/uthyrd) |
+| StableInviteToken | token (unique), stableId+email | Inbjudningstokens för stallägare |
 | (+ 12 andra) | ... | ... |
 
 **Viktiga patterns:**
@@ -163,7 +166,7 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### RLS Security Model
 
-**Status:** Aktiverat på alla 32 tabeller + `_prisma_migrations` sedan 2026-02-04
+**Status:** Aktiverat på alla 35 tabeller + `_prisma_migrations` sedan 2026-02-04
 
 ```sql
 -- Migration: 20260204120000_enable_rls

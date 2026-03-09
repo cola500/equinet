@@ -99,7 +99,7 @@ class EmailService {
 export const emailService = new EmailService()
 
 // --- Email Notifications ---
-import { emailVerificationEmail, passwordResetEmail, accountDeletionConfirmationEmail, customerInviteEmail } from "./templates"
+import { emailVerificationEmail, passwordResetEmail, accountDeletionConfirmationEmail, customerInviteEmail, stableInviteEmail } from "./templates"
 
 /**
  * Send email verification notification
@@ -200,6 +200,30 @@ export async function sendCustomerInviteNotification(
   return await emailService.send({
     to: email,
     subject: "Du har blivit inbjuden till Equinet",
+    html,
+    text,
+  })
+}
+
+/**
+ * Send stable invite notification
+ */
+export async function sendStableInviteNotification(
+  email: string,
+  stableName: string,
+  token: string
+) {
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const inviteUrl = `${baseUrl}/invite/stable/${token}`
+
+  const { html, text } = stableInviteEmail({
+    stableName,
+    inviteUrl,
+  })
+
+  return await emailService.send({
+    to: email,
+    subject: `Du har blivit inbjuden till ${stableName} på Equinet`,
     html,
     text,
   })
