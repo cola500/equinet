@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
-      return NextResponse.json({ error: "For manga forfragningar" }, { status: 429 })
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     if (!(await isFeatureEnabled("stable_profiles"))) {
-      return NextResponse.json({ error: "Ej tillganglig" }, { status: 404 })
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     const stableService = createStableService()
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   } catch (err: unknown) {
     if (err instanceof Response) return err
     logger.error("Error fetching stable spots", err instanceof Error ? err : new Error(String(err)))
-    return NextResponse.json({ error: "Kunde inte hamta stallplatser" }, { status: 500 })
+    return NextResponse.json({ error: "Kunde inte hämta stallplatser" }, { status: 500 })
   }
 }
 
@@ -51,11 +51,11 @@ export async function POST(request: NextRequest) {
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
-      return NextResponse.json({ error: "For manga forfragningar" }, { status: 429 })
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     if (!(await isFeatureEnabled("stable_profiles"))) {
-      return NextResponse.json({ error: "Ej tillganglig" }, { status: 404 })
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     const stableService = createStableService()

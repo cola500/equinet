@@ -64,38 +64,34 @@
         "src/app/api/stable/spots/[spotId]/route.test.ts",
         "src/app/stable/spots/page.tsx"
       ]
-    }
-  },
-
-  "remaining": {
+    },
     "fas4": {
-      "name": "Publik sokning + stallprofil",
-      "status": "todo",
-      "description": "Publik sokning av stall och stallplatser, SEO-optimerade sidor",
-      "tasks": [
-        "API: GET /api/stables (publik, municipality/city/search-filter, hasAvailableSpots) med rate limiting",
-        "API: GET /api/stables/[stableId] (publik stallprofil + lediga platser)",
-        "useStableSearch hook (debounce + URL-state, kopiera useProviderSearch)",
-        "UI: /stables soksida med filter (kommun autocomplete, stad)",
-        "UI: /stables/[stableId] publik profilsida med generateMetadata for SEO",
-        "Tester: explicit test att unauthenticated GET lyckas"
-      ],
-      "files_to_create": [
+      "name": "Publik sökning + stallprofil",
+      "status": "done",
+      "tests": 16,
+      "summary": "API: GET /api/stables (publik sökning med municipality/city/search/hasAvailableSpots), GET /api/stables/[stableId] (publik profil + lediga platser). useStableSearch hook med debounce+URL-sync. /stables söksida med kommun-autocomplete, /stables/[stableId] profilsida med generateMetadata SEO. Auth.config fix: /stables publikt, /stable/ skyddat. Svenska tecken-fix i 4 fas 1-3 filer.",
+      "files_created": [
         "src/app/api/stables/route.ts",
         "src/app/api/stables/route.test.ts",
         "src/app/api/stables/[stableId]/route.ts",
         "src/app/api/stables/[stableId]/route.test.ts",
         "src/hooks/useStableSearch.ts",
         "src/app/stables/page.tsx",
-        "src/app/stables/[stableId]/page.tsx"
+        "src/app/stables/[stableId]/page.tsx",
+        "src/app/stables/[stableId]/StableProfileView.tsx"
       ],
-      "important_notes": [
-        "/api/stables ska INTE vara i auth.config.ts protected routes (publik endpoint)",
-        "Ateranvand src/lib/geo/municipalities.ts for kommun-autocomplete",
-        "Ateranvand src/lib/geo/distance.ts for geo-filtrering",
-        "DB-aggregering for available spots (_count), inte JS-loop"
+      "files_modified": [
+        "src/lib/auth.config.ts",
+        "src/domain/stable/StableService.ts",
+        "src/app/stable/layout.tsx",
+        "src/app/api/stable/spots/route.ts",
+        "src/app/api/stable/spots/[spotId]/route.ts",
+        "src/components/layout/StableNav.tsx"
       ]
-    },
+    }
+  },
+
+  "remaining": {
     "fas5": {
       "name": "Koppla hast till stall",
       "status": "todo",
@@ -167,8 +163,8 @@
   },
 
   "verification": {
-    "tests_total": 3211,
-    "tests_new": 42,
+    "tests_total": 3227,
+    "tests_new": 58,
     "tests_all_green": true,
     "typecheck": "0 errors",
     "lint": "0 errors (25 pre-existing warnings)",

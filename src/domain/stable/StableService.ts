@@ -9,6 +9,7 @@ import type {
   IStableRepository,
   Stable,
   StableWithCounts,
+  StableFilters,
   CreateStableData,
   UpdateStableData,
 } from "@/infrastructure/persistence/stable/IStableRepository"
@@ -53,5 +54,9 @@ export class StableService {
 
   async getPublicById(id: string): Promise<StableWithCounts | null> {
     return this.repo.findPublicById(id)
+  }
+
+  async searchPublic(filters: StableFilters): Promise<StableWithCounts[]> {
+    return this.repo.findAll({ ...filters, isActive: true })
   }
 }

@@ -9,7 +9,7 @@ export default function StableRootLayout({ children }: { children: React.ReactNo
   if (!enabled) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Funktionen ar inte tillganglig just nu.</p>
+        <p className="text-gray-500">Funktionen är inte tillgänglig just nu.</p>
       </div>
     )
   }

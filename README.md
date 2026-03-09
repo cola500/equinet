@@ -241,6 +241,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Leverantörshantering (profil, tjänster, öppettider, kalender)
 - Hästregister med hälsotidslinje och delbar hästprofil (UELN + mikrochip)
 - Mobil-först UI med responsiva dialoger, 44px touch targets och stegvist bokningsflöde
+- Stallprofiler och stallplatser (skapa stall, publicera lediga platser, publik sökning med kommun-autocomplete)
 
 ### Leverantörsverktyg
 - Ruttplanering med kartvy, optimering, Google Maps-navigation och geolokalisering

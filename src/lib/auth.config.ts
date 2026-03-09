@@ -39,7 +39,8 @@ export const authConfig: NextAuthConfig = {
       const isProtectedRoute =
         nextUrl.pathname.startsWith('/provider') ||
         nextUrl.pathname.startsWith('/customer') ||
-        nextUrl.pathname.startsWith('/stable') ||
+        nextUrl.pathname.startsWith('/stable/') ||
+        nextUrl.pathname === '/stable' ||
         nextUrl.pathname.startsWith('/admin') ||
         nextUrl.pathname.startsWith('/dashboard') ||
         nextUrl.pathname.startsWith('/api/admin') ||

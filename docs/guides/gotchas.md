@@ -38,6 +38,8 @@ sections:
   - 27. Offline Sync Race Conditions
   - 28. Radix Dialog onOpenChange vid Programmatisk Stängning
   - 29. useSearchParams() Kräver Suspense-boundary
+  - 30. jose v6 + jsdom Vitest-inkompatibilitet
+  - 31. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
   - Relaterade Dokument
 ---
 
@@ -1311,6 +1313,27 @@ function RegisterForm() {
 ```
 
 **Galler for:** Alla testfiler som anvander `jose`, `crypto`, eller annan Node.js-specifik kryptografi.
+
+---
+
+## 31. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
+
+> **Learning: 2026-03-09** | **Severity: SECURITY**
+
+**Problem:** `nextUrl.pathname.startsWith('/stable')` i auth.config matchar BÅDE `/stable/...` (skyddat) OCH `/stables/...` (ska vara publikt). Publika sidor blockeras oavsiktligt av auth-middleware.
+
+**Orsak:** `startsWith` är en prefix-match -- `/stables` börjar med `/stable`. Konventionen singularis (skyddad) vs pluralis (publik) kräver mer specifik matching.
+
+**Fix:** Använd trailing slash + exact match:
+```typescript
+// ❌ FEL: matchar /stable, /stable/profile, /stables, /stables/search
+nextUrl.pathname.startsWith('/stable')
+
+// ✅ RÄTT: matchar bara /stable och /stable/*
+nextUrl.pathname.startsWith('/stable/') || nextUrl.pathname === '/stable'
+```
+
+**Regel:** Vid nya publika routes som delar prefix med skyddade routes, verifiera alltid att auth.config inte blockerar dem.
 
 ---
 

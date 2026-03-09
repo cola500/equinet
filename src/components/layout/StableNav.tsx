@@ -14,14 +14,14 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { toast } from "sonner"
 
 const stableTabs: TabItem[] = [
-  { href: "/stable/dashboard", label: "Oversikt", icon: Home },
+  { href: "/stable/dashboard", label: "Översikt", icon: Home },
   { href: "/stable/spots", label: "Platser", icon: MapPin },
   { href: "/stable/invites", label: "Inbjudningar", icon: Mail },
   { href: "/stable/profile", label: "Profil", icon: User },
 ]
 
 const navItems = [
-  { href: "/stable/dashboard", label: "Oversikt" },
+  { href: "/stable/dashboard", label: "Översikt" },
   { href: "/stable/spots", label: "Stallplatser" },
   { href: "/stable/invites", label: "Inbjudningar" },
   { href: "/stable/profile", label: "Min profil" },
@@ -36,7 +36,7 @@ export function StableNav() {
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!isOnline) {
       e.preventDefault()
-      toast.error("Inte tillganglig offline")
+      toast.error("Inte tillgänglig offline")
       return
     }
     // Already on this page
@@ -61,7 +61,7 @@ export function StableNav() {
                   onClick={() => router.push("/provider/dashboard")}
                   className="text-xs text-gray-500 hover:text-gray-700"
                 >
-                  Leverantor
+                  Leverantör
                 </button>
               )}
               {isCustomer && (

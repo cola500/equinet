@@ -18,11 +18,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
-      return NextResponse.json({ error: "For manga forfragningar" }, { status: 429 })
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     if (!(await isFeatureEnabled("stable_profiles"))) {
-      return NextResponse.json({ error: "Ej tillganglig" }, { status: 404 })
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     const stableService = createStableService()
@@ -73,11 +73,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
-      return NextResponse.json({ error: "For manga forfragningar" }, { status: 429 })
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     if (!(await isFeatureEnabled("stable_profiles"))) {
-      return NextResponse.json({ error: "Ej tillganglig" }, { status: 404 })
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     const stableService = createStableService()
