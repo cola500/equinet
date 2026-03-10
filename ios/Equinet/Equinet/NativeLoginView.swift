@@ -146,5 +146,5 @@ struct NativeLoginView: View {
 }
 
 #Preview {
-    NativeLoginView(authManager: AuthManager())
+    NativeLoginView(authManager: .createDefault())
 }

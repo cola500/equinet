@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 
 struct PendingBookingAction: Codable {
     let bookingId: String
@@ -43,11 +44,12 @@ enum PendingActionStore {
     }
 
     /// Retry all pending actions. Called on network restored and app-start.
+    @MainActor
     static func retryAll() {
         let actions = load()
         guard !actions.isEmpty else { return }
 
-        Task.detached {
+        Task {
             var remaining: [PendingBookingAction] = []
 
             for action in actions {
@@ -56,10 +58,10 @@ enum PendingActionStore {
                         bookingId: action.bookingId,
                         newStatus: action.status
                     )
-                    print("[PendingAction] Retried: \(action.bookingId) -> \(action.status)")
+                    AppLogger.network.info("Retried pending action: \(action.bookingId) -> \(action.status)")
                 } catch {
                     remaining.append(action)
-                    print("[PendingAction] Retry failed: \(error)")
+                    AppLogger.network.error("Retry failed: \(error.localizedDescription)")
                 }
             }
 

@@ -18,7 +18,8 @@ enum APIError: Error {
     case timeout
 }
 
-actor APIClient {
+@MainActor
+final class APIClient {
     static let shared = APIClient()
 
     private var isRefreshing = false
@@ -183,7 +184,7 @@ actor APIClient {
 
 // MARK: - Response types
 
-private struct TokenResponse: Codable {
+private struct TokenResponse: Codable, Sendable {
     let token: String
     let expiresAt: String
 }

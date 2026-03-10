@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct WidgetBooking: Codable {
+struct WidgetBooking: Codable, Sendable {
     let id: String
     let bookingDate: String       // ISO 8601 date
     let startTime: String         // "HH:mm"
@@ -20,13 +20,13 @@ struct WidgetBooking: Codable {
     let serviceName: String
 }
 
-struct WidgetBookingResponse: Codable {
+struct WidgetBookingResponse: Codable, Sendable {
     let booking: WidgetBooking?
     let updatedAt: String
 }
 
 /// Widget data stored in App Group UserDefaults
-struct WidgetData: Codable {
+struct WidgetData: Codable, Sendable {
     let booking: WidgetBooking?
     let updatedAt: Date
     let hasAuth: Bool

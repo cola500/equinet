@@ -10,7 +10,7 @@ import Foundation
 import Security
 
 /// Protocol for Keychain operations, enabling test doubles.
-protocol KeychainStorable {
+protocol KeychainStorable: Sendable {
     func save(key: String, value: String) -> Bool
     func load(key: String) -> String?
     func delete(key: String) -> Bool
@@ -87,7 +87,7 @@ extension KeychainHelper {
 }
 
 /// Adapter that wraps KeychainHelper's static methods as an instance conforming to KeychainStorable.
-struct KeychainHelperAdapter: KeychainStorable {
+struct KeychainHelperAdapter: KeychainStorable, Sendable {
     func save(key: String, value: String) -> Bool {
         KeychainHelper.save(key: key, value: value)
     }

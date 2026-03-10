@@ -13,7 +13,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @State private var authManager = AuthManager()
+    @State private var authManager = AuthManager.createDefault()
     @State private var canGoBack = false
     @State private var isLoading = false
     @State private var hasNavigationError = false
@@ -53,7 +53,7 @@ struct ContentView: View {
                 Task { await bridge.refreshTokenIfNeeded() }
                 PendingActionStore.retryAll()
                 calendarViewModel.loadDataForSelectedDate()
-                UIApplication.shared.applicationIconBadgeNumber = 0
+                Task { try? await UNUserNotificationCenter.current().setBadgeCount(0) }
             case .background:
                 bridge.sendToWeb(type: .appDidEnterBackground)
             default:

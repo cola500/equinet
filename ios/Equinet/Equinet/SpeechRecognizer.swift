@@ -71,8 +71,8 @@ final class SpeechRecognizer: SpeechRecognizable {
     // MARK: - Public API
 
     func start() {
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            Task { @MainActor in
+        SFSpeechRecognizer.requestAuthorization { status in
+            Task { @MainActor [weak self] in
                 switch status {
                 case .authorized:
                     self?.requestMicrophoneAndStart()
@@ -102,8 +102,8 @@ final class SpeechRecognizer: SpeechRecognizable {
     // MARK: - Private
 
     private func requestMicrophoneAndStart() {
-        AVAudioApplication.requestRecordPermission { [weak self] granted in
-            Task { @MainActor in
+        AVAudioApplication.requestRecordPermission { granted in
+            Task { @MainActor [weak self] in
                 if granted {
                     self?.startRecognition()
                 } else {
@@ -142,14 +142,10 @@ final class SpeechRecognizer: SpeechRecognizable {
 
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
             request.append(buffer)
 
-            // Calculate RMS audio level, throttle to ~10 Hz
-            let now = CACurrentMediaTime()
-            guard let self, now - self.lastAudioLevelTime >= 0.1 else { return }
-            self.lastAudioLevelTime = now
-
+            // Calculate RMS audio level from buffer
             guard let channelData = buffer.floatChannelData?[0] else { return }
             let frameLength = Int(buffer.frameLength)
             guard frameLength > 0 else { return }
@@ -162,7 +158,11 @@ final class SpeechRecognizer: SpeechRecognizable {
             // Normalize to 0-1 range (typical speech RMS is 0.01-0.3)
             let normalized = min(1.0, rms * 5.0)
 
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                // Throttle to ~10 Hz on main actor
+                let now = CACurrentMediaTime()
+                guard let self, now - self.lastAudioLevelTime >= 0.1 else { return }
+                self.lastAudioLevelTime = now
                 self.onAudioLevel?(normalized)
             }
         }
@@ -212,8 +212,8 @@ final class SpeechRecognizer: SpeechRecognizable {
 
     private func resetSilenceTimer() {
         silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
-            Task { @MainActor in
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { _ in
+            Task { @MainActor [weak self] in
                 self?.stop()
                 self?.onEnded?("timeout")
             }

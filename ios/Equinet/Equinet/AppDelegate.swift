@@ -34,14 +34,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        PushManager.shared.didRegisterForRemoteNotifications(with: deviceToken)
+        Task { @MainActor in
+            PushManager.shared.didRegisterForRemoteNotifications(with: deviceToken)
+        }
     }
 
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        PushManager.shared.didFailToRegisterForRemoteNotifications(with: error)
+        Task { @MainActor in
+            PushManager.shared.didFailToRegisterForRemoteNotifications(with: error)
+        }
     }
 
     // MARK: - Notification Categories
@@ -95,9 +99,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         switch actionIdentifier {
         case "CONFIRM_ACTION":
-            handleBookingAction(userInfo: userInfo, newStatus: "confirmed")
+            if let bookingId = userInfo["bookingId"] as? String {
+                Task { @MainActor in self.performBookingAction(bookingId: bookingId, newStatus: "confirmed") }
+            }
         case "DECLINE_ACTION":
-            handleBookingAction(userInfo: userInfo, newStatus: "cancelled")
+            if let bookingId = userInfo["bookingId"] as? String {
+                Task { @MainActor in self.performBookingAction(bookingId: bookingId, newStatus: "cancelled") }
+            }
         case UNNotificationDefaultActionIdentifier:
             // Standard tap -- navigate to URL in WebView
             if let urlString = userInfo["url"] as? String {
@@ -170,16 +178,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     // MARK: - Booking Actions
 
-    private nonisolated func handleBookingAction(
-        userInfo: [AnyHashable: Any],
+    @MainActor
+    private func performBookingAction(
+        bookingId: String,
         newStatus: String
     ) {
-        guard let bookingId = userInfo["bookingId"] as? String else {
-            AppLogger.push.warning("No bookingId in notification payload")
-            return
-        }
-
-        Task.detached {
+        Task {
             do {
                 try await APIClient.shared.updateBookingStatus(
                     bookingId: bookingId,
@@ -188,25 +192,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 AppLogger.push.info("Booking \(bookingId) -> \(newStatus)")
 
                 // Haptic feedback -- success
-                await MainActor.run {
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
 
                 // Sync calendar event after status change
-                await MainActor.run {
-                    CalendarSyncManager.shared.syncAfterStatusChange(
-                        bookingId: bookingId, newStatus: newStatus
-                    )
-                }
+                CalendarSyncManager.shared.syncAfterStatusChange(
+                    bookingId: bookingId, newStatus: newStatus
+                )
 
                 // Navigate to bookings view
-                await MainActor.run {
-                    NotificationCenter.default.post(
-                        name: .navigateToURL,
-                        object: nil,
-                        userInfo: ["url": "/provider/bookings"]
-                    )
-                }
+                NotificationCenter.default.post(
+                    name: .navigateToURL,
+                    object: nil,
+                    userInfo: ["url": "/provider/bookings"]
+                )
 
                 // Show local confirmation notification
                 let content = UNMutableNotificationContent()
@@ -224,19 +222,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 try? await UNUserNotificationCenter.current().add(request)
 
                 // Decrement badge
-                await MainActor.run {
-                    let current = UIApplication.shared.applicationIconBadgeNumber
-                    if current > 0 {
-                        UIApplication.shared.applicationIconBadgeNumber = current - 1
-                    }
+                let center = UNUserNotificationCenter.current()
+                let currentBadge = await center.deliveredNotifications().count
+                if currentBadge > 0 {
+                    try? await center.setBadgeCount(currentBadge - 1)
                 }
             } catch {
                 AppLogger.push.error("Failed to update booking \(bookingId): \(error.localizedDescription)")
 
                 // Haptic feedback -- error
-                await MainActor.run {
-                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                }
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
 
                 // Show error notification
                 let content = UNMutableNotificationContent()
