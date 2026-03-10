@@ -7,6 +7,7 @@
 //
 
 #if os(iOS)
+import OSLog
 import SwiftUI
 
 struct NativeCalendarView: View {
@@ -53,34 +54,13 @@ struct NativeCalendarView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             } else {
-                // Day view with swipe gesture
+                // Day view with UIKit swipe recognizers (SwiftUI gestures can't compete with ScrollView)
                 dayView(for: viewModel.selectedDate)
                     .id(viewModel.selectedDate)
                     .transition(.asymmetric(
                         insertion: .move(edge: swipeDirection),
                         removal: .move(edge: swipeDirection == .trailing ? .leading : .trailing)
                     ))
-                    .gesture(
-                        DragGesture(minimumDistance: 30, coordinateSpace: .local)
-                            .onEnded { value in
-                                let threshold: CGFloat = 50
-                                // Only trigger if horizontal movement exceeds vertical
-                                let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
-                                guard isHorizontal else { return }
-
-                                if value.translation.width < -threshold {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        swipeDirection = .trailing
-                                        navigateDay(by: 1)
-                                    }
-                                } else if value.translation.width > threshold {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        swipeDirection = .leading
-                                        navigateDay(by: -1)
-                                    }
-                                }
-                            }
-                    )
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
@@ -173,11 +153,11 @@ struct NativeCalendarView: View {
         }
     }
 
-    // MARK: - Day View (scrollable time grid)
+    // MARK: - Day View (UIKit UIScrollView with swipe gesture recognizers)
 
     private func dayView(for date: Date) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
+        SwipeableScrollView(
+            content: {
                 ZStack(alignment: .topLeading) {
                     // Availability overlay (behind everything)
                     availabilityOverlay(for: date)
@@ -194,19 +174,22 @@ struct NativeCalendarView: View {
                     }
                 }
                 .frame(height: CGFloat(hours.count) * hourHeight)
-                .id("timeGrid")
-            }
-            .refreshable {
+            },
+            onSwipe: { direction in
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    if direction == .left {
+                        swipeDirection = .trailing
+                        navigateDay(by: 1)
+                    } else if direction == .right {
+                        swipeDirection = .leading
+                        navigateDay(by: -1)
+                    }
+                }
+            },
+            onRefresh: {
                 viewModel.refresh()
             }
-            .onAppear {
-                // Scroll to current hour on today, or 08:00 on other days
-                // Small delay to let ScrollView lay out
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    proxy.scrollTo("timeGrid", anchor: .top)
-                }
-            }
-        }
+        )
     }
 
     // MARK: - Time Grid
@@ -592,6 +575,123 @@ struct NativeCalendarView: View {
         formatter.locale = Locale(identifier: "sv_SE")
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - SwipeableScrollView (UIKit-backed scroll with UIPanGestureRecognizer direction detection)
+
+/// Replaces SwiftUI ScrollView with UIKit UIScrollView + UIPanGestureRecognizer.
+/// Uses gestureRecognizerShouldBegin to disambiguate horizontal swipes (day navigation)
+/// from vertical scroll BEFORE any recognizer claims the touch.
+/// scrollView.panGestureRecognizer.require(toFail:) ensures UIScrollView waits for our decision.
+private struct SwipeableScrollView<Content: View>: UIViewRepresentable {
+    @ViewBuilder var content: () -> Content
+    var onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
+    var onRefresh: (() -> Void)?
+
+    func makeCoordinator() -> Coordinator { Coordinator(onSwipe: onSwipe, onRefresh: onRefresh) }
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = true
+
+        // Horizontal pan recognizer with direction detection in gestureRecognizerShouldBegin
+        let horizontalPan = UIPanGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleHorizontalPan)
+        )
+        horizontalPan.delegate = context.coordinator
+        scrollView.addGestureRecognizer(horizontalPan)
+        context.coordinator.horizontalPan = horizontalPan
+
+        // CRITICAL: Make scroll view's pan wait for our recognizer's decision
+        scrollView.panGestureRecognizer.require(toFail: horizontalPan)
+
+        // Pull-to-refresh
+        if onRefresh != nil {
+            let rc = UIRefreshControl()
+            rc.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh), for: .valueChanged)
+            scrollView.refreshControl = rc
+        }
+
+        // Host SwiftUI content
+        let host = UIHostingController(rootView: content())
+        host.view.backgroundColor = .clear
+        scrollView.addSubview(host.view)
+        context.coordinator.hostController = host
+
+        AppLogger.calendar.debug("SwipeableScrollView: created with horizontal pan gesture")
+        return scrollView
+    }
+
+    func updateUIView(_ scrollView: UIScrollView, context: Context) {
+        context.coordinator.hostController?.rootView = content()
+        layoutContent(in: scrollView, context: context)
+        // End refresh animation if still spinning
+        if scrollView.refreshControl?.isRefreshing == true {
+            scrollView.refreshControl?.endRefreshing()
+        }
+    }
+
+    private func layoutContent(in scrollView: UIScrollView, context: Context) {
+        guard let hostView = context.coordinator.hostController?.view else { return }
+        let width = scrollView.bounds.width
+        guard width > 0 else { return }
+        let size = hostView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        hostView.frame = CGRect(origin: .zero, size: CGSize(width: width, height: size.height))
+        scrollView.contentSize = CGSize(width: width, height: size.height)
+    }
+
+    class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        let onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
+        let onRefresh: (() -> Void)?
+        var hostController: UIHostingController<Content>?
+        var horizontalPan: UIPanGestureRecognizer?
+
+        init(onSwipe: @escaping (UISwipeGestureRecognizer.Direction) -> Void, onRefresh: (() -> Void)?) {
+            self.onSwipe = onSwipe
+            self.onRefresh = onRefresh
+        }
+
+        // Called BEFORE the gesture begins -- decide direction here
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer,
+                  pan === horizontalPan else { return true }
+            let velocity = pan.velocity(in: pan.view)
+            let isHorizontal = abs(velocity.x) > abs(velocity.y) * 1.5
+            AppLogger.calendar.debug("SwipeableScrollView: shouldBegin vx=\(velocity.x, privacy: .public) vy=\(velocity.y, privacy: .public) horizontal=\(isHorizontal, privacy: .public)")
+            return isHorizontal
+        }
+
+        // Allow long-press (context menu) to work simultaneously
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
+        ) -> Bool {
+            return other is UILongPressGestureRecognizer
+        }
+
+        @objc func handleHorizontalPan(_ gesture: UIPanGestureRecognizer) {
+            guard gesture.state == .ended || gesture.state == .cancelled else { return }
+            let velocity = gesture.velocity(in: gesture.view)
+            let translation = gesture.translation(in: gesture.view)
+            let translationThreshold: CGFloat = 50
+            let velocityThreshold: CGFloat = 500
+
+            if translation.x < -translationThreshold || velocity.x < -velocityThreshold {
+                AppLogger.calendar.debug("SwipeableScrollView: horizontal pan -> left (next day)")
+                onSwipe(.left)
+            } else if translation.x > translationThreshold || velocity.x > velocityThreshold {
+                AppLogger.calendar.debug("SwipeableScrollView: horizontal pan -> right (previous day)")
+                onSwipe(.right)
+            }
+        }
+
+        @objc func handleRefresh(_ control: UIRefreshControl) {
+            AppLogger.calendar.debug("SwipeableScrollView: pull-to-refresh triggered")
+            onRefresh?()
+        }
     }
 }
 #endif
