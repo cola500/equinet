@@ -192,8 +192,9 @@ struct WebView: UIViewRepresentable {
         func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
             Task { @MainActor in
                 let cookies = await cookieStore.allCookies()
+                let expectedCookieName = parent.authManager.sessionCookieName ?? "next-auth.session-token"
                 let hasSessionCookie = cookies.contains { cookie in
-                    cookie.name == "authjs.session-token"
+                    cookie.name == expectedCookieName
                         && (cookie.domain.hasSuffix(AppConfig.baseURL.host ?? "")
                             || cookie.domain == "localhost")
                 }

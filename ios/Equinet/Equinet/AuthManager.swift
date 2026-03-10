@@ -153,7 +153,11 @@ final class AuthManager {
         }
 
         let isProduction = sessionCookieSecure
-        let domain = isProduction ? "equinet.vercel.app" : "localhost"
+        let domain = if isProduction {
+            "equinet.vercel.app"
+        } else {
+            AppConfig.baseURL.host() ?? "localhost"
+        }
 
         var properties: [HTTPCookiePropertyKey: Any] = [
             .name: name,
@@ -262,7 +266,6 @@ private struct SessionCookieResponse: Decodable {
     let value: String
     let maxAge: Int
     let secure: Bool
-    let domain: String
 }
 
 private struct UserResponse: Decodable {
