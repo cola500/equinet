@@ -13,7 +13,7 @@ struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
-    @State private var currentPage: Int = 3  // Center of 7-day window (index 3 = selected date)
+    @State private var swipeDirection: Edge = .trailing
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -53,26 +53,34 @@ struct NativeCalendarView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             } else {
-                // Day view with swipe
-                TabView(selection: $currentPage) {
-                    ForEach(0..<7, id: \.self) { offset in
-                        dayView(for: dateForOffset(offset))
-                            .tag(offset)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .onChange(of: currentPage) { _, newPage in
-                    let date = dateForOffset(newPage)
-                    viewModel.selectedDate = date
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                // Day view with swipe gesture
+                dayView(for: viewModel.selectedDate)
+                    .id(viewModel.selectedDate)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: swipeDirection),
+                        removal: .move(edge: swipeDirection == .trailing ? .leading : .trailing)
+                    ))
+                    .gesture(
+                        DragGesture(minimumDistance: 30, coordinateSpace: .local)
+                            .onEnded { value in
+                                let threshold: CGFloat = 50
+                                // Only trigger if horizontal movement exceeds vertical
+                                let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
+                                guard isHorizontal else { return }
 
-                    // Re-center if near edge (prefetch more data)
-                    if newPage <= 1 || newPage >= 5 {
-                        viewModel.loadDataForSelectedDate()
-                        currentPage = 3
-                    }
-                }
+                                if value.translation.width < -threshold {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        swipeDirection = .trailing
+                                        navigateDay(by: 1)
+                                    }
+                                } else if value.translation.width > threshold {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        swipeDirection = .leading
+                                        navigateDay(by: -1)
+                                    }
+                                }
+                            }
+                    )
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
@@ -124,8 +132,10 @@ struct NativeCalendarView: View {
             // Today button or next day
             if !calendar.isDateInToday(viewModel.selectedDate) {
                 Button {
-                    viewModel.goToToday()
-                    currentPage = 3
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        swipeDirection = .leading
+                        viewModel.goToToday()
+                    }
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 } label: {
                     Text("Idag")
@@ -564,15 +574,9 @@ struct NativeCalendarView: View {
         return weekday == 1 ? 6 : weekday - 2
     }
 
-    private func dateForOffset(_ offset: Int) -> Date {
-        // Offset 3 = selectedDate, 0 = selectedDate-3, 6 = selectedDate+3
-        calendar.date(byAdding: .day, value: offset - 3, to: viewModel.selectedDate)!
-    }
-
     private func navigateDay(by days: Int) {
         let newDate = calendar.date(byAdding: .day, value: days, to: viewModel.selectedDate)!
         viewModel.navigateToDay(newDate)
-        currentPage = 3
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
