@@ -58,5 +58,9 @@
 	<string>Equinet använder Face ID för att logga in dig snabbt och säkert.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Equinet synkar dina bekräftade bokningar till Kalender-appen så du får påminnelser och kan se dem på Apple Watch.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.equinet.widget-refresh</string>
+	</array>
 </dict>
 </plist>

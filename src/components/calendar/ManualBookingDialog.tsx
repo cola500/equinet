@@ -324,7 +324,7 @@ export function ManualBookingDialog({
         onBookingCreated()
       } else {
         const bodyStr = JSON.stringify(body)
-        const tempId = crypto.randomUUID()
+        const tempId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
         const selectedService = services.find((s) => s.id === serviceId)
 
         await guardMutation(async () => {

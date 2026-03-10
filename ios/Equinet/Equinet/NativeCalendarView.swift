@@ -41,6 +41,17 @@ struct NativeCalendarView: View {
             // Error state
             if let error = viewModel.error {
                 errorView(error)
+                    .transition(.opacity)
+            } else if viewModel.isLoading && viewModel.bookings.isEmpty {
+                // Loading state (first load only)
+                VStack {
+                    Spacer()
+                    ProgressView("Laddar kalender...")
+                        .font(.subheadline)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+                .transition(.opacity)
             } else {
                 // Day view with swipe
                 TabView(selection: $currentPage) {
@@ -50,6 +61,7 @@ struct NativeCalendarView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
                 .onChange(of: currentPage) { _, newPage in
                     let date = dateForOffset(newPage)
                     viewModel.selectedDate = date
@@ -63,6 +75,8 @@ struct NativeCalendarView: View {
                 }
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.error)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
         .onAppear {
             viewModel.loadDataForSelectedDate()
         }
@@ -135,6 +149,18 @@ struct NativeCalendarView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(dayName(for: viewModel.selectedDate)), \(formattedDate(viewModel.selectedDate))")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                navigateDay(by: 1)
+            case .decrement:
+                navigateDay(by: -1)
+            @unknown default:
+                break
+            }
+        }
     }
 
     // MARK: - Day View (scrollable time grid)
@@ -296,6 +322,10 @@ struct NativeCalendarView: View {
         .padding(.trailing, 8)
         .offset(y: top)
         .frame(height: height)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(bookingAccessibilityLabel(booking))
+        .accessibilityHint("Dubbelklicka för detaljer")
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Now Line
@@ -318,6 +348,8 @@ struct NativeCalendarView: View {
                 .frame(height: 1.5)
         }
         .offset(y: position - 4) // Center the circle on the line
+        .accessibilityLabel("Nuvarande tid, klockan \(String(format: "%02d:%02d", hour, minute))")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     // MARK: - Availability Overlay
@@ -454,6 +486,29 @@ struct NativeCalendarView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 6)
         .background(Color.orange)
+    }
+
+    // MARK: - Accessibility Helpers
+
+    private func bookingAccessibilityLabel(_ booking: NativeBooking) -> String {
+        var parts = [booking.serviceName]
+        parts.append("klockan \(booking.startTime) till \(booking.endTime)")
+        parts.append(booking.customerFullName)
+        if let horse = booking.horseName {
+            parts.append(horse)
+        }
+        let statusText: String
+        switch booking.status {
+        case "pending": statusText = "väntande"
+        case "confirmed": statusText = "bekräftad"
+        case "completed": statusText = "slutförd"
+        case "cancelled": statusText = "avbokad"
+        case "no_show": statusText = "utebliven"
+        default: statusText = booking.status
+        }
+        parts.append(statusText)
+        if booking.isPaid { parts.append("betald") }
+        return parts.joined(separator: ", ")
     }
 
     // MARK: - Time Position Helpers

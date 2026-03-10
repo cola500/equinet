@@ -118,7 +118,7 @@ export function useProviderCustomers(isProvider: boolean) {
   }
 
   const handleAddNote = async (customerId: string, content: string): Promise<boolean> => {
-    const noteId = crypto.randomUUID()
+    const noteId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
     const body = JSON.stringify({ content })
 
     const result = await guardMutation(
@@ -278,7 +278,7 @@ export function useProviderCustomers(isProvider: boolean) {
   const handleAddCustomer = async (form: { firstName: string; lastName: string; phone: string; email: string }) => {
     if (!form.firstName.trim() || isAddingCustomer) return
 
-    const customerId = crypto.randomUUID()
+    const customerId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
     const bodyObj: Record<string, string> = { firstName: form.firstName.trim() }
     if (form.lastName.trim()) bodyObj.lastName = form.lastName.trim()
     if (form.phone.trim()) bodyObj.phone = form.phone.trim()
@@ -439,7 +439,7 @@ export function useProviderCustomers(isProvider: boolean) {
   const handleSaveHorse = async (customerId: string, form: HorseFormData, isEdit: boolean, horseId?: string) => {
     if (!form.name.trim() || isSavingHorse) return
 
-    const entityId = isEdit ? horseId! : crypto.randomUUID()
+    const entityId = isEdit ? horseId! : globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
     const bodyObj: Record<string, unknown> = { name: form.name.trim() }
     if (form.breed.trim()) bodyObj.breed = form.breed.trim()
     if (form.birthYear.trim()) bodyObj.birthYear = parseInt(form.birthYear, 10)

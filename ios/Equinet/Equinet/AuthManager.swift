@@ -34,7 +34,12 @@ final class AuthManager {
     /// Keychain abstraction for testability.
     let keychain: KeychainStorable
 
-    init(keychain: KeychainStorable = KeychainHelper.shared) {
+    /// Production factory -- call from @MainActor context to avoid concurrency warnings.
+    static func createDefault() -> AuthManager {
+        AuthManager(keychain: KeychainHelper.shared)
+    }
+
+    init(keychain: KeychainStorable) {
         self.keychain = keychain
     }
 
@@ -80,13 +85,13 @@ final class AuthManager {
             let response = try await performLogin(email: email, password: password)
 
             // Save mobile token
-            keychain.save(key: KeychainHelper.mobileTokenKey, value: response.token)
-            keychain.save(key: KeychainHelper.tokenExpiresAtKey, value: response.expiresAt)
+            _ = keychain.save(key: KeychainHelper.mobileTokenKey, value: response.token)
+            _ = keychain.save(key: KeychainHelper.tokenExpiresAtKey, value: response.expiresAt)
 
             // Save session cookie
-            keychain.save(key: KeychainHelper.sessionCookieNameKey, value: response.sessionCookie.name)
-            keychain.save(key: KeychainHelper.sessionCookieValueKey, value: response.sessionCookie.value)
-            keychain.save(key: KeychainHelper.sessionCookieSecureKey, value: response.sessionCookie.secure ? "true" : "false")
+            _ = keychain.save(key: KeychainHelper.sessionCookieNameKey, value: response.sessionCookie.name)
+            _ = keychain.save(key: KeychainHelper.sessionCookieValueKey, value: response.sessionCookie.value)
+            _ = keychain.save(key: KeychainHelper.sessionCookieSecureKey, value: response.sessionCookie.secure ? "true" : "false")
 
             sessionCookieName = response.sessionCookie.name
             sessionCookieValue = response.sessionCookie.value
@@ -127,11 +132,11 @@ final class AuthManager {
     // MARK: - Logout
 
     func logout() {
-        keychain.delete(key: KeychainHelper.mobileTokenKey)
-        keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
-        keychain.delete(key: KeychainHelper.sessionCookieNameKey)
-        keychain.delete(key: KeychainHelper.sessionCookieValueKey)
-        keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
+        _ = keychain.delete(key: KeychainHelper.mobileTokenKey)
+        _ = keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
+        _ = keychain.delete(key: KeychainHelper.sessionCookieNameKey)
+        _ = keychain.delete(key: KeychainHelper.sessionCookieValueKey)
+        _ = keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
         sessionCookieName = nil
         sessionCookieValue = nil
         sessionCookieSecure = false
@@ -148,7 +153,11 @@ final class AuthManager {
         }
 
         let isProduction = sessionCookieSecure
-        let domain = isProduction ? "equinet.vercel.app" : "localhost"
+        let domain = if isProduction {
+            "equinet.vercel.app"
+        } else {
+            AppConfig.baseURL.host() ?? "localhost"
+        }
 
         var properties: [HTTPCookiePropertyKey: Any] = [
             .name: name,
@@ -179,6 +188,7 @@ final class AuthManager {
         case .faceID: return "Face ID"
         case .touchID: return "Touch ID"
         case .opticID: return "Optic ID"
+        case .none: return "biometri"
         @unknown default: return "biometri"
         }
     }
@@ -256,7 +266,6 @@ private struct SessionCookieResponse: Decodable {
     let value: String
     let maxAge: Int
     let secure: Bool
-    let domain: String
 }
 
 private struct UserResponse: Decodable {

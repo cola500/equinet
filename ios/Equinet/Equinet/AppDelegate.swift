@@ -7,10 +7,16 @@
 //
 
 #if os(iOS)
+import BackgroundTasks
+import OSLog
 import UIKit
 import UserNotifications
+import WidgetKit
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+
+    /// Background task identifier for widget data refresh
+    static let widgetRefreshTaskId = "com.equinet.widget-refresh"
 
     func application(
         _ application: UIApplication,
@@ -18,6 +24,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         registerNotificationCategories()
+        registerBackgroundTasks()
         return true
     }
 
@@ -27,14 +34,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        PushManager.shared.didRegisterForRemoteNotifications(with: deviceToken)
+        Task { @MainActor in
+            PushManager.shared.didRegisterForRemoteNotifications(with: deviceToken)
+        }
     }
 
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        PushManager.shared.didFailToRegisterForRemoteNotifications(with: error)
+        Task { @MainActor in
+            PushManager.shared.didFailToRegisterForRemoteNotifications(with: error)
+        }
     }
 
     // MARK: - Notification Categories
@@ -88,9 +99,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         switch actionIdentifier {
         case "CONFIRM_ACTION":
-            handleBookingAction(userInfo: userInfo, newStatus: "confirmed")
+            if let bookingId = userInfo["bookingId"] as? String {
+                Task { @MainActor in self.performBookingAction(bookingId: bookingId, newStatus: "confirmed") }
+            }
         case "DECLINE_ACTION":
-            handleBookingAction(userInfo: userInfo, newStatus: "cancelled")
+            if let bookingId = userInfo["bookingId"] as? String {
+                Task { @MainActor in self.performBookingAction(bookingId: bookingId, newStatus: "cancelled") }
+            }
         case UNNotificationDefaultActionIdentifier:
             // Standard tap -- navigate to URL in WebView
             if let urlString = userInfo["url"] as? String {
@@ -109,45 +124,87 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         completionHandler()
     }
 
-    // MARK: - Booking Actions
+    // MARK: - Background Tasks
 
-    private nonisolated func handleBookingAction(
-        userInfo: [AnyHashable: Any],
-        newStatus: String
-    ) {
-        guard let bookingId = userInfo["bookingId"] as? String else {
-            print("[Push] No bookingId in notification payload")
-            return
+    private func registerBackgroundTasks() {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: Self.widgetRefreshTaskId,
+            using: nil
+        ) { task in
+            self.handleWidgetRefresh(task: task as! BGAppRefreshTask)
+        }
+    }
+
+    /// Schedule the next background refresh
+    func scheduleWidgetRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: Self.widgetRefreshTaskId)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 30 * 60) // 30 min
+        do {
+            try BGTaskScheduler.shared.submit(request)
+            AppLogger.push.debug("Scheduled widget background refresh")
+        } catch {
+            AppLogger.push.error("Failed to schedule widget refresh: \(error.localizedDescription)")
+        }
+    }
+
+    private func handleWidgetRefresh(task: BGAppRefreshTask) {
+        // Schedule the next refresh before starting work
+        scheduleWidgetRefresh()
+
+        let fetchTask = Task {
+            do {
+                let response = try await APIClient.shared.fetchNextBooking()
+                let widgetData = WidgetData(
+                    booking: response.booking,
+                    updatedAt: Date(),
+                    hasAuth: true
+                )
+                await MainActor.run {
+                    SharedDataManager.saveWidgetData(widgetData)
+                    WidgetCenter.shared.reloadAllTimelines()
+                }
+                task.setTaskCompleted(success: true)
+                AppLogger.push.info("Widget background refresh succeeded")
+            } catch {
+                task.setTaskCompleted(success: false)
+                AppLogger.push.error("Widget background refresh failed: \(error.localizedDescription)")
+            }
         }
 
-        Task.detached {
+        task.expirationHandler = {
+            fetchTask.cancel()
+        }
+    }
+
+    // MARK: - Booking Actions
+
+    @MainActor
+    private func performBookingAction(
+        bookingId: String,
+        newStatus: String
+    ) {
+        Task {
             do {
                 try await APIClient.shared.updateBookingStatus(
                     bookingId: bookingId,
                     newStatus: newStatus
                 )
-                print("[Push] Booking \(bookingId) -> \(newStatus)")
+                AppLogger.push.info("Booking \(bookingId) -> \(newStatus)")
 
                 // Haptic feedback -- success
-                await MainActor.run {
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
 
                 // Sync calendar event after status change
-                await MainActor.run {
-                    CalendarSyncManager.shared.syncAfterStatusChange(
-                        bookingId: bookingId, newStatus: newStatus
-                    )
-                }
+                CalendarSyncManager.shared.syncAfterStatusChange(
+                    bookingId: bookingId, newStatus: newStatus
+                )
 
                 // Navigate to bookings view
-                await MainActor.run {
-                    NotificationCenter.default.post(
-                        name: .navigateToURL,
-                        object: nil,
-                        userInfo: ["url": "/provider/bookings"]
-                    )
-                }
+                NotificationCenter.default.post(
+                    name: .navigateToURL,
+                    object: nil,
+                    userInfo: ["url": "/provider/bookings"]
+                )
 
                 // Show local confirmation notification
                 let content = UNMutableNotificationContent()
@@ -165,19 +222,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 try? await UNUserNotificationCenter.current().add(request)
 
                 // Decrement badge
-                await MainActor.run {
-                    let current = UIApplication.shared.applicationIconBadgeNumber
-                    if current > 0 {
-                        UIApplication.shared.applicationIconBadgeNumber = current - 1
-                    }
+                let center = UNUserNotificationCenter.current()
+                let currentBadge = await center.deliveredNotifications().count
+                if currentBadge > 0 {
+                    try? await center.setBadgeCount(currentBadge - 1)
                 }
             } catch {
-                print("[Push] Failed to update booking: \(error)")
+                AppLogger.push.error("Failed to update booking \(bookingId): \(error.localizedDescription)")
 
                 // Haptic feedback -- error
-                await MainActor.run {
-                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                }
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
 
                 // Show error notification
                 let content = UNMutableNotificationContent()

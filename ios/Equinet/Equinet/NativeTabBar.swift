@@ -49,13 +49,16 @@ struct NativeTabBar: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: tab.icon)
-                            .font(.system(size: 20))
+                            .font(.title3)
                         Text(tab.rawValue)
-                            .font(.system(size: 10))
+                            .font(.caption2)
                     }
                     .foregroundStyle(tab == activeTab ? Color.accentColor : .secondary)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 44)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(tab == activeTab ? .isSelected : [])
+                    .accessibilityHint(tab == activeTab ? "" : "Dubbelklicka för att byta till \(tab.rawValue)")
                 }
             }
         }
