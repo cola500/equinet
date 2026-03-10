@@ -14,7 +14,6 @@ struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
-    @State private var swipeDirection: Edge = .trailing
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -54,13 +53,20 @@ struct NativeCalendarView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             } else {
-                // Day view with UIKit swipe recognizers (SwiftUI gestures can't compete with ScrollView)
-                dayView(for: viewModel.selectedDate)
-                    .id(viewModel.selectedDate)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: swipeDirection),
-                        removal: .move(edge: swipeDirection == .trailing ? .leading : .trailing)
-                    ))
+                // UIPageViewController handles horizontal swipe + vertical scroll disambiguation natively
+                PagedDayView(
+                    selectedDate: $viewModel.selectedDate,
+                    onNavigateDay: { viewModel.navigateToDay($0) },
+                    onRefresh: { viewModel.refresh() }
+                ) { date in
+                    ZStack(alignment: .topLeading) {
+                        availabilityOverlay(for: date)
+                        timeGrid
+                        bookingBlocks(for: date)
+                        if calendar.isDateInToday(date) { nowLine }
+                    }
+                    .frame(height: CGFloat(hours.count) * hourHeight)
+                }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
@@ -112,10 +118,7 @@ struct NativeCalendarView: View {
             // Today button or next day
             if !calendar.isDateInToday(viewModel.selectedDate) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        swipeDirection = .leading
-                        viewModel.goToToday()
-                    }
+                    viewModel.goToToday()
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 } label: {
                     Text("Idag")
@@ -151,45 +154,6 @@ struct NativeCalendarView: View {
                 break
             }
         }
-    }
-
-    // MARK: - Day View (UIKit UIScrollView with swipe gesture recognizers)
-
-    private func dayView(for date: Date) -> some View {
-        SwipeableScrollView(
-            content: {
-                ZStack(alignment: .topLeading) {
-                    // Availability overlay (behind everything)
-                    availabilityOverlay(for: date)
-
-                    // Time grid lines
-                    timeGrid
-
-                    // Booking blocks
-                    bookingBlocks(for: date)
-
-                    // Now line
-                    if calendar.isDateInToday(date) {
-                        nowLine
-                    }
-                }
-                .frame(height: CGFloat(hours.count) * hourHeight)
-            },
-            onSwipe: { direction in
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    if direction == .left {
-                        swipeDirection = .trailing
-                        navigateDay(by: 1)
-                    } else if direction == .right {
-                        swipeDirection = .leading
-                        navigateDay(by: -1)
-                    }
-                }
-            },
-            onRefresh: {
-                viewModel.refresh()
-            }
-        )
     }
 
     // MARK: - Time Grid
@@ -578,119 +542,180 @@ struct NativeCalendarView: View {
     }
 }
 
-// MARK: - SwipeableScrollView (UIKit-backed scroll with UIPanGestureRecognizer direction detection)
+// MARK: - PagedDayView (UIPageViewController for horizontal day swipe + vertical scroll)
 
-/// Replaces SwiftUI ScrollView with UIKit UIScrollView + UIPanGestureRecognizer.
-/// Uses gestureRecognizerShouldBegin to disambiguate horizontal swipes (day navigation)
-/// from vertical scroll BEFORE any recognizer claims the touch.
-/// scrollView.panGestureRecognizer.require(toFail:) ensures UIScrollView waits for our decision.
-private struct SwipeableScrollView<Content: View>: UIViewRepresentable {
-    @ViewBuilder var content: () -> Content
-    var onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
+/// Uses UIPageViewController for gesture-disambiguation between horizontal day swipe
+/// and vertical scroll. This is the same pattern Apple Calendar uses.
+/// UIKit's view controller containment handles touch routing automatically.
+private struct PagedDayView<Content: View>: UIViewControllerRepresentable {
+    @Binding var selectedDate: Date
+    var onNavigateDay: (Date) -> Void
     var onRefresh: (() -> Void)?
+    @ViewBuilder var content: (Date) -> Content
 
-    func makeCoordinator() -> Coordinator { Coordinator(onSwipe: onSwipe, onRefresh: onRefresh) }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
 
-    func makeUIView(context: Context) -> UIScrollView {
-        let scrollView = UIScrollView()
-        scrollView.alwaysBounceVertical = true
-        scrollView.showsVerticalScrollIndicator = true
-
-        // Horizontal pan recognizer with direction detection in gestureRecognizerShouldBegin
-        let horizontalPan = UIPanGestureRecognizer(
-            target: context.coordinator,
-            action: #selector(Coordinator.handleHorizontalPan)
+    func makeUIViewController(context: Context) -> UIPageViewController {
+        let pageVC = UIPageViewController(
+            transitionStyle: .scroll,
+            navigationOrientation: .horizontal,
+            options: [.interPageSpacing: 0]
         )
-        horizontalPan.delegate = context.coordinator
-        scrollView.addGestureRecognizer(horizontalPan)
-        context.coordinator.horizontalPan = horizontalPan
+        pageVC.dataSource = context.coordinator
+        pageVC.delegate = context.coordinator
 
-        // CRITICAL: Make scroll view's pan wait for our recognizer's decision
-        scrollView.panGestureRecognizer.require(toFail: horizontalPan)
+        let initialPage = context.coordinator.makeDayPage(for: selectedDate)
+        pageVC.setViewControllers([initialPage], direction: .forward, animated: false)
+        context.coordinator.currentDate = selectedDate
 
-        // Pull-to-refresh
-        if onRefresh != nil {
-            let rc = UIRefreshControl()
-            rc.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh), for: .valueChanged)
-            scrollView.refreshControl = rc
-        }
-
-        // Host SwiftUI content
-        let host = UIHostingController(rootView: content())
-        host.view.backgroundColor = .clear
-        scrollView.addSubview(host.view)
-        context.coordinator.hostController = host
-
-        AppLogger.calendar.debug("SwipeableScrollView: created with horizontal pan gesture")
-        return scrollView
+        AppLogger.calendar.debug("PagedDayView: created with UIPageViewController")
+        return pageVC
     }
 
-    func updateUIView(_ scrollView: UIScrollView, context: Context) {
-        context.coordinator.hostController?.rootView = content()
-        layoutContent(in: scrollView, context: context)
-        // End refresh animation if still spinning
-        if scrollView.refreshControl?.isRefreshing == true {
-            scrollView.refreshControl?.endRefreshing()
+    func updateUIViewController(_ pageVC: UIPageViewController, context: Context) {
+        let coord = context.coordinator
+        coord.parent = self
+
+        // Programmatic navigation (chevrons, "Idag" button)
+        if !Calendar.current.isDate(selectedDate, inSameDayAs: coord.currentDate) {
+            let direction: UIPageViewController.NavigationDirection =
+                selectedDate > coord.currentDate ? .forward : .reverse
+            let newPage = coord.makeDayPage(for: selectedDate)
+            coord.currentDate = selectedDate
+            pageVC.setViewControllers([newPage], direction: direction, animated: true)
         }
     }
 
-    private func layoutContent(in scrollView: UIScrollView, context: Context) {
-        guard let hostView = context.coordinator.hostController?.view else { return }
-        let width = scrollView.bounds.width
-        guard width > 0 else { return }
-        let size = hostView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        hostView.frame = CGRect(origin: .zero, size: CGSize(width: width, height: size.height))
-        scrollView.contentSize = CGSize(width: width, height: size.height)
-    }
+    // MARK: - DayPageViewController
 
-    class Coordinator: NSObject, UIGestureRecognizerDelegate {
-        let onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
-        let onRefresh: (() -> Void)?
-        var hostController: UIHostingController<Content>?
-        var horizontalPan: UIPanGestureRecognizer?
+    class DayPageViewController: UIViewController {
+        let date: Date
+        private let onRefresh: (() -> Void)?
+        private var hostController: UIHostingController<Content>?
+        private let scrollView = UIScrollView()
 
-        init(onSwipe: @escaping (UISwipeGestureRecognizer.Direction) -> Void, onRefresh: (() -> Void)?) {
-            self.onSwipe = onSwipe
+        init(date: Date, content: Content, onRefresh: (() -> Void)?) {
+            self.date = date
             self.onRefresh = onRefresh
+            super.init(nibName: nil, bundle: nil)
+
+            let host = UIHostingController(rootView: content)
+            host.view.backgroundColor = .clear
+            self.hostController = host
         }
 
-        // Called BEFORE the gesture begins -- decide direction here
-        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            guard let pan = gestureRecognizer as? UIPanGestureRecognizer,
-                  pan === horizontalPan else { return true }
-            let velocity = pan.velocity(in: pan.view)
-            let isHorizontal = abs(velocity.x) > abs(velocity.y) * 1.5
-            AppLogger.calendar.debug("SwipeableScrollView: shouldBegin vx=\(velocity.x, privacy: .public) vy=\(velocity.y, privacy: .public) horizontal=\(isHorizontal, privacy: .public)")
-            return isHorizontal
-        }
+        @available(*, unavailable)
+        required init?(coder: NSCoder) { fatalError() }
 
-        // Allow long-press (context menu) to work simultaneously
-        func gestureRecognizer(
-            _ gestureRecognizer: UIGestureRecognizer,
-            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
-        ) -> Bool {
-            return other is UILongPressGestureRecognizer
-        }
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.backgroundColor = .systemBackground
 
-        @objc func handleHorizontalPan(_ gesture: UIPanGestureRecognizer) {
-            guard gesture.state == .ended || gesture.state == .cancelled else { return }
-            let velocity = gesture.velocity(in: gesture.view)
-            let translation = gesture.translation(in: gesture.view)
-            let translationThreshold: CGFloat = 50
-            let velocityThreshold: CGFloat = 500
+            scrollView.alwaysBounceVertical = true
+            scrollView.showsVerticalScrollIndicator = true
+            scrollView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(scrollView)
 
-            if translation.x < -translationThreshold || velocity.x < -velocityThreshold {
-                AppLogger.calendar.debug("SwipeableScrollView: horizontal pan -> left (next day)")
-                onSwipe(.left)
-            } else if translation.x > translationThreshold || velocity.x > velocityThreshold {
-                AppLogger.calendar.debug("SwipeableScrollView: horizontal pan -> right (previous day)")
-                onSwipe(.right)
+            NSLayoutConstraint.activate([
+                scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+                scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
+
+            if onRefresh != nil {
+                let rc = UIRefreshControl()
+                rc.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+                scrollView.refreshControl = rc
+            }
+
+            if let hostView = hostController?.view {
+                hostView.backgroundColor = .clear
+                hostView.translatesAutoresizingMaskIntoConstraints = false
+                addChild(hostController!)
+                scrollView.addSubview(hostView)
+
+                NSLayoutConstraint.activate([
+                    hostView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+                    hostView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
+                    hostView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
+                    hostView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+                ])
+
+                hostController?.didMove(toParent: self)
             }
         }
 
-        @objc func handleRefresh(_ control: UIRefreshControl) {
-            AppLogger.calendar.debug("SwipeableScrollView: pull-to-refresh triggered")
+        func updateContent(_ newContent: Content) {
+            hostController?.rootView = newContent
+        }
+
+        @objc private func handleRefresh(_ control: UIRefreshControl) {
+            AppLogger.calendar.debug("PagedDayView: pull-to-refresh triggered")
             onRefresh?()
+            // End refreshing after a short delay (parent will update content)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                control.endRefreshing()
+            }
+        }
+    }
+
+    // MARK: - Coordinator
+
+    class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+        var parent: PagedDayView
+        var currentDate: Date
+
+        init(parent: PagedDayView) {
+            self.parent = parent
+            self.currentDate = parent.selectedDate
+        }
+
+        func makeDayPage(for date: Date) -> DayPageViewController {
+            let dayContent = parent.content(date)
+            return DayPageViewController(date: date, content: dayContent, onRefresh: parent.onRefresh)
+        }
+
+        // MARK: UIPageViewControllerDataSource
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            viewControllerBefore viewController: UIViewController
+        ) -> UIViewController? {
+            guard let dayVC = viewController as? DayPageViewController,
+                  let prevDate = Calendar.current.date(byAdding: .day, value: -1, to: dayVC.date)
+            else { return nil }
+            return makeDayPage(for: prevDate)
+        }
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            viewControllerAfter viewController: UIViewController
+        ) -> UIViewController? {
+            guard let dayVC = viewController as? DayPageViewController,
+                  let nextDate = Calendar.current.date(byAdding: .day, value: 1, to: dayVC.date)
+            else { return nil }
+            return makeDayPage(for: nextDate)
+        }
+
+        // MARK: UIPageViewControllerDelegate
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            didFinishAnimating finished: Bool,
+            previousViewControllers: [UIViewController],
+            transitionCompleted completed: Bool
+        ) {
+            guard completed,
+                  let dayVC = pageViewController.viewControllers?.first as? DayPageViewController
+            else { return }
+
+            currentDate = dayVC.date
+            parent.onNavigateDay(dayVC.date)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            AppLogger.calendar.debug("PagedDayView: swiped to \(dayVC.date, privacy: .public)")
         }
     }
 }
