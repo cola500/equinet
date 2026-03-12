@@ -137,6 +137,7 @@ final class CalendarViewModel {
         }
     }
 
+
     // MARK: - Computed
 
     /// Unique services from current bookings, for filter pills

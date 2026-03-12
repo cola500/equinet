@@ -558,6 +558,7 @@ struct NativeCalendarView: View {
         return String(format: "%02d:%02d", min(hour, endHour), minute)
     }
 
+
     // MARK: - Time Position Helpers
 
     /// Convert "HH:mm" to Y offset in points
