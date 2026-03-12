@@ -203,36 +203,34 @@ export class HorseRepository implements IHorseRepository {
     horseId: string,
     data: UpdateNoteData
   ): Promise<HorseNoteWithAuthor | null> {
-    const existing = await prisma.horseNote.findFirst({
-      where: { id: noteId, horseId },
-      select: { id: true },
-    })
-
-    if (!existing) return null
-
     const updateData: Record<string, unknown> = {}
     if (data.category !== undefined) updateData.category = data.category
     if (data.title !== undefined) updateData.title = data.title
     if (data.content !== undefined) updateData.content = data.content
     if (data.noteDate !== undefined) updateData.noteDate = data.noteDate
 
-    return prisma.horseNote.update({
-      where: { id: noteId },
+    // Atomic ownership check: updateMany includes horseId in WHERE to prevent TOCTOU
+    const result = await prisma.horseNote.updateMany({
+      where: { id: noteId, horseId },
       data: updateData,
+    })
+
+    if (result.count === 0) return null
+
+    // Fetch the updated note with author info
+    return prisma.horseNote.findUnique({
+      where: { id: noteId },
       select: noteWithAuthorSelect,
     })
   }
 
   async deleteNote(noteId: string, horseId: string): Promise<boolean> {
-    const existing = await prisma.horseNote.findFirst({
+    // Atomic ownership check: deleteMany includes horseId in WHERE to prevent TOCTOU
+    const result = await prisma.horseNote.deleteMany({
       where: { id: noteId, horseId },
-      select: { id: true },
     })
 
-    if (!existing) return false
-
-    await prisma.horseNote.delete({ where: { id: noteId } })
-    return true
+    return result.count > 0
   }
 
   // ==========================================

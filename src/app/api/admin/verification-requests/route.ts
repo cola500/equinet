@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireAdmin } from "@/lib/admin-auth"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 
@@ -7,19 +8,7 @@ import { logger } from "@/lib/logger"
 export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
-
-    // Admin check
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, isAdmin: true },
-    })
-
-    if (!user?.isAdmin) {
-      return NextResponse.json(
-        { error: "Behörighet saknas" },
-        { status: 403 }
-      )
-    }
+    await requireAdmin(session)
 
     const verifications = await prisma.providerVerification.findMany({
       where: { status: "pending" },

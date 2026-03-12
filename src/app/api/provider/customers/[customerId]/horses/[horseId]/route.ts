@@ -81,9 +81,21 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (parsed.data.registrationNumber !== undefined) data.registrationNumber = parsed.data.registrationNumber ? sanitizeString(stripXss(parsed.data.registrationNumber)) : null
     if (parsed.data.microchipNumber !== undefined) data.microchipNumber = parsed.data.microchipNumber ? sanitizeString(stripXss(parsed.data.microchipNumber)) : null
 
-    const updated = await prisma.horse.update({
-      where: { id: horseId },
+    // Atomic ownership check: updateMany includes ownerId + isActive in WHERE to prevent TOCTOU
+    const updateResult = await prisma.horse.updateMany({
+      where: { id: horseId, ownerId: customerId, isActive: true },
       data,
+    })
+
+    if (updateResult.count === 0) {
+      return NextResponse.json(
+        { error: "Hästen hittades inte" },
+        { status: 404 }
+      )
+    }
+
+    const updated = await prisma.horse.findUnique({
+      where: { id: horseId },
       select: {
         id: true,
         name: true,
@@ -163,11 +175,18 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // Soft delete
-    await prisma.horse.update({
-      where: { id: horseId },
+    // Atomic soft delete with ownership in WHERE to prevent TOCTOU
+    const deleteResult = await prisma.horse.updateMany({
+      where: { id: horseId, ownerId: customerId, isActive: true },
       data: { isActive: false },
     })
+
+    if (deleteResult.count === 0) {
+      return NextResponse.json(
+        { error: "Hästen hittades inte" },
+        { status: 404 }
+      )
+    }
 
     logger.info("Horse soft-deleted by provider for customer", {
       horseId,

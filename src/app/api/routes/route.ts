@@ -13,7 +13,7 @@ const createRouteSchema = z.object({
   routeDate: z.string().datetime(),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Starttid måste vara i format HH:MM"),
   orderIds: z.array(z.string()).min(1, "Minst en beställning krävs"),
-})
+}).strict()
 
 // POST /api/routes - Create new route
 export async function POST(request: Request) {
@@ -32,7 +32,12 @@ export async function POST(request: Request) {
     }
 
     // Parse and validate
-    const body = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
+    }
     const validated = createRouteSchema.parse(body)
 
     // 3. Validate that all orders exist and are available

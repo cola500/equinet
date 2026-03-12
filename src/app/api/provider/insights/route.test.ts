@@ -58,7 +58,7 @@ function createRequest(months?: number) {
 const PROVIDER_ID = "a0000000-0000-4000-a000-000000000001"
 
 function setupAuthenticatedProvider() {
-  mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+  mockAuth.mockResolvedValue({ user: { id: "user-1", providerId: PROVIDER_ID } } as never)
   mockProviderFindFirst.mockResolvedValue({ id: PROVIDER_ID } as never)
 }
 
@@ -100,7 +100,7 @@ describe("GET /api/provider/insights", () => {
   })
 
   it("returns 429 when rate limited", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockAuth.mockResolvedValue({ user: { id: "user-1", providerId: PROVIDER_ID } } as never)
     mockRateLimiters.api.mockResolvedValueOnce(false)
 
     const response = await GET(createRequest())
@@ -108,7 +108,7 @@ describe("GET /api/provider/insights", () => {
   })
 
   it("should return 404 when provider not found", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockAuth.mockResolvedValue({ user: { id: "user-1", providerId: PROVIDER_ID } } as never)
     mockProviderFindFirst.mockResolvedValue(null)
 
     const response = await GET(createRequest())

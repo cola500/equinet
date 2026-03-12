@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
+vi.mock("@/lib/admin-auth", () => ({ requireAdmin: vi.fn() }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: { findUnique: vi.fn() },
@@ -14,10 +15,11 @@ vi.mock("@/lib/logger", () => ({
 
 import { GET } from "./route"
 import { auth } from "@/lib/auth-server"
+import { requireAdmin } from "@/lib/admin-auth"
 import { prisma } from "@/lib/prisma"
 
 const mockAuth = vi.mocked(auth)
-const mockFindUnique = vi.mocked(prisma.user.findUnique)
+const mockRequireAdmin = vi.mocked(requireAdmin)
 const mockFindMany = vi.mocked(prisma.providerVerification.findMany)
 
 const mockAdminSession = {
@@ -35,7 +37,7 @@ describe("GET /api/admin/verification-requests", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuth.mockResolvedValue(mockAdminSession)
-    mockFindUnique.mockResolvedValue({ id: "admin-1", isAdmin: true } as never)
+    mockRequireAdmin.mockResolvedValue({ id: "admin-1", isAdmin: true })
     mockFindMany.mockResolvedValue([])
   })
 
@@ -52,23 +54,31 @@ describe("GET /api/admin/verification-requests", () => {
   })
 
   it("returns 403 when user is not admin", async () => {
-    mockFindUnique.mockResolvedValue({ id: "admin-1", isAdmin: false } as never)
+    const forbiddenResponse = NextResponse.json(
+      { error: "Åtkomst nekad" },
+      { status: 403 }
+    )
+    mockRequireAdmin.mockRejectedValue(forbiddenResponse)
 
     const res = await GET(createRequest())
     const body = await res.json()
 
     expect(res.status).toBe(403)
-    expect(body.error).toBe("Behörighet saknas")
+    expect(body.error).toBe("Åtkomst nekad")
   })
 
   it("returns 403 when user not found in DB", async () => {
-    mockFindUnique.mockResolvedValue(null)
+    const forbiddenResponse = NextResponse.json(
+      { error: "Åtkomst nekad" },
+      { status: 403 }
+    )
+    mockRequireAdmin.mockRejectedValue(forbiddenResponse)
 
     const res = await GET(createRequest())
     const body = await res.json()
 
     expect(res.status).toBe(403)
-    expect(body.error).toBe("Behörighet saknas")
+    expect(body.error).toBe("Åtkomst nekad")
   })
 
   it("returns 200 with pending verifications list", async () => {
