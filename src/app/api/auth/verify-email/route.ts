@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAuthService } from "@/domain/auth/AuthService"
 import { mapAuthErrorToStatus } from "@/domain/auth/mapAuthErrorToStatus"
+import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 
@@ -10,6 +11,26 @@ const verifyEmailSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting by IP (uses passwordReset limiter: 3 attempts per hour)
+    try {
+      const clientIP = getClientIP(request)
+      const isAllowed = await rateLimiters.passwordReset(clientIP)
+      if (!isAllowed) {
+        return NextResponse.json(
+          { error: "För många försök. Vänta innan du försöker igen." },
+          { status: 429 }
+        )
+      }
+    } catch (error) {
+      if (error instanceof RateLimitServiceError) {
+        return NextResponse.json(
+          { error: "Tjänsten är tillfälligt otillgänglig" },
+          { status: 503 }
+        )
+      }
+      throw error
+    }
+
     let body
     try {
       body = await request.json()

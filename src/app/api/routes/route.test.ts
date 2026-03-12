@@ -165,9 +165,8 @@ describe("POST /api/routes", () => {
 
   // --- JSON parsing ---
 
-  it("returns 500 for invalid JSON body", async () => {
-    // request.json() is called without its own try-catch, so a SyntaxError
-    // from malformed JSON falls through to the generic catch -> 500.
+  it("returns 400 for invalid JSON body", async () => {
+    // request.json() is wrapped in try-catch, returning 400 for malformed JSON.
     const req = new NextRequest("http://localhost/api/routes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -175,9 +174,9 @@ describe("POST /api/routes", () => {
     })
 
     const res = await POST(req)
-    expect(res.status).toBe(500)
-    const text = await res.text()
-    expect(text).toBe("Internt serverfel")
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.error).toBe("Ogiltig JSON")
   })
 
   // --- Zod validation ---
