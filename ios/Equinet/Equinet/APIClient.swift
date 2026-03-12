@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 
 enum APIError: Error {
     case noToken
@@ -137,6 +138,12 @@ final class APIClient {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        // Log non-2xx responses for debugging
+        if !(200...299).contains(httpResponse.statusCode) {
+            let bodyPreview = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
+            AppLogger.network.error("HTTP \(httpResponse.statusCode) for \(path): \(bodyPreview)")
         }
 
         // Handle 401: try token refresh once

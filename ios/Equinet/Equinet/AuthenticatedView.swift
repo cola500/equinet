@@ -50,14 +50,11 @@ struct AuthenticatedView: View {
                     )
                 }
 
-                // More (WebView)
+                // More (Native menu with NavigationStack)
                 Tab(AppTab.more.rawValue, systemImage: AppTab.more.icon, value: AppTab.more) {
-                    WebViewTab(
-                        path: AppTab.more.webPath!,
+                    NativeMoreView(
                         bridge: coordinator.bridge,
-                        authManager: authManager,
-                        webViewReady: $webViewReady,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar }
+                        authManager: authManager
                     )
                 }
             }

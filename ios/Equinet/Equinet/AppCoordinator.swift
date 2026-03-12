@@ -34,7 +34,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .dashboard: return "/provider/dashboard"
         case .calendar: return nil
         case .bookings: return "/provider/bookings"
-        case .more: return "/provider/menu"
+        case .more: return nil  // Native NativeMoreView
         }
     }
 }

@@ -60,8 +60,17 @@ struct WebView: UIViewRepresentable {
                         -webkit-user-select: auto;
                         user-select: auto;
                     }
+                    /* Hide web BottomTabBar -- native TabView replaces it */
+                    nav[class*="fixed"][class*="bottom-0"] {
+                        display: none !important;
+                    }
+                    /* Hide web Header -- native NavigationStack replaces it */
+                    header.border-b {
+                        display: none !important;
+                    }
+                    /* No extra padding -- SwiftUI TabView handles safe area */
                     body {
-                        padding-bottom: env(safe-area-inset-bottom);
+                        padding-bottom: 0 !important;
                     }
                 `;
                 document.head.appendChild(style);
