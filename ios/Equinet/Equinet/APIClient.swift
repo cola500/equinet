@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 
 enum APIError: Error {
     case noToken
@@ -79,7 +80,10 @@ final class APIClient {
             throw APIError.noToken
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent("/api/auth/mobile-token/refresh"))
+        guard let url = URL(string: "/api/auth/mobile-token/refresh", relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(currentJwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
@@ -115,7 +119,10 @@ final class APIClient {
             throw APIError.noToken
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
@@ -137,6 +144,12 @@ final class APIClient {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        // Log non-2xx responses for debugging
+        if !(200...299).contains(httpResponse.statusCode) {
+            let bodyPreview = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
+            AppLogger.network.error("HTTP \(httpResponse.statusCode) for \(path): \(bodyPreview)")
         }
 
         // Handle 401: try token refresh once

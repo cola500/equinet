@@ -9,6 +9,7 @@
 import Foundation
 import LocalAuthentication
 import Observation
+import OSLog
 import WebKit
 
 enum AuthState {
@@ -30,6 +31,7 @@ final class AuthManager {
     private(set) var sessionCookieName: String?
     private(set) var sessionCookieValue: String?
     private(set) var sessionCookieSecure: Bool = false
+    private(set) var userType: String?  // "provider" or "customer"
 
     /// Keychain abstraction for testability.
     let keychain: KeychainStorable
@@ -97,6 +99,10 @@ final class AuthManager {
             sessionCookieValue = response.sessionCookie.value
             sessionCookieSecure = response.sessionCookie.secure
 
+            // Save user type for role-based UI
+            userType = response.user.userType
+            _ = keychain.save(key: KeychainHelper.userTypeKey, value: response.user.userType)
+
             state = .authenticated
         } catch let error as LoginError {
             loginError = error.message
@@ -137,9 +143,11 @@ final class AuthManager {
         _ = keychain.delete(key: KeychainHelper.sessionCookieNameKey)
         _ = keychain.delete(key: KeychainHelper.sessionCookieValueKey)
         _ = keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
+        _ = keychain.delete(key: KeychainHelper.userTypeKey)
         sessionCookieName = nil
         sessionCookieValue = nil
         sessionCookieSecure = false
+        userType = nil
         state = .loggedOut
     }
 
@@ -171,12 +179,12 @@ final class AuthManager {
         }
 
         guard let cookie = HTTPCookie(properties: properties) else {
-            print("[AuthManager] Failed to create HTTPCookie")
+            AppLogger.auth.error("Failed to create HTTPCookie")
             return
         }
 
         await cookieStore.setCookie(cookie)
-        print("[AuthManager] Session cookie injected into WKWebView")
+        AppLogger.auth.debug("Session cookie injected into WKWebView")
     }
 
     // MARK: - Biometric type
@@ -209,6 +217,7 @@ final class AuthManager {
         sessionCookieName = keychain.load(key: KeychainHelper.sessionCookieNameKey)
         sessionCookieValue = keychain.load(key: KeychainHelper.sessionCookieValueKey)
         sessionCookieSecure = keychain.load(key: KeychainHelper.sessionCookieSecureKey) == "true"
+        userType = keychain.load(key: KeychainHelper.userTypeKey)
     }
 
     private func performLogin(email: String, password: String) async throws -> NativeLoginResponse {

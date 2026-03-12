@@ -7,13 +7,14 @@
 //
 
 #if os(iOS)
+import OSLog
 import SwiftUI
 
 struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
-    @State private var currentPage: Int = 3  // Center of 7-day window (index 3 = selected date)
+    @State private var newBookingTime: (date: Date, time: String)?
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -23,10 +24,25 @@ struct NativeCalendarView: View {
 
     private let calendar = Calendar.current
 
+    @State private var scrollDateId: Date?
+
     var body: some View {
         VStack(spacing: 0) {
             // Date header
             dateHeader
+
+            // Week strip (7 day circles)
+            WeekStripView(
+                dates: viewModel.weekDates,
+                selectedDate: viewModel.selectedDate,
+                onSelectDate: { date in
+                    viewModel.navigateToDay(date)
+                    withAnimation { scrollDateId = viewModel.selectedDateId }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+            )
+
+            Divider()
 
             // Service filter pills
             if !viewModel.availableServices.isEmpty {
@@ -53,24 +69,36 @@ struct NativeCalendarView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             } else {
-                // Day view with swipe
-                TabView(selection: $currentPage) {
-                    ForEach(0..<7, id: \.self) { offset in
-                        dayView(for: dateForOffset(offset))
-                            .tag(offset)
+                // Horizontal scroll-paging for day swipe
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(viewModel.dateRange, id: \.self) { date in
+                            // Vertical scroll for time grid
+                            ScrollView(.vertical) {
+                                ZStack(alignment: .topLeading) {
+                                    availabilityOverlay(for: date)
+                                    timeGrid
+                                    timeSlotTapOverlay(for: date)
+                                    bookingBlocks(for: date)
+                                    if calendar.isDateInToday(date) { nowLine }
+                                }
+                                .frame(height: CGFloat(hours.count) * hourHeight)
+                            }
+                            .refreshable {
+                                viewModel.refresh()
+                            }
+                            .containerRelativeFrame(.horizontal)
+                        }
                     }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .onChange(of: currentPage) { _, newPage in
-                    let date = dateForOffset(newPage)
-                    viewModel.selectedDate = date
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-                    // Re-center if near edge (prefetch more data)
-                    if newPage <= 1 || newPage >= 5 {
-                        viewModel.loadDataForSelectedDate()
-                        currentPage = 3
+                .scrollTargetBehavior(.paging)
+                .scrollPosition(id: $scrollDateId)
+                .onChange(of: scrollDateId) { _, newDate in
+                    guard let newDate else { return }
+                    // Debounce: only update ViewModel if the date actually changed
+                    if !calendar.isDate(newDate, inSameDayAs: viewModel.selectedDate) {
+                        viewModel.navigateToDay(newDate)
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                 }
             }
@@ -78,7 +106,28 @@ struct NativeCalendarView: View {
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
         .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
         .onAppear {
+            scrollDateId = viewModel.selectedDateId
             viewModel.loadDataForSelectedDate()
+        }
+        .confirmationDialog(
+            newBookingDialogTitle,
+            isPresented: Binding(
+                get: { newBookingTime != nil },
+                set: { if !$0 { newBookingTime = nil } }
+            )
+        ) {
+            Button("Skapa bokning") {
+                if let booking = newBookingTime {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    let dateStr = dateFormatter.string(from: booking.date)
+                    onNavigateToWeb?("/provider/calendar?newBooking=true&date=\(dateStr)&time=\(booking.time)")
+                    newBookingTime = nil
+                }
+            }
+            Button("Avbryt", role: .cancel) {
+                newBookingTime = nil
+            }
         }
         .sheet(item: $selectedBooking) { booking in
             BookingDetailSheet(
@@ -125,7 +174,7 @@ struct NativeCalendarView: View {
             if !calendar.isDateInToday(viewModel.selectedDate) {
                 Button {
                     viewModel.goToToday()
-                    currentPage = 3
+                    withAnimation { scrollDateId = viewModel.selectedDateId }
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 } label: {
                     Text("Idag")
@@ -159,42 +208,6 @@ struct NativeCalendarView: View {
                 navigateDay(by: -1)
             @unknown default:
                 break
-            }
-        }
-    }
-
-    // MARK: - Day View (scrollable time grid)
-
-    private func dayView(for date: Date) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
-                ZStack(alignment: .topLeading) {
-                    // Availability overlay (behind everything)
-                    availabilityOverlay(for: date)
-
-                    // Time grid lines
-                    timeGrid
-
-                    // Booking blocks
-                    bookingBlocks(for: date)
-
-                    // Now line
-                    if calendar.isDateInToday(date) {
-                        nowLine
-                    }
-                }
-                .frame(height: CGFloat(hours.count) * hourHeight)
-                .id("timeGrid")
-            }
-            .refreshable {
-                viewModel.refresh()
-            }
-            .onAppear {
-                // Scroll to current hour on today, or 08:00 on other days
-                // Small delay to let ScrollView lay out
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    proxy.scrollTo("timeGrid", anchor: .top)
-                }
             }
         }
     }
@@ -511,6 +524,41 @@ struct NativeCalendarView: View {
         return parts.joined(separator: ", ")
     }
 
+    // MARK: - Tap-to-Book
+
+    private var newBookingDialogTitle: String {
+        guard let booking = newBookingTime else { return "" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "sv_SE")
+        formatter.dateFormat = "d MMMM"
+        return "Ny bokning \(formatter.string(from: booking.date)) kl \(booking.time)?"
+    }
+
+    private func timeSlotTapOverlay(for date: Date) -> some View {
+        let totalHeight = CGFloat(hours.count) * hourHeight
+        return Color.clear
+            .frame(height: totalHeight)
+            .padding(.leading, 52)
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                let time = timeFromTapPosition(location.y)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                newBookingTime = (date: date, time: time)
+            }
+    }
+
+    /// Convert Y position to "HH:mm" snapped to nearest 15 min
+    private func timeFromTapPosition(_ localY: CGFloat) -> String {
+        let totalHeight = CGFloat(hours.count) * hourHeight
+        let clamped = max(0, min(localY, totalHeight))
+        let totalMinutes = (clamped / totalHeight) * CGFloat(hours.count) * 60
+        let snapped = Int(round(totalMinutes / 15)) * 15
+        let hour = startHour + snapped / 60
+        let minute = snapped % 60
+        return String(format: "%02d:%02d", min(hour, endHour), minute)
+    }
+
+
     // MARK: - Time Position Helpers
 
     /// Convert "HH:mm" to Y offset in points
@@ -564,15 +612,10 @@ struct NativeCalendarView: View {
         return weekday == 1 ? 6 : weekday - 2
     }
 
-    private func dateForOffset(_ offset: Int) -> Date {
-        // Offset 3 = selectedDate, 0 = selectedDate-3, 6 = selectedDate+3
-        calendar.date(byAdding: .day, value: offset - 3, to: viewModel.selectedDate)!
-    }
-
     private func navigateDay(by days: Int) {
         let newDate = calendar.date(byAdding: .day, value: days, to: viewModel.selectedDate)!
         viewModel.navigateToDay(newDate)
-        currentPage = 3
+        withAnimation { scrollDateId = viewModel.selectedDateId }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -590,4 +633,5 @@ struct NativeCalendarView: View {
         return formatter.string(from: date)
     }
 }
+
 #endif

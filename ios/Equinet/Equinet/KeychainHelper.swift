@@ -156,6 +156,7 @@ extension KeychainHelper {
     static let sessionCookieNameKey = "session_cookie_name"
     static let sessionCookieValueKey = "session_cookie_value"
     static let sessionCookieSecureKey = "session_cookie_secure"
+    static let userTypeKey = "user_type"
 
     /// Save session cookie data for WKWebView injection
     static func saveSessionCookie(name: String, value: String, secure: Bool) {

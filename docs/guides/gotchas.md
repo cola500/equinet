@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-03-09
+last_updated: 2026-03-12
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -1360,6 +1360,35 @@ nextUrl.pathname.startsWith('/stable/') || nextUrl.pathname === '/stable'
 ```
 
 **Regel:** Vid nya publika routes som delar prefix med skyddade routes, verifiera alltid att auth.config inte blockerar dem.
+
+## 34. Turbopack Registrerar Inte Nya API Route-filer
+
+> **Learning: 2026-03-12** | **Severity: LOW**
+
+**Problem:** Ny route-fil (`src/app/api/native/calendar/route.ts`) skapas och commitas, men Next.js dev-server returnerar 404 (HTML-sida) vid anrop.
+
+**Orsak:** Turbopack hot-reload registrerar inte alltid nya route-filer i `src/app/api/` utan restart. Filen finns pa disk men Next.js filsystem-router har inte uppdaterats.
+
+**Fix:** Starta om dev-servern (`Ctrl+C` + `npm run dev`). Om det inte hjalper: `rm -rf .next && npm run dev`.
+
+**Regel:** Nar du skapar en helt ny route-fil (inte redigerar en befintlig), starta alltid om dev-servern for att verifiera att den fungerar.
+
+## 35. iOS WKWebView Visar Webbens Chrome Ovanpa Native TabView
+
+> **Learning: 2026-03-12** | **Severity: MEDIUM**
+
+**Problem:** Dubbla tab-bars och synlig Header i iOS-appen -- webbens BottomTabBar och Header renderas inuti WKWebView ovanpa native SwiftUI TabView.
+
+**Orsak:** WebView laddar hela webblayouten (inklusive nav + header) utan att veta att native navigation redan finns.
+
+**Fix:** CSS-injektion i `WebView.swift` (i `bridgeScript`-blocket):
+```css
+nav[class*="fixed"][class*="bottom-0"] { display: none !important; }
+header.border-b { display: none !important; }
+body { padding-bottom: 0 !important; }
+```
+
+**Regel:** Vid hybridappar med native navigation, dolj ALLTID webbens chrome via CSS-injektion. Anvand specifika class-selektorer (inte generella tag-selektorer) for att undvika oonskat dolja.
 
 ---
 

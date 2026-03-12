@@ -323,4 +323,103 @@ final class CalendarViewModelTests: XCTestCase {
             Calendar.current.dateComponents([.day], from: date)
         )
     }
+
+    // MARK: - Date Range (Scroll Paging)
+
+    func testDateRangeContains61Days() {
+        // +/- 30 days = 61 total
+        XCTAssertEqual(sut.dateRange.count, 61)
+    }
+
+    func testDateRangeIsCenteredOnSelectedDate() {
+        let cal = Calendar.current
+        let range = sut.dateRange
+        let first = range.first!
+        let last = range.last!
+
+        // First date should be 30 days before today
+        let expectedFirst = cal.startOfDay(for: cal.date(byAdding: .day, value: -30, to: .now)!)
+        let expectedLast = cal.startOfDay(for: cal.date(byAdding: .day, value: 30, to: .now)!)
+
+        XCTAssertEqual(first, expectedFirst)
+        XCTAssertEqual(last, expectedLast)
+    }
+
+    func testDateRangeUpdatesWhenSelectedDateChanges() {
+        let cal = Calendar.current
+        let futureDate = cal.date(byAdding: .day, value: 10, to: .now)!
+        sut.selectedDate = futureDate
+
+        let range = sut.dateRange
+        let expectedFirst = cal.startOfDay(for: cal.date(byAdding: .day, value: -30, to: futureDate)!)
+        XCTAssertEqual(range.first!, expectedFirst)
+    }
+
+    func testDateRangeAllDatesAreStartOfDay() {
+        let cal = Calendar.current
+        for date in sut.dateRange {
+            XCTAssertEqual(date, cal.startOfDay(for: date), "Date \(date) is not startOfDay")
+        }
+    }
+
+    // MARK: - Selected Date ID (Scroll Position Sync)
+
+    func testSelectedDateIdIsStartOfDay() {
+        let cal = Calendar.current
+        // Set selectedDate to a time in the middle of the day
+        var components = cal.dateComponents([.year, .month, .day], from: .now)
+        components.hour = 14
+        components.minute = 30
+        let midday = cal.date(from: components)!
+        sut.selectedDate = midday
+
+        XCTAssertEqual(sut.selectedDateId, cal.startOfDay(for: midday))
+    }
+
+    func testNavigateToDayNormalizesToStartOfDay() {
+        let cal = Calendar.current
+        var components = cal.dateComponents([.year, .month, .day], from: .now)
+        components.hour = 15
+        components.minute = 45
+        let afternoon = cal.date(from: components)!
+
+        sut.navigateToDay(afternoon)
+
+        XCTAssertEqual(sut.selectedDateId, cal.startOfDay(for: afternoon))
+    }
+
+    func testGoToTodaySetsSelectedDateIdToTodayStartOfDay() {
+        // Navigate away first
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now)!
+        sut.navigateToDay(tomorrow)
+
+        sut.goToToday()
+
+        let todayStart = Calendar.current.startOfDay(for: .now)
+        XCTAssertEqual(sut.selectedDateId, todayStart)
+    }
+
+    // MARK: - Week Strip Helpers
+
+    func testWeekDatesReturns7Days() {
+        let week = sut.weekDates
+        XCTAssertEqual(week.count, 7)
+    }
+
+    func testWeekDatesAreCenteredOnSelectedDate() {
+        let cal = Calendar.current
+        let week = sut.weekDates
+        // Middle element (index 3) should be the selected date's startOfDay
+        let expected = cal.startOfDay(for: sut.selectedDate)
+        XCTAssertEqual(week[3], expected)
+    }
+
+    func testWeekDatesAreConsecutive() {
+        let cal = Calendar.current
+        let week = sut.weekDates
+        for i in 1..<week.count {
+            let diff = cal.dateComponents([.day], from: week[i - 1], to: week[i])
+            XCTAssertEqual(diff.day, 1, "Days should be consecutive")
+        }
+    }
 }

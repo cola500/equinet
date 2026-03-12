@@ -15,6 +15,7 @@
 import OSLog
 
 enum AppLogger {
+    static let app      = Logger(subsystem: "com.equinet.Equinet", category: "app")
     static let auth     = Logger(subsystem: "com.equinet.Equinet", category: "auth")
     static let bridge   = Logger(subsystem: "com.equinet.Equinet", category: "bridge")
     static let calendar = Logger(subsystem: "com.equinet.Equinet", category: "calendar")

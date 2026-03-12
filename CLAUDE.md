@@ -255,6 +255,9 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Xcode 26 kräver explicit .xctestplan**: `shouldAutocreateTestPlan` är otillförlitligt. Skapa ALLTID `EquinetTests.xctestplan` manuellt och referera med `container:EquinetTests.xctestplan` i schemat. Utan fysisk fil: "test plan could not be read".
 - **iOS XCTest setup**: `xcodebuild test -project ... -scheme Equinet -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:EquinetTests`
 - **iOS CI simctl vs xcodebuild**: `simctl list devices` och `xcodebuild -showdestinations` returnerar OLIKA UDID:er. Använd ALDRIG simctl-UDID som xcodebuild-destination. Använd namnbaserad destination (`name=iPhone 16 Pro`) eller UDID från `xcodebuild -showdestinations`. CI: dynamiskt Xcode-val med `ls -d /Applications/Xcode_*.app | sort -V | tail -1`.
+- **iOS CSS-injektion för att dölja webb-chrome**: WKWebView visar webbens BottomTabBar + Header ovanpå native TabView. Fix: injicera CSS i `WebView.swift` med `nav[class*="fixed"][class*="bottom-0"] { display: none !important }` och `header.border-b { display: none !important }`. Använd specifika selektorer, inte generella.
+- **iOS NativeMoreView NavigationStack-mönster**: Native meny (SwiftUI List + sektioner) med NavigationLink som pushar WebView-wrapper (MoreWebView) för sub-sidor. Varje push skapar ny WebView-instans med delad BridgeHandler. `webViewReady: .constant(true)` för att undvika splash-overlay.
+- **iOS Turbopack hot-reload gotcha**: Nya API route-filer (`src/app/api/*/route.ts`) registreras inte alltid av Turbopack hot-reload. Dev-servern kan returnera 404 trots att filen finns. Fix: starta om dev-servern (`npm run dev`).
 
 ---
 
