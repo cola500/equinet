@@ -278,6 +278,7 @@ struct WebView: UIViewRepresentable {
             lastLoadFailed = false
             endRefreshingIfNeeded()
 
+
             // Signal first load complete (dismisses splash screen)
             if !parent.webViewReady {
                 parent.webViewReady = true

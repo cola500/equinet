@@ -28,7 +28,6 @@ struct AuthenticatedView: View {
                         bridge: coordinator.bridge,
                         authManager: authManager,
                         onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
-                        onFirstLoad: { initialLoadComplete = true },
                         pendingNavigation: $coordinator.pendingWebPath
                     )
                 }
@@ -36,7 +35,6 @@ struct AuthenticatedView: View {
                 // Calendar (Native)
                 Tab(AppTab.calendar.rawValue, systemImage: AppTab.calendar.icon, value: AppTab.calendar) {
                     NativeCalendarView(viewModel: coordinator.calendarViewModel) { path in
-                        initialLoadComplete = true  // Skip splash on programmatic navigation
                         coordinator.selectedTab = .dashboard
                         coordinator.pendingWebPath = path
                     }
@@ -72,8 +70,8 @@ struct AuthenticatedView: View {
                 Spacer()
             }
 
-            // Splash overlay -- shown until first WebView finishes loading
-            if !initialLoadComplete && coordinator.selectedTab != .calendar {
+            // Splash overlay -- brief branded transition after login
+            if !initialLoadComplete {
                 SplashView()
                     .transition(.opacity)
             }
@@ -84,6 +82,10 @@ struct AuthenticatedView: View {
         .onAppear {
             setupNetworkMonitoring()
             coordinator.networkMonitor.start()
+            // Dismiss splash after brief branded transition
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                initialLoadComplete = true
+            }
         }
         .onDisappear {
             coordinator.networkMonitor.stop()

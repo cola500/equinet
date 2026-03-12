@@ -258,6 +258,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS CSS-injektion för att dölja webb-chrome**: WKWebView visar webbens BottomTabBar + Header ovanpå native TabView. Fix: injicera CSS i `WebView.swift` med `nav[class*="fixed"][class*="bottom-0"] { display: none !important }` och `header.border-b { display: none !important }`. Använd specifika selektorer, inte generella.
 - **iOS NativeMoreView NavigationStack-mönster**: Native meny (SwiftUI List + sektioner) med NavigationLink som pushar WebView-wrapper (MoreWebView) för sub-sidor. Varje push skapar ny WebView-instans med delad BridgeHandler. `webViewReady: .constant(true)` för att undvika splash-overlay.
 - **iOS Turbopack hot-reload gotcha**: Nya API route-filer (`src/app/api/*/route.ts`) registreras inte alltid av Turbopack hot-reload. Dev-servern kan returnera 404 trots att filen finns. Fix: starta om dev-servern (`npm run dev`).
+- **iOS dual auth-system (JWT + session-cookie)**: Native APIClient använder mobile JWT (Bearer token), WebView-sidor använder session-cookie via NextAuth `useSession()`. De är helt oberoende -- en kan fungera medan den andra failar. Vid "data laddas inte" i WebView: injicera `fetch('/api/auth/session')` via `evaluateJavaScript` och skicka resultatet genom bridge för att se session-status.
+- **iOS WKWebView JS-debugging utan Safari Inspector**: Injicera JavaScript via `evaluateJavaScript` som gör `fetch()` och skickar resultat via `window.webkit.messageHandlers.equinet.postMessage()`. Logga i Swift via `AppLogger`. Fungerar på fysiska enheter utan Safari-koppling.
 
 ---
 
