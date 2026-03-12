@@ -13,6 +13,9 @@ struct PendingBookingAction: Codable {
     let bookingId: String
     let status: String     // "confirmed" | "cancelled"
     let createdAt: Date
+    var retryCount: Int = 0
+
+    static let maxRetries = 3
 }
 
 enum PendingActionStore {
@@ -53,15 +56,26 @@ enum PendingActionStore {
             var remaining: [PendingBookingAction] = []
 
             for action in actions {
+                // Skip actions that have exceeded max retries
+                if action.retryCount >= PendingBookingAction.maxRetries {
+                    AppLogger.network.warning("Discarding action \(action.bookingId) after \(action.retryCount) retries")
+                    continue
+                }
+
                 do {
                     try await APIClient.shared.updateBookingStatus(
                         bookingId: action.bookingId,
                         newStatus: action.status
                     )
                     AppLogger.network.info("Retried pending action: \(action.bookingId) -> \(action.status)")
+                } catch APIError.serverError(let code) where (400..<500).contains(code) {
+                    // Client errors (400, 404, etc.) are permanent -- discard, don't retry
+                    AppLogger.network.warning("Discarding action \(action.bookingId): HTTP \(code) (permanent error)")
                 } catch {
-                    remaining.append(action)
-                    AppLogger.network.error("Retry failed: \(error.localizedDescription)")
+                    var updated = action
+                    updated.retryCount += 1
+                    remaining.append(updated)
+                    AppLogger.network.error("Retry failed (\(updated.retryCount)/\(PendingBookingAction.maxRetries)): \(error.localizedDescription)")
                 }
             }
 

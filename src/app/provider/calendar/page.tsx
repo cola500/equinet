@@ -82,6 +82,19 @@ function CalendarContent() {
     }
   }, [isMobile])
 
+  // Auto-öppna ManualBookingDialog från query params (iOS native -> web)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('newBooking') === 'true') {
+      const date = params.get('date')
+      const time = params.get('time')
+      if (date) setPrefillDate(date)
+      if (time) setPrefillTime(time)
+      manualBookingDialog.openDialog()
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Återställ dialog vid tillbaka-navigation (URL -> state)
   const bookingIdFromUrl = searchParams.get('bookingId')
   useEffect(() => {

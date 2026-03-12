@@ -176,8 +176,11 @@ final class CalendarViewModel {
         let (from, to) = windowDates(for: selectedDate)
         let cacheKey = "\(from)_\(to)"
 
+        AppLogger.calendar.debug("loadDataForSelectedDate: from=\(from), to=\(to), cacheKey=\(cacheKey)")
+
         // Use cache if available
         if let cached = cache[cacheKey] {
+            AppLogger.calendar.debug("Using cached data for \(cacheKey)")
             applyResponse(cached)
             return
         }
@@ -186,6 +189,7 @@ final class CalendarViewModel {
         isLoading = true
         error = nil
 
+        AppLogger.calendar.debug("Fetching calendar from API...")
         Task {
             do {
                 let response = try await fetcher.fetchCalendar(from: from, to: to)
@@ -195,7 +199,11 @@ final class CalendarViewModel {
                 // Save to offline cache
                 cacheProvider.saveCalendarCache(response, from: from, to: to)
                 isOffline = false
-            } catch APIError.noToken, APIError.unauthorized {
+            } catch APIError.noToken {
+                AppLogger.calendar.error("No token available for calendar fetch")
+                error = "Du behöver logga in igen"
+            } catch APIError.unauthorized {
+                AppLogger.calendar.error("Unauthorized for calendar fetch")
                 error = "Du behöver logga in igen"
             } catch APIError.rateLimited(let retryAfter) {
                 if let seconds = retryAfter {
@@ -239,6 +247,9 @@ final class CalendarViewModel {
         // Save old status for rollback
         guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else { return }
         let oldStatus = bookings[index].status
+
+        // Skip if status already matches (avoids 400 from API)
+        guard oldStatus != newStatus else { return }
 
         // Optimistic update
         bookings[index] = bookings[index].withStatus(newStatus)

@@ -14,6 +14,7 @@ struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
+    @State private var newBookingTime: (date: Date, time: String)?
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -77,6 +78,7 @@ struct NativeCalendarView: View {
                                 ZStack(alignment: .topLeading) {
                                     availabilityOverlay(for: date)
                                     timeGrid
+                                    timeSlotTapOverlay(for: date)
                                     bookingBlocks(for: date)
                                     if calendar.isDateInToday(date) { nowLine }
                                 }
@@ -106,6 +108,26 @@ struct NativeCalendarView: View {
         .onAppear {
             scrollDateId = viewModel.selectedDateId
             viewModel.loadDataForSelectedDate()
+        }
+        .confirmationDialog(
+            newBookingDialogTitle,
+            isPresented: Binding(
+                get: { newBookingTime != nil },
+                set: { if !$0 { newBookingTime = nil } }
+            )
+        ) {
+            Button("Skapa bokning") {
+                if let booking = newBookingTime {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    let dateStr = dateFormatter.string(from: booking.date)
+                    onNavigateToWeb?("/provider/calendar?newBooking=true&date=\(dateStr)&time=\(booking.time)")
+                    newBookingTime = nil
+                }
+            }
+            Button("Avbryt", role: .cancel) {
+                newBookingTime = nil
+            }
         }
         .sheet(item: $selectedBooking) { booking in
             BookingDetailSheet(
@@ -500,6 +522,40 @@ struct NativeCalendarView: View {
         parts.append(statusText)
         if booking.isPaid { parts.append("betald") }
         return parts.joined(separator: ", ")
+    }
+
+    // MARK: - Tap-to-Book
+
+    private var newBookingDialogTitle: String {
+        guard let booking = newBookingTime else { return "" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "sv_SE")
+        formatter.dateFormat = "d MMMM"
+        return "Ny bokning \(formatter.string(from: booking.date)) kl \(booking.time)?"
+    }
+
+    private func timeSlotTapOverlay(for date: Date) -> some View {
+        let totalHeight = CGFloat(hours.count) * hourHeight
+        return Color.clear
+            .frame(height: totalHeight)
+            .padding(.leading, 52)
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                let time = timeFromTapPosition(location.y)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                newBookingTime = (date: date, time: time)
+            }
+    }
+
+    /// Convert Y position to "HH:mm" snapped to nearest 15 min
+    private func timeFromTapPosition(_ localY: CGFloat) -> String {
+        let totalHeight = CGFloat(hours.count) * hourHeight
+        let clamped = max(0, min(localY, totalHeight))
+        let totalMinutes = (clamped / totalHeight) * CGFloat(hours.count) * 60
+        let snapped = Int(round(totalMinutes / 15)) * 15
+        let hour = startHour + snapped / 60
+        let minute = snapped % 60
+        return String(format: "%02d:%02d", min(hour, endHour), minute)
     }
 
     // MARK: - Time Position Helpers

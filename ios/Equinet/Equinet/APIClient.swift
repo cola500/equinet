@@ -80,7 +80,10 @@ final class APIClient {
             throw APIError.noToken
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent("/api/auth/mobile-token/refresh"))
+        guard let url = URL(string: "/api/auth/mobile-token/refresh", relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(currentJwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
@@ -116,7 +119,10 @@ final class APIClient {
             throw APIError.noToken
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15

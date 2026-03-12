@@ -30,10 +30,18 @@ struct ContentView: View {
                 BiometricPromptView(authManager: authManager)
 
             case .authenticated:
-                AuthenticatedView(
-                    authManager: authManager,
-                    coordinator: coordinator
-                )
+                if authManager.userType == "provider" {
+                    AuthenticatedView(
+                        authManager: authManager,
+                        coordinator: coordinator
+                    )
+                } else {
+                    CustomerWebView(
+                        bridge: coordinator.bridge,
+                        authManager: authManager,
+                        networkMonitor: coordinator.networkMonitor
+                    )
+                }
             }
         }
         .animation(.easeInOut(duration: 0.3), value: authManager.state == .authenticated)

@@ -234,7 +234,7 @@ Agenten anvands for code review och teknisk radgivning under alla foljande steg.
 - `NativeTabBar.swift` -- orphaned (inte refererad langre, kan tas bort)
 - 48 tester, 0 failures, bygger utan fel
 
-### Steg 2: Fixa kalendern (~3-5 dagar)
+### Steg 2: Fixa kalendern -- KLART (session 2026-03-12)
 
 **Mal:** Kalender-swipe fungerar smooth med native-kansla.
 
@@ -286,6 +286,39 @@ Agenten anvands for code review och teknisk radgivning under alla foljande steg.
 **Agent-feedback att beakta:**
 - iOS Expert: scrollPosition + Date kraver startOfDay-normalisering, debounce vid snabb swipe, containerRelativeFrame + safe area
 - UX Reviewer: veckoband ovanfor kalender (Apple Kalender-monster), behall sheet for bokningsdetaljer (inte NavigationStack-push)
+
+### Steg 2: KLART (session 2026-03-12)
+
+**Resultat:**
+- `NativeCalendarView.swift` -- ScrollView(.horizontal) + scrollTargetBehavior(.paging) ersatter UIPageViewController
+- `CalendarViewModel.swift` -- dateRange (+/- 30 dagar), selectedDateId, weekDates, bookingsForDate, scroll-position-synk
+- `WeekStripView.swift` -- NY, 7-dagars veckoband ovanfor kalender
+- `BookingDetailSheet.swift` -- NavigationView -> NavigationStack, haptic feedback
+- `CalendarModels.swift` -- date computed property, withStatus copy-metod, serviceId (optional)
+- Tester: 16 CalendarViewModel-tester, 12 CalendarModels-tester (alla grona)
+
+### Steg 2.5: Post-implementation bugfixar (session 2026-03-12)
+
+**Problem:** Manuell testning pa enhet avslojade 4 buggar efter Steg 1+2.
+
+| Bugg | Rotorsak | Fix |
+|------|----------|-----|
+| Dubbla tab-bars (native + webb) | WebView visar webbens BottomTabBar bredvid SwiftUI TabView | CSS-injektion: `nav[class*="fixed"][class*="bottom-0"] { display: none !important }` |
+| Webb-header synlig i WebView-tabs | WebView visar webbens Header-komponent | CSS-injektion: `header.border-b { display: none !important }` |
+| "Mer"-tab ger 404 | `/provider/menu` ar en Drawer i webben, inte en route | NativeMoreView.swift -- NavigationStack + List med meny-items, NavigationLink pushar MoreWebView |
+| Kalender "serverfel" | `/api/native/calendar` returnerar 404 (dev-server behover restart) | Debug-loggning i APIClient, route finns redan -- trolig Turbopack hot-reload issue |
+
+**Andrade filer:**
+- `WebView.swift` -- CSS doljer webbens nav + header, `padding-bottom: 0` (SwiftUI TabView hanterar safe area)
+- `NativeMoreView.swift` -- NY, native Mer-meny med NavigationStack + MoreWebView wrapper
+- `AppCoordinator.swift` -- `.more.webPath` -> `nil`
+- `AuthenticatedView.swift` -- Mer-tab anvandar NativeMoreView istallet for WebViewTab
+- `APIClient.swift` -- debug-loggning av HTTP-status + response body for icke-2xx svar
+
+**Key learnings:**
+- CSS-injektion i WKWebView for att dolja webbens chrome (nav, header) -- specifika selektorer, `!important`
+- NativeMoreView NavigationStack-monster: native meny -> WebView-push for sub-sidor
+- Turbopack hot-reload registrerar inte alltid nya route-filer -- kraver dev-server restart
 
 ### Steg 3: Bokningslista (~2-3 dagar)
 
