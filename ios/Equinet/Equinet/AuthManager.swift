@@ -9,6 +9,7 @@
 import Foundation
 import LocalAuthentication
 import Observation
+import OSLog
 import WebKit
 
 enum AuthState {
@@ -171,12 +172,12 @@ final class AuthManager {
         }
 
         guard let cookie = HTTPCookie(properties: properties) else {
-            print("[AuthManager] Failed to create HTTPCookie")
+            AppLogger.auth.error("Failed to create HTTPCookie")
             return
         }
 
         await cookieStore.setCookie(cookie)
-        print("[AuthManager] Session cookie injected into WKWebView")
+        AppLogger.auth.debug("Session cookie injected into WKWebView")
     }
 
     // MARK: - Biometric type
