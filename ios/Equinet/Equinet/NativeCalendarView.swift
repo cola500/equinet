@@ -23,10 +23,25 @@ struct NativeCalendarView: View {
 
     private let calendar = Calendar.current
 
+    @State private var scrollDateId: Date?
+
     var body: some View {
         VStack(spacing: 0) {
             // Date header
             dateHeader
+
+            // Week strip (7 day circles)
+            WeekStripView(
+                dates: viewModel.weekDates,
+                selectedDate: viewModel.selectedDate,
+                onSelectDate: { date in
+                    viewModel.navigateToDay(date)
+                    withAnimation { scrollDateId = viewModel.selectedDateId }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+            )
+
+            Divider()
 
             // Service filter pills
             if !viewModel.availableServices.isEmpty {
@@ -53,25 +68,43 @@ struct NativeCalendarView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             } else {
-                // UIPageViewController handles horizontal swipe + vertical scroll disambiguation natively
-                PagedDayView(
-                    selectedDate: $viewModel.selectedDate,
-                    onNavigateDay: { viewModel.navigateToDay($0) },
-                    onRefresh: { viewModel.refresh() }
-                ) { date in
-                    ZStack(alignment: .topLeading) {
-                        availabilityOverlay(for: date)
-                        timeGrid
-                        bookingBlocks(for: date)
-                        if calendar.isDateInToday(date) { nowLine }
+                // Horizontal scroll-paging for day swipe
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(viewModel.dateRange, id: \.self) { date in
+                            // Vertical scroll for time grid
+                            ScrollView(.vertical) {
+                                ZStack(alignment: .topLeading) {
+                                    availabilityOverlay(for: date)
+                                    timeGrid
+                                    bookingBlocks(for: date)
+                                    if calendar.isDateInToday(date) { nowLine }
+                                }
+                                .frame(height: CGFloat(hours.count) * hourHeight)
+                            }
+                            .refreshable {
+                                viewModel.refresh()
+                            }
+                            .containerRelativeFrame(.horizontal)
+                        }
                     }
-                    .frame(height: CGFloat(hours.count) * hourHeight)
+                }
+                .scrollTargetBehavior(.paging)
+                .scrollPosition(id: $scrollDateId)
+                .onChange(of: scrollDateId) { _, newDate in
+                    guard let newDate else { return }
+                    // Debounce: only update ViewModel if the date actually changed
+                    if !calendar.isDate(newDate, inSameDayAs: viewModel.selectedDate) {
+                        viewModel.navigateToDay(newDate)
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }
                 }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
         .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
         .onAppear {
+            scrollDateId = viewModel.selectedDateId
             viewModel.loadDataForSelectedDate()
         }
         .sheet(item: $selectedBooking) { booking in
@@ -119,6 +152,7 @@ struct NativeCalendarView: View {
             if !calendar.isDateInToday(viewModel.selectedDate) {
                 Button {
                     viewModel.goToToday()
+                    withAnimation { scrollDateId = viewModel.selectedDateId }
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 } label: {
                     Text("Idag")
@@ -524,6 +558,7 @@ struct NativeCalendarView: View {
     private func navigateDay(by days: Int) {
         let newDate = calendar.date(byAdding: .day, value: days, to: viewModel.selectedDate)!
         viewModel.navigateToDay(newDate)
+        withAnimation { scrollDateId = viewModel.selectedDateId }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -542,181 +577,4 @@ struct NativeCalendarView: View {
     }
 }
 
-// MARK: - PagedDayView (UIPageViewController for horizontal day swipe + vertical scroll)
-
-/// Uses UIPageViewController for gesture-disambiguation between horizontal day swipe
-/// and vertical scroll. This is the same pattern Apple Calendar uses.
-/// UIKit's view controller containment handles touch routing automatically.
-private struct PagedDayView<Content: View>: UIViewControllerRepresentable {
-    @Binding var selectedDate: Date
-    var onNavigateDay: (Date) -> Void
-    var onRefresh: (() -> Void)?
-    @ViewBuilder var content: (Date) -> Content
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
-    }
-
-    func makeUIViewController(context: Context) -> UIPageViewController {
-        let pageVC = UIPageViewController(
-            transitionStyle: .scroll,
-            navigationOrientation: .horizontal,
-            options: [.interPageSpacing: 0]
-        )
-        pageVC.dataSource = context.coordinator
-        pageVC.delegate = context.coordinator
-
-        let initialPage = context.coordinator.makeDayPage(for: selectedDate)
-        pageVC.setViewControllers([initialPage], direction: .forward, animated: false)
-        context.coordinator.currentDate = selectedDate
-
-        AppLogger.calendar.debug("PagedDayView: created with UIPageViewController")
-        return pageVC
-    }
-
-    func updateUIViewController(_ pageVC: UIPageViewController, context: Context) {
-        let coord = context.coordinator
-        coord.parent = self
-
-        // Programmatic navigation (chevrons, "Idag" button)
-        if !Calendar.current.isDate(selectedDate, inSameDayAs: coord.currentDate) {
-            let direction: UIPageViewController.NavigationDirection =
-                selectedDate > coord.currentDate ? .forward : .reverse
-            let newPage = coord.makeDayPage(for: selectedDate)
-            coord.currentDate = selectedDate
-            pageVC.setViewControllers([newPage], direction: direction, animated: true)
-        }
-    }
-
-    // MARK: - DayPageViewController
-
-    class DayPageViewController: UIViewController {
-        let date: Date
-        private let onRefresh: (() -> Void)?
-        private var hostController: UIHostingController<Content>?
-        private let scrollView = UIScrollView()
-
-        init(date: Date, content: Content, onRefresh: (() -> Void)?) {
-            self.date = date
-            self.onRefresh = onRefresh
-            super.init(nibName: nil, bundle: nil)
-
-            let host = UIHostingController(rootView: content)
-            host.view.backgroundColor = .clear
-            self.hostController = host
-        }
-
-        @available(*, unavailable)
-        required init?(coder: NSCoder) { fatalError() }
-
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            view.backgroundColor = .systemBackground
-
-            scrollView.alwaysBounceVertical = true
-            scrollView.showsVerticalScrollIndicator = true
-            scrollView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(scrollView)
-
-            NSLayoutConstraint.activate([
-                scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-                scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            ])
-
-            if onRefresh != nil {
-                let rc = UIRefreshControl()
-                rc.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
-                scrollView.refreshControl = rc
-            }
-
-            if let hostView = hostController?.view {
-                hostView.backgroundColor = .clear
-                hostView.translatesAutoresizingMaskIntoConstraints = false
-                addChild(hostController!)
-                scrollView.addSubview(hostView)
-
-                NSLayoutConstraint.activate([
-                    hostView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-                    hostView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
-                    hostView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
-                    hostView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-                ])
-
-                hostController?.didMove(toParent: self)
-            }
-        }
-
-        func updateContent(_ newContent: Content) {
-            hostController?.rootView = newContent
-        }
-
-        @objc private func handleRefresh(_ control: UIRefreshControl) {
-            AppLogger.calendar.debug("PagedDayView: pull-to-refresh triggered")
-            onRefresh?()
-            // End refreshing after a short delay (parent will update content)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                control.endRefreshing()
-            }
-        }
-    }
-
-    // MARK: - Coordinator
-
-    class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
-        var parent: PagedDayView
-        var currentDate: Date
-
-        init(parent: PagedDayView) {
-            self.parent = parent
-            self.currentDate = parent.selectedDate
-        }
-
-        func makeDayPage(for date: Date) -> DayPageViewController {
-            let dayContent = parent.content(date)
-            return DayPageViewController(date: date, content: dayContent, onRefresh: parent.onRefresh)
-        }
-
-        // MARK: UIPageViewControllerDataSource
-
-        func pageViewController(
-            _ pageViewController: UIPageViewController,
-            viewControllerBefore viewController: UIViewController
-        ) -> UIViewController? {
-            guard let dayVC = viewController as? DayPageViewController,
-                  let prevDate = Calendar.current.date(byAdding: .day, value: -1, to: dayVC.date)
-            else { return nil }
-            return makeDayPage(for: prevDate)
-        }
-
-        func pageViewController(
-            _ pageViewController: UIPageViewController,
-            viewControllerAfter viewController: UIViewController
-        ) -> UIViewController? {
-            guard let dayVC = viewController as? DayPageViewController,
-                  let nextDate = Calendar.current.date(byAdding: .day, value: 1, to: dayVC.date)
-            else { return nil }
-            return makeDayPage(for: nextDate)
-        }
-
-        // MARK: UIPageViewControllerDelegate
-
-        func pageViewController(
-            _ pageViewController: UIPageViewController,
-            didFinishAnimating finished: Bool,
-            previousViewControllers: [UIViewController],
-            transitionCompleted completed: Bool
-        ) {
-            guard completed,
-                  let dayVC = pageViewController.viewControllers?.first as? DayPageViewController
-            else { return }
-
-            currentDate = dayVC.date
-            parent.onNavigateDay(dayVC.date)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            AppLogger.calendar.debug("PagedDayView: swiped to \(dayVC.date, privacy: .public)")
-        }
-    }
-}
 #endif

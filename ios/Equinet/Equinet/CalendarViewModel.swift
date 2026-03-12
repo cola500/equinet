@@ -111,6 +111,32 @@ final class CalendarViewModel {
         self.sync = sync ?? EventKitCalendarSync()
     }
 
+    // MARK: - Scroll Paging
+
+    /// Date range for horizontal scroll paging (+/- 30 days from selectedDate, normalized to startOfDay)
+    var dateRange: [Date] {
+        let cal = Calendar.current
+        let center = cal.startOfDay(for: selectedDate)
+        return (-30...30).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: center)
+        }
+    }
+
+    /// Normalized selectedDate for scroll position sync (always startOfDay)
+    var selectedDateId: Date {
+        get { Calendar.current.startOfDay(for: selectedDate) }
+        set { selectedDate = newValue }
+    }
+
+    /// 7-day strip centered on selectedDate (-3...+3 days)
+    var weekDates: [Date] {
+        let cal = Calendar.current
+        let center = cal.startOfDay(for: selectedDate)
+        return (-3...3).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: center)
+        }
+    }
+
     // MARK: - Computed
 
     /// Unique services from current bookings, for filter pills
@@ -127,7 +153,7 @@ final class CalendarViewModel {
 
     /// Navigate to a specific day and load data
     func navigateToDay(_ date: Date) {
-        selectedDate = date
+        selectedDate = Calendar.current.startOfDay(for: date)
         loadDataForSelectedDate()
     }
 
