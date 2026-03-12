@@ -13,14 +13,20 @@ struct WebViewTab: View {
     let path: String
     let bridge: BridgeHandler
     let authManager: AuthManager
-    @Binding var webViewReady: Bool
     /// Called when WebView intercepts a calendar URL -- parent should switch to calendar tab
     var onRequestNativeCalendar: (() -> Void)?
+    /// Called once when this tab's WebView finishes its first load
+    var onFirstLoad: (() -> Void)?
+    /// Pending navigation path from native calendar tap-to-book.
+    /// Consumed once the WebView is ready, then set to nil.
+    @Binding var pendingNavigation: String?
 
+    @State private var webViewReady = false
     @State private var canGoBack = false
     @State private var isLoading = false
     @State private var hasNavigationError = false
     @State private var showNativeCalendar = false
+    @State private var didCallFirstLoad = false
 
     private var url: URL {
         AppConfig.baseURL.appendingPathComponent(path)
@@ -59,6 +65,17 @@ struct WebViewTab: View {
                 onRequestNativeCalendar?()
             }
         }
+        .onChange(of: webViewReady) { _, isReady in
+            if isReady && !didCallFirstLoad {
+                didCallFirstLoad = true
+                onFirstLoad?()
+            }
+            // Consume pending navigation from native calendar tap-to-book
+            if isReady, let pending = pendingNavigation {
+                bridge.navigateWebView(to: pending)
+                pendingNavigation = nil
+            }
+        }
     }
 
     private var errorView: some View {
@@ -73,7 +90,7 @@ struct WebViewTab: View {
                 .font(.title3)
                 .fontWeight(.semibold)
 
-            Text("Kontrollera din internetanslutning och forsok igen.")
+            Text("Kontrollera din internetanslutning och försök igen.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -82,7 +99,7 @@ struct WebViewTab: View {
             Button {
                 hasNavigationError = false
             } label: {
-                Text("Forsok igen")
+                Text("Försök igen")
                     .fontWeight(.medium)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)

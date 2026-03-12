@@ -14,7 +14,7 @@ import SwiftUI
 struct AuthenticatedView: View {
     let authManager: AuthManager
     @Bindable var coordinator: AppCoordinator
-    @State private var webViewReady = false
+    @State private var initialLoadComplete = false
     @State private var showReconnectedBanner = false
 
     var body: some View {
@@ -27,15 +27,24 @@ struct AuthenticatedView: View {
                         path: AppTab.dashboard.webPath!,
                         bridge: coordinator.bridge,
                         authManager: authManager,
-                        webViewReady: $webViewReady,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar }
+                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
+                        onFirstLoad: { initialLoadComplete = true },
+                        pendingNavigation: $coordinator.pendingWebPath
                     )
                 }
 
                 // Calendar (Native)
                 Tab(AppTab.calendar.rawValue, systemImage: AppTab.calendar.icon, value: AppTab.calendar) {
                     NativeCalendarView(viewModel: coordinator.calendarViewModel) { path in
-                        coordinator.bridge.navigateWebView(to: path)
+                        initialLoadComplete = true  // Skip splash on programmatic navigation
+                        coordinator.selectedTab = .dashboard
+                        // If dashboard WebView is already mounted, navigate immediately.
+                        // Otherwise store as pending for WebViewTab to pick up on mount.
+                        if coordinator.bridge.hasWebView {
+                            coordinator.bridge.navigateWebView(to: path)
+                        } else {
+                            coordinator.pendingWebPath = path
+                        }
                     }
                 }
 
@@ -45,8 +54,8 @@ struct AuthenticatedView: View {
                         path: AppTab.bookings.webPath!,
                         bridge: coordinator.bridge,
                         authManager: authManager,
-                        webViewReady: $webViewReady,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar }
+                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
+                        pendingNavigation: .constant(nil)
                     )
                 }
 
@@ -70,12 +79,12 @@ struct AuthenticatedView: View {
             }
 
             // Splash overlay -- shown until first WebView finishes loading
-            if !webViewReady && coordinator.selectedTab != .calendar {
+            if !initialLoadComplete && coordinator.selectedTab != .calendar {
                 SplashView()
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: webViewReady)
+        .animation(.easeInOut(duration: 0.3), value: initialLoadComplete)
         .animation(.easeInOut(duration: 0.3), value: coordinator.networkMonitor.isConnected)
         .animation(.easeInOut(duration: 0.3), value: showReconnectedBanner)
         .onAppear {

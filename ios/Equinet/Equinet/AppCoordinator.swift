@@ -12,7 +12,7 @@ import OSLog
 
 /// Tab identifiers for the main tab bar.
 enum AppTab: String, CaseIterable, Identifiable {
-    case dashboard = "Oversikt"
+    case dashboard = "Översikt"
     case calendar = "Kalender"
     case bookings = "Bokningar"
     case more = "Mer"
@@ -46,6 +46,10 @@ final class AppCoordinator {
     // MARK: - Tab state
 
     var selectedTab: AppTab = .calendar
+
+    /// Pending URL path to load when dashboard WebView becomes active.
+    /// Set by native calendar tap-to-book when the dashboard WebView hasn't mounted yet.
+    var pendingWebPath: String?
 
     // MARK: - Shared dependencies
 

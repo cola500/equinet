@@ -60,6 +60,9 @@ final class BridgeHandler {
         self.speechRecognizer = speechRecognizer ?? SpeechRecognizer()
     }
 
+    /// Whether a WebView is currently attached (mounted and alive).
+    var hasWebView: Bool { webView != nil }
+
     func attach(to webView: WKWebView, authManager: AuthManager? = nil) {
         self.webView = webView
         if let authManager { self.authManager = authManager }
