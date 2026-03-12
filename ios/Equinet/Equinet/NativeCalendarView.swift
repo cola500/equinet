@@ -33,8 +33,7 @@ struct NativeCalendarView: View {
 
             // Week strip (7 day circles)
             WeekStripView(
-                dates: viewModel.weekDates,
-                selectedDate: viewModel.selectedDate,
+                viewModel: viewModel,
                 onSelectDate: { date in
                     viewModel.navigateToDay(date)
                     withAnimation { scrollDateId = viewModel.selectedDateId }

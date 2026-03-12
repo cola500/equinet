@@ -6,20 +6,22 @@
 //  Active day is highlighted with accent color. Tap navigates to that day.
 //  Follows Apple Calendar's week strip pattern.
 //
+//  Observes CalendarViewModel directly so @Observable tracking ensures
+//  the highlight updates when selectedDate changes via swipe.
+//
 
 #if os(iOS)
 import SwiftUI
 
 struct WeekStripView: View {
-    let dates: [Date]
-    let selectedDate: Date
+    var viewModel: CalendarViewModel
     let onSelectDate: (Date) -> Void
 
     private let calendar = Calendar.current
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(dates, id: \.self) { date in
+            ForEach(viewModel.weekDates, id: \.self) { date in
                 dayCircle(for: date)
                     .frame(maxWidth: .infinity)
                     .onTapGesture {
@@ -33,7 +35,7 @@ struct WeekStripView: View {
     }
 
     private func dayCircle(for date: Date) -> some View {
-        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        let isSelected = calendar.isDate(date, inSameDayAs: viewModel.selectedDate)
         let isToday = calendar.isDateInToday(date)
 
         return VStack(spacing: 4) {

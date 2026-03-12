@@ -113,12 +113,23 @@ final class CalendarViewModel {
 
     // MARK: - Scroll Paging
 
-    /// Date range for horizontal scroll paging (+/- 30 days from selectedDate, normalized to startOfDay)
+    /// Anchor date for the scroll range -- only re-centers when user navigates far away
+    private var dateRangeCenter: Date = Calendar.current.startOfDay(for: .now)
+
+    /// Date range for horizontal scroll paging (+/- 30 days from anchor, stable during swipes)
     var dateRange: [Date] {
         let cal = Calendar.current
-        let center = cal.startOfDay(for: selectedDate)
         return (-30...30).compactMap { offset in
-            cal.date(byAdding: .day, value: offset, to: center)
+            cal.date(byAdding: .day, value: offset, to: dateRangeCenter)
+        }
+    }
+
+    /// Re-center dateRange if selectedDate is within 5 days of the edge
+    private func reCenterIfNeeded() {
+        let cal = Calendar.current
+        let daysDiff = cal.dateComponents([.day], from: dateRangeCenter, to: selectedDate).day ?? 0
+        if abs(daysDiff) > 25 {
+            dateRangeCenter = cal.startOfDay(for: selectedDate)
         }
     }
 
@@ -128,12 +139,18 @@ final class CalendarViewModel {
         set { selectedDate = newValue }
     }
 
-    /// 7-day strip centered on selectedDate (-3...+3 days)
+    /// 7-day strip showing the week (Mon-Sun) that contains selectedDate
     var weekDates: [Date] {
-        let cal = Calendar.current
-        let center = cal.startOfDay(for: selectedDate)
-        return (-3...3).compactMap { offset in
-            cal.date(byAdding: .day, value: offset, to: center)
+        var cal = Calendar.current
+        cal.firstWeekday = 2  // Monday
+        let day = cal.startOfDay(for: selectedDate)
+        // Find Monday of this week
+        guard let weekInterval = cal.dateInterval(of: .weekOfYear, for: day) else {
+            return [day]
+        }
+        let monday = cal.startOfDay(for: weekInterval.start)
+        return (0..<7).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: monday)
         }
     }
 
@@ -155,6 +172,7 @@ final class CalendarViewModel {
     /// Navigate to a specific day and load data
     func navigateToDay(_ date: Date) {
         selectedDate = Calendar.current.startOfDay(for: date)
+        reCenterIfNeeded()
         loadDataForSelectedDate()
     }
 
