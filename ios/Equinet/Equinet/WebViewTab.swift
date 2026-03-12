@@ -27,6 +27,7 @@ struct WebViewTab: View {
     @State private var hasNavigationError = false
     @State private var showNativeCalendar = false
     @State private var didCallFirstLoad = false
+    @State private var navigateToPath: String?
 
     private var url: URL {
         AppConfig.baseURL.appendingPathComponent(path)
@@ -45,7 +46,8 @@ struct WebViewTab: View {
                     isLoading: $isLoading,
                     hasNavigationError: $hasNavigationError,
                     webViewReady: $webViewReady,
-                    showNativeCalendar: $showNativeCalendar
+                    showNativeCalendar: $showNativeCalendar,
+                    navigateTo: $navigateToPath
                 )
                 .ignoresSafeArea()
             }
@@ -72,7 +74,16 @@ struct WebViewTab: View {
             }
             // Consume pending navigation from native calendar tap-to-book
             if isReady, let pending = pendingNavigation {
-                bridge.navigateWebView(to: pending)
+                navigateToPath = pending
+                pendingNavigation = nil
+            }
+        }
+        .onChange(of: pendingNavigation) { _, newPath in
+            if let path = newPath {
+                if webViewReady {
+                    navigateToPath = path
+                }
+                // Consume regardless -- otherwise onChange won't fire for same value again
                 pendingNavigation = nil
             }
         }

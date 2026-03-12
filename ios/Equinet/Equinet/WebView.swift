@@ -20,6 +20,7 @@ struct WebView: UIViewRepresentable {
     @Binding var hasNavigationError: Bool
     @Binding var webViewReady: Bool
     @Binding var showNativeCalendar: Bool
+    @Binding var navigateTo: String?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -34,21 +35,26 @@ struct WebView: UIViewRepresentable {
             name: AppConfig.bridgeHandlerName
         )
 
-        // Inject bridge detection + native-feel CSS/JS
+        // Script A: Bridge setup (atDocumentStart -- must run before page JS)
         let bridgeScript = WKUserScript(
             source: """
-                // Bridge setup
                 window.isEquinetApp = true;
                 window.equinetNative = {
                     onMessage: function(msg) {
                         console.log('[EquinetNative] Received:', JSON.stringify(msg));
                     }
                 };
-
-                // Disable long-press context menu (save image, copy link etc)
+                localStorage.setItem('equinet-cookie-notice-dismissed', 'true');
                 document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+                """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        config.userContentController.addUserScript(bridgeScript)
 
-                // Disable text selection on non-input elements + extend to safe area
+        // Script B: CSS + viewport (atDocumentEnd -- document.head exists now)
+        let cssScript = WKUserScript(
+            source: """
                 var style = document.createElement('style');
                 style.textContent = `
                     * {
@@ -68,14 +74,24 @@ struct WebView: UIViewRepresentable {
                     header.border-b {
                         display: none !important;
                     }
+                    /* Hide ProviderNav -- native TabView replaces it */
+                    nav.border-b:not([class*="fixed"]) {
+                        display: none !important;
+                    }
+                    /* Hide page-level h1 title -- native NavigationStack shows the title */
+                    main h1:first-child {
+                        display: none !important;
+                    }
                     /* No extra padding -- SwiftUI TabView handles safe area */
                     body {
                         padding-bottom: 0 !important;
                     }
+                    main.container {
+                        padding-top: 0.5rem !important;
+                    }
                 `;
                 document.head.appendChild(style);
 
-                // Ensure viewport covers safe areas
                 var viewport = document.querySelector('meta[name="viewport"]');
                 if (viewport) {
                     var content = viewport.getAttribute('content');
@@ -84,10 +100,10 @@ struct WebView: UIViewRepresentable {
                     }
                 }
                 """,
-            injectionTime: .atDocumentStart,
+            injectionTime: .atDocumentEnd,
             forMainFrameOnly: true
         )
-        config.userContentController.addUserScript(bridgeScript)
+        config.userContentController.addUserScript(cssScript)
 
         // Allow inline media playback
         config.allowsInlineMediaPlayback = true
@@ -151,6 +167,15 @@ struct WebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
+        // Handle pending navigation (tap-to-book from native calendar)
+        if let path = navigateTo {
+            if let navURL = URL(string: path, relativeTo: AppConfig.baseURL) {
+                AppLogger.webview.debug("navigateTo: \(path)")
+                webView.load(URLRequest(url: navURL))
+            }
+            DispatchQueue.main.async { self.navigateTo = nil }
+        }
+
         // Retry loading when hasNavigationError is cleared (user tapped "retry" or came back online)
         if !hasNavigationError && context.coordinator.lastLoadFailed {
             context.coordinator.lastLoadFailed = false
@@ -338,9 +363,15 @@ struct WebView: UIViewRepresentable {
             // Intercept calendar URL -- show native calendar instead
             if url.host == AppConfig.baseURL.host || url.host == "localhost" {
                 if url.path == "/provider/calendar" || url.path.hasPrefix("/provider/calendar/") {
-                    decisionHandler(.cancel)
-                    parent.showNativeCalendar = true
-                    return
+                    // Allow navigation when opening ManualBookingDialog from native calendar tap-to-book
+                    let hasNewBooking = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                        .queryItems?.contains(where: { $0.name == "newBooking" && $0.value == "true" }) ?? false
+                    AppLogger.webview.debug("Calendar URL intercepted: \(url.absoluteString), hasNewBooking=\(hasNewBooking)")
+                    if !hasNewBooking {
+                        decisionHandler(.cancel)
+                        parent.showNativeCalendar = true
+                        return
+                    }
                 }
 
                 // Detect navigation to /login -- means session expired or user logged out in web

@@ -52,6 +52,17 @@ struct NativeMoreView: View {
                         }
                     }
                 }
+
+                Section {
+                    Button(role: .destructive) {
+                        bridge.clearMobileToken()
+                        authManager.logout()
+                    } label: {
+                        Label("Logga ut", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                } header: {
+                    Text("Konto")
+                }
             }
             .navigationTitle("Mer")
             .navigationDestination(for: MoreMenuItem.self) { item in
@@ -80,7 +91,7 @@ struct MoreWebView: View {
     @State private var hasNavigationError = false
 
     private var url: URL {
-        AppConfig.baseURL.appendingPathComponent(path)
+        URL(string: path, relativeTo: AppConfig.baseURL) ?? AppConfig.baseURL
     }
 
     var body: some View {
@@ -96,7 +107,8 @@ struct MoreWebView: View {
                     isLoading: $isLoading,
                     hasNavigationError: $hasNavigationError,
                     webViewReady: .constant(true),
-                    showNativeCalendar: .constant(false)
+                    showNativeCalendar: .constant(false),
+                    navigateTo: .constant(nil)
                 )
                 .ignoresSafeArea()
             }

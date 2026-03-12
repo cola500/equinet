@@ -38,13 +38,7 @@ struct AuthenticatedView: View {
                     NativeCalendarView(viewModel: coordinator.calendarViewModel) { path in
                         initialLoadComplete = true  // Skip splash on programmatic navigation
                         coordinator.selectedTab = .dashboard
-                        // If dashboard WebView is already mounted, navigate immediately.
-                        // Otherwise store as pending for WebViewTab to pick up on mount.
-                        if coordinator.bridge.hasWebView {
-                            coordinator.bridge.navigateWebView(to: path)
-                        } else {
-                            coordinator.pendingWebPath = path
-                        }
+                        coordinator.pendingWebPath = path
                     }
                 }
 
