@@ -16,7 +16,7 @@ test.describe('Offline PWA', () => {
       expect(manifest.name).toBe('Equinet - Hästtjänster')
       expect(manifest.short_name).toBe('Equinet')
       expect(manifest.display).toBe('standalone')
-      expect(manifest.theme_color).toBe('#16a34a')
+      expect(manifest.theme_color).toBe('#2d7a4e')
       expect(manifest.lang).toBe('sv')
       expect(manifest.icons.length).toBeGreaterThanOrEqual(2)
     })

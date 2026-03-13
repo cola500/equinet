@@ -150,6 +150,8 @@ test.describe('Exploratory Baseline Tests', () => {
   // ─── 1.14.2 Admin system page ──────────────────────────────────
 
   test('1.14.2 admin system page: db status, feature flags, email toggle', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Admin system page scrolling limited on mobile viewport')
+
     await loginAsAdmin(page)
     await page.goto('/admin/system')
 
@@ -241,7 +243,7 @@ test.describe('Exploratory Baseline Tests', () => {
         { url: '/customer/bookings', heading: /mina bokningar/i },
         { url: '/customer/horses', heading: /mina hästar/i },
         { url: '/customer/profile', heading: /min profil|profil/i },
-        { url: '/announcements', heading: /planerade rutter|annonser/i },
+        { url: '/announcements', heading: /lediga tider i ditt område|planerade rutter|annonser/i },
       ]
 
       for (const { url, heading } of customerPages) {

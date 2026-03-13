@@ -99,7 +99,7 @@ test.describe('Recurring Bookings (C1)', () => {
   // Track original recurringEnabled value to restore after tests
   let originalRecurringEnabled: boolean
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ browser }) => {
     await cleanupSpecData(SPEC_TAG)
 
     // Seed a booking series for badge/icon tests (Group C)
@@ -123,6 +123,19 @@ test.describe('Recurring Bookings (C1)', () => {
       where: { providerId: base.providerId },
       data: { isActive: true },
     })
+
+    // Enable recurring_bookings feature flag via admin API
+    // (other specs like feature-flag-toggle may have left it disabled)
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill('admin@example.com')
+    await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
+    await page.getByRole('button', { name: /logga in/i }).click()
+    await page.waitForURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
+    await setFlag(page, 'recurring_bookings', true)
+    await context.close()
   })
 
   test.afterAll(async () => {
@@ -145,6 +158,8 @@ test.describe('Recurring Bookings (C1)', () => {
       await page.goto('/provider/profile')
       // Wait for profile to load (h1 is a real heading)
       await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 })
+      // Settings are on "Inställningar" tab
+      await page.getByRole('button', { name: /inställningar/i }).click()
 
       // CardTitle is <div>, not a heading. Scroll to it.
       const recurringTitle = page.getByText('Återkommande bokningar', { exact: true })
@@ -158,6 +173,8 @@ test.describe('Recurring Bookings (C1)', () => {
     test('A2: Toggle ON shows success toast', async ({ page }) => {
       await loginAsProvider(page)
       await page.goto('/provider/profile')
+      await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 })
+      await page.getByRole('button', { name: /inställningar/i }).click()
       await expect(page.locator('#recurring-enabled')).toBeVisible({ timeout: 10000 })
 
       // Ensure it's OFF first, then toggle ON
@@ -180,6 +197,8 @@ test.describe('Recurring Bookings (C1)', () => {
     test('A3: Max occurrences select is visible when toggle is ON', async ({ page }) => {
       await loginAsProvider(page)
       await page.goto('/provider/profile')
+      await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 })
+      await page.getByRole('button', { name: /inställningar/i }).click()
       await expect(page.locator('#recurring-enabled')).toBeVisible({ timeout: 10000 })
 
       // Ensure toggle is ON
@@ -356,10 +375,10 @@ test.describe('Recurring Bookings (C1)', () => {
       await page.goto('/provider/bookings')
 
       // Wait for bookings to load
-      await expect(page.getByRole('heading', { name: /bokningar/i })).toBeVisible({ timeout: 10000 })
+      await expect(page.getByRole('heading', { level: 1, name: /bokningar/i })).toBeVisible({ timeout: 10000 })
 
       // The page should show bookings - we just verify it renders without error
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
 
       // At minimum, the page renders and we can see booking content
       // Provider bookings list doesn't show "Återkommande" badge (only customer side does)

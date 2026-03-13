@@ -257,6 +257,8 @@ test.describe('Reschedule Settings (Provider)', () => {
 
   test('should toggle "Tillåt ombokning"', async ({ page }) => {
     await page.goto('/provider/profile');
+    await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: /inställningar/i }).click();
 
     // Find the reschedule settings card
     await expect(page.getByText('Ombokningsinställningar')).toBeVisible({ timeout: 10000 });
@@ -284,6 +286,8 @@ test.describe('Reschedule Settings (Provider)', () => {
 
   test('should change reschedule window hours', async ({ page }) => {
     await page.goto('/provider/profile');
+    await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: /inställningar/i }).click();
     await expect(page.getByText('Ombokningsinställningar')).toBeVisible({ timeout: 10000 });
 
     // "Ombokningsfönster" label
@@ -302,6 +306,8 @@ test.describe('Reschedule Settings (Provider)', () => {
 
   test('should toggle "Kräv godkännande"', async ({ page }) => {
     await page.goto('/provider/profile');
+    await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: /inställningar/i }).click();
     await expect(page.getByText('Ombokningsinställningar')).toBeVisible({ timeout: 10000 });
 
     // "Kräv godkännande" label

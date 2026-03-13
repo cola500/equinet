@@ -113,6 +113,8 @@ export default defineConfig({
         FEATURE_DUE_FOR_SERVICE: 'true',
         FEATURE_MUNICIPALITY_WATCH: 'true',
         FEATURE_GROUP_BOOKINGS: 'true',
+        FEATURE_BUSINESS_INSIGHTS: 'true',
+        FEATURE_RECURRING_BOOKINGS: 'true',
       },
     },
     ...(process.env.OFFLINE_E2E === 'true'

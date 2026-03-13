@@ -16,9 +16,33 @@ const SPEC_TAG = 'insights';
  * Seed: 3 completed + 1 cancelled + 1 no_show bookings for non-zero KPIs
  */
 
+async function resetRateLimit(page: import('@playwright/test').Page) {
+  await page.request.post('/api/test/reset-rate-limit').catch(() => {})
+}
+
+async function setFlag(page: import('@playwright/test').Page, flag: string, value: boolean) {
+  const response = await page.request.patch('/api/admin/settings', {
+    data: { key: `feature_${flag}`, value: String(value) },
+  })
+  expect(response.ok()).toBeTruthy()
+}
+
 test.describe('Business Insights (Provider)', () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ browser }) => {
     await cleanupSpecData(SPEC_TAG);
+
+    // Ensure business_insights feature flag is enabled
+    // (other specs like feature-flag-toggle may have left it disabled)
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    await resetRateLimit(page)
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill('admin@example.com')
+    await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
+    await page.getByRole('button', { name: /logga in/i }).click()
+    await page.waitForURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
+    await setFlag(page, 'business_insights', true)
+    await context.close()
 
     // Completed bookings spread across the last 3 months
     await seedBooking({
