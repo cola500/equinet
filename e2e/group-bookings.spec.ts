@@ -128,9 +128,9 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
     await loginAsProvider(page);
     await page.goto('/provider/group-bookings');
 
-    // Wait for both to load
-    await expect(page.getByText('E2E Stall Stockholm')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('E2E Stall Göteborg')).toBeVisible();
+    // Wait for both to load (use .first() -- text appears in multiple card elements)
+    await expect(page.getByText('E2E Stall Stockholm').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('E2E Stall Göteborg').first()).toBeVisible();
 
     // Search for Stockholm
     await page.getByPlaceholder(/ort, stad eller postnummer/i).fill('Stockholm');
@@ -142,8 +142,8 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
     ).toBeVisible({ timeout: 15000 });
 
     // Stockholm request should be visible, Göteborg should be filtered out (>50km default)
-    await expect(page.getByText('E2E Stall Stockholm')).toBeVisible();
-    await expect(page.getByText('E2E Stall Göteborg')).not.toBeVisible();
+    await expect(page.getByText('E2E Stall Stockholm').first()).toBeVisible();
+    await expect(page.getByText('E2E Stall Göteborg').first()).not.toBeVisible();
   });
 
   test('should clear filter and show all requests', async ({ page }) => {
@@ -164,9 +164,9 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
     await loginAsProvider(page);
     await page.goto('/provider/group-bookings');
 
-    // Wait for both to load
-    await expect(page.getByText('E2E Stall Norr')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('E2E Stall Syd')).toBeVisible();
+    // Wait for both to load (use .first() -- text appears in multiple card elements)
+    await expect(page.getByText('E2E Stall Norr').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('E2E Stall Syd').first()).toBeVisible();
 
     // Activate filter via place search
     await page.getByPlaceholder(/ort, stad eller postnummer/i).fill('Stockholm');
@@ -178,14 +178,14 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
     ).toBeVisible({ timeout: 15000 });
 
     // Malmö should be filtered out
-    await expect(page.getByText('E2E Stall Syd')).not.toBeVisible();
+    await expect(page.getByText('E2E Stall Syd').first()).not.toBeVisible();
 
-    // Clear filter by clicking "x" on the pill
-    await page.locator('button', { hasText: 'x' }).click();
+    // Clear filter by clicking the remove button on the pill
+    await page.getByRole('button', { name: /ta bort platsfilter/i }).click();
 
     // Both should be visible again
-    await expect(page.getByText('E2E Stall Norr')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('E2E Stall Syd')).toBeVisible();
+    await expect(page.getByText('E2E Stall Norr').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('E2E Stall Syd').first()).toBeVisible();
   });
 
   test('should show empty state when no requests match filter', async ({ page }) => {
@@ -201,7 +201,7 @@ test.describe('Provider Group Bookings - Geo Filtering', () => {
     await page.goto('/provider/group-bookings');
 
     // Wait for the request to load
-    await expect(page.getByText('E2E Stall Malmö')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('E2E Stall Malmö').first()).toBeVisible({ timeout: 10000 });
 
     // Search for Kiruna (very far from Malmö)
     await page.getByPlaceholder(/ort, stad eller postnummer/i).fill('Kiruna');

@@ -54,12 +54,25 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 6. `Failed to fetch` tillagd i error-filter
 7. Recurring bookings: hittar "Test Stall AB" specifikt istallet for `.first()`
 
-### Batch 2: Bokningar (VANTANDE)
-- booking.spec.ts
-- calendar.spec.ts
-- manual-booking.spec.ts
-- flexible-booking.spec.ts
-- group-bookings.spec.ts
+### Batch 2: Bokningar (KLAR -- 41 pass, 19 skip, 0 fail)
+
+| Spec | Tester | Status | Fixar |
+|------|--------|--------|-------|
+| booking.spec.ts | 6 | PASS | Se nedan |
+| calendar.spec.ts | 9 | PASS | Legend-text uppdaterad |
+| manual-booking.spec.ts | 2 | PASS | `networkidle` -> `domcontentloaded` |
+| flexible-booking.spec.ts | ~8 | PASS | -- |
+| group-bookings.spec.ts | ~16 | PASS | Feature flag + selektorer |
+
+**APP-BUGG FIXAD: CalendarHeader.tsx** -- Alla 7 knappar saknade `type="button"`. Nar CalendarHeader anvands inuti ett `<form>` (t.ex. DesktopBookingDialog) defaultade knapparna till `type="submit"` (HTML-spec), vilket triggade formularets submit-handler och hoppade direkt till sammanfattningsvyn. Fix: lade till `type="button"` pa alla Button-element.
+
+**Ovriga fixar:**
+1. `manual-booking.spec.ts`: `networkidle` -> `domcontentloaded` + wait for heading (SWR-polling forhindrar networkidle)
+2. `calendar.spec.ts`: "Stangt (veckoschema)" -> "Stangt" (legend refaktorerades i Sprint 1)
+3. `booking.spec.ts`: Uppdaterat till nuvarande bokningsflode -- HorseSelector (combobox) istallet for textfalt, "Granska bokning" steg fore "Skicka"
+4. `group-bookings.spec.ts`: `FEATURE_GROUP_BOOKINGS=true` tillagd i playwright.config.ts webServer.env
+5. `group-bookings.spec.ts`: `.first()` pa alla `getByText` for card-namn (text finns i bade titel och beskrivning)
+6. `group-bookings.spec.ts`: `button 'x'` -> `getByRole('button', { name: /ta bort platsfilter/i })`
 
 ### Batch 3: Leverantor (VANTANDE)
 - provider.spec.ts
@@ -135,7 +148,8 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 ## Verifiering
 
 - [x] Batch 1 kord och gron
-- [ ] Batch 2-6 korda
+- [x] Batch 2 kord och gron
+- [ ] Batch 3-6 korda
 - [ ] Alla failures kategoriserade (flaky vs genuina buggar)
 - [ ] Genuina buggar fixade
 - [ ] Alla tester grona

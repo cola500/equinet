@@ -285,8 +285,8 @@ test.describe('Calendar & Availability (Provider)', () => {
       await expect(page.getByText('Bekräftad').first()).toBeVisible({ timeout: 5000 });
       await expect(page.getByText('Betald').first()).toBeVisible();
     } else {
-      // Desktop legend is always visible
-      await expect(page.getByText('Stängt (veckoschema)')).toBeVisible({ timeout: 10000 });
+      // Desktop legend shows color coding items (via popover or inline)
+      await expect(page.getByText('Stängt').first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('Ledig/undantag')).toBeVisible();
     }
   });
