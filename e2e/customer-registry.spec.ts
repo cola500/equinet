@@ -123,7 +123,7 @@ test.describe('Customer Registry (Provider)', () => {
     await expect(page.getByText('Antal bokningar', { exact: true }).first()).toBeVisible();
 
     // Häst-sektion ska finnas (E2E Blansen kopplad via completed booking med horseId)
-    await expect(page.getByText('Hästar', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/^Hästar/).first()).toBeVisible();
     await expect(page.getByText('E2E Blansen').first()).toBeVisible();
   });
 });

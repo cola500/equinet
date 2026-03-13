@@ -94,12 +94,20 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 6. `provider-notes.spec.ts`: `networkidle` -> `domcontentloaded` (SWR-polling forhindrar networkidle)
 7. `provider-notes.spec.ts`: ASCII-substitut i regex -- `/lagg till anteckning/i` -> `/lägg till anteckning/i`, `/Klicka for att redigera/i` -> `/Klicka för att redigera/i`
 
-### Batch 4: Kund (VANTANDE)
-- customer-profile.spec.ts
-- customer-registry.spec.ts
-- customer-reviews.spec.ts
-- customer-insights.spec.ts
-- customer-due-for-service.spec.ts
+### Batch 4: Kund (KLAR -- 44 pass, 0 skip, 0 fail)
+
+| Spec | Tester | Status | Fixar |
+|------|--------|--------|-------|
+| customer-profile.spec.ts | ~8 | PASS | -- |
+| customer-registry.spec.ts | ~8 | PASS | Regex for "Hästar" |
+| customer-reviews.spec.ts | ~8 | PASS | -- |
+| customer-insights.spec.ts | ~10 | PASS | -- |
+| customer-due-for-service.spec.ts | ~10 | PASS | Tab-namn + networkidle |
+
+**Fixar:**
+1. `customer-due-for-service.spec.ts`: Tab-etikett andrad fran "Intervall" till "Besöksschema" (URL-param `intervall` oforandrad)
+2. `customer-due-for-service.spec.ts`: `networkidle` -> `domcontentloaded` (SWR-polling)
+3. `customer-registry.spec.ts`: `getByText('Hästar', { exact: true })` matchade inte pa mobil dar paragraf innehaller "(1)" efter texten. Fix: regex `/^Hästar/`
 
 ### Batch 5: Rutter & socialt (VANTANDE)
 - route-planning.spec.ts
@@ -164,7 +172,8 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 - [x] Batch 1 kord och gron
 - [x] Batch 2 kord och gron
 - [x] Batch 3 kord och gron
-- [ ] Batch 4-6 korda
+- [x] Batch 4 kord och gron
+- [ ] Batch 5-6 korda
 - [ ] Alla failures kategoriserade (flaky vs genuina buggar)
 - [ ] Genuina buggar fixade
 - [ ] Alla tester grona
