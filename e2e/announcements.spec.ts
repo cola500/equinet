@@ -38,7 +38,7 @@ test.describe('Route Announcements Flow', () => {
       await page.goto('/announcements');
 
       // Verify page loaded
-      await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: /lediga tider i ditt område/i })).toBeVisible({ timeout: 10000 });
 
       // Verify municipality search exists
       await expect(page.getByPlaceholder(/sök kommun/i)).toBeVisible();
@@ -68,7 +68,7 @@ test.describe('Route Announcements Flow', () => {
       await page.goto('/announcements');
 
       // Wait for page to load
-      await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: /lediga tider i ditt område/i })).toBeVisible({ timeout: 10000 });
 
       // Type in municipality search
       await page.getByPlaceholder(/sök kommun/i).fill('Göte');
@@ -103,7 +103,7 @@ test.describe('Route Announcements Flow', () => {
       await page.goto('/announcements');
 
       // Wait for page to load
-      await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: /lediga tider i ditt område/i })).toBeVisible({ timeout: 10000 });
 
       // Apply a municipality filter
       await page.getByPlaceholder(/sök kommun/i).fill('Stock');
@@ -386,7 +386,7 @@ test.describe('Route Announcements Flow', () => {
       await page.goto('/announcements');
 
       // Wait for page to load
-      await expect(page.getByRole('heading', { name: /planerade rutter/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: /lediga tider i ditt område/i })).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(2000);
 
       // Check if there are announcements

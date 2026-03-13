@@ -103,8 +103,8 @@ test.describe('Route Planning Flow (Provider)', () => {
     // Vänta lite för validering
     await page.waitForTimeout(1000);
 
-    // Skapa rutt
-    const createButton = page.getByRole('button', { name: /skapa rutt/i });
+    // Skapa rutt (2 "Skapa rutt" knappar på sidan -- formuläret + bottom bar)
+    const createButton = page.getByRole('button', { name: /skapa rutt/i }).first();
     await expect(createButton).toBeEnabled();
     await createButton.click();
 

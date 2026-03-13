@@ -289,7 +289,7 @@ test.describe('Follow Provider', () => {
 
     // Navigate to profile and wait for network to settle
     await page.goto('/customer/profile')
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
 
     // If stuck on loading, try resetting rate limits and reloading
     const headingVisible = await page.getByRole('heading', { name: /min profil/i })
@@ -298,20 +298,20 @@ test.describe('Follow Provider', () => {
     if (!headingVisible) {
       await resetRateLimit(page)
       await page.reload()
-      await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+      await page.waitForLoadState('domcontentloaded').catch(() => {})
     }
 
     await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 15000 })
 
     // Verify municipality label in read mode
-    await expect(page.getByText('Kommun')).toBeVisible()
+    await expect(page.getByText('Kommun').first()).toBeVisible()
 
     // Enter edit mode
     await page.getByRole('button', { name: /redigera profil/i }).click()
     await expect(page.getByLabel(/förnamn/i)).toBeVisible({ timeout: 5000 })
 
-    // Find municipality input (combobox)
-    const municipalityInput = page.getByRole('combobox')
+    // Find municipality input (combobox) -- multiple comboboxes on page, use label
+    const municipalityInput = page.locator('#municipality')
     await expect(municipalityInput).toBeVisible()
 
     // Type to search for a municipality
@@ -342,7 +342,7 @@ test.describe('Follow Provider', () => {
     // Clean up: remove municipality
     await page.getByRole('button', { name: /redigera profil/i }).click()
     await expect(page.getByLabel(/förnamn/i)).toBeVisible({ timeout: 5000 })
-    const municipalityInputCleanup = page.getByRole('combobox')
+    const municipalityInputCleanup = page.locator('#municipality')
     await municipalityInputCleanup.clear()
     await resetRateLimit(page)
     await page.getByRole('button', { name: /spara ändringar/i }).click()

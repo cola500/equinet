@@ -109,12 +109,23 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 2. `customer-due-for-service.spec.ts`: `networkidle` -> `domcontentloaded` (SWR-polling)
 3. `customer-registry.spec.ts`: `getByText('Hästar', { exact: true })` matchade inte pa mobil dar paragraf innehaller "(1)" efter texten. Fix: regex `/^Hästar/`
 
-### Batch 5: Rutter & socialt (VANTANDE)
-- route-planning.spec.ts
-- announcements.spec.ts
-- route-announcement-notification.spec.ts
-- municipality-watch.spec.ts
-- follow-provider.spec.ts
+### Batch 5: Rutter & socialt (KLAR -- 66 pass, 0 skip, 0 fail)
+
+| Spec | Tester | Status | Fixar |
+|------|--------|--------|-------|
+| route-planning.spec.ts | ~14 | PASS | Strict mode `.first()` |
+| announcements.spec.ts | ~20 | PASS | Heading-text uppdaterad |
+| route-announcement-notification.spec.ts | ~10 | PASS | Strict mode heading |
+| municipality-watch.spec.ts | ~10 | PASS | Exact option match + networkidle |
+| follow-provider.spec.ts | ~12 | PASS | Combobox id-selektor + networkidle |
+
+**Fixar:**
+1. `announcements.spec.ts`: Heading andrad fran "Planerade rutter" till "Lediga tider i ditt område"
+2. `route-planning.spec.ts`: Strict mode -- 2 "Skapa rutt"-knappar (formulär + bottom bar). Fix: `.first()`
+3. `follow-provider.spec.ts`: Strict mode -- `getByRole('combobox')` matchade 3 comboboxar (profil + kommun-bevakning). Fix: `#municipality` id-selektor
+4. `municipality-watch.spec.ts`: Strict mode -- `getByRole('option', { name: 'Ridlektion' })` matchade "Ridlektion" OCH "Ridlektion - Nybörjare". Fix: `{ exact: true }`
+5. `route-announcement-notification.spec.ts`: Strict mode -- `getByText('Notifikationer')` matchade heading + "33 olästa notifikationer". Fix: `getByRole('heading')`
+6. Alla: `networkidle` -> `domcontentloaded`
 
 ### Batch 6: Ovrigt (VANTANDE)
 - recurring-bookings.spec.ts
@@ -173,7 +184,8 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 - [x] Batch 2 kord och gron
 - [x] Batch 3 kord och gron
 - [x] Batch 4 kord och gron
-- [ ] Batch 5-6 korda
+- [x] Batch 5 kord och gron
+- [ ] Batch 6 kord
 - [ ] Alla failures kategoriserade (flaky vs genuina buggar)
 - [ ] Genuina buggar fixade
 - [ ] Alla tester grona
