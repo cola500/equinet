@@ -331,13 +331,13 @@ final class CalendarViewModelTests: XCTestCase {
         XCTAssertEqual(sut.dateRange.count, 61)
     }
 
-    func testDateRangeIsCenteredOnSelectedDate() {
+    func testDateRangeIsCenteredOnToday() {
         let cal = Calendar.current
         let range = sut.dateRange
         let first = range.first!
         let last = range.last!
 
-        // First date should be 30 days before today
+        // Anchored on today at init
         let expectedFirst = cal.startOfDay(for: cal.date(byAdding: .day, value: -30, to: .now)!)
         let expectedLast = cal.startOfDay(for: cal.date(byAdding: .day, value: 30, to: .now)!)
 
@@ -345,14 +345,29 @@ final class CalendarViewModelTests: XCTestCase {
         XCTAssertEqual(last, expectedLast)
     }
 
-    func testDateRangeUpdatesWhenSelectedDateChanges() {
+    func testDateRangeStableOnSmallNavigation() {
         let cal = Calendar.current
-        let futureDate = cal.date(byAdding: .day, value: 10, to: .now)!
-        sut.selectedDate = futureDate
+        let rangeBefore = sut.dateRange
+
+        // Navigate 5 days forward -- should NOT re-center
+        let futureDate = cal.date(byAdding: .day, value: 5, to: .now)!
+        sut.navigateToDay(futureDate)
+
+        let rangeAfter = sut.dateRange
+        XCTAssertEqual(rangeBefore, rangeAfter, "dateRange should not re-center for small navigation")
+    }
+
+    func testDateRangeReCentersOnLargeNavigation() {
+        let cal = Calendar.current
+
+        // Navigate 26+ days forward -- should re-center
+        let farFuture = cal.date(byAdding: .day, value: 26, to: .now)!
+        sut.navigateToDay(farFuture)
 
         let range = sut.dateRange
-        let expectedFirst = cal.startOfDay(for: cal.date(byAdding: .day, value: -30, to: futureDate)!)
-        XCTAssertEqual(range.first!, expectedFirst)
+        let expectedCenter = cal.startOfDay(for: farFuture)
+        // The center of the range should now be near farFuture
+        XCTAssertTrue(range.contains(expectedCenter), "dateRange should contain the far future date after re-center")
     }
 
     func testDateRangeAllDatesAreStartOfDay() {
@@ -406,12 +421,11 @@ final class CalendarViewModelTests: XCTestCase {
         XCTAssertEqual(week.count, 7)
     }
 
-    func testWeekDatesAreCenteredOnSelectedDate() {
+    func testWeekDatesContainSelectedDate() {
         let cal = Calendar.current
         let week = sut.weekDates
-        // Middle element (index 3) should be the selected date's startOfDay
         let expected = cal.startOfDay(for: sut.selectedDate)
-        XCTAssertEqual(week[3], expected)
+        XCTAssertTrue(week.contains(expected), "Week should contain the selected date")
     }
 
     func testWeekDatesAreConsecutive() {

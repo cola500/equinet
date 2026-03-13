@@ -24,20 +24,22 @@ struct NativeCalendarView: View {
 
     private let calendar = Calendar.current
 
-    @State private var scrollDateId: Date?
+    /// The displayed date -- driven by @State, bound as TabView selection.
+    /// Single source of truth for header, week strip, AND page swiping.
+    @State private var displayedDate: Date = Calendar.current.startOfDay(for: .now)
 
     var body: some View {
         VStack(spacing: 0) {
-            // Date header
+            // Date header -- bound to @State displayedDate
             dateHeader
 
-            // Week strip (7 day circles)
+            // Week strip (7 day circles) -- bound to @State displayedDate
             WeekStripView(
-                dates: viewModel.weekDates,
-                selectedDate: viewModel.selectedDate,
+                selectedDate: displayedDate,
                 onSelectDate: { date in
+                    let day = calendar.startOfDay(for: date)
+                    withAnimation { displayedDate = day }
                     viewModel.navigateToDay(date)
-                    withAnimation { scrollDateId = viewModel.selectedDateId }
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 }
             )
@@ -69,33 +71,31 @@ struct NativeCalendarView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             } else {
-                // Horizontal scroll-paging for day swipe
-                ScrollView(.horizontal) {
-                    LazyHStack(spacing: 0) {
-                        ForEach(viewModel.dateRange, id: \.self) { date in
-                            // Vertical scroll for time grid
-                            ScrollView(.vertical) {
-                                ZStack(alignment: .topLeading) {
-                                    availabilityOverlay(for: date)
-                                    timeGrid
-                                    timeSlotTapOverlay(for: date)
-                                    bookingBlocks(for: date)
-                                    if calendar.isDateInToday(date) { nowLine }
-                                }
-                                .frame(height: CGFloat(hours.count) * hourHeight)
+                // Page-style TabView for day swipe navigation.
+                // Using TabView(selection:) instead of ScrollView+scrollPosition
+                // because TabView selection binding directly drives @State,
+                // guaranteeing visual updates for header and week strip.
+                TabView(selection: $displayedDate) {
+                    ForEach(viewModel.dateRange, id: \.self) { date in
+                        ScrollView(.vertical) {
+                            ZStack(alignment: .topLeading) {
+                                availabilityOverlay(for: date)
+                                timeGrid
+                                timeSlotTapOverlay(for: date)
+                                bookingBlocks(for: date)
+                                if calendar.isDateInToday(date) { nowLine }
                             }
-                            .refreshable {
-                                viewModel.refresh()
-                            }
-                            .containerRelativeFrame(.horizontal)
+                            .frame(height: CGFloat(hours.count) * hourHeight)
                         }
+                        .refreshable {
+                            viewModel.refresh()
+                        }
+                        .tag(date)
                     }
                 }
-                .scrollTargetBehavior(.paging)
-                .scrollPosition(id: $scrollDateId)
-                .onChange(of: scrollDateId) { _, newDate in
-                    guard let newDate else { return }
-                    // Debounce: only update ViewModel if the date actually changed
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .onChange(of: displayedDate) { _, newDate in
+                    // Sync ViewModel for data fetching when page changes
                     if !calendar.isDate(newDate, inSameDayAs: viewModel.selectedDate) {
                         viewModel.navigateToDay(newDate)
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -106,7 +106,7 @@ struct NativeCalendarView: View {
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
         .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
         .onAppear {
-            scrollDateId = viewModel.selectedDateId
+            displayedDate = calendar.startOfDay(for: viewModel.selectedDate)
             viewModel.loadDataForSelectedDate()
         }
         .confirmationDialog(
@@ -145,6 +145,7 @@ struct NativeCalendarView: View {
 
     // MARK: - Date Header
 
+    /// Uses @State displayedDate for visual rendering (not @Observable viewModel)
     private var dateHeader: some View {
         HStack {
             // Previous day
@@ -159,11 +160,11 @@ struct NativeCalendarView: View {
             Spacer()
 
             VStack(spacing: 2) {
-                Text(dayName(for: viewModel.selectedDate))
+                Text(dayName(for: displayedDate))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
-                Text(formattedDate(viewModel.selectedDate))
+                Text(formattedDate(displayedDate))
                     .font(.title3)
                     .fontWeight(.semibold)
             }
@@ -171,10 +172,11 @@ struct NativeCalendarView: View {
             Spacer()
 
             // Today button or next day
-            if !calendar.isDateInToday(viewModel.selectedDate) {
+            if !calendar.isDateInToday(displayedDate) {
                 Button {
+                    let today = calendar.startOfDay(for: .now)
+                    withAnimation { displayedDate = today }
                     viewModel.goToToday()
-                    withAnimation { scrollDateId = viewModel.selectedDateId }
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 } label: {
                     Text("Idag")
@@ -199,7 +201,7 @@ struct NativeCalendarView: View {
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(dayName(for: viewModel.selectedDate)), \(formattedDate(viewModel.selectedDate))")
+        .accessibilityLabel("\(dayName(for: displayedDate)), \(formattedDate(displayedDate))")
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment:
@@ -436,7 +438,7 @@ struct NativeCalendarView: View {
             Text(message)
                 .font(.body)
                 .foregroundStyle(.secondary)
-            Button("Försök igen") {
+            Button("Forsok igen") {
                 viewModel.refresh()
             }
             .buttonStyle(.borderedProminent)
@@ -512,9 +514,9 @@ struct NativeCalendarView: View {
         }
         let statusText: String
         switch booking.status {
-        case "pending": statusText = "väntande"
-        case "confirmed": statusText = "bekräftad"
-        case "completed": statusText = "slutförd"
+        case "pending": statusText = "vantande"
+        case "confirmed": statusText = "bekraftad"
+        case "completed": statusText = "slutford"
         case "cancelled": statusText = "avbokad"
         case "no_show": statusText = "utebliven"
         default: statusText = booking.status
@@ -613,9 +615,10 @@ struct NativeCalendarView: View {
     }
 
     private func navigateDay(by days: Int) {
-        let newDate = calendar.date(byAdding: .day, value: days, to: viewModel.selectedDate)!
+        let newDate = calendar.date(byAdding: .day, value: days, to: displayedDate)!
+        let day = calendar.startOfDay(for: newDate)
+        withAnimation { displayedDate = day }
         viewModel.navigateToDay(newDate)
-        withAnimation { scrollDateId = viewModel.selectedDateId }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
