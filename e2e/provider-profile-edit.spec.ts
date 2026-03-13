@@ -102,10 +102,13 @@ test.describe('Provider Profile Edit', () => {
     // h1 heading
     await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible()
 
-    // CardTitles (div elements, not headings)
+    // Profile tab: CardTitles (div elements, not headings)
     await expect(page.getByText('Personlig information', { exact: true })).toBeVisible()
     await expect(page.getByText('Företagsinformation', { exact: true })).toBeVisible()
-    await expect(page.getByText('Bokningsinställningar', { exact: true })).toBeVisible()
+
+    // Settings tab: click "Inställningar" to see booking settings
+    await page.getByRole('button', { name: /inställningar/i }).click()
+    await expect(page.getByText('Bokningsinställningar', { exact: true })).toBeVisible({ timeout: 5000 })
   })
 
   // ─── Personal info ─────────────────────────────────────────────

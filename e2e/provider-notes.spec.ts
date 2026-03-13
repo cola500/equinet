@@ -58,7 +58,7 @@ test.describe('Provider Notes', () => {
     for (let week = 0; week < 5; week++) {
       if (week > 0) {
         await page.getByRole('button', { name: /nästa/i }).click();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForTimeout(2000);
       }
 
@@ -90,7 +90,7 @@ test.describe('Provider Notes', () => {
     await expect(page.getByText('Dina anteckningar')).toBeVisible();
 
     // Click "Lägg till anteckning" button
-    const addNoteBtn = page.getByRole('button', { name: /lagg till anteckning/i });
+    const addNoteBtn = page.getByRole('button', { name: /lägg till anteckning/i });
     await expect(addNoteBtn).toBeVisible();
     await addNoteBtn.click();
 
@@ -118,11 +118,11 @@ test.describe('Provider Notes', () => {
 
     // If there's already a note from the previous test, we should see "Klicka för att redigera"
     // If not, add one first
-    const hasNote = await page.getByText(/Klicka for att redigera/i).isVisible({ timeout: 3000 }).catch(() => false);
+    const hasNote = await page.getByText(/Klicka för att redigera/i).isVisible({ timeout: 3000 }).catch(() => false);
 
     if (!hasNote) {
       // Add a note first
-      const addNoteBtn = page.getByRole('button', { name: /lagg till anteckning/i });
+      const addNoteBtn = page.getByRole('button', { name: /lägg till anteckning/i });
       await addNoteBtn.click();
       const textarea = page.getByPlaceholder(/Skriv anteckningar om behandlingen/i);
       await textarea.fill('Initial note');
@@ -131,7 +131,7 @@ test.describe('Provider Notes', () => {
     }
 
     // Click on the note to edit it
-    await page.getByText(/Klicka for att redigera/i).click();
+    await page.getByText(/Klicka för att redigera/i).click();
 
     // Textarea should appear with existing text
     const textarea = page.getByPlaceholder(/Skriv anteckningar om behandlingen/i);
@@ -175,14 +175,14 @@ test.describe('Provider Notes', () => {
     await openConfirmedBookingDialog(page);
 
     // Open the notes editing area
-    const addNoteBtn = page.getByRole('button', { name: /lagg till anteckning/i });
+    const addNoteBtn = page.getByRole('button', { name: /lägg till anteckning/i });
     const hasAddBtn = await addNoteBtn.isVisible({ timeout: 3000 }).catch(() => false);
 
     if (hasAddBtn) {
       await addNoteBtn.click();
     } else {
       // Click existing note to edit
-      await page.getByText(/Klicka for att redigera/i).click();
+      await page.getByText(/Klicka för att redigera/i).click();
     }
 
     // Textarea should be visible

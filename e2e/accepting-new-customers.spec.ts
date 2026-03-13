@@ -57,9 +57,11 @@ test.describe('Accepting New Customers', () => {
     await page.getByRole('button', { name: /logga in/i }).click()
     await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 10000 })
 
-    // Go to provider profile
+    // Go to provider profile and switch to settings tab
     await page.goto('/provider/profile')
-    await expect(page.getByText('Bokningsinställningar', { exact: true })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 10000 })
+    await page.getByRole('button', { name: /inställningar/i }).click()
+    await expect(page.getByText('Bokningsinställningar', { exact: true })).toBeVisible({ timeout: 5000 })
 
     // Find the switch
     const toggle = page.getByLabel('Ta emot nya kunder')

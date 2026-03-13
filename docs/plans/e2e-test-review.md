@@ -74,11 +74,25 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 5. `group-bookings.spec.ts`: `.first()` pa alla `getByText` for card-namn (text finns i bade titel och beskrivning)
 6. `group-bookings.spec.ts`: `button 'x'` -> `getByRole('button', { name: /ta bort platsfilter/i })`
 
-### Batch 3: Leverantor (VANTANDE)
-- provider.spec.ts
-- provider-profile-edit.spec.ts
-- provider-notes.spec.ts
-- accepting-new-customers.spec.ts
+### Batch 3: Leverantor (KLAR -- 50 pass, 6 skip, 0 fail)
+
+| Spec | Tester | Status | Fixar |
+|------|--------|--------|-------|
+| provider.spec.ts | 20 | PASS | Se nedan |
+| provider-profile-edit.spec.ts | 14 | PASS | Tab-navigering |
+| provider-notes.spec.ts | 9 | PASS | Svenska tecken + networkidle |
+| accepting-new-customers.spec.ts | 7 | PASS | Tab-navigering |
+
+**APP-BUGG FIXAD: provider/profile/page.tsx** -- Bokningsinställningar-kortet saknade CardHeader+CardTitle. Alla andra kort på profilsidan hade det, men detta kort hopppade direkt till CardContent. Fix: lade till `<CardHeader><CardTitle>Bokningsinställningar</CardTitle></CardHeader>`.
+
+**Övriga fixar:**
+1. `provider.spec.ts`: Rate limit reset i beforeEach (429 efter manga API-anrop)
+2. `provider.spec.ts`: Strict mode -- `getByText(/nya förfrågningar/i)` matchade 3 element (PriorityActionCard + stat card + tooltip). Fix: exakt text-matchning
+3. `provider.spec.ts`: Strict mode -- service-items filter matchade multipla element. Fix: `.first()`
+4. `provider.spec.ts`: `waitForResponse` timeout pa accept/reject -- ersatt med `waitForTimeout` (race condition med guardMutation)
+5. `provider-profile-edit.spec.ts` + `accepting-new-customers.spec.ts`: Profilsidan refaktorerad med flikar (Profil/Inställningar/Tillgänglighet). Tester uppdaterade att klicka "Inställningar" forst
+6. `provider-notes.spec.ts`: `networkidle` -> `domcontentloaded` (SWR-polling forhindrar networkidle)
+7. `provider-notes.spec.ts`: ASCII-substitut i regex -- `/lagg till anteckning/i` -> `/lägg till anteckning/i`, `/Klicka for att redigera/i` -> `/Klicka för att redigera/i`
 
 ### Batch 4: Kund (VANTANDE)
 - customer-profile.spec.ts
@@ -149,7 +163,8 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 
 - [x] Batch 1 kord och gron
 - [x] Batch 2 kord och gron
-- [ ] Batch 3-6 korda
+- [x] Batch 3 kord och gron
+- [ ] Batch 4-6 korda
 - [ ] Alla failures kategoriserade (flaky vs genuina buggar)
 - [ ] Genuina buggar fixade
 - [ ] Alla tester grona

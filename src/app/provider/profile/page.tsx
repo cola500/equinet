@@ -387,6 +387,9 @@ export default function ProviderProfilePage() {
 
       {/* Booking Settings Card */}
       <Card>
+        <CardHeader>
+          <CardTitle>Bokningsinställningar</CardTitle>
+        </CardHeader>
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
