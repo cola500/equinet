@@ -11,6 +11,24 @@ import OSLog
 import SwiftUI
 import WebKit
 
+/// Weak wrapper to break retain cycle between WKUserContentController and Coordinator.
+/// WKUserContentController.add(_:name:) holds a STRONG reference to the handler.
+/// Without this wrapper, Coordinator is never deallocated.
+private class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    weak var delegate: WKScriptMessageHandler?
+
+    init(delegate: WKScriptMessageHandler) {
+        self.delegate = delegate
+    }
+
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        delegate?.userContentController(userContentController, didReceive: message)
+    }
+}
+
 struct WebView: UIViewRepresentable {
     let url: URL
     let bridge: BridgeHandler
@@ -29,9 +47,9 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
 
-        // Register bridge message handler
+        // Register bridge message handler (via weak wrapper to prevent retain cycle)
         config.userContentController.add(
-            context.coordinator,
+            WeakScriptMessageHandler(delegate: context.coordinator),
             name: AppConfig.bridgeHandlerName
         )
 
@@ -164,6 +182,13 @@ struct WebView: UIViewRepresentable {
         }
 
         return webView
+    }
+
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(
+            forName: AppConfig.bridgeHandlerName
+        )
+        webView.configuration.userContentController.removeAllUserScripts()
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
@@ -410,6 +435,21 @@ struct WebView: UIViewRepresentable {
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
+            // Validate origin -- only accept messages from our own domain
+            if let messageURL = message.frameInfo.request.url,
+               let host = messageURL.host {
+                let allowedHosts: Set<String> = [
+                    AppConfig.baseURL.host ?? "",
+                    "localhost",
+                ]
+                guard allowedHosts.contains(host) else {
+                    Task { @MainActor in
+                        AppLogger.bridge.warning("Rejected bridge message from untrusted origin: \(host)")
+                    }
+                    return
+                }
+            }
+
             Task { @MainActor in
                 parent.bridge.handleMessage(message)
             }

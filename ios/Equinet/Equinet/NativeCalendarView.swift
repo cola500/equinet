@@ -7,6 +7,7 @@
 //
 
 #if os(iOS)
+import Combine
 import OSLog
 import SwiftUI
 
@@ -27,6 +28,10 @@ struct NativeCalendarView: View {
     /// The displayed date -- driven by @State, bound as TabView selection.
     /// Single source of truth for header, week strip, AND page swiping.
     @State private var displayedDate: Date = Calendar.current.startOfDay(for: .now)
+
+    /// Current time for now-line rendering, updated every 60s
+    @State private var currentTime = Date()
+    private let nowTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -84,6 +89,18 @@ struct NativeCalendarView: View {
                                 timeSlotTapOverlay(for: date)
                                 bookingBlocks(for: date)
                                 if calendar.isDateInToday(date) { nowLine }
+
+                                // Empty state overlay
+                                if viewModel.bookingsForDate(date).isEmpty && !viewModel.isLoading {
+                                    VStack(spacing: 8) {
+                                        Spacer()
+                                            .frame(height: CGFloat(hours.count / 2) * hourHeight - 40)
+                                        Text("Inga bokningar den här dagen")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
                             }
                             .frame(height: CGFloat(hours.count) * hourHeight)
                         }
@@ -103,6 +120,7 @@ struct NativeCalendarView: View {
                 }
             }
         }
+        .onReceive(nowTimer) { currentTime = $0 }
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
         .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
         .onAppear {
@@ -118,9 +136,7 @@ struct NativeCalendarView: View {
         ) {
             Button("Skapa bokning") {
                 if let booking = newBookingTime {
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateFormat = "yyyy-MM-dd"
-                    let dateStr = dateFormatter.string(from: booking.date)
+                    let dateStr = Self.isoDateFormatter.string(from: booking.date)
                     onNavigateToWeb?("/provider/calendar?newBooking=true&date=\(dateStr)&time=\(booking.time)")
                     newBookingTime = nil
                 }
@@ -171,23 +187,23 @@ struct NativeCalendarView: View {
 
             Spacer()
 
-            // Today button or next day
-            if !calendar.isDateInToday(displayedDate) {
-                Button {
-                    let today = calendar.startOfDay(for: .now)
-                    withAnimation { displayedDate = today }
-                    viewModel.goToToday()
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                } label: {
-                    Text("Idag")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.accentColor.opacity(0.1))
-                        .clipShape(Capsule())
-                }
+            // Today button -- always present to prevent layout shift, hidden when already today
+            Button {
+                let today = calendar.startOfDay(for: .now)
+                withAnimation { displayedDate = today }
+                viewModel.goToToday()
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            } label: {
+                Text("Idag")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.accentColor.opacity(0.1))
+                    .clipShape(Capsule())
             }
+            .opacity(calendar.isDateInToday(displayedDate) ? 0 : 1)
+            .disabled(calendar.isDateInToday(displayedDate))
 
             Button {
                 navigateDay(by: 1)
@@ -346,9 +362,8 @@ struct NativeCalendarView: View {
     // MARK: - Now Line
 
     private var nowLine: some View {
-        let now = Date()
-        let hour = calendar.component(.hour, from: now)
-        let minute = calendar.component(.minute, from: now)
+        let hour = calendar.component(.hour, from: currentTime)
+        let minute = calendar.component(.minute, from: currentTime)
         let position = timePositionFromComponents(hour: hour, minute: minute)
 
         return HStack(spacing: 0) {
@@ -438,7 +453,7 @@ struct NativeCalendarView: View {
             Text(message)
                 .font(.body)
                 .foregroundStyle(.secondary)
-            Button("Forsok igen") {
+            Button("Försök igen") {
                 viewModel.refresh()
             }
             .buttonStyle(.borderedProminent)
@@ -484,7 +499,7 @@ struct NativeCalendarView: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .clipShape(Capsule())
         }
-        .frame(minHeight: 36)
+        .frame(minHeight: 44)
     }
 
     // MARK: - Offline Banner
@@ -514,9 +529,9 @@ struct NativeCalendarView: View {
         }
         let statusText: String
         switch booking.status {
-        case "pending": statusText = "vantande"
-        case "confirmed": statusText = "bekraftad"
-        case "completed": statusText = "slutford"
+        case "pending": statusText = "väntande"
+        case "confirmed": statusText = "bekräftad"
+        case "completed": statusText = "slutförd"
         case "cancelled": statusText = "avbokad"
         case "no_show": statusText = "utebliven"
         default: statusText = booking.status
@@ -530,10 +545,7 @@ struct NativeCalendarView: View {
 
     private var newBookingDialogTitle: String {
         guard let booking = newBookingTime else { return "" }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "d MMMM"
-        return "Ny bokning \(formatter.string(from: booking.date)) kl \(booking.time)?"
+        return "Ny bokning \(Self.shortDateFormatter.string(from: booking.date)) kl \(booking.time)?"
     }
 
     private func timeSlotTapOverlay(for date: Date) -> some View {
@@ -622,18 +634,41 @@ struct NativeCalendarView: View {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
+    // MARK: - Static DateFormatters (avoid per-render allocation)
+
+    private static let dayNameFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "EEEE"
+        return f
+    }()
+
+    private static let fullDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "d MMMM yyyy"
+        return f
+    }()
+
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "d MMMM"
+        return f
+    }()
+
+    private static let isoDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     private func dayName(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        Self.dayNameFormatter.string(from: date)
     }
 
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: date)
+        Self.fullDateFormatter.string(from: date)
     }
 }
 

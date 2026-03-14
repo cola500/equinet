@@ -59,6 +59,7 @@ struct NativeLoginView: View {
                             .background(Color(.systemGray6))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .accessibilityLabel("Email")
+                            .accessibilityIdentifier("emailField")
                     }
 
                     // Password
@@ -75,6 +76,7 @@ struct NativeLoginView: View {
                             .background(Color(.systemGray6))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .accessibilityLabel("Lösenord")
+                            .accessibilityIdentifier("passwordField")
                     }
                 }
 

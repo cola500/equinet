@@ -24,7 +24,7 @@ struct AuthenticatedView: View {
                 // Dashboard (WebView)
                 Tab(AppTab.dashboard.rawValue, systemImage: AppTab.dashboard.icon, value: AppTab.dashboard) {
                     WebViewTab(
-                        path: AppTab.dashboard.webPath!,
+                        path: AppTab.dashboard.webPath ?? "/provider/dashboard",
                         bridge: coordinator.bridge,
                         authManager: authManager,
                         onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
@@ -43,7 +43,7 @@ struct AuthenticatedView: View {
                 // Bookings (WebView for now)
                 Tab(AppTab.bookings.rawValue, systemImage: AppTab.bookings.icon, value: AppTab.bookings) {
                     WebViewTab(
-                        path: AppTab.bookings.webPath!,
+                        path: AppTab.bookings.webPath ?? "/provider/bookings",
                         bridge: coordinator.bridge,
                         authManager: authManager,
                         onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
