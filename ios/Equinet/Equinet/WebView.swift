@@ -96,16 +96,13 @@ struct WebView: UIViewRepresentable {
                     nav.border-b:not([class*="fixed"]) {
                         display: none !important;
                     }
-                    /* Hide page-level h1 title -- native NavigationStack shows the title */
-                    main h1:first-child {
-                        display: none !important;
-                    }
-                    /* No extra padding -- SwiftUI TabView handles safe area */
+                    /* No extra padding at bottom -- SwiftUI TabView handles safe area */
                     body {
                         padding-bottom: 0 !important;
                     }
+                    /* Compensate for hidden header -- use safe area inset for status bar */
                     main.container {
-                        padding-top: 0.5rem !important;
+                        padding-top: calc(env(safe-area-inset-top, 20px) + 1rem) !important;
                     }
                 `;
                 document.head.appendChild(style);

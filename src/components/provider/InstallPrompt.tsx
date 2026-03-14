@@ -63,7 +63,9 @@ export function InstallPrompt() {
     }
   }
 
-  if (!isOfflineEnabled || dismissed || isStandalone()) return null
+  // Native iOS app has its own install -- don't show PWA prompt
+  const isNativeApp = typeof window !== "undefined" && (window as unknown as { isEquinetApp?: boolean }).isEquinetApp
+  if (!isOfflineEnabled || dismissed || isStandalone() || isNativeApp) return null
   if (!deferredPrompt && !showIOSGuide) return null
 
   return (

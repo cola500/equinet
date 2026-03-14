@@ -261,6 +261,11 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Turbopack hot-reload gotcha**: Nya API route-filer (`src/app/api/*/route.ts`) registreras inte alltid av Turbopack hot-reload. Dev-servern kan returnera 404 trots att filen finns. Fix: starta om dev-servern (`npm run dev`).
 - **iOS dual auth-system (JWT + session-cookie)**: Native APIClient använder mobile JWT (Bearer token), WebView-sidor använder session-cookie via NextAuth `useSession()`. De är helt oberoende -- en kan fungera medan den andra failar. Vid "data laddas inte" i WebView: injicera `fetch('/api/auth/session')` via `evaluateJavaScript` och skicka resultatet genom bridge för att se session-status.
 - **iOS WKWebView JS-debugging utan Safari Inspector**: Injicera JavaScript via `evaluateJavaScript` som gör `fetch()` och skickar resultat via `window.webkit.messageHandlers.equinet.postMessage()`. Logga i Swift via `AppLogger`. Fungerar på fysiska enheter utan Safari-koppling.
+- **iOS Simulator MCP**: `mobile-mcp` (`@mobilenext/mobile-mcp`) for all iOS Simulator-interaktion: screenshot, accessibility tree, tap/swipe/type, launch/install app, screen recording. Anvander XCUITest/WebDriverAgent (inga extra beroenden utover Xcode). Ersatter ios-simulator-mcp vars IDB-baserade verktyg inte fungerar med Xcode 26.
+- **iOS UI-verifiering**: Vid iOS UI-andringar -- anvand mobile-mcp for screenshots, accessibility tree och interaktion. Fixa problem direkt utan att fraga.
+- **iOS WKWebView retain cycle**: `WKUserContentController.add(_:name:)` håller STARK referens till handler. Wrappa ALLTID i `WeakScriptMessageHandler` med `weak var delegate`. Komplettera med `dismantleUIView` som kör `removeScriptMessageHandler` + `removeAllUserScripts`.
+- **iOS viewport-fit=cover statiskt**: Använd `export const viewport: Viewport = { viewportFit: "cover" }` i Next.js layout.tsx -- INTE dynamisk JS-injektion. Ger `env(safe-area-inset-*)` från första rendering. Behåll JS-injektion som fallback.
+- **iOS Static DateFormatter**: DateFormatter är dyrt att skapa. Använd `private static let` på struct-nivå i SwiftUI-vyer. Särskilt viktigt i scroll-tunga vyer (kalender, listor).
 
 ---
 
