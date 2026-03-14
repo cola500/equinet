@@ -69,6 +69,7 @@
 			membershipExceptions = (
 				BookingsModels.swift,
 				CalendarModels.swift,
+				DashboardModels.swift,
 				KeychainHelper.swift,
 				SharedDataManager.swift,
 				WidgetBooking.swift,

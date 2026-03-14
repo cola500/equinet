@@ -1,0 +1,30 @@
+{
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/BookingDetailSheet.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BookingDetailSheet.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BookingDetailSheet.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BookingDetailSheet.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BookingDetailSheet.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BookingDetailSheet.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/BridgeHandler.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BridgeHandler.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BridgeHandler.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BridgeHandler.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BridgeHandler.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/BridgeHandler.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/CalendarModels.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarModels.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarModels.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarModels.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarModels.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarModels.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/CalendarSyncManager.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarSyncManager.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarSyncManager.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarSyncManager.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarSyncManager.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarSyncManager.swiftdeps"
+  }
+}

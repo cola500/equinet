@@ -31,7 +31,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     /// Web path for tabs that still use WebView (nil = native)
     var webPath: String? {
         switch self {
-        case .dashboard: return "/provider/dashboard"
+        case .dashboard: return nil  // Native NativeDashboardView
         case .calendar: return nil
         case .bookings: return nil  // Native NativeBookingsView
         case .more: return nil  // Native NativeMoreView
@@ -45,11 +45,15 @@ final class AppCoordinator {
 
     // MARK: - Tab state
 
-    var selectedTab: AppTab = .calendar
+    var selectedTab: AppTab = .dashboard
 
-    /// Pending URL path to load when dashboard WebView becomes active.
-    /// Set by native calendar tap-to-book when the dashboard WebView hasn't mounted yet.
+    /// Pending URL path to load when a WebView tab becomes active.
+    /// Set by native calendar tap-to-book.
     var pendingWebPath: String?
+
+    /// Pending path for programmatic navigation in the Mer tab.
+    /// Set by dashboard KPI taps to services/reviews/profile.
+    var pendingMorePath: String?
 
     // MARK: - Shared dependencies
 

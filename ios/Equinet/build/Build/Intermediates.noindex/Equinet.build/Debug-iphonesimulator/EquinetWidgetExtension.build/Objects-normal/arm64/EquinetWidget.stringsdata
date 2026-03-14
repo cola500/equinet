@@ -1,0 +1,24 @@
+{
+  "source": "/Users/johanlindengard/Development/equinet/ios/Equinet/EquinetWidget/EquinetWidget.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Nästa bokning",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 33
+        }
+      },
+      {
+        "comment": "",
+        "key": "Visa din nästa kommande bokning",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 34
+        }
+      }
+    ]
+  },
+  "version": 1
+}

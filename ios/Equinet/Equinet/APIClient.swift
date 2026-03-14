@@ -47,6 +47,14 @@ final class APIClient {
         )
     }
 
+    /// Fetch dashboard data for native dashboard view
+    func fetchDashboard() async throws -> DashboardResponse {
+        return try await authenticatedRequest(
+            path: "/api/native/dashboard",
+            responseType: DashboardResponse.self
+        )
+    }
+
     /// Register APNs device token with backend
     func registerDeviceToken(_ token: String) async throws {
         _ = try await performRequest(

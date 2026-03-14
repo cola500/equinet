@@ -1,0 +1,88 @@
+{
+  "source": "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/NativeHelpView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Hjälp",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 120
+        }
+      },
+      {
+        "comment": "",
+        "key": "Laddar hjälpartiklar...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 111
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sök i hjälpartiklar",
+        "location": {
+          "startingColumn": 48,
+          "startingLine": 143
+        }
+      },
+      {
+        "comment": "",
+        "key": "Mejla oss",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 139
+        }
+      },
+      {
+        "comment": "",
+        "key": "Kunde inte ladda hjälpartiklar",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 157
+        }
+      },
+      {
+        "comment": "",
+        "key": "Försök igen",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 170
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@. %@",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 236
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tips: %@",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 320
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 287
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 301
+        }
+      }
+    ]
+  },
+  "version": 1
+}

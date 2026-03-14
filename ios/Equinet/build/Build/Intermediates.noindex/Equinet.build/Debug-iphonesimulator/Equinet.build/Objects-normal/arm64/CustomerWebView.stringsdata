@@ -1,0 +1,48 @@
+{
+  "source": "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/CustomerWebView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Ingen internetanslutning",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ansluten igen",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "Kunde inte ladda sidan",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 129
+        }
+      },
+      {
+        "comment": "",
+        "key": "Kontrollera din internetanslutning och forsok igen.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 133
+        }
+      },
+      {
+        "comment": "",
+        "key": "Forsok igen",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 142
+        }
+      }
+    ]
+  },
+  "version": 1
+}

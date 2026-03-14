@@ -1,0 +1,85 @@
+<h2>iOS Native-First Rebuild: Arkitektur</h2>
+<p class="subtitle">Tre approacher for att gora appen mer native. Klicka pa den du foredrar.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>TabView + NavigationStack (Rekommenderad)</h3>
+      <p>Ren SwiftUI-arkitektur. TabView med 5 flikar, NavigationStack per flik. Kalendern fixas med iOS 17 scrollTargetBehavior(.paging) istallet for UIPageViewController. WebView behalls bara for "Mer"-fliken.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Fordelar</h4>
+          <ul>
+            <li>Enklast -- minst kod, renast arkitektur</li>
+            <li>Ren SwiftUI = inga UIKit-bridging-buggar</li>
+            <li>iOS 17 scroll-APIer loser kalender-swipe nativt</li>
+            <li>Solo-developer-vanligt</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nackdelar</h4>
+          <ul>
+            <li>Horizontal scroll kraver tuning for oandlig-scroll-kansla</li>
+            <li>Deep linking mellan flikar kraver koordinering</li>
+          </ul>
+        </div>
+      </div>
+      <p><strong>Insats:</strong> ~2-3 veckor for kalender + kundlista + bokningslista</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Coordinator Pattern + Repository Layer</h3>
+      <p>Mer enterprise-aktig arkitektur med AppCoordinator, FeatureCoordinators, Repository-protokoll och Services. Skalbar men kraftigt mer boilerplate.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Fordelar</h4>
+          <ul>
+            <li>Ren separation av navigation fran vyer</li>
+            <li>Matchar webbappens DDD-Light-monster</li>
+            <li>Lattare att unit-testa navigeringslogik</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nackdelar</h4>
+          <ul>
+            <li>Mycket mer boilerplate (Coordinator + Repository + Service + ViewModel per feature)</li>
+            <li>Overkill for 3-5 native-skarmar</li>
+            <li>Webb-API:t AR redan service-lagret -- onodigt att duplicera</li>
+          </ul>
+        </div>
+      </div>
+      <p><strong>Insats:</strong> ~4-5 veckor</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Inkrementell Hybrid (Bara fixa det som ar trasigt)</h3>
+      <p>Behall WebView som primar. Fixa kalenderns swipe-bugg, lagg till kundlista som native tab. Minsta mojliga andring.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Fordelar</h4>
+          <ul>
+            <li>Lagst risk, snabbast att leverera</li>
+            <li>Kalender-fix pa dagar istallet for veckor</li>
+            <li>Bevarat monster (redan funkar for kalender)</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nackdelar</h4>
+          <ul>
+            <li>Fortfarande "webbig" for de flesta skarmar</li>
+            <li>URL-interception i WebView Coordinator blir rosslig</li>
+            <li>Vita blinkar och overgangar kvarstar for WebView-sidor</li>
+          </ul>
+        </div>
+      </div>
+      <p><strong>Insats:</strong> ~1 vecka</p>
+    </div>
+  </div>
+</div>
