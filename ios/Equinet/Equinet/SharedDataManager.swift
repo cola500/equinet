@@ -83,6 +83,45 @@ enum SharedDataManager {
         userDefaults?.removeObject(forKey: calendarCacheKey)
     }
 
+    // MARK: - Dashboard Cache
+
+    private static let dashboardCacheKey = "dashboard_cache_data"
+
+    /// Cached dashboard data with timestamp
+    struct DashboardCache: Codable {
+        let response: DashboardResponse
+        let cachedAt: Date
+    }
+
+    /// Save dashboard data for instant display on next launch
+    static func saveDashboardCache(_ response: DashboardResponse) {
+        guard let defaults = userDefaults else { return }
+        let cache = DashboardCache(response: response, cachedAt: Date())
+        if let encoded = try? JSONEncoder().encode(cache) {
+            defaults.set(encoded, forKey: dashboardCacheKey)
+        }
+    }
+
+    /// Load cached dashboard data (max 5 min old)
+    static func loadDashboardCache() -> DashboardCache? {
+        guard let defaults = userDefaults,
+              let data = defaults.data(forKey: dashboardCacheKey),
+              let cache = try? JSONDecoder().decode(DashboardCache.self, from: data) else {
+            return nil
+        }
+        let maxAge: TimeInterval = 5 * 60
+        guard Date().timeIntervalSince(cache.cachedAt) < maxAge else {
+            defaults.removeObject(forKey: dashboardCacheKey)
+            return nil
+        }
+        return cache
+    }
+
+    /// Clear dashboard cache (on logout)
+    static func clearDashboardCache() {
+        userDefaults?.removeObject(forKey: dashboardCacheKey)
+    }
+
     // MARK: - Calendar Sync
 
     private static let calendarSyncMappingKey = "calendar_sync_mapping"

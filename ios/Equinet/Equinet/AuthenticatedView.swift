@@ -21,14 +21,14 @@ struct AuthenticatedView: View {
         ZStack(alignment: .top) {
             // Main TabView
             TabView(selection: $coordinator.selectedTab) {
-                // Dashboard (WebView)
+                // Dashboard (Native)
                 Tab(AppTab.dashboard.rawValue, systemImage: AppTab.dashboard.icon, value: AppTab.dashboard) {
-                    WebViewTab(
-                        path: AppTab.dashboard.webPath!,
-                        bridge: coordinator.bridge,
-                        authManager: authManager,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
-                        pendingNavigation: $coordinator.pendingWebPath
+                    NativeDashboardView(
+                        onNavigateToTab: { tab in coordinator.selectedTab = tab },
+                        onNavigateToWebPath: { path in
+                            coordinator.pendingMorePath = path
+                            coordinator.selectedTab = .more
+                        }
                     )
                 }
 
@@ -55,7 +55,8 @@ struct AuthenticatedView: View {
                 Tab(AppTab.more.rawValue, systemImage: AppTab.more.icon, value: AppTab.more) {
                     NativeMoreView(
                         bridge: coordinator.bridge,
-                        authManager: authManager
+                        authManager: authManager,
+                        pendingPath: $coordinator.pendingMorePath
                     )
                 }
             }

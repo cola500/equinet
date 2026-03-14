@@ -261,6 +261,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Turbopack hot-reload gotcha**: Nya API route-filer (`src/app/api/*/route.ts`) registreras inte alltid av Turbopack hot-reload. Dev-servern kan returnera 404 trots att filen finns. Fix: starta om dev-servern (`npm run dev`).
 - **iOS dual auth-system (JWT + session-cookie)**: Native APIClient använder mobile JWT (Bearer token), WebView-sidor använder session-cookie via NextAuth `useSession()`. De är helt oberoende -- en kan fungera medan den andra failar. Vid "data laddas inte" i WebView: injicera `fetch('/api/auth/session')` via `evaluateJavaScript` och skicka resultatet genom bridge för att se session-status.
 - **iOS WKWebView JS-debugging utan Safari Inspector**: Injicera JavaScript via `evaluateJavaScript` som gör `fetch()` och skickar resultat via `window.webkit.messageHandlers.equinet.postMessage()`. Logga i Swift via `AppLogger`. Fungerar på fysiska enheter utan Safari-koppling.
+- **iOS Native Screen Pattern (WebView->SwiftUI)**: 7 steg: (1) Aggregerat API `/api/native/<screen>` med all data i ett anrop, (2) Codable structs + enum med unknown-fallback, (3) SharedDataManager-cache (5min TTL), (4) `@State`-baserad vy med callbacks (`onNavigateToTab`, `onNavigateToWebPath`), (5) Tab-nav via callback, icke-tab via `pendingMorePath` -> Mer-tab -> onChange pushar NavigationPath, (6) Cache-clear i AuthManager.logout(), (7) Nya modellfiler i widget `membershipExceptions` om SharedDataManager refererar dem.
+- **iOS pendingMorePath programmatisk navigation**: Sätt `coordinator.pendingMorePath = "/path"` + `coordinator.selectedTab = .more`. NativeMoreView.onChange pushar matchande MoreMenuItem eller temporärt item. Nollställs direkt efter push.
 
 ---
 

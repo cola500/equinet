@@ -138,12 +138,19 @@ final class AuthManager {
     // MARK: - Logout
 
     func logout() {
+        // Clear Keychain credentials
         _ = keychain.delete(key: KeychainHelper.mobileTokenKey)
         _ = keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
         _ = keychain.delete(key: KeychainHelper.sessionCookieNameKey)
         _ = keychain.delete(key: KeychainHelper.sessionCookieValueKey)
         _ = keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
         _ = keychain.delete(key: KeychainHelper.userTypeKey)
+
+        // Clear cached data (dashboard, calendar, widget)
+        SharedDataManager.clearDashboardCache()
+        SharedDataManager.clearCalendarCache()
+        SharedDataManager.clearWidgetData()
+
         sessionCookieName = nil
         sessionCookieValue = nil
         sessionCookieSecure = false
