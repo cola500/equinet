@@ -148,6 +148,7 @@ final class AuthManager {
         sessionCookieValue = nil
         sessionCookieSecure = false
         userType = nil
+        SharedDataManager.clearBookingsCache()
         state = .loggedOut
     }
 

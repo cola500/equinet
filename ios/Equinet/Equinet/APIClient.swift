@@ -66,12 +66,43 @@ final class APIClient {
     }
 
     /// Update booking status (confirm/decline from notification action)
-    func updateBookingStatus(bookingId: String, newStatus: String) async throws {
+    func updateBookingStatus(bookingId: String, newStatus: String, cancellationMessage: String? = nil) async throws {
+        var body: [String: Any] = ["status": newStatus]
+        if let cancellationMessage {
+            body["cancellationMessage"] = cancellationMessage
+        }
         _ = try await performRequest(
             method: "PUT",
             path: "/api/bookings/\(bookingId)",
-            body: ["status": newStatus]
+            body: body
         )
+    }
+
+    /// Fetch bookings list for native bookings view
+    func fetchBookings(status: String? = nil) async throws -> [BookingsListItem] {
+        var path = "/api/native/bookings"
+        if let status {
+            path += "?status=\(status)"
+        }
+        return try await authenticatedRequest(path: path, responseType: [BookingsListItem].self)
+    }
+
+    /// Create a customer review for a completed booking
+    func createBookingReview(bookingId: String, rating: Int, comment: String?) async throws -> CreateReviewResponse {
+        var body: [String: Any] = ["rating": rating]
+        if let comment {
+            body["comment"] = comment
+        }
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/bookings/\(bookingId)/review",
+            body: body
+        )
+        do {
+            return try JSONDecoder().decode(CreateReviewResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
     }
 
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
@@ -113,7 +144,7 @@ final class APIClient {
     private func performRequest(
         method: String,
         path: String,
-        body: [String: String]? = nil
+        body: [String: Any]? = nil
     ) async throws -> (Data, HTTPURLResponse) {
         guard let jwt = KeychainHelper.loadMobileToken() else {
             throw APIError.noToken

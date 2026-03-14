@@ -33,7 +33,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "/provider/dashboard"
         case .calendar: return nil
-        case .bookings: return "/provider/bookings"
+        case .bookings: return nil  // Native NativeBookingsView
         case .more: return nil  // Native NativeMoreView
         }
     }
@@ -56,17 +56,20 @@ final class AppCoordinator {
     let bridge: BridgeHandler
     let networkMonitor: NetworkMonitor
     let calendarViewModel: CalendarViewModel
+    let bookingsViewModel: BookingsViewModel
 
     // MARK: - Init
 
     init(
         bridge: BridgeHandler? = nil,
         networkMonitor: NetworkMonitor? = nil,
-        calendarViewModel: CalendarViewModel? = nil
+        calendarViewModel: CalendarViewModel? = nil,
+        bookingsViewModel: BookingsViewModel? = nil
     ) {
         self.bridge = bridge ?? BridgeHandler()
         self.networkMonitor = networkMonitor ?? NetworkMonitor()
         self.calendarViewModel = calendarViewModel ?? CalendarViewModel()
+        self.bookingsViewModel = bookingsViewModel ?? BookingsViewModel()
     }
 
     // MARK: - Tab routing

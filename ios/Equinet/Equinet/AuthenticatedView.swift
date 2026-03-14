@@ -40,15 +40,9 @@ struct AuthenticatedView: View {
                     }
                 }
 
-                // Bookings (WebView for now)
+                // Bookings (Native)
                 Tab(AppTab.bookings.rawValue, systemImage: AppTab.bookings.icon, value: AppTab.bookings) {
-                    WebViewTab(
-                        path: AppTab.bookings.webPath ?? "/provider/bookings",
-                        bridge: coordinator.bridge,
-                        authManager: authManager,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
-                        pendingNavigation: .constant(nil)
-                    )
+                    NativeBookingsView(viewModel: coordinator.bookingsViewModel)
                 }
 
                 // More (Native menu with NavigationStack)
