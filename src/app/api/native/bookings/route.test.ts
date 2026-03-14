@@ -59,7 +59,7 @@ const mockBooking = {
   bookingSeriesId: null,
   customer: { firstName: "Anna", lastName: "Andersson", email: "anna@example.com", phone: "070-1234567" },
   service: { name: "Ridlektion", price: 450 },
-  horse: { breed: "Halvblod" },
+  horse: { id: "horse-1", breed: "Halvblod" },
   payment: null,
   customerReview: null,
 }
@@ -126,6 +126,7 @@ describe("GET /api/native/bookings", () => {
     expect(b.customerEmail).toBe("anna@example.com")
     expect(b.customerPhone).toBe("070-1234567")
     expect(b.horseName).toBe("Blansen")
+    expect(b.horseId).toBe("horse-1")
     expect(b.horseBreed).toBe("Halvblod")
     expect(b.isPaid).toBe(false)
     expect(b.invoiceNumber).toBeNull()
@@ -189,6 +190,17 @@ describe("GET /api/native/bookings", () => {
     const body = await res.json()
     expect(body[0].isPaid).toBe(true)
     expect(body[0].invoiceNumber).toBe("INV-001")
+  })
+
+  it("returns horseId null when no horse", async () => {
+    mockFindBookings.mockResolvedValue([{
+      ...mockBooking,
+      horse: null,
+    }] as never)
+    const res = await GET(createRequest())
+    const body = await res.json()
+    expect(body[0].horseId).toBeNull()
+    expect(body[0].horseBreed).toBeNull()
   })
 
   it("returns 500 on unexpected error", async () => {

@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
           select: { name: true, price: true },
         },
         horse: {
-          select: { breed: true },
+          select: { id: true, breed: true },
         },
         payment: {
           select: { id: true, invoiceNumber: true },
@@ -130,6 +130,7 @@ export async function GET(request: NextRequest) {
         customerEmail: b.customer.email,
         customerPhone: b.customer.phone ?? null,
         horseName: b.horseName ?? null,
+        horseId: b.horse?.id ?? null,
         horseBreed: b.horse?.breed ?? null,
         isPaid: b.payment !== null,
         invoiceNumber: b.payment?.invoiceNumber ?? null,

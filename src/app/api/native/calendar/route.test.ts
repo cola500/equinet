@@ -79,6 +79,7 @@ const mockException = {
   startTime: null,
   endTime: null,
   reason: "Semester",
+  location: null,
 }
 
 describe("GET /api/native/calendar", () => {
@@ -231,6 +232,21 @@ describe("GET /api/native/calendar", () => {
     const res = await GET(createRequest({ from: "2026-03-10", to: "2026-03-16" }))
     const body = await res.json()
     expect(body.bookings[0].isPaid).toBe(true)
+  })
+
+  it("returns location in exception when set", async () => {
+    mockFindExceptions.mockResolvedValue([
+      { ...mockException, location: "Sollebrunn" },
+    ] as never)
+    const res = await GET(createRequest({ from: "2026-03-10", to: "2026-03-16" }))
+    const body = await res.json()
+    expect(body.exceptions[0].location).toBe("Sollebrunn")
+  })
+
+  it("returns null location in exception when not set", async () => {
+    const res = await GET(createRequest({ from: "2026-03-10", to: "2026-03-16" }))
+    const body = await res.json()
+    expect(body.exceptions[0].location).toBeNull()
   })
 
   it("returns 500 on unexpected error", async () => {

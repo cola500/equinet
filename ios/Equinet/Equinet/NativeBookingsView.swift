@@ -12,6 +12,7 @@ import OSLog
 
 struct NativeBookingsView: View {
     @Bindable var viewModel: BookingsViewModel
+    var onNavigateToWeb: ((_ path: String) -> Void)?
 
     // Sheet state
     @State private var cancelBookingId: String?
@@ -20,6 +21,7 @@ struct NativeBookingsView: View {
     @State private var reviewRating = 0
     @State private var reviewComment = ""
     @State private var isSubmittingReview = false
+    @State private var quickNoteBooking: BookingsListItem?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -67,6 +69,15 @@ struct NativeBookingsView: View {
                             reviewComment = ""
                         }
                     }
+                }
+            )
+            .presentationDetents([.medium])
+        }
+        .sheet(item: $quickNoteBooking) { booking in
+            QuickNoteSheet(
+                existingNotes: booking.providerNotes,
+                onSave: { text in
+                    await viewModel.saveQuickNote(bookingId: booking.id, text: text)
                 }
             )
             .presentationDetents([.medium])
@@ -189,7 +200,9 @@ struct NativeBookingsView: View {
                     onComplete: { Task { await viewModel.completeBooking(id: booking.id) } },
                     onNoShow: { Task { await viewModel.markNoShow(id: booking.id) } },
                     onCancel: { cancelBookingId = booking.id },
-                    onReview: { reviewBookingId = booking.id; reviewRating = 0; reviewComment = "" }
+                    onReview: { reviewBookingId = booking.id; reviewRating = 0; reviewComment = "" },
+                    onQuickNote: { quickNoteBooking = booking },
+                    onNavigateToWeb: onNavigateToWeb
                 )
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 .listRowSeparator(.hidden)
@@ -259,6 +272,8 @@ private struct BookingCard: View {
     let onNoShow: () -> Void
     let onCancel: () -> Void
     let onReview: () -> Void
+    let onQuickNote: () -> Void
+    var onNavigateToWeb: ((_ path: String) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -296,15 +311,33 @@ private struct BookingCard: View {
                     Image(systemName: "pawprint")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(horseName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if let horseId = booking.horseId, onNavigateToWeb != nil {
+                        Button {
+                            onNavigateToWeb?("/provider/horse-timeline/\(horseId)")
+                        } label: {
+                            Text(horseName)
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                        }
+                    } else {
+                        Text(horseName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     if let breed = booking.horseBreed {
                         Text("(\(breed))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
+            }
+
+            // Provider notes
+            if let notes = booking.providerNotes, !notes.isEmpty {
+                Label(notes, systemImage: "note.text")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
 
             // Badges
@@ -413,40 +446,63 @@ private struct BookingCard: View {
                 .disabled(isActionInProgress)
             }
         case "confirmed":
-            HStack(spacing: 8) {
-                Button(action: onComplete) {
-                    Label("Genomförd", systemImage: "checkmark.circle")
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Button(action: onComplete) {
+                        Label("Genomförd", systemImage: "checkmark.circle")
+                            .font(.caption)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.equinetGreen)
+                    .disabled(isActionInProgress)
+
+                    Button(action: onNoShow) {
+                        Label("Uteblev", systemImage: "person.slash")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .disabled(isActionInProgress)
+
+                    Button(action: onCancel) {
+                        Label("Avboka", systemImage: "xmark.circle")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .disabled(isActionInProgress)
                 }
-                .buttonStyle(.borderedProminent)
+                HStack(spacing: 8) {
+                    Button(action: onQuickNote) {
+                        Label("Anteckning", systemImage: "note.text")
+                            .font(.caption)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(Color.equinetGreen)
+                    .disabled(isActionInProgress)
+                }
+            }
+        case "completed":
+            HStack(spacing: 8) {
+                if booking.customerReview == nil {
+                    Button(action: onReview) {
+                        Label("Recensera kund", systemImage: "star")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .disabled(isActionInProgress)
+                }
+                Button(action: onQuickNote) {
+                    Label("Anteckning", systemImage: "note.text")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
                 .tint(Color.equinetGreen)
                 .disabled(isActionInProgress)
-
-                Button(action: onNoShow) {
-                    Label("Uteblev", systemImage: "person.slash")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-                .tint(.orange)
-                .disabled(isActionInProgress)
-
-                Button(action: onCancel) {
-                    Label("Avboka", systemImage: "xmark.circle")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
-                .disabled(isActionInProgress)
             }
-        case "completed" where booking.customerReview == nil:
-            Button(action: onReview) {
-                Label("Recensera kund", systemImage: "star")
-                    .font(.caption)
-            }
-            .buttonStyle(.bordered)
-            .tint(.orange)
-            .disabled(isActionInProgress)
         default:
             EmptyView()
         }

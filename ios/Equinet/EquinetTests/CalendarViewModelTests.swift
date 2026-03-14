@@ -15,8 +15,14 @@ final class MockCalendarFetcher: CalendarDataFetching, @unchecked Sendable {
         CalendarResponse(bookings: [], availability: [], exceptions: [])
     )
     var updateResult: Result<Void, Error> = .success(())
+    var saveExceptionResult: Result<NativeException, Error> = .success(
+        NativeException(date: "2026-03-15", isClosed: true, startTime: nil, endTime: nil, reason: nil, location: nil)
+    )
+    var deleteExceptionResult: Result<Void, Error> = .success(())
     var fetchCallCount = 0
     var updateCalls: [(bookingId: String, newStatus: String)] = []
+    var saveExceptionCalls: [ExceptionSaveRequest] = []
+    var deleteExceptionCalls: [String] = []
 
     func fetchCalendar(from: String, to: String) async throws -> CalendarResponse {
         fetchCallCount += 1
@@ -26,6 +32,16 @@ final class MockCalendarFetcher: CalendarDataFetching, @unchecked Sendable {
     func updateBookingStatus(bookingId: String, newStatus: String) async throws {
         updateCalls.append((bookingId, newStatus))
         try updateResult.get()
+    }
+
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException {
+        saveExceptionCalls.append(request)
+        return try saveExceptionResult.get()
+    }
+
+    func deleteException(date: String) async throws {
+        deleteExceptionCalls.append(date)
+        try deleteExceptionResult.get()
     }
 }
 
@@ -86,8 +102,27 @@ private func makeBooking(
     )
 }
 
-private func makeResponse(bookings: [NativeBooking] = []) -> CalendarResponse {
-    CalendarResponse(bookings: bookings, availability: [], exceptions: [])
+private func makeResponse(
+    bookings: [NativeBooking] = [],
+    exceptions: [NativeException] = []
+) -> CalendarResponse {
+    CalendarResponse(bookings: bookings, availability: [], exceptions: exceptions)
+}
+
+private func makeException(
+    date: String = "2026-03-09",
+    isClosed: Bool = true,
+    reason: String? = "Semester",
+    location: String? = nil
+) -> NativeException {
+    NativeException(
+        date: date,
+        isClosed: isClosed,
+        startTime: isClosed ? nil : "10:00",
+        endTime: isClosed ? nil : "14:00",
+        reason: reason,
+        location: location
+    )
 }
 
 // MARK: - Tests
@@ -412,6 +447,88 @@ final class CalendarViewModelTests: XCTestCase {
 
         let todayStart = Calendar.current.startOfDay(for: .now)
         XCTAssertEqual(sut.selectedDateId, todayStart)
+    }
+
+    // MARK: - Exception Management
+
+    func testSaveExceptionOptimisticUpdate() async {
+        let request = ExceptionSaveRequest(
+            date: "2026-03-09", isClosed: true,
+            startTime: nil, endTime: nil, reason: "Sjuk", location: nil
+        )
+        fetcher.saveExceptionResult = .success(makeException(date: "2026-03-09", reason: "Sjuk"))
+
+        sut.saveException(request)
+        // Optimistic update happens synchronously
+        XCTAssertEqual(sut.exceptions.count, 1)
+        XCTAssertEqual(sut.exceptions.first?.date, "2026-03-09")
+        XCTAssertEqual(sut.exceptions.first?.reason, "Sjuk")
+    }
+
+    func testSaveExceptionRevertsOnFailure() async {
+        fetcher.saveExceptionResult = .failure(URLError(.notConnectedToInternet))
+
+        let request = ExceptionSaveRequest(
+            date: "2026-03-09", isClosed: true,
+            startTime: nil, endTime: nil, reason: "Sjuk", location: nil
+        )
+        sut.saveException(request)
+        try? await Task.sleep(for: .milliseconds(50))
+
+        // Should revert -- exceptions back to empty
+        XCTAssertTrue(sut.exceptions.isEmpty)
+    }
+
+    func testDeleteExceptionOptimisticUpdate() {
+        sut.exceptions = [makeException(date: "2026-03-09")]
+
+        sut.deleteException(date: "2026-03-09")
+        // Optimistic removal happens synchronously
+        XCTAssertTrue(sut.exceptions.isEmpty)
+    }
+
+    func testDeleteExceptionRevertsOnFailure() async {
+        sut.exceptions = [makeException(date: "2026-03-09")]
+        fetcher.deleteExceptionResult = .failure(URLError(.notConnectedToInternet))
+
+        sut.deleteException(date: "2026-03-09")
+        try? await Task.sleep(for: .milliseconds(50))
+
+        // Should revert -- exception restored
+        XCTAssertEqual(sut.exceptions.count, 1)
+        XCTAssertEqual(sut.exceptions.first?.date, "2026-03-09")
+    }
+
+    func testSaveExceptionUpsertReplacesExisting() {
+        sut.exceptions = [makeException(date: "2026-03-09", reason: "Semester")]
+
+        let request = ExceptionSaveRequest(
+            date: "2026-03-09", isClosed: true,
+            startTime: nil, endTime: nil, reason: "Sjuk", location: nil
+        )
+        fetcher.saveExceptionResult = .success(makeException(date: "2026-03-09", reason: "Sjuk"))
+
+        sut.saveException(request)
+        XCTAssertEqual(sut.exceptions.count, 1)
+        XCTAssertEqual(sut.exceptions.first?.reason, "Sjuk")
+    }
+
+    func testSaveExceptionCallsAPIWithCorrectData() async {
+        let request = ExceptionSaveRequest(
+            date: "2026-03-15", isClosed: false,
+            startTime: "10:00", endTime: "14:00", reason: nil, location: "Sollebrunn"
+        )
+        fetcher.saveExceptionResult = .success(
+            makeException(date: "2026-03-15", isClosed: false, reason: nil, location: "Sollebrunn")
+        )
+
+        sut.saveException(request)
+        try? await Task.sleep(for: .milliseconds(50))
+
+        XCTAssertEqual(fetcher.saveExceptionCalls.count, 1)
+        XCTAssertEqual(fetcher.saveExceptionCalls.first?.date, "2026-03-15")
+        XCTAssertEqual(fetcher.saveExceptionCalls.first?.isClosed, false)
+        XCTAssertEqual(fetcher.saveExceptionCalls.first?.location, "Sollebrunn")
     }
 
     // MARK: - Week Strip Helpers

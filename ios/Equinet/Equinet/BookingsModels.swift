@@ -22,6 +22,7 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
     let customerEmail: String
     let customerPhone: String?
     let horseName: String?
+    let horseId: String?
     let horseBreed: String?
     let isPaid: Bool
     let invoiceNumber: String?
@@ -51,6 +52,7 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
             customerEmail: customerEmail,
             customerPhone: customerPhone,
             horseName: horseName,
+            horseId: horseId,
             horseBreed: horseBreed,
             isPaid: isPaid,
             invoiceNumber: invoiceNumber,
@@ -78,6 +80,7 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
             customerEmail: customerEmail,
             customerPhone: customerPhone,
             horseName: horseName,
+            horseId: horseId,
             horseBreed: horseBreed,
             isPaid: isPaid,
             invoiceNumber: invoiceNumber,
@@ -87,6 +90,34 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
             providerNotes: providerNotes,
             cancellationMessage: cancellationMessage,
             customerReview: review
+        )
+    }
+
+    /// Create a copy with updated provider notes (for optimistic UI)
+    func withProviderNotes(_ notes: String?) -> BookingsListItem {
+        BookingsListItem(
+            id: id,
+            bookingDate: bookingDate,
+            startTime: startTime,
+            endTime: endTime,
+            status: status,
+            serviceName: serviceName,
+            servicePrice: servicePrice,
+            customerFirstName: customerFirstName,
+            customerLastName: customerLastName,
+            customerEmail: customerEmail,
+            customerPhone: customerPhone,
+            horseName: horseName,
+            horseId: horseId,
+            horseBreed: horseBreed,
+            isPaid: isPaid,
+            invoiceNumber: invoiceNumber,
+            isManualBooking: isManualBooking,
+            bookingSeriesId: bookingSeriesId,
+            customerNotes: customerNotes,
+            providerNotes: notes,
+            cancellationMessage: cancellationMessage,
+            customerReview: customerReview
         )
     }
 }
@@ -127,4 +158,10 @@ struct CreateReviewResponse: Codable, Sendable {
     let id: String
     let rating: Int
     let comment: String?
+}
+
+// MARK: - Quick Note Response
+
+struct QuickNoteResponse: Codable, Sendable {
+    let providerNotes: String
 }

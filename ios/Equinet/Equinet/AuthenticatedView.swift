@@ -42,7 +42,10 @@ struct AuthenticatedView: View {
 
                 // Bookings (Native)
                 Tab(AppTab.bookings.rawValue, systemImage: AppTab.bookings.icon, value: AppTab.bookings) {
-                    NativeBookingsView(viewModel: coordinator.bookingsViewModel)
+                    NativeBookingsView(viewModel: coordinator.bookingsViewModel) { path in
+                        coordinator.pendingMorePath = path
+                        coordinator.selectedTab = .more
+                    }
                 }
 
                 // More (Native menu with NavigationStack)

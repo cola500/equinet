@@ -95,6 +95,37 @@ final class APIClient {
         return try await authenticatedRequest(path: path, responseType: [BookingsListItem].self)
     }
 
+    /// Save (create/update) an availability exception
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException {
+        var body: [String: Any] = [
+            "date": request.date,
+            "isClosed": request.isClosed,
+        ]
+        if let startTime = request.startTime { body["startTime"] = startTime }
+        if let endTime = request.endTime { body["endTime"] = endTime }
+        if let reason = request.reason { body["reason"] = reason }
+        if let location = request.location { body["location"] = location }
+
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/calendar/exceptions",
+            body: body
+        )
+        do {
+            return try JSONDecoder().decode(NativeException.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete an availability exception for a specific date
+    func deleteException(date: String) async throws {
+        _ = try await performRequest(
+            method: "DELETE",
+            path: "/api/native/calendar/exceptions/\(date)"
+        )
+    }
+
     /// Create a customer review for a completed booking
     func createBookingReview(bookingId: String, rating: Int, comment: String?) async throws -> CreateReviewResponse {
         var body: [String: Any] = ["rating": rating]
@@ -108,6 +139,20 @@ final class APIClient {
         )
         do {
             return try JSONDecoder().decode(CreateReviewResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Save provider notes on a booking
+    func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse {
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/bookings/\(bookingId)/quick-note",
+            body: ["providerNotes": providerNotes]
+        )
+        do {
+            return try JSONDecoder().decode(QuickNoteResponse.self, from: data)
         } catch {
             throw APIError.decodingError(error)
         }

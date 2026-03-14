@@ -16,9 +16,13 @@ final class MockBookingsFetcher: BookingsDataFetching, @unchecked Sendable {
     var reviewResult: Result<CreateReviewResponse, Error> = .success(
         CreateReviewResponse(id: "r1", rating: 4, comment: nil)
     )
+    var quickNoteResult: Result<QuickNoteResponse, Error> = .success(
+        QuickNoteResponse(providerNotes: "Test note")
+    )
     var fetchCallCount = 0
     var updateCalls: [(bookingId: String, newStatus: String, cancellationMessage: String?)] = []
     var reviewCalls: [(bookingId: String, rating: Int, comment: String?)] = []
+    var quickNoteCalls: [(bookingId: String, providerNotes: String)] = []
 
     func fetchBookings(status: String?) async throws -> [BookingsListItem] {
         fetchCallCount += 1
@@ -33,6 +37,11 @@ final class MockBookingsFetcher: BookingsDataFetching, @unchecked Sendable {
     func createBookingReview(bookingId: String, rating: Int, comment: String?) async throws -> CreateReviewResponse {
         reviewCalls.append((bookingId, rating, comment))
         return try reviewResult.get()
+    }
+
+    func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse {
+        quickNoteCalls.append((bookingId, providerNotes))
+        return try quickNoteResult.get()
     }
 }
 
@@ -59,6 +68,7 @@ private func makeBooking(
         customerEmail: "anna@example.com",
         customerPhone: "070-1234567",
         horseName: "Blansen",
+        horseId: "horse-1",
         horseBreed: "Halvblod",
         isPaid: false,
         invoiceNumber: nil,
@@ -270,6 +280,53 @@ final class BookingsViewModelTests: XCTestCase {
         XCTAssertEqual(updated.status, "confirmed")
         XCTAssertEqual(updated.id, "b1")
         XCTAssertEqual(updated.serviceName, "Ridlektion")
+    }
+
+    // MARK: - Quick Note
+
+    func testSaveQuickNoteOptimisticUpdate() async {
+        let bookings = [makeBooking(id: "b1", status: "confirmed")]
+        viewModel.bookings = bookings
+
+        let success = await viewModel.saveQuickNote(bookingId: "b1", text: "Bra häst")
+
+        XCTAssertTrue(success)
+        XCTAssertEqual(viewModel.bookings.first?.providerNotes, "Bra häst")
+        XCTAssertEqual(fetcher.quickNoteCalls.count, 1)
+        XCTAssertEqual(fetcher.quickNoteCalls.first?.providerNotes, "Bra häst")
+    }
+
+    func testSaveQuickNoteRevertsOnFailure() async {
+        let bookings = [makeBooking(id: "b1", status: "confirmed")]
+        viewModel.bookings = bookings
+        fetcher.quickNoteResult = .failure(NSError(domain: "test", code: 500))
+
+        let success = await viewModel.saveQuickNote(bookingId: "b1", text: "Bra häst")
+
+        XCTAssertFalse(success)
+        XCTAssertNil(viewModel.bookings.first?.providerNotes)  // reverted
+    }
+
+    func testSaveQuickNoteCallsAPI() async {
+        let bookings = [makeBooking(id: "b1", status: "completed")]
+        viewModel.bookings = bookings
+
+        _ = await viewModel.saveQuickNote(bookingId: "b1", text: "Genomförd utan problem")
+
+        XCTAssertEqual(fetcher.quickNoteCalls.count, 1)
+        XCTAssertEqual(fetcher.quickNoteCalls.first?.bookingId, "b1")
+        XCTAssertEqual(fetcher.quickNoteCalls.first?.providerNotes, "Genomförd utan problem")
+    }
+
+    // MARK: - Model Helpers: withProviderNotes
+
+    func testWithProviderNotesCreatesNewBooking() {
+        let booking = makeBooking(id: "b1", status: "confirmed")
+        let updated = booking.withProviderNotes("Test anteckning")
+
+        XCTAssertEqual(updated.providerNotes, "Test anteckning")
+        XCTAssertEqual(updated.id, "b1")
+        XCTAssertEqual(updated.status, "confirmed")
     }
 
     func testCustomerFullName() {

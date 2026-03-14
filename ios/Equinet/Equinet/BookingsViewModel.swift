@@ -21,6 +21,7 @@ protocol BookingsDataFetching: Sendable {
     func fetchBookings(status: String?) async throws -> [BookingsListItem]
     func updateBookingStatus(bookingId: String, newStatus: String, cancellationMessage: String?) async throws
     func createBookingReview(bookingId: String, rating: Int, comment: String?) async throws -> CreateReviewResponse
+    func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse
 }
 
 // MARK: - Production Adapter
@@ -43,6 +44,13 @@ struct APIBookingsFetcher: BookingsDataFetching {
             bookingId: bookingId,
             rating: rating,
             comment: comment
+        )
+    }
+
+    func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse {
+        try await APIClient.shared.saveQuickNote(
+            bookingId: bookingId,
+            providerNotes: providerNotes
         )
     }
 }
@@ -196,6 +204,38 @@ final class BookingsViewModel {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
             AppLogger.network.error("Failed to submit review: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    // MARK: - Quick Note
+
+    func saveQuickNote(bookingId: String, text: String) async -> Bool {
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else { return false }
+
+        let oldBooking = bookings[index]
+        actionInProgress = bookingId
+
+        // Optimistic update
+        bookings[index] = oldBooking.withProviderNotes(text)
+
+        do {
+            _ = try await fetcher.saveQuickNote(bookingId: bookingId, providerNotes: text)
+            actionInProgress = nil
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            #endif
+            return true
+        } catch {
+            // Revert on failure
+            if let currentIndex = bookings.firstIndex(where: { $0.id == bookingId }) {
+                bookings[currentIndex] = oldBooking
+            }
+            actionInProgress = nil
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            #endif
+            AppLogger.network.error("Failed to save quick note: \(error.localizedDescription)")
             return false
         }
     }

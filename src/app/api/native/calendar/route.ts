@@ -132,6 +132,7 @@ export async function GET(request: NextRequest) {
           startTime: true,
           endTime: true,
           reason: true,
+          location: true,
         },
       }),
     ])

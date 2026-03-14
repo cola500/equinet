@@ -20,6 +20,8 @@ import UIKit
 protocol CalendarDataFetching: Sendable {
     func fetchCalendar(from: String, to: String) async throws -> CalendarResponse
     func updateBookingStatus(bookingId: String, newStatus: String) async throws
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException
+    func deleteException(date: String) async throws
 }
 
 @MainActor
@@ -43,6 +45,14 @@ struct APICalendarFetcher: CalendarDataFetching {
 
     func updateBookingStatus(bookingId: String, newStatus: String) async throws {
         try await APIClient.shared.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
+    }
+
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException {
+        try await APIClient.shared.saveException(request)
+    }
+
+    func deleteException(date: String) async throws {
+        try await APIClient.shared.deleteException(date: date)
     }
 }
 
@@ -294,6 +304,70 @@ final class CalendarViewModel {
                 PendingActionStore.save(bookingId: bookingId, status: newStatus)
             }
             actionInProgress = nil
+        }
+    }
+
+    // MARK: - Exception Management
+
+    /// Save (create/update) an availability exception with optimistic UI
+    func saveException(_ request: ExceptionSaveRequest) {
+        // Build optimistic exception
+        let optimistic = NativeException(
+            date: request.date,
+            isClosed: request.isClosed,
+            startTime: request.startTime,
+            endTime: request.endTime,
+            reason: request.reason,
+            location: request.location
+        )
+
+        // Save old state for rollback
+        let oldExceptions = exceptions
+
+        // Optimistic update: replace or append
+        if let index = exceptions.firstIndex(where: { $0.date == request.date }) {
+            exceptions[index] = optimistic
+        } else {
+            exceptions.append(optimistic)
+        }
+
+        Task {
+            do {
+                let saved = try await fetcher.saveException(request)
+                // Replace optimistic with server response
+                if let index = exceptions.firstIndex(where: { $0.date == saved.date }) {
+                    exceptions[index] = saved
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                cache.removeAll()
+            } catch {
+                // Revert on failure
+                exceptions = oldExceptions
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                AppLogger.calendar.error("Failed to save exception: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Delete an availability exception with optimistic UI
+    func deleteException(date: String) {
+        // Save old state for rollback
+        let oldExceptions = exceptions
+
+        // Optimistic removal
+        exceptions.removeAll { $0.date.hasPrefix(date) }
+
+        Task {
+            do {
+                try await fetcher.deleteException(date: date)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                cache.removeAll()
+            } catch {
+                // Revert on failure
+                exceptions = oldExceptions
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                AppLogger.calendar.error("Failed to delete exception: \(error.localizedDescription)")
+            }
         }
     }
 
