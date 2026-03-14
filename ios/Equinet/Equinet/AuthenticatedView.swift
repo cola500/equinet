@@ -21,14 +21,14 @@ struct AuthenticatedView: View {
         ZStack(alignment: .top) {
             // Main TabView
             TabView(selection: $coordinator.selectedTab) {
-                // Dashboard (WebView)
+                // Dashboard (Native)
                 Tab(AppTab.dashboard.rawValue, systemImage: AppTab.dashboard.icon, value: AppTab.dashboard) {
-                    WebViewTab(
-                        path: AppTab.dashboard.webPath ?? "/provider/dashboard",
-                        bridge: coordinator.bridge,
-                        authManager: authManager,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
-                        pendingNavigation: $coordinator.pendingWebPath
+                    NativeDashboardView(
+                        onNavigateToTab: { tab in coordinator.selectedTab = tab },
+                        onNavigateToWebPath: { path in
+                            coordinator.pendingMorePath = path
+                            coordinator.selectedTab = .more
+                        }
                     )
                 }
 
@@ -40,22 +40,20 @@ struct AuthenticatedView: View {
                     }
                 }
 
-                // Bookings (WebView for now)
+                // Bookings (Native)
                 Tab(AppTab.bookings.rawValue, systemImage: AppTab.bookings.icon, value: AppTab.bookings) {
-                    WebViewTab(
-                        path: AppTab.bookings.webPath ?? "/provider/bookings",
-                        bridge: coordinator.bridge,
-                        authManager: authManager,
-                        onRequestNativeCalendar: { coordinator.selectedTab = .calendar },
-                        pendingNavigation: .constant(nil)
-                    )
+                    NativeBookingsView(viewModel: coordinator.bookingsViewModel) { path in
+                        coordinator.pendingMorePath = path
+                        coordinator.selectedTab = .more
+                    }
                 }
 
                 // More (Native menu with NavigationStack)
                 Tab(AppTab.more.rawValue, systemImage: AppTab.more.icon, value: AppTab.more) {
                     NativeMoreView(
                         bridge: coordinator.bridge,
-                        authManager: authManager
+                        authManager: authManager,
+                        pendingPath: $coordinator.pendingMorePath
                     )
                 }
             }

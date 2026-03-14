@@ -38,6 +38,7 @@ private let menuSections: [(name: String, items: [MoreMenuItem])] = [
 struct NativeMoreView: View {
     let bridge: BridgeHandler
     let authManager: AuthManager
+    @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
 
     var body: some View {
@@ -65,6 +66,18 @@ struct NativeMoreView: View {
                 }
             }
             .navigationTitle("Mer")
+            .onChange(of: pendingPath) { _, newPath in
+                guard let path = newPath else { return }
+                let allItems = menuSections.flatMap(\.items)
+                if let item = allItems.first(where: { $0.path == path }) {
+                    navigationPath.append(item)
+                } else {
+                    // Create temporary item for unknown paths
+                    let temp = MoreMenuItem(label: "", icon: "", path: path, section: "")
+                    navigationPath.append(temp)
+                }
+                pendingPath = nil
+            }
             .navigationDestination(for: MoreMenuItem.self) { item in
                 MoreWebView(
                     path: item.path,

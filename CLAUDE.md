@@ -266,6 +266,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS WKWebView retain cycle**: `WKUserContentController.add(_:name:)` håller STARK referens till handler. Wrappa ALLTID i `WeakScriptMessageHandler` med `weak var delegate`. Komplettera med `dismantleUIView` som kör `removeScriptMessageHandler` + `removeAllUserScripts`.
 - **iOS viewport-fit=cover statiskt**: Använd `export const viewport: Viewport = { viewportFit: "cover" }` i Next.js layout.tsx -- INTE dynamisk JS-injektion. Ger `env(safe-area-inset-*)` från första rendering. Behåll JS-injektion som fallback.
 - **iOS Static DateFormatter**: DateFormatter är dyrt att skapa. Använd `private static let` på struct-nivå i SwiftUI-vyer. Särskilt viktigt i scroll-tunga vyer (kalender, listor).
+- **iOS Native Screen Pattern (WebView->SwiftUI)**: 7 steg: (1) Aggregerat API `/api/native/<screen>` med all data i ett anrop, (2) Codable structs + enum med unknown-fallback, (3) SharedDataManager-cache (5min TTL), (4) `@State`-baserad vy med callbacks (`onNavigateToTab`, `onNavigateToWebPath`), (5) Tab-nav via callback, icke-tab via `pendingMorePath` -> Mer-tab -> onChange pushar NavigationPath, (6) Cache-clear i AuthManager.logout(), (7) Nya modellfiler i widget `membershipExceptions` om SharedDataManager refererar dem.
+- **iOS pendingMorePath programmatisk navigation**: Sätt `coordinator.pendingMorePath = "/path"` + `coordinator.selectedTab = .more`. NativeMoreView.onChange pushar matchande MoreMenuItem eller temporärt item. Nollställs direkt efter push.
 
 ---
 

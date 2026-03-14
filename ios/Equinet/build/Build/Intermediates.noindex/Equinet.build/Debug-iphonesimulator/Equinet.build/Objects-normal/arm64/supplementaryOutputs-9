@@ -1,0 +1,23 @@
+{
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/SplashView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/SplashView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/SplashView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/SplashView.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/SplashView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/SplashView.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/WebView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebView.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebView.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/WebViewTab.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebViewTab.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebViewTab.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebViewTab.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebViewTab.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WebViewTab.swiftdeps"
+  }
+}

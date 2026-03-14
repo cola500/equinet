@@ -13,6 +13,7 @@ import SwiftUI
 struct WeekStripView: View {
     let selectedDate: Date
     let onSelectDate: (Date) -> Void
+    var exceptionForDate: ((Date) -> NativeException?)? = nil
 
     private let calendar = Calendar.current
 
@@ -54,6 +55,16 @@ struct WeekStripView: View {
                             .foregroundStyle(isSelected ? .white : isToday ? .accentColor : .primary)
                     }
                     .frame(width: 34, height: 34)
+
+                    // Exception indicator dot
+                    if let exc = exceptionForDate?(date) {
+                        Circle()
+                            .fill(exc.isClosed ? .red : .blue)
+                            .frame(width: 5, height: 5)
+                    } else {
+                        // Spacer to maintain consistent height
+                        Color.clear.frame(width: 5, height: 5)
+                    }
                 }
                 .frame(maxWidth: .infinity, minHeight: 56)
                 .onTapGesture {

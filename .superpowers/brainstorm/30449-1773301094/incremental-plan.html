@@ -1,0 +1,104 @@
+<h2>Inkrementell Native-First Rebuild</h2>
+<p class="subtitle">Coordinator Pattern, byggt i sma steg. Varje steg levererar varde.</p>
+
+<div class="section">
+  <h3>Fas-oversikt</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0;">
+
+    <div style="background: var(--card-bg, #1a1a2e); border: 2px solid #4ade80; border-radius: 12px; padding: 16px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #4ade80; font-weight: 600; letter-spacing: 1px;">Steg 1</div>
+      <h3 style="margin: 8px 0 4px;">Grundskelett + iOS-agent</h3>
+      <p style="font-size: 14px; opacity: 0.8;">AppCoordinator, TabView, NavigationStack per flik. Skapa ios-expert-agent. WebView som fallback for alla flikar.</p>
+      <p style="font-size: 13px; color: #4ade80;">~1-2 dagar</p>
+    </div>
+
+    <div style="background: var(--card-bg, #1a1a2e); border: 2px solid #60a5fa; border-radius: 12px; padding: 16px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #60a5fa; font-weight: 600; letter-spacing: 1px;">Steg 2</div>
+      <h3 style="margin: 8px 0 4px;">Fixa kalendern</h3>
+      <p style="font-size: 14px; opacity: 0.8;">Ersatt UIPageViewController med SwiftUI scrollTargetBehavior(.paging). Kalender-tab blir forsta native-vyn i nya arkitekturen.</p>
+      <p style="font-size: 13px; color: #60a5fa;">~2-3 dagar</p>
+    </div>
+
+    <div style="background: var(--card-bg, #1a1a2e); border: 2px solid #c084fc; border-radius: 12px; padding: 16px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #c084fc; font-weight: 600; letter-spacing: 1px;">Steg 3</div>
+      <h3 style="margin: 8px 0 4px;">Bokningslista</h3>
+      <p style="font-size: 14px; opacity: 0.8;">BookingRepository + BookingListViewModel + SwiftUI-lista med filter. Andra native-vyn.</p>
+      <p style="font-size: 13px; color: #c084fc;">~2-3 dagar</p>
+    </div>
+
+    <div style="background: var(--card-bg, #1a1a2e); border: 2px solid #fb923c; border-radius: 12px; padding: 16px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #fb923c; font-weight: 600; letter-spacing: 1px;">Steg 4</div>
+      <h3 style="margin: 8px 0 4px;">Kundhantering</h3>
+      <p style="font-size: 14px; opacity: 0.8;">CustomerRepository + ListView + DetailView. Tredje native-vyn.</p>
+      <p style="font-size: 13px; color: #fb923c;">~3-4 dagar</p>
+    </div>
+
+    <div style="background: var(--card-bg, #1a1a2e); border: 2px solid #f472b6; border-radius: 12px; padding: 16px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #f472b6; font-weight: 600; letter-spacing: 1px;">Steg 5+</div>
+      <h3 style="margin: 8px 0 4px;">Polish + Fler vyer</h3>
+      <p style="font-size: 14px; opacity: 0.8;">Overgangsanimationer, deep linking, Dashboard native, offline-cache, dark mode.</p>
+      <p style="font-size: 13px; color: #f472b6;">Fortlopande</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>Arkitektur: Coordinator Pattern (pragmatisk)</h3>
+  <div class="mockup">
+    <div class="mockup-header">App-struktur</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8;">
+<pre style="margin:0; white-space: pre-wrap;">
+EquinetApp
+  +-- ContentView (auth state machine -- behalls)
+        +-- AuthenticatedView
+              +-- AppCoordinator (@Observable)
+                    +-- TabView (5 flikar)
+                    |
+                    +-- CalendarCoordinator
+                    |     +-- CalendarRepository (protocol)
+                    |     +-- CalendarViewModel
+                    |     +-- CalendarDayView (SwiftUI scroll)
+                    |     +-- BookingDetailView
+                    |
+                    +-- BookingsCoordinator
+                    |     +-- BookingRepository (protocol)
+                    |     +-- BookingListViewModel
+                    |     +-- BookingListView
+                    |
+                    +-- CustomersCoordinator
+                    |     +-- CustomerRepository (protocol)
+                    |     +-- CustomerListViewModel
+                    |     +-- CustomerDetailViewModel
+                    |
+                    +-- WebViewCoordinator (for "Mer"-tab + fallback)
+                          +-- WebView (befintlig)
+                          +-- BridgeHandler (befintlig)
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Kalender-fix: SwiftUI Paging</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header" style="color: #ef4444;">Nuvarande (buggy)</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><strong>UIPageViewController</strong></p>
+        <p>3 lager: UIPageViewController &gt; UIHostingController &gt; UIScrollView</p>
+        <p>Gesture-konflikter mellan horisontell swipe och vertikal scroll</p>
+        <p style="color: #ef4444;">Resulterar i: hakig swipe, fel dag, scroll-locking</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header" style="color: #4ade80;">Nytt (iOS 17+)</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><strong>SwiftUI ScrollView + scrollTargetBehavior</strong></p>
+        <p>1 lager: ScrollView(.horizontal) med LazyHStack</p>
+        <p>Native gesture-disambiguation, smooth paging</p>
+        <p style="color: #4ade80;">Resultat: native-kansla, inget UIKit-bridging</p>
+      </div>
+    </div>
+  </div>
+</div>

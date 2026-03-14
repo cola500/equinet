@@ -16,6 +16,7 @@ struct NativeCalendarView: View {
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
     @State private var newBookingTime: (date: Date, time: String)?
+    @State private var exceptionSheetDate: Date?
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -46,7 +47,8 @@ struct NativeCalendarView: View {
                     withAnimation { displayedDate = day }
                     viewModel.navigateToDay(date)
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                }
+                },
+                exceptionForDate: { viewModel.exceptionForDate($0) }
             )
 
             Divider()
@@ -54,6 +56,11 @@ struct NativeCalendarView: View {
             // Service filter pills
             if !viewModel.availableServices.isEmpty {
                 serviceFilterBar
+            }
+
+            // Exception info badge (reason + location)
+            if let exc = viewModel.exceptionForDate(displayedDate) {
+                exceptionBadge(exc)
             }
 
             // Offline banner
@@ -157,6 +164,19 @@ struct NativeCalendarView: View {
             )
             .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: Binding(
+            get: { exceptionSheetDate != nil },
+            set: { if !$0 { exceptionSheetDate = nil } }
+        )) {
+            if let date = exceptionSheetDate {
+                ExceptionFormSheet(
+                    date: date,
+                    existingException: viewModel.exceptionForDate(date),
+                    onSave: { request in viewModel.saveException(request) },
+                    onDelete: { dateStr in viewModel.deleteException(date: dateStr) }
+                )
+            }
+        }
     }
 
     // MARK: - Date Header
@@ -186,6 +206,18 @@ struct NativeCalendarView: View {
             }
 
             Spacer()
+
+            // Exception button -- opens form to add/edit availability exception
+            Button {
+                exceptionSheetDate = displayedDate
+            } label: {
+                Image(systemName: viewModel.exceptionForDate(displayedDate) != nil
+                    ? "moon.zzz.fill" : "moon.zzz")
+                    .font(.title3)
+                    .foregroundStyle(viewModel.exceptionForDate(displayedDate) != nil
+                        ? Color.orange : .secondary)
+                    .frame(minWidth: 44, minHeight: 44)
+            }
 
             // Today button -- always present to prevent layout shift, hidden when already today
             Button {
@@ -516,6 +548,31 @@ struct NativeCalendarView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 6)
         .background(Color.orange)
+    }
+
+    // MARK: - Exception Badge
+
+    private func exceptionBadge(_ exc: NativeException) -> some View {
+        HStack(spacing: 6) {
+            if exc.isClosed, let reason = exc.reason, !reason.isEmpty {
+                Label(reason, systemImage: "moon.zzz")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if exc.isClosed {
+                Label("Stängd", systemImage: "moon.zzz")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let location = exc.location, !location.isEmpty {
+                Label(location, systemImage: "mappin.circle")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemGray6))
     }
 
     // MARK: - Accessibility Helpers

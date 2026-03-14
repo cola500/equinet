@@ -47,6 +47,14 @@ final class APIClient {
         )
     }
 
+    /// Fetch dashboard data for native dashboard view
+    func fetchDashboard() async throws -> DashboardResponse {
+        return try await authenticatedRequest(
+            path: "/api/native/dashboard",
+            responseType: DashboardResponse.self
+        )
+    }
+
     /// Register APNs device token with backend
     func registerDeviceToken(_ token: String) async throws {
         _ = try await performRequest(
@@ -66,12 +74,88 @@ final class APIClient {
     }
 
     /// Update booking status (confirm/decline from notification action)
-    func updateBookingStatus(bookingId: String, newStatus: String) async throws {
+    func updateBookingStatus(bookingId: String, newStatus: String, cancellationMessage: String? = nil) async throws {
+        var body: [String: Any] = ["status": newStatus]
+        if let cancellationMessage {
+            body["cancellationMessage"] = cancellationMessage
+        }
         _ = try await performRequest(
             method: "PUT",
             path: "/api/bookings/\(bookingId)",
-            body: ["status": newStatus]
+            body: body
         )
+    }
+
+    /// Fetch bookings list for native bookings view
+    func fetchBookings(status: String? = nil) async throws -> [BookingsListItem] {
+        var path = "/api/native/bookings"
+        if let status {
+            path += "?status=\(status)"
+        }
+        return try await authenticatedRequest(path: path, responseType: [BookingsListItem].self)
+    }
+
+    /// Save (create/update) an availability exception
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException {
+        var body: [String: Any] = [
+            "date": request.date,
+            "isClosed": request.isClosed,
+        ]
+        if let startTime = request.startTime { body["startTime"] = startTime }
+        if let endTime = request.endTime { body["endTime"] = endTime }
+        if let reason = request.reason { body["reason"] = reason }
+        if let location = request.location { body["location"] = location }
+
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/calendar/exceptions",
+            body: body
+        )
+        do {
+            return try JSONDecoder().decode(NativeException.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete an availability exception for a specific date
+    func deleteException(date: String) async throws {
+        _ = try await performRequest(
+            method: "DELETE",
+            path: "/api/native/calendar/exceptions/\(date)"
+        )
+    }
+
+    /// Create a customer review for a completed booking
+    func createBookingReview(bookingId: String, rating: Int, comment: String?) async throws -> CreateReviewResponse {
+        var body: [String: Any] = ["rating": rating]
+        if let comment {
+            body["comment"] = comment
+        }
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/bookings/\(bookingId)/review",
+            body: body
+        )
+        do {
+            return try JSONDecoder().decode(CreateReviewResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Save provider notes on a booking
+    func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse {
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/bookings/\(bookingId)/quick-note",
+            body: ["providerNotes": providerNotes]
+        )
+        do {
+            return try JSONDecoder().decode(QuickNoteResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
     }
 
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
@@ -113,7 +197,7 @@ final class APIClient {
     private func performRequest(
         method: String,
         path: String,
-        body: [String: String]? = nil
+        body: [String: Any]? = nil
     ) async throws -> (Data, HTTPURLResponse) {
         guard let jwt = KeychainHelper.loadMobileToken() else {
             throw APIError.noToken

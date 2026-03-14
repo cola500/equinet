@@ -1,0 +1,16 @@
+{
+  "source": "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/SplashView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Equinet",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 23
+        }
+      }
+    ]
+  },
+  "version": 1
+}

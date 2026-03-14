@@ -1,0 +1,48 @@
+{
+  "source": "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/BiometricPromptView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Logga in med %@",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 50
+        }
+      },
+      {
+        "comment": "",
+        "key": "Logga in med lösenord istället",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Equinet",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Logga in med %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 40
+        }
+      },
+      {
+        "comment": "",
+        "key": "Logga in med lösenord",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 56
+        }
+      }
+    ]
+  },
+  "version": 1
+}

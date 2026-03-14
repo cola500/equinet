@@ -1,0 +1,109 @@
+{
+  "" : {
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidgetExtension-primary.dia",
+    "emit-module-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidgetExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidgetExtension-primary-emit-module.dia",
+    "pch" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidgetExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidgetExtension-primary.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/CalendarModels.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/CalendarModels~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/KeychainHelper.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/KeychainHelper~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/SharedDataManager.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SharedDataManager~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/WidgetBooking.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/WidgetBooking~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/EquinetWidget/EquinetWidget.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/EquinetWidget~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/EquinetWidget/MediumWidgetView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/MediumWidgetView~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/EquinetWidget/NextBookingEntry.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingEntry~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/EquinetWidget/NextBookingProvider.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/NextBookingProvider~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/EquinetWidget/SmallWidgetView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/SmallWidgetView~partial.swiftmodule"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/EquinetWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

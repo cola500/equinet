@@ -1,0 +1,23 @@
+{
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/WeekStripView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WeekStripView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WeekStripView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WeekStripView.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WeekStripView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WeekStripView.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/WidgetBooking.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WidgetBooking.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WidgetBooking.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WidgetBooking.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WidgetBooking.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/WidgetBooking.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps"
+  }
+}

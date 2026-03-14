@@ -77,6 +77,16 @@ struct NativeException: Codable, Sendable {
     let startTime: String?
     let endTime: String?
     let reason: String?
+    let location: String?         // Optional for backward compat with cache
+}
+
+struct ExceptionSaveRequest: Encodable, Sendable {
+    let date: String              // YYYY-MM-DD
+    let isClosed: Bool
+    let startTime: String?
+    let endTime: String?
+    let reason: String?
+    let location: String?
 }
 
 struct CalendarResponse: Codable, Sendable {
