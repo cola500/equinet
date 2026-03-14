@@ -75,6 +75,10 @@ struct WebView: UIViewRepresentable {
             source: """
                 var style = document.createElement('style');
                 style.textContent = `
+                    /* Force light mode -- web app lacks dark mode support */
+                    :root {
+                        color-scheme: light;
+                    }
                     * {
                         -webkit-user-select: none;
                         user-select: none;
