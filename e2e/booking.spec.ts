@@ -193,19 +193,36 @@ test.describe('Booking Flow (Customer)', () => {
     // Verifiera att "Vald tid" visas
     await expect(page.getByText(/vald tid/i)).toBeVisible({ timeout: 5000 });
 
-    // Fyll i hästinfo och kommentarer
-    await page.getByRole('textbox', { name: /hästens namn/i }).fill('Thunder');
-    await page.getByRole('textbox', { name: /övriga kommentarer/i }).fill('Vänligen kom 10 minuter innan');
+    // Häst auto-väljs via HorseSelector (combobox) om kunden har en häst
+    // Verifiera att häst-combobox finns och har ett val
+    const horseCombo = page.getByRole('combobox', { name: /häst/i });
+    if (await horseCombo.isVisible({ timeout: 3000 }).catch(() => false)) {
+      // Häst redan vald via auto-selection
+    } else {
+      // Fallback: om det finns ett textfält för hästnamn
+      const horseInput = page.getByRole('textbox', { name: /hästens namn/i });
+      if (await horseInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await horseInput.fill('Thunder');
+      }
+    }
+
+    // Fyll i kommentarer (valfritt)
+    const commentsInput = page.getByRole('textbox', { name: /övriga kommentarer/i });
+    if (await commentsInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await commentsInput.fill('Vänligen kom 10 minuter innan');
+    }
+
+    // Klicka "Granska bokning" för att gå till sammanfattning
+    const reviewBtn = page.getByRole('button', { name: /granska bokning/i });
+    if (await reviewBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await reviewBtn.click();
+      // Vänta på sammanfattningsvyn
+      await expect(page.getByText(/kontrollera dina uppgifter/i)).toBeVisible({ timeout: 5000 });
+    }
 
     // Submitta bokning
     const submitBtn = page.getByRole('button', { name: /skicka bokningsförfrågan/i });
-    const submitVisible = await submitBtn.isVisible().catch(() => false);
-
-    if (!submitVisible) {
-      test.skip(true, 'Submit button not available');
-      return;
-    }
-
+    await expect(submitBtn).toBeVisible({ timeout: 5000 });
     await submitBtn.click();
 
     // Wait longer for dialog to close (API call might take time with transaction)
@@ -226,8 +243,8 @@ test.describe('Booking Flow (Customer)', () => {
     // Gå till mina bokningar
     await page.goto('/customer/bookings');
 
-    // Verifiera att bokningen finns på sidan (kan finnas flera från tidigare tester)
-    await expect(page.getByText(/thunder/i).first()).toBeVisible({ timeout: 5000 });
+    // Verifiera att bokningen finns på sidan (häst auto-vald som E2E Blansen)
+    await expect(page.getByText(/hovslagning/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should prevent double booking', async ({ page }) => {
@@ -272,23 +289,21 @@ test.describe('Booking Flow (Customer)', () => {
     // Verifiera att "Vald tid" visas
     await expect(page.getByText(/vald tid/i)).toBeVisible({ timeout: 5000 });
 
-    await page.getByRole('textbox', { name: /hästens namn/i }).fill('Test Horse');
+    // Häst auto-väljs via HorseSelector combobox
+    // Verifiera att formuläret har nödvändiga knappar
+    const reviewBtn = page.getByRole('button', { name: /granska bokning/i });
+    const cancelBtn = page.getByRole('button', { name: /avbryt/i });
+    await expect(reviewBtn.or(cancelBtn).first()).toBeVisible({ timeout: 5000 });
 
-    // Verifiera att NÅGON knapp visas (antingen submit eller closed day)
-    const buttons = page.getByRole('button').filter({ hasText: /stäng|skicka|avbryt/i });
-    await expect(buttons.first()).toBeVisible({ timeout: 5000 });
+    // Klicka "Granska bokning" om tillgänglig
+    if (await reviewBtn.isVisible().catch(() => false)) {
+      await reviewBtn.click();
+      // Verifiera att sammanfattningsvyn visas
+      await expect(page.getByText(/kontrollera dina uppgifter/i)).toBeVisible({ timeout: 5000 });
 
-    // Om det finns ett error-meddelande, är det OK (betyder validering fungerar)
-    // Om det INTE finns error, ska vi kunna submitta
-    const hasError = await page.locator('.text-destructive, .text-red-500, .text-red-600')
-      .isVisible().catch(() => false);
-
-    if (!hasError) {
-      // Ingen error - försök skicka bokningen
+      // Försök skicka bokningen
       const submitBtn = page.getByRole('button', { name: /skicka bokningsförfrågan/i });
-      const submitVisible = await submitBtn.isVisible().catch(() => false);
-
-      if (submitVisible) {
+      if (await submitBtn.isVisible().catch(() => false)) {
         await submitBtn.click();
         // Vänta på success eller error toast
         await page.waitForTimeout(2000);

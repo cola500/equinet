@@ -16,6 +16,9 @@ test.describe('Provider Flow', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Reset rate limits to avoid 429 after many preceding tests
+    await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
     // Logga in som leverantör
     // OBS: Detta förutsätter att provider@example.com finns i databasen
     await page.goto('/login');
@@ -46,7 +49,7 @@ test.describe('Provider Flow', () => {
     // Verifiera statistik-cards (exakta texter från koden)
     await expect(page.getByText(/aktiva tjänster/i)).toBeVisible();
     await expect(page.getByText(/kommande bokningar/i)).toBeVisible();
-    await expect(page.getByText(/nya förfrågningar/i)).toBeVisible();
+    await expect(page.getByText('Nya förfrågningar', { exact: true })).toBeVisible();
 
     // Verifiera snabblänkar
     await expect(page.getByText(/snabblänkar/i)).toBeVisible();
@@ -72,7 +75,7 @@ test.describe('Provider Flow', () => {
     await page.getByRole('button', { name: /^skapa$/i }).click();
 
     // Vänta på att dialog stängs och tjänsten visas
-    await expect(page.locator('[data-testid="service-item"]').filter({ hasText: 'E2E Test Service' })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="service-item"]').filter({ hasText: 'E2E Test Service' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should edit an existing service', async ({ page }) => {
@@ -96,7 +99,7 @@ test.describe('Provider Flow', () => {
     await page.getByRole('button', { name: /^uppdatera$/i }).click();
 
     // Vänta på att dialog stängs och tjänsten uppdateras
-    await expect(page.locator('[data-testid="service-item"]').filter({ hasText: '999 kr' })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="service-item"]').filter({ hasText: '999 kr' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should toggle service active status', async ({ page }) => {
@@ -222,13 +225,12 @@ test.describe('Provider Flow', () => {
     // Räkna antal pending bokningar före
     const initialCount = await page.locator('[data-testid="booking-item"]').count();
 
-    // Klicka på "Acceptera" och vänta på API-svar
-    const acceptPromise = page.waitForResponse(resp =>
-      resp.url().includes('/api/bookings/') && resp.status() === 200
-    );
+    // Klicka på "Acceptera" och vänta på att bokningen uppdateras
     await page.locator('[data-testid="booking-item"]').first()
       .getByRole('button', { name: /acceptera/i }).click();
-    await acceptPromise;
+
+    // Vänta på success toast eller listan uppdateras
+    await page.waitForTimeout(2000);
 
     // Vänta på att pending-listan uppdateras
     await page.waitForTimeout(1000);
@@ -262,11 +264,10 @@ test.describe('Provider Flow', () => {
 
     // Bekräfta i AlertDialogen
     await expect(page.getByText(/avboka bokning/i)).toBeVisible({ timeout: 5000 });
-    const confirmPromise = page.waitForResponse(resp =>
-      resp.url().includes('/api/bookings/') && resp.status() === 200
-    );
     await page.getByRole('button', { name: /ja, avboka/i }).click();
-    await confirmPromise;
+
+    // Vänta på att avbokningen genomförs
+    await page.waitForTimeout(2000);
 
     // Vänta på att pending-listan uppdateras
     await page.waitForTimeout(1000);

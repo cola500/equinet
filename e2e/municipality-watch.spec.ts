@@ -42,7 +42,7 @@ async function syncClientFlags(page: import('@playwright/test').Page) {
 async function navigateToProfile(page: import('@playwright/test').Page) {
   await resetRateLimit(page)
   await page.goto('/customer/profile')
-  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+  await page.waitForLoadState('domcontentloaded').catch(() => {})
 
   const headingVisible = await page.getByRole('heading', { name: /min profil/i })
     .isVisible({ timeout: 5000 }).catch(() => false)
@@ -50,7 +50,7 @@ async function navigateToProfile(page: import('@playwright/test').Page) {
   if (!headingVisible) {
     await resetRateLimit(page)
     await page.reload()
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
   }
 
   await expect(page.getByRole('heading', { name: /min profil/i })).toBeVisible({ timeout: 15000 })
@@ -67,7 +67,7 @@ async function selectWatchMunicipality(page: import('@playwright/test').Page, na
 
   const listbox = page.locator('#municipality-listbox')
   await expect(listbox).toBeVisible({ timeout: 5000 })
-  await listbox.getByRole('option', { name }).click()
+  await listbox.getByRole('option', { name, exact: true }).click()
 }
 
 /**
@@ -80,7 +80,7 @@ async function fillServiceType(page: import('@playwright/test').Page, name: stri
 
   const listbox = page.locator('#service-type-listbox')
   await expect(listbox).toBeVisible({ timeout: 5000 })
-  await listbox.getByRole('option', { name }).click()
+  await listbox.getByRole('option', { name, exact: true }).click()
 }
 
 // --- Tests ---
@@ -186,7 +186,7 @@ test.describe('Municipality Watch', () => {
     // Reload and verify persistence
     await resetRateLimit(page)
     await page.reload()
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
     await syncClientFlags(page)
 
     await expect(page.getByText('Ridlektion i Malmö')).toBeVisible({ timeout: 10000 })

@@ -11,7 +11,8 @@ test.describe('Manual Booking Dialog', () => {
 
     // Navigate to calendar
     await page.goto('/provider/calendar')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 })
   })
 
   test('happy path: create manual booking with new customer (ghost user)', async ({ page }) => {

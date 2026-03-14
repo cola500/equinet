@@ -58,10 +58,10 @@ test.describe('Horse Registry (Customer)', () => {
 
   test('should edit an existing horse', async ({ page }) => {
     // Säkerställ att det finns minst en häst - skapa om nödvändigt
-    const horseCards = page.locator('.card, [class*="Card"]').filter({ hasText: /redigera/i });
-    const cardCount = await horseCards.count();
+    const infoButtons = page.getByRole('link', { name: /information/i });
+    const buttonCount = await infoButtons.count();
 
-    if (cardCount === 0) {
+    if (buttonCount === 0) {
       // Skapa en häst först
       await page.getByRole('button', { name: /lägg till häst/i }).first().click();
       await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
@@ -70,7 +70,16 @@ test.describe('Horse Registry (Customer)', () => {
       await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10000 });
     }
 
-    // Klicka "Redigera" på första hästen
+    // Navigate to horse detail page via "Information" link
+    await page.getByRole('link', { name: /information/i }).first().click();
+    await expect(page).toHaveURL(/\/customer\/horses\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    // Click "Redigera" on the detail page (in HorseInfoSection)
+    // First navigate to "Info" tab if not there
+    const infoTab = page.getByRole('tab', { name: /info/i });
+    if (await infoTab.isVisible().catch(() => false)) {
+      await infoTab.click();
+    }
     await page.getByRole('button', { name: /redigera/i }).first().click();
 
     // Vänta på redigera-dialogen
@@ -88,8 +97,8 @@ test.describe('Horse Registry (Customer)', () => {
     // Vänta på att dialogen stängs
     await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10000 });
 
-    // Verifiera att det uppdaterade namnet visas
-    await expect(page.getByText(updatedName)).toBeVisible({ timeout: 5000 });
+    // Verifiera att det uppdaterade namnet visas (heading + tab label both show name)
+    await expect(page.getByText(updatedName).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should delete a horse with confirmation', async ({ page }) => {
@@ -134,10 +143,10 @@ test.describe('Horse Registry (Customer)', () => {
     }).toPass({ timeout: 10000 });
   });
 
-  test('should navigate to horse history', async ({ page }) => {
+  test('should navigate to horse detail and see history', async ({ page }) => {
     // Säkerställ att det finns minst en häst
-    const historyLinks = page.getByRole('button', { name: /se historik/i });
-    const linkCount = await historyLinks.count();
+    const infoLinks = page.getByRole('link', { name: /information/i });
+    const linkCount = await infoLinks.count();
 
     if (linkCount === 0) {
       // Skapa en häst
@@ -148,13 +157,13 @@ test.describe('Horse Registry (Customer)', () => {
       await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10000 });
     }
 
-    // Klicka "Se historik" på första hästen
-    await page.getByRole('button', { name: /se historik/i }).first().click();
+    // Navigate to horse detail via "Information" link
+    await infoLinks.first().click();
 
     // Verifiera navigation till hästens detaljsida
     await expect(page).toHaveURL(/\/customer\/horses\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
-    // Verifiera att historik-sektionen visas
+    // Default tab is "historik" - verify heading is visible
     await expect(page.getByRole('heading', { name: /historik/i })).toBeVisible({ timeout: 5000 });
 
     // Verifiera tillbaka-länk finns

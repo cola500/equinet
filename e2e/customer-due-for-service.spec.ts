@@ -64,7 +64,7 @@ async function syncClientFlags(page: import('@playwright/test').Page) {
 async function navigateToHorseList(page: import('@playwright/test').Page) {
   await resetRateLimit(page)
   await page.goto('/customer/horses')
-  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+  await page.waitForLoadState('domcontentloaded').catch(() => {})
   await syncClientFlags(page)
 
   // Check if horses loaded -- if empty, reset rate limits and reload
@@ -74,7 +74,7 @@ async function navigateToHorseList(page: import('@playwright/test').Page) {
   if (!horseVisible) {
     await resetRateLimit(page)
     await page.reload()
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
     await syncClientFlags(page)
   }
 }
@@ -92,7 +92,7 @@ async function navigateToHorseDetail(
     ? `/customer/horses/${horseId}?tab=${tab}`
     : `/customer/horses/${horseId}`
   await page.goto(url)
-  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+  await page.waitForLoadState('domcontentloaded').catch(() => {})
   await syncClientFlags(page)
 
   // Check if page loaded -- retry on rate limit
@@ -102,7 +102,7 @@ async function navigateToHorseDetail(
   if (!nameVisible) {
     await resetRateLimit(page)
     await page.reload()
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
     await syncClientFlags(page)
   }
 }
@@ -166,13 +166,13 @@ test.describe('Customer Due For Service', () => {
     // Wait for horse name
     await expect(page.getByText('E2E Blansen')).toBeVisible({ timeout: 15000 })
 
-    // Should have 3 tabs: Historik, Intervall, Info
+    // Should have 3 tabs: Historik, Besöksschema, Info
     await expect(page.getByRole('tab', { name: 'Historik' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Intervall' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Besöksschema' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Info' })).toBeVisible()
 
-    // Click Intervall tab
-    await page.getByRole('tab', { name: 'Intervall' }).click()
+    // Click Besöksschema tab
+    await page.getByRole('tab', { name: 'Besöksschema' }).click()
 
     // Heading
     await expect(page.getByRole('heading', { name: 'Serviceintervall' })).toBeVisible()
