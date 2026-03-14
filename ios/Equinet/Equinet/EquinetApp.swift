@@ -17,6 +17,7 @@ struct EquinetApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(.light) // Force light mode until web app supports dark mode
         }
         #if os(iOS)
         .onChange(of: scenePhase) { _, newPhase in

@@ -69,20 +69,30 @@ struct WeekStripView: View {
         .background(Color(.systemBackground))
     }
 
+    // MARK: - Static DateFormatters
+
+    private static let abbreviationFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "EEE"
+        return f
+    }()
+
+    private static let dayNameFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "EEEE"
+        return f
+    }()
+
     // MARK: - Helpers
 
     private func dayAbbreviation(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "EEE"
-        return formatter.string(from: date).prefix(3).uppercased()
+        Self.abbreviationFormatter.string(from: date).prefix(3).uppercased()
     }
 
     private func dayName(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        Self.dayNameFormatter.string(from: date)
     }
 }
 #endif

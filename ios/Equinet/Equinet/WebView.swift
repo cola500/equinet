@@ -11,6 +11,24 @@ import OSLog
 import SwiftUI
 import WebKit
 
+/// Weak wrapper to break retain cycle between WKUserContentController and Coordinator.
+/// WKUserContentController.add(_:name:) holds a STRONG reference to the handler.
+/// Without this wrapper, Coordinator is never deallocated.
+private class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    weak var delegate: WKScriptMessageHandler?
+
+    init(delegate: WKScriptMessageHandler) {
+        self.delegate = delegate
+    }
+
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        delegate?.userContentController(userContentController, didReceive: message)
+    }
+}
+
 struct WebView: UIViewRepresentable {
     let url: URL
     let bridge: BridgeHandler
@@ -29,9 +47,9 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
 
-        // Register bridge message handler
+        // Register bridge message handler (via weak wrapper to prevent retain cycle)
         config.userContentController.add(
-            context.coordinator,
+            WeakScriptMessageHandler(delegate: context.coordinator),
             name: AppConfig.bridgeHandlerName
         )
 
@@ -57,6 +75,10 @@ struct WebView: UIViewRepresentable {
             source: """
                 var style = document.createElement('style');
                 style.textContent = `
+                    /* Force light mode -- web app lacks dark mode support */
+                    :root {
+                        color-scheme: light;
+                    }
                     * {
                         -webkit-user-select: none;
                         user-select: none;
@@ -78,16 +100,13 @@ struct WebView: UIViewRepresentable {
                     nav.border-b:not([class*="fixed"]) {
                         display: none !important;
                     }
-                    /* Hide page-level h1 title -- native NavigationStack shows the title */
-                    main h1:first-child {
-                        display: none !important;
-                    }
-                    /* No extra padding -- SwiftUI TabView handles safe area */
+                    /* No extra padding at bottom -- SwiftUI TabView handles safe area */
                     body {
                         padding-bottom: 0 !important;
                     }
+                    /* Compensate for hidden header -- use safe area inset for status bar */
                     main.container {
-                        padding-top: 0.5rem !important;
+                        padding-top: calc(env(safe-area-inset-top, 20px) + 1rem) !important;
                     }
                 `;
                 document.head.appendChild(style);
@@ -164,6 +183,13 @@ struct WebView: UIViewRepresentable {
         }
 
         return webView
+    }
+
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(
+            forName: AppConfig.bridgeHandlerName
+        )
+        webView.configuration.userContentController.removeAllUserScripts()
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
@@ -410,6 +436,21 @@ struct WebView: UIViewRepresentable {
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
+            // Validate origin -- only accept messages from our own domain
+            if let messageURL = message.frameInfo.request.url,
+               let host = messageURL.host {
+                let allowedHosts: Set<String> = [
+                    AppConfig.baseURL.host ?? "",
+                    "localhost",
+                ]
+                guard allowedHosts.contains(host) else {
+                    Task { @MainActor in
+                        AppLogger.bridge.warning("Rejected bridge message from untrusted origin: \(host)")
+                    }
+                    return
+                }
+            }
+
             Task { @MainActor in
                 parent.bridge.handleMessage(message)
             }
