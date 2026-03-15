@@ -75,17 +75,11 @@ struct NativeMoreView: View {
             }
             .navigationTitle("Mer")
             .tint(Color.equinetGreen)
-            .onChange(of: pendingPath) { _, newPath in
-                guard let path = newPath else { return }
-                let allItems = menuSections.flatMap(\.items)
-                if let item = allItems.first(where: { $0.path == path }) {
-                    navigationPath.append(item)
-                } else {
-                    // Create temporary item for unknown paths
-                    let temp = MoreMenuItem(label: "", icon: "", path: path, section: "")
-                    navigationPath.append(temp)
-                }
-                pendingPath = nil
+            .onAppear {
+                handlePendingPath()
+            }
+            .onChange(of: pendingPath) { _, _ in
+                handlePendingPath()
             }
             .navigationDestination(for: MoreMenuItem.self) { item in
                 if item.path == "/provider/customers" {
@@ -107,6 +101,20 @@ struct NativeMoreView: View {
                 )
             }
         }
+    }
+
+    // MARK: - Pending Path Handling
+
+    private func handlePendingPath() {
+        guard let path = pendingPath else { return }
+        let allItems = menuSections.flatMap(\.items)
+        if let item = allItems.first(where: { $0.path == path }) {
+            navigationPath.append(item)
+        } else {
+            let temp = MoreMenuItem(label: "", icon: "", path: path, section: "")
+            navigationPath.append(temp)
+        }
+        pendingPath = nil
     }
 }
 
