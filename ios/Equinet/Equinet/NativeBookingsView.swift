@@ -80,7 +80,7 @@ struct NativeBookingsView: View {
                     await viewModel.saveQuickNote(bookingId: booking.id, text: text)
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
     }
 
