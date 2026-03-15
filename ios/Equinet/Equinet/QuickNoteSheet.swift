@@ -30,80 +30,84 @@ struct QuickNoteSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                // Text editor with mic button
-                HStack(alignment: .bottom, spacing: 8) {
-                    TextEditor(text: $text)
-                        .frame(minHeight: 120)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
-                        .onChange(of: text) { _, newValue in
-                            if newValue.count > maxLength {
-                                text = String(newValue.prefix(maxLength))
-                            }
-                        }
-
-                    Button {
-                        toggleRecording()
-                    } label: {
-                        Image(systemName: isRecording ? "mic.fill" : "mic")
-                            .font(.title2)
-                            .foregroundStyle(isRecording ? .red : Color.equinetGreen)
-                            .frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel(isRecording ? "Stoppa inspelning" : "Starta rostinspelning")
+        VStack(alignment: .leading, spacing: 16) {
+            // Inline header -- avoids toolbar gesture conflict with .medium sheet
+            HStack {
+                Button("Avbryt") {
+                    stopRecording()
+                    dismiss()
                 }
-
-                // Status & character count
-                HStack {
-                    if isRecording {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(.red)
-                                .frame(width: 8, height: 8)
-                            Text("Lyssnar...")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Spacer()
-                    Text("\(text.count)/\(maxLength)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                .disabled(isSaving)
 
                 Spacer()
-            }
-            .padding()
-            .navigationTitle("Snabbnotering")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Avbryt") {
+
+                Text("Snabbnotering")
+                    .font(.headline)
+
+                Spacer()
+
+                Button("Spara") {
+                    Task {
                         stopRecording()
-                        dismiss()
-                    }
-                    .disabled(isSaving)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Spara") {
-                        Task {
-                            stopRecording()
-                            isSaving = true
-                            let success = await onSave(text)
-                            isSaving = false
-                            if success {
-                                dismiss()
-                            }
+                        isSaving = true
+                        let success = await onSave(text)
+                        isSaving = false
+                        if success {
+                            dismiss()
                         }
                     }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
+                .fontWeight(.semibold)
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
             }
+            .padding(.top, 8)
+
+            // Text editor with mic button
+            HStack(alignment: .bottom, spacing: 8) {
+                TextEditor(text: $text)
+                    .frame(minHeight: 120)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
+                    .onChange(of: text) { _, newValue in
+                        if newValue.count > maxLength {
+                            text = String(newValue.prefix(maxLength))
+                        }
+                    }
+
+                Button {
+                    toggleRecording()
+                } label: {
+                    Image(systemName: isRecording ? "mic.fill" : "mic")
+                        .font(.title2)
+                        .foregroundStyle(isRecording ? .red : Color.equinetGreen)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(isRecording ? "Stoppa inspelning" : "Starta rostinspelning")
+            }
+
+            // Status & character count
+            HStack {
+                if isRecording {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(.red)
+                            .frame(width: 8, height: 8)
+                        Text("Lyssnar...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Text("\(text.count)/\(maxLength)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
         }
+        .padding()
     }
 
     // MARK: - Speech Recognition

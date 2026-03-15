@@ -39,8 +39,10 @@ struct NativeMoreView: View {
     let bridge: BridgeHandler
     let authManager: AuthManager
     @Bindable var customersViewModel: CustomersViewModel
+    @Bindable var servicesViewModel: ServicesViewModel
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
+    @State private var showLogoutConfirmation = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -57,30 +59,33 @@ struct NativeMoreView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        bridge.clearMobileToken()
-                        authManager.logout()
+                        showLogoutConfirmation = true
                     } label: {
                         Label("Logga ut", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                    .confirmationDialog("Vill du logga ut?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
+                        Button("Logga ut", role: .destructive) {
+                            bridge.clearMobileToken()
+                            authManager.logout()
+                        }
+                        Button("Avbryt", role: .cancel) {}
                     }
                 } header: {
                     Text("Konto")
                 }
             }
             .navigationTitle("Mer")
-            .onChange(of: pendingPath) { _, newPath in
-                guard let path = newPath else { return }
-                let allItems = menuSections.flatMap(\.items)
-                if let item = allItems.first(where: { $0.path == path }) {
-                    navigationPath.append(item)
-                } else {
-                    // Create temporary item for unknown paths
-                    let temp = MoreMenuItem(label: "", icon: "", path: path, section: "")
-                    navigationPath.append(temp)
-                }
-                pendingPath = nil
+            .tint(Color.equinetGreen)
+            .onAppear {
+                handlePendingPath()
+            }
+            .onChange(of: pendingPath) { _, _ in
+                handlePendingPath()
             }
             .navigationDestination(for: MoreMenuItem.self) { item in
-                if item.path == "/provider/customers" {
+                if item.path == "/provider/services" {
+                    NativeServicesView(viewModel: servicesViewModel)
+                } else if item.path == "/provider/customers" {
                     NativeCustomersView(viewModel: customersViewModel)
                 } else {
                     MoreWebView(
@@ -99,6 +104,20 @@ struct NativeMoreView: View {
                 )
             }
         }
+    }
+
+    // MARK: - Pending Path Handling
+
+    private func handlePendingPath() {
+        guard let path = pendingPath else { return }
+        let allItems = menuSections.flatMap(\.items)
+        if let item = allItems.first(where: { $0.path == path }) {
+            navigationPath.append(item)
+        } else {
+            let temp = MoreMenuItem(label: "", icon: "", path: path, section: "")
+            navigationPath.append(temp)
+        }
+        pendingPath = nil
     }
 }
 

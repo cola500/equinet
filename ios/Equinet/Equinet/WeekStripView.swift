@@ -40,19 +40,19 @@ struct WeekStripView: View {
                 VStack(spacing: 4) {
                     Text(dayAbbreviation(for: date))
                         .font(.caption2)
-                        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                        .foregroundStyle(isSelected ? Color.equinetGreen : .secondary)
                         .fontWeight(isToday ? .bold : .regular)
 
                     ZStack {
                         Circle()
-                            .fill(Color.accentColor)
+                            .fill(Color.equinetGreen)
                             .frame(width: 34, height: 34)
                             .opacity(isSelected ? 1 : 0)
 
                         Text("\(calendar.component(.day, from: date))")
                             .font(.subheadline)
                             .fontWeight(isSelected || isToday ? .bold : .regular)
-                            .foregroundStyle(isSelected ? .white : isToday ? .accentColor : .primary)
+                            .foregroundStyle(isSelected ? .white : isToday ? Color.equinetGreen : .primary)
                     }
                     .frame(width: 34, height: 34)
 

@@ -47,10 +47,6 @@ final class AppCoordinator {
 
     var selectedTab: AppTab = .dashboard
 
-    /// Pending URL path to load when a WebView tab becomes active.
-    /// Set by native calendar tap-to-book.
-    var pendingWebPath: String?
-
     /// Pending path for programmatic navigation in the Mer tab.
     /// Set by dashboard KPI taps to services/reviews/profile.
     var pendingMorePath: String?
@@ -62,6 +58,7 @@ final class AppCoordinator {
     let calendarViewModel: CalendarViewModel
     let bookingsViewModel: BookingsViewModel
     let customersViewModel: CustomersViewModel
+    let servicesViewModel: ServicesViewModel
 
     // MARK: - Init
 
@@ -70,13 +67,15 @@ final class AppCoordinator {
         networkMonitor: NetworkMonitor? = nil,
         calendarViewModel: CalendarViewModel? = nil,
         bookingsViewModel: BookingsViewModel? = nil,
-        customersViewModel: CustomersViewModel? = nil
+        customersViewModel: CustomersViewModel? = nil,
+        servicesViewModel: ServicesViewModel? = nil
     ) {
         self.bridge = bridge ?? BridgeHandler()
         self.networkMonitor = networkMonitor ?? NetworkMonitor()
         self.calendarViewModel = calendarViewModel ?? CalendarViewModel()
         self.bookingsViewModel = bookingsViewModel ?? BookingsViewModel()
         self.customersViewModel = customersViewModel ?? CustomersViewModel()
+        self.servicesViewModel = servicesViewModel ?? ServicesViewModel()
     }
 
     // MARK: - Tab routing

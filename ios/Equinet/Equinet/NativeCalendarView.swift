@@ -231,7 +231,7 @@ struct NativeCalendarView: View {
                     .fontWeight(.medium)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.accentColor.opacity(0.1))
+                    .background(Color.equinetGreen.opacity(0.1))
                     .clipShape(Capsule())
             }
             .opacity(calendar.isDateInToday(displayedDate) ? 0 : 1)
@@ -527,7 +527,7 @@ struct NativeCalendarView: View {
                 .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color(.systemGray5))
+                .background(isSelected ? Color.equinetGreen : Color(.systemGray5))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .clipShape(Capsule())
         }

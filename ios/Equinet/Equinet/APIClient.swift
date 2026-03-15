@@ -294,6 +294,44 @@ final class APIClient {
         _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)/notes/\(noteId)")
     }
 
+    // MARK: - Services
+
+    /// Fetch all services for current provider
+    func fetchServices() async throws -> [ServiceItem] {
+        let response = try await authenticatedRequest(
+            path: "/api/native/services",
+            responseType: ServicesListResponse.self
+        )
+        return response.services
+    }
+
+    /// Create a new service
+    func createService(_ data: [String: Any]) async throws -> ServiceItem {
+        let (responseData, _) = try await performRequest(method: "POST", path: "/api/native/services", body: data)
+        do {
+            let response = try JSONDecoder().decode(ServiceCreateResponse.self, from: responseData)
+            return response.service
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Update an existing service
+    func updateService(id: String, data: [String: Any]) async throws -> ServiceItem {
+        let (responseData, _) = try await performRequest(method: "PUT", path: "/api/native/services/\(id)", body: data)
+        do {
+            let response = try JSONDecoder().decode(ServiceUpdateResponse.self, from: responseData)
+            return response.service
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete a service
+    func deleteService(id: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/services/\(id)")
+    }
+
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
     func refreshToken() async throws {
         guard let currentJwt = KeychainHelper.loadMobileToken() else {
