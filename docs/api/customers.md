@@ -4,7 +4,7 @@ description: "Customer search, horse lookup, provider customer registry and priv
 category: api
 tags: [customers, api, customer-notes, horses, provider]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-15
 depends_on:
   - docs/api/README.md
 related:
@@ -17,6 +17,7 @@ sections:
   - POST /api/provider/customers
   - DELETE /api/provider/customers/[customerId]
   - Kundanteckningar
+  - Native Customer API
 ---
 
 # Kunder
@@ -211,3 +212,83 @@ Redigera en befintlig anteckning.
 
 **Felkoder:**
 - `404` -- Anteckningen hittades inte (eller tillhör annan provider)
+
+---
+
+## Native Customer API
+
+Native iOS-appen använder separata endpoints med Bearer JWT-auth (`authFromMobileToken`) istället för session-cookies. Samma affärslogik som provider-routes ovan.
+
+### GET /api/native/customers
+
+Hämta kundlista med sök och filter. Samma aggregeringslogik som `GET /api/provider/customers`.
+
+**Auth:** Bearer JWT (mobile token)
+
+**Query Parameters:**
+| Parameter | Typ | Beskrivning |
+|-----------|-----|-------------|
+| `status` | string | `all` (default), `active`, `inactive` |
+| `q` | string | Fritextsökning i namn/email |
+
+**Response:** `200 OK`
+```json
+{
+  "customers": [
+    {
+      "id": "uuid",
+      "firstName": "Anna",
+      "lastName": "Svensson",
+      "email": "anna@example.com",
+      "phone": "0701234567",
+      "bookingCount": 5,
+      "noShowCount": 1,
+      "lastBookingDate": "2026-03-01T00:00:00.000Z",
+      "horses": [{ "id": "uuid", "name": "Blansen" }],
+      "isManuallyAdded": false
+    }
+  ]
+}
+```
+
+### POST /api/native/customers
+
+Registrera kund manuellt. Samma logik som `POST /api/provider/customers`.
+
+**Auth:** Bearer JWT | **Response:** `201 Created` `{ "customer": { "id": "uuid" } }`
+
+### PUT /api/native/customers/[customerId]
+
+Uppdatera kundinformation. IDOR-skydd via ProviderCustomer junction.
+
+**Auth:** Bearer JWT | **Response:** `200 OK`
+
+### DELETE /api/native/customers/[customerId]
+
+Ta bort manuellt tillagd kund. Rensar ghost user om inga bokningar finns.
+
+**Auth:** Bearer JWT | **Response:** `200 OK`
+
+### GET/POST /api/native/customers/[customerId]/horses
+
+Lista och skapa hästar. Använder `hasCustomerRelationship()` för IDOR-skydd.
+
+**Auth:** Bearer JWT
+
+### PUT/DELETE /api/native/customers/[customerId]/horses/[horseId]
+
+Uppdatera/soft-delete häst. Atomär ägarskapscheck med `ownerId: customerId` i WHERE.
+
+**Auth:** Bearer JWT
+
+### GET/POST /api/native/customers/[customerId]/notes
+
+Lista och skapa anteckningar. Samma mönster som provider-routes.
+
+**Auth:** Bearer JWT
+
+### PUT/DELETE /api/native/customers/[customerId]/notes/[noteId]
+
+Redigera/radera anteckning. Atomär ägarskapscheck med `providerId` i WHERE.
+
+**Auth:** Bearer JWT

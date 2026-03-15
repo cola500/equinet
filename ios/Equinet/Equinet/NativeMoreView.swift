@@ -38,6 +38,7 @@ private let menuSections: [(name: String, items: [MoreMenuItem])] = [
 struct NativeMoreView: View {
     let bridge: BridgeHandler
     let authManager: AuthManager
+    @Bindable var customersViewModel: CustomersViewModel
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
 
@@ -79,11 +80,22 @@ struct NativeMoreView: View {
                 pendingPath = nil
             }
             .navigationDestination(for: MoreMenuItem.self) { item in
-                MoreWebView(
-                    path: item.path,
-                    title: item.label,
-                    bridge: bridge,
-                    authManager: authManager
+                if item.path == "/provider/customers" {
+                    NativeCustomersView(viewModel: customersViewModel)
+                } else {
+                    MoreWebView(
+                        path: item.path,
+                        title: item.label,
+                        bridge: bridge,
+                        authManager: authManager
+                    )
+                }
+            }
+            .navigationDestination(for: CustomerSummary.self) { customer in
+                CustomerDetailView(
+                    customer: customer,
+                    viewModel: customersViewModel,
+                    onNavigateToWeb: nil
                 )
             }
         }
