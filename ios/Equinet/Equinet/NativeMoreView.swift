@@ -39,6 +39,7 @@ struct NativeMoreView: View {
     let bridge: BridgeHandler
     let authManager: AuthManager
     @Bindable var customersViewModel: CustomersViewModel
+    @Bindable var servicesViewModel: ServicesViewModel
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
     @State private var showLogoutConfirmation = false
@@ -82,7 +83,9 @@ struct NativeMoreView: View {
                 handlePendingPath()
             }
             .navigationDestination(for: MoreMenuItem.self) { item in
-                if item.path == "/provider/customers" {
+                if item.path == "/provider/services" {
+                    NativeServicesView(viewModel: servicesViewModel)
+                } else if item.path == "/provider/customers" {
                     NativeCustomersView(viewModel: customersViewModel)
                 } else {
                     MoreWebView(

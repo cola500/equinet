@@ -54,6 +54,7 @@ struct AuthenticatedView: View {
                         bridge: coordinator.bridge,
                         authManager: authManager,
                         customersViewModel: coordinator.customersViewModel,
+                        servicesViewModel: coordinator.servicesViewModel,
                         pendingPath: $coordinator.pendingMorePath
                     )
                 }
