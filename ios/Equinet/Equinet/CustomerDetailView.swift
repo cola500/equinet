@@ -507,7 +507,7 @@ private struct HorseFormSheet: View {
         self.viewModel = viewModel
         _name = State(initialValue: horse?.name ?? "")
         _breed = State(initialValue: horse?.breed ?? "")
-        _birthYearText = State(initialValue: horse?.birthYear != nil ? String(horse!.birthYear!) : "")
+        _birthYearText = State(initialValue: horse?.birthYear.map(String.init) ?? "")
         _color = State(initialValue: horse?.color ?? "")
         _gender = State(initialValue: horse?.gender ?? "")
         _specialNeeds = State(initialValue: horse?.specialNeeds ?? "")

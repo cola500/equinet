@@ -41,6 +41,7 @@ struct NativeMoreView: View {
     @Bindable var customersViewModel: CustomersViewModel
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
+    @State private var showLogoutConfirmation = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -57,16 +58,23 @@ struct NativeMoreView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        bridge.clearMobileToken()
-                        authManager.logout()
+                        showLogoutConfirmation = true
                     } label: {
                         Label("Logga ut", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                    .confirmationDialog("Vill du logga ut?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
+                        Button("Logga ut", role: .destructive) {
+                            bridge.clearMobileToken()
+                            authManager.logout()
+                        }
+                        Button("Avbryt", role: .cancel) {}
                     }
                 } header: {
                     Text("Konto")
                 }
             }
             .navigationTitle("Mer")
+            .tint(Color.equinetGreen)
             .onChange(of: pendingPath) { _, newPath in
                 guard let path = newPath else { return }
                 let allItems = menuSections.flatMap(\.items)

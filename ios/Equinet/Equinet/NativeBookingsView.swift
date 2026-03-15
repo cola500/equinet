@@ -546,18 +546,31 @@ private struct BookingCard: View {
         }
     }
 
+    // MARK: - Static DateFormatters
+
+    private static let isoDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "sv_SE")
+        return f
+    }()
+
+    private static let displayDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yyyy"
+        f.locale = Locale(identifier: "sv_SE")
+        return f
+    }()
+
     // MARK: - Formatted Date
 
     private var formattedDate: String {
         // bookingDate comes as ISO string "2026-03-14T00:00:00.000Z"
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "sv_SE")
-        if let date = formatter.date(from: String(booking.bookingDate.prefix(10))) {
-            formatter.dateFormat = "d MMM yyyy"
-            return formatter.string(from: date)
+        let dateString = String(booking.bookingDate.prefix(10))
+        if let date = Self.isoDateFormatter.date(from: dateString) {
+            return Self.displayDateFormatter.string(from: date)
         }
-        return String(booking.bookingDate.prefix(10))
+        return dateString
     }
 
     // MARK: - Accessibility

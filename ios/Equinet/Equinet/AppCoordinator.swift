@@ -47,10 +47,6 @@ final class AppCoordinator {
 
     var selectedTab: AppTab = .dashboard
 
-    /// Pending URL path to load when a WebView tab becomes active.
-    /// Set by native calendar tap-to-book.
-    var pendingWebPath: String?
-
     /// Pending path for programmatic navigation in the Mer tab.
     /// Set by dashboard KPI taps to services/reviews/profile.
     var pendingMorePath: String?

@@ -96,8 +96,7 @@ struct NativeDashboardView: View {
             case .pendingBookings:
                 onNavigateToTab?(.bookings)
             case .incompleteOnboarding:
-                // Scroll handled by onboarding being visible
-                break
+                onNavigateToWebPath?("/provider/profile")
             case .none, .unknown:
                 break
             }
@@ -105,7 +104,7 @@ struct NativeDashboardView: View {
             HStack(spacing: 12) {
                 Image(systemName: action.type == .pendingBookings ? "bell.badge" : "checklist")
                     .font(.title3)
-                    .foregroundStyle(action.type == .pendingBookings ? .orange : .blue)
+                    .foregroundStyle(action.type == .pendingBookings ? .orange : Color.equinetGreen)
                     .frame(width: 32)
 
                 Text(action.label)
@@ -124,7 +123,7 @@ struct NativeDashboardView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(action.type == .pendingBookings
                           ? Color.orange.opacity(0.1)
-                          : Color.blue.opacity(0.1))
+                          : Color.equinetGreen.opacity(0.1))
             )
         }
         .buttonStyle(.plain)

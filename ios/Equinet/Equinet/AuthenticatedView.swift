@@ -35,8 +35,8 @@ struct AuthenticatedView: View {
                 // Calendar (Native)
                 Tab(AppTab.calendar.rawValue, systemImage: AppTab.calendar.icon, value: AppTab.calendar) {
                     NativeCalendarView(viewModel: coordinator.calendarViewModel) { path in
-                        coordinator.selectedTab = .dashboard
-                        coordinator.pendingWebPath = path
+                        coordinator.pendingMorePath = path
+                        coordinator.selectedTab = .more
                     }
                 }
 
