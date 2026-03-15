@@ -61,6 +61,7 @@ final class AppCoordinator {
     let networkMonitor: NetworkMonitor
     let calendarViewModel: CalendarViewModel
     let bookingsViewModel: BookingsViewModel
+    let customersViewModel: CustomersViewModel
 
     // MARK: - Init
 
@@ -68,12 +69,14 @@ final class AppCoordinator {
         bridge: BridgeHandler? = nil,
         networkMonitor: NetworkMonitor? = nil,
         calendarViewModel: CalendarViewModel? = nil,
-        bookingsViewModel: BookingsViewModel? = nil
+        bookingsViewModel: BookingsViewModel? = nil,
+        customersViewModel: CustomersViewModel? = nil
     ) {
         self.bridge = bridge ?? BridgeHandler()
         self.networkMonitor = networkMonitor ?? NetworkMonitor()
         self.calendarViewModel = calendarViewModel ?? CalendarViewModel()
         self.bookingsViewModel = bookingsViewModel ?? BookingsViewModel()
+        self.customersViewModel = customersViewModel ?? CustomersViewModel()
     }
 
     // MARK: - Tab routing

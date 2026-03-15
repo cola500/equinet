@@ -158,6 +158,142 @@ final class APIClient {
         }
     }
 
+    // MARK: - Customer Management
+
+    /// Fetch customer list for native customers view
+    func fetchCustomers(status: String? = nil, query: String? = nil) async throws -> [CustomerSummary] {
+        var path = "/api/native/customers"
+        var params: [String] = []
+        if let status { params.append("status=\(status)") }
+        if let query { params.append("q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query)") }
+        if !params.isEmpty { path += "?" + params.joined(separator: "&") }
+
+        let response: CustomersListResponse = try await authenticatedRequest(path: path, responseType: CustomersListResponse.self)
+        return response.customers
+    }
+
+    /// Create a new customer manually
+    func createCustomer(firstName: String, lastName: String, phone: String?, email: String?) async throws -> String {
+        var body: [String: Any] = ["firstName": firstName, "lastName": lastName]
+        if let phone { body["phone"] = phone }
+        if let email { body["email"] = email }
+
+        let (data, _) = try await performRequest(method: "POST", path: "/api/native/customers", body: body)
+        let response = try JSONDecoder().decode(CustomerCreateResponse.self, from: data)
+        return response.customer.id
+    }
+
+    /// Update customer info
+    func updateCustomer(customerId: String, firstName: String, lastName: String, phone: String?, email: String?) async throws -> CustomerUpdateResponse {
+        var body: [String: Any] = ["firstName": firstName]
+        if !lastName.isEmpty { body["lastName"] = lastName }
+        if let phone { body["phone"] = phone }
+        if let email { body["email"] = email }
+
+        let (data, _) = try await performRequest(method: "PUT", path: "/api/native/customers/\(customerId)", body: body)
+        return try JSONDecoder().decode(CustomerUpdateResponse.self, from: data)
+    }
+
+    /// Delete a manually added customer
+    func deleteCustomer(customerId: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)")
+    }
+
+    /// Fetch horses for a customer
+    func fetchCustomerHorses(customerId: String) async throws -> [CustomerHorse] {
+        let response: CustomerHorsesResponse = try await authenticatedRequest(
+            path: "/api/native/customers/\(customerId)/horses",
+            responseType: CustomerHorsesResponse.self
+        )
+        return response.horses
+    }
+
+    /// Create a horse for a customer
+    func createCustomerHorse(customerId: String, name: String, breed: String?, birthYear: Int?, color: String?, gender: String?, specialNeeds: String?, registrationNumber: String?, microchipNumber: String?) async throws -> CustomerHorse {
+        var body: [String: Any] = ["name": name]
+        if let breed { body["breed"] = breed }
+        if let birthYear { body["birthYear"] = birthYear }
+        if let color { body["color"] = color }
+        if let gender { body["gender"] = gender }
+        if let specialNeeds { body["specialNeeds"] = specialNeeds }
+        if let registrationNumber { body["registrationNumber"] = registrationNumber }
+        if let microchipNumber { body["microchipNumber"] = microchipNumber }
+
+        let (data, _) = try await performRequest(method: "POST", path: "/api/native/customers/\(customerId)/horses", body: body)
+        do {
+            return try JSONDecoder().decode(CustomerHorse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Update a horse
+    func updateCustomerHorse(customerId: String, horseId: String, name: String?, breed: String?, birthYear: Int?, color: String?, gender: String?, specialNeeds: String?, registrationNumber: String?, microchipNumber: String?) async throws -> CustomerHorse {
+        var body: [String: Any] = [:]
+        if let name { body["name"] = name }
+        if let breed { body["breed"] = breed }
+        if let birthYear { body["birthYear"] = birthYear }
+        if let color { body["color"] = color }
+        if let gender { body["gender"] = gender }
+        if let specialNeeds { body["specialNeeds"] = specialNeeds }
+        if let registrationNumber { body["registrationNumber"] = registrationNumber }
+        if let microchipNumber { body["microchipNumber"] = microchipNumber }
+
+        let (data, _) = try await performRequest(method: "PUT", path: "/api/native/customers/\(customerId)/horses/\(horseId)", body: body)
+        do {
+            return try JSONDecoder().decode(CustomerHorse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Soft-delete a horse
+    func deleteCustomerHorse(customerId: String, horseId: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)/horses/\(horseId)")
+    }
+
+    /// Fetch notes for a customer
+    func fetchCustomerNotes(customerId: String) async throws -> [CustomerNote] {
+        let response: CustomerNotesResponse = try await authenticatedRequest(
+            path: "/api/native/customers/\(customerId)/notes",
+            responseType: CustomerNotesResponse.self
+        )
+        return response.notes
+    }
+
+    /// Create a note for a customer
+    func createCustomerNote(customerId: String, content: String) async throws -> CustomerNote {
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/customers/\(customerId)/notes",
+            body: ["content": content]
+        )
+        do {
+            return try JSONDecoder().decode(CustomerNote.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Update a note
+    func updateCustomerNote(customerId: String, noteId: String, content: String) async throws -> CustomerNote {
+        let (data, _) = try await performRequest(
+            method: "PUT",
+            path: "/api/native/customers/\(customerId)/notes/\(noteId)",
+            body: ["content": content]
+        )
+        do {
+            return try JSONDecoder().decode(CustomerNote.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete a note
+    func deleteCustomerNote(customerId: String, noteId: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)/notes/\(noteId)")
+    }
+
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
     func refreshToken() async throws {
         guard let currentJwt = KeychainHelper.loadMobileToken() else {

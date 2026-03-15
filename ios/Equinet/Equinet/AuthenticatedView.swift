@@ -53,6 +53,7 @@ struct AuthenticatedView: View {
                     NativeMoreView(
                         bridge: coordinator.bridge,
                         authManager: authManager,
+                        customersViewModel: coordinator.customersViewModel,
                         pendingPath: $coordinator.pendingMorePath
                     )
                 }

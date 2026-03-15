@@ -332,12 +332,44 @@ private struct BookingCard: View {
                 }
             }
 
+            // Customer phone (tappable)
+            if let phone = booking.customerPhone, !phone.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "phone")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Link(phone, destination: URL(string: "tel:\(phone)")!)
+                        .font(.caption)
+                }
+            }
+
             // Provider notes
             if let notes = booking.providerNotes, !notes.isEmpty {
                 Label(notes, systemImage: "note.text")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+            }
+
+            // Customer notes
+            if let customerNotes = booking.customerNotes, !customerNotes.isEmpty {
+                Label(customerNotes, systemImage: "text.bubble")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            // Cancellation message
+            if booking.status == "cancelled", let msg = booking.cancellationMessage, !msg.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.bubble")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    Text(msg)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                }
             }
 
             // Badges
@@ -414,7 +446,13 @@ private struct BookingCard: View {
 
     private func buildBadges() -> [String] {
         var badges: [String] = []
-        if booking.isPaid { badges.append("Betald") }
+        if booking.isPaid {
+            if let inv = booking.invoiceNumber, !inv.isEmpty {
+                badges.append("Betald #\(inv)")
+            } else {
+                badges.append("Betald")
+            }
+        }
         if booking.bookingSeriesId != nil { badges.append("Återkommande") }
         if booking.isManualBooking { badges.append("Manuell") }
         return badges
@@ -527,6 +565,8 @@ private struct BookingCard: View {
     private var accessibilityDescription: String {
         var parts = [booking.serviceName, booking.customerFullName, formattedDate, "\(booking.startTime) till \(booking.endTime)"]
         if let horseName = booking.horseName { parts.append(horseName) }
+        if let phone = booking.customerPhone, !phone.isEmpty { parts.append("Telefon: \(phone)") }
+        if let customerNotes = booking.customerNotes, !customerNotes.isEmpty { parts.append("Kundkommentar: \(customerNotes)") }
         return parts.joined(separator: ", ")
     }
 }
