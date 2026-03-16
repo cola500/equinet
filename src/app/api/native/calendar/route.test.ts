@@ -57,7 +57,7 @@ const mockBooking = {
   endTime: "11:00",
   status: "confirmed",
   horseName: "Blansen",
-  customer: { firstName: "Anna", lastName: "Andersson" },
+  customer: { firstName: "Anna", lastName: "Andersson", phone: "070-123 4567" },
   service: { id: "service-1", name: "Hovslagare", price: 1500 },
   isManualBooking: false,
   payment: null,
@@ -168,6 +168,7 @@ describe("GET /api/native/calendar", () => {
     expect(body.bookings[0].servicePrice).toBe(1500)
     expect(body.bookings[0].isManualBooking).toBe(false)
     expect(body.bookings[0].isPaid).toBe(false)
+    expect(body.bookings[0].customerPhone).toBe("070-123 4567")
 
     // Availability
     expect(body.availability).toHaveLength(1)

@@ -82,14 +82,11 @@ final class BookingsViewModel {
     // MARK: - Computed
 
     /// Filtered bookings based on selected filter.
-    /// "all" excludes cancelled and no_show (matches web behavior).
     var filteredBookings: [BookingsListItem] {
         let filtered: [BookingsListItem]
         switch selectedFilter {
         case .all:
-            filtered = bookings.filter { b in
-                b.status != "cancelled" && b.status != "no_show"
-            }
+            filtered = bookings.filter { $0.status != "cancelled" && $0.status != "no_show" }
         default:
             filtered = bookings.filter { $0.status == selectedFilter.rawValue }
         }

@@ -108,6 +108,7 @@ private func makeBooking(
         horseName: horseName,
         customerFirstName: "Anna",
         customerLastName: "Svensson",
+        customerPhone: nil,
         serviceName: serviceName,
         serviceId: "s1",
         servicePrice: servicePrice,

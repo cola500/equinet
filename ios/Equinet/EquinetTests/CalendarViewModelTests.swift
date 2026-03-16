@@ -91,6 +91,7 @@ private func makeBooking(
         horseName: "Blansen",
         customerFirstName: "Anna",
         customerLastName: "Svensson",
+        customerPhone: "070-123 4567",
         serviceName: serviceName,
         serviceId: serviceId,
         servicePrice: 800,
