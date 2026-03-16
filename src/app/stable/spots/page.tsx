@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Pencil, Check, X } from "lucide-react"
 import {
   ResponsiveAlertDialog,
   ResponsiveAlertDialogContent,
@@ -26,6 +28,8 @@ interface Spot {
 }
 
 export default function StableSpotsPage() {
+  const { isStableOwner, isLoading: authLoading } = useAuth()
+  const router = useRouter()
   const [spots, setSpots] = useState<Spot[]>([])
   const [counts, setCounts] = useState({ total: 0, available: 0 })
   const [isLoading, setIsLoading] = useState(true)
@@ -34,6 +38,18 @@ export default function StableSpotsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [editingSpotId, setEditingSpotId] = useState<string | null>(null)
+  const [editLabel, setEditLabel] = useState("")
+  const [editPrice, setEditPrice] = useState("")
+  const listEndRef = useRef<HTMLDivElement>(null)
+
+  // Redirect guard: require stable profile
+  useEffect(() => {
+    if (!authLoading && !isStableOwner) {
+      toast.error("Skapa en stallprofil först")
+      router.replace("/stable/profile")
+    }
+  }, [authLoading, isStableOwner, router])
 
   const fetchSpots = useCallback(async () => {
     try {
@@ -74,6 +90,8 @@ export default function StableSpotsPage() {
       setNewPrice("")
       await fetchSpots()
       toast.success("Stallplats skapad!")
+      // Scroll to newly added spot
+      setTimeout(() => listEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
     } catch {
       toast.error("Kunde inte skapa stallplats")
     } finally {
@@ -96,6 +114,40 @@ export default function StableSpotsPage() {
       }
     } catch {
       toast.error("Kunde inte uppdatera status")
+    }
+  }
+
+  const handleStartEdit = (spot: Spot) => {
+    setEditingSpotId(spot.id)
+    setEditLabel(spot.label || "")
+    setEditPrice(spot.pricePerMonth != null ? String(spot.pricePerMonth) : "")
+  }
+
+  const handleCancelEdit = () => {
+    setEditingSpotId(null)
+    setEditLabel("")
+    setEditPrice("")
+  }
+
+  const handleSaveEdit = async (spotId: string) => {
+    try {
+      const res = await fetch(`/api/stable/spots/${spotId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: editLabel || undefined,
+          pricePerMonth: editPrice ? parseFloat(editPrice) : undefined,
+        }),
+      })
+      if (res.ok) {
+        await fetchSpots()
+        handleCancelEdit()
+        toast.success("Stallplats uppdaterad")
+      } else {
+        toast.error("Kunde inte uppdatera stallplats")
+      }
+    } catch {
+      toast.error("Kunde inte uppdatera stallplats")
     }
   }
 
@@ -123,7 +175,7 @@ export default function StableSpotsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" role="status" aria-label="Laddar..." />
       </div>
     )
   }
@@ -156,7 +208,8 @@ export default function StableSpotsPage() {
             <Label htmlFor="spotPrice">Pris/mån</Label>
             <Input
               id="spotPrice"
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
               placeholder="kr"
@@ -179,40 +232,88 @@ export default function StableSpotsPage() {
           {spots.map((spot) => (
             <div
               key={spot.id}
-              className="bg-white rounded-lg border p-4 flex items-center justify-between"
+              className="bg-white rounded-lg border p-4"
             >
-              <div>
-                <span className="font-medium">
-                  {spot.label || "Stallplats"}
-                </span>
-                {spot.pricePerMonth && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    {spot.pricePerMonth} kr/mån
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-1 rounded ${
-                  spot.status === "available"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                  {spot.status === "available" ? "Ledig" : "Uthyrd"}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => handleToggleStatus(spot)}>
-                  {spot.status === "available" ? "Markera uthyrd" : "Markera ledig"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDeleteTarget(spot.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              {editingSpotId === spot.id ? (
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor={`edit-label-${spot.id}`}>Namn</Label>
+                    <Input
+                      id={`edit-label-${spot.id}`}
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      placeholder="Namn/etikett"
+                    />
+                  </div>
+                  <div className="w-32">
+                    <Label htmlFor={`edit-price-${spot.id}`}>Pris/mån</Label>
+                    <Input
+                      id={`edit-price-${spot.id}`}
+                      type="text"
+                      inputMode="decimal"
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                      placeholder="kr"
+                    />
+                  </div>
+                  <Button size="sm" onClick={() => handleSaveEdit(spot.id)} className="shrink-0">
+                    <Check className="h-4 w-4 mr-1" />
+                    Spara
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="shrink-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">
+                      {spot.label || "Stallplats"}
+                    </span>
+                    {spot.pricePerMonth != null && (
+                      <span className="ml-2 text-sm text-gray-500">
+                        {spot.pricePerMonth.toLocaleString("sv-SE")} kr/mån
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      spot.status === "available"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      {spot.status === "available" ? "Ledig" : "Uthyrd"}
+                    </span>
+                    <Button
+                      variant={spot.status === "available" ? "outline" : "default"}
+                      size="sm"
+                      onClick={() => handleToggleStatus(spot)}
+                    >
+                      {spot.status === "available" ? "Markera uthyrd" : "Markera ledig"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Redigera ${spot.label || "stallplats"}`}
+                      onClick={() => handleStartEdit(spot)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Ta bort ${spot.label || "stallplats"}`}
+                      onClick={() => setDeleteTarget(spot.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
+          <div ref={listEndRef} />
         </div>
       )}
       {/* Delete confirmation dialog */}
