@@ -41,11 +41,6 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
         <div className="flex items-center gap-2 md:gap-4">
           {isLoading ? null : !isAuthenticated ? (
             <>
-              {stableEnabled && (
-                <Link href="/stables" className="text-sm text-gray-600 hover:text-gray-900 hidden sm:inline">
-                  Hitta stall
-                </Link>
-              )}
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="h-11 px-3 md:px-4">
                   Logga in
@@ -53,8 +48,8 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
               </Link>
               <Link href="/register">
                 <Button size="sm" className="h-11 px-3 md:px-4">
-                  <span className="hidden sm:inline">Kom igång</span>
-                  <span className="sm:hidden">Börja</span>
+                  <span className="hidden sm:inline">Registrera gratis</span>
+                  <span className="sm:hidden">Registrera</span>
                 </Button>
               </Link>
             </>

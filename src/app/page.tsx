@@ -156,11 +156,11 @@ export default function Home() {
                 Registrera dig gratis
               </Button>
             </Link>
-            <Link href="/providers" className="w-full sm:w-auto">
+            <a href="#how-it-works" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8">
-                Hitta tjänster
+                Hur det funkar
               </Button>
-            </Link>
+            </a>
           </div>
         </section>
 
@@ -191,6 +191,24 @@ export default function Home() {
           </div>
         </section>
 
+        {/* F) Så funkar det (flyttad upp) */}
+        <section id="how-it-works" className="py-12 md:py-16 max-w-3xl mx-auto">
+          <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-10">
+            Så funkar det
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {steps.map((item) => (
+              <div key={item.step} className="text-center">
+                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                  {item.step}
+                </div>
+                <h3 className="font-semibold mb-2">{item.title}</h3>
+                <p className="text-sm text-gray-600">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* C) Features */}
         <section className="py-12 md:py-16">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-4">
@@ -216,9 +234,6 @@ export default function Home() {
             })}
           </div>
         </section>
-
-        {/* Announcement Preview (existing component) */}
-        <AnnouncementPreview />
 
         {/* D) USP för kunder */}
         <section className="py-12 md:py-16 max-w-4xl mx-auto">
@@ -262,44 +277,15 @@ export default function Home() {
           </div>
         </section>
 
-        {/* F) Så funkar det */}
-        <section className="py-12 md:py-16 max-w-3xl mx-auto">
-          <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-10">
-            Så funkar det
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {steps.map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-                  {item.step}
-                </div>
-                <h3 className="font-semibold mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-600">{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* G) FAQ */}
-        <section className="py-12 md:py-16 max-w-2xl mx-auto">
+        {/* Announcement Preview med kontextuell rubrik */}
+        <section className="py-12 md:py-16 max-w-4xl mx-auto">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-8">
-            Vanliga frågor
+            Se hur leverantörer annonserar besök
           </h2>
-          <Accordion type="single" collapsible className="w-full">
-            {faqItems.map((item, index) => (
-              <AccordionItem key={index} value={`faq-${index}`}>
-                <AccordionTrigger className="text-left">
-                  {item.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-gray-600">
-                  {item.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <AnnouncementPreview />
         </section>
 
-        {/* H) Varför inte vanliga alternativ */}
+        {/* H) Varför inte vanliga alternativ (flyttad före FAQ) */}
         <section className="py-12 md:py-16 max-w-4xl mx-auto">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-8">
             Varför inte bara SMS eller Facebook?
@@ -332,6 +318,25 @@ export default function Home() {
               <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och offline-stöd -- allt i en app.</p>
             </div>
           </div>
+        </section>
+
+        {/* G) FAQ */}
+        <section className="py-12 md:py-16 max-w-2xl mx-auto">
+          <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-8">
+            Vanliga frågor
+          </h2>
+          <Accordion type="single" collapsible className="w-full">
+            {faqItems.map((item, index) => (
+              <AccordionItem key={index} value={`faq-${index}`}>
+                <AccordionTrigger className="text-left">
+                  {item.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600">
+                  {item.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </section>
 
         {/* I) CTA */}

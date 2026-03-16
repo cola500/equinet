@@ -4,7 +4,7 @@ description: "Arbetsprocesser, patterns, arkitektur och key learnings för utvec
 category: root
 tags: [development, workflow, architecture, patterns]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-16
 related:
   - README.md
   - NFR.md
@@ -74,8 +74,9 @@ sections:
 1. **Planering**: Schema -> API -> UI
 2. **TDD-cykel**: Red -> Green -> Refactor
 3. **Feature branch**: `git checkout -b feature/namn`
-4. **Merge till main**: Efter alla tester är gröna
-5. **Push**: Till remote
+4. **Visuell UX-verifiering**: Vid UI-ändringar -- verifiera med Playwright MCP (se nedan)
+5. **Merge till main**: Efter alla tester är gröna
+6. **Push**: Till remote
 
 ### Release & Versionshantering
 
@@ -170,6 +171,7 @@ src/
 - [ ] Fungerar som förväntat, inga TypeScript-fel (`npm run typecheck`), inga console errors
 - [ ] Säker (Zod-validering, error handling, ingen XSS/SQL injection)
 - [ ] Unit tests skrivna FÖRST, E2E uppdaterade, coverage >= 70%
+- [ ] Visuell UX-verifiering med Playwright MCP (vid UI-ändringar)
 - [ ] Feature branch, alla tester gröna, mergad till main
 - [ ] Docs uppdaterade vid behov
 
@@ -271,6 +273,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS NativeMoreView native-routing**: I `navigationDestination(for: MoreMenuItem.self)` -- kolla `item.path == "/provider/X"` -> visa native vy istället för MoreWebView. Lägg till `navigationDestination(for: ModelType.self)` för detalj-push.
 - **iOS Segmented Picker för tabs i detaljvy**: Använd `Picker(.segmented)` + `switch` -- INTE SwiftUI TabView (krockar med swipe-to-delete i List). Varje tab är en `@ViewBuilder` computed property.
 - **iOS CustomerSheetType enum-pattern**: `enum SheetType: Identifiable` med en enda `.sheet(item:)` modifier. Varje case har egen presentationDetents. Undviker multipla `.sheet`-modifiers som kan krocka.
+- **Visuell UX-verifiering med Playwright MCP**: Vid UI-ändringar -- starta worktree dev-server (`npx next dev -p 3001`) FÖRST, skapa testdata via API, batcha screenshots (logga in -> navigera alla sidor -> verifiera). Huvudrepots dev-server (port 3000) reflekterar INTE worktree-ändringar. Värt det för loading states, a11y, formatering, layoutskift -- inte för ren affärslogik.
 
 ---
 
@@ -309,4 +312,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-03-06
+**Senast uppdaterad**: 2026-03-16

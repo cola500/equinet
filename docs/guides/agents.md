@@ -4,7 +4,7 @@ description: "Guide for the 3 specialized review agents: security-reviewer, tech
 category: guide
 tags: [agents, security-review, architecture, ux-review, workflow]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-16
 related:
   - CLAUDE.md
   - docs/guides/gotchas.md
@@ -79,6 +79,18 @@ Kör **efter** implementation när:
 - Befintliga UI-flöden ändrats väsentligt
 
 `/implement`-skillen flaggar automatiskt när nya sidor skapats.
+
+#### Visuell verifiering (efterföljande steg)
+
+Efter cx-ux-reviewer har gett feedback, verifiera visuellt med **Playwright MCP**:
+
+1. Starta worktree dev-server om du arbetar i worktree: `npx next dev -p 3001`
+2. Skapa testdata via API-anrop (snabbare än att klicka genom UI)
+3. Batcha screenshots: logga in -> navigera alla berörda sidor -> ta screenshots
+4. Kontrollera: loading states, skeleton-vyer, 404-hantering, a11y-attribut, formatering, layoutskift
+5. Fixa eventuella problem direkt
+
+> **Tips**: Visuell verifiering är värt det för UI/UX -- inte för ren affärslogik eller backend-ändringar.
 
 ---
 
