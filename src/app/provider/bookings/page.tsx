@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
-import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
+import { BookingNotesSection } from "@/components/booking/BookingNotesSection"
 import { Calendar, Mic } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
@@ -62,6 +62,7 @@ interface Booking {
   horseName?: string
   horseInfo?: string
   customerNotes?: string
+  providerNotes?: string | null
   horse?: Horse | null
   service: {
     name: string
@@ -455,67 +456,77 @@ function ProviderBookingsContent() {
                   )}
 
                   {booking.status === "confirmed" && (
-                    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-                      <Button
-                        onClick={() => updateBookingStatus(booking.id, "completed")}
-                        className="flex-1"
-                      >
-                        Markera som genomförd
-                      </Button>
-                      <QuickNoteButton
-                        bookingId={booking.id}
-                        variant="inline"
-                        onNoteSaved={() => mutateBookings()}
-                      />
-                      <Button
-                        onClick={() => updateBookingStatus(booking.id, "no_show")}
-                        variant="outline"
-                        className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50"
-                      >
-                        Ej infunnit
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setBookingToCancel(booking.id)
-                          setCancellationMessage("")
-                        }}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        Avboka
-                      </Button>
-                    </div>
+                    <>
+                      <div className="mt-4">
+                        <BookingNotesSection
+                          bookingId={booking.id}
+                          providerNotes={booking.providerNotes ?? null}
+                          status={booking.status}
+                          onNotesUpdate={() => mutateBookings()}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+                        <Button
+                          onClick={() => updateBookingStatus(booking.id, "completed")}
+                          className="flex-1"
+                        >
+                          Markera som genomförd
+                        </Button>
+                        <Button
+                          onClick={() => updateBookingStatus(booking.id, "no_show")}
+                          variant="outline"
+                          className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50"
+                        >
+                          Ej infunnit
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setBookingToCancel(booking.id)
+                            setCancellationMessage("")
+                          }}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Avboka
+                        </Button>
+                      </div>
+                    </>
                   )}
 
                   {booking.status === "completed" && (
-                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {booking.customerReview ? (
-                          <>
-                            <span className="text-sm text-gray-600">Din recension:</span>
-                            <StarRating rating={booking.customerReview.rating} readonly size="sm" />
-                            {booking.customerReview.comment && (
-                              <span className="text-sm text-gray-500 truncate max-w-[200px]">
-                                - {booking.customerReview.comment}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setReviewBooking(booking)}
-                          >
-                            Recensera kund
-                          </Button>
-                        )}
+                    <>
+                      <div className="mt-4">
+                        <BookingNotesSection
+                          bookingId={booking.id}
+                          providerNotes={booking.providerNotes ?? null}
+                          status={booking.status}
+                          onNotesUpdate={() => mutateBookings()}
+                        />
                       </div>
-                      <QuickNoteButton
-                        bookingId={booking.id}
-                        variant="icon"
-                        onNoteSaved={() => mutateBookings()}
-                      />
-                    </div>
+                      <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {booking.customerReview ? (
+                            <>
+                              <span className="text-sm text-gray-600">Din recension:</span>
+                              <StarRating rating={booking.customerReview.rating} readonly size="sm" />
+                              {booking.customerReview.comment && (
+                                <span className="text-sm text-gray-500 truncate max-w-[200px]">
+                                  - {booking.customerReview.comment}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setReviewBooking(booking)}
+                            >
+                              Recensera kund
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>

@@ -26,7 +26,7 @@ import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { CalendarBooking } from "@/types"
 import { CustomerReviewDialog } from "@/components/review/CustomerReviewDialog"
 import { StarRating } from "@/components/review/StarRating"
-import { QuickNoteButton } from "@/components/booking/QuickNoteButton"
+import { BookingNotesSection } from "@/components/booking/BookingNotesSection"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import Link from "next/link"
@@ -82,10 +82,7 @@ export function BookingDetailDialog({
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
-  const [providerNotes, setProviderNotes] = useState("")
-  const [isEditingNotes, setIsEditingNotes] = useState(false)
-  const [isSavingNotes, setIsSavingNotes] = useState(false)
-  const { isOnline, guardMutation } = useOfflineGuard()
+  const { isOnline } = useOfflineGuard()
 
   if (!booking) return null
 
@@ -241,120 +238,12 @@ export function BookingDetailDialog({
 
           {/* Leverantorsanteckningar */}
           {["confirmed", "completed", "no_show"].includes(booking.status) ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-sm text-gray-700">
-                  Dina anteckningar
-                </h4>
-                {!isEditingNotes && (
-                  <QuickNoteButton
-                    bookingId={booking.id}
-                    variant="icon"
-                    onNoteSaved={(cleanedText) => {
-                      onNotesUpdate?.(booking.id, cleanedText)
-                    }}
-                  />
-                )}
-              </div>
-              {isEditingNotes ? (
-                <div className="space-y-2">
-                  <VoiceTextarea
-                    value={providerNotes}
-                    onChange={(value) => setProviderNotes(value)}
-                    maxLength={2000}
-                    placeholder="Skriv anteckningar om behandlingen..."
-                    rows={3}
-                  />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-500">
-                      {providerNotes.length}/2000
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsEditingNotes(false)}
-                        disabled={isSavingNotes}
-                      >
-                        Avbryt
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          setIsSavingNotes(true)
-                          try {
-                            const notesBody = JSON.stringify({
-                              providerNotes: providerNotes.trim() || null,
-                            })
-                            await guardMutation(async () => {
-                              const res = await fetch(
-                                `/api/provider/bookings/${booking.id}/notes`,
-                                {
-                                  method: "PUT",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: notesBody,
-                                }
-                              )
-                              if (res.ok) {
-                                setIsEditingNotes(false)
-                                onNotesUpdate?.(
-                                  booking.id,
-                                  providerNotes.trim() || null
-                                )
-                              }
-                            }, {
-                              method: "PUT",
-                              url: `/api/provider/bookings/${booking.id}/notes`,
-                              body: notesBody,
-                              entityType: "booking-notes",
-                              entityId: booking.id,
-                              optimisticUpdate: () => {
-                                setIsEditingNotes(false)
-                                onNotesUpdate?.(
-                                  booking.id,
-                                  providerNotes.trim() || null
-                                )
-                              },
-                            })
-                          } finally {
-                            setIsSavingNotes(false)
-                          }
-                        }}
-                        disabled={isSavingNotes}
-                      >
-                        {isSavingNotes ? "Sparar..." : "Spara"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : booking.providerNotes ? (
-                <div
-                  className="p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition-colors"
-                  onClick={() => {
-                    setProviderNotes(booking.providerNotes || "")
-                    setIsEditingNotes(true)
-                  }}
-                >
-                  <p className="text-sm text-gray-800">
-                    {booking.providerNotes}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Klicka för att redigera
-                  </p>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setProviderNotes("")
-                    setIsEditingNotes(true)
-                  }}
-                >
-                  Lägg till anteckning
-                </Button>
-              )}
-            </div>
+            <BookingNotesSection
+              bookingId={booking.id}
+              providerNotes={booking.providerNotes ?? null}
+              status={booking.status}
+              onNotesUpdate={(notes) => onNotesUpdate?.(booking.id, notes)}
+            />
           ) : booking.providerNotes ? (
             <div className="p-3 bg-blue-50 rounded">
               <h4 className="font-semibold text-sm text-gray-700 mb-1">
