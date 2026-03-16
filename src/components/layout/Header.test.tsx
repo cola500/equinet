@@ -52,7 +52,7 @@ describe("Header", () => {
     render(<Header />)
 
     expect(screen.getByText("Logga in")).toBeInTheDocument()
-    expect(screen.getByText("Kom igång")).toBeInTheDocument()
+    expect(screen.getByText("Registrera gratis")).toBeInTheDocument()
   })
 
   it("shows user menu when authenticated", () => {

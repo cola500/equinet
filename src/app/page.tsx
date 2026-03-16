@@ -7,7 +7,7 @@ import {
   Bell,
   Heart,
   Route,
-  Mic,
+  Users,
   MessageSquare,
   Map,
   BarChart3,
@@ -53,9 +53,9 @@ const features = [
     description: "Leverantörer planerar rutter på karta och annonserar besök till intresserade kunder.",
   },
   {
-    icon: Mic,
-    title: "Röstloggning i fält",
-    description: "Leverantörer loggar utfört arbete med rösten. AI tolkar och sparar automatiskt.",
+    icon: Users,
+    title: "Kundregister med hästkoppling",
+    description: "Samla kunder, deras hästar och besökshistorik. Anteckningar och sökbart register -- byggt för leverantörer.",
   },
 ]
 
@@ -80,8 +80,8 @@ const customerBenefits = [
 const providerBenefits = [
   {
     icon: MessageSquare,
-    title: "Färre SMS, fler bokningar",
-    description: "Kunder bokar direkt i din kalender. Bekräfta, boka om eller avboka med ett klick.",
+    title: "Samla alla dina kunder",
+    description: "Kundregister med hästar, anteckningar och besökshistorik. Kunder bokar direkt i din kalender -- färre SMS, mer koll.",
   },
   {
     icon: Route,
@@ -127,8 +127,8 @@ const faqItems = [
     answer: "Equinet är byggt specifikt för hästbranschen. Vi förstår att leverantörer reser till kunderna, att hästar behöver regelbunden vård med bestämda intervall, och att hästägare vill ha en samlad vårdhistorik. Det kan inte Bokadirekt eller en Facebook-grupp erbjuda.",
   },
   {
-    question: "Kan jag använda Equinet utan internetuppkoppling?",
-    answer: "Ja. Equinet fungerar som en app på din telefon och stödjer offlineläge. Leverantörer kan se bokningar och logga arbete även utan täckning -- allt synkas automatiskt när uppkopplingen är tillbaka.",
+    question: "Finns Equinet som app?",
+    answer: "Ja. Equinet fungerar som en webapp på alla enheter, och vi har en native iOS-app med inbyggd kalender, bokningsöversikt och kundhantering. Appen finns tillgänglig för leverantörer.",
   },
 ]
 
@@ -148,7 +148,7 @@ export default function Home() {
           </h1>
           <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 px-2 max-w-2xl mx-auto">
             Hitta hovslagare, veterinärer och terapeuter.
-            Boka direkt. Få påminnelser. Håll koll på dina hästar.
+            Boka direkt. Få påminnelser. Allt på ett ställe -- för dig och hästen.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4 sm:px-0">
             <Link href="/register" className="w-full sm:w-auto">
@@ -305,9 +305,9 @@ export default function Home() {
               <h3 className="font-semibold mb-2 text-gray-400">Facebook-grupper</h3>
               <p className="text-sm text-gray-400">Svårt att hitta rätt. Inget bokningssystem. Inlägget försvinner i flödet.</p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-primary/30 text-center relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+            <div className="bg-white rounded-xl p-6 border border-primary/30 text-center ring-1 ring-primary/20 shadow-sm">
+              <div className="flex justify-center mb-4">
+                <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">
                   Byggt för hästbranschen
                 </span>
               </div>
@@ -315,7 +315,7 @@ export default function Home() {
                 <HorseIcon className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-semibold mb-2">Equinet</h3>
-              <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och offline-stöd -- allt i en app.</p>
+              <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och kundhantering -- allt på ett ställe.</p>
             </div>
           </div>
         </section>
@@ -365,10 +365,6 @@ export default function Home() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-12 border-t text-center text-gray-600">
-        <p>&copy; 2026 Equinet. Alla rättigheter förbehållna.</p>
-      </footer>
     </div>
   )
 }
