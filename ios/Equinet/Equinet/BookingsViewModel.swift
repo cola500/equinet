@@ -212,23 +212,26 @@ final class BookingsViewModel {
     // MARK: - Quick Note
 
     func saveQuickNote(bookingId: String, text: String) async -> Bool {
+        AppLogger.network.debug("saveQuickNote: ENTER bookingId=\(bookingId) text.count=\(text.count)")
         guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else {
-            AppLogger.network.error("saveQuickNote: booking \(bookingId) not found in list")
+            AppLogger.network.debug("saveQuickNote: booking NOT FOUND in list")
             return false
         }
 
         let oldBooking = bookings[index]
         actionInProgress = bookingId
-        AppLogger.network.debug("saveQuickNote: start bookingId=\(bookingId)")
+        AppLogger.network.debug("saveQuickNote: before optimistic update")
 
         // Optimistic update
         bookings[index] = oldBooking.withProviderNotes(text)
+        AppLogger.network.debug("saveQuickNote: after optimistic update, before API call")
 
         do {
             _ = try await fetcher.saveQuickNote(bookingId: bookingId, providerNotes: text)
+            AppLogger.network.debug("saveQuickNote: API success, saving cache")
             SharedDataManager.saveBookingsCache(bookings)
             actionInProgress = nil
-            AppLogger.network.debug("saveQuickNote: success bookingId=\(bookingId)")
+            AppLogger.network.debug("saveQuickNote: all done, returning true")
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             #endif
@@ -242,7 +245,7 @@ final class BookingsViewModel {
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
-            AppLogger.network.error("saveQuickNote: failed bookingId=\(bookingId) error=\(error.localizedDescription)")
+            AppLogger.network.debug("saveQuickNote: FAILED bookingId=\(bookingId) error=\(error.localizedDescription)")
             return false
         }
     }

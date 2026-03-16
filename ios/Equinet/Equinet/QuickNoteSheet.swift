@@ -12,7 +12,7 @@ import OSLog
 
 struct QuickNoteSheet: View {
     let existingNotes: String?
-    let onSave: (String) async -> Bool
+    let onSave: @MainActor (String) async -> Bool
 
     @State private var text: String
     @State private var isRecording = false
@@ -24,7 +24,7 @@ struct QuickNoteSheet: View {
 
     private let maxLength = 2000
 
-    init(existingNotes: String?, onSave: @escaping (String) async -> Bool) {
+    init(existingNotes: String?, onSave: @MainActor @escaping (String) async -> Bool) {
         self.existingNotes = existingNotes
         self.onSave = onSave
         self._text = State(initialValue: existingNotes ?? "")
@@ -49,10 +49,11 @@ struct QuickNoteSheet: View {
 
                 Button("Spara") {
                     Task {
+                        AppLogger.network.debug("QuickNoteSheet: SAVE TAPPED text.count=\(text.count)")
                         stopRecording()
                         errorMessage = nil
                         isSaving = true
-                        AppLogger.network.debug("QuickNoteSheet: save tapped, text length=\(text.count)")
+                        AppLogger.network.debug("QuickNoteSheet: calling onSave")
                         let success = await onSave(text)
                         AppLogger.network.debug("QuickNoteSheet: onSave returned \(success)")
                         isSaving = false
