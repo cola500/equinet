@@ -33,6 +33,7 @@ struct WebView: UIViewRepresentable {
     let url: URL
     let bridge: BridgeHandler
     let authManager: AuthManager
+    var hideWebNavigation: Bool = true
     @Binding var canGoBack: Bool
     @Binding var isLoading: Bool
     @Binding var hasNavigationError: Bool
@@ -71,23 +72,11 @@ struct WebView: UIViewRepresentable {
         config.userContentController.addUserScript(bridgeScript)
 
         // Script B: CSS + viewport (atDocumentEnd -- document.head exists now)
-        let cssScript = WKUserScript(
-            source: """
-                var style = document.createElement('style');
-                style.textContent = `
-                    /* Force light mode -- web app lacks dark mode support */
-                    :root {
-                        color-scheme: light;
-                    }
-                    * {
-                        -webkit-user-select: none;
-                        user-select: none;
-                        -webkit-touch-callout: none;
-                    }
-                    input, textarea, [contenteditable="true"] {
-                        -webkit-user-select: auto;
-                        user-select: auto;
-                    }
+        // Navigation-hiding CSS is only injected for provider views (hideWebNavigation=true).
+        // Customer views keep the web nav elements visible.
+        var navHidingCSS = ""
+        if hideWebNavigation {
+            navHidingCSS = """
                     /* Hide web BottomTabBar -- native TabView replaces it */
                     nav[class*="fixed"][class*="bottom-0"] {
                         display: none !important;
@@ -108,6 +97,27 @@ struct WebView: UIViewRepresentable {
                     main.container {
                         padding-top: calc(env(safe-area-inset-top, 20px) + 1rem) !important;
                     }
+                """
+        }
+
+        let cssScript = WKUserScript(
+            source: """
+                var style = document.createElement('style');
+                style.textContent = `
+                    /* Force light mode -- web app lacks dark mode support */
+                    :root {
+                        color-scheme: light;
+                    }
+                    * {
+                        -webkit-user-select: none;
+                        user-select: none;
+                        -webkit-touch-callout: none;
+                    }
+                    input, textarea, [contenteditable="true"] {
+                        -webkit-user-select: auto;
+                        user-select: auto;
+                    }
+                    \(navHidingCSS)
                 `;
                 document.head.appendChild(style);
 

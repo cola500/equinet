@@ -34,6 +34,7 @@ struct CustomerWebView: View {
                     url: url,
                     bridge: bridge,
                     authManager: authManager,
+                    hideWebNavigation: false,
                     canGoBack: $canGoBack,
                     isLoading: $isLoading,
                     hasNavigationError: $hasNavigationError,
