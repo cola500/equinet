@@ -7,13 +7,16 @@
 //
 
 #if os(iOS)
+import Combine
+import OSLog
 import SwiftUI
 
 struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
-    @State private var currentPage: Int = 3  // Center of 7-day window (index 3 = selected date)
+    @State private var newBookingTime: (date: Date, time: String)?
+    @State private var exceptionSheetDate: Date?
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -23,14 +26,41 @@ struct NativeCalendarView: View {
 
     private let calendar = Calendar.current
 
+    /// The displayed date -- driven by @State, bound as TabView selection.
+    /// Single source of truth for header, week strip, AND page swiping.
+    @State private var displayedDate: Date = Calendar.current.startOfDay(for: .now)
+
+    /// Current time for now-line rendering, updated every 60s
+    @State private var currentTime = Date()
+    private let nowTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+
     var body: some View {
         VStack(spacing: 0) {
-            // Date header
+            // Date header -- bound to @State displayedDate
             dateHeader
+
+            // Week strip (7 day circles) -- bound to @State displayedDate
+            WeekStripView(
+                selectedDate: displayedDate,
+                onSelectDate: { date in
+                    let day = calendar.startOfDay(for: date)
+                    withAnimation { displayedDate = day }
+                    viewModel.navigateToDay(date)
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                },
+                exceptionForDate: { viewModel.exceptionForDate($0) }
+            )
+
+            Divider()
 
             // Service filter pills
             if !viewModel.availableServices.isEmpty {
                 serviceFilterBar
+            }
+
+            // Exception info badge (reason + location)
+            if let exc = viewModel.exceptionForDate(displayedDate) {
+                exceptionBadge(exc)
             }
 
             // Offline banner
@@ -41,30 +71,86 @@ struct NativeCalendarView: View {
             // Error state
             if let error = viewModel.error {
                 errorView(error)
+                    .transition(.opacity)
+            } else if viewModel.isLoading && viewModel.bookings.isEmpty {
+                // Loading state (first load only)
+                VStack {
+                    Spacer()
+                    ProgressView("Laddar kalender...")
+                        .font(.subheadline)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+                .transition(.opacity)
             } else {
-                // Day view with swipe
-                TabView(selection: $currentPage) {
-                    ForEach(0..<7, id: \.self) { offset in
-                        dayView(for: dateForOffset(offset))
-                            .tag(offset)
+                // Page-style TabView for day swipe navigation.
+                // Using TabView(selection:) instead of ScrollView+scrollPosition
+                // because TabView selection binding directly drives @State,
+                // guaranteeing visual updates for header and week strip.
+                TabView(selection: $displayedDate) {
+                    ForEach(viewModel.dateRange, id: \.self) { date in
+                        ScrollView(.vertical) {
+                            ZStack(alignment: .topLeading) {
+                                availabilityOverlay(for: date)
+                                timeGrid
+                                timeSlotTapOverlay(for: date)
+                                bookingBlocks(for: date)
+                                if calendar.isDateInToday(date) { nowLine }
+
+                                // Empty state overlay
+                                if viewModel.bookingsForDate(date).isEmpty && !viewModel.isLoading {
+                                    VStack(spacing: 8) {
+                                        Spacer()
+                                            .frame(height: CGFloat(hours.count / 2) * hourHeight - 40)
+                                        Text("Inga bokningar den här dagen")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                            }
+                            .frame(height: CGFloat(hours.count) * hourHeight)
+                        }
+                        .refreshable {
+                            viewModel.refresh()
+                        }
+                        .tag(date)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .onChange(of: currentPage) { _, newPage in
-                    let date = dateForOffset(newPage)
-                    viewModel.selectedDate = date
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-                    // Re-center if near edge (prefetch more data)
-                    if newPage <= 1 || newPage >= 5 {
-                        viewModel.loadDataForSelectedDate()
-                        currentPage = 3
+                .onChange(of: displayedDate) { _, newDate in
+                    // Sync ViewModel for data fetching when page changes
+                    if !calendar.isDate(newDate, inSameDayAs: viewModel.selectedDate) {
+                        viewModel.navigateToDay(newDate)
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                 }
             }
         }
+        .onReceive(nowTimer) { currentTime = $0 }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.error)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
         .onAppear {
+            displayedDate = calendar.startOfDay(for: viewModel.selectedDate)
             viewModel.loadDataForSelectedDate()
+        }
+        .confirmationDialog(
+            newBookingDialogTitle,
+            isPresented: Binding(
+                get: { newBookingTime != nil },
+                set: { if !$0 { newBookingTime = nil } }
+            )
+        ) {
+            Button("Skapa bokning") {
+                if let booking = newBookingTime {
+                    let dateStr = Self.isoDateFormatter.string(from: booking.date)
+                    onNavigateToWeb?("/provider/calendar?newBooking=true&date=\(dateStr)&time=\(booking.time)")
+                    newBookingTime = nil
+                }
+            }
+            Button("Avbryt", role: .cancel) {
+                newBookingTime = nil
+            }
         }
         .sheet(item: $selectedBooking) { booking in
             BookingDetailSheet(
@@ -78,10 +164,24 @@ struct NativeCalendarView: View {
             )
             .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: Binding(
+            get: { exceptionSheetDate != nil },
+            set: { if !$0 { exceptionSheetDate = nil } }
+        )) {
+            if let date = exceptionSheetDate {
+                ExceptionFormSheet(
+                    date: date,
+                    existingException: viewModel.exceptionForDate(date),
+                    onSave: { request in viewModel.saveException(request) },
+                    onDelete: { dateStr in viewModel.deleteException(date: dateStr) }
+                )
+            }
+        }
     }
 
     // MARK: - Date Header
 
+    /// Uses @State displayedDate for visual rendering (not @Observable viewModel)
     private var dateHeader: some View {
         HStack {
             // Previous day
@@ -96,33 +196,46 @@ struct NativeCalendarView: View {
             Spacer()
 
             VStack(spacing: 2) {
-                Text(dayName(for: viewModel.selectedDate))
+                Text(dayName(for: displayedDate))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
-                Text(formattedDate(viewModel.selectedDate))
+                Text(formattedDate(displayedDate))
                     .font(.title3)
                     .fontWeight(.semibold)
             }
 
             Spacer()
 
-            // Today button or next day
-            if !calendar.isDateInToday(viewModel.selectedDate) {
-                Button {
-                    viewModel.goToToday()
-                    currentPage = 3
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                } label: {
-                    Text("Idag")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.accentColor.opacity(0.1))
-                        .clipShape(Capsule())
-                }
+            // Exception button -- opens form to add/edit availability exception
+            Button {
+                exceptionSheetDate = displayedDate
+            } label: {
+                Image(systemName: viewModel.exceptionForDate(displayedDate) != nil
+                    ? "moon.zzz.fill" : "moon.zzz")
+                    .font(.title3)
+                    .foregroundStyle(viewModel.exceptionForDate(displayedDate) != nil
+                        ? Color.orange : .secondary)
+                    .frame(minWidth: 44, minHeight: 44)
             }
+
+            // Today button -- always present to prevent layout shift, hidden when already today
+            Button {
+                let today = calendar.startOfDay(for: .now)
+                withAnimation { displayedDate = today }
+                viewModel.goToToday()
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            } label: {
+                Text("Idag")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.equinetGreen.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+            .opacity(calendar.isDateInToday(displayedDate) ? 0 : 1)
+            .disabled(calendar.isDateInToday(displayedDate))
 
             Button {
                 navigateDay(by: 1)
@@ -135,40 +248,16 @@ struct NativeCalendarView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
-    }
-
-    // MARK: - Day View (scrollable time grid)
-
-    private func dayView(for date: Date) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
-                ZStack(alignment: .topLeading) {
-                    // Availability overlay (behind everything)
-                    availabilityOverlay(for: date)
-
-                    // Time grid lines
-                    timeGrid
-
-                    // Booking blocks
-                    bookingBlocks(for: date)
-
-                    // Now line
-                    if calendar.isDateInToday(date) {
-                        nowLine
-                    }
-                }
-                .frame(height: CGFloat(hours.count) * hourHeight)
-                .id("timeGrid")
-            }
-            .refreshable {
-                viewModel.refresh()
-            }
-            .onAppear {
-                // Scroll to current hour on today, or 08:00 on other days
-                // Small delay to let ScrollView lay out
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    proxy.scrollTo("timeGrid", anchor: .top)
-                }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(dayName(for: displayedDate)), \(formattedDate(displayedDate))")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                navigateDay(by: 1)
+            case .decrement:
+                navigateDay(by: -1)
+            @unknown default:
+                break
             }
         }
     }
@@ -296,14 +385,17 @@ struct NativeCalendarView: View {
         .padding(.trailing, 8)
         .offset(y: top)
         .frame(height: height)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(bookingAccessibilityLabel(booking))
+        .accessibilityHint("Dubbelklicka för detaljer")
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Now Line
 
     private var nowLine: some View {
-        let now = Date()
-        let hour = calendar.component(.hour, from: now)
-        let minute = calendar.component(.minute, from: now)
+        let hour = calendar.component(.hour, from: currentTime)
+        let minute = calendar.component(.minute, from: currentTime)
         let position = timePositionFromComponents(hour: hour, minute: minute)
 
         return HStack(spacing: 0) {
@@ -318,6 +410,8 @@ struct NativeCalendarView: View {
                 .frame(height: 1.5)
         }
         .offset(y: position - 4) // Center the circle on the line
+        .accessibilityLabel("Nuvarande tid, klockan \(String(format: "%02d:%02d", hour, minute))")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     // MARK: - Availability Overlay
@@ -433,11 +527,11 @@ struct NativeCalendarView: View {
                 .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color(.systemGray5))
+                .background(isSelected ? Color.equinetGreen : Color(.systemGray5))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .clipShape(Capsule())
         }
-        .frame(minHeight: 36)
+        .frame(minHeight: 44)
     }
 
     // MARK: - Offline Banner
@@ -455,6 +549,86 @@ struct NativeCalendarView: View {
         .padding(.vertical, 6)
         .background(Color.orange)
     }
+
+    // MARK: - Exception Badge
+
+    private func exceptionBadge(_ exc: NativeException) -> some View {
+        HStack(spacing: 6) {
+            if exc.isClosed, let reason = exc.reason, !reason.isEmpty {
+                Label(reason, systemImage: "moon.zzz")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if exc.isClosed {
+                Label("Stängd", systemImage: "moon.zzz")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let location = exc.location, !location.isEmpty {
+                Label(location, systemImage: "mappin.circle")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemGray6))
+    }
+
+    // MARK: - Accessibility Helpers
+
+    private func bookingAccessibilityLabel(_ booking: NativeBooking) -> String {
+        var parts = [booking.serviceName]
+        parts.append("klockan \(booking.startTime) till \(booking.endTime)")
+        parts.append(booking.customerFullName)
+        if let horse = booking.horseName {
+            parts.append(horse)
+        }
+        let statusText: String
+        switch booking.status {
+        case "pending": statusText = "väntande"
+        case "confirmed": statusText = "bekräftad"
+        case "completed": statusText = "slutförd"
+        case "cancelled": statusText = "avbokad"
+        case "no_show": statusText = "utebliven"
+        default: statusText = booking.status
+        }
+        parts.append(statusText)
+        if booking.isPaid { parts.append("betald") }
+        return parts.joined(separator: ", ")
+    }
+
+    // MARK: - Tap-to-Book
+
+    private var newBookingDialogTitle: String {
+        guard let booking = newBookingTime else { return "" }
+        return "Ny bokning \(Self.shortDateFormatter.string(from: booking.date)) kl \(booking.time)?"
+    }
+
+    private func timeSlotTapOverlay(for date: Date) -> some View {
+        let totalHeight = CGFloat(hours.count) * hourHeight
+        return Color.clear
+            .frame(height: totalHeight)
+            .padding(.leading, 52)
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                let time = timeFromTapPosition(location.y)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                newBookingTime = (date: date, time: time)
+            }
+    }
+
+    /// Convert Y position to "HH:mm" snapped to nearest 15 min
+    private func timeFromTapPosition(_ localY: CGFloat) -> String {
+        let totalHeight = CGFloat(hours.count) * hourHeight
+        let clamped = max(0, min(localY, totalHeight))
+        let totalMinutes = (clamped / totalHeight) * CGFloat(hours.count) * 60
+        let snapped = Int(round(totalMinutes / 15)) * 15
+        let hour = startHour + snapped / 60
+        let minute = snapped % 60
+        return String(format: "%02d:%02d", min(hour, endHour), minute)
+    }
+
 
     // MARK: - Time Position Helpers
 
@@ -509,30 +683,50 @@ struct NativeCalendarView: View {
         return weekday == 1 ? 6 : weekday - 2
     }
 
-    private func dateForOffset(_ offset: Int) -> Date {
-        // Offset 3 = selectedDate, 0 = selectedDate-3, 6 = selectedDate+3
-        calendar.date(byAdding: .day, value: offset - 3, to: viewModel.selectedDate)!
-    }
-
     private func navigateDay(by days: Int) {
-        let newDate = calendar.date(byAdding: .day, value: days, to: viewModel.selectedDate)!
+        let newDate = calendar.date(byAdding: .day, value: days, to: displayedDate)!
+        let day = calendar.startOfDay(for: newDate)
+        withAnimation { displayedDate = day }
         viewModel.navigateToDay(newDate)
-        currentPage = 3
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
+    // MARK: - Static DateFormatters (avoid per-render allocation)
+
+    private static let dayNameFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "EEEE"
+        return f
+    }()
+
+    private static let fullDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "d MMMM yyyy"
+        return f
+    }()
+
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "d MMMM"
+        return f
+    }()
+
+    private static let isoDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     private func dayName(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        Self.dayNameFormatter.string(from: date)
     }
 
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: date)
+        Self.fullDateFormatter.string(from: date)
     }
 }
+
 #endif

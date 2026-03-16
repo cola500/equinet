@@ -6,7 +6,8 @@
  */
 import { MobileTokenService } from "@/domain/auth/MobileTokenService"
 import { mobileTokenRepository } from "@/infrastructure/persistence/mobile-token"
-import { SignJWT } from "jose"
+import { EncryptJWT, base64url, calculateJwkThumbprint } from "jose"
+import { hkdf } from "@panva/hkdf"
 
 // Singleton service using NEXTAUTH_SECRET
 let mobileTokenService: MobileTokenService | null = null
@@ -57,7 +58,6 @@ export interface SessionCookieResult {
   value: string
   maxAge: number
   secure: boolean
-  domain: string
 }
 
 /**
@@ -83,34 +83,40 @@ export async function createSessionCookieValue(user: {
     ? "__Secure-next-auth.session-token"
     : "next-auth.session-token"
 
-  const domain = isProduction
-    ? process.env.NEXTAUTH_URL
-      ? new URL(process.env.NEXTAUTH_URL).hostname
-      : "equinet.vercel.app"
-    : "localhost"
-
   const maxAge = 24 * 60 * 60 // 24h, matches auth.config.ts:54
   const now = Math.floor(Date.now() / 1000)
 
-  const encodedSecret = new TextEncoder().encode(secret)
-  const jwt = await new SignJWT({
+  // Derive encryption key exactly like NextAuth (@auth/core/jwt.js)
+  // Algorithm: dir + A256CBC-HS512, key derived via HKDF with salt = cookie name
+  const encryptionSecret = await hkdf(
+    "sha256",
+    secret,
+    cookieName,
+    `Auth.js Generated Encryption Key (${cookieName})`,
+    64
+  )
+  const thumbprint = await calculateJwkThumbprint(
+    { kty: "oct", k: base64url.encode(encryptionSecret) },
+    `sha${encryptionSecret.byteLength << 3}` as "sha256" | "sha384" | "sha512"
+  )
+  const jwt = await new EncryptJWT({
     sub: user.id,
     id: user.id,
     name: user.name,
     userType: user.userType,
     isAdmin: user.isAdmin,
     providerId: user.providerId,
-    iat: now,
-    exp: now + maxAge,
   })
-    .setProtectedHeader({ alg: "HS256" })
-    .sign(encodedSecret)
+    .setProtectedHeader({ alg: "dir", enc: "A256CBC-HS512", kid: thumbprint })
+    .setIssuedAt()
+    .setExpirationTime(now + maxAge)
+    .setJti(crypto.randomUUID())
+    .encrypt(encryptionSecret)
 
   return {
     name: cookieName,
     value: jwt,
     maxAge,
     secure: isProduction,
-    domain,
   }
 }

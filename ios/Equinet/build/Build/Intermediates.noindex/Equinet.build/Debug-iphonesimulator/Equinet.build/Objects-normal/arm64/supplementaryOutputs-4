@@ -1,0 +1,30 @@
+{
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/CalendarViewModel.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarViewModel.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarViewModel.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarViewModel.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarViewModel.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CalendarViewModel.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/Color+Brand.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/Color+Brand.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/Color+Brand.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/Color+Brand.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/Color+Brand.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/Color+Brand.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/ContentView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/ContentView.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/ContentView.swiftdeps"
+  },
+  "/Users/johanlindengard/Development/equinet/ios/Equinet/Equinet/CustomerWebView.swift" : {
+    "const-values" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CustomerWebView.swiftconstvalues",
+    "dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CustomerWebView.d",
+    "diagnostics" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CustomerWebView.dia",
+    "object" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CustomerWebView.o",
+    "swift-dependencies" : "/Users/johanlindengard/Development/equinet/ios/Equinet/build/Build/Intermediates.noindex/Equinet.build/Debug-iphonesimulator/Equinet.build/Objects-normal/arm64/CustomerWebView.swiftdeps"
+  }
+}

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct NativeBooking: Codable, Identifiable {
+struct NativeBooking: Codable, Identifiable, Sendable {
     let id: String
     let bookingDate: String       // ISO 8601 date
     let startTime: String         // "HH:mm"
@@ -64,22 +64,32 @@ struct NativeBooking: Codable, Identifiable {
     }
 }
 
-struct NativeAvailability: Codable {
+struct NativeAvailability: Codable, Sendable {
     let dayOfWeek: Int            // 0-6 (0=Monday)
     let startTime: String         // "HH:mm"
     let endTime: String           // "HH:mm"
     let isClosed: Bool
 }
 
-struct NativeException: Codable {
+struct NativeException: Codable, Sendable {
     let date: String              // ISO 8601 date
     let isClosed: Bool
     let startTime: String?
     let endTime: String?
     let reason: String?
+    let location: String?         // Optional for backward compat with cache
 }
 
-struct CalendarResponse: Codable {
+struct ExceptionSaveRequest: Encodable, Sendable {
+    let date: String              // YYYY-MM-DD
+    let isClosed: Bool
+    let startTime: String?
+    let endTime: String?
+    let reason: String?
+    let location: String?
+}
+
+struct CalendarResponse: Codable, Sendable {
     let bookings: [NativeBooking]
     let availability: [NativeAvailability]
     let exceptions: [NativeException]

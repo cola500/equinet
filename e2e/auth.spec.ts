@@ -122,8 +122,8 @@ test.describe('Authentication Flow', () => {
     // Klicka på "Logga ut" i dropdownen
     await page.getByRole('menuitem', { name: /logga ut/i }).click();
 
-    // Verifiera redirect till startsidan
-    await expect(page).toHaveURL('/', { timeout: 5000 });
+    // Verifiera redirect till startsidan (URL kan vara localhost eller LAN-IP)
+    await expect(page).toHaveURL(/\/$/, { timeout: 5000 });
   });
 
   test('should validate password requirements', async ({ page }) => {

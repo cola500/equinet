@@ -17,7 +17,7 @@ const updateGroupBookingSchema = z.object({
     { message: "Ogiltigt datumformat" }
   ).optional(),
   status: z.enum(["open", "matched", "completed", "cancelled"]).optional(),
-})
+}).strict()
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const clientIp = getClientIP(request)

@@ -70,5 +70,5 @@ struct BiometricPromptView: View {
 }
 
 #Preview {
-    BiometricPromptView(authManager: AuthManager())
+    BiometricPromptView(authManager: .createDefault())
 }

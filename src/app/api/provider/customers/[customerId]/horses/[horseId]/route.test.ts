@@ -15,7 +15,8 @@ vi.mock("@/lib/prisma", () => ({
     providerCustomer: { count: vi.fn() },
     horse: {
       findFirst: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }))
@@ -143,7 +144,8 @@ describe("PUT /api/provider/customers/[customerId]/horses/[horseId]", () => {
       id: "h1",
       ownerId: "c1",
     } as never)
-    vi.mocked(prisma.horse.update).mockResolvedValue({
+    vi.mocked(prisma.horse.updateMany).mockResolvedValue({ count: 1 } as never)
+    vi.mocked(prisma.horse.findUnique).mockResolvedValue({
       id: "h1",
       name: "Uppdaterad",
       breed: "Islandshäst",
@@ -214,10 +216,7 @@ describe("DELETE /api/provider/customers/[customerId]/horses/[horseId]", () => {
       id: "h1",
       ownerId: "c1",
     } as never)
-    vi.mocked(prisma.horse.update).mockResolvedValue({
-      id: "h1",
-      isActive: false,
-    } as never)
+    vi.mocked(prisma.horse.updateMany).mockResolvedValue({ count: 1 } as never)
 
     const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses/h1", {
       method: "DELETE",
@@ -228,9 +227,9 @@ describe("DELETE /api/provider/customers/[customerId]/horses/[horseId]", () => {
     expect(response.status).toBe(200)
     expect(data.message).toContain("tagits bort")
 
-    expect(prisma.horse.update).toHaveBeenCalledWith(
+    expect(prisma.horse.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "h1" },
+        where: { id: "h1", ownerId: "c1", isActive: true },
         data: { isActive: false },
       })
     )

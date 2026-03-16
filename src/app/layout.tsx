@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
@@ -21,6 +21,10 @@ const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
   variable: "--font-heading",
 });
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "Equinet - Bokningsplattform för hästtjänster",

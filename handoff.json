@@ -1,180 +1,117 @@
 {
-  "title": "Stallprofiler och Stallplatser - Marketplace Expansion",
-  "branch": "feature/stallagare",
-  "date": "2026-03-09",
-  "plan": "docs/plans/stallagare.md",
+  "project": "equinet",
+  "branch": "feature/ios-feature-polish",
+  "plan": "docs/plans/ios-ux-comprehensive-review.md",
+  "status": "all_sessions_complete",
+  "lastVerifiedBuild": true,
+  "lastVerifiedTests": "70/70 passed (0 failures)",
+  "sessionsCompleted": ["A", "B", "C", "D", "E", "F", "G"],
+  "sessionsInProgress": [],
+  "sessionsPending": [],
 
-  "completed": {
-    "fas1": {
-      "name": "Schema + Auth + Repository",
-      "status": "done",
-      "tests": 8,
-      "summary": "Prisma-modeller (Stable, StableSpot, StableInviteToken), migration, feature flag stable_profiles, stableId i JWT/session/types, useAuth med isStableOwner/stableId, IStableRepository + MockStableRepository + PrismaStableRepository, StableService med TDD, Zod-validering",
-      "files_created": [
-        "prisma/migrations/20260309120609_add_stable_models/migration.sql",
-        "src/infrastructure/persistence/stable/IStableRepository.ts",
-        "src/infrastructure/persistence/stable/MockStableRepository.ts",
-        "src/infrastructure/persistence/stable/PrismaStableRepository.ts",
-        "src/domain/stable/StableService.ts",
-        "src/domain/stable/StableService.test.ts",
-        "src/domain/stable/StableServiceFactory.ts",
-        "src/lib/validations/stable.ts"
-      ],
-      "files_modified": [
-        "prisma/schema.prisma",
-        "src/types/next-auth.d.ts",
-        "src/lib/auth.config.ts",
-        "src/domain/auth/AuthService.ts",
-        "src/hooks/useAuth.ts",
-        "src/lib/feature-flag-definitions.ts",
-        "src/infrastructure/persistence/auth/IAuthRepository.ts",
-        "src/infrastructure/persistence/auth/PrismaAuthRepository.ts",
-        "src/infrastructure/persistence/auth/MockAuthRepository.ts",
-        "src/lib/feature-flags.test.ts",
-        "src/app/api/feature-flags/route.test.ts"
-      ]
+  "sessionA_completed": {
+    "description": "Säkerhet + Loggning + Brand",
+    "fas1_color_brand": "KLAR - Color+Brand.swift skapad, 4 filer uppdaterade",
+    "fas2_applogger": "KLAR - AppLogger.swift skapad, ~33 print() ersatta i 9 filer, KeychainHelper behåller print() (R1)",
+    "fas3_push_deregistration": "KLAR - clearMobileToken() avregistrerar device token innan Keychain rensas",
+    "fas4_webview_cleanup": "KLAR - WebView-data rensas vid logout, webViewId tvingar re-creation"
+  },
+
+  "sessionB_completed": {
+    "description": "Haptics + Backoff + NetworkMonitor",
+    "fas1_haptics": "KLAR - AuthManager login/biometric success haptic, NativeCalendarView filter pill selection haptic, ContentView error retry haptic",
+    "fas2_networkmonitor": "KLAR - onStatusChanged callback borttagen, all reconnect-logik i .onChange(of: networkMonitor.isConnected)",
+    "fas3_pendingactionstore": "KLAR - retryCount (bakåtkompatibelt), exponentiell backoff med jitter, max 5 retries, circuit breaker (2 failures)"
+  },
+
+  "sessionC_completed": {
+    "description": "DI + Tester",
+    "fas1_calendarviewmodel_di": {
+      "status": "KLAR",
+      "details": "CalendarDataFetching, CalendarCaching, CalendarSyncing protokoll. APICalendarFetcher, SharedDataCalendarCache, EventKitCalendarSync adapter-structs. Constructor injection med nil-defaults (MainActor-workaround). CalendarViewModelTests.swift med 18 tester -- ALLA GRÖNA.",
+      "new_features": "updateBookingStatus() optimistisk UI + revert, actionInProgress, selectedServiceFilter, availableServices"
     },
-    "fas2": {
-      "name": "Stallprofil - skapa och redigera",
-      "status": "done",
-      "tests": 13,
-      "summary": "API: POST/GET/PUT /api/stable/profile med feature flag gating, auth, rate limiting, Zod. StableLayout, StableNav (desktop + mobil BottomTabBar, rollvaxlare), /stable/profile sida med create/edit form, /stable/dashboard sida, session-refresh via useSession().update()",
-      "files_created": [
-        "src/app/api/stable/profile/route.ts",
-        "src/app/api/stable/profile/route.test.ts",
-        "src/components/layout/StableLayout.tsx",
-        "src/components/layout/StableNav.tsx",
-        "src/app/stable/layout.tsx",
-        "src/app/stable/profile/page.tsx",
-        "src/app/stable/dashboard/page.tsx"
-      ]
+    "fas2_bridgehandler_di": {
+      "status": "KLAR",
+      "details": "SpeechRecognizable protokoll i SpeechRecognizer.swift. BridgeHandler constructor injection (speechRecognizer: SpeechRecognizable? = nil). BridgeHandlerTests.swift med 9 tester -- ALLA GRÖNA."
     },
-    "fas3": {
-      "name": "Stallplatser - CRUD",
-      "status": "done",
-      "tests": 21,
-      "summary": "StableSpotService med TDD (7 tester), API: POST/GET /api/stable/spots (8 tester), PUT/DELETE /api/stable/spots/[spotId] (6 tester), ownership via stableId. /stable/spots sida med create, toggle status, delete",
-      "files_created": [
-        "src/domain/stable/StableSpotService.ts",
-        "src/domain/stable/StableSpotService.test.ts",
-        "src/domain/stable/StableSpotServiceFactory.ts",
-        "src/app/api/stable/spots/route.ts",
-        "src/app/api/stable/spots/route.test.ts",
-        "src/app/api/stable/spots/[spotId]/route.ts",
-        "src/app/api/stable/spots/[spotId]/route.test.ts",
-        "src/app/stable/spots/page.tsx"
-      ]
+    "fas3_calendarmodels_restored": {
+      "status": "KLAR",
+      "details": "Återställde session 88-fält (serviceId, bookingSeriesId, customerNotes, providerNotes, withStatus()) som tappats av session A/B/C överskrivningar."
     },
-    "fas4": {
-      "name": "Publik sökning + stallprofil",
-      "status": "done",
-      "tests": 16,
-      "summary": "API: GET /api/stables (publik sökning med municipality/city/search/hasAvailableSpots), GET /api/stables/[stableId] (publik profil + lediga platser). useStableSearch hook med debounce+URL-sync. /stables söksida med kommun-autocomplete, /stables/[stableId] profilsida med generateMetadata SEO. Auth.config fix: /stables publikt, /stable/ skyddat. Svenska tecken-fix i 4 fas 1-3 filer.",
-      "files_created": [
-        "src/app/api/stables/route.ts",
-        "src/app/api/stables/route.test.ts",
-        "src/app/api/stables/[stableId]/route.ts",
-        "src/app/api/stables/[stableId]/route.test.ts",
-        "src/hooks/useStableSearch.ts",
-        "src/app/stables/page.tsx",
-        "src/app/stables/[stableId]/page.tsx",
-        "src/app/stables/[stableId]/StableProfileView.tsx"
-      ],
-      "files_modified": [
-        "src/lib/auth.config.ts",
-        "src/domain/stable/StableService.ts",
-        "src/app/stable/layout.tsx",
-        "src/app/api/stable/spots/route.ts",
-        "src/app/api/stable/spots/[spotId]/route.ts",
-        "src/components/layout/StableNav.tsx"
-      ]
+    "fas4_speechrecognizer_restored": {
+      "status": "KLAR",
+      "details": "Återställde session 88-features (onAudioLevel RMS 10Hz, confidence scores, onTranscript 3-param). Konverterade print() -> AppLogger.speech."
+    },
+    "fas5_bridgehandler_logging": {
+      "status": "KLAR",
+      "details": "Alla print() i BridgeHandler -> AppLogger.bridge med rätt lognivåer. Återställde speechAudioLevel enum case."
     }
   },
 
-  "remaining": {
-    "fas5": {
-      "name": "Koppla hast till stall",
-      "status": "todo",
-      "description": "Hastagare kan ange vilket stall hasten star pa",
-      "tasks": [
-        "API: PATCH /api/horses/[horseId]/stable (set/remove stableId) med ownership-check",
-        "StableSelector-komponent (autocomplete mot GET /api/stables?search=...&limit=10)",
-        "Integrera StableSelector i hastformularet (/customer/horses/[horseId])",
-        "Visa stall-info pa hastprofil (namn + kommun, lank till stallprofil)"
-      ],
-      "files_to_create": [
-        "src/app/api/horses/[horseId]/stable/route.ts",
-        "src/app/api/horses/[horseId]/stable/route.test.ts",
-        "src/components/stable/StableSelector.tsx"
-      ],
-      "important_notes": [
-        "Horse.stableId redan tillagt i schema (fas 1)",
-        "Ownership-check: horseId maste tillhora session user",
-        "Validera att stableId finns och ar aktivt"
-      ]
-    },
-    "fas6": {
-      "name": "Inbjudningssystem",
-      "status": "todo",
-      "description": "Stallagare kan bjuda in hastagare via email",
-      "tasks": [
-        "Repository-triad: IStableInviteRepository + Mock + Prisma (kopiera CustomerInviteToken-monstret)",
-        "StableInviteService (domain): skapa, validera, acceptera inbjudan",
-        "API: POST /api/stable/invites (skapa inbjudan, skicka email)",
-        "API: GET /api/stable/invites/[token] (visa inbjudan - publik)",
-        "API: POST /api/stable/invites/[token]/accept (ny user: skapa konto + koppla, befintlig: koppla direkt)",
-        "UI: /stable/invites - hantera inbjudningar",
-        "UI: /invite/stable/[token] - publik accept-sida",
-        "Email-template for inbjudan"
-      ],
-      "files_to_create": [
-        "src/infrastructure/persistence/stable-invite/IStableInviteRepository.ts",
-        "src/infrastructure/persistence/stable-invite/MockStableInviteRepository.ts",
-        "src/infrastructure/persistence/stable-invite/PrismaStableInviteRepository.ts",
-        "src/domain/stable/StableInviteService.ts",
-        "src/domain/stable/StableInviteService.test.ts",
-        "src/app/api/stable/invites/route.ts",
-        "src/app/api/stable/invites/route.test.ts",
-        "src/app/api/stable/invites/[token]/route.ts",
-        "src/app/api/stable/invites/[token]/accept/route.ts",
-        "src/app/api/stable/invites/[token]/accept/route.test.ts",
-        "src/app/stable/invites/page.tsx",
-        "src/app/invite/stable/[token]/page.tsx"
-      ],
-      "important_notes": [
-        "StableInviteToken modell redan i schema (fas 1)",
-        "Invalidera gamla tokens for samma email+stall innan ny skapas",
-        "Token: randomBytes(32), 7 dagars expiry",
-        "Horse.stableId satts INTE automatiskt vid accept - hastagaren valjer sjalv (fas 5)",
-        "Kopiera pattern fran src/infrastructure/persistence/invite/"
-      ]
-    },
-    "e2e_tests": {
-      "description": "E2E-tester efter alla faser",
-      "env_setup": "FEATURE_STABLE_PROFILES=true i .env + playwright.config.ts webServer.env",
-      "specs": [
-        "e2e/stable-profile.spec.ts",
-        "e2e/stable-spots.spec.ts",
-        "e2e/stable-search.spec.ts",
-        "e2e/stable-horse-link.spec.ts",
-        "e2e/stable-invite.spec.ts"
-      ]
-    }
+  "sessionD_completed": {
+    "description": "Tillgänglighet + Native Feel (MI-3, MI-5, LF-1)",
+    "fas1_dynamic_type": "KLAR - NativeTabBar: .system(size: 20/10) -> .title3/.caption2. Dekorativa ikoner behållna.",
+    "fas2_animations": "KLAR - .transition(.move+.opacity) på kalender, .transition(.opacity) på error, ProgressView vid första laddning, .animation(.easeInOut 0.25s)",
+    "fas3_voiceover": "KLAR - Bokningsblock: .combine + rik label (tjänst/tid/kund/häst/status/betald) + hint. Now-line: .updatesFrequently + tidslabel. Tab bar: .isSelected trait + hint. Date header: .accessibilityAdjustableAction (svep byter dag)."
   },
 
-  "verification": {
-    "tests_total": 3227,
-    "tests_new": 58,
-    "tests_all_green": true,
-    "typecheck": "0 errors",
-    "lint": "0 errors (25 pre-existing warnings)",
-    "migration_applied": "20260309120609_add_stable_models"
+  "sessionE_completed": {
+    "description": "Robusthet (MI-6, LF-2)",
+    "fas1_api_errors": "KLAR - rateLimited(retryAfter:) + timeout error cases. 429-hantering med Retry-After header i performRequest. Timeout-catch på URLError.timedOut. Differentierade felmeddelanden i CalendarViewModel (rate limit, timeout, serverfel, nätverksfel).",
+    "fas2_cookie_lifecycle": "KLAR - WKHTTPCookieStoreObserver i Coordinator, filtrerar på authjs.session-token cookies. Cookie-borttagning -> auto-logout. HTTP 401-detektion i decidePolicyFor -> auto-logout. Alla print() -> AppLogger.webview/auth."
   },
 
-  "architecture_notes": {
-    "url_convention": "/api/stable/* = auth-skyddad (agarens stall), /api/stables/* = publik (sok)",
-    "auth_flow": "stableId i JWT/session, refreshas via useSession().update() efter stallskapande",
-    "ownership_pattern": "Alla CRUD: session.user.id -> findByUserId -> stableId, aldrig stableId fran request",
-    "feature_flag": "stable_profiles gatar alla routes (server 404) och alla sidor (client FeatureFlagProvider)"
-  }
+  "sessionF_completed": {
+    "description": "Infrastruktur (LF-3, LF-4)",
+    "fas1_ci": "KLAR - .github/workflows/ios-tests.yml skapad. Trigger: push/PR på ios/**. macos-15 runner, xcodebuild build + test, artifact upload vid failure.",
+    "fas2_bg_refresh": "KLAR - BGTaskScheduler.register() i AppDelegate. BGAppRefreshTaskRequest var 30 min. handleWidgetRefresh hämtar API -> SharedDataManager -> WidgetCenter.reloadAllTimelines. scheduleWidgetRefresh() anropas vid scenePhase .background. BGTaskSchedulerPermittedIdentifiers i Info.plist. Alla print() -> AppLogger.push."
+  },
+
+  "sessionG_completed": {
+    "description": "Testcoverage (LF-5)",
+    "fas1_speech_tests": "KLAR - AudioSessionConfigurable protokoll + AVAudioSession conformance. SpeechRecognizer constructor injection (audioSession:). SpeechRecognizerTests.swift med 12 tester (error enum, callbacks, state, stop, DI).",
+    "fas2_calendar_tests": "KLAR - CalendarEventStoring + CalendarSyncStorage protokoll. EKEventStoreAdapter + SharedDataCalendarStorage adapters. CalendarSyncManager DI init. CalendarSyncManagerTests.swift med 23 tester (sync logic, filtering, permissions, formatting, date parsing, cleanup). Alla print() -> AppLogger.calendar."
+  },
+
+  "remainingPlan": {},
+
+  "newFiles": [
+    "ios/Equinet/Equinet/Color+Brand.swift",
+    "ios/Equinet/Equinet/AppLogger.swift",
+    "ios/Equinet/EquinetTests/CalendarViewModelTests.swift",
+    "ios/Equinet/EquinetTests/BridgeHandlerTests.swift",
+    "docs/plans/ios-ux-comprehensive-review.md",
+    "ios/Equinet/EquinetTests/SpeechRecognizerTests.swift",
+    "ios/Equinet/EquinetTests/CalendarSyncManagerTests.swift",
+    ".github/workflows/ios-tests.yml"
+  ],
+
+  "modifiedFiles": [
+    "ios/Equinet/Equinet/AppDelegate.swift",
+    "ios/Equinet/Equinet/AuthManager.swift",
+    "ios/Equinet/Equinet/BiometricPromptView.swift",
+    "ios/Equinet/Equinet/BridgeHandler.swift",
+    "ios/Equinet/Equinet/CalendarModels.swift",
+    "ios/Equinet/Equinet/CalendarSyncManager.swift",
+    "ios/Equinet/Equinet/CalendarViewModel.swift",
+    "ios/Equinet/Equinet/ContentView.swift",
+    "ios/Equinet/Equinet/NativeCalendarView.swift",
+    "ios/Equinet/Equinet/NativeLoginView.swift",
+    "ios/Equinet/Equinet/NativeTabBar.swift",
+    "ios/Equinet/Equinet/NetworkMonitor.swift",
+    "ios/Equinet/Equinet/PendingActionStore.swift",
+    "ios/Equinet/Equinet/PushManager.swift",
+    "ios/Equinet/Equinet/SpeechRecognizer.swift",
+    "ios/Equinet/Equinet/SplashView.swift",
+    "ios/Equinet/Equinet/WebView.swift"
+  ],
+
+  "notes": [
+    "SourceKit-diagnostik i editorn är cross-file indexering, INTE build-fel",
+    "Build och tester (42/42) gröna vid senaste verifiering (efter Session C)",
+    "MainActor default-parameter workaround: använd optional? = nil + ?? RealType() inuti init-body",
+    "Session A/B/C överskrev session 88-ändringar i CalendarModels + SpeechRecognizer -- återställt i C",
+    "Inget är committat -- alla ändringar i working tree"
+  ]
 }

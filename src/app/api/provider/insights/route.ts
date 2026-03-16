@@ -19,6 +19,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
+    if (!session.user.providerId) {
+      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
+    }
+
     const ip = getClientIP(request)
     const isAllowed = await rateLimiters.api(ip)
     if (!isAllowed) {

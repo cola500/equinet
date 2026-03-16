@@ -4,13 +4,79 @@
 //
 //  MVVM ViewModel for the native day calendar.
 //  Fetches 7-day windows, caches in memory, supports day navigation.
+//  Dependencies are injected via protocols for testability.
 //
 
 import Foundation
+import OSLog
 import Observation
 #if os(iOS)
 import UIKit
 #endif
+
+// MARK: - DI Protocols
+
+@MainActor
+protocol CalendarDataFetching: Sendable {
+    func fetchCalendar(from: String, to: String) async throws -> CalendarResponse
+    func updateBookingStatus(bookingId: String, newStatus: String) async throws
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException
+    func deleteException(date: String) async throws
+}
+
+@MainActor
+protocol CalendarCaching {
+    func saveCalendarCache(_ response: CalendarResponse, from: String, to: String)
+    func loadCalendarCache() -> SharedDataManager.CalendarCache?
+}
+
+@MainActor
+protocol CalendarSyncing {
+    func syncBookings(_ bookings: [NativeBooking])
+    func syncAfterStatusChange(bookingId: String, newStatus: String)
+}
+
+// MARK: - Adapters (production defaults)
+
+struct APICalendarFetcher: CalendarDataFetching {
+    func fetchCalendar(from: String, to: String) async throws -> CalendarResponse {
+        try await APIClient.shared.fetchCalendar(from: from, to: to)
+    }
+
+    func updateBookingStatus(bookingId: String, newStatus: String) async throws {
+        try await APIClient.shared.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
+    }
+
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException {
+        try await APIClient.shared.saveException(request)
+    }
+
+    func deleteException(date: String) async throws {
+        try await APIClient.shared.deleteException(date: date)
+    }
+}
+
+struct SharedDataCalendarCache: CalendarCaching {
+    func saveCalendarCache(_ response: CalendarResponse, from: String, to: String) {
+        SharedDataManager.saveCalendarCache(response, from: from, to: to)
+    }
+
+    func loadCalendarCache() -> SharedDataManager.CalendarCache? {
+        SharedDataManager.loadCalendarCache()
+    }
+}
+
+struct EventKitCalendarSync: CalendarSyncing {
+    func syncBookings(_ bookings: [NativeBooking]) {
+        CalendarSyncManager.shared.syncBookings(bookings)
+    }
+
+    func syncAfterStatusChange(bookingId: String, newStatus: String) {
+        CalendarSyncManager.shared.syncAfterStatusChange(bookingId: bookingId, newStatus: newStatus)
+    }
+}
+
+// MARK: - ViewModel
 
 @Observable
 @MainActor
@@ -25,8 +91,14 @@ final class CalendarViewModel {
     var isLoading = false
     var error: String?
     var isOffline = false
-    var actionInProgress: String?  // bookingId currently being updated
-    var selectedServiceFilter: String?  // nil = show all services
+    var actionInProgress: String?
+    var selectedServiceFilter: String?
+
+    // MARK: - Dependencies
+
+    private let fetcher: CalendarDataFetching
+    private let cacheProvider: CalendarCaching
+    private let sync: CalendarSyncing
 
     // MARK: - Private
 
@@ -37,11 +109,80 @@ final class CalendarViewModel {
         return f
     }()
 
+    // MARK: - Init
+
+    init(
+        fetcher: CalendarDataFetching? = nil,
+        cache: CalendarCaching? = nil,
+        sync: CalendarSyncing? = nil
+    ) {
+        self.fetcher = fetcher ?? APICalendarFetcher()
+        self.cacheProvider = cache ?? SharedDataCalendarCache()
+        self.sync = sync ?? EventKitCalendarSync()
+    }
+
+    // MARK: - Scroll Paging
+
+    /// Anchor date for the scroll range -- only re-centers when user navigates far away
+    private var dateRangeCenter: Date = Calendar.current.startOfDay(for: .now)
+
+    /// Date range for horizontal scroll paging (+/- 30 days from anchor, stable during swipes)
+    var dateRange: [Date] {
+        let cal = Calendar.current
+        return (-30...30).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: dateRangeCenter)
+        }
+    }
+
+    /// Re-center dateRange if selectedDate is within 5 days of the edge
+    private func reCenterIfNeeded() {
+        let cal = Calendar.current
+        let daysDiff = cal.dateComponents([.day], from: dateRangeCenter, to: selectedDate).day ?? 0
+        if abs(daysDiff) > 25 {
+            dateRangeCenter = cal.startOfDay(for: selectedDate)
+        }
+    }
+
+    /// Normalized selectedDate for scroll position sync (always startOfDay)
+    var selectedDateId: Date {
+        get { Calendar.current.startOfDay(for: selectedDate) }
+        set { selectedDate = newValue }
+    }
+
+    /// 7-day strip showing the week (Mon-Sun) that contains selectedDate
+    var weekDates: [Date] {
+        var cal = Calendar.current
+        cal.firstWeekday = 2  // Monday
+        let day = cal.startOfDay(for: selectedDate)
+        // Find Monday of this week
+        guard let weekInterval = cal.dateInterval(of: .weekOfYear, for: day) else {
+            return [day]
+        }
+        let monday = cal.startOfDay(for: weekInterval.start)
+        return (0..<7).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: monday)
+        }
+    }
+
+
+    // MARK: - Computed
+
+    /// Unique services from current bookings, for filter pills
+    var availableServices: [(id: String, name: String)] {
+        var seen = Set<String>()
+        return bookings.compactMap { booking in
+            guard let serviceId = booking.serviceId, !seen.contains(serviceId) else { return nil }
+            seen.insert(serviceId)
+            return (id: serviceId, name: booking.serviceName)
+        }
+    }
+
     // MARK: - Public API
 
     /// Navigate to a specific day and load data
     func navigateToDay(_ date: Date) {
-        selectedDate = date
+        selectedDate = Calendar.current.startOfDay(for: date)
+        reCenterIfNeeded()
         loadDataForSelectedDate()
     }
 
@@ -64,8 +205,11 @@ final class CalendarViewModel {
         let (from, to) = windowDates(for: selectedDate)
         let cacheKey = "\(from)_\(to)"
 
+        AppLogger.calendar.debug("loadDataForSelectedDate: from=\(from), to=\(to), cacheKey=\(cacheKey)")
+
         // Use cache if available
         if let cached = cache[cacheKey] {
+            AppLogger.calendar.debug("Using cached data for \(cacheKey)")
             applyResponse(cached)
             return
         }
@@ -74,20 +218,47 @@ final class CalendarViewModel {
         isLoading = true
         error = nil
 
+        AppLogger.calendar.debug("Fetching calendar from API...")
         Task {
             do {
-                let response = try await APIClient.shared.fetchCalendar(from: from, to: to)
+                let response = try await fetcher.fetchCalendar(from: from, to: to)
                 cache[cacheKey] = response
                 applyResponse(response)
 
                 // Save to offline cache
-                SharedDataManager.saveCalendarCache(response, from: from, to: to)
+                cacheProvider.saveCalendarCache(response, from: from, to: to)
                 isOffline = false
-            } catch APIError.noToken, APIError.unauthorized {
+            } catch APIError.noToken {
+                AppLogger.calendar.error("No token available for calendar fetch")
                 error = "Du behöver logga in igen"
+            } catch APIError.unauthorized {
+                AppLogger.calendar.error("Unauthorized for calendar fetch")
+                error = "Du behöver logga in igen"
+            } catch APIError.rateLimited(let retryAfter) {
+                if let seconds = retryAfter {
+                    error = "För många förfrågningar, försök igen om \(seconds) sekunder"
+                } else {
+                    error = "För många förfrågningar, vänta en stund"
+                }
+            } catch APIError.timeout {
+                // Try offline cache on timeout
+                if let cached = cacheProvider.loadCalendarCache() {
+                    applyResponse(cached.response)
+                    isOffline = true
+                } else {
+                    error = "Anslutningen tog för lång tid"
+                }
+            } catch APIError.serverError(let code) {
+                AppLogger.calendar.error("Server error \(code) fetching calendar")
+                if let cached = cacheProvider.loadCalendarCache() {
+                    applyResponse(cached.response)
+                    isOffline = true
+                } else {
+                    error = "Serverfel, försök igen senare"
+                }
             } catch {
-                // Try offline cache
-                if let cached = SharedDataManager.loadCalendarCache() {
+                // Try offline cache for network errors
+                if let cached = cacheProvider.loadCalendarCache() {
                     applyResponse(cached.response)
                     isOffline = true
                 } else {
@@ -98,41 +269,36 @@ final class CalendarViewModel {
         }
     }
 
-    // MARK: - Booking Actions
-
-    /// Update booking status with optimistic UI update and offline fallback
+    /// Update booking status with optimistic UI and offline fallback
     func updateBookingStatus(bookingId: String, newStatus: String) {
         guard actionInProgress == nil else { return }
-        actionInProgress = bookingId
+
+        // Save old status for rollback
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else { return }
+        let oldStatus = bookings[index].status
+
+        // Skip if status already matches (avoids 400 from API)
+        guard oldStatus != newStatus else { return }
 
         // Optimistic update
-        let oldBookings = bookings
-        if let index = bookings.firstIndex(where: { $0.id == bookingId }) {
-            bookings[index] = bookings[index].withStatus(newStatus)
-        }
+        bookings[index] = bookings[index].withStatus(newStatus)
+        actionInProgress = bookingId
 
         Task {
             do {
-                try await APIClient.shared.updateBookingStatus(
-                    bookingId: bookingId,
-                    newStatus: newStatus
-                )
-                print("[Calendar] Booking \(bookingId) -> \(newStatus)")
-
+                try await fetcher.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-
-                // Sync calendar
-                CalendarSyncManager.shared.syncAfterStatusChange(
-                    bookingId: bookingId, newStatus: newStatus
-                )
+                sync.syncAfterStatusChange(bookingId: bookingId, newStatus: newStatus)
 
                 // Invalidate cache to pick up changes on next fetch
                 cache.removeAll()
             } catch {
-                print("[Calendar] Failed to update booking: \(error)")
-                // Revert optimistic update
-                bookings = oldBookings
+                // Revert on failure
+                if let idx = bookings.firstIndex(where: { $0.id == bookingId }) {
+                    bookings[idx] = bookings[idx].withStatus(oldStatus)
+                }
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
+                AppLogger.calendar.error("Failed to update booking status: \(error.localizedDescription)")
 
                 // Save for offline retry
                 PendingActionStore.save(bookingId: bookingId, status: newStatus)
@@ -141,30 +307,79 @@ final class CalendarViewModel {
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Exception Management
 
-    /// Distinct services from current bookings (for filter pills)
-    var availableServices: [(id: String, name: String)] {
-        var seen = Set<String>()
-        var result: [(id: String, name: String)] = []
-        for booking in bookings {
-            guard let serviceId = booking.serviceId else { continue }
-            if seen.insert(serviceId).inserted {
-                result.append((id: serviceId, name: booking.serviceName))
+    /// Save (create/update) an availability exception with optimistic UI
+    func saveException(_ request: ExceptionSaveRequest) {
+        // Build optimistic exception
+        let optimistic = NativeException(
+            date: request.date,
+            isClosed: request.isClosed,
+            startTime: request.startTime,
+            endTime: request.endTime,
+            reason: request.reason,
+            location: request.location
+        )
+
+        // Save old state for rollback
+        let oldExceptions = exceptions
+
+        // Optimistic update: replace or append
+        if let index = exceptions.firstIndex(where: { $0.date == request.date }) {
+            exceptions[index] = optimistic
+        } else {
+            exceptions.append(optimistic)
+        }
+
+        Task {
+            do {
+                let saved = try await fetcher.saveException(request)
+                // Replace optimistic with server response
+                if let index = exceptions.firstIndex(where: { $0.date == saved.date }) {
+                    exceptions[index] = saved
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                cache.removeAll()
+            } catch {
+                // Revert on failure
+                exceptions = oldExceptions
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                AppLogger.calendar.error("Failed to save exception: \(error.localizedDescription)")
             }
         }
-        return result
     }
 
-    /// Get bookings for a specific date, filtered by selected service
+    /// Delete an availability exception with optimistic UI
+    func deleteException(date: String) {
+        // Save old state for rollback
+        let oldExceptions = exceptions
+
+        // Optimistic removal
+        exceptions.removeAll { $0.date.hasPrefix(date) }
+
+        Task {
+            do {
+                try await fetcher.deleteException(date: date)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                cache.removeAll()
+            } catch {
+                // Revert on failure
+                exceptions = oldExceptions
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                AppLogger.calendar.error("Failed to delete exception: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Get bookings for a specific date, optionally filtered by service
     func bookingsForDate(_ date: Date) -> [NativeBooking] {
         let dateString = dateFormatter.string(from: date)
         return bookings.filter { booking in
-            guard booking.bookingDate.hasPrefix(dateString) else { return false }
-            if let filter = selectedServiceFilter {
-                return booking.serviceId == filter
-            }
-            return true
+            let matchesDate = booking.bookingDate.hasPrefix(dateString)
+            let matchesService = selectedServiceFilter == nil || booking.serviceId == selectedServiceFilter
+            return matchesDate && matchesService
         }
     }
 
@@ -193,6 +408,6 @@ final class CalendarViewModel {
         exceptions = response.exceptions
 
         // Sync confirmed bookings to iOS Calendar if enabled
-        CalendarSyncManager.shared.syncBookings(response.bookings)
+        sync.syncBookings(response.bookings)
     }
 }

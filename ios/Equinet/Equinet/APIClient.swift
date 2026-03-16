@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 
 enum APIError: Error {
     case noToken
@@ -14,9 +15,12 @@ enum APIError: Error {
     case networkError(Error)
     case serverError(Int)
     case decodingError(Error)
+    case rateLimited(retryAfter: Int?)
+    case timeout
 }
 
-actor APIClient {
+@MainActor
+final class APIClient {
     static let shared = APIClient()
 
     private var isRefreshing = false
@@ -43,6 +47,14 @@ actor APIClient {
         )
     }
 
+    /// Fetch dashboard data for native dashboard view
+    func fetchDashboard() async throws -> DashboardResponse {
+        return try await authenticatedRequest(
+            path: "/api/native/dashboard",
+            responseType: DashboardResponse.self
+        )
+    }
+
     /// Register APNs device token with backend
     func registerDeviceToken(_ token: String) async throws {
         _ = try await performRequest(
@@ -62,12 +74,262 @@ actor APIClient {
     }
 
     /// Update booking status (confirm/decline from notification action)
-    func updateBookingStatus(bookingId: String, newStatus: String) async throws {
+    func updateBookingStatus(bookingId: String, newStatus: String, cancellationMessage: String? = nil) async throws {
+        var body: [String: Any] = ["status": newStatus]
+        if let cancellationMessage {
+            body["cancellationMessage"] = cancellationMessage
+        }
         _ = try await performRequest(
             method: "PUT",
             path: "/api/bookings/\(bookingId)",
-            body: ["status": newStatus]
+            body: body
         )
+    }
+
+    /// Fetch bookings list for native bookings view
+    func fetchBookings(status: String? = nil) async throws -> [BookingsListItem] {
+        var path = "/api/native/bookings"
+        if let status {
+            path += "?status=\(status)"
+        }
+        return try await authenticatedRequest(path: path, responseType: [BookingsListItem].self)
+    }
+
+    /// Save (create/update) an availability exception
+    func saveException(_ request: ExceptionSaveRequest) async throws -> NativeException {
+        var body: [String: Any] = [
+            "date": request.date,
+            "isClosed": request.isClosed,
+        ]
+        if let startTime = request.startTime { body["startTime"] = startTime }
+        if let endTime = request.endTime { body["endTime"] = endTime }
+        if let reason = request.reason { body["reason"] = reason }
+        if let location = request.location { body["location"] = location }
+
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/calendar/exceptions",
+            body: body
+        )
+        do {
+            return try JSONDecoder().decode(NativeException.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete an availability exception for a specific date
+    func deleteException(date: String) async throws {
+        _ = try await performRequest(
+            method: "DELETE",
+            path: "/api/native/calendar/exceptions/\(date)"
+        )
+    }
+
+    /// Create a customer review for a completed booking
+    func createBookingReview(bookingId: String, rating: Int, comment: String?) async throws -> CreateReviewResponse {
+        var body: [String: Any] = ["rating": rating]
+        if let comment {
+            body["comment"] = comment
+        }
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/bookings/\(bookingId)/review",
+            body: body
+        )
+        do {
+            return try JSONDecoder().decode(CreateReviewResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Save provider notes on a booking
+    func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse {
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/bookings/\(bookingId)/quick-note",
+            body: ["providerNotes": providerNotes]
+        )
+        do {
+            return try JSONDecoder().decode(QuickNoteResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    // MARK: - Customer Management
+
+    /// Fetch customer list for native customers view
+    func fetchCustomers(status: String? = nil, query: String? = nil) async throws -> [CustomerSummary] {
+        var path = "/api/native/customers"
+        var params: [String] = []
+        if let status { params.append("status=\(status)") }
+        if let query { params.append("q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query)") }
+        if !params.isEmpty { path += "?" + params.joined(separator: "&") }
+
+        let response: CustomersListResponse = try await authenticatedRequest(path: path, responseType: CustomersListResponse.self)
+        return response.customers
+    }
+
+    /// Create a new customer manually
+    func createCustomer(firstName: String, lastName: String, phone: String?, email: String?) async throws -> String {
+        var body: [String: Any] = ["firstName": firstName, "lastName": lastName]
+        if let phone { body["phone"] = phone }
+        if let email { body["email"] = email }
+
+        let (data, _) = try await performRequest(method: "POST", path: "/api/native/customers", body: body)
+        let response = try JSONDecoder().decode(CustomerCreateResponse.self, from: data)
+        return response.customer.id
+    }
+
+    /// Update customer info
+    func updateCustomer(customerId: String, firstName: String, lastName: String, phone: String?, email: String?) async throws -> CustomerUpdateResponse {
+        var body: [String: Any] = ["firstName": firstName]
+        if !lastName.isEmpty { body["lastName"] = lastName }
+        if let phone { body["phone"] = phone }
+        if let email { body["email"] = email }
+
+        let (data, _) = try await performRequest(method: "PUT", path: "/api/native/customers/\(customerId)", body: body)
+        return try JSONDecoder().decode(CustomerUpdateResponse.self, from: data)
+    }
+
+    /// Delete a manually added customer
+    func deleteCustomer(customerId: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)")
+    }
+
+    /// Fetch horses for a customer
+    func fetchCustomerHorses(customerId: String) async throws -> [CustomerHorse] {
+        let response: CustomerHorsesResponse = try await authenticatedRequest(
+            path: "/api/native/customers/\(customerId)/horses",
+            responseType: CustomerHorsesResponse.self
+        )
+        return response.horses
+    }
+
+    /// Create a horse for a customer
+    func createCustomerHorse(customerId: String, name: String, breed: String?, birthYear: Int?, color: String?, gender: String?, specialNeeds: String?, registrationNumber: String?, microchipNumber: String?) async throws -> CustomerHorse {
+        var body: [String: Any] = ["name": name]
+        if let breed { body["breed"] = breed }
+        if let birthYear { body["birthYear"] = birthYear }
+        if let color { body["color"] = color }
+        if let gender { body["gender"] = gender }
+        if let specialNeeds { body["specialNeeds"] = specialNeeds }
+        if let registrationNumber { body["registrationNumber"] = registrationNumber }
+        if let microchipNumber { body["microchipNumber"] = microchipNumber }
+
+        let (data, _) = try await performRequest(method: "POST", path: "/api/native/customers/\(customerId)/horses", body: body)
+        do {
+            return try JSONDecoder().decode(CustomerHorse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Update a horse
+    func updateCustomerHorse(customerId: String, horseId: String, name: String?, breed: String?, birthYear: Int?, color: String?, gender: String?, specialNeeds: String?, registrationNumber: String?, microchipNumber: String?) async throws -> CustomerHorse {
+        var body: [String: Any] = [:]
+        if let name { body["name"] = name }
+        if let breed { body["breed"] = breed }
+        if let birthYear { body["birthYear"] = birthYear }
+        if let color { body["color"] = color }
+        if let gender { body["gender"] = gender }
+        if let specialNeeds { body["specialNeeds"] = specialNeeds }
+        if let registrationNumber { body["registrationNumber"] = registrationNumber }
+        if let microchipNumber { body["microchipNumber"] = microchipNumber }
+
+        let (data, _) = try await performRequest(method: "PUT", path: "/api/native/customers/\(customerId)/horses/\(horseId)", body: body)
+        do {
+            return try JSONDecoder().decode(CustomerHorse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Soft-delete a horse
+    func deleteCustomerHorse(customerId: String, horseId: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)/horses/\(horseId)")
+    }
+
+    /// Fetch notes for a customer
+    func fetchCustomerNotes(customerId: String) async throws -> [CustomerNote] {
+        let response: CustomerNotesResponse = try await authenticatedRequest(
+            path: "/api/native/customers/\(customerId)/notes",
+            responseType: CustomerNotesResponse.self
+        )
+        return response.notes
+    }
+
+    /// Create a note for a customer
+    func createCustomerNote(customerId: String, content: String) async throws -> CustomerNote {
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/customers/\(customerId)/notes",
+            body: ["content": content]
+        )
+        do {
+            return try JSONDecoder().decode(CustomerNote.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Update a note
+    func updateCustomerNote(customerId: String, noteId: String, content: String) async throws -> CustomerNote {
+        let (data, _) = try await performRequest(
+            method: "PUT",
+            path: "/api/native/customers/\(customerId)/notes/\(noteId)",
+            body: ["content": content]
+        )
+        do {
+            return try JSONDecoder().decode(CustomerNote.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete a note
+    func deleteCustomerNote(customerId: String, noteId: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/customers/\(customerId)/notes/\(noteId)")
+    }
+
+    // MARK: - Services
+
+    /// Fetch all services for current provider
+    func fetchServices() async throws -> [ServiceItem] {
+        let response = try await authenticatedRequest(
+            path: "/api/native/services",
+            responseType: ServicesListResponse.self
+        )
+        return response.services
+    }
+
+    /// Create a new service
+    func createService(_ data: [String: Any]) async throws -> ServiceItem {
+        let (responseData, _) = try await performRequest(method: "POST", path: "/api/native/services", body: data)
+        do {
+            let response = try JSONDecoder().decode(ServiceCreateResponse.self, from: responseData)
+            return response.service
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Update an existing service
+    func updateService(id: String, data: [String: Any]) async throws -> ServiceItem {
+        let (responseData, _) = try await performRequest(method: "PUT", path: "/api/native/services/\(id)", body: data)
+        do {
+            let response = try JSONDecoder().decode(ServiceUpdateResponse.self, from: responseData)
+            return response.service
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete a service
+    func deleteService(id: String) async throws {
+        _ = try await performRequest(method: "DELETE", path: "/api/native/services/\(id)")
     }
 
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
@@ -76,7 +338,10 @@ actor APIClient {
             throw APIError.noToken
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent("/api/auth/mobile-token/refresh"))
+        guard let url = URL(string: "/api/auth/mobile-token/refresh", relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(currentJwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
@@ -106,13 +371,16 @@ actor APIClient {
     private func performRequest(
         method: String,
         path: String,
-        body: [String: String]? = nil
+        body: [String: Any]? = nil
     ) async throws -> (Data, HTTPURLResponse) {
         guard let jwt = KeychainHelper.loadMobileToken() else {
             throw APIError.noToken
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
@@ -122,10 +390,24 @@ actor APIClient {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch let urlError as URLError where urlError.code == .timedOut {
+            throw APIError.timeout
+        } catch {
+            throw APIError.networkError(error)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        // Log non-2xx responses for debugging
+        if !(200...299).contains(httpResponse.statusCode) {
+            let bodyPreview = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
+            AppLogger.network.error("HTTP \(httpResponse.statusCode) for \(path): \(bodyPreview)")
         }
 
         // Handle 401: try token refresh once
@@ -140,6 +422,13 @@ actor APIClient {
                 KeychainHelper.clearMobileToken()
                 throw APIError.unauthorized
             }
+        }
+
+        // Handle 429: rate limited
+        if httpResponse.statusCode == 429 {
+            let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After")
+                .flatMap { Int($0) }
+            throw APIError.rateLimited(retryAfter: retryAfter)
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
@@ -166,7 +455,7 @@ actor APIClient {
 
 // MARK: - Response types
 
-private struct TokenResponse: Codable {
+private struct TokenResponse: Codable, Sendable {
     let token: String
     let expiresAt: String
 }

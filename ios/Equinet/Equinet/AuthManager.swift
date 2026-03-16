@@ -9,6 +9,7 @@
 import Foundation
 import LocalAuthentication
 import Observation
+import OSLog
 import WebKit
 
 enum AuthState {
@@ -30,11 +31,17 @@ final class AuthManager {
     private(set) var sessionCookieName: String?
     private(set) var sessionCookieValue: String?
     private(set) var sessionCookieSecure: Bool = false
+    private(set) var userType: String?  // "provider" or "customer"
 
     /// Keychain abstraction for testability.
     let keychain: KeychainStorable
 
-    init(keychain: KeychainStorable = KeychainHelper.shared) {
+    /// Production factory -- call from @MainActor context to avoid concurrency warnings.
+    static func createDefault() -> AuthManager {
+        AuthManager(keychain: KeychainHelper.shared)
+    }
+
+    init(keychain: KeychainStorable) {
         self.keychain = keychain
     }
 
@@ -80,17 +87,21 @@ final class AuthManager {
             let response = try await performLogin(email: email, password: password)
 
             // Save mobile token
-            keychain.save(key: KeychainHelper.mobileTokenKey, value: response.token)
-            keychain.save(key: KeychainHelper.tokenExpiresAtKey, value: response.expiresAt)
+            _ = keychain.save(key: KeychainHelper.mobileTokenKey, value: response.token)
+            _ = keychain.save(key: KeychainHelper.tokenExpiresAtKey, value: response.expiresAt)
 
             // Save session cookie
-            keychain.save(key: KeychainHelper.sessionCookieNameKey, value: response.sessionCookie.name)
-            keychain.save(key: KeychainHelper.sessionCookieValueKey, value: response.sessionCookie.value)
-            keychain.save(key: KeychainHelper.sessionCookieSecureKey, value: response.sessionCookie.secure ? "true" : "false")
+            _ = keychain.save(key: KeychainHelper.sessionCookieNameKey, value: response.sessionCookie.name)
+            _ = keychain.save(key: KeychainHelper.sessionCookieValueKey, value: response.sessionCookie.value)
+            _ = keychain.save(key: KeychainHelper.sessionCookieSecureKey, value: response.sessionCookie.secure ? "true" : "false")
 
             sessionCookieName = response.sessionCookie.name
             sessionCookieValue = response.sessionCookie.value
             sessionCookieSecure = response.sessionCookie.secure
+
+            // Save user type for role-based UI
+            userType = response.user.userType
+            _ = keychain.save(key: KeychainHelper.userTypeKey, value: response.user.userType)
 
             state = .authenticated
         } catch let error as LoginError {
@@ -127,14 +138,24 @@ final class AuthManager {
     // MARK: - Logout
 
     func logout() {
-        keychain.delete(key: KeychainHelper.mobileTokenKey)
-        keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
-        keychain.delete(key: KeychainHelper.sessionCookieNameKey)
-        keychain.delete(key: KeychainHelper.sessionCookieValueKey)
-        keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
+        // Clear Keychain credentials
+        _ = keychain.delete(key: KeychainHelper.mobileTokenKey)
+        _ = keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
+        _ = keychain.delete(key: KeychainHelper.sessionCookieNameKey)
+        _ = keychain.delete(key: KeychainHelper.sessionCookieValueKey)
+        _ = keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
+        _ = keychain.delete(key: KeychainHelper.userTypeKey)
+
+        // Clear cached data (dashboard, calendar, widget)
+        SharedDataManager.clearDashboardCache()
+        SharedDataManager.clearCalendarCache()
+        SharedDataManager.clearWidgetData()
+
         sessionCookieName = nil
         sessionCookieValue = nil
         sessionCookieSecure = false
+        userType = nil
+        SharedDataManager.clearBookingsCache()
         state = .loggedOut
     }
 
@@ -148,7 +169,11 @@ final class AuthManager {
         }
 
         let isProduction = sessionCookieSecure
-        let domain = isProduction ? "equinet.vercel.app" : "localhost"
+        let domain = if isProduction {
+            "equinet.vercel.app"
+        } else {
+            AppConfig.baseURL.host() ?? "localhost"
+        }
 
         var properties: [HTTPCookiePropertyKey: Any] = [
             .name: name,
@@ -162,12 +187,12 @@ final class AuthManager {
         }
 
         guard let cookie = HTTPCookie(properties: properties) else {
-            print("[AuthManager] Failed to create HTTPCookie")
+            AppLogger.auth.error("Failed to create HTTPCookie")
             return
         }
 
         await cookieStore.setCookie(cookie)
-        print("[AuthManager] Session cookie injected into WKWebView")
+        AppLogger.auth.debug("Session cookie injected into WKWebView")
     }
 
     // MARK: - Biometric type
@@ -179,6 +204,7 @@ final class AuthManager {
         case .faceID: return "Face ID"
         case .touchID: return "Touch ID"
         case .opticID: return "Optic ID"
+        case .none: return "biometri"
         @unknown default: return "biometri"
         }
     }
@@ -199,6 +225,7 @@ final class AuthManager {
         sessionCookieName = keychain.load(key: KeychainHelper.sessionCookieNameKey)
         sessionCookieValue = keychain.load(key: KeychainHelper.sessionCookieValueKey)
         sessionCookieSecure = keychain.load(key: KeychainHelper.sessionCookieSecureKey) == "true"
+        userType = keychain.load(key: KeychainHelper.userTypeKey)
     }
 
     private func performLogin(email: String, password: String) async throws -> NativeLoginResponse {
@@ -256,7 +283,6 @@ private struct SessionCookieResponse: Decodable {
     let value: String
     let maxAge: Int
     let secure: Bool
-    let domain: String
 }
 
 private struct UserResponse: Decodable {

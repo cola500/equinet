@@ -73,6 +73,7 @@ export function CalendarHeader({
         {showViewToggle && (
           <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-1">
             <Button
+              type="button"
               variant={viewMode === "day" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewModeChange?.("day")}
@@ -83,6 +84,7 @@ export function CalendarHeader({
               <span className="hidden sm:inline ml-1">Dag</span>
             </Button>
             <Button
+              type="button"
               variant={viewMode === "3-day" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewModeChange?.("3-day")}
@@ -93,6 +95,7 @@ export function CalendarHeader({
               <span className="hidden sm:inline ml-1">3 dagar</span>
             </Button>
             <Button
+              type="button"
               variant={viewMode === "week" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewModeChange?.("week")}
@@ -103,6 +106,7 @@ export function CalendarHeader({
               <span className="hidden sm:inline ml-1">Vecka</span>
             </Button>
             <Button
+              type="button"
               variant={viewMode === "month" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewModeChange?.("month")}
@@ -119,6 +123,7 @@ export function CalendarHeader({
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={handlePrevious}
@@ -138,6 +143,7 @@ export function CalendarHeader({
         </Button>
 
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={onToday}
@@ -147,6 +153,7 @@ export function CalendarHeader({
         </Button>
 
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={handleNext}

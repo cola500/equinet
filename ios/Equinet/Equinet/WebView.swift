@@ -7,8 +7,27 @@
 //
 
 #if os(iOS)
+import OSLog
 import SwiftUI
 import WebKit
+
+/// Weak wrapper to break retain cycle between WKUserContentController and Coordinator.
+/// WKUserContentController.add(_:name:) holds a STRONG reference to the handler.
+/// Without this wrapper, Coordinator is never deallocated.
+private class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    weak var delegate: WKScriptMessageHandler?
+
+    init(delegate: WKScriptMessageHandler) {
+        self.delegate = delegate
+    }
+
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        delegate?.userContentController(userContentController, didReceive: message)
+    }
+}
 
 struct WebView: UIViewRepresentable {
     let url: URL
@@ -19,6 +38,7 @@ struct WebView: UIViewRepresentable {
     @Binding var hasNavigationError: Bool
     @Binding var webViewReady: Bool
     @Binding var showNativeCalendar: Bool
+    @Binding var navigateTo: String?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -27,29 +47,38 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
 
-        // Register bridge message handler
+        // Register bridge message handler (via weak wrapper to prevent retain cycle)
         config.userContentController.add(
-            context.coordinator,
+            WeakScriptMessageHandler(delegate: context.coordinator),
             name: AppConfig.bridgeHandlerName
         )
 
-        // Inject bridge detection + native-feel CSS/JS
+        // Script A: Bridge setup (atDocumentStart -- must run before page JS)
         let bridgeScript = WKUserScript(
             source: """
-                // Bridge setup
                 window.isEquinetApp = true;
                 window.equinetNative = {
                     onMessage: function(msg) {
                         console.log('[EquinetNative] Received:', JSON.stringify(msg));
                     }
                 };
-
-                // Disable long-press context menu (save image, copy link etc)
+                localStorage.setItem('equinet-cookie-notice-dismissed', 'true');
                 document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+                """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        config.userContentController.addUserScript(bridgeScript)
 
-                // Disable text selection on non-input elements + extend to safe area
+        // Script B: CSS + viewport (atDocumentEnd -- document.head exists now)
+        let cssScript = WKUserScript(
+            source: """
                 var style = document.createElement('style');
                 style.textContent = `
+                    /* Force light mode -- web app lacks dark mode support */
+                    :root {
+                        color-scheme: light;
+                    }
                     * {
                         -webkit-user-select: none;
                         user-select: none;
@@ -59,13 +88,29 @@ struct WebView: UIViewRepresentable {
                         -webkit-user-select: auto;
                         user-select: auto;
                     }
+                    /* Hide web BottomTabBar -- native TabView replaces it */
+                    nav[class*="fixed"][class*="bottom-0"] {
+                        display: none !important;
+                    }
+                    /* Hide web Header -- native NavigationStack replaces it */
+                    header.border-b {
+                        display: none !important;
+                    }
+                    /* Hide ProviderNav -- native TabView replaces it */
+                    nav.border-b:not([class*="fixed"]) {
+                        display: none !important;
+                    }
+                    /* No extra padding at bottom -- SwiftUI TabView handles safe area */
                     body {
-                        padding-bottom: env(safe-area-inset-bottom);
+                        padding-bottom: 0 !important;
+                    }
+                    /* Compensate for hidden header -- use safe area inset for status bar */
+                    main.container {
+                        padding-top: calc(env(safe-area-inset-top, 20px) + 1rem) !important;
                     }
                 `;
                 document.head.appendChild(style);
 
-                // Ensure viewport covers safe areas
                 var viewport = document.querySelector('meta[name="viewport"]');
                 if (viewport) {
                     var content = viewport.getAttribute('content');
@@ -74,10 +119,10 @@ struct WebView: UIViewRepresentable {
                     }
                 }
                 """,
-            injectionTime: .atDocumentStart,
+            injectionTime: .atDocumentEnd,
             forMainFrameOnly: true
         )
-        config.userContentController.addUserScript(bridgeScript)
+        config.userContentController.addUserScript(cssScript)
 
         // Allow inline media playback
         config.allowsInlineMediaPlayback = true
@@ -128,6 +173,9 @@ struct WebView: UIViewRepresentable {
         // Store reference for navigation from push notifications
         context.coordinator.webView = webView
 
+        // Observe cookie changes for session expiry detection
+        context.coordinator.startObservingCookies(for: webView)
+
         // Inject session cookie BEFORE loading the page
         Task {
             await authManager.injectSessionCookie(into: webView.configuration.websiteDataStore.httpCookieStore)
@@ -137,7 +185,23 @@ struct WebView: UIViewRepresentable {
         return webView
     }
 
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(
+            forName: AppConfig.bridgeHandlerName
+        )
+        webView.configuration.userContentController.removeAllUserScripts()
+    }
+
     func updateUIView(_ webView: WKWebView, context: Context) {
+        // Handle pending navigation (tap-to-book from native calendar)
+        if let path = navigateTo {
+            if let navURL = URL(string: path, relativeTo: AppConfig.baseURL) {
+                AppLogger.webview.debug("navigateTo: \(path)")
+                webView.load(URLRequest(url: navURL))
+            }
+            DispatchQueue.main.async { self.navigateTo = nil }
+        }
+
         // Retry loading when hasNavigationError is cleared (user tapped "retry" or came back online)
         if !hasNavigationError && context.coordinator.lastLoadFailed {
             context.coordinator.lastLoadFailed = false
@@ -147,7 +211,7 @@ struct WebView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, WKHTTPCookieStoreObserver {
         let parent: WebView
         weak var webView: WKWebView?
         var lastLoadFailed = false
@@ -173,6 +237,33 @@ struct WebView: UIViewRepresentable {
         deinit {
             if let observer = navigationObserver {
                 NotificationCenter.default.removeObserver(observer)
+            }
+            // Unregister cookie observer
+            webView?.configuration.websiteDataStore.httpCookieStore.remove(self)
+        }
+
+        /// Start observing cookie changes (called after webView is set up)
+        func startObservingCookies(for webView: WKWebView) {
+            webView.configuration.websiteDataStore.httpCookieStore.add(self)
+        }
+
+        // MARK: - WKHTTPCookieStoreObserver
+
+        func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
+            Task { @MainActor in
+                let cookies = await cookieStore.allCookies()
+                let expectedCookieName = parent.authManager.sessionCookieName ?? "next-auth.session-token"
+                let hasSessionCookie = cookies.contains { cookie in
+                    cookie.name == expectedCookieName
+                        && (cookie.domain.hasSuffix(AppConfig.baseURL.host ?? "")
+                            || cookie.domain == "localhost")
+                }
+
+                // Session cookie disappeared -> user logged out or session expired
+                if !hasSessionCookie && parent.webViewReady {
+                    AppLogger.auth.info("Session cookie removed, triggering logout")
+                    parent.authManager.logout()
+                }
             }
         }
 
@@ -213,6 +304,7 @@ struct WebView: UIViewRepresentable {
             lastLoadFailed = false
             endRefreshingIfNeeded()
 
+
             // Signal first load complete (dismisses splash screen)
             if !parent.webViewReady {
                 parent.webViewReady = true
@@ -221,7 +313,7 @@ struct WebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             parent.isLoading = false
-            print("[WebView] Navigation failed: \(error.localizedDescription)")
+            AppLogger.webview.warning("Navigation failed: \(error.localizedDescription)")
         }
 
         func webView(
@@ -246,28 +338,40 @@ struct WebView: UIViewRepresentable {
                 if networkErrors.contains(nsError.code) {
                     lastLoadFailed = true
                     parent.hasNavigationError = true
-                    print("[WebView] Network error: \(nsError.code) - \(error.localizedDescription)")
+                    AppLogger.webview.warning("Network error \(nsError.code): \(error.localizedDescription)")
                     return
                 }
             }
 
-            print("[WebView] Provisional navigation failed: \(error.localizedDescription)")
+            AppLogger.webview.warning("Provisional navigation failed: \(error.localizedDescription)")
         }
 
-        // Catch HTTP 5xx errors and show native error view
+        // Catch HTTP 401/5xx errors
         func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationResponse: WKNavigationResponse,
             decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
         ) {
-            if let httpResponse = navigationResponse.response as? HTTPURLResponse,
-               httpResponse.statusCode >= 500 {
-                parent.isLoading = false
-                lastLoadFailed = true
-                parent.hasNavigationError = true
-                decisionHandler(.cancel)
-                print("[WebView] Server error: \(httpResponse.statusCode)")
-                return
+            if let httpResponse = navigationResponse.response as? HTTPURLResponse {
+                // 401 -> session expired, auto-logout
+                if httpResponse.statusCode == 401 {
+                    AppLogger.auth.info("HTTP 401 detected, triggering logout")
+                    decisionHandler(.cancel)
+                    Task { @MainActor in
+                        parent.authManager.logout()
+                    }
+                    return
+                }
+
+                // 5xx -> show native error view
+                if httpResponse.statusCode >= 500 {
+                    parent.isLoading = false
+                    lastLoadFailed = true
+                    parent.hasNavigationError = true
+                    decisionHandler(.cancel)
+                    AppLogger.webview.error("Server error: \(httpResponse.statusCode)")
+                    return
+                }
             }
             decisionHandler(.allow)
         }
@@ -286,9 +390,15 @@ struct WebView: UIViewRepresentable {
             // Intercept calendar URL -- show native calendar instead
             if url.host == AppConfig.baseURL.host || url.host == "localhost" {
                 if url.path == "/provider/calendar" || url.path.hasPrefix("/provider/calendar/") {
-                    decisionHandler(.cancel)
-                    parent.showNativeCalendar = true
-                    return
+                    // Allow navigation when opening ManualBookingDialog from native calendar tap-to-book
+                    let hasNewBooking = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                        .queryItems?.contains(where: { $0.name == "newBooking" && $0.value == "true" }) ?? false
+                    AppLogger.webview.debug("Calendar URL intercepted: \(url.absoluteString), hasNewBooking=\(hasNewBooking)")
+                    if !hasNewBooking {
+                        decisionHandler(.cancel)
+                        parent.showNativeCalendar = true
+                        return
+                    }
                 }
 
                 // Detect navigation to /login -- means session expired or user logged out in web
@@ -326,6 +436,21 @@ struct WebView: UIViewRepresentable {
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
+            // Validate origin -- only accept messages from our own domain
+            if let messageURL = message.frameInfo.request.url,
+               let host = messageURL.host {
+                let allowedHosts: Set<String> = [
+                    AppConfig.baseURL.host ?? "",
+                    "localhost",
+                ]
+                guard allowedHosts.contains(host) else {
+                    Task { @MainActor in
+                        AppLogger.bridge.warning("Rejected bridge message from untrusted origin: \(host)")
+                    }
+                    return
+                }
+            }
+
             Task { @MainActor in
                 parent.bridge.handleMessage(message)
             }

@@ -10,7 +10,7 @@ import Foundation
 import Security
 
 /// Protocol for Keychain operations, enabling test doubles.
-protocol KeychainStorable {
+protocol KeychainStorable: Sendable {
     func save(key: String, value: String) -> Bool
     func load(key: String) -> String?
     func delete(key: String) -> Bool
@@ -87,7 +87,7 @@ extension KeychainHelper {
 }
 
 /// Adapter that wraps KeychainHelper's static methods as an instance conforming to KeychainStorable.
-struct KeychainHelperAdapter: KeychainStorable {
+struct KeychainHelperAdapter: KeychainStorable, Sendable {
     func save(key: String, value: String) -> Bool {
         KeychainHelper.save(key: key, value: value)
     }
@@ -156,6 +156,7 @@ extension KeychainHelper {
     static let sessionCookieNameKey = "session_cookie_name"
     static let sessionCookieValueKey = "session_cookie_value"
     static let sessionCookieSecureKey = "session_cookie_secure"
+    static let userTypeKey = "user_type"
 
     /// Save session cookie data for WKWebView injection
     static func saveSessionCookie(name: String, value: String, secure: Bool) {

@@ -259,8 +259,8 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Dashboard med trendgrafer och onboarding-checklista
 - Affärsinsikter (populära tjänster, tidsanalys, kundretention)
 
-### iOS-app (hybrid)
-- WKWebView-baserad hybrid-app som laddar webbappen
+### iOS-app (hybrid + native SwiftUI)
+- Native SwiftUI-vyer för dashboard, kalender, bokningslista och kundhantering (ersätter WebView steg för steg)
 - Native-Web bridge (JS <-> Swift) för push-notiser, kalendersynk och nätverksstatus
 - Push-notiser via APNs med actionable notifications (bekräfta/avvisa bokningar)
 - EventKit-kalendersynk -- bekräftade bokningar synkas till iOS Kalender (Apple Watch-påminnelser, Siri-förslag)

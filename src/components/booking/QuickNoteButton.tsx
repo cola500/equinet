@@ -109,7 +109,7 @@ export function QuickNoteButton({
         url: `/api/provider/bookings/${bookingId}/quick-note`,
         body,
         entityType: "booking-notes",
-        entityId: crypto.randomUUID(),
+        entityId: globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
         optimisticUpdate: () => {
           onNoteSaved?.(text, [])
           setTranscript("")

@@ -187,27 +187,6 @@ export default function StableProfilePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="address">Adress</Label>
-            <Input
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Stallvägen 1"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="postalCode">Postnummer</Label>
-            <Input
-              id="postalCode"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              placeholder="44192"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
             <Label htmlFor="municipality">Kommun</Label>
             <MunicipalitySelect
               id="municipality"
@@ -223,6 +202,27 @@ export default function StableProfilePage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="T.ex. Sollebrunn"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="address">Adress</Label>
+            <Input
+              id="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Stallvägen 1"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="postalCode">Postnummer</Label>
+            <Input
+              id="postalCode"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              placeholder="44192"
             />
           </div>
         </div>

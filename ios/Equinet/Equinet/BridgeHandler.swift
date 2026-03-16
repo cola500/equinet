@@ -11,7 +11,16 @@
 
 import Foundation
 import Observation
+import OSLog
 import WebKit
+
+/// Protocol to abstract WKScriptMessage for testability.
+/// WKScriptMessage cannot be subclassed safely (no public init).
+protocol ScriptMessageProtocol {
+    var body: Any { get }
+}
+
+extension WKScriptMessage: ScriptMessageProtocol {}
 
 enum BridgeMessageType: String {
     case requestPush = "requestPush"
@@ -44,8 +53,16 @@ enum BridgeMessageType: String {
 final class BridgeHandler {
 
     private weak var webView: WKWebView?
-    private let speechRecognizer = SpeechRecognizer()
+    private let speechRecognizer: SpeechRecognizable
     private weak var authManager: AuthManager?
+
+    init(speechRecognizer: SpeechRecognizable? = nil) {
+        self.speechRecognizer = speechRecognizer ?? SpeechRecognizer()
+    }
+
+    /// Whether a WebView is currently attached (mounted and alive).
+    var hasWebView: Bool { webView != nil }
+
 
     func attach(to webView: WKWebView, authManager: AuthManager? = nil) {
         self.webView = webView
@@ -55,15 +72,15 @@ final class BridgeHandler {
 
     // MARK: - Incoming (JS -> Swift)
 
-    func handleMessage(_ message: WKScriptMessage) {
+    func handleMessage(_ message: ScriptMessageProtocol) {
         guard let body = message.body as? [String: Any],
               let type = body["type"] as? String else {
-            print("[Bridge] Invalid message format: \(message.body)")
+            AppLogger.bridge.warning("Invalid message format")
             return
         }
 
         _ = body["payload"] as? [String: Any]
-        print("[Bridge] Received: \(type)")
+        AppLogger.bridge.debug("Received: \(type)")
 
         switch type {
         case BridgeMessageType.requestPush.rawValue:
@@ -79,7 +96,7 @@ final class BridgeHandler {
         case BridgeMessageType.userDidLogout.rawValue:
             handleUserDidLogout()
         default:
-            print("[Bridge] Unknown message type: \(type)")
+            AppLogger.bridge.warning("Unknown message type: \(type)")
         }
     }
 
@@ -87,7 +104,7 @@ final class BridgeHandler {
 
     func sendToWeb(type: BridgeMessageType, payload: [String: Any]? = nil) {
         guard let webView else {
-            print("[Bridge] No WebView attached, cannot send \(type.rawValue)")
+            AppLogger.bridge.debug("No WebView attached, cannot send \(type.rawValue)")
             return
         }
 
@@ -98,14 +115,14 @@ final class BridgeHandler {
 
         guard let jsonData = try? JSONSerialization.data(withJSONObject: message),
               let jsonString = String(data: jsonData, encoding: .utf8) else {
-            print("[Bridge] Failed to serialize message")
+            AppLogger.bridge.error("Failed to serialize message")
             return
         }
 
         let js = "window.equinetNative?.onMessage(\(jsonString))"
         webView.evaluateJavaScript(js) { _, error in
             if let error {
-                print("[Bridge] JS eval error: \(error.localizedDescription)")
+                AppLogger.bridge.error("JS eval error: \(error.localizedDescription)")
             }
         }
     }
@@ -144,13 +161,13 @@ final class BridgeHandler {
     private func handleMobileTokenReceived(_ payload: [String: Any]?) {
         guard let token = payload?["token"] as? String,
               let expiresAt = payload?["expiresAt"] as? String else {
-            print("[Bridge] Invalid mobile token payload")
+            AppLogger.bridge.warning("Invalid mobile token payload")
             sendToWeb(type: .mobileTokenError, payload: ["error": "Invalid payload"])
             return
         }
 
         KeychainHelper.saveMobileToken(jwt: token, expiresAt: expiresAt)
-        print("[Bridge] Mobile token stored in Keychain")
+        AppLogger.bridge.info("Mobile token stored in Keychain")
 
         // Confirm to web
         sendToWeb(type: .mobileTokenReceived)
@@ -172,14 +189,14 @@ final class BridgeHandler {
             )
             SharedDataManager.saveWidgetData(widgetData)
             SharedDataManager.reloadWidgets()
-            print("[Bridge] Widget data updated")
+            AppLogger.bridge.info("Widget data updated")
         } catch APIError.noToken, APIError.unauthorized {
             let widgetData = WidgetData(booking: nil, updatedAt: Date(), hasAuth: false)
             SharedDataManager.saveWidgetData(widgetData)
             SharedDataManager.reloadWidgets()
-            print("[Bridge] No valid token for widget data")
+            AppLogger.bridge.debug("No valid token for widget data")
         } catch {
-            print("[Bridge] Failed to fetch widget data: \(error)")
+            AppLogger.bridge.error("Failed to fetch widget data: \(error.localizedDescription)")
         }
     }
 
@@ -193,9 +210,9 @@ final class BridgeHandler {
 
         do {
             try await APIClient.shared.refreshToken()
-            print("[Bridge] Mobile token refreshed")
+            AppLogger.bridge.info("Mobile token refreshed")
         } catch {
-            print("[Bridge] Token refresh failed: \(error)")
+            AppLogger.bridge.error("Token refresh failed: \(error.localizedDescription)")
         }
 
         await fetchAndStoreWidgetData()
@@ -209,12 +226,12 @@ final class BridgeHandler {
         SharedDataManager.clearCalendarCache()
         SharedDataManager.reloadWidgets()
         CalendarSyncManager.shared.removeAllSyncedEvents()
-        print("[Bridge] Mobile token, session cookie, widget data, calendar cache, and calendar sync cleared")
+        AppLogger.bridge.info("Cleared mobile token, session cookie, widget data, calendar cache, and calendar sync")
     }
 
     /// Handle logout message from web app
     private func handleUserDidLogout() {
-        print("[Bridge] User logged out from web")
+        AppLogger.bridge.info("User logged out from web")
         authManager?.logout()
     }
 

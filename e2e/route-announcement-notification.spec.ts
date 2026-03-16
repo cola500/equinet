@@ -227,7 +227,7 @@ test.describe('Route Announcement Notifications', () => {
     await resetRateLimit(page)
     await page.goto('/notifications')
 
-    await expect(page.getByText('Notifikationer')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: 'Notifikationer' })).toBeVisible({ timeout: 10000 })
     await expect(page.getByText(/Test Stall AB/i).first()).toBeVisible({ timeout: 10000 })
   })
 
