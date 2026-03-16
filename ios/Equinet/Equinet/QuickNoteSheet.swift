@@ -17,6 +17,7 @@ struct QuickNoteSheet: View {
     @State private var text: String
     @State private var isRecording = false
     @State private var isSaving = false
+    @State private var errorMessage: String?
     @State private var speechRecognizer: SpeechRecognizer?
     @State private var textBeforeRecording = ""
     @Environment(\.dismiss) private var dismiss
@@ -49,11 +50,16 @@ struct QuickNoteSheet: View {
                 Button("Spara") {
                     Task {
                         stopRecording()
+                        errorMessage = nil
                         isSaving = true
+                        AppLogger.network.debug("QuickNoteSheet: save tapped, text length=\(text.count)")
                         let success = await onSave(text)
+                        AppLogger.network.debug("QuickNoteSheet: onSave returned \(success)")
                         isSaving = false
                         if success {
                             dismiss()
+                        } else {
+                            errorMessage = "Kunde inte spara anteckningen. Forsok igen."
                         }
                     }
                 }
@@ -103,6 +109,13 @@ struct QuickNoteSheet: View {
                 Text("\(text.count)/\(maxLength)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            // Error message
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
             }
 
             Spacer()

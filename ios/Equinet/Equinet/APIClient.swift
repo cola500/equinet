@@ -146,14 +146,18 @@ final class APIClient {
 
     /// Save provider notes on a booking
     func saveQuickNote(bookingId: String, providerNotes: String) async throws -> QuickNoteResponse {
+        AppLogger.network.debug("APIClient.saveQuickNote: bookingId=\(bookingId)")
         let (data, _) = try await performRequest(
             method: "POST",
             path: "/api/native/bookings/\(bookingId)/quick-note",
             body: ["providerNotes": providerNotes]
         )
         do {
-            return try JSONDecoder().decode(QuickNoteResponse.self, from: data)
+            let response = try JSONDecoder().decode(QuickNoteResponse.self, from: data)
+            AppLogger.network.debug("APIClient.saveQuickNote: decoded OK")
+            return response
         } catch {
+            AppLogger.network.error("APIClient.saveQuickNote: decode failed \(error)")
             throw APIError.decodingError(error)
         }
     }
@@ -390,13 +394,17 @@ final class APIClient {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
+        AppLogger.network.debug("performRequest: \(method) \(path)")
+
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch let urlError as URLError where urlError.code == .timedOut {
+            AppLogger.network.error("performRequest: timeout \(method) \(path)")
             throw APIError.timeout
         } catch {
+            AppLogger.network.error("performRequest: network error \(method) \(path): \(error.localizedDescription)")
             throw APIError.networkError(error)
         }
 

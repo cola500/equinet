@@ -193,6 +193,7 @@ final class BookingsViewModel {
                 let review = BookingReview(id: response.id, rating: response.rating, comment: response.comment)
                 bookings[index] = bookings[index].withReview(review)
             }
+            SharedDataManager.saveBookingsCache(bookings)
             actionInProgress = nil
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -203,7 +204,7 @@ final class BookingsViewModel {
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
-            AppLogger.network.error("Failed to submit review: \(error.localizedDescription)")
+            AppLogger.network.error("submitReview: failed bookingId=\(bookingId) error=\(error.localizedDescription)")
             return false
         }
     }
@@ -211,17 +212,23 @@ final class BookingsViewModel {
     // MARK: - Quick Note
 
     func saveQuickNote(bookingId: String, text: String) async -> Bool {
-        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else { return false }
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else {
+            AppLogger.network.error("saveQuickNote: booking \(bookingId) not found in list")
+            return false
+        }
 
         let oldBooking = bookings[index]
         actionInProgress = bookingId
+        AppLogger.network.debug("saveQuickNote: start bookingId=\(bookingId)")
 
         // Optimistic update
         bookings[index] = oldBooking.withProviderNotes(text)
 
         do {
             _ = try await fetcher.saveQuickNote(bookingId: bookingId, providerNotes: text)
+            SharedDataManager.saveBookingsCache(bookings)
             actionInProgress = nil
+            AppLogger.network.debug("saveQuickNote: success bookingId=\(bookingId)")
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             #endif
@@ -235,7 +242,7 @@ final class BookingsViewModel {
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
-            AppLogger.network.error("Failed to save quick note: \(error.localizedDescription)")
+            AppLogger.network.error("saveQuickNote: failed bookingId=\(bookingId) error=\(error.localizedDescription)")
             return false
         }
     }
@@ -257,6 +264,7 @@ final class BookingsViewModel {
                 newStatus: newStatus,
                 cancellationMessage: cancellationMessage
             )
+            SharedDataManager.saveBookingsCache(bookings)
             actionInProgress = nil
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -270,7 +278,7 @@ final class BookingsViewModel {
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
-            AppLogger.network.error("Failed to update booking status: \(error.localizedDescription)")
+            AppLogger.network.error("updateStatus: failed id=\(id) newStatus=\(newStatus) error=\(error.localizedDescription)")
         }
     }
 }
