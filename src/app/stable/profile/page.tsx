@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { useAuth } from "@/hooks/useAuth"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,8 +23,8 @@ interface StableProfile {
 }
 
 export default function StableProfilePage() {
-  const { isStableOwner } = useAuth()
   const { update: updateSession } = useSession()
+  const router = useRouter()
   const [profile, setProfile] = useState<StableProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -44,20 +44,28 @@ export default function StableProfilePage() {
     async function fetchProfile() {
       try {
         const res = await fetch("/api/stable/profile")
-        if (res.ok) {
-          const data = await res.json()
-          setProfile(data)
-          setName(data.name || "")
-          setDescription(data.description || "")
-          setAddress(data.address || "")
-          setCity(data.city || "")
-          setPostalCode(data.postalCode || "")
-          setMunicipality(data.municipality || "")
-          setContactEmail(data.contactEmail || "")
-          setContactPhone(data.contactPhone || "")
+        if (res.status === 404) {
+          // No profile yet -- expected for new users
+          setIsLoading(false)
+          return
         }
+        if (!res.ok) {
+          toast.error("Kunde inte hämta stallprofil")
+          setIsLoading(false)
+          return
+        }
+        const data = await res.json()
+        setProfile(data)
+        setName(data.name || "")
+        setDescription(data.description || "")
+        setAddress(data.address || "")
+        setCity(data.city || "")
+        setPostalCode(data.postalCode || "")
+        setMunicipality(data.municipality || "")
+        setContactEmail(data.contactEmail || "")
+        setContactPhone(data.contactPhone || "")
       } catch {
-        // No profile yet
+        toast.error("Kunde inte hämta stallprofil")
       } finally {
         setIsLoading(false)
       }
@@ -92,9 +100,10 @@ export default function StableProfilePage() {
 
       const data = await res.json()
       setProfile(data)
-      // Refresh session to include stableId
+      // Refresh session to include stableId -- must resolve BEFORE redirect
       await updateSession({ stableId: data.stableId || data.id })
-      toast.success("Stallprofil skapad!")
+      toast.success("Stallprofil skapad! Lägg nu till dina stallplatser.")
+      router.push("/stable/spots")
     } catch {
       toast.error("Kunde inte skapa stallprofil")
     } finally {
@@ -228,6 +237,7 @@ export default function StableProfilePage() {
               onChange={(e) => setContactEmail(e.target.value)}
               placeholder="stall@example.com"
             />
+            <p className="text-xs text-gray-400">Visas publikt</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="contactPhone">Kontakttelefon</Label>
@@ -237,6 +247,7 @@ export default function StableProfilePage() {
               onChange={(e) => setContactPhone(e.target.value)}
               placeholder="070-123 45 67"
             />
+            <p className="text-xs text-gray-400">Visas publikt</p>
           </div>
         </div>
 

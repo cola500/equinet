@@ -10,7 +10,6 @@ import { Header } from "@/components/layout/Header"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useStableSearch, type StableData } from "@/hooks/useStableSearch"
 import { searchMunicipalities } from "@/lib/geo/municipalities"
-import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Search } from "lucide-react"
 
 export default function StablesPage() {
@@ -24,7 +23,7 @@ export default function StablesPage() {
             <p className="text-gray-600 mb-8">Sök bland stall med lediga platser</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-lg" />
+                <div key={i} className="min-h-[192px] bg-gray-200 animate-pulse rounded-lg" />
               ))}
             </div>
           </div>
@@ -105,6 +104,7 @@ function StablesContent() {
               <div className="flex-1 relative">
                 <Input
                   placeholder="Sök stallnamn..."
+                  aria-label="Sök stallnamn"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full"
@@ -150,16 +150,14 @@ function StablesContent() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="available-spots"
-                  checked={hasAvailableSpots}
-                  onCheckedChange={(checked) => setHasAvailableSpots(checked === true)}
-                />
-                <label htmlFor="available-spots" className="text-sm whitespace-nowrap cursor-pointer">
-                  Lediga platser
-                </label>
-              </div>
+              <Button
+                variant={hasAvailableSpots ? "default" : "outline"}
+                onClick={() => setHasAvailableSpots(!hasAvailableSpots)}
+                aria-pressed={hasAvailableSpots}
+                className="whitespace-nowrap"
+              >
+                Lediga platser
+              </Button>
 
               {hasActiveFilters && (
                 <Button variant="outline" onClick={clearSearch}>
@@ -175,20 +173,20 @@ function StablesContent() {
                 {search && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
                     &quot;{search}&quot;
-                    <button type="button" onClick={() => setSearch("")}>×</button>
+                    <button type="button" aria-label="Ta bort filter" onClick={() => setSearch("")}>×</button>
                   </span>
                 )}
                 {municipality && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
                     <MapPin className="h-3 w-3" />
                     {municipality}
-                    <button type="button" onClick={() => setMunicipality("")}>×</button>
+                    <button type="button" aria-label="Ta bort filter" onClick={() => setMunicipality("")}>×</button>
                   </span>
                 )}
                 {hasAvailableSpots && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-800 rounded-full">
                     Lediga platser
-                    <button type="button" onClick={() => setHasAvailableSpots(false)}>×</button>
+                    <button type="button" aria-label="Ta bort filter" onClick={() => setHasAvailableSpots(false)}>×</button>
                   </span>
                 )}
               </div>
@@ -217,7 +215,7 @@ function StablesContent() {
           ) : isLoading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-lg" />
+                <div key={i} className="min-h-[192px] bg-gray-200 animate-pulse rounded-lg" />
               ))}
             </div>
           ) : stables.length === 0 ? (
@@ -271,7 +269,7 @@ function StableGrid({ stables }: { stables: StableData[] }) {
               )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">
-                  {stable._count.spots} platser totalt
+                  {stable._count.spots === 1 ? "1 plats totalt" : `${stable._count.spots} platser totalt`}
                 </span>
                 {stable._count.availableSpots > 0 ? (
                   <span className="text-green-700 font-medium">

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { clientLogger } from "@/lib/client-logger"
 
@@ -187,9 +187,7 @@ export default function StableInvitePage() {
 
           {state === "error" && (
             <>
-              <div className="text-red-500 text-4xl mb-2">
-                <span aria-hidden="true">&#10007;</span>
-              </div>
+              <XCircle className="h-12 w-12 text-red-500 mx-auto" />
               <h1 className="text-xl font-bold">
                 {errorType === "expired" ? "Inbjudan har gått ut" :
                  errorType === "used" ? "Inbjudan redan använd" :

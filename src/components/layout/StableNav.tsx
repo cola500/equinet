@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   Home,
-  MapPin,
+  LayoutGrid,
   Mail,
   User,
   ArrowLeftRight,
@@ -14,14 +14,14 @@ import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { toast } from "sonner"
 
-const stableTabs: TabItem[] = [
+const allStableTabs: TabItem[] = [
   { href: "/stable/dashboard", label: "Översikt", icon: Home },
-  { href: "/stable/spots", label: "Platser", icon: MapPin },
+  { href: "/stable/spots", label: "Platser", icon: LayoutGrid },
   { href: "/stable/invites", label: "Inbjudningar", icon: Mail },
   { href: "/stable/profile", label: "Stallprofil", icon: User },
 ]
 
-const navItems = [
+const allNavItems = [
   { href: "/stable/dashboard", label: "Översikt" },
   { href: "/stable/spots", label: "Stallplatser" },
   { href: "/stable/invites", label: "Inbjudningar" },
@@ -31,8 +31,17 @@ const navItems = [
 export function StableNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const { isProvider, isCustomer } = useAuth()
+  const { isProvider, isCustomer, isStableOwner, isLoading } = useAuth()
   const isOnline = useOnlineStatus()
+
+  // Hide Platser + Inbjudningar tabs until auth resolves and user has a stable profile
+  const showAllTabs = !isLoading && isStableOwner
+  const stableTabs = showAllTabs
+    ? allStableTabs
+    : allStableTabs.filter((t) => t.href === "/stable/dashboard" || t.href === "/stable/profile")
+  const navItems = showAllTabs
+    ? allNavItems
+    : allNavItems.filter((n) => n.href === "/stable/dashboard" || n.href === "/stable/profile")
 
   const stableMoreItems: MoreMenuItem[] = [
     ...(isProvider ? [{ href: "/provider/dashboard", label: "Leverantörsvy", icon: ArrowLeftRight, section: "Byt vy" }] : []),
@@ -58,7 +67,8 @@ export function StableNav() {
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-1 h-12">
             {/* Role switcher */}
-            <div className="mr-4 flex items-center bg-gray-100 rounded-lg p-1">
+            <div className="mr-4 flex items-center bg-gray-100 rounded-lg p-1" aria-label="Byt vy">
+              <span className="text-xs text-gray-500 mr-1">Vy:</span>
               <span className="text-sm font-medium bg-white rounded-md shadow-sm px-3 py-1.5">
                 Stall
               </span>

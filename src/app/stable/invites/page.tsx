@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { Button } from "@/components/ui/button"
@@ -59,7 +60,16 @@ function isValidEmail(email: string): boolean {
 
 export default function StableInvitesPage() {
   const { isLoading: authLoading, isStableOwner } = useAuth()
+  const router = useRouter()
   const stableEnabled = useFeatureFlag("stable_profiles")
+
+  // Redirect guard: require stable profile
+  useEffect(() => {
+    if (!authLoading && !isStableOwner) {
+      toast.error("Skapa en stallprofil först")
+      router.replace("/stable/profile")
+    }
+  }, [authLoading, isStableOwner, router])
   const [invites, setInvites] = useState<Invite[]>([])
   const [email, setEmail] = useState("")
   const [emailError, setEmailError] = useState("")
@@ -116,7 +126,7 @@ export default function StableInvitesPage() {
       const data = await res.json()
 
       if (res.ok) {
-        toast.success("Inbjudan skapad")
+        toast.success("Inbjudan skapad -- kopiera länken nedan")
         if (data.inviteUrl) {
           setLastInviteUrl(window.location.origin + data.inviteUrl)
         }
@@ -399,7 +409,7 @@ function InviteRow({
             {(isPending || status === "expired") && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="sm" className="h-11 w-11 p-0">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

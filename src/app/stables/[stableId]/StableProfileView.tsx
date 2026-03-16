@@ -55,7 +55,7 @@ export function StableProfileView({ stable, availableSpots }: StableProfileViewP
               <Card>
                 <CardHeader>
                   <CardTitle>
-                    Lediga stallplatser ({availableSpots.length} av {stable._count.spots})
+                    Lediga stallplatser ({availableSpots.length} av {stable._count.spots === 1 ? "1 plats" : `${stable._count.spots} platser`})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -141,11 +141,19 @@ export function StableProfileView({ stable, availableSpots }: StableProfileViewP
               </Card>
 
               {/* CTA */}
-              {stable.contactEmail && (
+              {(stable.contactEmail || stable.contactPhone) ? (
                 <Button asChild className="w-full">
-                  <a href={`mailto:${stable.contactEmail}?subject=Förfrågan om stallplats - ${stable.name}`}>
+                  <a href={
+                    stable.contactEmail
+                      ? `mailto:${stable.contactEmail}?subject=Förfrågan om stallplats - ${stable.name}`
+                      : `tel:${stable.contactPhone}`
+                  }>
                     Kontakta stallet
                   </a>
+                </Button>
+              ) : (
+                <Button disabled className="w-full">
+                  Kontaktuppgifter saknas
                 </Button>
               )}
             </div>
