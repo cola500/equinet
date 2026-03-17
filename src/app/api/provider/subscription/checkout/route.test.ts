@@ -90,6 +90,12 @@ describe("POST /api/provider/subscription/checkout", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    mockAuth.mockResolvedValue(null as never)
+    const response = await POST(makeRequest(validBody))
+    expect(response.status).toBe(401)
+  })
+
   it("returns 403 when user is customer (not provider)", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "customer" },

@@ -76,6 +76,12 @@ describe("PATCH /api/horses/[id]/stable", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await PATCH(makeRequest({ stableId: "s1" }), routeContext)
+    expect(res.status).toBe(401)
+  })
+
   it("sets stableId on horse when valid", async () => {
     mockHorseService.setStable.mockResolvedValue(
       Result.ok({ id: "horse-1", name: "Blansen", stableId: "s1" })

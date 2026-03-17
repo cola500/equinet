@@ -75,6 +75,15 @@ describe("POST /api/stables/invites/[token]/accept", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const req = new NextRequest("http://localhost/api/stables/invites/abc123/accept", {
+      method: "POST",
+    })
+    const res = await POST(req, routeContext)
+    expect(res.status).toBe(401)
+  })
+
   it("accepts invite when email matches (case-insensitive)", async () => {
     // Session email is "anna@test.se", invite email is "Anna@Test.SE"
     mockInviteService.validateToken.mockResolvedValue(

@@ -140,7 +140,7 @@ describe('GET /api/group-bookings/[id]', () => {
     expect(data.error).toBe('Grupprequest hittades inte')
   })
 
-  it('should return 401 when not authenticated', async () => {
+  it('should return 401 when auth throws Response', async () => {
     const unauthorizedResponse = new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
@@ -153,6 +153,19 @@ describe('GET /api/group-bookings/[id]', () => {
 
     const response = await GET(request, { params: makeParams(TEST_UUIDS.groupRequest) })
     expect(response.status).toBe(401)
+  })
+
+  it('returns 401 when not authenticated (null session)', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`
+    )
+
+    const response = await GET(request, { params: makeParams(TEST_UUIDS.groupRequest) })
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 })
 
@@ -251,6 +264,23 @@ describe('PUT /api/group-bookings/[id]', () => {
 
     expect(response.status).toBe(403)
     expect(data.error).toBe('Bara skaparen kan uppdatera grupprequesten')
+  })
+
+  it('returns 401 when not authenticated (null session)', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/group-bookings/${TEST_UUIDS.groupRequest}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ notes: 'test' }),
+      }
+    )
+
+    const response = await PUT(request, { params: makeParams(TEST_UUIDS.groupRequest) })
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 400 for invalid status transition', async () => {

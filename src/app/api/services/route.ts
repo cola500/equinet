@@ -19,6 +19,9 @@ export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -29,7 +32,7 @@ export async function GET(_request: NextRequest) {
     const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Use repository to get services
@@ -56,6 +59,9 @@ export async function POST(request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -79,7 +85,7 @@ export async function POST(request: NextRequest) {
     const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Parse request body with error handling

@@ -91,11 +91,27 @@ describe("GET /api/notifications", () => {
 
     expect(response.status).toBe(401)
   })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest("http://localhost:3000/api/notifications")
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
 })
 
 describe("POST /api/notifications (mark all as read)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest("http://localhost:3000/api/notifications", {
+      method: "POST",
+    })
+    const response = await POST(request)
+    expect(response.status).toBe(401)
   })
 
   it("should mark all notifications as read", async () => {

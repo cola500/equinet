@@ -24,6 +24,9 @@ export async function PUT(
     const { id } = await params
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -42,7 +45,7 @@ export async function PUT(
     const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Parse request body with error handling
@@ -63,7 +66,7 @@ export async function PUT(
     const service = await serviceRepo.updateWithAuth(id, validatedData, provider.id)
 
     if (!service) {
-      return NextResponse.json({ error: "Service not found" }, { status: 404 })
+      return NextResponse.json({ error: "Tjänst hittades inte" }, { status: 404 })
     }
 
     return NextResponse.json(service)
@@ -98,6 +101,9 @@ export async function DELETE(
     const { id } = await params
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -116,14 +122,14 @@ export async function DELETE(
     const provider = await providerRepo.findByUserId(session.user.id)
 
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Delete with authorization check (atomic WHERE clause in repository)
     const deleted = await serviceRepo.deleteWithAuth(id, provider.id)
 
     if (!deleted) {
-      return NextResponse.json({ error: "Service not found" }, { status: 404 })
+      return NextResponse.json({ error: "Tjänst hittades inte" }, { status: 404 })
     }
 
     return NextResponse.json({ message: "Service deleted" })

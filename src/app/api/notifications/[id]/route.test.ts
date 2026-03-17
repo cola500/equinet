@@ -46,6 +46,18 @@ describe("PUT /api/notifications/[id]", () => {
     expect(mockMarkAsRead).toHaveBeenCalledWith("n1", "user-1")
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/notifications/n1",
+      { method: "PUT" }
+    )
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: "n1" }),
+    })
+    expect(response.status).toBe(401)
+  })
+
   it("should return 404 when notification not found or not owned", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },

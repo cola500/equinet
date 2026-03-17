@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { DELETE } from './route'
+import { DELETE, PUT } from './route'
 import { auth } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
@@ -47,6 +47,13 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(auth).mockResolvedValue(providerSession)
+  })
+
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    expect(response.status).toBe(401)
   })
 
   it('should return 401 when not authenticated', async () => {
@@ -157,5 +164,24 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
 
     expect(response.status).toBe(200)
     expect(prisma.user.delete).not.toHaveBeenCalled()
+  })
+})
+
+describe('PUT /api/provider/customers/[customerId]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(auth).mockResolvedValue(providerSession)
+  })
+
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/customers/customer-1', {
+      method: 'PUT',
+      body: JSON.stringify({ firstName: 'Anna' }),
+    })
+
+    const response = await PUT(request, { params: makeParams('customer-1') })
+    expect(response.status).toBe(401)
   })
 })

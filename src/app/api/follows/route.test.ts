@@ -54,6 +54,12 @@ describe("POST /api/follows", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await POST(makeRequest("POST", { providerId: PROVIDER_ID }))
+    expect(response.status).toBe(401)
+  })
+
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "provider" },
@@ -129,6 +135,12 @@ describe("POST /api/follows", () => {
 describe("GET /api/follows", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await GET(makeRequest("GET"))
+    expect(response.status).toBe(401)
   })
 
   it("should return followed providers list", async () => {

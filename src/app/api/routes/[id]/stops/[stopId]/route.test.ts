@@ -124,7 +124,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
 
   // ---- Auth ----
 
-  it("returns 401 when not authenticated", async () => {
+  it("returns 401 when auth throws Response", async () => {
     mockAuth.mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
     )
@@ -133,6 +133,17 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
     const res = await PATCH(req, defaultParams)
 
     expect(res.status).toBe(401)
+  })
+
+  it("returns 401 when not authenticated (null session)", async () => {
+    mockAuth.mockResolvedValue(null as never)
+
+    const req = createRequest({ status: "completed" })
+    const res = await PATCH(req, defaultParams)
+
+    expect(res.status).toBe(401)
+    const json = await res.json()
+    expect(json.error).toBe("Ej inloggad")
   })
 
   it("returns 403 when user is not a provider", async () => {

@@ -212,6 +212,20 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(authServer.auth).mockResolvedValue(null as never)
+
+    const request = new Request(
+      `http://localhost/api/providers/${mockProviderId}/availability-exceptions/${mockDate}`,
+      { method: "DELETE" }
+    )
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: mockProviderId, date: mockDate }),
+    })
+
+    expect(response.status).toBe(401)
+  })
+
   it("should return 403 if not a provider", async () => {
     const mockSession = {
       user: { id: mockUserId, userType: "customer" },

@@ -78,6 +78,13 @@ describe("GET /api/horses/[id]/notes", () => {
     })
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest("http://localhost:3000/api/horses/horse-1/notes")
+    const response = await GET(request, routeContext)
+    expect(response.status).toBe(401)
+  })
+
   it("should pass category filter to service", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
     mockService.listNotes.mockResolvedValue(Result.ok([]))
@@ -170,6 +177,23 @@ describe("POST /api/horses/[id]/notes", () => {
       category: "veterinary",
       title: "Vaccination - influensa",
     })
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/horses/horse-1/notes",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          category: "general",
+          title: "Test",
+          noteDate: "2026-01-15T00:00:00.000Z",
+        }),
+      }
+    )
+    const response = await POST(request, routeContext)
+    expect(response.status).toBe(401)
   })
 
   it("should return 400 for invalid category", async () => {

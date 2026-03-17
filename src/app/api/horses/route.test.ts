@@ -110,6 +110,13 @@ describe('GET /api/horses', () => {
     expect(data.error).toBe('Ej inloggad')
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/horses')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
+
   it('should return empty array when customer has no horses', async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
     mockService.listHorses.mockResolvedValue(Result.ok([]))
@@ -297,6 +304,16 @@ describe('POST /api/horses', () => {
 
     expect(response.status).toBe(401)
     expect(data.error).toBe('Ej inloggad')
+  })
+
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/horses', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Blansen' }),
+    })
+    const response = await POST(request)
+    expect(response.status).toBe(401)
   })
 
   it('should pass ownerId from session to service', async () => {

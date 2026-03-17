@@ -104,6 +104,15 @@ describe("PATCH /api/bookings/[id]/reschedule", () => {
     })
   })
 
+  it("should return 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = makeRequest(validBody)
+    const response = await PATCH(request, { params: Promise.resolve({ id: "booking-1" }) })
+
+    expect(response.status).toBe(401)
+  })
+
   it("should reschedule booking successfully", async () => {
     const request = makeRequest(validBody)
     const response = await PATCH(request, { params: Promise.resolve({ id: "booking-1" }) })

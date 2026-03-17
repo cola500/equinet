@@ -82,6 +82,15 @@ describe('GET /api/profile', () => {
     expect(data.error).toBe('Unauthorized')
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/profile')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
+  })
+
   it('returns 404 when user not found', async () => {
     vi.mocked(auth).mockResolvedValue(customerSession)
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
@@ -91,7 +100,7 @@ describe('GET /api/profile', () => {
 
     expect(response.status).toBe(404)
     const data = await response.json()
-    expect(data.error).toBe('User not found')
+    expect(data.error).toBe('Användare hittades inte')
   })
 
   it('returns profile with provider data and flattened providerId', async () => {
@@ -165,6 +174,16 @@ describe('PUT /api/profile', () => {
     })
     const response = await PUT(request)
 
+    expect(response.status).toBe(401)
+  })
+
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ firstName: 'Anna', lastName: 'Andersson' }),
+    })
+    const response = await PUT(request)
     expect(response.status).toBe(401)
   })
 

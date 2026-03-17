@@ -78,6 +78,12 @@ describe("POST /api/bug-reports", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    mockAuth.mockResolvedValue(null as never)
+    const res = await POST(createRequest(validBody))
+    expect(res.status).toBe(401)
+  })
+
   it("returns 429 when rate limited", async () => {
     mockRateLimit.mockResolvedValue(false)
     const res = await POST(createRequest(validBody))

@@ -54,6 +54,12 @@ describe("POST /api/push-subscriptions", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await POST(makeRequest("POST", validSubscription))
+    expect(response.status).toBe(401)
+  })
+
   it("should create subscription with 201", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "customer" },
@@ -98,6 +104,14 @@ describe("POST /api/push-subscriptions", () => {
 describe("DELETE /api/push-subscriptions", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await DELETE(
+      makeRequest("DELETE", { endpoint: validSubscription.endpoint })
+    )
+    expect(response.status).toBe(401)
   })
 
   it("should delete subscription and return 200", async () => {

@@ -26,6 +26,9 @@ export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(_request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -54,7 +57,7 @@ export async function GET(_request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return NextResponse.json({ error: "Användare hittades inte" }, { status: 404 })
     }
 
     // Flatten provider ID for convenience
@@ -82,6 +85,9 @@ export async function PUT(request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

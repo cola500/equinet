@@ -141,6 +141,16 @@ describe('POST /api/reviews', () => {
     expect(response.status).toBe(401)
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/reviews', {
+      method: 'POST',
+      body: JSON.stringify({ bookingId: 'booking-1', rating: 5 }),
+    })
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 when user is not a customer', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider' },

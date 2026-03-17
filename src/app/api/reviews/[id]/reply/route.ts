@@ -23,8 +23,11 @@ async function resolveAuth(request: NextRequest): Promise<{ userId: string; user
     // Mobile tokens are provider-only (issued at login for providers)
     return { userId: mobileAuth.userId, userType: "provider" }
   }
-  // Fall back to session auth (throws Response on failure)
+  // Fall back to session auth
   const session = await auth()
+  if (!session) {
+    throw NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+  }
   return { userId: session.user.id, userType: (session.user as { userType: string }).userType }
 }
 

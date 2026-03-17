@@ -114,6 +114,13 @@ describe("GET /api/horses/[id]/export", () => {
     expect(response.headers.get("content-disposition")).toContain("Blansen")
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest("http://localhost:3000/api/horses/horse-1/export")
+    const response = await GET(request, makeContext("horse-1"))
+    expect(response.status).toBe(401)
+  })
+
   it("should return 404 for non-owned horse (IDOR protection)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
     mockService.exportData.mockResolvedValue(

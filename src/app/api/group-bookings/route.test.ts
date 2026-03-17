@@ -118,7 +118,7 @@ describe('POST /api/group-bookings', () => {
     expect(data.participants[0].userId).toBe(TEST_UUIDS.creator)
   })
 
-  it('should return 401 when not authenticated', async () => {
+  it('should return 401 when auth throws Response', async () => {
     const unauthorizedResponse = new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
@@ -138,6 +138,20 @@ describe('POST /api/group-bookings', () => {
 
     const response = await POST(request)
     expect(response.status).toBe(401)
+  })
+
+  it('returns 401 when not authenticated (null session)', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/group-bookings', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 400 for missing required fields', async () => {
@@ -347,7 +361,7 @@ describe('GET /api/group-bookings', () => {
     expect(data[0].locationName).toBe('Sollebrunn Ridklubb')
   })
 
-  it('should return 401 when not authenticated', async () => {
+  it('should return 401 when auth throws Response', async () => {
     const unauthorizedResponse = new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
@@ -358,6 +372,17 @@ describe('GET /api/group-bookings', () => {
 
     const response = await GET(request)
     expect(response.status).toBe(401)
+  })
+
+  it('returns 401 when not authenticated (null session)', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/group-bookings')
+
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('returns 503 when rate limiter throws', async () => {

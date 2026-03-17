@@ -114,6 +114,20 @@ describe('POST /api/bookings/manual', () => {
     })
   }
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = makeRequest({
+      serviceId: TEST_UUIDS.service,
+      bookingDate: FUTURE_DATE_STR,
+      startTime: '10:00',
+      customerId: TEST_UUIDS.customer,
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+  })
+
   it('should create manual booking with existing customer', async () => {
     const mockBooking = {
       id: TEST_UUIDS.booking,

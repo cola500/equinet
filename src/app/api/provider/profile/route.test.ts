@@ -49,6 +49,14 @@ describe('GET /api/provider/profile', () => {
     vi.clearAllMocks()
   })
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
+
   it('should return provider profile with acceptingNewCustomers', async () => {
     vi.mocked(auth).mockResolvedValue(providerSession)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
@@ -106,6 +114,17 @@ describe('GET /api/provider/profile', () => {
 describe('PUT /api/provider/profile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/provider/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ businessName: 'Test' }),
+    })
+    const response = await PUT(request)
+    expect(response.status).toBe(401)
   })
 
   it('should update acceptingNewCustomers to false', async () => {

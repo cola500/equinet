@@ -13,6 +13,9 @@ const horseIdSchema = z.string().uuid()
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "customer") {
       return NextResponse.json(

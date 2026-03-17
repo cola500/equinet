@@ -80,6 +80,13 @@ describe('GET /api/provider/customers', () => {
 
   // --- Auth & Authorization ---
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 for unauthenticated users', async () => {
     vi.mocked(auth).mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
@@ -469,6 +476,13 @@ describe('POST /api/provider/customers', () => {
       customerId: 'new-ghost-id',
       createdAt: new Date(),
     } as never)
+  })
+
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const response = await POST(makePostRequest({ firstName: 'Anna' }))
+    expect(response.status).toBe(401)
   })
 
   it('should return 401 for unauthenticated users', async () => {

@@ -58,7 +58,8 @@ describe("GET /api/provider/onboarding-status", () => {
     const res = await GET(mockRequest())
 
     expect(res.status).toBe(401)
-    expect(await res.text()).toBe("Unauthorized")
+    const body = await res.json()
+    expect(body.error).toBe("Ej inloggad")
   })
 
   it("returns 401 when session.user.id is missing", async () => {
@@ -77,7 +78,8 @@ describe("GET /api/provider/onboarding-status", () => {
     const res = await GET(mockRequest())
 
     expect(res.status).toBe(404)
-    expect(await res.text()).toBe("Provider not found")
+    const body = await res.json()
+    expect(body.error).toBe("Leverantör hittades inte")
   })
 
   // --- Completion booleans ---

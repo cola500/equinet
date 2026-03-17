@@ -131,7 +131,14 @@ describe('GET /api/services', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
+  })
+
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/services')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
   })
 })
 
@@ -211,6 +218,16 @@ describe('POST /api/services', () => {
     // Assert
     expect(response.status).toBe(401)
     expect(data.error).toBe('Ej inloggad')
+  })
+
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/services', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Test', price: 100, durationMinutes: 30 }),
+    })
+    const response = await POST(request)
+    expect(response.status).toBe(401)
   })
 
   it('should return 400 for invalid data - missing name', async () => {

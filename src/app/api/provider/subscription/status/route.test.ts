@@ -69,6 +69,12 @@ describe("GET /api/provider/subscription/status", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    mockAuth.mockResolvedValue(null as never)
+    const response = await GET(createRequest())
+    expect(response.status).toBe(401)
+  })
+
   it("returns 403 when user is customer", async () => {
     mockAuth.mockResolvedValue({
       user: { id: "user-1", userType: "customer" },

@@ -55,6 +55,14 @@ describe("GET /api/provider/customers/[customerId]/horses", () => {
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
   })
 
+  it("should return 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses")
+    const response = await GET(request, { params: makeParams("c1") })
+    expect(response.status).toBe(401)
+  })
+
   it("should return 401 when not authenticated", async () => {
     vi.mocked(auth).mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
@@ -150,6 +158,17 @@ describe("POST /api/provider/customers/[customerId]/horses", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
+  })
+
+  it("should return 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest("http://localhost:3000/api/provider/customers/c1/horses", {
+      method: "POST",
+      body: JSON.stringify({ name: "Blansen" }),
+    })
+    const response = await POST(request, { params: makeParams("c1") })
+    expect(response.status).toBe(401)
   })
 
   it("should return 401 when not authenticated", async () => {

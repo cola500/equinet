@@ -26,6 +26,14 @@ type RouteContext = { params: Promise<{ horseId: string }> }
  */
 async function authorizeCustomer(request: NextRequest, context: RouteContext) {
   const session = await auth()
+  if (!session) {
+    return {
+      error: NextResponse.json(
+        { error: "Ej inloggad" },
+        { status: 401 }
+      ),
+    }
+  }
 
   if (session.user.userType !== "customer") {
     return {

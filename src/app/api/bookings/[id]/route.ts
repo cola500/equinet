@@ -50,6 +50,9 @@ export async function PUT(
       userType = user.userType
     } else {
       const session = await auth()
+      if (!session) {
+        return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+      }
       userId = session.user.id
       userType = session.user.userType
     }
@@ -87,7 +90,7 @@ export async function PUT(
       const provider = await providerRepo.findByUserId(userId)
 
       if (!provider) {
-        return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+        return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
       }
 
       providerId = provider.id
@@ -188,6 +191,9 @@ export async function DELETE(
   try {
     const { id } = await params
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Rate limiting
     const clientIp = getClientIP(request)
@@ -208,7 +214,7 @@ export async function DELETE(
       const provider = await providerRepo.findByUserId(session.user.id)
 
       if (!provider) {
-        return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+        return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
       }
 
       authContext = { providerId: provider.id }

@@ -31,6 +31,9 @@ export async function GET(_request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -102,6 +105,9 @@ export async function PUT(request: NextRequest) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -193,7 +199,7 @@ export async function PUT(request: NextRequest) {
       if (error.code === "P2025") {
         logger.error("Provider not found for userId")
         return NextResponse.json(
-          { error: "Provider profile not found" },
+          { error: "Leverantörsprofil hittades inte" },
           { status: 404 }
         )
       }

@@ -50,6 +50,20 @@ describe('POST /api/route-orders', () => {
     vi.clearAllMocks()
   })
 
+  it('returns 401 when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/route-orders', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
+  })
+
   describe('Customer-initiated orders (existing functionality)', () => {
     it('should create customer route order with valid data', async () => {
       // Arrange
@@ -476,6 +490,17 @@ describe('POST /api/route-orders', () => {
 describe('GET /api/route-orders', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/route-orders?announcementType=provider_announced')
+
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return provider announcements for authenticated provider', async () => {

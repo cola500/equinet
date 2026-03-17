@@ -44,7 +44,7 @@ describe("GET /api/route-orders/my-orders", () => {
     mockFindMany.mockResolvedValue([])
   })
 
-  it("returns 401 when not authenticated", async () => {
+  it("returns 401 when auth throws Response", async () => {
     mockAuth.mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -54,6 +54,15 @@ describe("GET /api/route-orders/my-orders", () => {
 
     const res = await GET(mockRequest())
     expect(res.status).toBe(401)
+  })
+
+  it("returns 401 when not authenticated (null session)", async () => {
+    mockAuth.mockResolvedValue(null as never)
+
+    const res = await GET(mockRequest())
+    expect(res.status).toBe(401)
+    const body = await res.json()
+    expect(body.error).toBe("Ej inloggad")
   })
 
   it("returns 404 when route_planning flag is disabled", async () => {

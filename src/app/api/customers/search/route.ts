@@ -9,6 +9,9 @@ import { logger } from "@/lib/logger"
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Provider-only endpoint
     if (session.user.userType !== 'provider') {
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
     const providerRepo = new ProviderRepository()
     const provider = await providerRepo.findByUserId(session.user.id)
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Search customers that have booked with THIS provider (IDOR protection)

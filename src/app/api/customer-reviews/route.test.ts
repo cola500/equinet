@@ -125,6 +125,16 @@ describe('POST /api/customer-reviews', () => {
     expect(response.status).toBe(401)
   })
 
+  it('returns 401 when session is null (POST)', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
+      method: 'POST',
+      body: JSON.stringify({ bookingId: 'booking-1', rating: 5 }),
+    })
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
@@ -395,5 +405,12 @@ describe('GET /api/customer-reviews', () => {
 
     expect(response.status).toBe(401)
     expect(data.error).toBe('Ej inloggad')
+  })
+
+  it('returns 401 when session is null (GET)', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/customer-reviews')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
   })
 })

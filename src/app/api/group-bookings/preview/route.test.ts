@@ -122,7 +122,7 @@ describe("GET /api/group-bookings/preview", () => {
     expect(response.status).toBe(404)
   })
 
-  it("should return 401 when not authenticated", async () => {
+  it("should return 401 when auth throws Response", async () => {
     vi.mocked(auth).mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -136,6 +136,19 @@ describe("GET /api/group-bookings/preview", () => {
     const response = await GET(request)
 
     expect(response.status).toBe(401)
+  })
+
+  it("returns 401 when not authenticated (null session)", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/group-bookings/preview?code=ABC12345"
+    )
+    const response = await GET(request)
+
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe("Ej inloggad")
   })
 
   it("returns 503 when rate limiter throws", async () => {

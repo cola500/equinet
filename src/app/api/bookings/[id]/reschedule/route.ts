@@ -27,6 +27,9 @@ export async function PATCH(
   try {
     // 1. Auth
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "customer") {
       return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })

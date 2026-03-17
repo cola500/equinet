@@ -116,6 +116,18 @@ describe('PUT /api/services/[id]', () => {
     expect(data.error).toBe('Ej inloggad')
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/services/service1', {
+      method: 'PUT',
+      body: JSON.stringify({ name: 'Test', price: 100, durationMinutes: 30 }),
+    })
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'service1' }),
+    })
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 when user is not a provider', async () => {
     // Arrange - customer trying to update a service
     vi.mocked(auth).mockResolvedValue({
@@ -158,7 +170,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return 404 when service does not exist', async () => {
@@ -188,7 +200,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Service not found')
+    expect(data.error).toBe('Tjänst hittades inte')
   })
 
   it('should return 404 when service belongs to different provider', async () => {
@@ -218,7 +230,7 @@ describe('PUT /api/services/[id]', () => {
 
     // Assert - Returns 404 (not 403) because atomic auth doesn't distinguish
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Service not found')
+    expect(data.error).toBe('Tjänst hittades inte')
   })
 
   it('should return 400 for invalid data', async () => {
@@ -335,6 +347,17 @@ describe('DELETE /api/services/[id]', () => {
     expect(data.error).toBe('Ej inloggad')
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/services/service1', {
+      method: 'DELETE',
+    })
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: 'service1' }),
+    })
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 when user is not a provider', async () => {
     // Arrange - customer trying to delete a service
     vi.mocked(auth).mockResolvedValue({
@@ -375,7 +398,7 @@ describe('DELETE /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return 404 when service does not exist', async () => {
@@ -404,7 +427,7 @@ describe('DELETE /api/services/[id]', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Service not found')
+    expect(data.error).toBe('Tjänst hittades inte')
   })
 
   it('should return 404 when service belongs to different provider', async () => {
@@ -433,6 +456,6 @@ describe('DELETE /api/services/[id]', () => {
 
     // Assert - Returns 404 (not 403) because atomic auth
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Service not found')
+    expect(data.error).toBe('Tjänst hittades inte')
   })
 })

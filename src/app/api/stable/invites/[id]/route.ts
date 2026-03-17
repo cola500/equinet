@@ -25,6 +25,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await context.params
 
     // Verify user owns a stable

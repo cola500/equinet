@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const session = await auth()
 
     if (!session?.user?.id) {
-      return new Response("Unauthorized", { status: 401 })
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     const clientIp = getClientIP(request)
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!provider) {
-      return new Response("Provider not found", { status: 404 })
+      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
     // Check if profile is complete:
@@ -79,6 +79,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error("Error fetching onboarding status", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internal error", { status: 500 })
+    return NextResponse.json({ error: "Internt serverfel" }, { status: 500 })
   }
 }

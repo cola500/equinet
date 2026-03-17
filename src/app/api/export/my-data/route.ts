@@ -20,6 +20,9 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Auth first
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const userId = session.user.id
 
     // 2. Rate limiting (after auth to avoid unauthenticated abuse)

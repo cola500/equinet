@@ -11,6 +11,9 @@ type RouteParams = { params: Promise<{ id: string; pid: string }> }
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id, pid } = await params
 
     const clientIp = getClientIP(request)

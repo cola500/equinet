@@ -240,4 +240,19 @@ describe("PUT /api/admin/verification-requests/[id]", () => {
 
     expect(response.status).toBe(401)
   })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/verification-requests/ver-1",
+      {
+        method: "PUT",
+        body: JSON.stringify({ action: "approve" }),
+      }
+    )
+
+    const response = await PUT(request, routeContext)
+    expect(response.status).toBe(401)
+  })
 })

@@ -12,6 +12,9 @@ export async function GET(
 ) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Provider-only endpoint
     if (session.user.userType !== 'provider') {
