@@ -11,12 +11,13 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { parseDate } from "@/lib/date-utils"
+import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
 
 const exceptionSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat"),
+  date: dateSchema,
   isClosed: z.boolean().default(true),
-  startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional().nullable(),
-  endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional().nullable(),
+  startTime: strictTimeSchema.optional().nullable(),
+  endTime: strictTimeSchema.optional().nullable(),
   reason: z.string()
     .max(200)
     .transform(val => val?.trim() || null)

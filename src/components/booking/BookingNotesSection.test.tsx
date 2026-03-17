@@ -146,7 +146,7 @@ describe("BookingNotesSection", () => {
 
   it("shows QuickNoteButton icon when not editing", () => {
     render(<BookingNotesSection {...defaultProps} providerNotes="Text" />)
-    // QuickNoteButton renders with title "Lägg till anteckning"
-    expect(screen.getByTitle("Lägg till anteckning")).toBeInTheDocument()
+    // QuickNoteButton renders with title "Skriv eller diktera en anteckning"
+    expect(screen.getByTitle("Skriv eller diktera en anteckning")).toBeInTheDocument()
   })
 })

@@ -10,12 +10,13 @@ import { BookingSeriesService, SeriesError } from "@/domain/booking/BookingSerie
 import { BookingService } from "@/domain/booking/BookingService"
 import { TravelTimeService } from "@/domain/booking/TravelTimeService"
 import type { SessionUser } from "@/types/auth"
+import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
 
 const createSeriesSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID"),
   serviceId: z.string().uuid("Ogiltigt tjänst-ID"),
-  firstBookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat (YYYY-MM-DD)"),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Ogiltigt tidsformat (HH:MM)"),
+  firstBookingDate: dateSchema,
+  startTime: strictTimeSchema,
   intervalWeeks: z.number().int().min(1, "Intervall måste vara minst 1 vecka").max(52, "Intervall får inte överstiga 52 veckor"),
   totalOccurrences: z.number().int().min(2, "Minst 2 tillfällen").max(52, "Max 52 tillfällen"),
   horseId: z.string().uuid("Ogiltigt häst-ID").optional(),

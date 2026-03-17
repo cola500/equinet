@@ -4,12 +4,13 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { strictTimeSchema } from "@/lib/zod-schemas"
 
 // Validation schema for availability schedule
 const scheduleItemSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
-  startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/), // HH:MM format
-  endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
+  startTime: strictTimeSchema,
+  endTime: strictTimeSchema,
   isClosed: z.boolean(),
 })
 
