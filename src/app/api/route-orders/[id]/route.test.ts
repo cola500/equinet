@@ -189,10 +189,12 @@ describe("PATCH /api/route-orders/[id] - Provider flow", () => {
     expect(res.status).toBe(429)
   })
 
-  it("returns 500 when session is null (no auth check)", async () => {
+  it("returns 401 when not authenticated", async () => {
     mockedAuth.mockResolvedValue(null as never)
     const res = await PATCH(makeRequest("PATCH", { status: "cancelled" }), { params })
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(401)
+    const body = await res.json()
+    expect(body.error).toBe("Ej inloggad")
   })
 })
 
