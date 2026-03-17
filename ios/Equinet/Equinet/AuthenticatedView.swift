@@ -14,6 +14,7 @@ import SwiftUI
 struct AuthenticatedView: View {
     let authManager: AuthManager
     @Bindable var coordinator: AppCoordinator
+    @Environment(\.scenePhase) private var scenePhase
     @State private var initialLoadComplete = false
     @State private var showReconnectedBanner = false
 
@@ -34,7 +35,13 @@ struct AuthenticatedView: View {
 
                 // Calendar (Native)
                 Tab(AppTab.calendar.rawValue, systemImage: AppTab.calendar.icon, value: AppTab.calendar) {
-                    NativeCalendarView(viewModel: coordinator.calendarViewModel) { path in
+                    NativeCalendarView(
+                        viewModel: coordinator.calendarViewModel,
+                        onNavigateToBooking: { bookingId in
+                            coordinator.pendingBookingId = bookingId
+                            coordinator.selectedTab = .bookings
+                        }
+                    ) { path in
                         coordinator.pendingMorePath = path
                         coordinator.selectedTab = .more
                     }
@@ -42,7 +49,10 @@ struct AuthenticatedView: View {
 
                 // Bookings (Native)
                 Tab(AppTab.bookings.rawValue, systemImage: AppTab.bookings.icon, value: AppTab.bookings) {
-                    NativeBookingsView(viewModel: coordinator.bookingsViewModel) { path in
+                    NativeBookingsView(
+                        viewModel: coordinator.bookingsViewModel,
+                        pendingBookingId: $coordinator.pendingBookingId
+                    ) { path in
                         coordinator.pendingMorePath = path
                         coordinator.selectedTab = .more
                     }
@@ -55,6 +65,8 @@ struct AuthenticatedView: View {
                         authManager: authManager,
                         customersViewModel: coordinator.customersViewModel,
                         servicesViewModel: coordinator.servicesViewModel,
+                        reviewsViewModel: coordinator.reviewsViewModel,
+                        featureFlags: coordinator.featureFlags,
                         pendingPath: $coordinator.pendingMorePath
                     )
                 }
@@ -82,9 +94,15 @@ struct AuthenticatedView: View {
         .onAppear {
             setupNetworkMonitoring()
             coordinator.networkMonitor.start()
+            coordinator.loadFeatureFlags()
             // Dismiss splash after brief branded transition
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 initialLoadComplete = true
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                coordinator.loadFeatureFlags()
             }
         }
         .onDisappear {

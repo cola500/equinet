@@ -51,6 +51,35 @@ final class AppCoordinator {
     /// Set by dashboard KPI taps to services/reviews/profile.
     var pendingMorePath: String?
 
+    /// Pending booking ID for programmatic navigation to Bokningar tab.
+    /// Set by calendar "Hantera bokning" tap.
+    var pendingBookingId: String?
+
+    // MARK: - Feature Flags
+
+    var featureFlags: [String: Bool] = [:]
+
+    private static let featureFlagsCacheKey = "cachedFeatureFlags"
+
+    /// Load feature flags: cached first, then fresh from API in background.
+    func loadFeatureFlags() {
+        // 1. Load cached flags from UserDefaults immediately
+        if let cached = UserDefaults.standard.dictionary(forKey: Self.featureFlagsCacheKey) as? [String: Bool] {
+            featureFlags = cached
+        }
+
+        // 2. Fetch fresh flags in background
+        Task {
+            do {
+                let fresh = try await APIClient.shared.fetchFeatureFlags()
+                featureFlags = fresh
+                UserDefaults.standard.set(fresh, forKey: Self.featureFlagsCacheKey)
+            } catch {
+                AppLogger.app.error("Failed to fetch feature flags: \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Shared dependencies
 
     let bridge: BridgeHandler
@@ -59,6 +88,7 @@ final class AppCoordinator {
     let bookingsViewModel: BookingsViewModel
     let customersViewModel: CustomersViewModel
     let servicesViewModel: ServicesViewModel
+    let reviewsViewModel: ReviewsViewModel
 
     // MARK: - Init
 
@@ -68,7 +98,8 @@ final class AppCoordinator {
         calendarViewModel: CalendarViewModel? = nil,
         bookingsViewModel: BookingsViewModel? = nil,
         customersViewModel: CustomersViewModel? = nil,
-        servicesViewModel: ServicesViewModel? = nil
+        servicesViewModel: ServicesViewModel? = nil,
+        reviewsViewModel: ReviewsViewModel? = nil
     ) {
         self.bridge = bridge ?? BridgeHandler()
         self.networkMonitor = networkMonitor ?? NetworkMonitor()
@@ -76,6 +107,7 @@ final class AppCoordinator {
         self.bookingsViewModel = bookingsViewModel ?? BookingsViewModel()
         self.customersViewModel = customersViewModel ?? CustomersViewModel()
         self.servicesViewModel = servicesViewModel ?? ServicesViewModel()
+        self.reviewsViewModel = reviewsViewModel ?? ReviewsViewModel(fetcher: APIClient.shared)
     }
 
     // MARK: - Tab routing
