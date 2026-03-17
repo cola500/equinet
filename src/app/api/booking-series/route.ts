@@ -23,6 +23,7 @@ const createSeriesSchema = z.object({
   horseName: z.string().max(100, "Hästnamn max 100 tecken").optional(),
   horseInfo: z.string().max(500, "Hästinfo max 500 tecken").optional(),
   customerNotes: z.string().max(1000, "Anteckningar max 1000 tecken").optional(),
+  customerId: z.string().uuid("Ogiltigt kund-ID").optional(),
 }).strict()
 
 function mapSeriesErrorToStatus(error: SeriesError): number {
@@ -86,11 +87,17 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Parse JSON
-  let body: unknown
+  let body: Record<string, unknown>
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
+  }
+
+  // 3b. Resolve "self" providerId for manual bookings (provider creating for themselves)
+  const user = session.user as SessionUser
+  if (body.providerId === "self" && user.providerId) {
+    body.providerId = user.providerId
   }
 
   // 4. Zod validation
@@ -105,9 +112,8 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
 
   // 5. Determine if manual booking (provider creating)
-  const user = session.user as SessionUser
   const isManualBooking = !!(user.providerId && user.providerId === data.providerId)
-  const customerId = isManualBooking ? undefined : user.id
+  const customerId = isManualBooking ? data.customerId : user.id
   const createdByProviderId = isManualBooking ? data.providerId : undefined
 
   // 6. Create service with deps
@@ -156,7 +162,7 @@ export async function POST(request: NextRequest) {
   // 7. Call service
   try {
     const result = await seriesService.createSeries({
-      customerId: customerId || user.id,
+      customerId,
       providerId: data.providerId,
       serviceId: data.serviceId,
       firstBookingDate: new Date(data.firstBookingDate),

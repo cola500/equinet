@@ -244,6 +244,37 @@ describe("POST /api/booking-series", () => {
     expect(data.skippedDates[0].date).toBe("2026-06-01")
   })
 
+  it("resolves providerId 'self' to session providerId for manual bookings", async () => {
+    vi.mocked(auth).mockResolvedValue(PROVIDER_SESSION)
+    const res = await POST(makeRequest({ ...validBody, providerId: "self" }))
+    expect(res.status).toBe(201)
+    expect(mockCreateSeries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: "a0000000-0000-4000-a000-000000000001",
+        isManualBooking: true,
+      })
+    )
+  })
+
+  it("passes customerId from body for manual bookings with selected customer", async () => {
+    vi.mocked(auth).mockResolvedValue(PROVIDER_SESSION)
+    const customerId = "a0000000-0000-4000-a000-000000000099"
+    const res = await POST(makeRequest({ ...validBody, providerId: "self", customerId }))
+    expect(res.status).toBe(201)
+    expect(mockCreateSeries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId,
+        isManualBooking: true,
+      })
+    )
+  })
+
+  it("returns 400 when 'self' providerId used by non-provider", async () => {
+    vi.mocked(auth).mockResolvedValue(CUSTOMER_SESSION)
+    const res = await POST(makeRequest({ ...validBody, providerId: "self" }))
+    expect(res.status).toBe(400)
+  })
+
   it("accepts optional horse fields", async () => {
     const bodyWithHorse = {
       ...validBody,
