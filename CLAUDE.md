@@ -102,14 +102,41 @@ npm run migrate:status      # Fullständig namnbaserad jämförelse (pending, dr
 
 ## Testing (TDD är Obligatoriskt!)
 
-```
+### BDD Dual-Loop (API routes, domain services, komplexa flöden)
+
+1. Red (integration) -- Skriv ETT integrations-/acceptanstest som beskriver nästa
+   observerbara beteende. Bekräfta att det failar av rätt anledning.
+2. Inre loop (unit) -- upprepa tills integrationstestet passerar:
+   - Red: minsta unit-test för nästa saknade del
+   - Green: minimum kod för att passera
+   - Refactor: rensa medan unit-tester är gröna
+3. Green (integration) -- Kör integrationstestet igen. Failar det, tillbaka till steg 2.
+4. Refactor (integration) -- ALLA tester måste förbli gröna.
+
+### Enkel TDD (iOS SwiftUI, simpel CRUD, utilities)
+
 1. RED:    Skriv test som failar
 2. GREEN:  Skriv minsta möjliga kod för att passera
 3. REFACTOR: Förbättra utan att bryta test
-```
+
+### När använda vad
+
+| Område | Approach |
+|--------|----------|
+| API routes + domain services | BDD dual-loop |
+| Komplexa flöden (multi-step, offline) | BDD dual-loop |
+| iOS SwiftUI-vyer | Enkel TDD + visuell verifiering (mobile-mcp) |
+| Simpel CRUD / utilities | Enkel TDD |
+
+### Disciplinregler
+
+- Skippa aldrig red-steget. Kan du inte formulera varför testet failar, förstår du inte kravet.
+- En logisk ändring per cykel.
+- Kör relevant test efter varje green, hela sviten före commit.
+- Om en refactor bryter ett test -- revertera refactorn, fixa inte framåt.
 
 **Skriv tester FÖRST för:** API routes, domain services, utilities och hooks.
-**Coverage-mål:** API Routes >= 80%, Utilities >= 90%, Overall >= 70%
+**Coverage-mål:** API Routes >= 90%, Utilities >= 95%, Overall >= 80%
 
 > Se `.claude/rules/testing.md` för behavior-based testing och gotchas.
 
@@ -274,6 +301,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Segmented Picker för tabs i detaljvy**: Använd `Picker(.segmented)` + `switch` -- INTE SwiftUI TabView (krockar med swipe-to-delete i List). Varje tab är en `@ViewBuilder` computed property.
 - **iOS CustomerSheetType enum-pattern**: `enum SheetType: Identifiable` med en enda `.sheet(item:)` modifier. Varje case har egen presentationDetents. Undviker multipla `.sheet`-modifiers som kan krocka.
 - **Visuell UX-verifiering med Playwright MCP**: Vid UI-ändringar -- starta worktree dev-server (`npx next dev -p 3001`) FÖRST, skapa testdata via API, batcha screenshots (logga in -> navigera alla sidor -> verifiera). Huvudrepots dev-server (port 3000) reflekterar INTE worktree-ändringar. Värt det för loading states, a11y, formatering, layoutskift -- inte för ren affärslogik.
+- **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer (publik endpoint). AppCoordinator: `[String: Bool]` state + UserDefaults-cache (cachad vid start, fräscht i bakgrund). AuthenticatedView: trigger `.onAppear` + `.onChange(of: scenePhase)`. NativeMoreView: `visibleSections` compactMap-filtrering, tomma sektioner döljs. `handlePendingPath` söker ALLTID i `allMenuSections` (inte filtrerade).
+- **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/` i strängar. Använd `URL(string: path, relativeTo: baseURL)` för API-paths.
 
 ---
 
@@ -312,4 +341,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-03-16
+**Senast uppdaterad**: 2026-03-17
