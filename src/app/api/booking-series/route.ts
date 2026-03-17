@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
   // 5. Determine if manual booking (provider creating)
   const isManualBooking = !!(user.providerId && user.providerId === data.providerId)
-  const customerId = isManualBooking ? data.customerId : user.id
+  const customerId = isManualBooking ? (data.customerId || user.id) : user.id
   const createdByProviderId = isManualBooking ? data.providerId : undefined
 
   // 6. Create service with deps
