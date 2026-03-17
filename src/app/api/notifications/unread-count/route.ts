@@ -8,6 +8,9 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(_request)
     const isAllowed = await rateLimiters.api(clientIp)

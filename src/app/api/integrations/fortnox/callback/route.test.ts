@@ -92,6 +92,13 @@ describe("GET /api/integrations/fortnox/callback", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = makeRequest({ code: "abc", state: "xyz" })
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
+
   it("redirects to / when user is not a provider", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
 

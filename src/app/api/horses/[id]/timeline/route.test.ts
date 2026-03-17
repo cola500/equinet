@@ -83,6 +83,13 @@ describe("GET /api/horses/[id]/timeline", () => {
     expect(data[1].title).toBe("Vaccination")
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest("http://localhost:3000/api/horses/horse-1/timeline")
+    const response = await GET(request, routeContext)
+    expect(response.status).toBe(401)
+  })
+
   it("should return empty timeline for horse with no history", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
     mockService.getTimeline.mockResolvedValue(Result.ok([]))

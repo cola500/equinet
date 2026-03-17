@@ -85,6 +85,13 @@ describe("POST /api/provider/subscription/portal", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    mockAuth.mockResolvedValue(null as never)
+    const request = createRequest({ returnUrl: "https://example.com/dashboard" })
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+  })
+
   it("returns 403 when user is customer", async () => {
     mockAuth.mockResolvedValue(customerSession)
 

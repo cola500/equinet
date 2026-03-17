@@ -65,6 +65,12 @@ describe("PUT /api/stable/spots/[spotId]", () => {
     expect(res.status).toBe(404)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await PUT(makeRequest("PUT", { status: "rented" }), { params })
+    expect(res.status).toBe(401)
+  })
+
   it("returns 403 when user has no stable", async () => {
     mockAuth()
     mockGetByUserId.mockResolvedValue(null)
@@ -105,6 +111,12 @@ describe("DELETE /api/stable/spots/[spotId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsFeatureEnabled.mockResolvedValue(true)
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await DELETE(makeRequest("DELETE"), { params })
+    expect(res.status).toBe(401)
   })
 
   it("returns 403 when user has no stable", async () => {

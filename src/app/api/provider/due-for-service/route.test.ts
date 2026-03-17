@@ -61,6 +61,13 @@ describe('GET /api/provider/due-for-service', () => {
     vi.mocked(prisma.customerHorseServiceInterval.findMany).mockResolvedValue([])
   })
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 for unauthenticated users', async () => {
     vi.mocked(auth).mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })

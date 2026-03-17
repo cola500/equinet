@@ -24,6 +24,9 @@ export async function PUT(
 ) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await params
 
     const clientIp = getClientIP(request)
@@ -127,6 +130,9 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await params
 
     const clientIp = getClientIP(request)

@@ -49,6 +49,23 @@ const makeParams = (id: string) => Promise.resolve({ id })
 describe("POST /api/group-bookings/[id]/match", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.providerUser, userType: "provider" },
+    } as never)
+  })
+
+  it("returns 401 when not authenticated", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const req = new NextRequest("http://localhost/api/group-bookings/gb-1/match", {
+      method: "POST",
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req, { params: Promise.resolve({ id: "gb-1" }) })
+    expect(res.status).toBe(401)
+    const data = await res.json()
+    expect(data.error).toBe("Ej inloggad")
   })
 
   it("returns 404 when group_bookings feature flag is disabled", async () => {

@@ -20,6 +20,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const service = createHorseService()
 
     const result = await service.listHorses(session.user.id)
@@ -49,6 +52,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Parse JSON
     let body

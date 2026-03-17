@@ -54,6 +54,15 @@ describe("POST /api/municipality-watches", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await POST(makeRequest("POST", {
+      municipality: "Kungsbacka",
+      serviceTypeName: "Hovslagning",
+    }))
+    expect(response.status).toBe(401)
+  })
+
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "provider" },
@@ -209,6 +218,12 @@ describe("POST /api/municipality-watches", () => {
 describe("GET /api/municipality-watches", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await GET(makeRequest("GET"))
+    expect(response.status).toBe(401)
   })
 
   it("should return customer's watches", async () => {

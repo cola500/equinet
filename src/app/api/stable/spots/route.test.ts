@@ -65,6 +65,12 @@ describe("GET /api/stable/spots", () => {
     expect(res.status).toBe(404)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await GET(makeRequest("GET"))
+    expect(res.status).toBe(401)
+  })
+
   it("returns 403 when user has no stable", async () => {
     mockAuth()
     mockGetByUserId.mockResolvedValue(null)
@@ -101,6 +107,12 @@ describe("POST /api/stable/spots", () => {
 
     const res = await POST(makeRequest("POST", { label: "Box 1" }))
     expect(res.status).toBe(404)
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await POST(makeRequest("POST", { label: "Box 1" }))
+    expect(res.status).toBe(401)
   })
 
   it("returns 403 when user has no stable", async () => {

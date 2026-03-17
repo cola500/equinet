@@ -20,6 +20,9 @@ const createBugReportSchema = z
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.bugReport(

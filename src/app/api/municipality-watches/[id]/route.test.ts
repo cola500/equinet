@@ -47,6 +47,12 @@ describe("DELETE /api/municipality-watches/[id]", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    expect(response.status).toBe(401)
+  })
+
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "u1", userType: "provider" },

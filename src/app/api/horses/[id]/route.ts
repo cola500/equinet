@@ -22,6 +22,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await context.params
     const service = createHorseService()
 
@@ -52,6 +55,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await context.params
 
     // Parse JSON
@@ -105,6 +111,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await context.params
 
     const service = createHorseService()

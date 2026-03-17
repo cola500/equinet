@@ -31,11 +31,36 @@ vi.mock('@/lib/feature-flags', () => ({
   isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+}))
+
 const makeParams = (id: string, pid: string) => Promise.resolve({ id, pid })
 
 describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.creator, userType: 'customer' },
+    } as never)
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const req = new NextRequest('http://localhost/api/group-bookings/gb-1/participants/p-1', {
+      method: 'DELETE',
+    })
+    const res = await DELETE(req, { params: Promise.resolve({ id: 'gb-1', pid: 'p-1' }) })
+    expect(res.status).toBe(401)
+    const data = await res.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('returns 404 when group_bookings feature flag is disabled', async () => {

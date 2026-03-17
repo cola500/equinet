@@ -241,6 +241,13 @@ describe("GET /api/export/my-data", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest("http://localhost:3000/api/export/my-data")
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
+
   it("should return provider-specific data for provider users", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
     vi.mocked(prisma.user.findUnique).mockResolvedValue({

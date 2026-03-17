@@ -153,6 +153,15 @@ describe("GET /api/verification-requests", () => {
 
     expect(response.status).toBe(401)
   })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests"
+    )
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
 })
 
 describe("POST /api/verification-requests", () => {
@@ -387,6 +396,19 @@ describe("POST /api/verification-requests", () => {
     const response = await POST(request)
 
     expect(response.status).toBe(201)
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests",
+      {
+        method: "POST",
+        body: JSON.stringify({ type: "education", title: "Test" }),
+      }
+    )
+    const response = await POST(request)
+    expect(response.status).toBe(401)
   })
 
   it("should set providerId from session, not request body (IDOR)", async () => {

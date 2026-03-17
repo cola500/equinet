@@ -152,6 +152,15 @@ describe("POST /api/bookings/[id]/payment", () => {
     mockedPaymentUpsert.mockResolvedValue(mockPaymentRecord as never)
   })
 
+  it("returns 401 when session is null", async () => {
+    mockedAuth.mockResolvedValue(null as never)
+
+    const req = createRequest(BOOKING_ID, "POST")
+    const res = await POST(req, { params })
+
+    expect(res.status).toBe(401)
+  })
+
   it("returns 401 when not authenticated", async () => {
     mockedAuth.mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
@@ -399,6 +408,15 @@ describe("GET /api/bookings/[id]/payment", () => {
     mockedAuth.mockResolvedValue({
       user: { id: "user-1", email: "anna@example.com", userType: "customer" },
     } as never)
+  })
+
+  it("returns 401 when session is null", async () => {
+    mockedAuth.mockResolvedValue(null as never)
+
+    const req = createRequest(BOOKING_ID, "GET")
+    const res = await GET(req, { params })
+
+    expect(res.status).toBe(401)
   })
 
   it("returns 401 when not authenticated", async () => {

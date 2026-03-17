@@ -25,6 +25,9 @@ type RouteContext = { params: Promise<{ customerId: string; noteId: string }> }
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json(
@@ -104,6 +107,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json(

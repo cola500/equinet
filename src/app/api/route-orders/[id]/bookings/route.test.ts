@@ -39,6 +39,19 @@ describe('GET /api/route-orders/[id]/bookings', () => {
     vi.clearAllMocks()
   })
 
+  it('returns 401 when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/route-orders/${TEST_UUIDS.announcement}/bookings`
+    )
+
+    const response = await GET(request, { params: Promise.resolve({ id: TEST_UUIDS.announcement }) })
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
+  })
+
   it('should return bookings for provider-owned announcement', async () => {
     // Arrange
     const mockSession = {

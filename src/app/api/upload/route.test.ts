@@ -248,4 +248,14 @@ describe("POST /api/upload", () => {
 
     expect(response.status).toBe(401)
   })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = createMockUploadRequest(
+      { bucket: "horses", entityId: "horse-1" },
+      { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+    )
+    const response = await POST(request)
+    expect(response.status).toBe(401)
+  })
 })

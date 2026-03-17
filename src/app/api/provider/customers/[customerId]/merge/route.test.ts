@@ -84,6 +84,13 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
     vi.mocked(prisma.$transaction).mockResolvedValue(undefined as never)
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
+    expect(res.status).toBe(401)
+  })
+
   it('returns 403 when not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.providerUser, userType: 'customer' },

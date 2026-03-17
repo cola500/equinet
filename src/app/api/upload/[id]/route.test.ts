@@ -123,4 +123,14 @@ describe("DELETE /api/upload/[id]", () => {
 
     expect(response.status).toBe(401)
   })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/upload/upload-1",
+      { method: "DELETE" }
+    )
+    const response = await DELETE(request, makeContext("upload-1"))
+    expect(response.status).toBe(401)
+  })
 })

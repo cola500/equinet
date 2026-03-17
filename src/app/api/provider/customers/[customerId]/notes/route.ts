@@ -17,6 +17,9 @@ type RouteContext = { params: Promise<{ customerId: string }> }
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json(
@@ -78,6 +81,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json(

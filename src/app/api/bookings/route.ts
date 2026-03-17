@@ -68,6 +68,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const bookingRepo = new PrismaBookingRepository()
     let bookings
@@ -77,7 +80,7 @@ export async function GET(request: NextRequest) {
       const provider = await providerRepo.findByUserId(session.user.id)
 
       if (!provider) {
-        return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+        return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
       }
 
       bookings = await bookingRepo.findByProviderIdWithDetails(provider.id)
@@ -103,6 +106,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Rate limiting
     const rateLimitKey = `booking:${session.user.id}`

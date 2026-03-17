@@ -137,7 +137,7 @@ describe('GET /api/route-orders/available', () => {
   // -------------------------------------------------------
   // 2. Authentication
   // -------------------------------------------------------
-  it('returns 401 when not authenticated', async () => {
+  it('returns 401 when auth throws Response', async () => {
     // Arrange - auth() throws a Response (middleware pattern)
     mockAuth.mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
@@ -150,6 +150,17 @@ describe('GET /api/route-orders/available', () => {
 
     // Assert - the thrown Response is returned directly
     expect(response.status).toBe(401)
+  })
+
+  it('returns 401 when not authenticated (null session)', async () => {
+    mockAuth.mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/route-orders/available')
+    const response = await GET(request)
+
+    expect(response.status).toBe(401)
+    const data = await response.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   // -------------------------------------------------------

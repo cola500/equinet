@@ -23,6 +23,9 @@ export async function GET(request: Request) {
   try {
     // Auth handled by middleware
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (!(await isFeatureEnabled("route_planning"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

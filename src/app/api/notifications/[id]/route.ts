@@ -12,6 +12,9 @@ export async function PUT(
   try {
     const { id } = await params
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

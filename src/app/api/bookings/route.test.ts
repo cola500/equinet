@@ -198,6 +198,15 @@ describe('GET /api/bookings', () => {
     expect(data.error).toBe('Unauthorized')
   })
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings')
+    const response = await GET(request)
+
+    expect(response.status).toBe(401)
+  })
+
   it('should return 404 when provider not found', async () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
@@ -213,7 +222,7 @@ describe('GET /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 })
 
@@ -324,6 +333,23 @@ describe('POST /api/bookings', () => {
     expect(data.customerNotes).toBe('Please be gentle')
     // Verify transaction was called
     expect(prisma.$transaction).toHaveBeenCalled()
+  })
+
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        providerId: TEST_UUIDS.provider,
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_ISO,
+        startTime: '10:00',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(401)
   })
 
   it('should return 401 when user is not authenticated', async () => {

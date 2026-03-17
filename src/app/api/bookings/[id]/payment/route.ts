@@ -19,6 +19,9 @@ export async function POST(
   try {
     const { id: bookingId } = await params
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -199,6 +202,9 @@ export async function GET(
   try {
     const { id: bookingId } = await params
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

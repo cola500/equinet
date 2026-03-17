@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Verify user owns a stable
     const stableService = createStableService()
@@ -121,6 +124,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const stableService = createStableService()
     const stable = await stableService.getByUserId(session.user.id)

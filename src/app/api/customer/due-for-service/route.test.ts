@@ -61,6 +61,12 @@ describe("GET /api/customer/due-for-service", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await GET(makeRequest())
+    expect(response.status).toBe(401)
+  })
+
   it("returns 403 for provider users", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "provider-user", userType: "provider" },

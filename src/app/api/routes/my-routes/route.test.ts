@@ -47,6 +47,19 @@ describe("GET /api/routes/my-routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsFeatureEnabled.mockResolvedValue(true)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
+    } as never)
+  })
+
+  it("returns 401 when not authenticated", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new Request("http://localhost:3000/api/routes/my-routes")
+    const res = await GET(request)
+    expect(res.status).toBe(401)
+    const json = await res.json()
+    expect(json.error).toBe("Ej inloggad")
   })
 
   it("returns 404 when route_planning feature flag is disabled", async () => {

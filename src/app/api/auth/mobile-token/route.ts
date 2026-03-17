@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
   try {
     // Auth (session cookie)
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Rate limit
     const clientIP = getClientIP(request)

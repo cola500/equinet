@@ -17,6 +17,9 @@ type RouteContext = { params: Promise<{ id: string }> }
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     const { id } = await context.params
 
     // Admin check: fetch user and verify isAdmin flag

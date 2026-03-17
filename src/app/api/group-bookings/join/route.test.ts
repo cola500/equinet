@@ -41,6 +41,23 @@ vi.mock('@/domain/group-booking/GroupBookingService', () => ({
 describe('POST /api/group-bookings/join', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsFeatureEnabled.mockResolvedValue(true)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: TEST_UUIDS.joiner, userType: 'customer' },
+    } as never)
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const req = new NextRequest('http://localhost/api/group-bookings/join', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(401)
+    const data = await res.json()
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('returns 404 when group_bookings feature flag is disabled', async () => {

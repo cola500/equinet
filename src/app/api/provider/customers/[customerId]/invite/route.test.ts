@@ -92,6 +92,13 @@ describe('POST /api/provider/customers/[customerId]/invite', () => {
     } as never)
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const res = await POST(makeRequest(), routeContext)
+    expect(res.status).toBe(401)
+  })
+
   it('returns 401 when not authenticated', async () => {
     vi.mocked(auth).mockRejectedValue(new Response(null, { status: 401 }))
 

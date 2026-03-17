@@ -76,6 +76,16 @@ describe("POST /api/horses/[id]/profile", () => {
     expect(expiresAtMs - now).toBeLessThan(thirtyDays + 7200000)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/horses/horse-1/profile",
+      { method: "POST" }
+    )
+    const response = await POST(request, makeContext("horse-1"))
+    expect(response.status).toBe(401)
+  })
+
   it("should return 404 for non-owned horse (IDOR protection)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
     mockService.createProfileToken.mockResolvedValue(

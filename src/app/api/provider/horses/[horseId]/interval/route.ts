@@ -22,6 +22,9 @@ type RouteContext = { params: Promise<{ horseId: string }> }
  */
 async function authorizeProvider(request: NextRequest, context: RouteContext) {
   const session = await auth()
+  if (!session) {
+    return { error: NextResponse.json({ error: "Ej inloggad" }, { status: 401 }) }
+  }
 
   if (session.user.userType !== "provider") {
     return { error: NextResponse.json({ error: "Bara leverantorer har tillgang" }, { status: 403 }) }

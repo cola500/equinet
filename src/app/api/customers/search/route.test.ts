@@ -40,6 +40,13 @@ describe('GET /api/customers/search', () => {
     } as never)
   })
 
+  it('returns 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest('http://localhost:3000/api/customers/search?q=anna')
+    const response = await GET(request)
+    expect(response.status).toBe(401)
+  })
+
   it('should return matching customers', async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: 'c1', firstName: 'Anna', lastName: 'Svensson', email: 'anna@test.com', phone: '070-123' },

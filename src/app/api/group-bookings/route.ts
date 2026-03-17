@@ -64,6 +64,9 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Rate limiting
     const rateLimitKey = `booking:${session.user.id}`
@@ -163,6 +166,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const service = createGroupBookingService()
     const result = await service.listForUser(session.user.id)

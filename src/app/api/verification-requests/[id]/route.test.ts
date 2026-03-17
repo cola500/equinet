@@ -219,6 +219,19 @@ describe("PUT /api/verification-requests/[id]", () => {
     expect(response.status).toBe(400)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests/ver-1",
+      {
+        method: "PUT",
+        body: JSON.stringify({ title: "Test" }),
+      }
+    )
+    const response = await PUT(request, createParams("ver-1"))
+    expect(response.status).toBe(401)
+  })
+
   it("should return 400 for invalid year", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
     vi.mocked(prisma.provider.findFirst).mockResolvedValue(mockProvider as never)
@@ -330,6 +343,16 @@ describe("DELETE /api/verification-requests/[id]", () => {
 
     const response = await DELETE(request, createParams("ver-1"))
 
+    expect(response.status).toBe(401)
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/verification-requests/ver-1",
+      { method: "DELETE" }
+    )
+    const response = await DELETE(request, createParams("ver-1"))
     expect(response.status).toBe(401)
   })
 })

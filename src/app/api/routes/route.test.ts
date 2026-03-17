@@ -149,18 +149,13 @@ describe("POST /api/routes", () => {
 
   // --- Auth ---
 
-  it("returns 500 when not authenticated (auth throws Response)", async () => {
-    // auth() throws a Response with 401 -- but route.ts catch block does NOT
-    // propagate thrown Responses (missing `if (error instanceof Response)` check),
-    // so it falls through to the generic 500 handler.
-    mockAuth.mockRejectedValue(
-      new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
-    )
+  it("returns 401 when not authenticated", async () => {
+    mockAuth.mockResolvedValue(null as never)
 
     const res = await POST(makeRequest(validBody()))
-    expect(res.status).toBe(500)
-    const text = await res.text()
-    expect(text).toBe("Internt serverfel")
+    expect(res.status).toBe(401)
+    const json = await res.json()
+    expect(json.error).toBe("Ej inloggad")
   })
 
   // --- JSON parsing ---

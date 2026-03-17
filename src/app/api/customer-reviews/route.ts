@@ -18,6 +18,9 @@ const createCustomerReviewSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -109,6 +112,9 @@ export async function POST(request: NextRequest) {
 export async function GET(_request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })

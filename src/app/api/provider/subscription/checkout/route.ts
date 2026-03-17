@@ -18,8 +18,11 @@ const checkoutSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Auth (throws Response on unauthenticated)
+    // 1. Auth
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
     if (session.user.userType !== "provider" || !session.user.providerId) {
       return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
     }

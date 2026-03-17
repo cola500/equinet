@@ -76,6 +76,13 @@ describe("GET /api/bookings/[id]/receipt", () => {
     } as never)
   })
 
+  it("returns 401 when session is null", async () => {
+    mockedAuth.mockResolvedValue(null as never)
+    const req = createRequest("a0000000-0000-4000-a000-000000000001")
+    const res = await GET(req, { params })
+    expect(res.status).toBe(401)
+  })
+
   it("returns receipt HTML for valid booking", async () => {
     mockedFindFirst.mockResolvedValue(mockBooking as never)
     const req = createRequest("a0000000-0000-4000-a000-000000000001")

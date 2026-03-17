@@ -71,6 +71,17 @@ describe('GET /api/provider/customers/[customerId]/notes', () => {
     expect(data.notes[0].content).toBe('Behöver extra tid')
   })
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/provider/customers/customer-1/notes'
+    )
+
+    const response = await GET(request, { params: makeParams('customer-1') })
+    expect(response.status).toBe(401)
+  })
+
   it('should return 401 when not authenticated', async () => {
     vi.mocked(auth).mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
@@ -167,6 +178,18 @@ describe('POST /api/provider/customers/[customerId]/notes', () => {
     expect(response.status).toBe(201)
     expect(data.content).toBe('Ny anteckning')
     expect(data.providerId).toBe('provider-1')
+  })
+
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/provider/customers/customer-1/notes',
+      { method: 'POST', body: JSON.stringify({ content: 'Test' }) }
+    )
+
+    const response = await POST(request, { params: makeParams('customer-1') })
+    expect(response.status).toBe(401)
   })
 
   it('should return 401 when not authenticated', async () => {

@@ -31,6 +31,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (!(await isFeatureEnabled("group_bookings"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
@@ -65,6 +68,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (!(await isFeatureEnabled("group_bookings"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

@@ -72,6 +72,12 @@ describe("GET /api/stable/profile", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await GET(makeRequest("GET"))
+    expect(res.status).toBe(401)
+  })
+
   it("returns 404 when user has no stable", async () => {
     mockAuth()
     mockGetByUserId.mockResolvedValue(null)
@@ -104,6 +110,12 @@ describe("POST /api/stable/profile", () => {
 
     const res = await POST(makeRequest("POST", { name: "Stall A" }))
     expect(res.status).toBe(404)
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await POST(makeRequest("POST", { name: "Stall A" }))
+    expect(res.status).toBe(401)
   })
 
   it("returns 400 for invalid JSON", async () => {
@@ -164,6 +176,12 @@ describe("PUT /api/stable/profile", () => {
 
     const res = await PUT(makeRequest("PUT", { name: "Updated" }))
     expect(res.status).toBe(404)
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const res = await PUT(makeRequest("PUT", { name: "Updated" }))
+    expect(res.status).toBe(401)
   })
 
   it("returns 400 for invalid JSON", async () => {

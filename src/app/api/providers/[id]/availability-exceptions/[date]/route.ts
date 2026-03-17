@@ -61,6 +61,9 @@ export async function DELETE(
   try {
     // Auth
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Provider check
     if (session.user.userType !== "provider") {

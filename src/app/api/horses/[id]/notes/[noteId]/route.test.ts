@@ -79,6 +79,19 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
     expect(data.title).toBe("Uppdaterad titel")
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/horses/horse-1/notes/note-1",
+      {
+        method: "PUT",
+        body: JSON.stringify({ title: "Test" }),
+      }
+    )
+    const response = await PUT(request, routeContext)
+    expect(response.status).toBe(401)
+  })
+
   it("should return 404 if horse not owned (IDOR)", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
     mockService.updateNote.mockResolvedValue(
@@ -172,6 +185,16 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
 
     expect(response.status).toBe(200)
     expect(data.message).toBeDefined()
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const request = new NextRequest(
+      "http://localhost:3000/api/horses/horse-1/notes/note-1",
+      { method: "DELETE" }
+    )
+    const response = await DELETE(request, routeContext)
+    expect(response.status).toBe(401)
   })
 
   it("should return 404 if horse not owned (IDOR)", async () => {

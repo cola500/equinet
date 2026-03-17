@@ -80,6 +80,17 @@ describe("POST /api/stable/invites", () => {
     expect(res.status).toBe(429)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const req = new NextRequest("http://localhost/api/stable/invites", {
+      method: "POST",
+      body: JSON.stringify({ email: "anna@test.se" }),
+      headers: { "Content-Type": "application/json" },
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(401)
+  })
+
   it("returns 403 when user has no stable", async () => {
     mockStableService.getByUserId.mockResolvedValue(null)
     const req = new NextRequest("http://localhost/api/stable/invites", {
@@ -150,6 +161,13 @@ describe("GET /api/stable/invites", () => {
     expect(res.status).toBe(200)
     expect(data).toHaveLength(1)
     expect(data[0].email).toBe("anna@test.se")
+  })
+
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const req = new NextRequest("http://localhost/api/stable/invites")
+    const res = await GET(req)
+    expect(res.status).toBe(401)
   })
 
   it("returns 403 when user has no stable", async () => {

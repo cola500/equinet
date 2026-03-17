@@ -19,6 +19,9 @@ const joinSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (!(await isFeatureEnabled("group_bookings"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })

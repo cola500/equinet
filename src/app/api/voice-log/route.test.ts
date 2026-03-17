@@ -98,6 +98,12 @@ describe("POST /api/voice-log", () => {
     expect(response.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const response = await POST(makeRequest({ transcript: "test" }))
+    expect(response.status).toBe(401)
+  })
+
   it("returns 403 when user is not a provider", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", userType: "customer" },

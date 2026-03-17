@@ -82,6 +82,15 @@ describe("DELETE /api/stable/invites/[id]", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 401 when session is null", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+    const req = new NextRequest("http://localhost/api/stable/invites/inv-1", {
+      method: "DELETE",
+    })
+    const res = await DELETE(req, routeContext)
+    expect(res.status).toBe(401)
+  })
+
   it("returns 403 when user has no stable", async () => {
     mockStableService.getByUserId.mockResolvedValue(null)
     const req = new NextRequest("http://localhost/api/stable/invites/inv-1", {

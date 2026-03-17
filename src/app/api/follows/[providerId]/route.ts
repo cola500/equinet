@@ -13,6 +13,9 @@ type RouteContext = {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     if (session.user.userType !== "customer") {
       return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
@@ -49,6 +52,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

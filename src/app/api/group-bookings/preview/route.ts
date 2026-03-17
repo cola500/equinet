@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
     }
 
     const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     // Rate limiting
     const rateLimitKey = `api:${session.user.id}`

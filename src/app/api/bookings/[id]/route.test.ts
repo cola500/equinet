@@ -246,6 +246,22 @@ describe('PUT /api/bookings/[id]', () => {
     expect(data.error).toBe('Valideringsfel')
   })
 
+  it('should return 401 when session is null (fallback auth)', async () => {
+    vi.mocked(authFromMobileToken).mockResolvedValue(null)
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(401)
+  })
+
   it('should return 404 when provider profile not found', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
@@ -263,7 +279,7 @@ describe('PUT /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 
   it('should return 400 for invalid JSON body', async () => {
@@ -426,6 +442,20 @@ describe('DELETE /api/bookings/[id]', () => {
     vi.clearAllMocks()
   })
 
+  it('should return 401 when session is null', async () => {
+    vi.mocked(auth).mockResolvedValue(null as never)
+
+    const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
+      method: 'DELETE',
+    })
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: 'booking1' }),
+    })
+
+    expect(response.status).toBe(401)
+  })
+
   it('should delete booking when provider is authorized', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider' },
@@ -529,7 +559,7 @@ describe('DELETE /api/bookings/[id]', () => {
     const data = await response.json()
 
     expect(response.status).toBe(404)
-    expect(data.error).toBe('Provider not found')
+    expect(data.error).toBe('Leverantör hittades inte')
   })
 })
 
