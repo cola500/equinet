@@ -24,6 +24,14 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }))
 
+vi.mock("@/components/booking/QuickNoteButton", () => ({
+  QuickNoteButton: ({ bookingId }: { bookingId: string }) => (
+    <button data-testid="quick-note-button" aria-label="Lägg till anteckning">
+      QuickNote-{bookingId}
+    </button>
+  ),
+}))
+
 vi.mock("@/components/ui/voice-textarea", () => ({
   VoiceTextarea: ({ value, onChange, placeholder, ...props }: { value: string; onChange: (v: string) => void; placeholder?: string; [key: string]: unknown }) => (
     <textarea
