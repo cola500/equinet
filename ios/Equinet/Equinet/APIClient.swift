@@ -336,6 +336,62 @@ final class APIClient {
         _ = try await performRequest(method: "DELETE", path: "/api/native/services/\(id)")
     }
 
+    // MARK: - Reviews
+
+    /// Fetch paginated reviews for native reviews view
+    func fetchReviews(page: Int = 1) async throws -> ReviewsResponse {
+        return try await authenticatedRequest(
+            path: "/api/native/reviews?page=\(page)",
+            responseType: ReviewsResponse.self
+        )
+    }
+
+    /// Submit a reply to a review (returns reply + repliedAt)
+    func submitReply(reviewId: String, text: String) async throws -> ReplyResponse {
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/reviews/\(reviewId)/reply",
+            body: ["reply": text]
+        )
+        do {
+            return try JSONDecoder().decode(ReplyResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete a reply from a review
+    func deleteReply(reviewId: String) async throws {
+        _ = try await performRequest(
+            method: "DELETE",
+            path: "/api/reviews/\(reviewId)/reply"
+        )
+    }
+
+    // MARK: - Feature Flags (public endpoint, no auth)
+
+    private struct FeatureFlagsResponse: Codable {
+        let flags: [String: Bool]
+    }
+
+    /// Fetch feature flags from public endpoint (no Bearer token required)
+    func fetchFeatureFlags() async throws -> [String: Bool] {
+        guard let url = URL(string: "/api/feature-flags", relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+        do {
+            let decoded = try JSONDecoder().decode(FeatureFlagsResponse.self, from: data)
+            return decoded.flags
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
     /// Refresh the mobile token (rotation: old token revoked, new one returned)
     func refreshToken() async throws {
         guard let currentJwt = KeychainHelper.loadMobileToken() else {
@@ -460,6 +516,10 @@ final class APIClient {
         }
     }
 }
+
+// MARK: - Protocol conformances
+
+extension APIClient: ReviewsDataFetching {}
 
 // MARK: - Response types
 
