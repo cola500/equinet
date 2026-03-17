@@ -66,6 +66,7 @@ struct AuthenticatedView: View {
                         customersViewModel: coordinator.customersViewModel,
                         servicesViewModel: coordinator.servicesViewModel,
                         reviewsViewModel: coordinator.reviewsViewModel,
+                        profileViewModel: coordinator.profileViewModel,
                         featureFlags: coordinator.featureFlags,
                         pendingPath: $coordinator.pendingMorePath
                     )

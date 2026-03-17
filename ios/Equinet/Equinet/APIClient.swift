@@ -336,6 +336,39 @@ final class APIClient {
         _ = try await performRequest(method: "DELETE", path: "/api/native/services/\(id)")
     }
 
+    // MARK: - Profile
+
+    /// Fetch provider profile for native profile view
+    func fetchProfile() async throws -> ProviderProfile {
+        return try await authenticatedRequest(
+            path: "/api/native/provider/profile",
+            responseType: ProviderProfile.self
+        )
+    }
+
+    /// Update provider profile (supports both provider and user fields)
+    func updateProfile(_ data: [String: Any]) async throws -> ProviderProfile {
+        let (responseData, _) = try await performRequest(
+            method: "PUT",
+            path: "/api/native/provider/profile",
+            body: data
+        )
+        do {
+            return try JSONDecoder().decode(ProviderProfile.self, from: responseData)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Delete user account (GDPR Art. 17)
+    func deleteAccount(password: String, confirmation: String) async throws {
+        _ = try await performRequest(
+            method: "DELETE",
+            path: "/api/account",
+            body: ["password": password, "confirmation": confirmation]
+        )
+    }
+
     // MARK: - Reviews
 
     /// Fetch paginated reviews for native reviews view
@@ -520,6 +553,7 @@ final class APIClient {
 // MARK: - Protocol conformances
 
 extension APIClient: ReviewsDataFetching {}
+extension APIClient: ProfileDataFetching {}
 
 // MARK: - Response types
 

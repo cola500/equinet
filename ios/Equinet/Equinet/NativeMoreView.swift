@@ -60,6 +60,7 @@ struct NativeMoreView: View {
     @Bindable var customersViewModel: CustomersViewModel
     @Bindable var servicesViewModel: ServicesViewModel
     @Bindable var reviewsViewModel: ReviewsViewModel
+    @Bindable var profileViewModel: ProfileViewModel
     let featureFlags: [String: Bool]
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
@@ -98,6 +99,7 @@ struct NativeMoreView: View {
                     .confirmationDialog("Vill du logga ut?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
                         Button("Logga ut", role: .destructive) {
                             reviewsViewModel.reset()
+                            profileViewModel.reset()
                             bridge.clearMobileToken()
                             authManager.logout()
                         }
@@ -122,6 +124,16 @@ struct NativeMoreView: View {
                     NativeCustomersView(viewModel: customersViewModel)
                 } else if item.path == "/provider/reviews" {
                     NativeReviewsView(viewModel: reviewsViewModel)
+                } else if item.path == "/provider/profile" {
+                    NativeProfileView(
+                        viewModel: profileViewModel,
+                        featureFlags: featureFlags,
+                        onNavigateToWebPath: { path in
+                            navigationPath.removeLast()
+                            let temp = MoreMenuItem(label: "Profil", icon: "person.circle", path: path, section: "")
+                            navigationPath.append(temp)
+                        }
+                    )
                 } else {
                     MoreWebView(
                         path: item.path,

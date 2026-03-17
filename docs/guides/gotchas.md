@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-03-12
+last_updated: 2026-03-17
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -1389,6 +1389,18 @@ body { padding-bottom: 0 !important; }
 ```
 
 **Regel:** Vid hybridappar med native navigation, dolj ALLTID webbens chrome via CSS-injektion. Anvand specifika class-selektorer (inte generella tag-selektorer) for att undvika oonskat dolja.
+
+---
+
+## 36. iOS Native Anrop till Web-Routes med Fel Auth-Mekanism
+
+**Problem:** Native iOS-appen anvander Bearer JWT (via `authFromMobileToken`) for autentisering. Befintliga web-routes (t.ex. `/api/account`) anvander NextAuth session-cookies (`auth()`). Att anropa en session-baserad route fran native ger alltid 401.
+
+**Losning:** Kontrollera alltid om en befintlig route anvander `auth()` eller `authFromMobileToken()` innan du lagger till native-anrop. For session-only routes: skapa `/api/native/*`-route med Bearer auth, eller offloada till WebView.
+
+**Upptackt:** Session 107 -- `DeleteAccountSheet` skapades for att anropa `/api/account` men routen anvander session auth. Fixat genom att offloada "Radera konto" till WebView.
+
+**Regel:** I Feature Inventory (steg 0 i Native Screen Pattern): verifiera auth-mekanism per endpoint. Skriv "Session" eller "Bearer" i beslutstabellen.
 
 ---
 

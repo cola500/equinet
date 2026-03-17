@@ -89,6 +89,7 @@ final class AppCoordinator {
     let customersViewModel: CustomersViewModel
     let servicesViewModel: ServicesViewModel
     let reviewsViewModel: ReviewsViewModel
+    let profileViewModel: ProfileViewModel
 
     // MARK: - Init
 
@@ -99,7 +100,8 @@ final class AppCoordinator {
         bookingsViewModel: BookingsViewModel? = nil,
         customersViewModel: CustomersViewModel? = nil,
         servicesViewModel: ServicesViewModel? = nil,
-        reviewsViewModel: ReviewsViewModel? = nil
+        reviewsViewModel: ReviewsViewModel? = nil,
+        profileViewModel: ProfileViewModel? = nil
     ) {
         self.bridge = bridge ?? BridgeHandler()
         self.networkMonitor = networkMonitor ?? NetworkMonitor()
@@ -108,6 +110,7 @@ final class AppCoordinator {
         self.customersViewModel = customersViewModel ?? CustomersViewModel()
         self.servicesViewModel = servicesViewModel ?? ServicesViewModel()
         self.reviewsViewModel = reviewsViewModel ?? ReviewsViewModel(fetcher: APIClient.shared)
+        self.profileViewModel = profileViewModel ?? ProfileViewModel()
     }
 
     // MARK: - Tab routing
