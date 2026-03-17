@@ -22,12 +22,13 @@ interface CalculateAvailableSlotsParams {
   date?: string // "YYYY-MM-DD" format - the date for these slots
   currentDateTime?: Date // Current date/time for filtering past slots
   slotInterval?: number // Minutes between slot starts (defaults to serviceDurationMinutes)
+  checkTravelTime?: (startTime: string, endTime: string) => boolean // true = unavailable
 }
 
 /**
  * Convert "HH:mm" string to minutes from midnight
  */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const [hours, minutes] = time.split(":").map(Number)
   return hours * 60 + minutes
 }
@@ -35,7 +36,7 @@ function timeToMinutes(time: string): number {
 /**
  * Convert minutes from midnight to "HH:mm" string
  */
-function minutesToTime(minutes: number): string {
+export function minutesToTime(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
   return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`
@@ -63,7 +64,6 @@ function isSlotInPast(
   slotStartTime: string,
   currentDateTime: Date
 ): boolean {
-  // Parse slot date and time
   const [year, month, day] = slotDate.split("-").map(Number)
   const [hours, minutes] = slotStartTime.split(":").map(Number)
 
@@ -87,7 +87,8 @@ export function calculateAvailableSlots(
     serviceDurationMinutes,
     date,
     currentDateTime,
-    slotInterval = serviceDurationMinutes, // Default: slot interval = service duration
+    slotInterval = serviceDurationMinutes,
+    checkTravelTime,
   } = params
 
   const openingMinutes = timeToMinutes(openingTime)
@@ -108,6 +109,18 @@ export function calculateAvailableSlots(
   ) {
     const endMinutes = startMinutes + serviceDurationMinutes
     const startTime = minutesToTime(startMinutes)
+    const endTime = minutesToTime(endMinutes)
+
+    // Check if slot is in the past (priority: past > booked > travel-time)
+    const isPast =
+      date && currentDateTime
+        ? isSlotInPast(date, startTime, currentDateTime)
+        : false
+
+    if (isPast) {
+      slots.push({ startTime, endTime, isAvailable: false, unavailableReason: "past" })
+      continue
+    }
 
     // Check if this slot overlaps with any booked slot
     const isBookedConflict = bookedSlots.some((booked) => {
@@ -116,17 +129,18 @@ export function calculateAvailableSlots(
       return rangesOverlap(startMinutes, endMinutes, bookedStart, bookedEnd)
     })
 
-    // Check if slot is in the past (only if date and currentDateTime provided)
-    const isPast =
-      date && currentDateTime
-        ? isSlotInPast(date, startTime, currentDateTime)
-        : false
+    if (isBookedConflict) {
+      slots.push({ startTime, endTime, isAvailable: false, unavailableReason: "booked" })
+      continue
+    }
 
-    slots.push({
-      startTime,
-      endTime: minutesToTime(endMinutes),
-      isAvailable: !isBookedConflict && !isPast,
-    })
+    // Check travel time if callback provided (only for available slots)
+    if (checkTravelTime && checkTravelTime(startTime, endTime)) {
+      slots.push({ startTime, endTime, isAvailable: false, unavailableReason: "travel-time" })
+      continue
+    }
+
+    slots.push({ startTime, endTime, isAvailable: true })
   }
 
   return slots
