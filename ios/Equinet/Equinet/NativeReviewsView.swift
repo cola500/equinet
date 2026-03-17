@@ -228,7 +228,7 @@ struct NativeReviewsView: View {
                     Label("Svara", systemImage: "arrowshape.turn.up.left")
                         .font(.subheadline)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
                 .tint(Color.equinetGreen)
                 .frame(minHeight: 44)
                 .disabled(!(networkMonitor?.isConnected ?? true))
