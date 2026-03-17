@@ -17,13 +17,14 @@ import {
 import { notificationService } from "@/domain/notification/NotificationService"
 import { pushDeliveryService } from "@/domain/notification/PushDeliveryService"
 import { customerName } from "@/lib/notification-helpers"
+import { timeSchema } from "@/lib/zod-schemas"
 
 // Zod schema for manual booking input
 const manualBookingSchema = z.object({
   serviceId: z.string().uuid(),
   bookingDate: z.string(),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  startTime: timeSchema,
+  endTime: timeSchema.optional(),
   // Customer: either ID or manual fields
   customerId: z.string().uuid().optional(),
   customerName: z.string().min(2).max(100).trim().optional(),

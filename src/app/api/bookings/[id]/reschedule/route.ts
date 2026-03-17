@@ -13,10 +13,11 @@ import { prisma } from "@/lib/prisma"
 import { sendBookingRescheduleNotification } from "@/lib/email"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
+import { dateSchema, timeSchema } from "@/lib/zod-schemas"
 
 const rescheduleSchema = z.object({
-  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat (YYYY-MM-DD)"),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Ogiltigt tidsformat (HH:MM)"),
+  bookingDate: dateSchema,
+  startTime: timeSchema,
 }).strict()
 
 export async function PATCH(

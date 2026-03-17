@@ -10,10 +10,11 @@ import { authFromMobileToken } from "@/lib/mobile-auth"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
+import { dateSchema } from "@/lib/zod-schemas"
 
 const querySchema = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat"),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat"),
+  from: dateSchema,
+  to: dateSchema,
 }).strict().refine(
   (data) => {
     const from = new Date(data.from)

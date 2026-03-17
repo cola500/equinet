@@ -6,12 +6,13 @@ import { calculateDistance } from "@/lib/geo/distance"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { timeSchema } from "@/lib/zod-schemas"
 
 // Validation schema for creating route
 const createRouteSchema = z.object({
   routeName: z.string().min(1, "Ruttnamn krävs"),
   routeDate: z.string().datetime(),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Starttid måste vara i format HH:MM"),
+  startTime: timeSchema,
   orderIds: z.array(z.string()).min(1, "Minst en beställning krävs"),
 }).strict()
 

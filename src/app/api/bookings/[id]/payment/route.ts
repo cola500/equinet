@@ -9,15 +9,7 @@ import { customerName } from "@/lib/notification-helpers"
 import { getPaymentGateway } from "@/domain/payment/PaymentGateway"
 import { createBookingEventDispatcher, createBookingPaymentReceivedEvent } from "@/domain/booking"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-
-// Generate unique invoice number
-function generateInvoiceNumber(): string {
-  const date = new Date()
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
-  return `EQ-${year}${month}-${random}`
-}
+import { generateInvoiceNumber } from "@/domain/payment/InvoiceNumberGenerator"
 
 // POST - Create mock payment for a booking
 export async function POST(

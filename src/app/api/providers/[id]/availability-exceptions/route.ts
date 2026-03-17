@@ -5,19 +5,20 @@ import { rateLimiters } from "@/lib/rate-limit"
 import { parseDate } from "@/lib/date-utils"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
 
 // Validation schema for query parameters
 const querySchema = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (expected YYYY-MM-DD)").optional(),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (expected YYYY-MM-DD)").optional(),
+  from: dateSchema.optional(),
+  to: dateSchema.optional(),
 })
 
 // Validation schema for creating an exception
 const createExceptionSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD format
+  date: dateSchema,
   isClosed: z.boolean().default(true),
-  startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional().nullable(),
-  endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional().nullable(),
+  startTime: strictTimeSchema.optional().nullable(),
+  endTime: strictTimeSchema.optional().nullable(),
   reason: z.string()
     .max(200)
     .transform(val => val?.trim() || null)
