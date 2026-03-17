@@ -4,42 +4,7 @@ import { TravelTimeService, BookingWithLocation } from "@/domain/booking/TravelT
 import { Location } from "@/domain/shared/Location"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
-
-interface SlotWithReason {
-  startTime: string
-  endTime: string
-  isAvailable: boolean
-  unavailableReason?: "booked" | "travel-time" | "past"
-}
-
-/**
- * Convert "HH:mm" string to minutes from midnight
- */
-function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number)
-  return hours * 60 + minutes
-}
-
-/**
- * Convert minutes from midnight to "HH:mm" string
- */
-function minutesToTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`
-}
-
-/**
- * Check if two time ranges overlap
- */
-function rangesOverlap(
-  start1: number,
-  end1: number,
-  start2: number,
-  end2: number
-): boolean {
-  return start1 < end2 && end1 > start2
-}
+import { calculateAvailableSlots } from "@/lib/utils/slotCalculator"
 
 export async function GET(
   request: NextRequest,
@@ -144,7 +109,6 @@ export async function GET(
     const closingTime = (exception?.endTime) || availability.endTime
 
     // Get all confirmed/pending bookings for the provider on that date
-    // Include customer location for travel time calculation
     const bookings = await prisma.booking.findMany({
       where: {
         providerId,
@@ -174,118 +138,62 @@ export async function GET(
       },
     })
 
-    // Create TravelTimeService instance
-    const travelTimeService = new TravelTimeService()
+    // Prepare travel-time callback if customer location is provided
+    let checkTravelTime: ((startTime: string, endTime: string) => boolean) | undefined
 
-    // Convert bookings to BookingWithLocation format for TravelTimeService
-    const existingBookingsWithLocation: BookingWithLocation[] = bookings.map((b) => {
-      let location: Location | undefined
-      if (b.customer.latitude && b.customer.longitude) {
-        const locationResult = Location.create(b.customer.latitude, b.customer.longitude)
-        if (locationResult.isSuccess) {
-          location = locationResult.value
-        }
-      }
-      return {
-        id: b.id,
-        startTime: b.startTime,
-        endTime: b.endTime,
-        location,
-      }
-    })
-
-    // Create customer location if provided
-    let customerLocation: Location | undefined
     if (customerLatitude !== null && customerLongitude !== null) {
-      const locationResult = Location.create(customerLatitude, customerLongitude)
-      if (locationResult.isSuccess) {
-        customerLocation = locationResult.value
-      }
-    }
+      const customerLocationResult = Location.create(customerLatitude, customerLongitude)
 
-    // Generate slots with availability status
-    const openingMinutes = timeToMinutes(openingTime)
-    const closingMinutes = timeToMinutes(closingTime)
-    const slots: SlotWithReason[] = []
+      if (customerLocationResult.isSuccess && bookings.length > 0) {
+        const customerLocation = customerLocationResult.value
+        const travelTimeService = new TravelTimeService()
 
-    // Get current time for past slot filtering
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const bookingDay = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate())
-    const isPastDay = bookingDay < today
-    const isToday = bookingDay.getTime() === today.getTime()
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
-
-    // Generate slots at serviceDuration intervals
-    for (
-      let startMinutes = openingMinutes;
-      startMinutes + serviceDurationMinutes <= closingMinutes;
-      startMinutes += serviceDurationMinutes
-    ) {
-      const endMinutes = startMinutes + serviceDurationMinutes
-      const startTime = minutesToTime(startMinutes)
-      const endTime = minutesToTime(endMinutes)
-
-      // Check if slot is in the past (entire day passed or today's past slots)
-      if (isPastDay || (isToday && startMinutes < currentMinutes)) {
-        slots.push({
-          startTime,
-          endTime,
-          isAvailable: false,
-          unavailableReason: "past",
+        // Build BookingWithLocation array for TravelTimeService
+        const existingBookingsWithLocation: BookingWithLocation[] = bookings.map((b) => {
+          let location: Location | undefined
+          if (b.customer.latitude && b.customer.longitude) {
+            const locationResult = Location.create(b.customer.latitude, b.customer.longitude)
+            if (locationResult.isSuccess) {
+              location = locationResult.value
+            }
+          }
+          return {
+            id: b.id,
+            startTime: b.startTime,
+            endTime: b.endTime,
+            location,
+          }
         })
-        continue
-      }
 
-      // Check if this slot overlaps with any booked slot
-      const isBookedConflict = bookings.some((booked) => {
-        const bookedStart = timeToMinutes(booked.startTime)
-        const bookedEnd = timeToMinutes(booked.endTime)
-        return rangesOverlap(startMinutes, endMinutes, bookedStart, bookedEnd)
-      })
-
-      if (isBookedConflict) {
-        slots.push({
-          startTime,
-          endTime,
-          isAvailable: false,
-          unavailableReason: "booked",
-        })
-        continue
-      }
-
-      // Check travel time if customer location is provided and there are existing bookings
-      if (customerLocation && existingBookingsWithLocation.length > 0) {
-        const hypotheticalBooking: BookingWithLocation = {
-          id: "hypothetical",
-          startTime,
-          endTime,
-          location: customerLocation,
-        }
-
-        const travelTimeResult = travelTimeService.hasEnoughTravelTime(
-          hypotheticalBooking,
-          existingBookingsWithLocation
-        )
-
-        if (!travelTimeResult.valid) {
-          slots.push({
+        checkTravelTime = (startTime: string, endTime: string) => {
+          const hypotheticalBooking: BookingWithLocation = {
+            id: "hypothetical",
             startTime,
             endTime,
-            isAvailable: false,
-            unavailableReason: "travel-time",
-          })
-          continue
+            location: customerLocation,
+          }
+          const result = travelTimeService.hasEnoughTravelTime(
+            hypotheticalBooking,
+            existingBookingsWithLocation
+          )
+          return !result.valid
         }
       }
-
-      // Slot is available
-      slots.push({
-        startTime,
-        endTime,
-        isAvailable: true,
-      })
     }
+
+    // Generate slots using shared calculator
+    const slots = calculateAvailableSlots({
+      openingTime,
+      closingTime,
+      bookedSlots: bookings.map((b) => ({
+        startTime: b.startTime,
+        endTime: b.endTime,
+      })),
+      serviceDurationMinutes,
+      date,
+      currentDateTime: new Date(),
+      checkTravelTime,
+    })
 
     return NextResponse.json({
       date,

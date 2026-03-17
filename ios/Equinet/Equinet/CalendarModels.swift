@@ -17,6 +17,7 @@ struct NativeBooking: Codable, Identifiable, Sendable {
     let horseName: String?
     let customerFirstName: String
     let customerLastName: String
+    let customerPhone: String?     // nil for cached data before this field was added
     let serviceName: String
     let serviceId: String?       // nil for cached data before this field was added
     let servicePrice: Double
@@ -41,6 +42,7 @@ struct NativeBooking: Codable, Identifiable, Sendable {
             horseName: horseName,
             customerFirstName: customerFirstName,
             customerLastName: customerLastName,
+            customerPhone: customerPhone,
             serviceName: serviceName,
             serviceId: serviceId,
             servicePrice: servicePrice,

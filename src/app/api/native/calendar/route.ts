@@ -10,10 +10,11 @@ import { authFromMobileToken } from "@/lib/mobile-auth"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
+import { dateSchema } from "@/lib/zod-schemas"
 
 const querySchema = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat"),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat"),
+  from: dateSchema,
+  to: dateSchema,
 }).strict().refine(
   (data) => {
     const from = new Date(data.from)
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
           providerNotes: true,
           bookingSeriesId: true,
           customer: {
-            select: { firstName: true, lastName: true },
+            select: { firstName: true, lastName: true, phone: true },
           },
           service: {
             select: { id: true, name: true, price: true },
@@ -156,6 +157,7 @@ export async function GET(request: NextRequest) {
         horseName: b.horseName,
         customerFirstName: b.customer.firstName,
         customerLastName: b.customer.lastName,
+        customerPhone: b.customer.phone ?? null,
         serviceName: b.service.name,
         serviceId: b.service.id,
         servicePrice: b.service.price,

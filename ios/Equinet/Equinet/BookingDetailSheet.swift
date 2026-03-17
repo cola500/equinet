@@ -2,7 +2,8 @@
 //  BookingDetailSheet.swift
 //  Equinet
 //
-//  Read-only booking detail presented as a sheet from the native calendar.
+//  Compact action card for calendar bookings.
+//  Focus: "What do I do with this booking NOW?"
 //
 
 #if os(iOS)
@@ -16,120 +17,55 @@ struct BookingDetailSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // Service info
-                Section {
-                    LabeledContent("Tjänst", value: booking.serviceName)
-                    LabeledContent("Pris", value: "\(Int(booking.servicePrice)) kr")
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Status pill
+                    statusBadge
 
-                // Time
-                Section {
-                    LabeledContent("Tid", value: "\(booking.startTime) - \(booking.endTime)")
-                    if let date = booking.date {
-                        LabeledContent("Datum", value: formattedDate(date))
-                    }
-                }
-
-                // Customer
-                Section("Kund") {
-                    LabeledContent("Namn", value: booking.customerFullName)
-                    if let horse = booking.horseName {
-                        LabeledContent("Häst", value: horse)
-                    }
-                }
-
-                // Status
-                Section {
-                    HStack {
-                        Text("Status")
-                        Spacer()
-                        statusBadge
-                    }
-                    if booking.isPaid {
-                        HStack {
-                            Text("Betalning")
-                            Spacer()
-                            Label("Betald", systemImage: "creditcard.fill")
+                    // Customer + horse
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(booking.customerFullName)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                        if let horse = booking.horseName {
+                            Text(horse)
                                 .font(.subheadline)
-                                .foregroundStyle(.green)
-                        }
-                    }
-                    if booking.isManualBooking {
-                        HStack {
-                            Text("Typ")
-                            Spacer()
-                            Text("Manuell bokning")
                                 .foregroundStyle(.secondary)
                         }
                     }
-                }
 
-                // Notes
-                if booking.customerNotes != nil || booking.providerNotes != nil {
-                    Section("Anteckningar") {
-                        if let notes = booking.customerNotes {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Kundens meddelande")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(notes)
-                                    .font(.body)
-                            }
-                        }
-                        if let notes = booking.providerNotes {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Dina anteckningar")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(notes)
-                                    .font(.body)
-                            }
+                    // Service + time
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(booking.serviceName)
+                            .font(.headline)
+                        if let date = booking.date {
+                            Text("\(formattedDate(date)), \(booking.startTime)–\(booking.endTime)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("\(booking.startTime)–\(booking.endTime)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                }
 
-                // Recurring badge
-                if booking.bookingSeriesId != nil {
-                    Section {
-                        Label("Återkommande bokning", systemImage: "arrow.triangle.2.circlepath")
-                            .foregroundStyle(.secondary)
+                    // Phone (tap-to-call)
+                    if let phone = booking.customerPhone, !phone.isEmpty {
+                        phoneLink(phone)
                     }
-                }
 
-                // Action buttons for pending bookings
-                if booking.status == "pending", let onAction {
-                    Section {
-                        Button {
-                            onAction(booking.id, "confirmed")
-                            dismiss()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Label("Bekräfta bokning", systemImage: "checkmark.circle.fill")
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                        }
-                        .tint(.green)
-
-                        Button(role: .destructive) {
-                            onAction(booking.id, "cancelled")
-                            dismiss()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Label("Avvisa bokning", systemImage: "xmark.circle.fill")
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                        }
+                    // Customer message (highlight box)
+                    if let notes = booking.customerNotes, !notes.isEmpty {
+                        customerMessageBox(notes)
                     }
-                }
 
-                // Open in web app
-                if let onOpenInApp, booking.status != "cancelled", booking.status != "no_show" {
-                    Section {
+                    Spacer(minLength: 8)
+
+                    // Actions (status-dependent)
+                    actionButtons
+
+                    // Open in web app
+                    if let onOpenInApp, booking.status != "cancelled", booking.status != "no_show" {
                         Button {
                             dismiss()
                             onOpenInApp(booking.id)
@@ -142,8 +78,9 @@ struct BookingDetailSheet: View {
                         }
                     }
                 }
+                .padding(16)
             }
-            .navigationTitle("Bokningsdetaljer")
+            .navigationTitle("Bokning")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -194,11 +131,123 @@ struct BookingDetailSheet: View {
         statusTextColor.opacity(0.12)
     }
 
+    // MARK: - Phone Link
+
+    private func phoneLink(_ phone: String) -> some View {
+        let digits = phone.filter { $0.isNumber || $0 == "+" }
+        return Link(destination: URL(string: "tel:\(digits)")!) {
+            Label(phone, systemImage: "phone.fill")
+                .font(.body)
+        }
+    }
+
+    // MARK: - Customer Message
+
+    private func customerMessageBox(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Kundens meddelande")
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+            Text(message)
+                .font(.body)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: - Action Buttons
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        switch booking.status {
+        case "pending":
+            pendingActions
+        case "confirmed":
+            confirmedActions
+        default:
+            // completed, cancelled, no_show
+            detailLink("Alla detaljer")
+        }
+    }
+
+    private var pendingActions: some View {
+        VStack(spacing: 12) {
+            if let onAction {
+                Button {
+                    onAction(booking.id, "confirmed")
+                    dismiss()
+                } label: {
+                    Label("Bekräfta bokning", systemImage: "checkmark.circle.fill")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .controlSize(.large)
+
+                Button(role: .destructive) {
+                    onAction(booking.id, "cancelled")
+                    dismiss()
+                } label: {
+                    Text("Avvisa")
+                        .fontWeight(.medium)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+            }
+        }
+    }
+
+    private var confirmedActions: some View {
+        VStack(spacing: 12) {
+            if let onAction {
+                Button {
+                    onAction(booking.id, "completed")
+                    dismiss()
+                } label: {
+                    Label("Markera genomförd", systemImage: "checkmark.circle.fill")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .controlSize(.large)
+            }
+
+            detailLink("Hantera bokning")
+        }
+    }
+
+    private func detailLink(_ title: String) -> some View {
+        Group {
+            if let onOpenInApp {
+                Button {
+                    onOpenInApp(booking.id)
+                    dismiss()
+                } label: {
+                    Text(title)
+                        .fontWeight(.medium)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.blue)
+            }
+        }
+    }
+
+    // MARK: - Date Formatting
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "sv_SE")
+        f.dateFormat = "EEE d MMM"
+        return f
+    }()
+
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "sv_SE")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: date)
+        Self.dateFormatter.string(from: date)
     }
 }
 #endif
