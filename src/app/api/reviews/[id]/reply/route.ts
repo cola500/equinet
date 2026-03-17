@@ -1,16 +1,35 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { authFromMobileToken } from "@/lib/mobile-auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { ReviewService } from "@/domain/review/ReviewService"
 import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 
 const replySchema = z.object({
   reply: z.string().min(1, "Svar krävs").max(500, "Svar kan vara max 500 tecken"),
 }).strict()
+
+/**
+ * Dual-auth: try Bearer JWT first, fall back to session.
+ * Returns { userId, userType } or throws/returns 401 Response.
+ */
+async function resolveAuth(request: NextRequest): Promise<{ userId: string; userType: string }> {
+  const mobileAuth = await authFromMobileToken(request)
+  if (mobileAuth) {
+    // Mobile tokens are provider-only (issued at login for providers)
+    return { userId: mobileAuth.userId, userType: "provider" }
+  }
+  // Fall back to session auth
+  const session = await auth()
+  if (!session) {
+    throw NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+  }
+  return { userId: session.user.id, userType: (session.user as { userType: string }).userType }
+}
 
 // POST - Add a reply to a review (provider only)
 export async function POST(
@@ -18,20 +37,28 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId, userType } = await resolveAuth(request)
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    // Rate limiting (fail-closed)
+    try {
+      const clientIp = getClientIP(request)
+      const isAllowed = await rateLimiters.api(clientIp)
+      if (!isAllowed) {
+        return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+      }
+    } catch (error) {
+      if (error instanceof RateLimitServiceError) {
+        return NextResponse.json(
+          { error: "Tjänsten är tillfälligt otillgänglig" },
+          { status: 503 }
+        )
+      }
+      throw error
     }
 
     const { id: reviewId } = await params
 
-    if (session.user.userType !== "provider") {
+    if (userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -47,7 +74,7 @@ export async function POST(
 
     // Find the provider for the current user
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 
@@ -101,26 +128,34 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId, userType } = await resolveAuth(request)
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    // Rate limiting (fail-closed)
+    try {
+      const clientIp = getClientIP(request)
+      const isAllowed = await rateLimiters.api(clientIp)
+      if (!isAllowed) {
+        return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+      }
+    } catch (error) {
+      if (error instanceof RateLimitServiceError) {
+        return NextResponse.json(
+          { error: "Tjänsten är tillfälligt otillgänglig" },
+          { status: 503 }
+        )
+      }
+      throw error
     }
 
     const { id: reviewId } = await params
 
-    if (session.user.userType !== "provider") {
+    if (userType !== "provider") {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Find the provider for the current user
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 

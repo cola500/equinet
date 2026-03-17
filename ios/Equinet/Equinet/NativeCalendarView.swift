@@ -13,6 +13,7 @@ import SwiftUI
 
 struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
+    var onNavigateToBooking: ((_ bookingId: String) -> Void)?
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
     @State private var newBookingTime: (date: Date, time: String)?
@@ -159,7 +160,7 @@ struct NativeCalendarView: View {
                     viewModel.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
                 },
                 onOpenInApp: { bookingId in
-                    onNavigateToWeb?("/provider/bookings/\(bookingId)")
+                    onNavigateToBooking?(bookingId)
                 }
             )
             .presentationDetents([.medium, .large])

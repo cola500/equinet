@@ -8,6 +8,10 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
+vi.mock('@/lib/mobile-auth', () => ({
+  authFromMobileToken: vi.fn(),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     review: {
@@ -19,6 +23,22 @@ vi.mock('@/lib/prisma', () => ({
     },
   },
 }))
+
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+  RateLimitServiceError: class RateLimitServiceError extends Error {},
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+}))
+
+import { authFromMobileToken } from '@/lib/mobile-auth'
+import { rateLimiters, RateLimitServiceError } from '@/lib/rate-limit'
+
+const mockMobileAuth = vi.mocked(authFromMobileToken)
+const mockRateLimit = vi.mocked(rateLimiters.api)
 
 const mockReview = {
   id: 'review-1',
@@ -237,5 +257,107 @@ describe('DELETE /api/reviews/[id]/reply', () => {
 
     expect(response.status).toBe(403)
     expect(data.error).toBe('Not authorized')
+  })
+})
+
+describe('POST /api/reviews/[id]/reply - Bearer token auth', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockMobileAuth.mockResolvedValue(null)
+    mockRateLimit.mockResolvedValue(true)
+  })
+
+  it('should work with Bearer token (mobile auth)', async () => {
+    // No session needed -- mobile auth provides userId
+    vi.mocked(auth).mockRejectedValue(
+      new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    )
+    mockMobileAuth.mockResolvedValue({ userId: 'provider-user-1', tokenId: 'token-1' })
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+      id: 'provider-1',
+    } as never)
+    vi.mocked(prisma.review.findUnique).mockResolvedValue(mockReview as never)
+    vi.mocked(prisma.review.update).mockResolvedValue({
+      ...mockReview,
+      reply: 'Tack från mobilen!',
+      repliedAt: new Date(),
+    } as never)
+
+    const { request, params } = createRequest('review-1', 'POST', {
+      reply: 'Tack från mobilen!',
+    })
+
+    const response = await POST(request, { params })
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.reply).toBe('Tack från mobilen!')
+  })
+
+  it('should return 503 when rate limiter throws RateLimitServiceError', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'provider-user-1', userType: 'provider' },
+    } as never)
+    mockRateLimit.mockRejectedValue(new RateLimitServiceError('Redis error'))
+
+    const { request, params } = createRequest('review-1', 'POST', { reply: 'Tack!' })
+    const response = await POST(request, { params })
+    const data = await response.json()
+
+    expect(response.status).toBe(503)
+    expect(data.error).toBe('Tjänsten är tillfälligt otillgänglig')
+  })
+})
+
+describe('DELETE /api/reviews/[id]/reply - Bearer token auth', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockMobileAuth.mockResolvedValue(null)
+    mockRateLimit.mockResolvedValue(true)
+  })
+
+  it('should work with Bearer token (mobile auth)', async () => {
+    vi.mocked(auth).mockRejectedValue(
+      new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    )
+    mockMobileAuth.mockResolvedValue({ userId: 'provider-user-1', tokenId: 'token-1' })
+    vi.mocked(prisma.provider.findUnique).mockResolvedValue({
+      id: 'provider-1',
+    } as never)
+    vi.mocked(prisma.review.findUnique).mockResolvedValue({
+      ...mockReview,
+      reply: 'Tack!',
+      repliedAt: new Date(),
+    } as never)
+    vi.mocked(prisma.review.update).mockResolvedValue({
+      ...mockReview,
+      reply: null,
+      repliedAt: null,
+    } as never)
+
+    const { request, params } = createRequest('review-1', 'DELETE')
+    const response = await DELETE(request, { params })
+
+    expect(response.status).toBe(204)
+  })
+
+  it('should return 503 when rate limiter throws RateLimitServiceError', async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'provider-user-1', userType: 'provider' },
+    } as never)
+    mockRateLimit.mockRejectedValue(new RateLimitServiceError('Redis error'))
+
+    const { request, params } = createRequest('review-1', 'DELETE')
+    const response = await DELETE(request, { params })
+    const data = await response.json()
+
+    expect(response.status).toBe(503)
+    expect(data.error).toBe('Tjänsten är tillfälligt otillgänglig')
   })
 })

@@ -17,19 +17,38 @@ struct MoreMenuItem: Hashable, Identifiable {
     let icon: String  // SF Symbol
     let path: String
     let section: String
+    let featureFlag: String?
 
     var id: String { path }
+
+    init(label: String, icon: String, path: String, section: String, featureFlag: String? = nil) {
+        self.label = label
+        self.icon = icon
+        self.path = path
+        self.section = section
+        self.featureFlag = featureFlag
+    }
 }
 
-private let menuSections: [(name: String, items: [MoreMenuItem])] = [
+/// All menu sections matching the web ProviderNav order exactly.
+/// Items with a featureFlag are hidden unless that flag is true.
+let allMenuSections: [(name: String, items: [MoreMenuItem])] = [
     ("Dagligt arbete", [
         MoreMenuItem(label: "Mina tjänster", icon: "stethoscope", path: "/provider/services", section: "Dagligt arbete"),
+        MoreMenuItem(label: "Logga arbete", icon: "mic", path: "/provider/voice-log", section: "Dagligt arbete", featureFlag: "voice_logging"),
         MoreMenuItem(label: "Kunder", icon: "person.2", path: "/provider/customers", section: "Dagligt arbete"),
     ]),
+    ("Planering", [
+        MoreMenuItem(label: "Ruttplanering", icon: "map", path: "/provider/route-planning", section: "Planering", featureFlag: "route_planning"),
+        MoreMenuItem(label: "Rutt-annonser", icon: "megaphone", path: "/provider/announcements", section: "Planering", featureFlag: "route_announcements"),
+        MoreMenuItem(label: "Besöksplanering", icon: "clock.badge.checkmark", path: "/provider/due-for-service", section: "Planering", featureFlag: "due_for_service"),
+        MoreMenuItem(label: "Gruppbokningar", icon: "person.badge.plus", path: "/provider/group-bookings", section: "Planering", featureFlag: "group_bookings"),
+    ]),
     ("Mitt företag", [
+        MoreMenuItem(label: "Insikter", icon: "chart.bar.xaxis", path: "/provider/insights", section: "Mitt företag", featureFlag: "business_insights"),
         MoreMenuItem(label: "Recensioner", icon: "star", path: "/provider/reviews", section: "Mitt företag"),
+        MoreMenuItem(label: "Hjälp", icon: "questionmark.circle", path: "/provider/help", section: "Mitt företag", featureFlag: "help_center"),
         MoreMenuItem(label: "Min profil", icon: "person.circle", path: "/provider/profile", section: "Mitt företag"),
-        MoreMenuItem(label: "Hjälp", icon: "questionmark.circle", path: "/provider/help", section: "Mitt företag"),
     ]),
 ]
 
@@ -40,14 +59,27 @@ struct NativeMoreView: View {
     let authManager: AuthManager
     @Bindable var customersViewModel: CustomersViewModel
     @Bindable var servicesViewModel: ServicesViewModel
+    @Bindable var reviewsViewModel: ReviewsViewModel
+    let featureFlags: [String: Bool]
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
     @State private var showLogoutConfirmation = false
 
+    /// Sections filtered by feature flags. Empty sections are hidden.
+    private var visibleSections: [(name: String, items: [MoreMenuItem])] {
+        allMenuSections.compactMap { section in
+            let visible = section.items.filter { item in
+                guard let flag = item.featureFlag else { return true }
+                return featureFlags[flag] == true
+            }
+            return visible.isEmpty ? nil : (section.name, visible)
+        }
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             List {
-                ForEach(menuSections, id: \.name) { section in
+                ForEach(visibleSections, id: \.name) { section in
                     Section(section.name) {
                         ForEach(section.items) { item in
                             NavigationLink(value: item) {
@@ -65,6 +97,7 @@ struct NativeMoreView: View {
                     }
                     .confirmationDialog("Vill du logga ut?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
                         Button("Logga ut", role: .destructive) {
+                            reviewsViewModel.reset()
                             bridge.clearMobileToken()
                             authManager.logout()
                         }
@@ -87,6 +120,8 @@ struct NativeMoreView: View {
                     NativeServicesView(viewModel: servicesViewModel)
                 } else if item.path == "/provider/customers" {
                     NativeCustomersView(viewModel: customersViewModel)
+                } else if item.path == "/provider/reviews" {
+                    NativeReviewsView(viewModel: reviewsViewModel)
                 } else {
                     MoreWebView(
                         path: item.path,
@@ -110,7 +145,7 @@ struct NativeMoreView: View {
 
     private func handlePendingPath() {
         guard let path = pendingPath else { return }
-        let allItems = menuSections.flatMap(\.items)
+        let allItems = allMenuSections.flatMap(\.items)
         if let item = allItems.first(where: { $0.path == path }) {
             navigationPath.append(item)
         } else {

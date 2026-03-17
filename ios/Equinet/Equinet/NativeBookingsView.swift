@@ -12,6 +12,7 @@ import OSLog
 
 struct NativeBookingsView: View {
     @Bindable var viewModel: BookingsViewModel
+    @Binding var pendingBookingId: String?
     var onNavigateToWeb: ((_ path: String) -> Void)?
 
     // Sheet state
@@ -22,6 +23,7 @@ struct NativeBookingsView: View {
     @State private var reviewComment = ""
     @State private var isSubmittingReview = false
     @State private var quickNoteBooking: BookingsListItem?
+    @State private var highlightedBookingId: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +32,13 @@ struct NativeBookingsView: View {
         }
         .task {
             await viewModel.loadBookings()
+            if let id = pendingBookingId {
+                handlePendingBooking(id)
+            }
+        }
+        .onChange(of: pendingBookingId) { _, newId in
+            guard let id = newId else { return }
+            handlePendingBooking(id)
         }
         .sheet(item: cancelBinding) { item in
             CancelBookingSheet(
@@ -190,28 +199,59 @@ struct NativeBookingsView: View {
     }
 
     private var bookingsList: some View {
-        List {
-            ForEach(viewModel.filteredBookings) { booking in
-                BookingCard(
-                    booking: booking,
-                    isActionInProgress: viewModel.actionInProgress == booking.id,
-                    onConfirm: { Task { await viewModel.confirmBooking(id: booking.id) } },
-                    onDecline: { Task { await viewModel.declineBooking(id: booking.id) } },
-                    onComplete: { Task { await viewModel.completeBooking(id: booking.id) } },
-                    onNoShow: { Task { await viewModel.markNoShow(id: booking.id) } },
-                    onCancel: { cancelBookingId = booking.id },
-                    onReview: { reviewBookingId = booking.id; reviewRating = 0; reviewComment = "" },
-                    onQuickNote: { quickNoteBooking = booking },
-                    onNavigateToWeb: onNavigateToWeb
-                )
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                .listRowSeparator(.hidden)
+        ScrollViewReader { proxy in
+            List {
+                ForEach(viewModel.filteredBookings) { booking in
+                    BookingCard(
+                        booking: booking,
+                        isActionInProgress: viewModel.actionInProgress == booking.id,
+                        onConfirm: { Task { await viewModel.confirmBooking(id: booking.id) } },
+                        onDecline: { Task { await viewModel.declineBooking(id: booking.id) } },
+                        onComplete: { Task { await viewModel.completeBooking(id: booking.id) } },
+                        onNoShow: { Task { await viewModel.markNoShow(id: booking.id) } },
+                        onCancel: { cancelBookingId = booking.id },
+                        onReview: { reviewBookingId = booking.id; reviewRating = 0; reviewComment = "" },
+                        onQuickNote: { quickNoteBooking = booking },
+                        onNavigateToWeb: onNavigateToWeb
+                    )
+                    .id(booking.id)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(
+                        highlightedBookingId == booking.id
+                            ? Color.equinetGreen.opacity(0.1)
+                            : nil
+                    )
+                }
+            }
+            .listStyle(.plain)
+            .refreshable {
+                await viewModel.refresh()
+            }
+            .onChange(of: highlightedBookingId) { _, newId in
+                guard let id = newId else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    withAnimation { proxy.scrollTo(id, anchor: .center) }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation { highlightedBookingId = nil }
+                    }
+                }
             }
         }
-        .listStyle(.plain)
-        .refreshable {
-            await viewModel.refresh()
+    }
+
+    // MARK: - Pending Booking Navigation
+
+    private func handlePendingBooking(_ bookingId: String) {
+        guard let booking = viewModel.bookings.first(where: { $0.id == bookingId }) else { return }
+
+        let targetFilter = BookingFilter(rawValue: booking.status) ?? .all
+        if viewModel.selectedFilter != targetFilter {
+            viewModel.selectedFilter = targetFilter
         }
+
+        highlightedBookingId = bookingId
+        pendingBookingId = nil
     }
 
     // MARK: - Empty State Helpers
@@ -381,11 +421,7 @@ private struct BookingCard: View {
             // Existing review
             if let review = booking.customerReview {
                 HStack(spacing: 2) {
-                    ForEach(1...5, id: \.self) { star in
-                        Image(systemName: star <= review.rating ? "star.fill" : "star")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
+                    StarRatingView(rating: review.rating, font: .caption)
                     if let comment = review.comment {
                         Text(comment)
                             .font(.caption)
@@ -393,8 +429,6 @@ private struct BookingCard: View {
                             .lineLimit(1)
                     }
                 }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Kundrecension: \(review.rating) av 5 stjärnor")
             }
         }
         .padding(12)
@@ -661,20 +695,9 @@ struct ReviewBookingSheet: View {
                     .font(.headline)
 
                 // Star rating
-                HStack(spacing: 8) {
-                    ForEach(1...5, id: \.self) { star in
-                        Image(systemName: star <= rating ? "star.fill" : "star")
-                            .font(.title2)
-                            .foregroundStyle(star <= rating ? .orange : .gray)
-                            .onTapGesture {
-                                rating = star
-                            }
-                            .accessibilityLabel("\(star) stjärna")
-                            .accessibilityAddTraits(star <= rating ? .isSelected : [])
-                    }
+                StarRatingView(rating: rating, font: .title2, interactive: true) { newRating in
+                    rating = newRating
                 }
-                .accessibilityElement(children: .contain)
-                .accessibilityValue("\(rating) av 5")
                 .padding(.vertical, 4)
 
                 // Comment
