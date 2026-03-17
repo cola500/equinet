@@ -128,15 +128,15 @@ struct BookingDetailSheet: View {
                 }
 
                 // Open in web app
-                if let onOpenInApp {
+                if let onOpenInApp, booking.status != "cancelled", booking.status != "no_show" {
                     Section {
                         Button {
-                            onOpenInApp(booking.id)
                             dismiss()
+                            onOpenInApp(booking.id)
                         } label: {
                             HStack {
                                 Spacer()
-                                Label("Visa i appen", systemImage: "arrow.up.forward.app")
+                                Label("Hantera bokning", systemImage: "list.bullet")
                                 Spacer()
                             }
                         }
