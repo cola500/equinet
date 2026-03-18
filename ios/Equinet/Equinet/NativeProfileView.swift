@@ -117,18 +117,12 @@ struct NativeProfileView: View {
                     Text("Profilen är \(profile.profileCompletion)% klar")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                    Text("Fyll i fler uppgifter för att synas bättre.")
+                    Text(missingFieldsText(profile))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
-
-                Button("Redigera") {
-                    showEditSheet = true
-                }
-                .font(.subheadline)
-                .fontWeight(.medium)
             }
             .padding()
             .background(Color.orange.opacity(0.1))
@@ -172,6 +166,11 @@ struct NativeProfileView: View {
                     .font(.caption)
                     .foregroundStyle(.green)
             }
+
+            Button("Byt bild") {
+                onNavigateToWebPath?("/provider/profile?edit=image")
+            }
+            .font(.caption)
         }
     }
 
@@ -389,7 +388,7 @@ struct NativeProfileView: View {
         Section {
             Button(role: .destructive) {
                 // Offload to WebView -- /api/account uses session auth, not Bearer JWT
-                onNavigateToWebPath?("/provider/profile?tab=settings")
+                onNavigateToWebPath?("/provider/profile?tab=settings&section=delete-account")
             } label: {
                 Label("Radera konto", systemImage: "trash")
             }
@@ -407,6 +406,18 @@ struct NativeProfileView: View {
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.body)
+        }
+    }
+
+    private func missingFieldsText(_ profile: ProviderProfile) -> String {
+        let missing = profile.missingFields
+        guard !missing.isEmpty else { return "Fyll i fler uppgifter för att synas bättre." }
+
+        if missing.count <= 3 {
+            return "Saknas: \(missing.joined(separator: ", "))"
+        } else {
+            let first3 = missing.prefix(3).joined(separator: ", ")
+            return "Saknas: \(first3) och \(missing.count - 3) till"
         }
     }
 

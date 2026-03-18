@@ -280,6 +280,34 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertEqual(profile.profileCompletion, 33) // 3/9 = 33%
     }
 
+    // MARK: - Missing Fields
+
+    func testMissingFieldsFullProfile() {
+        let profile = makeProviderProfile(profileImageUrl: "https://example.com/img.jpg")
+        XCTAssertEqual(profile.missingFields, [])
+    }
+
+    func testMissingFieldsPartialProfile() {
+        let profile = makeProviderProfile(
+            description: nil,
+            postalCode: nil,
+            profileImageUrl: nil,
+            phone: nil
+        )
+        XCTAssertEqual(profile.missingFields, ["Beskrivning", "Postnummer", "Profilbild", "Telefon"])
+    }
+
+    func testMissingFieldsEmptyStrings() {
+        let profile = makeProviderProfile(
+            businessName: "",
+            description: "",
+            profileImageUrl: nil,
+            firstName: "",
+            phone: nil
+        )
+        XCTAssertEqual(profile.missingFields, ["Företagsnamn", "Beskrivning", "Profilbild", "Förnamn", "Telefon"])
+    }
+
     // MARK: - Reset
 
     func testReset() async {

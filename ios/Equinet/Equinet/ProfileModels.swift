@@ -65,6 +65,29 @@ struct ProviderProfile: Codable, Sendable, Identifiable {
         guard total > 0 else { return 100 }
         return (filled * 100) / total
     }
+
+    /// Swedish labels for profile fields that are still empty/nil.
+    var missingFields: [String] {
+        var result: [String] = []
+
+        let fieldChecks: [(Bool, String)] = [
+            (!businessName.isEmpty, "Företagsnamn"),
+            (description != nil && !description!.isEmpty, "Beskrivning"),
+            (address != nil && !address!.isEmpty, "Adress"),
+            (city != nil && !city!.isEmpty, "Stad"),
+            (postalCode != nil && !postalCode!.isEmpty, "Postnummer"),
+            (profileImageUrl != nil && !profileImageUrl!.isEmpty, "Profilbild"),
+            (!user.firstName.isEmpty, "Förnamn"),
+            (!user.lastName.isEmpty, "Efternamn"),
+            (user.phone != nil && !user.phone!.isEmpty, "Telefon"),
+        ]
+
+        for (isFilled, label) in fieldChecks {
+            if !isFilled { result.append(label) }
+        }
+
+        return result
+    }
 }
 
 // MARK: - Geocode Result

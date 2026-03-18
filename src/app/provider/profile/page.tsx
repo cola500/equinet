@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
@@ -25,11 +26,27 @@ import type { SubscriptionStatus } from "@/components/provider/profile/Subscript
 import type { ProviderProfile } from "@/components/provider/profile/types"
 import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
 
+const VALID_TABS = ["profile", "availability", "settings"] as const
+type ProfileTab = typeof VALID_TABS[number]
+
 export default function ProviderProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProviderProfilePageContent />
+    </Suspense>
+  )
+}
+
+function ProviderProfilePageContent() {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  const sectionParam = searchParams.get("section")
+  const initialTab: ProfileTab = VALID_TABS.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : "profile"
+
   const { isLoading, isProvider, providerId } = useAuth()
   const { profile: swrProfile, mutate: mutateProfile } = useProviderProfile()
   const profile = swrProfile as ProviderProfile | null
-  const [activeTab, setActiveTab] = useState<"profile" | "availability" | "settings">("profile")
+  const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab)
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
@@ -58,6 +75,16 @@ export default function ProviderProfilePage() {
       .catch(() => setSubscriptionStatus(null))
       .finally(() => setSubscriptionLoading(false))
   }, [subscriptionEnabled, isProvider])
+
+  // Scroll to section when navigating from iOS (e.g. delete-account)
+  useEffect(() => {
+    if (sectionParam === "delete-account" && activeTab === "settings" && profile) {
+      const timer = setTimeout(() => {
+        document.getElementById("delete-account")?.scrollIntoView({ behavior: "smooth" })
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [sectionParam, activeTab, profile])
 
   // Sync form state when SWR profile data arrives or changes
   useEffect(() => {
@@ -453,7 +480,7 @@ export default function ProviderProfilePage() {
       )}
 
       {/* Delete Account */}
-      <Card className="border-red-200 mt-6">
+      <Card id="delete-account" className="border-red-200 mt-6">
         <CardHeader>
           <CardTitle className="text-red-600">Radera konto</CardTitle>
           <CardDescription>
