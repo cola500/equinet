@@ -28,6 +28,7 @@ struct ServiceFormSheet: View {
     @State private var selectedDuration: Int = 60
     @State private var isActive: Bool = true
     @State private var selectedInterval: Int = 0  // 0 = ingen
+    @FocusState private var isTextFieldFocused: Bool
 
     private var isEditing: Bool { service != nil }
 
@@ -73,6 +74,7 @@ struct ServiceFormSheet: View {
                 Section("Grundinformation") {
                     TextField("Namn", text: $name)
                         .textContentType(.name)
+                        .focused($isTextFieldFocused)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Beskrivning")
@@ -89,6 +91,7 @@ struct ServiceFormSheet: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(maxWidth: 120)
+                            .focused($isTextFieldFocused)
                     }
 
                     Picker("Varaktighet", selection: $selectedDuration) {
@@ -132,10 +135,7 @@ struct ServiceFormSheet: View {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Klar") {
-                        UIApplication.shared.sendAction(
-                            #selector(UIResponder.resignFirstResponder),
-                            to: nil, from: nil, for: nil
-                        )
+                        isTextFieldFocused = false
                     }
                 }
             }

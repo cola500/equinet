@@ -97,7 +97,8 @@ struct AuthenticatedView: View {
             coordinator.networkMonitor.start()
             coordinator.loadFeatureFlags()
             // Dismiss splash after brief branded transition
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
                 initialLoadComplete = true
             }
         }
@@ -119,7 +120,8 @@ struct AuthenticatedView: View {
 
             if isOnline {
                 showReconnectedBanner = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
                     showReconnectedBanner = false
                 }
                 PendingActionStore.retryAll()

@@ -685,7 +685,7 @@ struct NativeCalendarView: View {
     }
 
     private func navigateDay(by days: Int) {
-        let newDate = calendar.date(byAdding: .day, value: days, to: displayedDate)!
+        guard let newDate = calendar.date(byAdding: .day, value: days, to: displayedDate) else { return }
         let day = calendar.startOfDay(for: newDate)
         withAnimation { displayedDate = day }
         viewModel.navigateToDay(newDate)

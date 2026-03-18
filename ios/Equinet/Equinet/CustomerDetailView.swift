@@ -110,8 +110,13 @@ struct CustomerDetailView: View {
                     HStack {
                         Label("Telefon", systemImage: "phone")
                         Spacer()
-                        Link(phone, destination: URL(string: "tel:\(phone.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "-", with: ""))")!)
-                            .foregroundStyle(.blue)
+                        if let telURL = URL(string: "tel:\(phone.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "-", with: ""))") {
+                            Link(phone, destination: telURL)
+                                .foregroundStyle(.blue)
+                        } else {
+                            Text(phone)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 

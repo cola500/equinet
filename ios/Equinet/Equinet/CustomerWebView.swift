@@ -79,7 +79,8 @@ struct CustomerWebView: View {
             bridge.sendNetworkStatus(isOnline: isOnline)
             if isOnline {
                 showReconnectedBanner = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
                     showReconnectedBanner = false
                 }
             }
@@ -131,7 +132,7 @@ struct CustomerWebView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
 
-            Text("Kontrollera din internetanslutning och forsok igen.")
+            Text("Kontrollera din internetanslutning och försök igen.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -140,7 +141,7 @@ struct CustomerWebView: View {
             Button {
                 hasNavigationError = false
             } label: {
-                Text("Forsok igen")
+                Text("Försök igen")
                     .fontWeight(.medium)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)
