@@ -159,7 +159,12 @@ struct NativeReviewsView: View {
     private var reviewsList: some View {
         List {
             ForEach(viewModel.reviews) { review in
-                reviewCard(review)
+                ReviewCardView(
+                    review: review,
+                    isConnected: networkMonitor?.isConnected ?? true,
+                    onReply: { activeSheet = .reply(review) },
+                    formatDate: formattedDate
+                )
                     .swipeActions(edge: .trailing) {
                         if review.hasReply {
                             Button(role: .destructive) {
@@ -179,116 +184,7 @@ struct NativeReviewsView: View {
         .listStyle(.plain)
     }
 
-    // MARK: - Review Card
-
-    private func reviewCard(_ review: ReviewItem) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header: customer + service
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(review.customerName)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    if let service = review.serviceName {
-                        Text(service)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-                statusBadge(for: review)
-            }
-
-            // Stars + date
-            HStack {
-                StarRatingView(rating: review.rating, font: .caption)
-                Spacer()
-                Text(formattedDate(review.createdAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            // Comment
-            if let comment = review.comment, !comment.isEmpty {
-                Text(comment)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-            }
-
-            // Reply box
-            if let reply = review.reply {
-                replyBox(reply: reply, repliedAt: review.repliedAt)
-            }
-
-            // Reply button (only if not replied)
-            if !review.hasReply {
-                Button {
-                    activeSheet = .reply(review)
-                } label: {
-                    Label("Svara", systemImage: "arrowshape.turn.up.left")
-                        .font(.subheadline)
-                }
-                .buttonStyle(.borderless)
-                .tint(Color.equinetGreen)
-                .frame(minHeight: 44)
-                .disabled(!(networkMonitor?.isConnected ?? true))
-                .accessibilityHint(
-                    (networkMonitor?.isConnected ?? true) ? "Öppnar svarsfönster" : "Inte tillgängligt offline"
-                )
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    // MARK: - Status Badge
-
-    @ViewBuilder
-    private func statusBadge(for review: ReviewItem) -> some View {
-        if review.hasReply {
-            Text("Besvarad")
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.green, in: Capsule())
-        } else if review.rating <= 3 {
-            Text("Obesvarad")
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.orange, in: Capsule())
-        }
-    }
-
-    // MARK: - Reply Box
-
-    private func replyBox(reply: String, repliedAt: String?) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Ditt svar")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(Color.equinetGreen)
-                Spacer()
-                if let repliedAt {
-                    Text(formattedDate(repliedAt))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Text(reply)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-        }
-        .padding(10)
-        .background(Color.equinetGreen.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Ditt svar\(repliedAt.map { ", \(formattedDate($0))" } ?? ""): \(reply)")
-    }
+    // MARK: - Review Card (delegates to ReviewCardView struct)
 
     // MARK: - Load More
 
@@ -326,6 +222,118 @@ struct NativeReviewsView: View {
     private func formattedDate(_ iso: String) -> String {
         guard let date = Self.isoFormatter.date(from: iso) else { return iso }
         return Self.displayFormatter.string(from: date)
+    }
+}
+
+// MARK: - Review Card
+
+private struct ReviewCardView: View {
+    let review: ReviewItem
+    let isConnected: Bool
+    let onReply: () -> Void
+    let formatDate: (String) -> String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Header: customer + service
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(review.customerName)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    if let service = review.serviceName {
+                        Text(service)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                statusBadge
+            }
+
+            // Stars + date
+            HStack {
+                StarRatingView(rating: review.rating, font: .caption)
+                Spacer()
+                Text(formatDate(review.createdAt))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Comment
+            if let comment = review.comment, !comment.isEmpty {
+                Text(comment)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+            }
+
+            // Reply box
+            if let reply = review.reply {
+                replyBox(reply: reply, repliedAt: review.repliedAt)
+            }
+
+            // Reply button (only if not replied)
+            if !review.hasReply {
+                Button {
+                    onReply()
+                } label: {
+                    Label("Svara", systemImage: "arrowshape.turn.up.left")
+                        .font(.subheadline)
+                }
+                .buttonStyle(.borderless)
+                .tint(Color.equinetGreen)
+                .frame(minHeight: 44)
+                .disabled(!isConnected)
+                .accessibilityHint(isConnected ? "Öppnar svarsfönster" : "Inte tillgängligt offline")
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        if review.hasReply {
+            Text("Besvarad")
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.green, in: Capsule())
+        } else if review.rating <= 3 {
+            Text("Obesvarad")
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.orange, in: Capsule())
+        }
+    }
+
+    private func replyBox(reply: String, repliedAt: String?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Ditt svar")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.equinetGreen)
+                Spacer()
+                if let repliedAt {
+                    Text(formatDate(repliedAt))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Text(reply)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+        .padding(10)
+        .background(Color.equinetGreen.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Ditt svar\(repliedAt.map { ", \(formatDate($0))" } ?? ""): \(reply)")
     }
 }
 

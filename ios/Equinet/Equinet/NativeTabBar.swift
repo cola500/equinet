@@ -14,6 +14,8 @@ struct NativeTabBar: View {
     let activeTab: Tab
     let onTabSelected: (Tab) -> Void
 
+    @State private var tapCount = 0
+
     enum Tab: String, CaseIterable {
         case dashboard = "Översikt"
         case calendar = "Kalender"
@@ -44,7 +46,7 @@ struct NativeTabBar: View {
         HStack {
             ForEach(Tab.allCases, id: \.self) { tab in
                 Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    tapCount += 1
                     onTabSelected(tab)
                 } label: {
                     VStack(spacing: 4) {
@@ -62,6 +64,7 @@ struct NativeTabBar: View {
                 }
             }
         }
+        .sensoryFeedback(.impact(flexibility: .solid, intensity: 0.5), trigger: tapCount)
         .padding(.top, 8)
         .padding(.bottom, 4)
         .background(

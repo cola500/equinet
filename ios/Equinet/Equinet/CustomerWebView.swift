@@ -89,34 +89,8 @@ struct CustomerWebView: View {
 
     // MARK: - Banners
 
-    private var offlineBanner: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "wifi.slash")
-                .font(.caption)
-            Text("Ingen internetanslutning")
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(Color.orange)
-    }
-
-    private var reconnectedBanner: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "wifi")
-                .font(.caption)
-            Text("Ansluten igen")
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(Color.green)
-        .transition(.move(edge: .top).combined(with: .opacity))
-    }
+    private var offlineBanner: some View { NetworkBannerView.Offline() }
+    private var reconnectedBanner: some View { NetworkBannerView.Reconnected() }
 
     // MARK: - Error
 

@@ -84,10 +84,7 @@ struct CustomerDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Ta bort", role: .destructive) {
-                Task {
-                    let success = await viewModel.deleteCustomer(customerId: customer.id)
-                    if success { dismiss() }
-                }
+                performDeleteCustomer()
             }
             Button("Avbryt", role: .cancel) {}
         } message: {
@@ -213,18 +210,14 @@ struct CustomerDetailView: View {
                                     Label("Redigera", systemImage: "pencil")
                                 }
                                 Button(role: .destructive) {
-                                    Task {
-                                        await viewModel.deleteHorse(customerId: customer.id, horseId: horse.id)
-                                    }
+                                    performDeleteHorse(horse)
                                 } label: {
                                     Label("Ta bort", systemImage: "trash")
                                 }
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    Task {
-                                        await viewModel.deleteHorse(customerId: customer.id, horseId: horse.id)
-                                    }
+                                    performDeleteHorse(horse)
                                 } label: {
                                     Label("Ta bort", systemImage: "trash")
                                 }
@@ -288,18 +281,14 @@ struct CustomerDetailView: View {
                                     Label("Redigera", systemImage: "pencil")
                                 }
                                 Button(role: .destructive) {
-                                    Task {
-                                        await viewModel.deleteNote(customerId: customer.id, noteId: note.id)
-                                    }
+                                    performDeleteNote(note)
                                 } label: {
                                     Label("Ta bort", systemImage: "trash")
                                 }
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    Task {
-                                        await viewModel.deleteNote(customerId: customer.id, noteId: note.id)
-                                    }
+                                    performDeleteNote(note)
                                 } label: {
                                     Label("Ta bort", systemImage: "trash")
                                 }
@@ -318,6 +307,23 @@ struct CustomerDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Actions
+
+    private func performDeleteCustomer() {
+        Task {
+            let success = await viewModel.deleteCustomer(customerId: customer.id)
+            if success { dismiss() }
+        }
+    }
+
+    private func performDeleteHorse(_ horse: CustomerHorse) {
+        Task { await viewModel.deleteHorse(customerId: customer.id, horseId: horse.id) }
+    }
+
+    private func performDeleteNote(_ note: CustomerNote) {
+        Task { await viewModel.deleteNote(customerId: customer.id, noteId: note.id) }
     }
 
     // MARK: - Sheet Content
