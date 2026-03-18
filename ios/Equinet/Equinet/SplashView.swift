@@ -11,8 +11,7 @@ import SwiftUI
 struct SplashView: View {
     var body: some View {
         ZStack {
-            // Brand background color (matches Equinet green)
-            Color(red: 0.16, green: 0.65, blue: 0.47)
+            Color.equinetGreen
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
@@ -22,7 +21,7 @@ struct SplashView: View {
 
                 Text("Equinet")
                     .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .bold()
                     .foregroundStyle(.white)
             }
         }

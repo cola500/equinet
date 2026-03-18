@@ -18,6 +18,7 @@ struct NativeCalendarView: View {
     @State private var selectedBooking: NativeBooking?
     @State private var newBookingTime: (date: Date, time: String)?
     @State private var exceptionSheetDate: Date?
+    @State private var timeSlotTapCount = 0
 
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
@@ -47,7 +48,6 @@ struct NativeCalendarView: View {
                     let day = calendar.startOfDay(for: date)
                     withAnimation { displayedDate = day }
                     viewModel.navigateToDay(date)
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 },
                 exceptionForDate: { viewModel.exceptionForDate($0) }
             )
@@ -123,11 +123,13 @@ struct NativeCalendarView: View {
                     // Sync ViewModel for data fetching when page changes
                     if !calendar.isDate(newDate, inSameDayAs: viewModel.selectedDate) {
                         viewModel.navigateToDay(newDate)
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                 }
             }
         }
+        .sensoryFeedback(.impact(flexibility: .solid, intensity: 0.5), trigger: displayedDate)
+        .sensoryFeedback(.impact(flexibility: .solid, intensity: 0.5), trigger: selectedBooking?.id)
+        .sensoryFeedback(.impact(flexibility: .solid, intensity: 0.5), trigger: timeSlotTapCount)
         .onReceive(nowTimer) { currentTime = $0 }
         .animation(.easeInOut(duration: 0.25), value: viewModel.error)
         .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
@@ -225,7 +227,6 @@ struct NativeCalendarView: View {
                 let today = calendar.startOfDay(for: .now)
                 withAnimation { displayedDate = today }
                 viewModel.goToToday()
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             } label: {
                 Text("Idag")
                     .font(.subheadline)
@@ -302,7 +303,6 @@ struct NativeCalendarView: View {
                     }
                 }
                 .onTapGesture {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     selectedBooking = booking
                 }
                 .contextMenu {
@@ -614,7 +614,7 @@ struct NativeCalendarView: View {
             .contentShape(Rectangle())
             .onTapGesture { location in
                 let time = timeFromTapPosition(location.y)
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                timeSlotTapCount += 1
                 newBookingTime = (date: date, time: time)
             }
     }
@@ -685,11 +685,10 @@ struct NativeCalendarView: View {
     }
 
     private func navigateDay(by days: Int) {
-        let newDate = calendar.date(byAdding: .day, value: days, to: displayedDate)!
+        guard let newDate = calendar.date(byAdding: .day, value: days, to: displayedDate) else { return }
         let day = calendar.startOfDay(for: newDate)
         withAnimation { displayedDate = day }
         viewModel.navigateToDay(newDate)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     // MARK: - Static DateFormatters (avoid per-render allocation)

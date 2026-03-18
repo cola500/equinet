@@ -112,7 +112,7 @@ struct NativeBookingsView: View {
                             if count > 0 {
                                 Text("\(count)")
                                     .font(.caption2)
-                                    .fontWeight(.bold)
+                                    .bold()
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 1)
                                     .background(
@@ -230,11 +230,11 @@ struct NativeBookingsView: View {
             }
             .onChange(of: highlightedBookingId) { _, newId in
                 guard let id = newId else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(150))
                     withAnimation { proxy.scrollTo(id, anchor: .center) }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation { highlightedBookingId = nil }
-                    }
+                    try? await Task.sleep(for: .seconds(2))
+                    withAnimation { highlightedBookingId = nil }
                 }
             }
         }
@@ -378,8 +378,10 @@ private struct BookingCard: View {
                     Image(systemName: "phone")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Link(phone, destination: URL(string: "tel:\(phone)")!)
-                        .font(.caption)
+                    if let telURL = URL(string: "tel:\(phone)") {
+                        Link(phone, destination: telURL)
+                            .font(.caption)
+                    }
                 }
             }
 

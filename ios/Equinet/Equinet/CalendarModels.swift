@@ -54,15 +54,22 @@ struct NativeBooking: Codable, Identifiable, Sendable {
         )
     }
 
+    private static let bookingDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    private static let bookingISOFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
     /// Parse bookingDate string to Date
     var date: Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        // Try ISO date first, then full ISO 8601
-        if let d = formatter.date(from: bookingDate) { return d }
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return isoFormatter.date(from: bookingDate)
+        if let d = Self.bookingDateFormatter.date(from: bookingDate) { return d }
+        return Self.bookingISOFormatter.date(from: bookingDate)
     }
 }
 

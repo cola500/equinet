@@ -205,8 +205,8 @@ final class CalendarSyncManager {
                 let eventId = try eventStore.upsertEvent(
                     identifier: existingId,
                     title: eventTitle(for: booking),
-                    start: parseDateTime(date: booking.bookingDate, time: booking.startTime) ?? Date(),
-                    end: parseDateTime(date: booking.bookingDate, time: booking.endTime) ?? Date(),
+                    start: parseDateTime(date: booking.bookingDate, time: booking.startTime) ?? .now,
+                    end: parseDateTime(date: booking.bookingDate, time: booking.endTime) ?? .now,
                     timeZone: stockholmTimeZone,
                     notes: eventNotes(for: booking),
                     alarmOffset: -3600,
@@ -232,7 +232,7 @@ final class CalendarSyncManager {
             try eventStore.commitChanges()
 
             storage.calendarSyncMapping = mapping
-            lastSyncDate = Date()
+            lastSyncDate = .now
             syncedCount = processedIds.count
         } catch {
             AppLogger.calendar.error("Sync failed: \(error.localizedDescription)")

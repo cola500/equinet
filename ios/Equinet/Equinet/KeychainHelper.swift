@@ -129,7 +129,7 @@ extension KeychainHelper {
         guard let jwt = load(key: mobileTokenKey),
               let expiresAtStr = load(key: tokenExpiresAtKey),
               let expiresAt = iso8601Formatter.date(from: expiresAtStr),
-              expiresAt > Date() else {
+              expiresAt > .now else {
             return nil
         }
         return jwt
@@ -141,7 +141,7 @@ extension KeychainHelper {
               let expiresAt = iso8601Formatter.date(from: expiresAtStr) else {
             return true // No token = treat as expired
         }
-        let threshold = Date().addingTimeInterval(TimeInterval(days * 24 * 60 * 60))
+        let threshold = Date.now.addingTimeInterval(TimeInterval(days * 24 * 60 * 60))
         return expiresAt < threshold
     }
 

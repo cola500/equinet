@@ -18,8 +18,7 @@ struct NativeLoginView: View {
         case email, password
     }
 
-    // Equinet brand green
-    private let brandGreen = Color(red: 0.16, green: 0.65, blue: 0.47)
+    private let brandGreen = Color.equinetGreen
 
     var body: some View {
         ScrollView {
@@ -35,7 +34,7 @@ struct NativeLoginView: View {
 
                     Text("Equinet")
                         .font(.largeTitle)
-                        .fontWeight(.bold)
+                        .bold()
                         .foregroundStyle(brandGreen)
                 }
                 .padding(.bottom, 24)
@@ -57,7 +56,7 @@ struct NativeLoginView: View {
                             .focused($focusedField, equals: .email)
                             .padding(12)
                             .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(.rect(cornerRadius: 10))
                             .accessibilityLabel("Email")
                             .accessibilityIdentifier("emailField")
                     }
@@ -74,7 +73,7 @@ struct NativeLoginView: View {
                             .focused($focusedField, equals: .password)
                             .padding(12)
                             .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(.rect(cornerRadius: 10))
                             .accessibilityLabel("Lösenord")
                             .accessibilityIdentifier("passwordField")
                     }
@@ -109,7 +108,7 @@ struct NativeLoginView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(brandGreen)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(.rect(cornerRadius: 12))
                 .disabled(email.isEmpty || password.isEmpty || authManager.isLoggingIn)
                 .accessibilityLabel("Logga in")
 

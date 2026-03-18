@@ -79,7 +79,8 @@ struct CustomerWebView: View {
             bridge.sendNetworkStatus(isOnline: isOnline)
             if isOnline {
                 showReconnectedBanner = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
                     showReconnectedBanner = false
                 }
             }
@@ -88,34 +89,8 @@ struct CustomerWebView: View {
 
     // MARK: - Banners
 
-    private var offlineBanner: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "wifi.slash")
-                .font(.caption)
-            Text("Ingen internetanslutning")
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(Color.orange)
-    }
-
-    private var reconnectedBanner: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "wifi")
-                .font(.caption)
-            Text("Ansluten igen")
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(Color.green)
-        .transition(.move(edge: .top).combined(with: .opacity))
-    }
+    private var offlineBanner: some View { NetworkBannerView.Offline() }
+    private var reconnectedBanner: some View { NetworkBannerView.Reconnected() }
 
     // MARK: - Error
 
@@ -131,7 +106,7 @@ struct CustomerWebView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
 
-            Text("Kontrollera din internetanslutning och forsok igen.")
+            Text("Kontrollera din internetanslutning och försök igen.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -140,7 +115,7 @@ struct CustomerWebView: View {
             Button {
                 hasNavigationError = false
             } label: {
-                Text("Forsok igen")
+                Text("Försök igen")
                     .fontWeight(.medium)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)

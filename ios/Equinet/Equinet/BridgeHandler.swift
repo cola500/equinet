@@ -184,14 +184,14 @@ final class BridgeHandler {
             let response = try await APIClient.shared.fetchNextBooking()
             let widgetData = WidgetData(
                 booking: response.booking,
-                updatedAt: Date(),
+                updatedAt: .now,
                 hasAuth: true
             )
             SharedDataManager.saveWidgetData(widgetData)
             SharedDataManager.reloadWidgets()
             AppLogger.bridge.info("Widget data updated")
         } catch APIError.noToken, APIError.unauthorized {
-            let widgetData = WidgetData(booking: nil, updatedAt: Date(), hasAuth: false)
+            let widgetData = WidgetData(booking: nil, updatedAt: .now, hasAuth: false)
             SharedDataManager.saveWidgetData(widgetData)
             SharedDataManager.reloadWidgets()
             AppLogger.bridge.debug("No valid token for widget data")

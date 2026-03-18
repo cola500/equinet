@@ -287,7 +287,9 @@ final class CalendarViewModel {
         Task {
             do {
                 try await fetcher.updateBookingStatus(bookingId: bookingId, newStatus: newStatus)
+                #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
+                #endif
                 sync.syncAfterStatusChange(bookingId: bookingId, newStatus: newStatus)
 
                 // Invalidate cache to pick up changes on next fetch
@@ -297,7 +299,9 @@ final class CalendarViewModel {
                 if let idx = bookings.firstIndex(where: { $0.id == bookingId }) {
                     bookings[idx] = bookings[idx].withStatus(oldStatus)
                 }
+                #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
+                #endif
                 AppLogger.calendar.error("Failed to update booking status: \(error.localizedDescription)")
 
                 // Save for offline retry
@@ -338,12 +342,16 @@ final class CalendarViewModel {
                 if let index = exceptions.firstIndex(where: { $0.date == saved.date }) {
                     exceptions[index] = saved
                 }
+                #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
+                #endif
                 cache.removeAll()
             } catch {
                 // Revert on failure
                 exceptions = oldExceptions
+                #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
+                #endif
                 AppLogger.calendar.error("Failed to save exception: \(error.localizedDescription)")
             }
         }
@@ -360,12 +368,16 @@ final class CalendarViewModel {
         Task {
             do {
                 try await fetcher.deleteException(date: date)
+                #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
+                #endif
                 cache.removeAll()
             } catch {
                 // Revert on failure
                 exceptions = oldExceptions
+                #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
+                #endif
                 AppLogger.calendar.error("Failed to delete exception: \(error.localizedDescription)")
             }
         }
@@ -397,8 +409,11 @@ final class CalendarViewModel {
     /// Calculate 7-day window: selected date +/- 3 days
     private func windowDates(for date: Date) -> (from: String, to: String) {
         let calendar = Calendar.current
-        let from = calendar.date(byAdding: .day, value: -3, to: date)!
-        let to = calendar.date(byAdding: .day, value: 3, to: date)!
+        guard let from = calendar.date(byAdding: .day, value: -3, to: date),
+              let to = calendar.date(byAdding: .day, value: 3, to: date) else {
+            let fallback = dateFormatter.string(from: date)
+            return (fallback, fallback)
+        }
         return (dateFormatter.string(from: from), dateFormatter.string(from: to))
     }
 

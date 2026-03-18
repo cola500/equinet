@@ -142,26 +142,28 @@ final class CustomersViewModel {
 
     // MARK: - Computed
 
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
     var filteredCustomers: [CustomerSummary] {
         var result = customers
 
         // Filter by status
         if selectedFilter != .all {
+            let twelveMonthsAgo = Calendar.current.date(byAdding: .month, value: -12, to: .now) ?? .now
+            let isoFormatter = Self.isoFormatter
             result = result.filter { c in
                 let filterParam = selectedFilter.rawValue
                 if filterParam == "active" {
-                    // Active = has booking within last 12 months
-                    guard let last = c.lastBookingDate else { return false }
-                    let twelveMonthsAgo = Calendar.current.date(byAdding: .month, value: -12, to: Date()) ?? Date()
-                    let isoFormatter = ISO8601DateFormatter()
-                    guard let lastDate = isoFormatter.date(from: last) else { return false }
+                    guard let last = c.lastBookingDate,
+                          let lastDate = isoFormatter.date(from: last) else { return false }
                     return lastDate >= twelveMonthsAgo
                 } else {
-                    // Inactive = no booking or last booking > 12 months ago
-                    guard let last = c.lastBookingDate else { return true }
-                    let twelveMonthsAgo = Calendar.current.date(byAdding: .month, value: -12, to: Date()) ?? Date()
-                    let isoFormatter = ISO8601DateFormatter()
-                    guard let lastDate = isoFormatter.date(from: last) else { return true }
+                    guard let last = c.lastBookingDate,
+                          let lastDate = isoFormatter.date(from: last) else { return true }
                     return lastDate < twelveMonthsAgo
                 }
             }

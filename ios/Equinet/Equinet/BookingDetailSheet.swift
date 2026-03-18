@@ -26,7 +26,7 @@ struct BookingDetailSheet: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(booking.customerFullName)
                             .font(.title3)
-                            .fontWeight(.bold)
+                            .bold()
                         if let horse = booking.horseName {
                             Text(horse)
                                 .font(.subheadline)

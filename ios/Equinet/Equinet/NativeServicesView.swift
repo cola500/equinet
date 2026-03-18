@@ -82,10 +82,10 @@ struct NativeServicesView: View {
     private var serviceList: some View {
         List {
             ForEach(viewModel.services) { service in
-                serviceRow(service)
+                ServiceRowView(service: service)
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         Button {
-                            Task { await viewModel.toggleActive(service: service) }
+                            performToggleActive(service)
                         } label: {
                             Label(
                                 service.isActive ? "Inaktivera" : "Aktivera",
@@ -116,7 +116,7 @@ struct NativeServicesView: View {
                         }
 
                         Button {
-                            Task { await viewModel.toggleActive(service: service) }
+                            performToggleActive(service)
                         } label: {
                             Label(
                                 service.isActive ? "Inaktivera" : "Aktivera",
@@ -136,44 +136,7 @@ struct NativeServicesView: View {
         }
     }
 
-    // MARK: - Service Row
-
-    private func serviceRow(_ service: ServiceItem) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(service.name)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundStyle(service.isActive ? .primary : .secondary)
-
-                Spacer()
-
-                Text(service.isActive ? "Aktiv" : "Inaktiv")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(service.isActive ? Color.green.opacity(0.15) : Color.gray.opacity(0.15))
-                    )
-                    .foregroundStyle(service.isActive ? .green : .secondary)
-            }
-
-            HStack(spacing: 6) {
-                Text(service.formattedPrice)
-                Text("·")
-                Text(service.formattedDuration)
-                if let interval = service.intervalLabel {
-                    Text("·")
-                    Text(interval)
-                }
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 2)
-    }
+    // MARK: - Service Row (delegates to ServiceRowView struct)
 
     // MARK: - Empty State
 
@@ -240,6 +203,34 @@ struct NativeServicesView: View {
         }
     }
 
+    // MARK: - Actions
+
+    private func performToggleActive(_ service: ServiceItem) {
+        Task { await viewModel.toggleActive(service: service) }
+    }
+
+    private func performCreateService(name: String, description: String?, price: Double, duration: Int, isActive: Bool, interval: Int?) {
+        Task {
+            let ok = await viewModel.createService(
+                name: name, description: description, price: price,
+                durationMinutes: duration, isActive: isActive,
+                recommendedIntervalWeeks: interval
+            )
+            if ok { viewModel.activeSheet = nil }
+        }
+    }
+
+    private func performUpdateService(id: String, name: String, description: String?, price: Double, duration: Int, isActive: Bool, interval: Int?) {
+        Task {
+            let ok = await viewModel.updateService(
+                id: id, name: name, description: description, price: price,
+                durationMinutes: duration, isActive: isActive,
+                recommendedIntervalWeeks: interval
+            )
+            if ok { viewModel.activeSheet = nil }
+        }
+    }
+
     // MARK: - Sheet Content
 
     @ViewBuilder
@@ -247,34 +238,56 @@ struct NativeServicesView: View {
         switch sheet {
         case .add:
             ServiceFormSheet(service: nil) { name, description, price, duration, isActive, interval in
-                Task {
-                    let ok = await viewModel.createService(
-                        name: name,
-                        description: description,
-                        price: price,
-                        durationMinutes: duration,
-                        isActive: isActive,
-                        recommendedIntervalWeeks: interval
-                    )
-                    if ok { viewModel.activeSheet = nil }
-                }
+                performCreateService(name: name, description: description, price: price, duration: duration, isActive: isActive, interval: interval)
             }
         case .edit(let service):
             ServiceFormSheet(service: service) { name, description, price, duration, isActive, interval in
-                Task {
-                    let ok = await viewModel.updateService(
-                        id: service.id,
-                        name: name,
-                        description: description,
-                        price: price,
-                        durationMinutes: duration,
-                        isActive: isActive,
-                        recommendedIntervalWeeks: interval
-                    )
-                    if ok { viewModel.activeSheet = nil }
-                }
+                performUpdateService(id: service.id, name: name, description: description, price: price, duration: duration, isActive: isActive, interval: interval)
             }
         }
+    }
+}
+
+// MARK: - Service Row
+
+private struct ServiceRowView: View {
+    let service: ServiceItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(service.name)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundStyle(service.isActive ? .primary : .secondary)
+
+                Spacer()
+
+                Text(service.isActive ? "Aktiv" : "Inaktiv")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule()
+                            .fill(service.isActive ? Color.green.opacity(0.15) : Color.gray.opacity(0.15))
+                    )
+                    .foregroundStyle(service.isActive ? .green : .secondary)
+            }
+
+            HStack(spacing: 6) {
+                Text(service.formattedPrice)
+                Text("\u{00B7}")
+                Text(service.formattedDuration)
+                if let interval = service.intervalLabel {
+                    Text("\u{00B7}")
+                    Text(interval)
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
     }
 }
 #endif

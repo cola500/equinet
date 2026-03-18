@@ -56,7 +56,7 @@ enum SharedDataManager {
     /// Save calendar data for offline use
     static func saveCalendarCache(_ response: CalendarResponse, from: String, to: String) {
         guard let defaults = userDefaults else { return }
-        let cache = CalendarCache(response: response, from: from, to: to, cachedAt: Date())
+        let cache = CalendarCache(response: response, from: from, to: to, cachedAt: .now)
         if let encoded = try? JSONEncoder().encode(cache) {
             defaults.set(encoded, forKey: calendarCacheKey)
         }
@@ -71,7 +71,7 @@ enum SharedDataManager {
         }
         // Expire after 4 hours
         let maxAge: TimeInterval = 4 * 60 * 60
-        guard Date().timeIntervalSince(cache.cachedAt) < maxAge else {
+        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
             defaults.removeObject(forKey: calendarCacheKey)
             return nil
         }
@@ -96,7 +96,7 @@ enum SharedDataManager {
     /// Save dashboard data for instant display on next launch
     static func saveDashboardCache(_ response: DashboardResponse) {
         guard let defaults = userDefaults else { return }
-        let cache = DashboardCache(response: response, cachedAt: Date())
+        let cache = DashboardCache(response: response, cachedAt: .now)
         if let encoded = try? JSONEncoder().encode(cache) {
             defaults.set(encoded, forKey: dashboardCacheKey)
         }
@@ -110,7 +110,7 @@ enum SharedDataManager {
             return nil
         }
         let maxAge: TimeInterval = 5 * 60
-        guard Date().timeIntervalSince(cache.cachedAt) < maxAge else {
+        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
             defaults.removeObject(forKey: dashboardCacheKey)
             return nil
         }
@@ -134,7 +134,7 @@ enum SharedDataManager {
     /// Save bookings data for cache-first loading
     static func saveBookingsCache(_ bookings: [BookingsListItem]) {
         guard let defaults = userDefaults else { return }
-        let cache = BookingsCache(bookings: bookings, cachedAt: Date())
+        let cache = BookingsCache(bookings: bookings, cachedAt: .now)
         if let encoded = try? JSONEncoder().encode(cache) {
             defaults.set(encoded, forKey: bookingsCacheKey)
         }
@@ -148,7 +148,7 @@ enum SharedDataManager {
             return nil
         }
         let maxAge: TimeInterval = 5 * 60
-        guard Date().timeIntervalSince(cache.cachedAt) < maxAge else {
+        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
             defaults.removeObject(forKey: bookingsCacheKey)
             return nil
         }

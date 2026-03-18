@@ -41,7 +41,7 @@ struct NativeDashboardView: View {
                     dashboardContent(dashboard)
                 }
             }
-            .navigationTitle(Self.dateFormatter.string(from: Date()).localizedCapitalized)
+            .navigationTitle(Self.dateFormatter.string(from: .now).localizedCapitalized)
             .navigationBarTitleDisplayMode(.large)
         }
         .task {
@@ -335,7 +335,7 @@ struct NativeDashboardView: View {
                     if let badge, badge > 0 {
                         Text("\(badge)")
                             .font(.caption2)
-                            .fontWeight(.bold)
+                            .bold()
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -349,7 +349,7 @@ struct NativeDashboardView: View {
 
                 Text(value)
                     .font(.title2)
-                    .fontWeight(.bold)
+                    .bold()
                     .foregroundStyle(.primary)
 
                 if let subtitle {
@@ -535,7 +535,7 @@ struct NativeDashboardView: View {
         let defaults = UserDefaults.standard
         if defaults.bool(forKey: Self.dismissPermanentKey) { return true }
         if let until = defaults.object(forKey: Self.dismissUntilKey) as? Date {
-            return Date() < until
+            return Date.now < until
         }
         return false
     }
@@ -547,7 +547,7 @@ struct NativeDashboardView: View {
         if permanent {
             UserDefaults.standard.set(true, forKey: Self.dismissPermanentKey)
         } else {
-            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
             UserDefaults.standard.set(tomorrow, forKey: Self.dismissUntilKey)
         }
     }

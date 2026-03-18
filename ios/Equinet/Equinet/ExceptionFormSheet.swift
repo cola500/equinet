@@ -147,16 +147,12 @@ struct ExceptionFormSheet: View {
     /// Parse "HH:mm" string to a Date (today with that time)
     private static func timeFromString(_ timeString: String?) -> Date? {
         guard let timeString else { return nil }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.date(from: timeString)
+        return timeFormatter.date(from: timeString)
     }
 
     /// Parse "HH:mm" to Date, returning a default for nil
     private static func timeFromString(_ timeString: String) -> Date {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.date(from: timeString) ?? Date()
+        timeFormatter.date(from: timeString) ?? .now
     }
 }
 
