@@ -156,7 +156,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 let response = try await APIClient.shared.fetchNextBooking()
                 let widgetData = WidgetData(
                     booking: response.booking,
-                    updatedAt: Date(),
+                    updatedAt: .now,
                     hasAuth: true
                 )
                 await MainActor.run {

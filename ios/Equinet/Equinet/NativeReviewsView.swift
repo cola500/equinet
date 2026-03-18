@@ -78,7 +78,7 @@ struct NativeReviewsView: View {
                     HStack(spacing: 4) {
                         Text(String(format: "%.1f", avg))
                             .font(.title2)
-                            .fontWeight(.bold)
+                            .bold()
                         StarRatingView(rating: Int(avg.rounded()), font: .body)
                     }
                     Text("\(viewModel.totalCount) recensioner")

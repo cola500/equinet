@@ -21,7 +21,7 @@ struct SplashView: View {
 
                 Text("Equinet")
                     .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .bold()
                     .foregroundStyle(.white)
             }
         }

@@ -26,7 +26,7 @@ enum PendingActionStore {
         actions.append(PendingBookingAction(
             bookingId: bookingId,
             status: status,
-            createdAt: Date()
+            createdAt: .now
         ))
         if let data = try? JSONEncoder().encode(actions) {
             defaults.set(data, forKey: key)
@@ -39,7 +39,7 @@ enum PendingActionStore {
             return []
         }
         // Discard actions older than 24h
-        return actions.filter { Date().timeIntervalSince($0.createdAt) < 86400 }
+        return actions.filter { Date.now.timeIntervalSince($0.createdAt) < 86400 }
     }
 
     static func clear(from defaults: UserDefaults = .standard) {
@@ -48,8 +48,8 @@ enum PendingActionStore {
 
     /// Retry all pending actions. Called on network restored and app-start.
     @MainActor
-    static func retryAll() {
-        let actions = load()
+    static func retryAll(from defaults: UserDefaults = .standard) {
+        let actions = load(from: defaults)
         guard !actions.isEmpty else { return }
 
         Task {
@@ -80,9 +80,9 @@ enum PendingActionStore {
             }
 
             if remaining.isEmpty {
-                clear()
+                clear(from: defaults)
             } else if let data = try? JSONEncoder().encode(remaining) {
-                UserDefaults.standard.set(data, forKey: key)
+                defaults.set(data, forKey: Self.key)
             }
         }
     }

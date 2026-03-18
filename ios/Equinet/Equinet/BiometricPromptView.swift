@@ -26,7 +26,7 @@ struct BiometricPromptView: View {
 
                 Text("Equinet")
                     .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .bold()
                     .foregroundStyle(brandGreen)
             }
 

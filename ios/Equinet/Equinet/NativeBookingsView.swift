@@ -112,7 +112,7 @@ struct NativeBookingsView: View {
                             if count > 0 {
                                 Text("\(count)")
                                     .font(.caption2)
-                                    .fontWeight(.bold)
+                                    .bold()
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 1)
                                     .background(

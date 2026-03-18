@@ -34,7 +34,7 @@ struct NativeLoginView: View {
 
                     Text("Equinet")
                         .font(.largeTitle)
-                        .fontWeight(.bold)
+                        .bold()
                         .foregroundStyle(brandGreen)
                 }
                 .padding(.bottom, 24)
