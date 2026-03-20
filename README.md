@@ -134,16 +134,18 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | `npm run test:e2e` | E2E-tester med Playwright |
 | `npm run test:coverage` | Coverage report |
 | `npm run deploy` | Kvalitetscheckar + drift-check + auto-backup + push |
+| `npm run check:all` | Alla quality gates i ett kommando (färgkodad output) |
+| `npm run flags:validate` | Validera feature flag gates (server + klient) |
 
 ## Quality Gates
 
 Automatiserade quality gates säkerställer kodkvalitet:
 
-**Lokal Gate (Husky pre-push hook):**
-- Swedish character check (`npm run check:swedish`)
-- Unit tests (`npm run test:run`)
-- TypeScript check (`npm run typecheck`)
-- Lint check (`npm run lint`)
+**Allt-i-ett:** `npm run check:all` (typecheck + test + lint + swedish med färgkodad output)
+
+**Lokal Gate (Husky):**
+- Pre-commit: Swedish character check + TypeScript (om .ts/.tsx staged)
+- Pre-push: Swedish character check + Unit tests + TypeScript + Lint
 
 **CI Gate (GitHub Actions):**
 - Unit Tests & Coverage

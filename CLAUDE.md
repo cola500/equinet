@@ -4,7 +4,7 @@ description: "Arbetsprocesser, patterns, arkitektur och key learnings för utvec
 category: root
 tags: [development, workflow, architecture, patterns]
 status: active
-last_updated: 2026-03-16
+last_updated: 2026-03-20
 related:
   - README.md
   - NFR.md
@@ -57,6 +57,7 @@ sections:
 | Production Readiness | [NFR.md](NFR.md) |
 | Röstloggning | [docs/guides/voice-logging.md](docs/guides/voice-logging.md) |
 | Pentest-rapport (feb 2026) | [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) |
+| Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (6 workflow-checklistor) |
 
 ---
 
@@ -324,8 +325,26 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ## Automated Quality Gates
 
-**Lokal (Husky pre-push):** `npm run check:swedish` + `npm run test:run` + `npm run typecheck` + `npm run lint`
+**Lokal (Husky):**
+- **Pre-commit:** `npm run check:swedish` + `npm run typecheck` (bara om .ts/.tsx staged)
+- **Pre-push:** `npm run check:swedish` + `npm run test:run` + `npm run typecheck` + `npm run lint`
+- **Allt-i-ett:** `npm run check:all` (alla 4 gates med färgkodad output)
+
 **CI (GitHub Actions):** Unit tests + coverage, E2E, TypeScript, Build
+
+**Feature Flag Validator:** `npm run flags:validate` -- listar server/klient-gates per flagga
+
+**Claude Code Hooks** (`.claude/hooks/`, konfigurerade i `.claude/settings.local.json`):
+- PreToolUse (påminner FÖRE ändring):
+  - `api-route-check.sh` -- Checklista vid redigering av API routes (auth, rate limit, Zod, select)
+  - `tdd-reminder.sh` -- Påminnelse om TDD när testfil saknas
+  - `feature-flag-check.sh` -- Checklista vid nya feature flags
+  - `prisma-migration-check.sh` -- Påminnelse vid schemaändringar
+  - `definition-of-done.sh` -- DoD-checklista vid git commit
+  - `e2e-check.sh` -- Checklista vid E2E-teständringar
+- PostToolUse (verifierar EFTER ändring):
+  - `post-api-route-verify.sh` -- Varnar om auth/include/console saknas i API route
+  - `post-import-check.sh` -- Varnar om server-only import i klient-komponent
 
 ---
 
@@ -343,4 +362,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-03-17
+**Senast uppdaterad**: 2026-03-20

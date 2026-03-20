@@ -1,2 +1,18 @@
 . "$HOME/.nvm/nvm.sh" 2>/dev/null
-npm test
+
+# 1. Svenska tecken-check (snabb, ~0.5s)
+echo "Kontrollerar svenska tecken..."
+npm run check:swedish --silent || {
+  echo "Svenska tecken-problem hittade! Fix innan commit."
+  exit 1
+}
+
+# 2. TypeScript-check BARA om .ts/.tsx-filer är staged
+STAGED=$(git diff --cached --name-only --diff-filter=d | grep -E '\.(ts|tsx)$' || true)
+if [ -n "$STAGED" ]; then
+  echo "TypeScript-check (staged .ts/.tsx hittade)..."
+  npm run typecheck --silent || {
+    echo "TypeScript-fel hittade! Fix innan commit."
+    exit 1
+  }
+fi
