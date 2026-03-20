@@ -52,6 +52,8 @@
     "loadtest:all": "k6 run load-tests/scenarios/providers-listing.js && k6 run load-tests/scenarios/provider-dashboard.js && k6 run load-tests/scenarios/provider-insights.js",
     "docs:validate": "node scripts/validate-frontmatter.mjs",
     "analyze": "ANALYZE=true next build --webpack",
+    "check:all": "bash scripts/check-all.sh",
+    "flags:validate": "bash scripts/validate-feature-flags.sh",
     "cache:clear": "rm -rf .next .tsbuildinfo"
   },
   "dependencies": {
