@@ -18,6 +18,7 @@ import Link from "next/link"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard"
 import { RescheduleSettingsCard } from "@/components/provider/profile/RescheduleSettingsCard"
 import { RecurringBookingsCard } from "@/components/provider/profile/RecurringBookingsCard"
@@ -58,8 +59,10 @@ function ProviderProfilePageContent() {
 
   const { guardMutation } = useOfflineGuard()
   const helpEnabled = useFeatureFlag("help_center")
-  const selfRescheduleEnabled = useFeatureFlag("self_reschedule")
-  const recurringBookingsEnabled = useFeatureFlag("recurring_bookings")
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const selfRescheduleEnabled = useFeatureFlag("self_reschedule") && !demo
+  const recurringBookingsEnabled = useFeatureFlag("recurring_bookings") && !demo
   const subscriptionEnabled = useFeatureFlag("provider_subscription")
 
   // Subscription status (only fetched when flag is on)
