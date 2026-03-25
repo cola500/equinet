@@ -24,6 +24,7 @@ import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useBookings } from "@/hooks/useBookings"
+import { isDemoModeWithFlags, DEMO_ALLOWED_PATHS } from "@/lib/demo-mode"
 import { toast } from "sonner"
 
 interface NavItem {
@@ -122,12 +123,24 @@ export function ProviderNav() {
   const moreRef = useRef<HTMLDivElement>(null)
   const { bookings } = useBookings()
   const pendingCount = (bookings as Array<{ status: string }>).filter((b) => b.status === "pending").length
+  const demo = isDemoModeWithFlags(flags)
+
+  const demoTabs: TabItem[] = [
+    { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
+    { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
+    { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList },
+    { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
+    { href: "/provider/services", label: "Tjänster", icon: Stethoscope },
+  ]
+
+  const baseTabs = demo ? demoTabs : providerTabs
 
   const tabsWithBadge = useMemo(() =>
-    providerTabs.map((tab) =>
+    baseTabs.map((tab) =>
       tab.href === "/provider/bookings" ? { ...tab, badge: pendingCount } : tab
     ),
-    [pendingCount]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pendingCount, demo]
   )
 
   // Close dropdown when clicking outside
@@ -156,11 +169,17 @@ export function ProviderNav() {
     }
   }, [flags.offline_mode, router])
 
-  const isVisible = (item: { featureFlag?: string }) =>
-    !item.featureFlag || flags[item.featureFlag]
+  const demoAllowed = (item: { href: string }) =>
+    !demo || DEMO_ALLOWED_PATHS.some((p) => item.href.startsWith(p))
 
-  const visibleSecondaryItems = secondaryNavItems.filter(isVisible)
-  const visibleMoreItems = providerMoreItems.filter(isVisible)
+  const isVisible = (item: { href: string; featureFlag?: string }) =>
+    demoAllowed(item) && (!item.featureFlag || flags[item.featureFlag])
+
+  const visiblePrimaryItems = primaryNavItems.filter(isVisible)
+  const visibleSecondaryItems = demo ? [] : secondaryNavItems.filter(isVisible)
+  const visibleMoreItems = demo
+    ? providerMoreItems.filter(isVisible)
+    : providerMoreItems.filter(isVisible)
 
   const isActive = (item: NavItem) => {
     if (item.matchPrefix) {
@@ -200,7 +219,7 @@ export function ProviderNav() {
       <nav className="bg-white border-b hidden md:block">
         <div className="container mx-auto px-4">
           <div className="flex gap-6 items-center">
-            {primaryNavItems.map((item) => (
+            {visiblePrimaryItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -262,7 +281,7 @@ export function ProviderNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={tabsWithBadge} moreItems={visibleMoreItems} />
+      <BottomTabBar tabs={tabsWithBadge} moreItems={demo ? visibleMoreItems.filter((i) => i.href === "/provider/profile") : visibleMoreItems} />
     </>
   )
 }

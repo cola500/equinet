@@ -150,4 +150,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
+  demo_mode: {
+    key: "demo_mode",
+    label: "Demo-läge",
+    description: "Strippar ner UI:t till kärnflödet: dashboard, bokningar, kunder, tjänster. Döljer alla sekundära features.",
+    defaultEnabled: false,
+    clientVisible: true,
+    category: "shared",
+  },
 }

@@ -15,7 +15,8 @@ import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
 import { StarRating } from "@/components/review/StarRating"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { CalendarDays, Users, CalendarRange, Map, Mic, ChevronDown, Package } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import { DashboardSkeleton } from "@/components/loading/DashboardSkeleton"
@@ -44,6 +45,8 @@ export default function ProviderDashboard() {
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [onboardingComplete, setOnboardingComplete] = useState(true)
   const [showCharts, setShowCharts] = useState<boolean | null>(null)
+  const allFlags = useFeatureFlags()
+  const demo = isDemoModeWithFlags(allFlags)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
   const isRoutePlanningEnabled = useFeatureFlag("route_planning")
   const pendingCount = bookings.filter((b) => b.status === "pending").length
@@ -200,7 +203,7 @@ export default function ProviderDashboard() {
               <OnboardingChecklist />
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className={`grid md:grid-cols-2 ${demo ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6 mb-8`}>
           {/* Stats Cards */}
           <Link href="/provider/services">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
@@ -250,6 +253,7 @@ export default function ProviderDashboard() {
             </Card>
           </Link>
 
+          {!demo && (
           <Link href="/provider/reviews">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
@@ -274,6 +278,7 @@ export default function ProviderDashboard() {
               </CardContent>
             </Card>
           </Link>
+          )}
         </div>
 
         {/* Dashboard Charts -- collapsible */}
@@ -295,7 +300,7 @@ export default function ProviderDashboard() {
         </div>
 
         {/* Routes Section */}
-        {routes.length > 0 && (
+        {!demo && routes.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -386,14 +391,14 @@ export default function ProviderDashboard() {
                   Kundregister
                 </Button>
               </Link>
-              {isVoiceLoggingEnabled ? (
+              {!demo && isVoiceLoggingEnabled ? (
                 <Link href="/provider/voice-log">
                   <Button className="w-full" variant="outline">
                     <Mic className="h-4 w-4 mr-2" />
                     Logga arbete
                   </Button>
                 </Link>
-              ) : isRoutePlanningEnabled ? (
+              ) : !demo && isRoutePlanningEnabled ? (
                 <Link href="/provider/route-planning">
                   <Button className="w-full" variant="outline">
                     <Map className="h-4 w-4 mr-2" />
