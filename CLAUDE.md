@@ -58,6 +58,8 @@ sections:
 | Röstloggning | [docs/guides/voice-logging.md](docs/guides/voice-logging.md) |
 | Pentest-rapport (feb 2026) | [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) |
 | Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (6 workflow-checklistor) |
+| Demo-läge | [docs/demo-mode.md](docs/demo-mode.md) |
+| Produktanalys | [docs/product-audit/](docs/product-audit/) (6 dokument) |
 
 ---
 
@@ -362,4 +364,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-03-20
+**Senast uppdaterad**: 2026-03-25

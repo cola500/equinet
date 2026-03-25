@@ -81,6 +81,18 @@ sections:
 | [admin.md](api/admin.md) | Admin API |
 | [voice-and-ai.md](api/voice-and-ai.md) | Voice & AI API |
 
+## Produktanalys & Demo
+
+| Dokument | Beskrivning |
+|----------|-------------|
+| [demo-mode.md](demo-mode.md) | Demo-läge -- vad som visas/döljs, hur man startar |
+| [product-audit/feature-inventory.md](product-audit/feature-inventory.md) | Fullständig inventering av alla 47 features |
+| [product-audit/user-flows.md](product-audit/user-flows.md) | Viktigaste användarflödena med status och blockerare |
+| [product-audit/demo-readiness.md](product-audit/demo-readiness.md) | Bedömning av vad som är demo-bart idag |
+| [product-audit/demo-mvp-proposal.md](product-audit/demo-mvp-proposal.md) | Minimal demo-MVP med steg-för-steg-script |
+| [product-audit/technical-risks.md](product-audit/technical-risks.md) | Tekniska risker för demo/MVP |
+| [product-audit/recent-changes.md](product-audit/recent-changes.md) | Förändringsinventering jan-mar 2026 |
+
 ## Planer (aktiva)
 
 | Dokument | Beskrivning |
@@ -117,4 +129,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-02-28*
+*Senast uppdaterad: 2026-03-25*
