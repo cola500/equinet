@@ -370,7 +370,8 @@ function ProviderProfilePageContent() {
             guardMutation={guardMutation}
           />
 
-          {/* Verification Link */}
+          {/* Verification Link - hidden in demo */}
+          {!demo && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Verifiering</CardTitle>
@@ -384,8 +385,10 @@ function ProviderProfilePageContent() {
               </Link>
             </CardContent>
           </Card>
+          )}
 
-          {/* Export Data */}
+          {/* Export Data - hidden in demo */}
+          {!demo && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Exportera data</CardTitle>
@@ -399,6 +402,7 @@ function ProviderProfilePageContent() {
               </Link>
             </CardContent>
           </Card>
+          )}
 
         </>
       )}
@@ -406,8 +410,8 @@ function ProviderProfilePageContent() {
       {/* Tab: Inställningar */}
       {activeTab === "settings" && (
         <>
-      {/* Subscription Card */}
-      {subscriptionEnabled && (
+      {/* Subscription Card - hidden in demo */}
+      {subscriptionEnabled && !demo && (
         <SubscriptionCard
           status={subscriptionStatus}
           isLoading={subscriptionLoading}
@@ -482,7 +486,9 @@ function ProviderProfilePageContent() {
         />
       )}
 
-      {/* Delete Account */}
+      {/* Delete Account - hidden in demo */}
+      {!demo && (
+      <>
       <Card id="delete-account" className="border-red-200 mt-6">
         <CardHeader>
           <CardTitle className="text-red-600">Radera konto</CardTitle>
@@ -504,6 +510,8 @@ function ProviderProfilePageContent() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
       />
+      </>
+      )}
 
         </>
       )}

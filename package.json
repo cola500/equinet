@@ -12,6 +12,8 @@
     "setup": "prisma generate && prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed:force": "npx tsx prisma/seed.ts --force",
+    "db:seed:demo": "npx tsx prisma/seed-demo.ts",
+    "db:seed:demo:reset": "npx tsx prisma/seed-demo.ts --reset",
     "db:reset": "prisma migrate reset",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",

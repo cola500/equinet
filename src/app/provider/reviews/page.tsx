@@ -1,7 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,7 +24,17 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 
 export default function ProviderReviewsPage() {
+  const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+
+  // Redirect away from reviews in demo mode
+  useEffect(() => {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
   const { providerId, isLoading: isLoadingProfile } = useProviderProfile()
   const [reviewStats, setReviewStats] = useState<{
     averageRating: number | null
@@ -106,6 +119,8 @@ export default function ProviderReviewsPage() {
       }
     })
   }
+
+  if (demo) return null
 
   if (isLoading || !isProvider) {
     return (

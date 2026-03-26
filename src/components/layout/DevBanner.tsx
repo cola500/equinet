@@ -1,6 +1,9 @@
 // Server Component -- no "use client" needed
+import { isDemoMode } from "@/lib/demo-mode"
+
 export function DevBanner() {
   if (process.env.NODE_ENV === 'production') return null
+  if (isDemoMode()) return null
 
   const dbUrl = process.env.DATABASE_URL || ''
   const isLocalDb = dbUrl.includes('localhost')

@@ -17,6 +17,8 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 
 interface Service {
   id: string
@@ -40,7 +42,11 @@ const INTERVAL_OPTIONS = [
 
 export default function ProviderServicesPage() {
   const { isLoading, isProvider } = useAuth()
-  const { services, mutate: mutateServices } = useServices()
+  const { services: allServices, mutate: mutateServices } = useServices()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  // In demo mode, hide inactive services (stale test data)
+  const services = demo ? allServices.filter((s: Service) => s.isActive) : allServices
   const serviceDialog = useDialogState()
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [formData, setFormData] = useState({
@@ -422,6 +428,7 @@ export default function ProviderServicesPage() {
                     >
                       Redigera
                     </Button>
+                    {!demo && (
                     <Button
                       onClick={() => setDeleteConfirm(service.id)}
                       variant="destructive"
@@ -430,6 +437,7 @@ export default function ProviderServicesPage() {
                     >
                       Ta bort
                     </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
