@@ -403,7 +403,7 @@ Se [docs/operations/deployment.md](docs/operations/deployment.md) för fullstän
 - **[docs/retrospectives/](./docs/retrospectives/)** - Konsoliderade retrospectives
 
 ### Features
-- **[features/rutt-baserad-levering.md](./features/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
+- **[docs/plans/rutt-baserad-levering.md](./docs/plans/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
 
 ## Roadmap
 
