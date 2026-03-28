@@ -205,6 +205,38 @@ describe("PATCH /api/bookings/[id]/reschedule", () => {
     expect(response.status).toBe(400)
   })
 
+  it("passes customerId from session to service (IDOR protection)", async () => {
+    const request = makeRequest(validBody)
+    await PATCH(request, { params: Promise.resolve({ id: "booking-1" }) })
+
+    // Verify customerId comes from session, not from URL or body
+    expect(mockRescheduleBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "customer-1", // From mockSession.user.id
+        bookingId: "booking-1",
+      })
+    )
+  })
+
+  it("returns error when service rejects wrong customer (IDOR)", async () => {
+    // Service returns BOOKING_NOT_FOUND when customerId doesn't match
+    mockRescheduleBooking.mockResolvedValue({
+      isSuccess: false,
+      isFailure: true,
+      error: { type: "BOOKING_NOT_FOUND" },
+    })
+
+    vi.mocked(mapBookingErrorToStatus).mockReturnValue(404)
+    vi.mocked(mapBookingErrorToMessage).mockReturnValue("Bokningen hittades inte")
+
+    const request = makeRequest(validBody)
+    const response = await PATCH(request, { params: Promise.resolve({ id: "other-booking" }) })
+
+    expect(response.status).toBe(404)
+    const data = await response.json()
+    expect(data.error).toBe("Bokningen hittades inte")
+  })
+
   it("should return domain error when reschedule fails", async () => {
     mockRescheduleBooking.mockResolvedValue({
       isSuccess: false,
