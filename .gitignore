@@ -91,3 +91,11 @@ public/sw.js.map
 xcuserdata/
 *.xcuserstate
 DerivedData/
+
+# Superpowers (per-machine)
+.agents/
+.claude/skills/
+skills-lock.json
+
+# E2E visual snapshots (generated)
+e2e/__snapshots__/

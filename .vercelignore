@@ -1,0 +1,6 @@
+ios/
+.claude/
+docs/
+e2e/
+__tests__/
+*.md
