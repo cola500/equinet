@@ -1,30 +1,15 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { logger } from "@/lib/logger"
-import { isFeatureEnabled } from "@/lib/feature-flags"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { requireCustomer } from "@/lib/roles"
 
 // GET /api/route-orders/my-orders - Get customer's own route orders
-export async function GET(request: Request) {
-  try {
-    const { userId } = requireCustomer(await auth())
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    if (!(await isFeatureEnabled("route_planning"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
+export const GET = withApiHandler(
+  { auth: "customer", featureFlag: "route_planning" },
+  async ({ user }) => {
     // Fetch route orders
     const routeOrders = await prisma.routeOrder.findMany({
       where: {
-        customerId: userId,
+        customerId: user.userId,
       },
       select: {
         id: true,
@@ -77,14 +62,5 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json(routeOrders)
-
-  } catch (error) {
-    // If error is a Response (from auth()), return it
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Error fetching route orders", error instanceof Error ? error : new Error(String(error)))
-    return new Response("Internt serverfel", { status: 500 })
-  }
-}
+  },
+)

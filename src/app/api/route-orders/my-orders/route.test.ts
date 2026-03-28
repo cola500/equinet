@@ -19,9 +19,10 @@ import { GET } from "./route"
 import { auth } from "@/lib/auth-server"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
+import { NextRequest } from "next/server"
 
 function mockRequest() {
-  return new Request("http://localhost:3000/api/route-orders/my-orders")
+  return new NextRequest("http://localhost:3000/api/route-orders/my-orders")
 }
 
 const mockAuth = vi.mocked(auth)
@@ -143,9 +144,9 @@ describe("GET /api/route-orders/my-orders", () => {
     mockFindMany.mockRejectedValue(new Error("DB connection lost"))
 
     const res = await GET(mockRequest())
-    const text = await res.text()
+    const body = await res.json()
 
     expect(res.status).toBe(500)
-    expect(text).toBe("Internt serverfel")
+    expect(body.error).toBe("Internt serverfel")
   })
 })

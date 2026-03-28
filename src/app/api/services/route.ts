@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireProvider } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
@@ -16,46 +15,29 @@ const serviceSchema = z.object({
 })
 
 // GET all services for logged-in provider
-export async function GET(_request: NextRequest) {
-  try {
-    // Auth + role check (throws 401/403)
-    const { userId } = requireProvider(await auth())
-
-    // Use repository to find provider
+export const GET = withApiHandler(
+  { auth: "provider" },
+  async ({ user }) => {
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(userId)
+    const provider = await providerRepo.findByUserId(user.userId)
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
-    // Use repository to get services
     const serviceRepo = new ServiceRepository()
     const services = await serviceRepo.findByProviderId(provider.id)
 
     return NextResponse.json(services)
-  } catch (error) {
-    // If error is a Response (from auth()), return it
-    if (error instanceof Response) {
-      return error
-    }
+  },
+)
 
-    logger.error("Error fetching services", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte hämta tjänster" },
-      { status: 500 }
-    )
-  }
-}
-
-// POST - Create new service
-export async function POST(request: NextRequest) {
-  try {
-    // Auth + role check (throws 401/403)
-    const { userId } = requireProvider(await auth())
-
-    // Rate limiting - 10 service creations per hour per provider
-    const rateLimitKey = `service-create:${userId}`
+// POST - Create new service (custom rate limit key, so rateLimit: false)
+export const POST = withApiHandler(
+  { auth: "provider", rateLimit: false, schema: serviceSchema },
+  async ({ user, body }) => {
+    // Manual rate limiting with user-specific key
+    const rateLimitKey = `service-create:${user.userId}`
     const isAllowed = await rateLimiters.serviceCreate(rateLimitKey)
     if (!isAllowed) {
       return NextResponse.json(
@@ -67,60 +49,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Use repository to find provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(userId)
+    const provider = await providerRepo.findByUserId(user.userId)
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
-    // Parse request body with error handling
-    let body
-    try {
-      body = await request.json()
-    } catch (jsonError) {
-      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
-      return NextResponse.json(
-        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    const validatedData = serviceSchema.parse(body)
-
-    // Use repository to create service
     const serviceRepo = new ServiceRepository()
     const service = await serviceRepo.save({
-      id: crypto.randomUUID(), // Generate new ID for creation
+      id: crypto.randomUUID(),
       providerId: provider.id,
-      name: validatedData.name,
-      description: validatedData.description || null,
-      price: validatedData.price,
-      durationMinutes: validatedData.durationMinutes,
+      name: body.name,
+      description: body.description || null,
+      price: body.price,
+      durationMinutes: body.durationMinutes,
       isActive: true,
-      recommendedIntervalWeeks: validatedData.recommendedIntervalWeeks ?? null,
+      recommendedIntervalWeeks: body.recommendedIntervalWeeks ?? null,
       createdAt: new Date(),
     })
 
+    logger.info("Service created", { providerId: provider.id, serviceId: service.id })
+
     return NextResponse.json(service, { status: 201 })
-  } catch (error) {
-    // If error is a Response (from auth()), return it
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error creating service", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte skapa tjänst" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

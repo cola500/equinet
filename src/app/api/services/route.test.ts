@@ -26,13 +26,24 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
-    serviceCreate: vi.fn().mockResolvedValue(true), // Allow by default
+    api: vi.fn().mockResolvedValue(true),
+    serviceCreate: vi.fn().mockResolvedValue(true),
+  },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }))
 
 describe('GET /api/services', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(rateLimiters.api).mockResolvedValue(true)
   })
 
   it('should return services for authenticated provider', async () => {
@@ -232,15 +243,9 @@ describe('POST /api/services', () => {
 
   it('should return 400 for invalid data - missing name', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -261,15 +266,9 @@ describe('POST /api/services', () => {
 
   it('should return 400 for invalid data - negative price', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -291,15 +290,9 @@ describe('POST /api/services', () => {
 
   it('should return 400 for invalid data - zero duration', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',

@@ -9,6 +9,13 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimiters: {
+    api: vi.fn().mockResolvedValue(true),
+  },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     provider: {

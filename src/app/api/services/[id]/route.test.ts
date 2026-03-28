@@ -8,6 +8,21 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimiters: {
+    api: vi.fn().mockResolvedValue(true),
+  },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
 // Mock repositories
 const mockUpdateWithAuth = vi.fn()
 const mockDeleteWithAuth = vi.fn()
@@ -70,9 +85,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert - Behavior-based: test WHAT the API returns
@@ -106,9 +119,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert
@@ -122,9 +133,7 @@ describe('PUT /api/services/[id]', () => {
       method: 'PUT',
       body: JSON.stringify({ name: 'Test', price: 100, durationMinutes: 30 }),
     })
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     expect(response.status).toBe(401)
   })
 
@@ -140,9 +149,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert
@@ -163,9 +170,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert
@@ -193,9 +198,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'nonexistent' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert
@@ -223,9 +226,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert - Returns 404 (not 403) because atomic auth doesn't distinguish
@@ -235,15 +236,9 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 400 for invalid data', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
-    mockFindByUserId.mockResolvedValue(mockProvider)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -251,9 +246,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert
@@ -263,15 +256,9 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 400 for invalid JSON body', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
-    mockFindByUserId.mockResolvedValue(mockProvider)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -279,9 +266,7 @@ describe('PUT /api/services/[id]', () => {
     })
 
     // Act
-    const response = await PUT(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await PUT(request)
     const data = await response.json()
 
     // Assert
@@ -313,9 +298,7 @@ describe('DELETE /api/services/[id]', () => {
     })
 
     // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await DELETE(request)
     const data = await response.json()
 
     // Assert
@@ -337,9 +320,7 @@ describe('DELETE /api/services/[id]', () => {
     })
 
     // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await DELETE(request)
     const data = await response.json()
 
     // Assert
@@ -352,9 +333,7 @@ describe('DELETE /api/services/[id]', () => {
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'DELETE',
     })
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await DELETE(request)
     expect(response.status).toBe(401)
   })
 
@@ -369,9 +348,7 @@ describe('DELETE /api/services/[id]', () => {
     })
 
     // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await DELETE(request)
     const data = await response.json()
 
     // Assert
@@ -391,9 +368,7 @@ describe('DELETE /api/services/[id]', () => {
     })
 
     // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await DELETE(request)
     const data = await response.json()
 
     // Assert
@@ -420,9 +395,7 @@ describe('DELETE /api/services/[id]', () => {
     })
 
     // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'nonexistent' }),
-    })
+    const response = await DELETE(request)
     const data = await response.json()
 
     // Assert
@@ -449,9 +422,7 @@ describe('DELETE /api/services/[id]', () => {
     })
 
     // Act
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'service1' }),
-    })
+    const response = await DELETE(request)
     const data = await response.json()
 
     // Assert - Returns 404 (not 403) because atomic auth

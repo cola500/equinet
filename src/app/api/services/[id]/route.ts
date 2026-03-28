@@ -1,11 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireProvider } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { z } from "zod"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
-import { logger } from "@/lib/logger"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Tjänstens namn krävs"),
@@ -17,102 +14,45 @@ const serviceSchema = z.object({
 })
 
 // PUT - Update service
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const session = await auth()
-    const { userId } = requireProvider(session)
+export const PUT = withApiHandler(
+  { auth: "provider", schema: serviceSchema },
+  async ({ request, user, body }) => {
+    const id = request.nextUrl.pathname.split("/").pop()!
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    // Use repositories instead of direct Prisma access
     const serviceRepo = new ServiceRepository()
     const providerRepo = new ProviderRepository()
 
-    const provider = await providerRepo.findByUserId(userId)
+    const provider = await providerRepo.findByUserId(user.userId)
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
-    // Parse request body with error handling
-    let body
-    try {
-      body = await request.json()
-    } catch (jsonError) {
-      logger.warn("Invalid JSON in request body", { error: String(jsonError) })
-      return NextResponse.json(
-        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    const validatedData = serviceSchema.parse(body)
-
-    // Update with authorization check (atomic WHERE clause in repository)
-    const service = await serviceRepo.updateWithAuth(id, validatedData, provider.id)
+    const service = await serviceRepo.updateWithAuth(id, body, provider.id)
 
     if (!service) {
       return NextResponse.json({ error: "Tjänst hittades inte" }, { status: 404 })
     }
 
     return NextResponse.json(service)
-  } catch (error) {
-    // If error is a Response (from auth()), return it
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      logger.warn("Validation error", { issues: JSON.stringify(error.issues) })
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error updating service", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte uppdatera tjänst" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // DELETE - Delete service
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const session = await auth()
-    const { userId } = requireProvider(session)
+export const DELETE = withApiHandler(
+  { auth: "provider" },
+  async ({ request, user }) => {
+    const id = request.nextUrl.pathname.split("/").pop()!
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    // Use repositories instead of direct Prisma access
     const serviceRepo = new ServiceRepository()
     const providerRepo = new ProviderRepository()
 
-    const provider = await providerRepo.findByUserId(userId)
+    const provider = await providerRepo.findByUserId(user.userId)
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
-    // Delete with authorization check (atomic WHERE clause in repository)
     const deleted = await serviceRepo.deleteWithAuth(id, provider.id)
 
     if (!deleted) {
@@ -120,16 +60,5 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: "Service deleted" })
-  } catch (error) {
-    // If error is a Response (from auth()), return it
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Error deleting service", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte ta bort tjänst" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

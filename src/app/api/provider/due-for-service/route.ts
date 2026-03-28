@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireProvider } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { logger } from "@/lib/logger"
 import {
   calculateDueStatus,
   resolveInterval,
@@ -15,21 +12,11 @@ interface ProviderDueForServiceItem extends DueForServiceResult {
 }
 
 // GET /api/provider/due-for-service?filter=all|overdue|upcoming
-export async function GET(request: NextRequest) {
-  try {
-    const { userId } = requireProvider(await auth())
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "For manga forfragningar" },
-        { status: 429 }
-      )
-    }
-
+export const GET = withApiHandler(
+  { auth: "provider" },
+  async ({ user, request }) => {
     const provider = await prisma.provider.findUnique({
-      where: { userId },
+      where: { userId: user.userId },
       select: { id: true },
     })
 
@@ -151,16 +138,5 @@ export async function GET(request: NextRequest) {
     filteredItems.sort((a, b) => a.daysUntilDue - b.daysUntilDue)
 
     return NextResponse.json({ items: filteredItems })
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    logger.error(
-      "Failed to fetch due-for-service",
-      error instanceof Error ? error : new Error(String(error))
-    )
-    return NextResponse.json(
-      { error: "Kunde inte hamta besoksplanering" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

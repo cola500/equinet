@@ -1,10 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireCustomer } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { z } from "zod"
-import { logger } from "@/lib/logger"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { createFollowService } from "@/domain/follow/FollowServiceFactory"
 
 const followSchema = z.object({
@@ -12,37 +8,11 @@ const followSchema = z.object({
 }).strict()
 
 // POST /api/follows - Follow a provider
-export async function POST(request: NextRequest) {
-  try {
-    const { userId } = requireCustomer(await auth())
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    if (!(await isFeatureEnabled("follow_provider"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    const validated = followSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "customer", featureFlag: "follow_provider", schema: followSchema },
+  async ({ user, body }) => {
     const service = createFollowService()
-    const result = await service.follow(userId, validated.providerId)
+    const result = await service.follow(user.userId, body.providerId)
 
     if (!result.ok) {
       if (result.error === "PROVIDER_NOT_FOUND") {
@@ -58,50 +28,16 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Internt serverfel" }, { status: 500 })
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error creating follow", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // GET /api/follows - List followed providers
-export async function GET(request: NextRequest) {
-  try {
-    const { userId } = requireCustomer(await auth())
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    if (!(await isFeatureEnabled("follow_provider"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
+export const GET = withApiHandler(
+  { auth: "customer", featureFlag: "follow_provider" },
+  async ({ user }) => {
     const service = createFollowService()
-    const follows = await service.getFollowedProviders(userId)
+    const follows = await service.getFollowedProviders(user.userId)
 
     return NextResponse.json(follows)
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    logger.error("Error fetching follows", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

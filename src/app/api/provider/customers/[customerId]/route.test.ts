@@ -26,6 +26,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     },
   },
@@ -35,12 +36,15 @@ const providerSession = {
   user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
 } as never
 
-const makeParams = (customerId: string) =>
-  Promise.resolve({ customerId })
-
-const makeRequest = () =>
-  new NextRequest('http://localhost:3000/api/provider/customers/customer-1', {
+const makeDeleteRequest = (customerId: string) =>
+  new NextRequest(`http://localhost:3000/api/provider/customers/${customerId}`, {
     method: 'DELETE',
+  })
+
+const makePutRequest = (customerId: string, body: Record<string, unknown>) =>
+  new NextRequest(`http://localhost:3000/api/provider/customers/${customerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
   })
 
 describe('DELETE /api/provider/customers/[customerId]', () => {
@@ -52,7 +56,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
   it('should return 401 when session is null', async () => {
     vi.mocked(auth).mockResolvedValue(null as never)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
     expect(response.status).toBe(401)
   })
 
@@ -61,7 +65,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
     )
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
     expect(response.status).toBe(401)
   })
 
@@ -70,7 +74,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       user: { id: 'user-1', userType: 'customer' },
     } as never)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
     const data = await response.json()
     expect(response.status).toBe(403)
     expect(data.error).toBe('Åtkomst nekad')
@@ -79,7 +83,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
   it('should return 404 when customer not in registry', async () => {
     vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValue(null)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
     const data = await response.json()
 
     expect(response.status).toBe(404)
@@ -100,7 +104,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       isManualCustomer: true,
     } as never)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
     const data = await response.json()
 
     expect(response.status).toBe(200)
@@ -113,7 +117,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
     // findUnique returns null because WHERE includes providerId
     vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValue(null)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
     expect(response.status).toBe(404)
 
     // Verify the query used the provider's ID
@@ -141,7 +145,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
     } as never)
     vi.mocked(prisma.user.delete).mockResolvedValue({} as never)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
 
     expect(response.status).toBe(200)
     expect(prisma.user.delete).toHaveBeenCalledWith({
@@ -162,7 +166,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
       isManualCustomer: false, // Real user
     } as never)
 
-    const response = await DELETE(makeRequest(), { params: makeParams('customer-1') })
+    const response = await DELETE(makeDeleteRequest('customer-1'))
 
     expect(response.status).toBe(200)
     expect(prisma.user.delete).not.toHaveBeenCalled()
@@ -178,12 +182,7 @@ describe('PUT /api/provider/customers/[customerId]', () => {
   it('should return 401 when session is null', async () => {
     vi.mocked(auth).mockResolvedValue(null as never)
 
-    const request = new NextRequest('http://localhost:3000/api/provider/customers/customer-1', {
-      method: 'PUT',
-      body: JSON.stringify({ firstName: 'Anna' }),
-    })
-
-    const response = await PUT(request, { params: makeParams('customer-1') })
+    const response = await PUT(makePutRequest('customer-1', { firstName: 'Anna' }))
     expect(response.status).toBe(401)
   })
 })

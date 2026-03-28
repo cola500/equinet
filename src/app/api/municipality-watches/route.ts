@@ -1,10 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireCustomer } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { z } from "zod"
-import { logger } from "@/lib/logger"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { createMunicipalityWatchService } from "@/domain/municipality-watch/MunicipalityWatchServiceFactory"
 
 const watchSchema = z.object({
@@ -13,40 +9,14 @@ const watchSchema = z.object({
 }).strict()
 
 // POST /api/municipality-watches - Create a new municipality watch
-export async function POST(request: NextRequest) {
-  try {
-    const { userId } = requireCustomer(await auth())
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    if (!(await isFeatureEnabled("municipality_watch"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    const validated = watchSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "customer", featureFlag: "municipality_watch", schema: watchSchema },
+  async ({ user, body }) => {
     const service = createMunicipalityWatchService()
     const result = await service.addWatch(
-      userId,
-      validated.municipality,
-      validated.serviceTypeName
+      user.userId,
+      body.municipality,
+      body.serviceTypeName,
     )
 
     if (!result.ok) {
@@ -57,55 +27,20 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json(
         { error: errorMessages[result.error] || "Valideringsfel" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     return NextResponse.json(result.value, { status: 201 })
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error creating municipality watch", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // GET /api/municipality-watches - List customer's watches
-export async function GET(request: NextRequest) {
-  try {
-    const { userId } = requireCustomer(await auth())
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    if (!(await isFeatureEnabled("municipality_watch"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
+export const GET = withApiHandler(
+  { auth: "customer", featureFlag: "municipality_watch" },
+  async ({ user }) => {
     const service = createMunicipalityWatchService()
-    const watches = await service.getWatches(userId)
-
+    const watches = await service.getWatches(user.userId)
     return NextResponse.json(watches)
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    logger.error("Error fetching municipality watches", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

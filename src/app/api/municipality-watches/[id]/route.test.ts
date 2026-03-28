@@ -43,13 +43,13 @@ describe("DELETE /api/municipality-watches/[id]", () => {
       new Response(JSON.stringify({ error: "Ej inloggad" }), { status: 401 })
     )
 
-    const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    const response = await DELETE(makeRequest("w1"))
     expect(response.status).toBe(401)
   })
 
   it("returns 401 when session is null", async () => {
     vi.mocked(auth).mockResolvedValue(null as never)
-    const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    const response = await DELETE(makeRequest("w1"))
     expect(response.status).toBe(401)
   })
 
@@ -58,7 +58,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
       user: { id: "u1", userType: "provider" },
     } as never)
 
-    const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    const response = await DELETE(makeRequest("w1"))
     expect(response.status).toBe(403)
   })
 
@@ -70,7 +70,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockRemoveWatch.mockResolvedValue(false)
 
-    const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    const response = await DELETE(makeRequest("w1"))
     expect(response.status).toBe(404)
   })
 
@@ -82,7 +82,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockRemoveWatch.mockResolvedValue(true)
 
-    const response = await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    const response = await DELETE(makeRequest("w1"))
     expect(response.status).toBe(200)
   })
 
@@ -94,7 +94,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockRemoveWatch.mockResolvedValue(true)
 
-    await DELETE(makeRequest("w1"), { params: Promise.resolve({ id: "w1" }) })
+    await DELETE(makeRequest("w1"))
 
     expect(mockRemoveWatch).toHaveBeenCalledWith("w1", "session-user")
   })
