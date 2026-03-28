@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
@@ -36,17 +37,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireProvider(await auth())
 
     // Parse JSON
     let body
@@ -63,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Get provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
     if (!provider) {
       return NextResponse.json(
         { error: "Leverantör hittades inte" },

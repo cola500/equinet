@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { requireProvider } from "@/lib/roles"
 
 /**
  * GET /api/route-orders/[id]/bookings
@@ -16,11 +17,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId, providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -32,20 +29,12 @@ export async function GET(
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
-    // Only providers can access this endpoint
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Endast leverantörer kan se bokningar på annonser" },
-        { status: 403 }
-      )
-    }
-
     // Get the announcement ID from params
     const { id: announcementId } = await params
 
     // Find the provider profile
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true }
     })
 

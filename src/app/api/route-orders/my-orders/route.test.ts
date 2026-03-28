@@ -88,7 +88,7 @@ describe("GET /api/route-orders/my-orders", () => {
     const body = await res.json()
 
     expect(res.status).toBe(403)
-    expect(body.error).toBe("Endast kunder kan se sina rutt-beställningar")
+    expect(body.error).toBe("Åtkomst nekad")
   })
 
   it("returns 200 with route orders for customer", async () => {

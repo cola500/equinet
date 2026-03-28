@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
@@ -30,18 +31,7 @@ interface CustomerSummary {
 // GET /api/provider/customers?status=all|active|inactive&q=searchterm
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    // Provider-only endpoint
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan se kundlistan" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireProvider(await auth())
 
     // Rate limiting
     const clientIp = getClientIP(request)
@@ -55,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // Get provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 
@@ -237,17 +227,7 @@ export async function GET(request: NextRequest) {
 // POST /api/provider/customers -- Add a customer manually
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan lägga till kunder" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -277,7 +257,7 @@ export async function POST(request: NextRequest) {
 
     // Get provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 

@@ -4,15 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { requireCustomer } from "@/lib/roles"
 
 // GET /api/route-orders/my-orders - Get customer's own route orders
 export async function GET(request: Request) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -24,18 +21,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
-    // Only customers can view their route orders
-    if (session.user.userType !== "customer") {
-      return NextResponse.json(
-        { error: "Endast kunder kan se sina rutt-beställningar" },
-        { status: 403 }
-      )
-    }
-
     // Fetch route orders
     const routeOrders = await prisma.routeOrder.findMany({
       where: {
-        customerId: session.user.id,
+        customerId: userId,
       },
       select: {
         id: true,

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { requireProvider } from "@/lib/roles"
 
 // GET /api/routes/:id - Get specific route
 export async function GET(
@@ -17,24 +18,12 @@ export async function GET(
 
     const { id } = await params
 
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    // Only providers can view routes
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Endast leverantörer kan se rutter" },
-        { status: 403 }
-      )
     }
 
     // 2. Fetch route
@@ -105,7 +94,7 @@ export async function GET(
     }
 
     // 3. Check ownership
-    if (route.providerId !== session.user.providerId) {
+    if (route.providerId !== providerId) {
       return NextResponse.json(
         { error: "Du har inte tillgång till denna rutt" },
         { status: 403 }

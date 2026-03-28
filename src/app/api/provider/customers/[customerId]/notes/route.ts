@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { sanitizeMultilineString, stripXss } from "@/lib/sanitize"
 import { hasCustomerRelationship } from "@/lib/customer-relationship"
+import { requireProvider } from "@/lib/roles"
 
 const createNoteSchema = z.object({
   content: z.string().min(1).max(2000),
@@ -16,17 +17,7 @@ type RouteContext = { params: Promise<{ customerId: string }> }
 // GET /api/provider/customers/[customerId]/notes
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan se kundanteckningar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -38,7 +29,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     // Verify customer relationship (booking or manual)
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
@@ -80,17 +70,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // POST /api/provider/customers/[customerId]/notes
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan skapa kundanteckningar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -119,7 +99,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     // Verify customer relationship (booking or manual)
     const hasRelation = await hasCustomerRelationship(providerId, customerId)

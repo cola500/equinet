@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
@@ -17,22 +18,13 @@ const createCustomerReviewSchema = z.object({
 // POST - Create a customer review (provider only)
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
-
-    const providerId = session.user.providerId
 
     // Parse JSON
     let body
@@ -111,14 +103,7 @@ export async function POST(request: NextRequest) {
 // GET - List provider's customer reviews (provider only)
 export async function GET(_request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(_request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -127,7 +112,7 @@ export async function GET(_request: NextRequest) {
     }
 
     const repository = new CustomerReviewRepository()
-    const reviews = await repository.findByProviderId(session.user.providerId)
+    const reviews = await repository.findByProviderId(providerId)
 
     return NextResponse.json(reviews)
   } catch (error) {

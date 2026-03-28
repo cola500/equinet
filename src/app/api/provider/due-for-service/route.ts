@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
@@ -16,17 +17,7 @@ interface ProviderDueForServiceItem extends DueForServiceResult {
 // GET /api/provider/due-for-service?filter=all|overdue|upcoming
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Bara leverantorer har tillgang" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -38,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 

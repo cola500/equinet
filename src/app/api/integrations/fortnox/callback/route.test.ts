@@ -99,16 +99,15 @@ describe("GET /api/integrations/fortnox/callback", () => {
     expect(response.status).toBe(401)
   })
 
-  it("redirects to / when user is not a provider", async () => {
+  it("returns 403 when user is not a provider", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
 
     const request = makeRequest({ code: "abc", state: "xyz" })
     const response = await GET(request)
+    const data = await response.json()
 
-    expect(response.status).toBe(307)
-    const location = getRedirectLocation(response)
-    expect(location).toContain("/")
-    expect(location).not.toContain("/provider")
+    expect(response.status).toBe(403)
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it("redirects with error=denied when OAuth error param is present", async () => {
@@ -192,22 +191,18 @@ describe("GET /api/integrations/fortnox/callback", () => {
     )
   })
 
-  it("redirects with error=no_provider when session has no providerId", async () => {
+  it("returns 403 when session has no providerId", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSessionNoProviderId)
-    vi.mocked(exchangeCodeForTokens).mockResolvedValue({
-      access_token: "at-123",
-      refresh_token: "rt-123",
-      expires_in: 3600,
-    } as never)
 
     const request = makeRequest(
       { code: "abc", state: "test-state" },
       "fortnox_oauth_state=test-state"
     )
     const response = await GET(request)
+    const data = await response.json()
 
-    expect(response.status).toBe(307)
-    expect(getRedirectLocation(response)).toContain("error=no_provider")
+    expect(response.status).toBe(403)
+    expect(data.error).toBe("Leverantörsprofil saknas")
   })
 
   it("exchanges code, encrypts tokens, upserts, and redirects to success on happy path", async () => {

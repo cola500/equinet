@@ -156,7 +156,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
 
     expect(res.status).toBe(403)
     const json = await res.json()
-    expect(json.error).toBe("Endast leverantörer kan uppdatera stopp")
+    expect(json.error).toBe("Åtkomst nekad")
   })
 
   it("returns 403 when provider has no providerId", async () => {
@@ -169,7 +169,7 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
 
     expect(res.status).toBe(403)
     const json = await res.json()
-    expect(json.error).toBe("Endast leverantörer kan uppdatera stopp")
+    expect(json.error).toBe("Leverantörsprofil saknas")
   })
 
   // ---- Route lookup ----

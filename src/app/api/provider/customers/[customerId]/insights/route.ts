@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { hasCustomerRelationship } from "@/lib/customer-relationship"
@@ -27,14 +28,7 @@ type RouteContext = { params: Promise<{ customerId: string }> }
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     // 1. Auth
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireProvider(await auth())
 
     // 2. Rate limit (AI-specific)
     const clientIp = getClientIP(request)
@@ -48,7 +42,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // 3. Get provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
     if (!provider) {
       return NextResponse.json(
         { error: "Leverantör hittades inte" },

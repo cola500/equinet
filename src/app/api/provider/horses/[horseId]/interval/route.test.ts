@@ -63,7 +63,7 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
     vi.clearAllMocks()
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
+      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -97,7 +97,9 @@ describe('GET /api/provider/horses/[horseId]/interval', () => {
     } as never)
 
     const response = await GET(makeRequest('GET'), routeContext)
+    const data = await response.json()
     expect(response.status).toBe(403)
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it('should return 403 when provider has no bookings for horse', async () => {
@@ -160,7 +162,7 @@ describe('PUT /api/provider/horses/[horseId]/interval', () => {
     vi.clearAllMocks()
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
+      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -298,7 +300,7 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
     vi.clearAllMocks()
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
+      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -360,6 +362,8 @@ describe('DELETE /api/provider/horses/[horseId]/interval', () => {
       makeRequest('DELETE', { serviceId: TEST_UUIDS.service1 }),
       routeContext
     )
+    const data = await response.json()
     expect(response.status).toBe(403)
+    expect(data.error).toBe("Åtkomst nekad")
   })
 })

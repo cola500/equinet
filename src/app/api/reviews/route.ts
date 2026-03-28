@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireCustomer } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
@@ -19,18 +20,12 @@ const createReviewSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireCustomer(session)
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Parse JSON
@@ -82,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     const result = await reviewService.createReview({
       bookingId: validated.bookingId,
-      customerId: session.user.id,
+      customerId: userId,
       rating: validated.rating,
       comment: validated.comment || null,
     })

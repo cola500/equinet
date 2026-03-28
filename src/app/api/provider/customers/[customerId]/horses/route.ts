@@ -6,23 +6,14 @@ import { logger } from "@/lib/logger"
 import { sanitizeString, stripXss } from "@/lib/sanitize"
 import { hasCustomerRelationship } from "@/lib/customer-relationship"
 import { horseCreateSchema } from "@/lib/schemas/horse"
+import { requireProvider } from "@/lib/roles"
 
 type RouteContext = { params: Promise<{ customerId: string }> }
 
 // GET /api/provider/customers/[customerId]/horses
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan se kunders hästar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -34,7 +25,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {
@@ -79,17 +69,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // POST /api/provider/customers/[customerId]/horses
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan lägga till hästar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -118,7 +98,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {

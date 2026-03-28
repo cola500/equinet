@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -12,14 +13,7 @@ import { createSubscriptionService } from "@/domain/subscription/SubscriptionSer
 export async function GET(request: NextRequest) {
   try {
     // 1. Auth
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
-    const providerId = session.user.providerId
+    const { providerId } = requireProvider(await auth())
 
     // 2. Rate limit (use 'api' limiter for reads)
     const clientIp = getClientIP(request)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -12,17 +13,7 @@ type RouteContext = { params: Promise<{ customerId: string }> }
 // POST /api/provider/customers/[customerId]/invite
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     if (!(await isFeatureEnabled("customer_invite"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
@@ -38,7 +29,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     // IDOR-check: verify customer belongs to this provider
     const link = await prisma.providerCustomer.findUnique({

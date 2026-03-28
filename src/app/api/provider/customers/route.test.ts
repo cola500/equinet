@@ -66,7 +66,7 @@ describe('GET /api/provider/customers', () => {
 
     // Default: authenticated provider
     vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
+      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -102,7 +102,9 @@ describe('GET /api/provider/customers', () => {
     } as never)
 
     const response = await GET(makeRequest())
+    const data = await response.json()
     expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 404 when provider profile not found', async () => {
@@ -460,7 +462,7 @@ describe('POST /api/provider/customers', () => {
     vi.clearAllMocks()
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
+      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -500,7 +502,9 @@ describe('POST /api/provider/customers', () => {
     } as never)
 
     const response = await POST(makePostRequest({ firstName: 'Anna' }))
+    const data = await response.json()
     expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 400 for invalid JSON', async () => {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireCustomer } from "@/lib/roles"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -12,14 +13,7 @@ type RouteContext = {
 // DELETE /api/municipality-watches/:id - Remove a municipality watch
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -34,7 +28,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { id } = await context.params
 
     const service = createMunicipalityWatchService()
-    const deleted = await service.removeWatch(id, session.user.id)
+    const deleted = await service.removeWatch(id, userId)
 
     if (!deleted) {
       return NextResponse.json({ error: "Bevakning hittades inte" }, { status: 404 })

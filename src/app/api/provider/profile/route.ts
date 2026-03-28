@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
@@ -29,15 +30,7 @@ const providerProfileSchema = z.object({
 // GET - Fetch current provider profile
 export async function GET(_request: NextRequest) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireProvider(await auth())
 
     const clientIp = getClientIP(_request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -46,7 +39,7 @@ export async function GET(_request: NextRequest) {
     }
 
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: {
         id: true,
         businessName: true,
@@ -103,15 +96,7 @@ export async function GET(_request: NextRequest) {
 // PUT - Update current provider profile
 export async function PUT(request: NextRequest) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -137,7 +122,7 @@ export async function PUT(request: NextRequest) {
     // This eliminates race condition between findUnique and update
     // If provider doesn't exist for this userId, Prisma will throw P2025 error
     const updatedProvider = await prisma.provider.update({
-      where: { userId: session.user.id },
+      where: { userId },
       data: validatedData,
       select: {
         id: true,

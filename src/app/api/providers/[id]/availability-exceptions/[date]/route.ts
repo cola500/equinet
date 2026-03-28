@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { rateLimiters } from "@/lib/rate-limit"
 import { parseDate } from "@/lib/date-utils"
 import { logger } from "@/lib/logger"
+import { requireProvider } from "@/lib/roles"
 
 /**
  * GET /api/providers/[id]/availability-exceptions/[date]
@@ -59,19 +60,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; date: string }> }
 ) {
   try {
-    // Auth
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    // Provider check
-    if (session.user.userType !== "provider") {
-      return new Response("Bara leverantörer kan ta bort tillgänglighetsundantag", { status: 403 })
-    }
+    const { userId } = requireProvider(await auth())
 
     // Rate limiting
-    const isAllowed = await rateLimiters.profileUpdate(session.user.id)
+    const isAllowed = await rateLimiters.profileUpdate(userId)
     if (!isAllowed) {
       return NextResponse.json(
         { error: "För många förfrågningar. Vänta en stund innan du gör fler ändringar." },
@@ -95,7 +87,7 @@ export async function DELETE(
       select: { userId: true },
     })
 
-    if (!provider || provider.userId !== session.user.id) {
+    if (!provider || provider.userId !== userId) {
       return new Response("Åtkomst nekad - inte din leverantörsprofil", { status: 403 })
     }
 

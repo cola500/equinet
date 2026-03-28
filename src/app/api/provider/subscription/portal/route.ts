@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
@@ -14,14 +15,7 @@ const portalSchema = z
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
-    const providerId = session.user.providerId
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.subscription(clientIp)

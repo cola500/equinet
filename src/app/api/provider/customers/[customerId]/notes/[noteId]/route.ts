@@ -5,6 +5,7 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { sanitizeMultilineString, stripXss } from "@/lib/sanitize"
+import { requireProvider } from "@/lib/roles"
 
 const updateNoteSchema = z.object({
   content: z.string().min(1).max(2000),
@@ -24,17 +25,7 @@ type RouteContext = { params: Promise<{ customerId: string; noteId: string }> }
 // PUT /api/provider/customers/[customerId]/notes/[noteId]
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan redigera kundanteckningar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -72,7 +63,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const { noteId } = await context.params
-    const providerId = session.user.providerId
 
     try {
       // Atomic: WHERE { id, providerId } ensures IDOR protection
@@ -106,17 +96,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // DELETE /api/provider/customers/[customerId]/notes/[noteId]
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan ta bort kundanteckningar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -128,7 +108,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { noteId } = await context.params
-    const providerId = session.user.providerId
 
     try {
       // Atomic: WHERE { id, providerId } ensures IDOR protection

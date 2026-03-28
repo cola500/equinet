@@ -6,6 +6,7 @@ import { parseDate } from "@/lib/date-utils"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
+import { requireProvider } from "@/lib/roles"
 
 // Validation schema for query parameters
 const querySchema = z.object({
@@ -115,22 +116,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Auth
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    // Provider check
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Endast leverantörer kan ändra tillgänglighet" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireProvider(await auth())
 
     // Rate limiting - use profileUpdate limiter (20/hour is reasonable for schedule changes)
-    const isAllowed = await rateLimiters.profileUpdate(session.user.id)
+    const isAllowed = await rateLimiters.profileUpdate(userId)
     if (!isAllowed) {
       return NextResponse.json(
         { error: "För många förfrågningar. Vänta en stund innan du gör fler ändringar." },
@@ -146,7 +135,7 @@ export async function POST(
       select: { userId: true },
     })
 
-    if (!provider || provider.userId !== session.user.id) {
+    if (!provider || provider.userId !== userId) {
       return NextResponse.json(
         { error: "Du har inte behörighet att ändra denna profil" },
         { status: 403 }

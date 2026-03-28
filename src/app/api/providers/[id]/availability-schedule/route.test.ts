@@ -204,6 +204,8 @@ describe('PUT /api/providers/[id]/availability-schedule', () => {
     })
 
     expect(response.status).toBe(403)
+    const data = await response.json()
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 403 if provider ID does not match session', async () => {

@@ -181,7 +181,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should create a new exception (closed all day)", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -227,7 +227,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should create exception with alternative hours", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -274,7 +274,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should return 400 if not closed but missing times", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -305,7 +305,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should return 400 for invalid date format", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -335,7 +335,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should return 400 for invalid time format", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -365,7 +365,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should return 400 for invalid JSON", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -456,11 +456,13 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
     })
 
     expect(response.status).toBe(403)
+    const data = await response.json()
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it("should return 403 if not owner of provider profile", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -488,7 +490,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should return 429 when rate limited", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(false) // Rate limited
@@ -515,7 +517,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should trim whitespace from reason field", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -566,7 +568,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should convert whitespace-only reason to null", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -617,7 +619,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
   it("should upsert existing exception", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -679,7 +681,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
   describe("Location fields (US-2)", () => {
     it("should create exception with location data", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -748,7 +750,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     it("should accept exception without location (backward compatibility)", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -798,7 +800,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     it("should validate latitude range (-90 to 90)", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -830,7 +832,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     it("should validate longitude range (-180 to 180)", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -862,7 +864,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     it("should trim whitespace from location field", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -916,7 +918,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     it("should convert whitespace-only location to null", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -975,7 +977,6 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
         user: { id: mockUserId, userType: "customer" },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
-      vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
 
       const request = new Request(
         `http://localhost/api/providers/${mockProviderId}/availability-exceptions`,
@@ -991,12 +992,12 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
       expect(response.status).toBe(403)
       const data = await response.json()
-      expect(data.error).toBeDefined()
+      expect(data.error).toBe("Åtkomst nekad")
     })
 
     it("should return JSON 403 when provider does not own the profile", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)
@@ -1024,7 +1025,7 @@ describe("POST /api/providers/[id]/availability-exceptions", () => {
 
     it("should return JSON 500 on unexpected error", async () => {
       const mockSession = {
-        user: { id: mockUserId, userType: "provider" },
+        user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
       }
       vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
       vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(true)

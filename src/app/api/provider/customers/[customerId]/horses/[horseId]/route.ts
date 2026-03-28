@@ -6,23 +6,14 @@ import { logger } from "@/lib/logger"
 import { sanitizeString, stripXss } from "@/lib/sanitize"
 import { hasCustomerRelationship } from "@/lib/customer-relationship"
 import { horseUpdateSchema } from "@/lib/schemas/horse"
+import { requireProvider } from "@/lib/roles"
 
 type RouteContext = { params: Promise<{ customerId: string; horseId: string }> }
 
 // PUT /api/provider/customers/[customerId]/horses/[horseId]
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan uppdatera hästar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -51,7 +42,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId, horseId } = await context.params
-    const providerId = session.user.providerId
 
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {
@@ -137,17 +127,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // DELETE /api/provider/customers/[customerId]/horses/[horseId]
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan ta bort hästar" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -159,7 +139,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId, horseId } = await context.params
-    const providerId = session.user.providerId
 
     const hasRelation = await hasCustomerRelationship(providerId, customerId)
     if (!hasRelation) {

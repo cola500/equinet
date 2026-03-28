@@ -53,7 +53,7 @@ describe('PUT /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockUpdateWithAuth.mockResolvedValue(mockUpdatedService)
@@ -128,7 +128,7 @@ describe('PUT /api/services/[id]', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should return 401 when user is not a provider', async () => {
+  it('should return 403 when user is not a provider', async () => {
     // Arrange - customer trying to update a service
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'customer' },
@@ -146,14 +146,14 @@ describe('PUT /api/services/[id]', () => {
     const data = await response.json()
 
     // Assert
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Ej inloggad')
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 404 when provider profile not found', async () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(null)
 
@@ -181,7 +181,7 @@ describe('PUT /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null when service not found or unauthorized
@@ -211,7 +211,7 @@ describe('PUT /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null for unauthorized access
@@ -241,7 +241,7 @@ describe('PUT /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
 
@@ -269,7 +269,7 @@ describe('PUT /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
 
@@ -303,7 +303,7 @@ describe('DELETE /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockDeleteWithAuth.mockResolvedValue(true)
@@ -358,7 +358,7 @@ describe('DELETE /api/services/[id]', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should return 401 when user is not a provider', async () => {
+  it('should return 403 when user is not a provider', async () => {
     // Arrange - customer trying to delete a service
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user123', userType: 'customer' },
@@ -375,14 +375,14 @@ describe('DELETE /api/services/[id]', () => {
     const data = await response.json()
 
     // Assert
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Ej inloggad')
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 404 when provider profile not found', async () => {
     // Arrange
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(null)
 
@@ -409,7 +409,7 @@ describe('DELETE /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false when service not found
@@ -438,7 +438,7 @@ describe('DELETE /api/services/[id]', () => {
     }
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
+      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
     } as never)
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false for unauthorized access

@@ -58,6 +58,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       user: {
         id: TEST_UUIDS.providerUser,
         userType: 'provider',
+        providerId: TEST_UUIDS.provider,
       },
     }
 
@@ -145,7 +146,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
 
     // Assert
     expect(response.status).toBe(403)
-    expect(data.error).toBe('Endast leverantörer kan se bokningar på annonser')
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 404 when announcement does not exist', async () => {
@@ -154,6 +155,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       user: {
         id: TEST_UUIDS.providerUser,
         userType: 'provider',
+        providerId: TEST_UUIDS.provider,
       },
     }
 
@@ -184,6 +186,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       user: {
         id: TEST_UUIDS.providerUser,
         userType: 'provider',
+        providerId: TEST_UUIDS.provider,
       },
     }
 
@@ -224,6 +227,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       user: {
         id: TEST_UUIDS.providerUser,
         userType: 'provider',
+        providerId: TEST_UUIDS.provider,
       },
     }
 
@@ -264,6 +268,7 @@ describe('GET /api/route-orders/[id]/bookings', () => {
       user: {
         id: TEST_UUIDS.providerUser,
         userType: 'provider',
+        providerId: TEST_UUIDS.provider,
       },
     }
 

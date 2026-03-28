@@ -4,19 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { encrypt } from "@/lib/encryption"
 import { exchangeCodeForTokens } from "@/lib/fortnox-client"
-import type { SessionUser } from "@/types/auth"
+import { requireProvider } from "@/lib/roles"
 
 // GET /api/integrations/fortnox/callback - OAuth callback
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.redirect(new URL("/", request.url))
-    }
+    const { userId, providerId } = requireProvider(await auth())
 
     const { searchParams } = new URL(request.url)
     const code = searchParams.get("code")
@@ -27,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       logger.warn("Fortnox OAuth denied", {
         error,
-        userId: session.user.id,
+        userId,
       })
       return NextResponse.redirect(
         new URL("/provider/settings/integrations?error=denied", request.url)
@@ -44,7 +37,7 @@ export async function GET(request: NextRequest) {
     const storedState = request.cookies.get("fortnox_oauth_state")?.value
     if (!storedState || storedState !== state) {
       logger.security("Fortnox OAuth state mismatch", "high", {
-        userId: session.user.id,
+        userId,
       })
       return NextResponse.redirect(
         new URL("/provider/settings/integrations?error=state_mismatch", request.url)
@@ -62,14 +55,6 @@ export async function GET(request: NextRequest) {
       clientSecret,
       redirectUri
     )
-
-    // Get provider ID
-    const providerId = (session.user as SessionUser).providerId
-    if (!providerId) {
-      return NextResponse.redirect(
-        new URL("/provider/settings/integrations?error=no_provider", request.url)
-      )
-    }
 
     // Store encrypted tokens
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
@@ -90,7 +75,7 @@ export async function GET(request: NextRequest) {
     })
 
     logger.info("Fortnox connected", {
-      userId: session.user.id,
+      userId,
       providerId,
     })
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
@@ -17,17 +18,7 @@ type RouteContext = { params: Promise<{ customerId: string }> }
 // PUT /api/provider/customers/[customerId] -- Update customer info
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -48,7 +39,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const validated = updateCustomerSchema.parse(body)
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     // IDOR-safe: verify customer belongs to this provider
     const link = await prisma.providerCustomer.findUnique({
@@ -106,17 +96,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // DELETE /api/provider/customers/[customerId] -- Remove manually added customer
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan ta bort kunder" },
-        { status: 403 }
-      )
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -128,7 +108,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { customerId } = await context.params
-    const providerId = session.user.providerId
 
     // Atomic IDOR-safe lookup
     const link = await prisma.providerCustomer.findUnique({

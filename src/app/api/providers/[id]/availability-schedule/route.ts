@@ -5,6 +5,7 @@ import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { strictTimeSchema } from "@/lib/zod-schemas"
+import { requireProvider } from "@/lib/roles"
 
 // Validation schema for availability schedule
 const scheduleItemSchema = z.object({
@@ -62,21 +63,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    // Provider check
-    if (session.user.userType !== "provider") {
-      return new Response("Bara leverantörer kan uppdatera tillgänglighet", { status: 403 })
     }
 
     const { id: providerId } = await params
@@ -87,7 +79,7 @@ export async function PUT(
       select: { userId: true },
     })
 
-    if (!provider || provider.userId !== session.user.id) {
+    if (!provider || provider.userId !== userId) {
       return new Response("Åtkomst nekad - inte din leverantörsprofil", { status: 403 })
     }
 

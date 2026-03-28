@@ -135,7 +135,7 @@ describe('POST /api/customer-reviews', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should return 401 when user is not a provider', async () => {
+  it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as never)
@@ -148,11 +148,11 @@ describe('POST /api/customer-reviews', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Ej inloggad')
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
-  it('should return 401 when provider has no providerId', async () => {
+  it('should return 403 when provider has no providerId', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: null },
     } as never)
@@ -165,8 +165,8 @@ describe('POST /api/customer-reviews', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Ej inloggad')
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Leverantörsprofil saknas')
   })
 
   it('should return 400 for invalid rating (too low)', async () => {
@@ -394,7 +394,7 @@ describe('GET /api/customer-reviews', () => {
     expect(data[0].customer.firstName).toBe('Anna')
   })
 
-  it('should return 401 when not a provider', async () => {
+  it('should return 403 when not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as never)
@@ -403,8 +403,8 @@ describe('GET /api/customer-reviews', () => {
     const response = await GET(request)
     const data = await response.json()
 
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Ej inloggad')
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('returns 401 when session is null (GET)', async () => {

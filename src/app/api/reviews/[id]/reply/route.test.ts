@@ -108,7 +108,7 @@ describe('POST /api/reviews/[id]/reply', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should return 401 when user is not a provider', async () => {
+  it('should return 403 when user is not a provider', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as never)
@@ -117,8 +117,8 @@ describe('POST /api/reviews/[id]/reply', () => {
     const response = await POST(request, { params })
     const data = await response.json()
 
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Ej inloggad')
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 404 when review not found', async () => {

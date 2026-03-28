@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireCustomer, requireAuth } from "@/lib/roles"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -12,14 +13,7 @@ type RouteContext = {
 // DELETE /api/follows/:providerId - Unfollow a provider
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -34,7 +28,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { providerId } = await context.params
 
     const service = createFollowService()
-    await service.unfollow(session.user.id, providerId)
+    await service.unfollow(userId, providerId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -51,10 +45,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 // GET /api/follows/:providerId - Check follow status
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId, userType } = requireAuth(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -70,8 +61,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const service = createFollowService()
     const [isFollowing, followerCount] = await Promise.all([
-      session.user.userType === "customer"
-        ? service.isFollowing(session.user.id, providerId)
+      userType === "customer"
+        ? service.isFollowing(userId, providerId)
         : false,
       service.getFollowerCount(providerId),
     ])

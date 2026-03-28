@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters } from "@/lib/rate-limit"
@@ -17,19 +18,12 @@ const serviceSchema = z.object({
 // GET all services for logged-in provider
 export async function GET(_request: NextRequest) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    // Auth + role check (throws 401/403)
+    const { userId } = requireProvider(await auth())
 
     // Use repository to find provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
@@ -57,18 +51,11 @@ export async function GET(_request: NextRequest) {
 // POST - Create new service
 export async function POST(request: NextRequest) {
   try {
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    // Auth + role check (throws 401/403)
+    const { userId } = requireProvider(await auth())
 
     // Rate limiting - 10 service creations per hour per provider
-    const rateLimitKey = `service-create:${session.user.id}`
+    const rateLimitKey = `service-create:${userId}`
     const isAllowed = await rateLimiters.serviceCreate(rateLimitKey)
     if (!isAllowed) {
       return NextResponse.json(
@@ -82,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Use repository to find provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
 
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })

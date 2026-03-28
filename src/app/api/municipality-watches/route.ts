@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireCustomer } from "@/lib/roles"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
@@ -14,17 +15,7 @@ const watchSchema = z.object({
 // POST /api/municipality-watches - Create a new municipality watch
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -53,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     const service = createMunicipalityWatchService()
     const result = await service.addWatch(
-      session.user.id,
+      userId,
       validated.municipality,
       validated.serviceTypeName
     )
@@ -92,14 +83,7 @@ export async function POST(request: NextRequest) {
 // GET /api/municipality-watches - List customer's watches
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -112,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     const service = createMunicipalityWatchService()
-    const watches = await service.getWatches(session.user.id)
+    const watches = await service.getWatches(userId)
 
     return NextResponse.json(watches)
   } catch (error) {

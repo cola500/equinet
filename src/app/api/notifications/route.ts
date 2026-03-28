@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireAuth } from "@/lib/roles"
 import { notificationService } from "@/domain/notification/NotificationService"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
@@ -7,10 +8,7 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 // GET - List notifications for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireAuth(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -22,8 +20,8 @@ export async function GET(request: NextRequest) {
     const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10), 1), 50) : 20
 
     const [notifications, unreadCount] = await Promise.all([
-      notificationService.getForUser(session.user.id, { limit }),
-      notificationService.getUnreadCount(session.user.id),
+      notificationService.getForUser(userId, { limit }),
+      notificationService.getUnreadCount(userId),
     ])
 
     return NextResponse.json({ notifications, unreadCount })
@@ -43,10 +41,7 @@ export async function GET(request: NextRequest) {
 // POST - Mark all notifications as read
 export async function POST(_request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireAuth(await auth())
 
     const clientIp = getClientIP(_request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -54,7 +49,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
-    const result = await notificationService.markAllAsRead(session.user.id)
+    const result = await notificationService.markAllAsRead(userId)
 
     return NextResponse.json({ markedAsRead: result.count })
   } catch (error) {

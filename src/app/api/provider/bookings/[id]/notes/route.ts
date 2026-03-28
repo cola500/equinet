@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { z } from "zod"
 import { rateLimiters } from "@/lib/rate-limit"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
@@ -26,24 +27,17 @@ export async function PUT(
     const { id } = await params
 
     // 1. Auth
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireProvider(await auth())
 
     // 2. Rate limiting
-    const isAllowed = await rateLimiters.api(session.user.id)
+    const isAllowed = await rateLimiters.api(userId)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
     // 3. Get provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 })
     }
@@ -101,6 +95,8 @@ export async function PUT(
         { status: 400 }
       )
     }
+
+    if (error instanceof Response) return error
 
     logger.error(
       "Error updating provider notes",

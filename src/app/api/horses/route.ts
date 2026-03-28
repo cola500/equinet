@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireAuth } from "@/lib/roles"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
@@ -19,13 +20,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireAuth(await auth())
     const service = createHorseService()
 
-    const result = await service.listHorses(session.user.id)
+    const result = await service.listHorses(userId)
 
     if (result.isFailure) {
       return NextResponse.json(
@@ -51,10 +49,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new horse
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireAuth(await auth())
 
     // Parse JSON
     let body
@@ -71,7 +66,7 @@ export async function POST(request: NextRequest) {
     const validated = horseCreateSchema.parse(body)
 
     const service = createHorseService()
-    const result = await service.createHorse(validated, session.user.id)
+    const result = await service.createHorse(validated, userId)
 
     if (result.isFailure) {
       return NextResponse.json(
@@ -80,7 +75,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    logger.info("Horse created", { horseId: result.value.id, ownerId: session.user.id })
+    logger.info("Horse created", { horseId: result.value.id, ownerId: userId })
 
     return NextResponse.json(result.value, { status: 201 })
   } catch (error) {

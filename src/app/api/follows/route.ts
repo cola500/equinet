@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireCustomer } from "@/lib/roles"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
@@ -13,17 +14,7 @@ const followSchema = z.object({
 // POST /api/follows - Follow a provider
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -51,7 +42,7 @@ export async function POST(request: NextRequest) {
     const validated = followSchema.parse(body)
 
     const service = createFollowService()
-    const result = await service.follow(session.user.id, validated.providerId)
+    const result = await service.follow(userId, validated.providerId)
 
     if (!result.ok) {
       if (result.error === "PROVIDER_NOT_FOUND") {
@@ -88,14 +79,7 @@ export async function POST(request: NextRequest) {
 // GET /api/follows - List followed providers
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireCustomer(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -108,7 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     const service = createFollowService()
-    const follows = await service.getFollowedProviders(session.user.id)
+    const follows = await service.getFollowedProviders(userId)
 
     return NextResponse.json(follows)
   } catch (error) {

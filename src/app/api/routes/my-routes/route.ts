@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { requireProvider } from "@/lib/roles"
 
 // GET /api/routes/my-routes - Get provider's routes
 export async function GET(request: Request) {
@@ -12,11 +13,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -24,18 +21,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
     }
 
-    // Only providers can view their routes
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Endast leverantörer kan se sina rutter" },
-        { status: 403 }
-      )
-    }
-
     // 2. Fetch routes with explicit select (no include)
     const routes = await prisma.route.findMany({
       where: {
-        providerId: session.user.providerId,
+        providerId,
       },
       select: {
         id: true,
