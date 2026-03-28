@@ -14,6 +14,42 @@ import {
 import { BookingMapper } from './BookingMapper'
 import { logger } from '@/lib/logger'
 
+// --- Named select blocks for consistent field selection ---
+// See CLAUDE.md: "Nytt fält på modell: kontrollera ALLA select-block"
+
+/** Service relation: name, price, duration. Used in all booking-with-relations queries. */
+const SERVICE_SELECT = {
+  select: { name: true, price: true, durationMinutes: true },
+} as const
+
+/** Provider relation (basic): businessName + user name. Used in most booking responses. */
+const PROVIDER_SELECT = {
+  select: {
+    businessName: true,
+    user: { select: { firstName: true, lastName: true } },
+  },
+} as const
+
+/** Customer relation (full): name + contact. Used in provider-facing queries. */
+const CUSTOMER_CONTACT_SELECT = {
+  select: { firstName: true, lastName: true, email: true, phone: true },
+} as const
+
+/** Customer relation (minimal): name + email. Used in status change notifications. */
+const CUSTOMER_EMAIL_SELECT = {
+  select: { firstName: true, lastName: true, email: true },
+} as const
+
+/** Horse relation (full): id, name, breed, gender. Used in create/reschedule/notes. */
+const HORSE_FULL_SELECT = {
+  select: { id: true, name: true, breed: true, gender: true },
+} as const
+
+/** Horse relation (basic): id, name, breed. Used in list queries. */
+const HORSE_BASIC_SELECT = {
+  select: { id: true, name: true, breed: true },
+} as const
+
 export class PrismaBookingRepository
   extends BaseRepository<Booking>
   implements IBookingRepository
@@ -266,40 +302,10 @@ export class PrismaBookingRepository
             updatedAt: true,
 
             // Relations for response
-            customer: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-              },
-            },
-            service: {
-              select: {
-                name: true,
-                price: true,
-                durationMinutes: true,
-              },
-            },
-            provider: {
-              select: {
-                businessName: true,
-                user: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
-                  },
-                },
-              },
-            },
-            horse: {
-              select: {
-                id: true,
-                name: true,
-                breed: true,
-                gender: true,
-              },
-            },
+            customer: CUSTOMER_CONTACT_SELECT,
+            service: SERVICE_SELECT,
+            provider: PROVIDER_SELECT,
+            horse: HORSE_FULL_SELECT,
           },
         })
       }, {
@@ -374,20 +380,8 @@ export class PrismaBookingRepository
             phone: true, // Provider needs to contact customer
           },
         },
-        service: {
-          select: {
-            name: true,
-            price: true,
-            durationMinutes: true,
-          },
-        },
-        horse: {
-          select: {
-            id: true,
-            name: true,
-            breed: true,
-          },
-        },
+        service: SERVICE_SELECT,
+        horse: HORSE_BASIC_SELECT,
         // Payment information for provider view
         payment: {
           select: {
@@ -462,20 +456,8 @@ export class PrismaBookingRepository
             },
           },
         },
-        service: {
-          select: {
-            name: true,
-            price: true,
-            durationMinutes: true,
-          },
-        },
-        horse: {
-          select: {
-            id: true,
-            name: true,
-            breed: true,
-          },
-        },
+        service: SERVICE_SELECT,
+        horse: HORSE_BASIC_SELECT,
         // Payment information for customer view
         payment: {
           select: {
@@ -561,13 +543,7 @@ export class PrismaBookingRepository
           updatedAt: true,
 
           // Relations for email notification
-          customer: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
+          customer: CUSTOMER_EMAIL_SELECT,
           service: {
             select: {
               name: true,
@@ -575,17 +551,7 @@ export class PrismaBookingRepository
               durationMinutes: true,
             },
           },
-          provider: {
-            select: {
-              businessName: true,
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
+          provider: PROVIDER_SELECT,
         },
       })
 
@@ -758,40 +724,10 @@ export class PrismaBookingRepository
             createdByProviderId: true,
             createdAt: true,
             updatedAt: true,
-            customer: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-              },
-            },
-            service: {
-              select: {
-                name: true,
-                price: true,
-                durationMinutes: true,
-              },
-            },
-            provider: {
-              select: {
-                businessName: true,
-                user: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
-                  },
-                },
-              },
-            },
-            horse: {
-              select: {
-                id: true,
-                name: true,
-                breed: true,
-                gender: true,
-              },
-            },
+            customer: CUSTOMER_CONTACT_SELECT,
+            service: SERVICE_SELECT,
+            provider: PROVIDER_SELECT,
+            horse: HORSE_FULL_SELECT,
           },
         })
       }, {
