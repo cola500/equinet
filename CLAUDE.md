@@ -60,6 +60,7 @@ sections:
 | Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (6 workflow-checklistor) |
 | Demo-läge | [docs/demo-mode.md](docs/demo-mode.md) |
 | Produktanalys | [docs/product-audit/](docs/product-audit/) (6 dokument) |
+| Teknikförbättringar Q1 | [docs/technical-improvements-2026-q1.md](docs/technical-improvements-2026-q1.md) |
 
 ---
 
@@ -364,4 +365,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-03-25
+**Senast uppdaterad**: 2026-03-28

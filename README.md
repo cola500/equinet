@@ -309,7 +309,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**4076+ tester** (373 E2E desktop + mobil + 3703 unit/integration) med **70% coverage**.
+**4128+ tester** (373 E2E desktop + mobil + 3755 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

@@ -34,6 +34,12 @@ sections:
 | [booking-flow.md](architecture/booking-flow.md) | Bokningsflode och betalning |
 | [scaling.md](architecture/scaling.md) | Skalningsplan for 500 anvandare |
 | [arkitektgenomlysning.md](architecture/arkitektgenomlysning.md) | Arkitekturgenomlysning |
+| [architecture-review.md](architecture-review.md) | Arkitekturgenomgang Q1 2026 |
+| [code-quality-review.md](code-quality-review.md) | Kodkvalitetsgenomgang Q1 2026 |
+| [changeability-review.md](changeability-review.md) | Forandringsbarhet Q1 2026 |
+| [booking-domain-review.md](booking-domain-review.md) | Bokningsdomanen -- genomlysning |
+| [payment-domain-review.md](payment-domain-review.md) | Payment/checkout -- genomlysning |
+| [technical-improvements-2026-q1.md](technical-improvements-2026-q1.md) | Teknikforbattringar Q1 2026 (sammanfattning) |
 
 ## Operations
 
