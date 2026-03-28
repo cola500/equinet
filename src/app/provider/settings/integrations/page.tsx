@@ -70,10 +70,9 @@ function IntegrationsContent() {
     }
   }, [demo, router])
 
-  if (demo) return null
-
   // Handle OAuth callback results
   useEffect(() => {
+    if (demo) return
     const success = searchParams.get("success")
     const error = searchParams.get("error")
 
@@ -90,13 +89,15 @@ function IntegrationsContent() {
       }
       toast.error(errorMessages[error] || "Något gick fel")
     }
-  }, [searchParams])
+  }, [searchParams, demo])
 
   useEffect(() => {
     // In a real implementation, check if Fortnox is connected via API
     // For now, we start as disconnected (MockAccountingGateway)
     setIsLoading(false)
   }, [])
+
+  if (demo) return null
 
   const handleConnect = () => {
     window.location.href = "/api/integrations/fortnox/connect"
