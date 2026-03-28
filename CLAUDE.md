@@ -365,4 +365,63 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
+## Working with Claude -- Proven Playbook
+
+> Baserat på Q1 2026 teknikspår. Se [retro](docs/retrospectives/2026-technical-cleanup-retro.md) för bakgrund.
+
+### 1. Standard workflow
+
+```
+Analys (explore-agenter) -> Pilot (2-3 filer) -> Batch (parallella agenter) -> Pausa vid avtagande värde
+```
+
+- **Analys först**: Låt explore-agenter kartlägga innan implementation. Förhindrar att vi löser fel problem.
+- **Pilot med riktade tester**: Verifiera mönstret på 2-3 representativa filer. Upptäck teständringar som behövs.
+- **Batch med parallella agenter**: 3-4 agenter, 4-5 filer var. Inga merge-konflikter om filerna inte överlappar.
+- **Pausa proaktivt**: Om nästa batch kräver mer instruktioner än den förra -- pausa. Avtagande avkastning.
+
+### 2. Hur vi skriver bra prompts
+
+- **Små, avgränsade uppgifter**: "Migrera dessa 5 routes till requireProvider" > "Refaktorera alla routes"
+- **Tydliga constraints**: "Rör INTE IDOR-logik", "Ändra INTE affärslogik", "Rör INTE middleware"
+- **Explicit mönster**: Visa exakt före/efter-kod i prompten. Agenter kopierar mönster bättre än de tolkar instruktioner.
+- **Verifieringssteg**: Avsluta alltid med "kör tester + typecheck + visa resultat"
+
+### 3. När Claude är stark
+
+- **Mekaniska batchändringar**: Rollmigrering (47 routes, 0 regressioner), wrapper-migrering (18 routes)
+- **Kodanalys och inventering**: Explore-agenter som läser 20+ filer och producerar strukturerade rapporter
+- **Testgenerering**: TDD-cykler, edge case-identifiering, IDOR-bekräftelsetester
+- **Dokumentation**: Strukturerade genomgångar med konsekvent format
+
+### 4. När Claude är svag -- och hur vi kompenserar
+
+- **Säkerhetsbedömningar**: Agenten flaggade falskt IDOR-alarm i reschedule. **Kompensera**: verifiera alltid säkerhetspåståenden manuellt i faktisk kod.
+- **Filinnehållsjämförelser**: `handoff.json` missidentifierades som duplicat (olika innehåll, samma namn). **Kompensera**: läs filerna själv vid tvetydiga fall.
+- **"Allt klart"-påståenden**: PaymentService-filer var untracked men rapporterades inte. **Kompensera**: kör `git status` efter varje refaktoreringssession.
+
+### 5. Viktiga guardrails
+
+- **Kör `git status` efter varje session** -- untracked filer som importeras av aktiv kod = produktionsrisk
+- **Kör `npm run lint` före push** -- lint-fel blockerar pre-push hook
+- **Anta aldrig att filer är committade** -- verifiera med `git diff --cached --stat`
+- **Verifiera kritiska ändringar manuellt** -- särskilt auth, IDOR, payment
+
+### 6. När vi ska pausa teknikspår
+
+- **Avtagande avkastning**: Batch 1 gav 57% LOC-reduktion, batch 3 gav 30% -- rätt att pausa
+- **Kvarvarande filer har specialfall**: Om de återstående filerna alla kräver individuell bedömning, batcha inte
+- **Produktarbete ger mer värde**: Teknikspår ska stödja features, inte ersätta dem
+- **Triggers för nästa spår**: Feature svår att bygga, samma bugg upprepas, tester opålitliga
+
+### 7. Anti-patterns
+
+- **"Migrera allt"** -- Batch till 80%, pausa, ta resten vid behov
+- **Flera förändringar i samma steg** -- En concern per commit: rollmigrering ELLER wrapper, inte båda
+- **Att inte verifiera output** -- Kör alltid tester + typecheck + lint, inte bara "ser bra ut"
+- **Att låta Claude fatta arkitekturbeslut** -- Claude exekverar. Människan beslutar scope, prioritet, och "är detta värt det?"
+- **För stora prompts** -- Om prompten är >30 rader, dela upp i steg
+
+---
+
 **Senast uppdaterad**: 2026-03-28
