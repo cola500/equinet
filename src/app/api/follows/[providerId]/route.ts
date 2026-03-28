@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { logger } from "@/lib/logger"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
+import { withApiHandler } from "@/lib/api-handler"
 import { createFollowService } from "@/domain/follow/FollowServiceFactory"
 
 type RouteContext = {
@@ -11,79 +8,35 @@ type RouteContext = {
 
 // DELETE /api/follows/:providerId - Unfollow a provider
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+  return withApiHandler(
+    { auth: "customer", featureFlag: "follow_provider" },
+    async ({ user }) => {
+      const { providerId } = await context.params
 
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+      const service = createFollowService()
+      await service.unfollow(user.userId, providerId)
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    if (!(await isFeatureEnabled("follow_provider"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    const { providerId } = await context.params
-
-    const service = createFollowService()
-    await service.unfollow(session.user.id, providerId)
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    logger.error("Error unfollowing", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json({ success: true })
+    },
+  )(request)
 }
 
 // GET /api/follows/:providerId - Check follow status
 export async function GET(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+  return withApiHandler(
+    { auth: "any", featureFlag: "follow_provider" },
+    async ({ user }) => {
+      const { providerId } = await context.params
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
+      const service = createFollowService()
+      const [isFollowing, followerCount] = await Promise.all([
+        user.userType === "customer"
+          ? service.isFollowing(user.userId, providerId)
+          : false,
+        service.getFollowerCount(providerId),
+      ])
 
-    if (!(await isFeatureEnabled("follow_provider"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    const { providerId } = await context.params
-
-    const service = createFollowService()
-    const [isFollowing, followerCount] = await Promise.all([
-      session.user.userType === "customer"
-        ? service.isFollowing(session.user.id, providerId)
-        : false,
-      service.getFollowerCount(providerId),
-    ])
-
-    return NextResponse.json({ isFollowing, followerCount })
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    logger.error("Error checking follow status", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json({ isFollowing, followerCount })
+    },
+  )(request)
 }

@@ -1,31 +1,17 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { logger } from "@/lib/logger"
-import { z } from "zod"
 import { createHorseService } from "@/domain/horse/HorseService"
 import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 import { horseCreateSchema } from "@/lib/schemas/horse"
 
 // GET - List horses for authenticated user
-export async function GET(request: NextRequest) {
-  const clientIp = getClientIP(request)
-  const isAllowed = await rateLimiters.api(clientIp)
-  if (!isAllowed) {
-    return NextResponse.json(
-      { error: "För många förfrågningar. Försök igen om en minut." },
-      { status: 429 }
-    )
-  }
-
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+export const GET = withApiHandler(
+  { auth: "any" },
+  async ({ user }) => {
     const service = createHorseService()
 
-    const result = await service.listHorses(session.user.id)
+    const result = await service.listHorses(user.userId)
 
     if (result.isFailure) {
       return NextResponse.json(
@@ -35,43 +21,15 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(result.value)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Failed to fetch horses", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte hämta hästar" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // POST - Create new horse
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    // Validate input
-    const validated = horseCreateSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "any", schema: horseCreateSchema },
+  async ({ user, body }) => {
     const service = createHorseService()
-    const result = await service.createHorse(validated, session.user.id)
+    const result = await service.createHorse(body, user.userId)
 
     if (result.isFailure) {
       return NextResponse.json(
@@ -80,25 +38,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    logger.info("Horse created", { horseId: result.value.id, ownerId: session.user.id })
+    logger.info("Horse created", { horseId: result.value.id, ownerId: user.userId })
 
     return NextResponse.json(result.value, { status: 201 })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Failed to create horse", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte skapa häst" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

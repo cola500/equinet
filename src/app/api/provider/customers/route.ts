@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { sanitizeString, sanitizePhone, sanitizeEmail, stripXss } from "@/lib/sanitize"
 import { createGhostUser } from "@/lib/ghost-user"
@@ -28,34 +26,14 @@ interface CustomerSummary {
 }
 
 // GET /api/provider/customers?status=all|active|inactive&q=searchterm
-export async function GET(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    // Provider-only endpoint
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan se kundlistan" },
-        { status: 403 }
-      )
-    }
-
-    // Rate limiting
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar. Försök igen om en minut." },
-        { status: 429 }
-      )
-    }
+export const GET = withApiHandler(
+  { auth: "provider" },
+  async ({ user, request }) => {
+    const { userId } = user
 
     // Get provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 
@@ -218,66 +196,18 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ customers })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error(
-      "Failed to fetch provider customers",
-      error instanceof Error ? error : new Error(String(error))
-    )
-    return NextResponse.json(
-      { error: "Kunde inte hämta kundlistan" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // POST /api/provider/customers -- Add a customer manually
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan lägga till kunder" },
-        { status: 403 }
-      )
-    }
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar. Försök igen om en minut." },
-        { status: 429 }
-      )
-    }
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    // Validate
-    const parsed = addCustomerSchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: parsed.error.issues },
-        { status: 400 }
-      )
-    }
+export const POST = withApiHandler(
+  { auth: "provider", schema: addCustomerSchema },
+  async ({ user, body }) => {
+    const { userId } = user
 
     // Get provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true },
     })
 
@@ -289,10 +219,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize
-    const firstName = sanitizeString(stripXss(parsed.data.firstName))
-    const lastName = sanitizeString(stripXss(parsed.data.lastName || ''))
-    const phone = parsed.data.phone ? sanitizePhone(parsed.data.phone) : undefined
-    const email = parsed.data.email ? sanitizeEmail(parsed.data.email) : undefined
+    const firstName = sanitizeString(stripXss(body.firstName))
+    const lastName = sanitizeString(stripXss(body.lastName || ''))
+    const phone = body.phone ? sanitizePhone(body.phone) : undefined
+    const email = body.email ? sanitizeEmail(body.email) : undefined
 
     // Create ghost user (or reuse existing by email)
     const customerId = await createGhostUser({ firstName, lastName, phone, email })
@@ -326,18 +256,5 @@ export async function POST(request: NextRequest) {
       { customer: { id: customerId } },
       { status: 201 }
     )
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error(
-      "Failed to add customer",
-      error instanceof Error ? error : new Error(String(error))
-    )
-    return NextResponse.json(
-      { error: "Kunde inte lägga till kund" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

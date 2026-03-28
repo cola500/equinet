@@ -108,7 +108,7 @@ describe('GET /api/provider/customers/[customerId]/notes', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toContain('leverantör')
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return 403 when no completed booking with customer', async () => {

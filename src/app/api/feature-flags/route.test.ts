@@ -51,6 +51,7 @@ describe("GET /api/feature-flags", () => {
       provider_subscription: false,
       help_center: true,
       stable_profiles: false,
+      demo_mode: false,
     })
   })
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +26,8 @@ import {
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 
 interface FortnoxStatus {
   connected: boolean
@@ -50,7 +52,10 @@ export default function IntegrationsPage() {
 
 function IntegrationsContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
   const [fortnoxStatus, setFortnoxStatus] = useState<FortnoxStatus>({
     connected: false,
   })
@@ -58,8 +63,16 @@ function IntegrationsContent() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
 
+  // Redirect away from integrations in demo mode
+  useEffect(() => {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
+
   // Handle OAuth callback results
   useEffect(() => {
+    if (demo) return
     const success = searchParams.get("success")
     const error = searchParams.get("error")
 
@@ -76,13 +89,15 @@ function IntegrationsContent() {
       }
       toast.error(errorMessages[error] || "Något gick fel")
     }
-  }, [searchParams])
+  }, [searchParams, demo])
 
   useEffect(() => {
     // In a real implementation, check if Fortnox is connected via API
     // For now, we start as disconnected (MockAccountingGateway)
     setIsLoading(false)
   }, [])
+
+  if (demo) return null
 
   const handleConnect = () => {
     window.location.href = "/api/integrations/fortnox/connect"

@@ -62,6 +62,30 @@ describe("GET /api/routes/my-routes", () => {
     expect(json.error).toBe("Ej inloggad")
   })
 
+  it("returns 403 when user is not a provider", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-1", userType: "customer" },
+    } as never)
+
+    const request = new Request("http://localhost:3000/api/routes/my-routes")
+    const res = await GET(request)
+    expect(res.status).toBe(403)
+    const json = await res.json()
+    expect(json.error).toBe("Åtkomst nekad")
+  })
+
+  it("returns 403 when provider has no providerId", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-1", userType: "provider", providerId: null },
+    } as never)
+
+    const request = new Request("http://localhost:3000/api/routes/my-routes")
+    const res = await GET(request)
+    expect(res.status).toBe(403)
+    const json = await res.json()
+    expect(json.error).toBe("Leverantörsprofil saknas")
+  })
+
   it("returns 404 when route_planning feature flag is disabled", async () => {
     mockIsFeatureEnabled.mockResolvedValueOnce(false)
 

@@ -5,6 +5,7 @@ import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { requireProvider } from "@/lib/roles"
 
 // Validation schema for updating stop
 const updateStopSchema = z.object({
@@ -24,24 +25,12 @@ export async function PATCH(
 
     const { id: routeId, stopId } = await params
 
-    // Auth handled by middleware
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    // Only providers can update stops
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Endast leverantörer kan uppdatera stopp" },
-        { status: 403 }
-      )
     }
 
     // 2. Validate route ownership
@@ -56,7 +45,7 @@ export async function PATCH(
       )
     }
 
-    if (route.providerId !== session.user.providerId) {
+    if (route.providerId !== providerId) {
       return NextResponse.json(
         { error: "Du har inte tillgång till denna rutt" },
         { status: 403 }

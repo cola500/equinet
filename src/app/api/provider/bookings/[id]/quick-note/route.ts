@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireProvider } from "@/lib/roles"
 import { z } from "zod"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
@@ -27,14 +28,7 @@ export async function POST(
     const { id } = await params
 
     // 1. Auth
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
+    const { userId } = requireProvider(await auth())
 
     // 2. Rate limiting (AI-specific)
     const clientIp = getClientIP(request)
@@ -48,7 +42,7 @@ export async function POST(
 
     // 3. Get provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
@@ -132,7 +126,7 @@ export async function POST(
       await prisma.horseNote.create({
         data: {
           horseId: booking.horseId,
-          authorId: session.user.id,
+          authorId: userId,
           category: interpreted.horseNoteCategory,
           title: sanitizedText.slice(0, 100),
           content: sanitizedText,
@@ -162,6 +156,8 @@ export async function POST(
         { status: 400 }
       )
     }
+
+    if (error instanceof Response) return error
 
     logger.error(
       "Error saving quick note",

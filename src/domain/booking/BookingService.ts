@@ -210,31 +210,15 @@ export class BookingService {
   async createBooking(
     dto: CreateBookingDTO
   ): Promise<Result<BookingWithRelations, BookingError>> {
-    // 1. Get and validate service
-    const service = await this.deps.getService(dto.serviceId)
+    // 1. Validate service
+    const serviceResult = await this.validateService(dto.serviceId, dto.providerId)
+    if (serviceResult.isFailure) return Result.fail(serviceResult.error)
+    const service = serviceResult.value
 
-    if (!service) {
-      return Result.fail({ type: 'INACTIVE_SERVICE' })
-    }
-
-    if (!service.isActive) {
-      return Result.fail({ type: 'INACTIVE_SERVICE' })
-    }
-
-    if (service.providerId !== dto.providerId) {
-      return Result.fail({ type: 'SERVICE_PROVIDER_MISMATCH' })
-    }
-
-    // 2. Get and validate provider
-    const provider = await this.deps.getProvider(dto.providerId)
-
-    if (!provider) {
-      return Result.fail({ type: 'INACTIVE_PROVIDER' })
-    }
-
-    if (!provider.isActive) {
-      return Result.fail({ type: 'INACTIVE_PROVIDER' })
-    }
+    // 2. Validate provider
+    const providerResult = await this.validateProvider(dto.providerId)
+    if (providerResult.isFailure) return Result.fail(providerResult.error)
+    const provider = providerResult.value
 
     // 3. Prevent self-booking
     if (provider.userId === dto.customerId) {
@@ -257,17 +241,11 @@ export class BookingService {
       return Result.fail(closedDayCheck.error)
     }
 
-    // 5. Calculate end time if not provided
-    const endTime = dto.endTime || this.calculateEndTime(dto.startTime, service.durationMinutes)
+    // 5. Calculate end time + validate time slot
+    const timeSlot = this.validateTimeSlot(dto.startTime, dto.endTime, service.durationMinutes)
+    if (timeSlot.isFailure) return Result.fail(timeSlot.error)
 
-    // 6. Validate times using TimeSlot value object
-    const timeSlotResult = TimeSlot.create(dto.startTime, endTime)
-
-    if (timeSlotResult.isFailure) {
-      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
-    }
-
-    // 7. Validate route order if provided
+    // 6. Validate route order if provided
     if (dto.routeOrderId && this.deps.getRouteOrder) {
       const routeOrderValidation = await this.validateRouteOrder(
         dto.routeOrderId,
@@ -287,8 +265,8 @@ export class BookingService {
         dto.customerId,
         dto.providerId,
         dto.bookingDate,
-        timeSlotResult.value.startTime,
-        timeSlotResult.value.endTime,
+        timeSlot.value.startTime,
+        timeSlot.value.endTime,
         provider
       )
 
@@ -299,14 +277,14 @@ export class BookingService {
       travelTimeMinutes = travelValidation.value
     }
 
-    // 9. Create booking with atomic overlap check
+    // 8. Create booking with atomic overlap check
     const bookingData: CreateBookingData = {
       customerId: dto.customerId,
       providerId: dto.providerId,
       serviceId: dto.serviceId,
       bookingDate: dto.bookingDate,
-      startTime: timeSlotResult.value.startTime,
-      endTime: timeSlotResult.value.endTime,
+      startTime: timeSlot.value.startTime,
+      endTime: timeSlot.value.endTime,
       routeOrderId: dto.routeOrderId,
       horseId: dto.horseId,
       horseName: dto.horseName,
@@ -428,26 +406,18 @@ export class BookingService {
       })
     }
 
-    // 2. Get and validate service
-    const service = await this.deps.getService(dto.serviceId)
-    if (!service || !service.isActive) {
-      return Result.fail({ type: 'INACTIVE_SERVICE' })
-    }
-    if (service.providerId !== dto.providerId) {
-      return Result.fail({ type: 'SERVICE_PROVIDER_MISMATCH' })
-    }
+    // 2. Validate service
+    const serviceResult = await this.validateService(dto.serviceId, dto.providerId)
+    if (serviceResult.isFailure) return Result.fail(serviceResult.error)
+    const service = serviceResult.value
 
-    // 3. Get and validate provider
-    const provider = await this.deps.getProvider(dto.providerId)
-    if (!provider || !provider.isActive) {
-      return Result.fail({ type: 'INACTIVE_PROVIDER' })
-    }
+    // 3. Validate provider
+    const providerResult = await this.validateProvider(dto.providerId)
+    if (providerResult.isFailure) return Result.fail(providerResult.error)
 
     // 4. Check if provider has closed this day
     const closedDayCheck = await this.validateClosedDay(dto.providerId, dto.bookingDate)
-    if (closedDayCheck.isFailure) {
-      return Result.fail(closedDayCheck.error)
-    }
+    if (closedDayCheck.isFailure) return Result.fail(closedDayCheck.error)
 
     // 5. Resolve customer ID (existing or ghost user)
     let customerId = dto.customerId
@@ -473,14 +443,9 @@ export class BookingService {
       })
     }
 
-    // 5. Calculate end time if not provided
-    const endTime = dto.endTime || this.calculateEndTime(dto.startTime, service.durationMinutes)
-
-    // 6. Validate times
-    const timeSlotResult = TimeSlot.create(dto.startTime, endTime)
-    if (timeSlotResult.isFailure) {
-      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
-    }
+    // 6. Calculate end time + validate time slot
+    const timeSlot = this.validateTimeSlot(dto.startTime, dto.endTime, service.durationMinutes)
+    if (timeSlot.isFailure) return Result.fail(timeSlot.error)
 
     // 7. Create booking with atomic overlap check
     const bookingData: CreateBookingData = {
@@ -488,8 +453,8 @@ export class BookingService {
       providerId: dto.providerId,
       serviceId: dto.serviceId,
       bookingDate: dto.bookingDate,
-      startTime: timeSlotResult.value.startTime,
-      endTime: timeSlotResult.value.endTime,
+      startTime: timeSlot.value.startTime,
+      endTime: timeSlot.value.endTime,
       horseId: dto.horseId,
       horseName: dto.horseName,
       horseInfo: dto.horseInfo,
@@ -586,16 +551,11 @@ export class BookingService {
       return Result.fail({ type: 'INACTIVE_SERVICE_FOR_RESCHEDULE' })
     }
 
-    // 8. Calculate end time
-    const newEndTime = this.calculateEndTime(dto.newStartTime, service.durationMinutes)
+    // 8. Calculate end time + validate time slot
+    const timeSlot = this.validateTimeSlot(dto.newStartTime, undefined, service.durationMinutes)
+    if (timeSlot.isFailure) return Result.fail(timeSlot.error)
 
-    // 9. Validate new time slot
-    const timeSlotResult = TimeSlot.create(dto.newStartTime, newEndTime)
-    if (timeSlotResult.isFailure) {
-      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
-    }
-
-    // 10. New date must be in the future
+    // 9. New date must be in the future
     const newBookingDate = new Date(dto.newBookingDate)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -621,8 +581,8 @@ export class BookingService {
       dto.customerId,
       {
         bookingDate: newBookingDate,
-        startTime: timeSlotResult.value.startTime,
-        endTime: timeSlotResult.value.endTime,
+        startTime: timeSlot.value.startTime,
+        endTime: timeSlot.value.endTime,
         providerId: booking.providerId,
         newStatus,
       }
@@ -636,6 +596,64 @@ export class BookingService {
     }
 
     return Result.ok(updated)
+  }
+
+  // --- Shared validation helpers ---
+
+  /**
+   * Validate that a service exists, is active, and belongs to the given provider.
+   */
+  private async validateService(
+    serviceId: string,
+    providerId: string
+  ): Promise<Result<ServiceInfo, BookingError>> {
+    const service = await this.deps.getService(serviceId)
+
+    if (!service || !service.isActive) {
+      return Result.fail({ type: 'INACTIVE_SERVICE' })
+    }
+
+    if (service.providerId !== providerId) {
+      return Result.fail({ type: 'SERVICE_PROVIDER_MISMATCH' })
+    }
+
+    return Result.ok(service)
+  }
+
+  /**
+   * Validate that a provider exists and is active.
+   */
+  private async validateProvider(
+    providerId: string
+  ): Promise<Result<ProviderInfo, BookingError>> {
+    const provider = await this.deps.getProvider(providerId)
+
+    if (!provider || !provider.isActive) {
+      return Result.fail({ type: 'INACTIVE_PROVIDER' })
+    }
+
+    return Result.ok(provider)
+  }
+
+  /**
+   * Calculate end time (if needed) and validate as TimeSlot.
+   */
+  private validateTimeSlot(
+    startTime: string,
+    endTime: string | undefined,
+    durationMinutes: number
+  ): Result<{ startTime: string; endTime: string }, BookingError> {
+    const resolvedEndTime = endTime || this.calculateEndTime(startTime, durationMinutes)
+    const timeSlotResult = TimeSlot.create(startTime, resolvedEndTime)
+
+    if (timeSlotResult.isFailure) {
+      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
+    }
+
+    return Result.ok({
+      startTime: timeSlotResult.value.startTime,
+      endTime: timeSlotResult.value.endTime,
+    })
   }
 
   /**

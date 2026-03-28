@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
@@ -10,8 +10,6 @@ import {
   type BookingContext,
 } from "@/domain/voice-log/VoiceInterpretationService"
 import { parseVocabulary, formatForPrompt } from "@/domain/voice-log/VocabularyService"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 const interpretSchema = z.object({
   transcript: z.string().min(1, "Transkribering krävs").max(5000, "Transkribering för lång"),
@@ -19,51 +17,12 @@ const interpretSchema = z.object({
 }).strict()
 
 // POST /api/voice-log - Interpret a voice transcript
-export async function POST(request: NextRequest) {
-  try {
-    // Feature flag check
-    if (!(await isFeatureEnabled("voice_logging"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    // Rate limiting
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.ai(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många AI-förfrågningar. Försök igen om en stund." },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    const validated = interpretSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "provider", rateLimit: "ai", featureFlag: "voice_logging", schema: interpretSchema },
+  async ({ user, body: validated }) => {
     // Get provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(user.userId)
     if (!provider) {
       return NextResponse.json(
         { error: "Leverantör hittades inte" },
@@ -181,22 +140,5 @@ export async function POST(request: NextRequest) {
       interpretation: enriched,
       bookings: bookingContext,
     })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Failed to interpret voice log", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte tolka röstinspelningen" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

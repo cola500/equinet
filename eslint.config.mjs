@@ -61,6 +61,8 @@ export default [
     ignores: [
       ".next/**",
       ".worktrees/**",
+      ".claude/worktrees/**",
+      ".agents/**",
       "out/**",
       "build/**",
       "coverage/**",

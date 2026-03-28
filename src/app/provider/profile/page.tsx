@@ -18,6 +18,7 @@ import Link from "next/link"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard"
 import { RescheduleSettingsCard } from "@/components/provider/profile/RescheduleSettingsCard"
 import { RecurringBookingsCard } from "@/components/provider/profile/RecurringBookingsCard"
@@ -58,8 +59,10 @@ function ProviderProfilePageContent() {
 
   const { guardMutation } = useOfflineGuard()
   const helpEnabled = useFeatureFlag("help_center")
-  const selfRescheduleEnabled = useFeatureFlag("self_reschedule")
-  const recurringBookingsEnabled = useFeatureFlag("recurring_bookings")
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const selfRescheduleEnabled = useFeatureFlag("self_reschedule") && !demo
+  const recurringBookingsEnabled = useFeatureFlag("recurring_bookings") && !demo
   const subscriptionEnabled = useFeatureFlag("provider_subscription")
 
   // Subscription status (only fetched when flag is on)
@@ -367,7 +370,8 @@ function ProviderProfilePageContent() {
             guardMutation={guardMutation}
           />
 
-          {/* Verification Link */}
+          {/* Verification Link - hidden in demo */}
+          {!demo && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Verifiering</CardTitle>
@@ -381,8 +385,10 @@ function ProviderProfilePageContent() {
               </Link>
             </CardContent>
           </Card>
+          )}
 
-          {/* Export Data */}
+          {/* Export Data - hidden in demo */}
+          {!demo && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Exportera data</CardTitle>
@@ -396,6 +402,7 @@ function ProviderProfilePageContent() {
               </Link>
             </CardContent>
           </Card>
+          )}
 
         </>
       )}
@@ -403,8 +410,8 @@ function ProviderProfilePageContent() {
       {/* Tab: Inställningar */}
       {activeTab === "settings" && (
         <>
-      {/* Subscription Card */}
-      {subscriptionEnabled && (
+      {/* Subscription Card - hidden in demo */}
+      {subscriptionEnabled && !demo && (
         <SubscriptionCard
           status={subscriptionStatus}
           isLoading={subscriptionLoading}
@@ -479,7 +486,9 @@ function ProviderProfilePageContent() {
         />
       )}
 
-      {/* Delete Account */}
+      {/* Delete Account - hidden in demo */}
+      {!demo && (
+      <>
       <Card id="delete-account" className="border-red-200 mt-6">
         <CardHeader>
           <CardTitle className="text-red-600">Radera konto</CardTitle>
@@ -501,6 +510,8 @@ function ProviderProfilePageContent() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
       />
+      </>
+      )}
 
         </>
       )}

@@ -1,12 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { logger } from "@/lib/logger"
 import { CustomerReviewService } from "@/domain/customer-review/CustomerReviewService"
 import { mapCustomerReviewErrorToStatus } from "@/domain/customer-review/mapCustomerReviewErrorToStatus"
 import { CustomerReviewRepository } from "@/infrastructure/persistence/customer-review/CustomerReviewRepository"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const createCustomerReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
@@ -15,36 +13,9 @@ const createCustomerReviewSchema = z.object({
 }).strict()
 
 // POST - Create a customer review (provider only)
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    const providerId = session.user.providerId
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    // Validate
-    const validated = createCustomerReviewSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "provider", schema: createCustomerReviewSchema },
+  async ({ user, body }) => {
     const reviewService = new CustomerReviewService({
       customerReviewRepository: new CustomerReviewRepository(),
       getBooking: async (id) => {
@@ -74,10 +45,10 @@ export async function POST(request: NextRequest) {
     })
 
     const result = await reviewService.createReview({
-      bookingId: validated.bookingId,
-      providerId,
-      rating: validated.rating,
-      comment: validated.comment || null,
+      bookingId: body.bookingId,
+      providerId: user.providerId,
+      rating: body.rating,
+      comment: body.comment || null,
     })
 
     if (result.isFailure) {
@@ -88,57 +59,16 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(result.value, { status: 201 })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error creating customer review", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte skapa kundrecension" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // GET - List provider's customer reviews (provider only)
-export async function GET(_request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    const clientIp = getClientIP(_request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
+export const GET = withApiHandler(
+  { auth: "provider" },
+  async ({ user }) => {
     const repository = new CustomerReviewRepository()
-    const reviews = await repository.findByProviderId(session.user.providerId)
+    const reviews = await repository.findByProviderId(user.providerId)
 
     return NextResponse.json(reviews)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Error fetching customer reviews", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte hämta kundrecensioner" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

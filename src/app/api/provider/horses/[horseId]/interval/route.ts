@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { requireProvider } from "@/lib/roles"
 import { z } from "zod"
 
 const intervalSchema = z.object({
@@ -21,14 +22,7 @@ type RouteContext = { params: Promise<{ horseId: string }> }
  * Shared auth + access check for all methods
  */
 async function authorizeProvider(request: NextRequest, context: RouteContext) {
-  const session = await auth()
-  if (!session) {
-    return { error: NextResponse.json({ error: "Ej inloggad" }, { status: 401 }) }
-  }
-
-  if (session.user.userType !== "provider") {
-    return { error: NextResponse.json({ error: "Bara leverantorer har tillgang" }, { status: 403 }) }
-  }
+  const { userId, providerId } = requireProvider(await auth())
 
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.api(clientIp)
@@ -37,7 +31,7 @@ async function authorizeProvider(request: NextRequest, context: RouteContext) {
   }
 
   const provider = await prisma.provider.findUnique({
-    where: { userId: session.user.id },
+    where: { userId },
     select: { id: true },
   })
 
@@ -51,7 +45,7 @@ async function authorizeProvider(request: NextRequest, context: RouteContext) {
   const bookingCount = await prisma.booking.count({
     where: {
       horseId,
-      provider: { userId: session.user.id },
+      provider: { userId },
     },
   })
 

@@ -70,7 +70,7 @@ describe("POST /api/voice-log", () => {
     vi.clearAllMocks()
     mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockFindMany.mockResolvedValue([])

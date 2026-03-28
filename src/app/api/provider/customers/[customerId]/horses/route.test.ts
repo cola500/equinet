@@ -81,7 +81,7 @@ describe("GET /api/provider/customers/[customerId]/horses", () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toContain("leverantör")
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it("should return 429 when rate limited", async () => {

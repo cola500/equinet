@@ -4,22 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { requireProvider } from "@/lib/roles"
 
 // GET /api/customers/search?q=anna
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    // Provider-only endpoint
-    if (session.user.userType !== 'provider') {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan söka kunder" },
-        { status: 403 }
-      )
-    }
+    const { userId } = requireProvider(await auth())
 
     // Rate limiting
     const clientIp = getClientIP(request)
@@ -42,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Get provider from session
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(userId)
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }

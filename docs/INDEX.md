@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-03-26
 sections:
   - Arkitektur
   - Operations
@@ -33,6 +33,13 @@ sections:
 | [offline-pwa.md](architecture/offline-pwa.md) | Offline PWA-arkitektur (service worker, IndexedDB, sync) |
 | [booking-flow.md](architecture/booking-flow.md) | Bokningsflode och betalning |
 | [scaling.md](architecture/scaling.md) | Skalningsplan for 500 anvandare |
+| [arkitektgenomlysning.md](architecture/arkitektgenomlysning.md) | Arkitekturgenomlysning |
+| [architecture-review.md](architecture-review.md) | Arkitekturgenomgang Q1 2026 |
+| [code-quality-review.md](code-quality-review.md) | Kodkvalitetsgenomgang Q1 2026 |
+| [changeability-review.md](changeability-review.md) | Forandringsbarhet Q1 2026 |
+| [booking-domain-review.md](booking-domain-review.md) | Bokningsdomanen -- genomlysning |
+| [payment-domain-review.md](payment-domain-review.md) | Payment/checkout -- genomlysning |
+| [technical-improvements-2026-q1.md](technical-improvements-2026-q1.md) | Teknikforbattringar Q1 2026 (sammanfattning) |
 
 ## Operations
 
@@ -48,6 +55,7 @@ sections:
 |----------|-------------|
 | [pentest-2026-02-15.md](security/pentest-2026-02-15.md) | OWASP ZAP pentest-rapport (februari 2026) |
 | [rls-findings.md](security/rls-findings.md) | Row Level Security-analys |
+| [PENTEST-REPORT-2026-02-27.md](security/PENTEST-REPORT-2026-02-27.md) | Pentest-rapport (februari 2026, utokad) |
 
 ## Testning
 
@@ -80,6 +88,21 @@ sections:
 | [group-bookings.md](api/group-bookings.md) | Group Bookings API |
 | [admin.md](api/admin.md) | Admin API |
 | [voice-and-ai.md](api/voice-and-ai.md) | Voice & AI API |
+
+## Produktanalys & Demo
+
+| Dokument | Beskrivning |
+|----------|-------------|
+| [demo-mode.md](demo-mode.md) | Demo-lage -- vad som visas/doljs, hur man startar |
+| [demo-seed.md](demo-seed.md) | Demo-data: tjanster, kunder, hastar, bokningar |
+| [demo-go-no-go.md](demo-go-no-go.md) | Go/no-go genomgang av demo-flodet |
+| [product-audit/UX-GENOMLYSNING.md](product-audit/UX-GENOMLYSNING.md) | UX-genomlysning |
+| [product-audit/feature-inventory.md](product-audit/feature-inventory.md) | Fullständig inventering av alla 47 features |
+| [product-audit/user-flows.md](product-audit/user-flows.md) | Viktigaste användarflödena med status och blockerare |
+| [product-audit/demo-readiness.md](product-audit/demo-readiness.md) | Bedömning av vad som är demo-bart idag |
+| [product-audit/demo-mvp-proposal.md](product-audit/demo-mvp-proposal.md) | Minimal demo-MVP med steg-för-steg-script |
+| [product-audit/technical-risks.md](product-audit/technical-risks.md) | Tekniska risker för demo/MVP |
+| [product-audit/recent-changes.md](product-audit/recent-changes.md) | Förändringsinventering jan-mar 2026 |
 
 ## Planer (aktiva)
 
@@ -117,4 +140,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-02-28*
+*Senast uppdaterad: 2026-03-26*

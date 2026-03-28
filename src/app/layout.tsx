@@ -11,6 +11,7 @@ import { DevBanner } from "@/components/layout/DevBanner";
 import { CookieNotice } from "@/components/layout/CookieNotice";
 import { BugReportFab } from "@/components/provider/BugReportFab";
 import { getFeatureFlags } from "@/lib/feature-flags";
+import { isDemoMode } from "@/lib/demo-mode";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialFlags = await getFeatureFlags()
+  const demo = isDemoMode() || initialFlags.demo_mode === true
 
   return (
     <html lang="sv">
@@ -58,7 +60,7 @@ export default async function RootLayout({
               </div>
               <Toaster />
               <CookieNotice />
-              <BugReportFab />
+              {!demo && <BugReportFab />}
             </SWRProvider>
           </FeatureFlagProvider>
         </SessionProvider>

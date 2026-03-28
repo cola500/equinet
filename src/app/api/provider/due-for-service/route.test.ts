@@ -49,7 +49,7 @@ describe('GET /api/provider/due-for-service', () => {
     vi.clearAllMocks()
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
+      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -84,6 +84,8 @@ describe('GET /api/provider/due-for-service', () => {
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(403)
+    const data = await response.json()
+    expect(data.error).toBe('Åtkomst nekad')
   })
 
   it('should return horses sorted by urgency (overdue first)', async () => {

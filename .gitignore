@@ -20,6 +20,9 @@
 /playwright/.cache/
 .playwright-mcp/
 
+# Root-level screenshots (Playwright MCP, demo walkthroughs)
+/*.png
+
 # next.js
 /.next/
 /out/

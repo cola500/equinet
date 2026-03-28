@@ -302,13 +302,14 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Rate limiting, CSRF, XSS, SQL injection-skydd
 - GDPR-dataexport (JSON/CSV)
 - Redis-backade feature flags med admin-toggle
+- Demo-läge (`NEXT_PUBLIC_DEMO_MODE=true` eller feature flag `demo_mode`) -- strippar ner UI:t till kärnflödet för demo, se [docs/demo-mode.md](docs/demo-mode.md)
 - Installbar PWA med offline-stöd (Serwist service worker + IndexedDB-cache + offline mutation queue med automatisk synk vid återanslutning)
 
 Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade beskrivningar.
 
 ## Testning
 
-**3176+ tester** (325+ E2E desktop + mobil + 2851+ unit/integration) med **70% coverage**.
+**4128+ tester** (373 E2E desktop + mobil + 3755 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 
@@ -402,7 +403,7 @@ Se [docs/operations/deployment.md](docs/operations/deployment.md) för fullstän
 - **[docs/retrospectives/](./docs/retrospectives/)** - Konsoliderade retrospectives
 
 ### Features
-- **[features/rutt-baserad-levering.md](./features/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
+- **[docs/plans/rutt-baserad-levering.md](./docs/plans/rutt-baserad-levering.md)** - Fullständig feature-spec för rutt-funktionen
 
 ## Roadmap
 

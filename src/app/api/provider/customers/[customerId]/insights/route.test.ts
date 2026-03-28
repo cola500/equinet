@@ -116,11 +116,13 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
     const response = await POST(createRequest(), { params })
     expect(response.status).toBe(403)
+    const data = await response.json()
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it("returns 429 when rate limited", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     vi.mocked(rateLimiters.ai).mockResolvedValueOnce(false)
 
@@ -130,7 +132,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("returns 403 when no customer relationship", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(false)
@@ -143,7 +145,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("returns 400 when customer has no completed bookings", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
@@ -176,7 +178,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("returns insight on success (happy path)", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
@@ -224,7 +226,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("returns 500 when AI service fails", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
@@ -256,7 +258,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("returns 404 when provider not found", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue(null)
 
@@ -268,7 +270,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("returns cached insight without calling AI", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
@@ -303,7 +305,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("stores result in cache after AI generation", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)
@@ -342,7 +344,7 @@ describe("POST /api/provider/customers/[customerId]/insights", () => {
 
   it("ignores cache when ?refresh=true", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider" },
+      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
     } as never)
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockHasCustomerRelationship.mockResolvedValue(true)

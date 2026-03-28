@@ -9,6 +9,13 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimiters: {
+    api: vi.fn().mockResolvedValue(true),
+  },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     provider: {
@@ -100,14 +107,16 @@ describe('GET /api/provider/profile', () => {
     expect(selectBlock.updatedAt).toBeFalsy()
   })
 
-  it('should return 401 for non-provider users', async () => {
+  it('should return 403 for non-provider users', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
     const response = await GET(request)
-    expect(response.status).toBe(401)
+    expect(response.status).toBe(403)
+    const data = await response.json()
+    expect(data.error).toBe('Åtkomst nekad')
   })
 })
 

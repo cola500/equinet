@@ -116,7 +116,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
   it("should delete an exception", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -151,7 +151,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
   it("should return 404 if exception not found", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -179,7 +179,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
   it("should return 400 for invalid date format", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
 
@@ -241,11 +241,13 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
     })
 
     expect(response.status).toBe(403)
+    const data = await response.json()
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it("should return 403 if not owner of provider profile", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -266,7 +268,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
   it("should return 429 when rate limited", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(rateLimit.rateLimiters.profileUpdate).mockResolvedValue(false) // Rate limited
@@ -286,7 +288,7 @@ describe("DELETE /api/providers/[id]/availability-exceptions/[date]", () => {
 
   it("should call delete with correct parameters", async () => {
     const mockSession = {
-      user: { id: mockUserId, userType: "provider" },
+      user: { id: mockUserId, userType: "provider", providerId: mockProviderId },
     }
     vi.mocked(authServer.auth).mockResolvedValue(mockSession as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({

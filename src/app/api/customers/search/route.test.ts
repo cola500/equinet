@@ -31,7 +31,7 @@ describe('GET /api/customers/search', () => {
     vi.clearAllMocks()
 
     vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+      user: { id: 'provider-user-1', userType: 'provider', providerId: 'provider-1' },
     } as never)
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -70,8 +70,10 @@ describe('GET /api/customers/search', () => {
 
     const request = new NextRequest('http://localhost:3000/api/customers/search?q=anna')
     const response = await GET(request)
+    const data = await response.json()
 
     expect(response.status).toBe(403)
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it('should return 400 for too short query', async () => {

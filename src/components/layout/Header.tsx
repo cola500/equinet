@@ -16,6 +16,12 @@ import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoMode } from "@/lib/demo-mode"
+
+function useDemoMode(): boolean {
+  const flagValue = useFeatureFlag("demo_mode")
+  return isDemoMode() || flagValue
+}
 
 interface HeaderProps {
   hideSecondaryNav?: boolean
@@ -24,6 +30,7 @@ interface HeaderProps {
 export function Header({ hideSecondaryNav = false }: HeaderProps) {
   const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin, isStableOwner } = useAuth()
   const stableEnabled = useFeatureFlag("stable_profiles")
+  const demo = useDemoMode()
 
   const handleLogout = async () => {
     notifyNativeLogout()
@@ -46,16 +53,18 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
                   Logga in
                 </Button>
               </Link>
-              <Link href="/register">
-                <Button size="sm" className="h-11 px-3 md:px-4">
-                  <span className="hidden sm:inline">Registrera gratis</span>
-                  <span className="sm:hidden">Registrera</span>
-                </Button>
-              </Link>
+              {!demo && (
+                <Link href="/register">
+                  <Button size="sm" className="h-11 px-3 md:px-4">
+                    <span className="hidden sm:inline">Registrera gratis</span>
+                    <span className="sm:hidden">Registrera</span>
+                  </Button>
+                </Link>
+              )}
             </>
           ) : (
             <>
-            <NotificationBell />
+            {!demo && <NotificationBell />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-11 px-3 md:px-4 max-w-[150px] md:max-w-none truncate">
@@ -73,12 +82,12 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
                     Min profil
                   </Link>
                 </DropdownMenuItem>
-                {isStableOwner && stableEnabled && (
+                {!demo && isStableOwner && stableEnabled && (
                   <DropdownMenuItem asChild className="py-3 px-4">
                     <Link href="/stable/profile">Stallprofil</Link>
                   </DropdownMenuItem>
                 )}
-                {isAdmin && (
+                {!demo && isAdmin && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild className="py-3 px-4">
@@ -99,7 +108,7 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
         </div>
       </div>
     </header>
-    {isAuthenticated && isCustomer && !hideSecondaryNav && <CustomerNav />}
+    {isAuthenticated && isCustomer && !hideSecondaryNav && !demo && <CustomerNav />}
     </>
   )
 }

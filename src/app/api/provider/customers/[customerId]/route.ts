@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { logger } from "@/lib/logger"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 const updateCustomerSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -12,43 +11,18 @@ const updateCustomerSchema = z.object({
   email: z.string().email().max(255).optional(),
 }).strict()
 
-type RouteContext = { params: Promise<{ customerId: string }> }
+function extractCustomerId(pathname: string): string {
+  // /api/provider/customers/[customerId] -> segment at index 4
+  const segments = pathname.split('/')
+  return segments[4]
+}
 
 // PUT /api/provider/customers/[customerId] -- Update customer info
-export async function PUT(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Åtkomst nekad" },
-        { status: 403 }
-      )
-    }
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar. Försök igen om en minut." },
-        { status: 429 }
-      )
-    }
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    const validated = updateCustomerSchema.parse(body)
-
-    const { customerId } = await context.params
-    const providerId = session.user.providerId
+export const PUT = withApiHandler(
+  { auth: "provider", schema: updateCustomerSchema },
+  async ({ user, body, request }) => {
+    const { providerId } = user
+    const customerId = extractCustomerId(request.nextUrl.pathname)
 
     // IDOR-safe: verify customer belongs to this provider
     const link = await prisma.providerCustomer.findUnique({
@@ -67,10 +41,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const updated = await prisma.user.update({
       where: { id: customerId },
       data: {
-        firstName: validated.firstName,
-        lastName: validated.lastName || "",
-        phone: validated.phone || null,
-        email: validated.email || undefined,
+        firstName: body.firstName,
+        lastName: body.lastName || "",
+        phone: body.phone || null,
+        email: body.email || undefined,
       },
       select: {
         id: true,
@@ -82,53 +56,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     })
 
     return NextResponse.json(updated)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    if (error instanceof Response) return error
-
-    logger.error(
-      "Failed to update customer",
-      error instanceof Error ? error : new Error(String(error))
-    )
-    return NextResponse.json(
-      { error: "Kunde inte uppdatera kund" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // DELETE /api/provider/customers/[customerId] -- Remove manually added customer
-export async function DELETE(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider" || !session.user.providerId) {
-      return NextResponse.json(
-        { error: "Bara leverantörer kan ta bort kunder" },
-        { status: 403 }
-      )
-    }
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar. Försök igen om en minut." },
-        { status: 429 }
-      )
-    }
-
-    const { customerId } = await context.params
-    const providerId = session.user.providerId
+export const DELETE = withApiHandler(
+  { auth: "provider" },
+  async ({ user, request }) => {
+    const { providerId } = user
+    const customerId = extractCustomerId(request.nextUrl.pathname)
 
     // Atomic IDOR-safe lookup
     const link = await prisma.providerCustomer.findUnique({
@@ -158,12 +94,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     })
 
     if (bookingCount === 0) {
-      const user = await prisma.user.findUnique({
+      const ghostUser = await prisma.user.findUnique({
         where: { id: customerId },
         select: { id: true, isManualCustomer: true },
       })
 
-      if (user?.isManualCustomer) {
+      if (ghostUser?.isManualCustomer) {
         await prisma.user.delete({ where: { id: customerId } })
         logger.info("Ghost user cleaned up after customer removal", {
           ghostUserId: customerId,
@@ -172,16 +108,5 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     return NextResponse.json({ message: "Kunden har tagits bort" })
-  } catch (error) {
-    if (error instanceof Response) return error
-
-    logger.error(
-      "Failed to delete customer",
-      error instanceof Error ? error : new Error(String(error))
-    )
-    return NextResponse.json(
-      { error: "Kunde inte ta bort kund" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

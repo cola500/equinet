@@ -13,10 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
+import { isDemoMode } from "@/lib/demo-mode"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const demo = isDemoMode()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -149,6 +151,7 @@ function LoginForm() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Lösenord</Label>
+                {!demo && (
                 <Link
                   href="/forgot-password"
                   className="text-sm text-primary hover:text-primary/80"
@@ -156,6 +159,7 @@ function LoginForm() {
                 >
                   Glömt lösenord?
                 </Link>
+                )}
               </div>
               <div className="relative">
                 <Input
@@ -187,6 +191,7 @@ function LoginForm() {
               {isLoading ? "Loggar in..." : "Logga in"}
             </Button>
 
+            {!demo && (
             <div className="text-center text-sm text-gray-600">
               Har du inget konto?{" "}
               <Link
@@ -196,6 +201,7 @@ function LoginForm() {
                 Registrera dig här
               </Link>
             </div>
+            )}
           </form>
           )}
         </CardContent>

@@ -63,8 +63,10 @@ describe("POST /api/integrations/fortnox/disconnect", () => {
       { method: "POST" }
     )
     const response = await POST(request)
+    const data = await response.json()
 
     expect(response.status).toBe(403)
+    expect(data.error).toBe("Åtkomst nekad")
   })
 
   it("should return 404 when no connection exists", async () => {

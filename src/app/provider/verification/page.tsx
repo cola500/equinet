@@ -1,7 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useDialogState } from "@/hooks/useDialogState"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -106,8 +109,18 @@ const emptyForm = {
 // --- Page ---
 
 export default function ProviderVerificationPage() {
+  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+
+  // Redirect away from verification in demo mode
+  useEffect(() => {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
 
   const [requests, setRequests] = useState<VerificationRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -260,6 +273,8 @@ export default function ProviderVerificationPage() {
 
   const pendingCount = requests.filter((r) => r.status === "pending").length
   const isEditable = (status: string) => status === "pending" || status === "rejected"
+
+  if (demo) return null
 
   if (authLoading || !isProvider) {
     return (

@@ -127,4 +127,23 @@ describe("POST /api/integrations/fortnox/sync", () => {
     const response = await POST(request)
     expect(response.status).toBe(401)
   })
+
+  it("returns 404 when provider has no providerId", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: {
+        id: "provider-user-1",
+        email: "magnus@test.se",
+        userType: "provider",
+        providerId: null,
+      },
+    } as never)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/integrations/fortnox/sync",
+      { method: "POST" }
+    )
+    const response = await POST(request)
+
+    expect(response.status).toBe(404)
+  })
 })

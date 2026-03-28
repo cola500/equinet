@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
+import { requireCustomer } from "@/lib/roles"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
@@ -19,9 +20,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireCustomer(session)
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -30,10 +29,6 @@ export async function PUT(
     }
 
     const { id: reviewId } = await params
-
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
 
     // Parse JSON
     let body
@@ -49,7 +44,7 @@ export async function PUT(
     const updated = await reviewRepo.updateWithAuth(
       reviewId,
       { rating: validated.rating, comment: validated.comment ?? null },
-      session.user.id
+      userId
     )
 
     if (!updated) {
@@ -89,9 +84,7 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+    const { userId } = requireCustomer(session)
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -101,12 +94,8 @@ export async function DELETE(
 
     const { id: reviewId } = await params
 
-    if (session.user.userType !== "customer") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
     // Atomic delete with authorization (IDOR-safe)
-    const deleted = await reviewRepo.deleteWithAuth(reviewId, session.user.id)
+    const deleted = await reviewRepo.deleteWithAuth(reviewId, userId)
 
     if (!deleted) {
       // Could be "not found" or "not authorized" - check which

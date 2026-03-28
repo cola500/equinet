@@ -59,7 +59,7 @@ export async function POST(
     const { id: reviewId } = await params
 
     if (userType !== "provider") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
     }
 
     // Parse JSON
@@ -150,7 +150,7 @@ export async function DELETE(
     const { id: reviewId } = await params
 
     if (userType !== "provider") {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
     }
 
     // Find the provider for the current user

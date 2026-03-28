@@ -2,36 +2,18 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
-import type { SessionUser } from "@/types/auth"
+import { requireProvider } from "@/lib/roles"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 // POST /api/integrations/fortnox/disconnect - Remove Fortnox connection
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (session.user.userType !== "provider") {
-      return NextResponse.json(
-        { error: "Bara leverantorer kan hantera Fortnox-koppling" },
-        { status: 403 }
-      )
-    }
+    const { userId, providerId } = requireProvider(await auth())
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    const providerId = (session.user as SessionUser).providerId
-    if (!providerId) {
-      return NextResponse.json(
-        { error: "Leverantör hittades inte" },
-        { status: 404 }
-      )
     }
 
     // Delete connection (tokens are encrypted, deleting is sufficient)
@@ -51,7 +33,7 @@ export async function POST(request: NextRequest) {
     })
 
     logger.info("Fortnox disconnected", {
-      userId: session.user.id,
+      userId,
       providerId,
     })
 
