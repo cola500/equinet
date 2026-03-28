@@ -12,6 +12,7 @@ import {
 } from "@/domain/customer-insight/CustomerInsightService"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 import {
   getCachedInsight,
   setCachedInsight,
@@ -40,7 +41,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // 3. Get provider
+    // 3. Feature flag
+    if (!(await isFeatureEnabled("customer_insights"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
+    // 4. Get provider
     const providerRepo = new ProviderRepository()
     const provider = await providerRepo.findByUserId(userId)
     if (!provider) {

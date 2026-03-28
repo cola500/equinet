@@ -13,7 +13,7 @@ interface ProviderDueForServiceItem extends DueForServiceResult {
 
 // GET /api/provider/due-for-service?filter=all|overdue|upcoming
 export const GET = withApiHandler(
-  { auth: "provider" },
+  { auth: "provider", featureFlag: "due_for_service" },
   async ({ user, request }) => {
     const provider = await prisma.provider.findUnique({
       where: { userId: user.userId },
