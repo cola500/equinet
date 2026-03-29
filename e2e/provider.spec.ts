@@ -7,8 +7,8 @@ test.describe('Provider Flow', () => {
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG);
     // 2 pending bookings: one for accept, one for reject
-    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 7, horseName: 'E2E Accept' });
-    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 8, horseName: 'E2E Reject' });
+    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 7, startTime: '10:00', endTime: '11:00', horseName: 'E2E Accept' });
+    await seedBooking({ specTag: SPEC_TAG, status: 'pending', daysFromNow: 8, startTime: '11:00', endTime: '12:00', horseName: 'E2E Reject' });
   });
 
   test.afterAll(async () => {

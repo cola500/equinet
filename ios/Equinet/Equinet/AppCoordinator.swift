@@ -84,6 +84,7 @@ final class AppCoordinator {
 
     let bridge: BridgeHandler
     let networkMonitor: NetworkMonitor
+    let dashboardViewModel: DashboardViewModel
     let calendarViewModel: CalendarViewModel
     let bookingsViewModel: BookingsViewModel
     let customersViewModel: CustomersViewModel
@@ -96,6 +97,7 @@ final class AppCoordinator {
     init(
         bridge: BridgeHandler? = nil,
         networkMonitor: NetworkMonitor? = nil,
+        dashboardViewModel: DashboardViewModel? = nil,
         calendarViewModel: CalendarViewModel? = nil,
         bookingsViewModel: BookingsViewModel? = nil,
         customersViewModel: CustomersViewModel? = nil,
@@ -105,6 +107,7 @@ final class AppCoordinator {
     ) {
         self.bridge = bridge ?? BridgeHandler()
         self.networkMonitor = networkMonitor ?? NetworkMonitor()
+        self.dashboardViewModel = dashboardViewModel ?? DashboardViewModel()
         self.calendarViewModel = calendarViewModel ?? CalendarViewModel()
         self.bookingsViewModel = bookingsViewModel ?? BookingsViewModel()
         self.customersViewModel = customersViewModel ?? CustomersViewModel()

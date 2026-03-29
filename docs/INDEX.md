@@ -40,6 +40,10 @@ sections:
 | [booking-domain-review.md](booking-domain-review.md) | Bokningsdomanen -- genomlysning |
 | [payment-domain-review.md](payment-domain-review.md) | Payment/checkout -- genomlysning |
 | [technical-improvements-2026-q1.md](technical-improvements-2026-q1.md) | Teknikforbattringar Q1 2026 (sammanfattning) |
+| [ios-executive-summary.md](ios-executive-summary.md) | iOS-app -- executive summary |
+| [ios-architecture-review.md](ios-architecture-review.md) | iOS-app -- arkitektur, lager, hotspots |
+| [ios-code-quality-review.md](ios-code-quality-review.md) | iOS-app -- kodkvalitet, mönster, testbarhet |
+| [ios-refactoring-opportunities.md](ios-refactoring-opportunities.md) | iOS-app -- 13 prioriterade förbättringar |
 
 ## Operations
 
@@ -65,6 +69,7 @@ sections:
 | [exploratory-coverage.md](testing/exploratory-coverage.md) | Exploratory test-coverage |
 | [e2e-seed-plan.md](testing/e2e-seed-plan.md) | E2E seed-data strategi |
 | [exploratory-session-1.md](testing/exploratory-session-1.md) | Forsta exploratory-session |
+| [e2e-suite-review.md](e2e-suite-review.md) | E2E-svit genomlysning och kategorisering |
 
 ## Guider
 
@@ -118,6 +123,10 @@ sections:
 
 Se [retrospectives/README.md](retrospectives/README.md) for konsoliderade sammanfattningar (67 sessioner).
 
+| Dokument | Beskrivning |
+|----------|-------------|
+| [2026-ios-dashboard-pilot-retro.md](retrospectives/2026-ios-dashboard-pilot-retro.md) | DashboardViewModel-pilot: lärdomar och stopping point |
+
 ## Ideer & Backlog
 
 | Dokument | Beskrivning |
@@ -140,4 +149,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-03-26*
+*Senast uppdaterad: 2026-03-29*

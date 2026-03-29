@@ -125,18 +125,8 @@ struct ExceptionFormSheet: View {
 
     // MARK: - Static Formatters
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "sv_SE")
-        f.dateFormat = "d MMMM yyyy"
-        return f
-    }()
-
-    private static let isoFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
+    private static let dateFormatter = EquinetDateFormatters.swedishFullDate
+    private static let isoFormatter = EquinetDateFormatters.isoDate
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()

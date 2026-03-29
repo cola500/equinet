@@ -103,11 +103,7 @@ final class CalendarViewModel {
     // MARK: - Private
 
     private var cache: [String: CalendarResponse] = [:]
-    private let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
+    private let dateFormatter = EquinetDateFormatters.isoDate
 
     // MARK: - Init
 

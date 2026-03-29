@@ -89,12 +89,7 @@ struct WeekStripView: View {
         return f
     }()
 
-    private static let dayNameFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "sv_SE")
-        f.dateFormat = "EEEE"
-        return f
-    }()
+    private static let dayNameFormatter = EquinetDateFormatters.swedishDayName
 
     // MARK: - Helpers
 

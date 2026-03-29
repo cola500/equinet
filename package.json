@@ -30,6 +30,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:cleanup": "playwright test --project=cleanup",
     "test:e2e:offline": "OFFLINE_E2E=true playwright test --project=offline-chromium",
+    "test:e2e:smoke": "playwright test e2e/exploratory-baseline.spec.ts e2e/auth.spec.ts",
+    "test:e2e:critical": "playwright test e2e/booking.spec.ts e2e/payment.spec.ts e2e/provider.spec.ts",
     "build:pwa": "FEATURE_OFFLINE_MODE=true next build --webpack",
     "start:pwa": "FEATURE_OFFLINE_MODE=true AUTH_TRUST_HOST=true next start -p 3001",
     "typecheck": "tsc --project tsconfig.typecheck.json",

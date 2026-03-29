@@ -77,7 +77,7 @@ sections:
 
 1. **Planering**: Schema -> API -> UI
 2. **TDD-cykel**: Red -> Green -> Refactor
-3. **Feature branch**: `git checkout -b feature/namn`
+3. **Feature branch**: `git checkout -b feature/namn`. Om branch-namnet inte längre beskriver arbetet, starta ny branch.
 4. **Visuell UX-verifiering**: Vid UI-ändringar -- verifiera med Playwright MCP (se nedan)
 5. **Merge till main**: Efter alla tester är gröna
 6. **Push**: Till remote
@@ -309,6 +309,129 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Visuell UX-verifiering med Playwright MCP**: Vid UI-ändringar -- starta worktree dev-server (`npx next dev -p 3001`) FÖRST, skapa testdata via API, batcha screenshots (logga in -> navigera alla sidor -> verifiera). Huvudrepots dev-server (port 3000) reflekterar INTE worktree-ändringar. Värt det för loading states, a11y, formatering, layoutskift -- inte för ren affärslogik.
 - **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer (publik endpoint). AppCoordinator: `[String: Bool]` state + UserDefaults-cache (cachad vid start, fräscht i bakgrund). AuthenticatedView: trigger `.onAppear` + `.onChange(of: scenePhase)`. NativeMoreView: `visibleSections` compactMap-filtrering, tomma sektioner döljs. `handlePendingPath` söker ALLTID i `allMenuSections` (inte filtrerade).
 - **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/` i strängar. Använd `URL(string: path, relativeTo: baseURL)` för API-paths.
+
+**Vilken testplaybook?** Swift-fil -> iOS-testflöde. TypeScript/JS-fil -> Webb-testflöde.
+
+### iOS-testflöde
+
+Full `EquinetTests` tar ~4 min pga simulator-overhead (EventKit, WebView, Speech). ViewModel-testerna tar <1s. **Kör alltid Nivå 1 först. Kör Nivå 2 bara inför PR eller vid bred påverkan.**
+
+**Nivå 1 -- Under arbete (default):** Kör bara berörda testsviter:
+```bash
+xcodebuild test -project Equinet.xcodeproj -scheme Equinet \
+  -destination 'platform=iOS Simulator,id=<UDID>' \
+  -only-testing:EquinetTests/BookingsViewModelTests \
+  -only-testing:EquinetTests/BookingsModelsTests
+```
+
+**Nivå 2 -- Inför PR eller bred påverkan:** Kör full svit en gång:
+```bash
+xcodebuild test ... -only-testing:EquinetTests
+```
+
+**Mappning ändrad fil -> testsvit:**
+
+| Fil | Testsvit |
+|-----|----------|
+| BookingsModels | BookingsModelsTests + BookingsViewModelTests |
+| DashboardViewModel | DashboardViewModelTests |
+| CalendarViewModel | CalendarViewModelTests |
+| APIClient | APIClientTests |
+| CustomersViewModel | CustomersViewModelTests |
+| ServicesViewModel | ServicesViewModelTests |
+| ReviewsViewModel | ReviewsViewModelTests |
+| ProfileViewModel | ProfileViewModelTests |
+| AuthManager | AuthManagerTests |
+
+**Långsamma sviter (bara Nivå 2):** CalendarSyncManagerTests (~2.5 min), BridgeHandlerTests (~22s), SpeechRecognizerTests (~23s).
+
+**Observability:**
+- Kör testsviten EN gång. Kör ALDRIG om bara för att räkna resultat.
+- xcodebuild visar `Executed` tre gånger (suite, bundle, selected) -- det är samma körning, inte tre.
+- **Debugging:** Full output, ingen grep -- visar var det hakar.
+- **Slutverifiering:** `grep -E "(Executed|failed)" | tail -1` ger en ren sammanfattning.
+
+**Fallback:** Om något känns fel, kör Nivå 2 utan `-only-testing:` och utan grep-filter. Full output visar exakt var det hakar.
+
+### Webb-testflöde
+
+266 testfiler, 3755 tester. **Kör alltid Nivå 1 först. Kör Nivå 2 bara inför PR eller vid bred påverkan.**
+
+**Nivå 1 -- Under arbete (default):** Kör berörda tester + typecheck:
+```bash
+npx vitest run src/domain/booking          # filtrerat på ändrad sökväg (~1s)
+npm run typecheck                           # alltid, fångar importfel (~10s)
+```
+
+**Nivå 2 -- Inför PR eller bred påverkan:**
+```bash
+npm run check:all                           # typecheck + test:run + lint + check:swedish (~50s)
+```
+
+**Mappning ändrat område -> verifiering:**
+
+| Område | Nivå 1 | Nivå 2 |
+|--------|--------|--------|
+| Domain service | `vitest run src/domain/<namn>` | check:all |
+| API route | `vitest run src/app/api/<path>` | check:all |
+| Auth/middleware | `vitest run src/lib/auth` + typecheck | check:all |
+| UI-komponent | typecheck | check:all |
+| Feature flag | `vitest run` filtrerat + typecheck | check:all + `flags:validate` |
+| Prisma schema | typecheck + `vitest run` berörda routes | check:all + migrate:check |
+| Utility/lib | `vitest run src/lib/<namn>` | check:all |
+
+**Tidbudget:**
+
+| Kommando | Tid |
+|----------|-----|
+| `vitest run <path>` (filtrerat) | ~1s |
+| `npm run typecheck` | ~10s |
+| `npm run lint` | ~5s |
+| `npm run check:swedish` | ~1s |
+| `npm run test:run` (alla 3755) | ~32s |
+| `npm run check:all` | ~50s |
+
+**Observability:**
+- Vitest visar tydlig output med färger -- använd den rakt av, ingen grep.
+- Kör aldrig `test:run` två gånger i samma verifieringscykel.
+- `check:all` kör alla fyra gates sekventiellt med färgkodad output -- bästa val för Nivå 2.
+
+**Fallback:** Om något känns fel, kör `npm run check:all` utan filtrering.
+
+**Dubbelkörning:** Pre-push-hooken kör samma gates som `check:all` (test + typecheck + lint + swedish). Kör INTE `check:all` manuellt och sedan push -- det blir dubbelt. Antingen: (a) lita på hooken, eller (b) kör `check:all` manuellt och pusha med `--no-verify`.
+
+### E2E -- separat strategi
+
+E2E (35 specs, Playwright) är ett separat verifieringsspår -- inte en del av Nivå 1/2.
+
+- Är INTE default vid vanlig refaktorering, serviceändringar eller modellarbete.
+- Kräver egen felsökning: `--headed` för visuell debugging, `--project=cleanup` för datahantering.
+
+**Körvägar:**
+- `npm run test:e2e:smoke` -- app startar, login fungerar (exploratory-baseline + auth)
+- `npm run test:e2e:critical` -- kärnflöden: bokning, betalning, leverantör
+- `npm run test:e2e` -- full svit (35 specs, bara vid behov)
+
+**När:** Kör smoke efter breda UI-ändringar. Kör critical efter ändringar i boknings-/betalningsflöden. Kör full bara inför release eller vid oklara regressioner.
+
+Se `.claude/rules/e2e-playbook.md` för strategi och `.claude/rules/e2e.md` för tekniska gotchas.
+
+## Definition of Done
+
+### Kodändring
+
+- [ ] Relevant testnivå körd och grön (Nivå 1 under arbete, Nivå 2 inför PR)
+- [ ] Typecheck/build passerar för berörd plattform
+- [ ] Inga oförklarade warnings eller errors i output
+- [ ] Docs uppdaterade vid behov
+
+### E2E-ändring (tillägg)
+
+- [ ] Berörd spec passerar isolerat: `npx playwright test e2e/<spec>.spec.ts`
+- [ ] Seed-data är deterministisk (inga kollisioner vid upprepad körning)
+- [ ] Inga nya `waitForTimeout()` utan dokumenterad motivering
+- [ ] Passerar 3 gånger i rad lokalt
+- [ ] Testet följer E2E-playbooken (stabila selektorer, tydligt flöde, inga dolda beroenden)
 
 ---
 

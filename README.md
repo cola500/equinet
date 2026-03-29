@@ -320,7 +320,9 @@ npm run test:ui           # Visuellt interface
 npm run test:coverage     # Med coverage
 
 # E2E (Playwright)
-npm run test:e2e          # Kör E2E-tester (desktop)
+npm run test:e2e          # Kör alla E2E-tester
+npm run test:e2e:smoke    # Smoke: app startar, login fungerar
+npm run test:e2e:critical # Kritiska flöden: bokning, betalning, leverantör
 npm run test:e2e:ui       # Playwright UI (bäst för utveckling)
 npm run test:e2e:offline  # Offline PWA E2E-tester (bygger prod + testar offline-läge)
 # Mobil viewport körs automatiskt som separat Playwright-projekt (Pixel 7, Chromium)

@@ -97,5 +97,6 @@ DerivedData/
 .claude/skills/
 skills-lock.json
 
-# E2E visual snapshots (generated)
+# E2E visual snapshots (generated, machine-specific)
 e2e/__snapshots__/
+e2e/*.spec.ts-snapshots/

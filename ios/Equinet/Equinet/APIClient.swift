@@ -23,7 +23,12 @@ enum APIError: Error {
 final class APIClient {
     static let shared = APIClient()
 
+    let session: URLSession
     private var isRefreshing = false
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
 
     private var baseURL: URL {
         AppConfig.baseURL
@@ -412,7 +417,7 @@ final class APIClient {
         guard let url = URL(string: "/api/feature-flags", relativeTo: baseURL) else {
             throw APIError.networkError(URLError(.badURL))
         }
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw APIError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
@@ -439,7 +444,7 @@ final class APIClient {
         request.setValue("Bearer \(currentJwt)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
@@ -488,7 +493,7 @@ final class APIClient {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            (data, response) = try await session.data(for: request)
         } catch let urlError as URLError where urlError.code == .timedOut {
             AppLogger.network.error("performRequest: timeout \(method) \(path)")
             throw APIError.timeout
