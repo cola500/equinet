@@ -310,6 +310,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer (publik endpoint). AppCoordinator: `[String: Bool]` state + UserDefaults-cache (cachad vid start, fräscht i bakgrund). AuthenticatedView: trigger `.onAppear` + `.onChange(of: scenePhase)`. NativeMoreView: `visibleSections` compactMap-filtrering, tomma sektioner döljs. `handlePendingPath` söker ALLTID i `allMenuSections` (inte filtrerade).
 - **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/` i strängar. Använd `URL(string: path, relativeTo: baseURL)` för API-paths.
 
+**Vilken testplaybook?** Swift-fil -> iOS-testflöde. TypeScript/JS-fil -> Webb-testflöde.
+
 ### iOS-testflöde
 
 Full `EquinetTests` tar ~4 min pga simulator-overhead (EventKit, WebView, Speech). ViewModel-testerna tar <1s. **Kör alltid Nivå 1 först. Kör Nivå 2 bara inför PR eller vid bred påverkan.**
@@ -345,8 +347,9 @@ xcodebuild test ... -only-testing:EquinetTests
 
 **Observability:**
 - Kör testsviten EN gång. Kör ALDRIG om bara för att räkna resultat.
-- Under utveckling: låt xcodebuild skriva full output utan grep/tail -- det döljer progress och fel.
-- För slutresultat: `grep -E "(Executed|failed)" | tail -3` är OK.
+- xcodebuild visar `Executed` tre gånger (suite, bundle, selected) -- det är samma körning, inte tre.
+- **Debugging:** Full output, ingen grep -- visar var det hakar.
+- **Slutverifiering:** `grep -E "(Executed|failed)" | tail -1` ger en ren sammanfattning.
 
 **Fallback:** Om något känns fel, kör Nivå 2 utan `-only-testing:` och utan grep-filter. Full output visar exakt var det hakar.
 
