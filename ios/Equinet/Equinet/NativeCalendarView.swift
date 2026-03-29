@@ -693,30 +693,14 @@ struct NativeCalendarView: View {
 
     // MARK: - Static DateFormatters (avoid per-render allocation)
 
-    private static let dayNameFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "sv_SE")
-        f.dateFormat = "EEEE"
-        return f
-    }()
-
-    private static let fullDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "sv_SE")
-        f.dateFormat = "d MMMM yyyy"
-        return f
-    }()
+    private static let dayNameFormatter = EquinetDateFormatters.swedishDayName
+    private static let fullDateFormatter = EquinetDateFormatters.swedishFullDate
+    private static let isoDateFormatter = EquinetDateFormatters.isoDate
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "sv_SE")
         f.dateFormat = "d MMMM"
-        return f
-    }()
-
-    private static let isoDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
         return f
     }()
 

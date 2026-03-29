@@ -12,7 +12,7 @@ struct BiometricPromptView: View {
     let authManager: AuthManager
 
     // Equinet brand green
-    private let brandGreen = Color(red: 0.16, green: 0.65, blue: 0.47)
+    private let brandGreen = Color.equinetGreen
 
     var body: some View {
         VStack(spacing: 32) {

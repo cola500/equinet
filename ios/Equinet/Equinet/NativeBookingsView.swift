@@ -584,12 +584,7 @@ private struct BookingCard: View {
 
     // MARK: - Static DateFormatters
 
-    private static let isoDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "sv_SE")
-        return f
-    }()
+    private static let isoDateFormatter = EquinetDateFormatters.isoDate
 
     private static let displayDateFormatter: DateFormatter = {
         let f = DateFormatter()

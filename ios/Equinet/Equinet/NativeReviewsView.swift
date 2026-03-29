@@ -206,18 +206,8 @@ struct NativeReviewsView: View {
 
     // MARK: - Date formatting
 
-    private static let isoFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    private static let displayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "sv_SE")
-        f.dateStyle = .medium
-        return f
-    }()
+    private static let isoFormatter = EquinetDateFormatters.isoWithFractionalSeconds
+    private static let displayFormatter = EquinetDateFormatters.swedishMediumDate
 
     private func formattedDate(_ iso: String) -> String {
         guard let date = Self.isoFormatter.date(from: iso) else { return iso }

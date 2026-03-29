@@ -208,18 +208,8 @@ struct NativeCustomersView: View {
 private struct CustomerCard: View {
     let customer: CustomerSummary
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.locale = Locale(identifier: "sv_SE")
-        return f
-    }()
-
-    private static let isoFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
+    private static let dateFormatter = EquinetDateFormatters.swedishMediumDate
+    private static let isoFormatter = EquinetDateFormatters.isoWithFractionalSeconds
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
