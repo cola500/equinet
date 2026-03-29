@@ -36,14 +36,6 @@ jobs:
       - name: List available simulators
         run: xcrun simctl list devices available
 
-      - name: Build
-        run: |
-          xcodebuild build \
-            -project ios/Equinet/Equinet.xcodeproj \
-            -scheme Equinet \
-            -destination 'generic/platform=iOS Simulator' \
-            -quiet
-
       - name: Find simulator
         id: simulator
         run: |
