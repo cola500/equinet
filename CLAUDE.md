@@ -77,7 +77,7 @@ sections:
 
 1. **Planering**: Schema -> API -> UI
 2. **TDD-cykel**: Red -> Green -> Refactor
-3. **Feature branch**: `git checkout -b feature/namn`
+3. **Feature branch**: `git checkout -b feature/namn`. Om branch-namnet inte längre beskriver arbetet, starta ny branch.
 4. **Visuell UX-verifiering**: Vid UI-ändringar -- verifiera med Playwright MCP (se nedan)
 5. **Merge till main**: Efter alla tester är gröna
 6. **Push**: Till remote
@@ -397,6 +397,8 @@ npm run check:all                           # typecheck + test:run + lint + chec
 - `check:all` kör alla fyra gates sekventiellt med färgkodad output -- bästa val för Nivå 2.
 
 **Fallback:** Om något känns fel, kör `npm run check:all` utan filtrering.
+
+**Dubbelkörning:** Pre-push-hooken kör samma gates som `check:all` (test + typecheck + lint + swedish). Kör INTE `check:all` manuellt och sedan push -- det blir dubbelt. Antingen: (a) lita på hooken, eller (b) kör `check:all` manuellt och pusha med `--no-verify`.
 
 ### E2E -- separat strategi
 
