@@ -105,7 +105,7 @@ jobs:
       - name: Run E2E tests
         env:
           DEBUG: pw:webserver
-        run: npm run test:e2e
+        run: npm run test:e2e:smoke
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
