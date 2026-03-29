@@ -61,12 +61,22 @@ jobs:
           # xcodebuild may exit 65 due to SpeechRecognizer aurioc warning
           # in simulator even when all tests pass. Capture output and verify
           # actual test results instead of relying on exit code.
+          #
+          # CalendarSyncManagerTests are skipped in pull_request runs.
+          # These EventKit-related tests are significantly slower than the rest of the suite.
+          # Full suite still runs on push to main.
+          SKIP_FLAG=""
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            SKIP_FLAG="-skip-testing:EquinetTests/CalendarSyncManagerTests"
+          fi
+
           set +e
           xcodebuild test \
             -project ios/Equinet/Equinet.xcodeproj \
             -scheme Equinet \
             -destination 'platform=iOS Simulator,name=${{ steps.simulator.outputs.name }}' \
             -only-testing:EquinetTests \
+            $SKIP_FLAG \
             -resultBundlePath TestResults.xcresult 2>&1 | tee xcodebuild-output.log
           EXIT_CODE=$?
           set -e
