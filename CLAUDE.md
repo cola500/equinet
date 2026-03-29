@@ -310,6 +310,46 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer (publik endpoint). AppCoordinator: `[String: Bool]` state + UserDefaults-cache (cachad vid start, fräscht i bakgrund). AuthenticatedView: trigger `.onAppear` + `.onChange(of: scenePhase)`. NativeMoreView: `visibleSections` compactMap-filtrering, tomma sektioner döljs. `handlePendingPath` söker ALLTID i `allMenuSections` (inte filtrerade).
 - **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/` i strängar. Använd `URL(string: path, relativeTo: baseURL)` för API-paths.
 
+### iOS-testflöde
+
+Full `EquinetTests` tar ~4 min pga simulator-overhead (EventKit, WebView, Speech). ViewModel-testerna tar <1s. **Kör alltid Nivå 1 först. Kör Nivå 2 bara inför PR eller vid bred påverkan.**
+
+**Nivå 1 -- Under arbete (default):** Kör bara berörda testsviter:
+```bash
+xcodebuild test -project Equinet.xcodeproj -scheme Equinet \
+  -destination 'platform=iOS Simulator,id=<UDID>' \
+  -only-testing:EquinetTests/BookingsViewModelTests \
+  -only-testing:EquinetTests/BookingsModelsTests
+```
+
+**Nivå 2 -- Inför PR eller bred påverkan:** Kör full svit en gång:
+```bash
+xcodebuild test ... -only-testing:EquinetTests
+```
+
+**Mappning ändrad fil -> testsvit:**
+
+| Fil | Testsvit |
+|-----|----------|
+| BookingsModels | BookingsModelsTests + BookingsViewModelTests |
+| DashboardViewModel | DashboardViewModelTests |
+| CalendarViewModel | CalendarViewModelTests |
+| APIClient | APIClientTests |
+| CustomersViewModel | CustomersViewModelTests |
+| ServicesViewModel | ServicesViewModelTests |
+| ReviewsViewModel | ReviewsViewModelTests |
+| ProfileViewModel | ProfileViewModelTests |
+| AuthManager | AuthManagerTests |
+
+**Långsamma sviter (bara Nivå 2):** CalendarSyncManagerTests (~2.5 min), BridgeHandlerTests (~22s), SpeechRecognizerTests (~23s).
+
+**Observability:**
+- Kör testsviten EN gång. Kör ALDRIG om bara för att räkna resultat.
+- Under utveckling: låt xcodebuild skriva full output utan grep/tail -- det döljer progress och fel.
+- För slutresultat: `grep -E "(Executed|failed)" | tail -3` är OK.
+
+**Fallback:** Om något känns fel, kör Nivå 2 utan `-only-testing:` och utan grep-filter. Full output visar exakt var det hakar.
+
 ---
 
 ## Debugging: 5 Whys
