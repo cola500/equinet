@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - 'ios/**'
+      - '.github/workflows/ios-tests.yml'
   push:
     branches: [main]
     paths:
       - 'ios/**'
+      - '.github/workflows/ios-tests.yml'
+  workflow_dispatch:
 
 jobs:
   ios-tests:
