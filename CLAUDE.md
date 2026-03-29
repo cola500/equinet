@@ -402,12 +402,17 @@ npm run check:all                           # typecheck + test:run + lint + chec
 
 E2E (35 specs, Playwright) är ett separat verifieringsspår -- inte en del av Nivå 1/2.
 
-- Används selektivt för kritiska användarflöden och integrationsbeteenden (bokning, login, betalning).
 - Är INTE default vid vanlig refaktorering, serviceändringar eller modellarbete.
 - Kräver egen felsökning: `--headed` för visuell debugging, `--project=cleanup` för datahantering.
-- Filtreras per spec: `npx playwright test e2e/bookings.spec.ts`.
 
-En separat E2E-playbook definieras vid behov. Se `.claude/rules/e2e-playbook.md` för strategi och `.claude/rules/e2e.md` för tekniska gotchas.
+**Körvägar:**
+- `npm run test:e2e:smoke` -- app startar, login fungerar (exploratory-baseline + auth)
+- `npm run test:e2e:critical` -- kärnflöden: bokning, betalning, leverantör
+- `npm run test:e2e` -- full svit (35 specs, bara vid behov)
+
+**När:** Kör smoke efter breda UI-ändringar. Kör critical efter ändringar i boknings-/betalningsflöden. Kör full bara inför release eller vid oklara regressioner.
+
+Se `.claude/rules/e2e-playbook.md` för strategi och `.claude/rules/e2e.md` för tekniska gotchas.
 
 ## Definition of Done
 
