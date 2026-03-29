@@ -407,7 +407,24 @@ E2E (35 specs, Playwright) är ett separat verifieringsspår -- inte en del av N
 - Kräver egen felsökning: `--headed` för visuell debugging, `--project=cleanup` för datahantering.
 - Filtreras per spec: `npx playwright test e2e/bookings.spec.ts`.
 
-En separat E2E-playbook definieras vid behov. Se `.claude/rules/e2e.md` för befintliga gotchas.
+En separat E2E-playbook definieras vid behov. Se `.claude/rules/e2e-playbook.md` för strategi och `.claude/rules/e2e.md` för tekniska gotchas.
+
+## Definition of Done
+
+### Kodändring
+
+- [ ] Relevant testnivå körd och grön (Nivå 1 under arbete, Nivå 2 inför PR)
+- [ ] Typecheck/build passerar för berörd plattform
+- [ ] Inga oförklarade warnings eller errors i output
+- [ ] Docs uppdaterade vid behov
+
+### E2E-ändring (tillägg)
+
+- [ ] Berörd spec passerar isolerat: `npx playwright test e2e/<spec>.spec.ts`
+- [ ] Seed-data är deterministisk (inga kollisioner vid upprepad körning)
+- [ ] Inga nya `waitForTimeout()` utan dokumenterad motivering
+- [ ] Passerar 3 gånger i rad lokalt
+- [ ] Testet följer E2E-playbooken (stabila selektorer, tydligt flöde, inga dolda beroenden)
 
 ---
 
