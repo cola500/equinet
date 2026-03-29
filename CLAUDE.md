@@ -350,6 +350,62 @@ xcodebuild test ... -only-testing:EquinetTests
 
 **Fallback:** Om något känns fel, kör Nivå 2 utan `-only-testing:` och utan grep-filter. Full output visar exakt var det hakar.
 
+### Webb-testflöde
+
+266 testfiler, 3755 tester. **Kör alltid Nivå 1 först. Kör Nivå 2 bara inför PR eller vid bred påverkan.**
+
+**Nivå 1 -- Under arbete (default):** Kör berörda tester + typecheck:
+```bash
+npx vitest run src/domain/booking          # filtrerat på ändrad sökväg (~1s)
+npm run typecheck                           # alltid, fångar importfel (~10s)
+```
+
+**Nivå 2 -- Inför PR eller bred påverkan:**
+```bash
+npm run check:all                           # typecheck + test:run + lint + check:swedish (~50s)
+```
+
+**Mappning ändrat område -> verifiering:**
+
+| Område | Nivå 1 | Nivå 2 |
+|--------|--------|--------|
+| Domain service | `vitest run src/domain/<namn>` | check:all |
+| API route | `vitest run src/app/api/<path>` | check:all |
+| Auth/middleware | `vitest run src/lib/auth` + typecheck | check:all |
+| UI-komponent | typecheck | check:all |
+| Feature flag | `vitest run` filtrerat + typecheck | check:all + `flags:validate` |
+| Prisma schema | typecheck + `vitest run` berörda routes | check:all + migrate:check |
+| Utility/lib | `vitest run src/lib/<namn>` | check:all |
+
+**Tidbudget:**
+
+| Kommando | Tid |
+|----------|-----|
+| `vitest run <path>` (filtrerat) | ~1s |
+| `npm run typecheck` | ~10s |
+| `npm run lint` | ~5s |
+| `npm run check:swedish` | ~1s |
+| `npm run test:run` (alla 3755) | ~32s |
+| `npm run check:all` | ~50s |
+
+**Observability:**
+- Vitest visar tydlig output med färger -- använd den rakt av, ingen grep.
+- Kör aldrig `test:run` två gånger i samma verifieringscykel.
+- `check:all` kör alla fyra gates sekventiellt med färgkodad output -- bästa val för Nivå 2.
+
+**Fallback:** Om något känns fel, kör `npm run check:all` utan filtrering.
+
+### E2E -- separat strategi
+
+E2E (35 specs, Playwright) är ett separat verifieringsspår -- inte en del av Nivå 1/2.
+
+- Används selektivt för kritiska användarflöden och integrationsbeteenden (bokning, login, betalning).
+- Är INTE default vid vanlig refaktorering, serviceändringar eller modellarbete.
+- Kräver egen felsökning: `--headed` för visuell debugging, `--project=cleanup` för datahantering.
+- Filtreras per spec: `npx playwright test e2e/bookings.spec.ts`.
+
+En separat E2E-playbook definieras vid behov. Se `.claude/rules/e2e.md` för befintliga gotchas.
+
 ---
 
 ## Debugging: 5 Whys
