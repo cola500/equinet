@@ -161,7 +161,7 @@ sections:
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
 | Unit/integration-tester | Klart | 3755 tester, 311 testfiler (2026-03-28) |
-| iOS XCTest | Klart | 116 tester (CalendarModels, CalendarViewModel, BookingsViewModel, CustomersViewModel, m.fl.) |
+| iOS XCTest | Klart | 223 tester (APIClient, DashboardViewModel, BookingsModels, CalendarModels, CalendarViewModel, BookingsViewModel, CustomersViewModel, m.fl.) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
