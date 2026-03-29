@@ -49,6 +49,7 @@ sections:
 
 | Dokument | Beskrivning |
 |----------|-------------|
+| [ci-decisions.md](ci-decisions.md) | CI-beslut och lärdomar |
 | [deployment.md](operations/deployment.md) | Komplett deploy-guide (Vercel + Supabase) |
 | [load-testing.md](operations/load-testing.md) | Lasttest-baseline och resultat |
 | [parallel-sessions.md](operations/parallel-sessions.md) | Guide for parallella utvecklingssessioner |
@@ -126,6 +127,7 @@ Se [retrospectives/README.md](retrospectives/README.md) for konsoliderade samman
 | Dokument | Beskrivning |
 |----------|-------------|
 | [2026-ios-dashboard-pilot-retro.md](retrospectives/2026-ios-dashboard-pilot-retro.md) | DashboardViewModel-pilot: lärdomar och stopping point |
+| [2026-03-29-ios-review-ci-optimization.md](retrospectives/2026-03-29-ios-review-ci-optimization.md) | iOS-review, teststrategi och CI-optimering |
 
 ## Ideer & Backlog
 
