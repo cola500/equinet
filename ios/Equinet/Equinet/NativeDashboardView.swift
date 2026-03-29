@@ -11,17 +11,9 @@ import OSLog
 import SwiftUI
 
 struct NativeDashboardView: View {
+    @Bindable var viewModel: DashboardViewModel
     var onNavigateToTab: ((AppTab) -> Void)?
     var onNavigateToWebPath: ((String) -> Void)?
-
-    @State private var dashboard: DashboardResponse?
-    @State private var isLoading = true
-    @State private var error: String?
-    @State private var onboardingDismissed = false
-
-    // Onboarding dismiss persistence
-    private static let dismissUntilKey = "dashboard_onboarding_dismiss_until"
-    private static let dismissPermanentKey = "dashboard_onboarding_dismiss_permanent"
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -33,11 +25,11 @@ struct NativeDashboardView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if isLoading && dashboard == nil {
+                if viewModel.isLoading && viewModel.dashboard == nil {
                     loadingView
-                } else if let error {
+                } else if let error = viewModel.error {
                     errorView(error)
-                } else if let dashboard {
+                } else if let dashboard = viewModel.dashboard {
                     dashboardContent(dashboard)
                 }
             }
@@ -45,7 +37,7 @@ struct NativeDashboardView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .task {
-            await loadDashboard()
+            await viewModel.loadDashboard()
         }
     }
 
@@ -62,7 +54,7 @@ struct NativeDashboardView: View {
 
                 // Onboarding checklist
                 if data.onboarding.allComplete != true,
-                   !isOnboardingDismissed() {
+                   !viewModel.isOnboardingDismissed() {
                     onboardingChecklist(data.onboarding)
                 }
 
@@ -84,7 +76,7 @@ struct NativeDashboardView: View {
             .padding()
         }
         .refreshable {
-            await fetchDashboard()
+            await viewModel.refresh()
         }
     }
 
@@ -143,10 +135,14 @@ struct NativeDashboardView: View {
                 Spacer()
                 Menu {
                     Button("Påminn mig imorgon") {
-                        dismissOnboarding(permanent: false)
+                        withAnimation {
+                            viewModel.dismissOnboarding(permanent: false)
+                        }
                     }
                     Button("Dölj tills vidare") {
-                        dismissOnboarding(permanent: true)
+                        withAnimation {
+                            viewModel.dismissOnboarding(permanent: true)
+                        }
                     }
                 } label: {
                     Image(systemName: "xmark")
@@ -468,7 +464,7 @@ struct NativeDashboardView: View {
                 .padding(.horizontal, 32)
 
             Button {
-                Task { await fetchDashboard() }
+                Task { await viewModel.refresh() }
             } label: {
                 Text("Försök igen")
                     .fontWeight(.medium)
@@ -479,76 +475,6 @@ struct NativeDashboardView: View {
             .buttonStyle(.borderedProminent)
 
             Spacer()
-        }
-    }
-
-    // MARK: - Data Loading
-
-    private func loadDashboard() async {
-        // Show cached data immediately
-        if let cached = SharedDataManager.loadDashboardCache() {
-            dashboard = cached.response
-            isLoading = false
-            // Refresh in background if cache exists
-            await fetchDashboard()
-            return
-        }
-        // No cache -- show loading state
-        isLoading = true
-        await fetchDashboard()
-        isLoading = false
-    }
-
-    private func fetchDashboard() async {
-        do {
-            let response = try await APIClient.shared.fetchDashboard()
-            dashboard = response
-            error = nil
-            SharedDataManager.saveDashboardCache(response)
-        } catch let apiError as APIError {
-            // Only show error if we have no cached data
-            if dashboard == nil {
-                switch apiError {
-                case .networkError, .timeout:
-                    error = "Kontrollera din internetanslutning och försök igen."
-                case .unauthorized:
-                    error = "Du behöver logga in igen."
-                case .rateLimited:
-                    error = "För många förfrågningar. Försök igen om en stund."
-                default:
-                    error = "Något gick fel. Försök igen."
-                }
-            }
-            AppLogger.network.error("Dashboard fetch failed: \(String(describing: apiError))")
-        } catch {
-            if dashboard == nil {
-                self.error = "Något gick fel. Försök igen."
-            }
-            AppLogger.network.error("Dashboard fetch failed: \(error.localizedDescription)")
-        }
-    }
-
-    // MARK: - Onboarding Dismiss
-
-    private func isOnboardingDismissed() -> Bool {
-        if onboardingDismissed { return true }
-        let defaults = UserDefaults.standard
-        if defaults.bool(forKey: Self.dismissPermanentKey) { return true }
-        if let until = defaults.object(forKey: Self.dismissUntilKey) as? Date {
-            return Date.now < until
-        }
-        return false
-    }
-
-    private func dismissOnboarding(permanent: Bool) {
-        withAnimation {
-            onboardingDismissed = true
-        }
-        if permanent {
-            UserDefaults.standard.set(true, forKey: Self.dismissPermanentKey)
-        } else {
-            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
-            UserDefaults.standard.set(tomorrow, forKey: Self.dismissUntilKey)
         }
     }
 }

@@ -25,6 +25,7 @@ struct AuthenticatedView: View {
                 // Dashboard (Native)
                 Tab(AppTab.dashboard.rawValue, systemImage: AppTab.dashboard.icon, value: AppTab.dashboard) {
                     NativeDashboardView(
+                        viewModel: coordinator.dashboardViewModel,
                         onNavigateToTab: { tab in coordinator.selectedTab = tab },
                         onNavigateToWebPath: { path in
                             coordinator.pendingMorePath = path
