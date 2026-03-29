@@ -15,7 +15,9 @@ sections:
   - Gotchas
 ---
 
-# E2E Test Requirements
+# E2E Test Requirements -- Equinet
+
+> Tekniska gotchas och obligatoriska patterns för Playwright E2E i detta projekt. Strategi och "när" finns i `e2e-playbook.md`.
 
 ## Seed & Cleanup
 
