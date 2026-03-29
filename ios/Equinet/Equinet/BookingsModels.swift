@@ -33,6 +33,15 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
     let cancellationMessage: String?
     let customerReview: BookingReview?
 
+    enum CodingKeys: String, CodingKey {
+        case id, bookingDate, startTime, endTime, status
+        case serviceName, servicePrice
+        case customerFirstName, customerLastName, customerEmail, customerPhone
+        case horseName, horseId, horseBreed
+        case isPaid, invoiceNumber, isManualBooking, bookingSeriesId
+        case customerNotes, providerNotes, cancellationMessage, customerReview
+    }
+
     var customerFullName: String {
         "\(customerFirstName) \(customerLastName)"
     }
@@ -128,6 +137,10 @@ struct BookingReview: Codable, Sendable {
     let id: String
     let rating: Int
     let comment: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, rating, comment
+    }
 }
 
 // MARK: - Booking Filter
@@ -158,10 +171,18 @@ struct CreateReviewResponse: Codable, Sendable {
     let id: String
     let rating: Int
     let comment: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, rating, comment
+    }
 }
 
 // MARK: - Quick Note Response
 
 struct QuickNoteResponse: Codable, Sendable {
     let providerNotes: String
+
+    enum CodingKeys: String, CodingKey {
+        case providerNotes
+    }
 }
