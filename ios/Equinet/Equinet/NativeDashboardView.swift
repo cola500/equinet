@@ -302,7 +302,7 @@ struct NativeDashboardView: View {
             if data.reviewStats.totalCount > 0 {
                 kpiCard(
                     title: "Recensioner",
-                    value: data.reviewStats.averageRating.map { String(format: "%.1f", $0) } ?? "-",
+                    value: data.reviewStats.averageRating.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "-",
                     icon: "star.fill",
                     subtitle: "\(data.reviewStats.totalCount) st",
                     action: { onNavigateToWebPath?("/provider/reviews") }
