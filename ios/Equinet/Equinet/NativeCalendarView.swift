@@ -500,7 +500,7 @@ struct NativeCalendarView: View {
     // MARK: - Service Filter Bar
 
     private var serviceFilterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 // "Alla" pill
                 filterPill(label: "Alla", isSelected: viewModel.selectedServiceFilter == nil) {
@@ -519,6 +519,7 @@ struct NativeCalendarView: View {
             .padding(.horizontal)
             .padding(.vertical, 6)
         }
+        .scrollIndicators(.hidden)
         .background(Color(.systemBackground))
     }
 

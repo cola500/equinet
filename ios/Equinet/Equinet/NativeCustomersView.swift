@@ -45,7 +45,7 @@ struct NativeCustomersView: View {
     // MARK: - Filter Bar
 
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 ForEach(CustomerFilter.allCases, id: \.self) { filter in
                     let isSelected = viewModel.selectedFilter == filter
@@ -70,6 +70,7 @@ struct NativeCustomersView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
         }
+        .scrollIndicators(.hidden)
     }
 
     // MARK: - Content
