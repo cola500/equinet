@@ -294,18 +294,20 @@ struct NativeCalendarView: View {
     private func bookingBlocks(for date: Date) -> some View {
         let dayBookings = viewModel.bookingsForDate(date)
         return ForEach(dayBookings) { booking in
-            bookingBlock(booking)
-                .overlay {
-                    if viewModel.actionInProgress == booking.id {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(.ultraThinMaterial)
-                            .overlay(ProgressView())
+            Button {
+                selectedBooking = booking
+            } label: {
+                bookingBlock(booking)
+                    .overlay {
+                        if viewModel.actionInProgress == booking.id {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(.ultraThinMaterial)
+                                .overlay(ProgressView())
+                        }
                     }
-                }
-                .onTapGesture {
-                    selectedBooking = booking
-                }
-                .contextMenu {
+            }
+            .buttonStyle(.plain)
+            .contextMenu {
                     if booking.status == "pending" {
                         Button {
                             viewModel.updateBookingStatus(bookingId: booking.id, newStatus: "confirmed")
@@ -388,8 +390,7 @@ struct NativeCalendarView: View {
         .frame(height: height)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(bookingAccessibilityLabel(booking))
-        .accessibilityHint("Dubbelklicka för detaljer")
-        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Visa detaljer")
     }
 
     // MARK: - Now Line

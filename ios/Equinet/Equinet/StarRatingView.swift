@@ -19,22 +19,28 @@ struct StarRatingView: View {
     var body: some View {
         HStack(spacing: interactive ? 8 : 2) {
             ForEach(1...maxRating, id: \.self) { star in
-                Image(systemName: star <= rating ? "star.fill" : "star")
-                    .font(font)
-                    .foregroundStyle(star <= rating ? .orange : .gray)
-                    .frame(minWidth: interactive ? 44 : 0, minHeight: interactive ? 44 : 0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if interactive {
-                            onRatingChanged?(star)
-                        }
+                if interactive {
+                    Button {
+                        onRatingChanged?(star)
+                    } label: {
+                        starImage(for: star)
+                            .frame(minWidth: 44, minHeight: 44)
                     }
-                    .accessibilityLabel("\(star) stjärna")
-                    .accessibilityAddTraits(star <= rating ? .isSelected : [])
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Sätt betyg \(star) av \(maxRating)")
+                } else {
+                    starImage(for: star)
+                }
             }
         }
         .accessibilityElement(children: interactive ? .contain : .ignore)
         .accessibilityLabel(interactive ? "" : "\(rating) av \(maxRating) stjärnor")
         .accessibilityValue(interactive ? "\(rating) av \(maxRating)" : "")
+    }
+
+    private func starImage(for star: Int) -> some View {
+        Image(systemName: star <= rating ? "star.fill" : "star")
+            .font(font)
+            .foregroundStyle(star <= rating ? .orange : .gray)
     }
 }
