@@ -141,7 +141,7 @@ struct NativeLoginView: View {
     }
 
     private func openForgotPassword() {
-        let url = AppConfig.baseURL.appendingPathComponent("forgot-password")
+        let url = AppConfig.baseURL.appending(path: "forgot-password")
         UIApplication.shared.open(url)
     }
 }

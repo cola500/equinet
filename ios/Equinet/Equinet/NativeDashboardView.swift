@@ -404,25 +404,13 @@ struct NativeDashboardView: View {
     }
 
     private var emptyStateNoBookings: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-
-            Text("Inga bokningar ännu")
-                .font(.headline)
-
+        ContentUnavailableView {
+            Label("Inga bokningar ännu", systemImage: "calendar.badge.plus")
+        } description: {
             Text("Dela din profil för att få dina första bokningar.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
+        } actions: {
             ShareLink(item: shareURL) {
                 Text("Dela min profil")
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .frame(minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
         }

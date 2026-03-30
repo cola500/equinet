@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Wrapper for equinet-review.py -- allows running as:
+#   scripts/equinet-review --staged
+#   git diff | scripts/equinet-review
+exec python3 "$(dirname "$0")/equinet-review.py" "$@"

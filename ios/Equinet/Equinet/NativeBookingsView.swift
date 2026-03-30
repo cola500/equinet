@@ -96,7 +96,7 @@ struct NativeBookingsView: View {
     // MARK: - Filter Bar
 
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 ForEach(BookingFilter.allCases, id: \.self) { filter in
                     let count = viewModel.filterCounts[filter] ?? 0
@@ -133,6 +133,7 @@ struct NativeBookingsView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+        .scrollIndicators(.hidden)
         .background(Color(.systemBackground))
     }
 

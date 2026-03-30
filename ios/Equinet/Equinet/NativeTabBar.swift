@@ -53,7 +53,7 @@ struct NativeTabBar: View {
                         Image(systemName: tab.icon)
                             .font(.title3)
                         Text(tab.rawValue)
-                            .font(.caption2)
+                            .font(.caption)
                     }
                     .foregroundStyle(tab == activeTab ? Color.accentColor : .secondary)
                     .frame(maxWidth: .infinity)
