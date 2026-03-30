@@ -2,13 +2,19 @@
 """
 Equinet diff review tool.
 
-Reads a git diff from stdin and returns a structured review
-based on Equinet's coding standards.
+Reads a git diff and returns a structured review based on
+Equinet's coding standards.
 
 Usage:
-    git diff | python3 scripts/equinet-review.py
-    git diff -- ios/ | python3 scripts/equinet-review.py
-    git diff HEAD~1 | python3 scripts/equinet-review.py
+    git diff | scripts/equinet-review
+    git diff -- ios/ | scripts/equinet-review
+    scripts/equinet-review --staged
+
+Exit codes:
+    0  = APPROVE
+    10 = FIX (review found issues)
+    20 = usage or configuration error
+    30 = API or response error
 
 Requires:
     OPENAI_API_KEY environment variable
@@ -19,9 +25,15 @@ Optional:
 
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
+
+EXIT_APPROVE = 0
+EXIT_FIX = 10
+EXIT_USAGE = 20
+EXIT_API = 30
 
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_MODEL = "gpt-4o-mini"
@@ -102,12 +114,27 @@ VALID_RESULTS = {"APPROVE", "FIX"}
 VALID_RISKS = {"LOW", "MEDIUM", "HIGH"}
 
 
-def read_diff() -> str:
-    if sys.stdin.isatty():
-        print("Error: no diff provided on stdin.", file=sys.stderr)
-        print("Usage: git diff | python3 scripts/equinet-review.py", file=sys.stderr)
-        sys.exit(1)
-    return sys.stdin.read()
+def get_diff() -> str:
+    """Read diff from --staged, stdin, or show usage."""
+    if "--staged" in sys.argv:
+        try:
+            result = subprocess.run(
+                ["git", "diff", "--cached"],
+                capture_output=True, text=True, check=True,
+            )
+            return result.stdout
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"Error: could not run git diff --cached: {e}", file=sys.stderr)
+            sys.exit(EXIT_USAGE)
+
+    if not sys.stdin.isatty():
+        return sys.stdin.read()
+
+    print("Error: no diff provided.", file=sys.stderr)
+    print("Usage:", file=sys.stderr)
+    print("  git diff | scripts/equinet-review", file=sys.stderr)
+    print("  scripts/equinet-review --staged", file=sys.stderr)
+    sys.exit(EXIT_USAGE)
 
 
 def truncate_diff(diff: str) -> str:
@@ -146,17 +173,17 @@ def call_openai(diff: str, api_key: str, model: str) -> str:
     except urllib.error.HTTPError as e:
         error_body = e.read().decode() if e.fp else ""
         print(f"Error: OpenAI API returned {e.code}: {error_body}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(EXIT_API)
     except urllib.error.URLError as e:
         print(f"Error: could not reach OpenAI API: {e.reason}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(EXIT_API)
 
     try:
         return body["choices"][0]["message"]["content"].strip()
     except (KeyError, IndexError):
         print("Error: unexpected API response format.", file=sys.stderr)
         print(f"Response: {json.dumps(body)[:500]}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(EXIT_API)
 
 
 def validate_output(text: str) -> bool:
@@ -178,19 +205,26 @@ def validate_output(text: str) -> bool:
     return result_ok and risk_ok and has_reasons and has_verify
 
 
+def parse_result(text: str) -> str:
+    for line in text.splitlines():
+        if line.startswith("RESULT:"):
+            return line.split(":", 1)[1].strip()
+    return ""
+
+
 def main():
-    diff = read_diff()
+    diff = get_diff()
 
     if not diff.strip():
         print(EMPTY_DIFF_RESPONSE)
-        sys.exit(0)
+        sys.exit(EXIT_FIX)
 
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
         print("Error: OPENAI_API_KEY environment variable is not set.", file=sys.stderr)
         print("Export it before running:", file=sys.stderr)
         print("  export OPENAI_API_KEY=sk-...", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(EXIT_USAGE)
 
     model = os.environ.get("EQUINET_REVIEW_MODEL", "").strip() or DEFAULT_MODEL
 
@@ -201,6 +235,9 @@ def main():
         print("Warning: unexpected output format from API.", file=sys.stderr)
 
     print(result)
+
+    verdict = parse_result(result)
+    sys.exit(EXIT_APPROVE if verdict == "APPROVE" else EXIT_FIX)
 
 
 if __name__ == "__main__":
