@@ -2,21 +2,24 @@
 
 ## Vad vi vill göra
 
-Vi vill ta reda på **var det tar onödigt lång tid att leverera förändringar** — och fixa de viktigaste flaskhalsarna, utan att starta ett stort transformationsprojekt.
+Vi vill ta reda på **var det tar onödigt lång tid att leverera förändringar** — och åtgärda de viktigaste flaskhalsarna. Utan att starta ett stort transformationsprojekt.
 
-## Varför
+## Varför nu
 
 Varje dag ett enterprise-system är svårt att ändra kostar pengar:
 
-- **Långsam time-to-market** — konkurrensnackdel
-- **Hög risk vid varje release** — incident och brandkårsutryckningar
-- **Utvecklare spenderar tid på att navigera komplexitet** istället för att bygga värde
+- **Långsam time-to-market** — vi tappar tempo mot konkurrenter
+- **Hög risk vid varje release** — incidenter, brandkårsutryckningar, helgarbete
+- **Utvecklare navigerar komplexitet** istället för att bygga affärsvärde
+- **Rekrytering påverkas** — skickliga utvecklare väljer bort system de inte kan påverka
+
+Kostnaden för att *inte* agera växer med tiden. Ju längre vi väntar, desto mer cementeras friktionen — och desto dyrare blir den att åtgärda senare.
 
 ## Hur — tre saker, tre veckor
 
 | Vecka | Aktivitet | Vad vi får |
 |-------|-----------|------------|
-| 1 | Analysera ändringshistorik + intervjua 8–10 utvecklare | En karta över var friktionen faktiskt sitter |
+| 1 | Analysera ändringshistorik + intervjua 8–10 utvecklare | En karta över var friktionen faktiskt sitter — baserad på data, inte åsikter |
 | 2 | Välj ut **en** avgränsad del och börja förbättra | Snabb, synlig effekt utan att röra hela systemet |
 | 3 | Snabba upp testning och bygg + synliggör leveranstakt | Kortare tid från idé till produktion |
 
@@ -41,6 +44,12 @@ Fem konkreta förbättringar som ger effekt inom veckor:
 - **2–3 utvecklare, 3 veckor** för analysen och de första förbättringarna
 - **Ingen ny infrastruktur** — vi använder verktyg som redan finns
 - **Löpande, inkrementellt** — vi mäter efter varje steg och bestämmer sedan om vi fortsätter
+
+## Vad vi behöver från er
+
+1. **Mandat** att avsätta 2–3 utvecklare i 3 veckor
+2. **Tillgång** till CI/CD-metriker och git-historik
+3. **Stöd** att boka intervjutid med utvecklare från olika team
 
 ## En mening
 
