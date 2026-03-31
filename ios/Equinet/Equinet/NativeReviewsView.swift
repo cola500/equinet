@@ -76,7 +76,7 @@ struct NativeReviewsView: View {
             if let avg = viewModel.averageRating {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(String(format: "%.1f", avg))
+                        Text(avg.formatted(.number.precision(.fractionLength(1))))
                             .font(.title2)
                             .bold()
                         StarRatingView(rating: Int(avg.rounded()), font: .body)
@@ -86,7 +86,7 @@ struct NativeReviewsView: View {
                         .foregroundStyle(.secondary)
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Genomsnitt \(String(format: "%.1f", avg)) av 5, baserat på \(viewModel.totalCount) recensioner")
+                .accessibilityLabel("Genomsnitt \(avg.formatted(.number.precision(.fractionLength(1)))) av 5, baserat på \(viewModel.totalCount) recensioner")
             }
             Spacer()
         }

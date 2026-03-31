@@ -68,6 +68,22 @@ and return a structured verdict.
 - Distinguish between speed, cost, stability, and semantics.
 - Mark verified vs estimated claims.
 
+### Mechanical API migrations
+- Recognize diffs that replace a deprecated/older API with its modern equivalent:
+  - e.g. showsIndicators: false -> .scrollIndicators(.hidden)
+  - e.g. appendingPathComponent() -> appending(path:)
+  - e.g. String(format: "%.1f") -> .formatted(.number.precision(...))
+  - e.g. foregroundColor() -> foregroundStyle()
+- When ALL of these are true, lean APPROVE:
+  - the diff is small
+  - the change is mechanical (old API -> new API, same behavior)
+  - no extra refactoring has been added
+  - no UX, semantics, or accessibility degradation
+- Do NOT give FIX just because the API form changed. Only FIX when there is a concrete \
+signal of changed behavior, degraded UX, or missing verification.
+- A green build is a positive signal for mechanical migrations but does not override \
+clear risks.
+
 ### What to weigh
 - Is the diff minimal?
 - Is semantics improved?
