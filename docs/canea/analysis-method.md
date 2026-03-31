@@ -1,122 +1,122 @@
 # Genomlysning av komplext enterprise-system
 
-> Metod for att identifiera forbattringsomraden i ett Canea One-liknande system.
-> Fokus: oka forandringstakt, minska komplexitet, inkrementellt.
+> Metod för att identifiera förbättringsområden i ett Canea One-liknande system.
+> Fokus: öka förändringstakt, minska komplexitet, inkrementellt.
 
-## 1. Metod: Tre spar, parallellt, 2-3 veckor
+## 1. Metod: Tre spår, parallellt, 2–3 veckor
 
-### Spar A: Hotspot-analys (data-driven)
+### Spår A: Hotspot-analys (data-driven)
 
-Anvand **git-historik** som primar datakalla -- inte arkitekturdokument.
+Använd **git-historik** som primär datakälla — inte arkitekturdokument.
 
 ```bash
-# Mest andrade filer senaste 6 man (change frequency)
+# Mest ändrade filer senaste 6 mån (change frequency)
 git log --since="6 months ago" --pretty=format: --name-only | sort | uniq -c | sort -rn | head 30
 
-# Filer som andras tillsammans (coupling)
+# Filer som ändras tillsammans (coupling)
 # Verktyg: code-maat, git-of-theseus, eller manuell analys
 
-# Filer med flest forfattare (koordineringskostnad)
+# Filer med flest författare (koordineringskostnad)
 git log --since="6 months ago" --pretty=format:%an --name-only -- <hot-file> | sort -u
 ```
 
-**Hotspot = hog andringsfrekvens + hog komplexitet.** Korsreferera med cyklomatisk komplexitet (SonarQube, CodeClimate, eller `radon` for Python, `plato` for JS).
+**Hotspot = hög ändringsfrekvens + hög komplexitet.** Korsreferera med cyklomatisk komplexitet (SonarQube, CodeClimate, eller `radon` för Python, `plato` för JS).
 
-De 5-10 filerna som hamnar hogt pa *bada* axlarna ar dar friktionen finns.
+De 5–10 filerna som hamnar högt på *båda* axlarna är där friktionen finns.
 
-### Spar B: Utvecklarintervjuer (kvalitativt)
+### Spår B: Utvecklarintervjuer (kvalitativt)
 
-**8-10 intervjuer, 30 min var.** Blanda seniora och juniora. Stall dessa fragor:
+**8–10 intervjuer, 30 min var.** Blanda seniora och juniora. Ställ dessa frågor:
 
-| Kategori | Fraga |
+| Kategori | Fråga |
 |----------|-------|
-| Vardagsfrikt | "Beskriv senaste gangen du blev blockerad mer an en timme. Vad hande?" |
-| Fortroende | "Hur saker kanner du dig att din andring inte bryter nagot?" |
-| Feedback-loop | "Hur lang tid tar det fran commit till att du vet att allt fungerar?" |
-| Onboarding | "Vilken del av systemet skulle du aldrig vilja rora? Varfor?" |
-| Beroenden | "Vilka team/moduler maste du koordinera med oftast?" |
-| Testning | "Hur testar du en typisk andring? Vad testar du inte?" |
-| Deploy | "Vad ar din kansla dagarna efter en deploy?" |
+| Vardagsfriktion | "Beskriv senaste gången du blev blockerad mer än en timme. Vad hände?" |
+| Förtroende | "Hur säker känner du dig att din ändring inte bryter något?" |
+| Feedback-loop | "Hur lång tid tar det från commit till att du vet att allt fungerar?" |
+| Onboarding | "Vilken del av systemet skulle du aldrig vilja röra? Varför?" |
+| Beroenden | "Vilka team/moduler måste du koordinera med oftast?" |
+| Testning | "Hur testar du en typisk ändring? Vad testar du inte?" |
+| Deploy | "Vad är din känsla dagarna efter en deploy?" |
 
-**Nyckeln:** Lyssna efter *monster*. Om 4 av 8 namner samma modul/process -- det ar signalen.
+**Nyckeln:** Lyssna efter *mönster*. Om 4 av 8 nämner samma modul/process — det är signalen.
 
-### Spar C: Teststrategi & feedback-loop-kartlaggning
+### Spår C: Teststrategi & feedback-loop-kartläggning
 
-Mat konkret:
+Mät konkret:
 
-| Matpunkt | Hur |
+| Mätpunkt | Hur |
 |----------|-----|
-| **Commit -> gron CI** | Mat mediantid i CI-systemet |
-| **Commit -> produktion** | Lead time (DORA-metrik) |
-| **Testsvitens kortid** | Total + uppdelad per typ (unit/integration/E2E) |
-| **Flaky test-frekvens** | Antal reruns senaste manaden |
-| **Test-coverage per hotspot** | Coverage-rapport filtrerad pa de 10 hetaste filerna |
-| **Manuellt testberoende** | Vilka floden *kraver* manuell QA? |
+| **Commit → grön CI** | Mät mediantid i CI-systemet |
+| **Commit → produktion** | Lead time (DORA-metrik) |
+| **Testsvitens körtid** | Total + uppdelad per typ (unit/integration/E2E) |
+| **Flaky test-frekvens** | Antal reruns senaste månaden |
+| **Test-coverage per hotspot** | Coverage-rapport filtrerad på de 10 hetaste filerna |
+| **Manuellt testberoende** | Vilka flöden *kräver* manuell QA? |
 
 ---
 
-## 2. Hitta ratt forsta "slice"
+## 2. Hitta rätt första "slice"
 
 ### Urvalskriterier
 
-Valj den modul/doman som har:
+Välj den modul/domän som har:
 
-1. **Hog andringsfrekvens** (data visar det)
-2. **Utvecklare klagar pa den** (intervjuer bekraftar det)
-3. **Begransad blast radius** (inte karnan i allt)
-4. **Synligt affarsvarde** (stakeholders bryr sig)
+1. **Hög ändringsfrekvens** (data visar det)
+2. **Utvecklare klagar på den** (intervjuer bekräftar det)
+3. **Begränsad blast radius** (inte kärnan i allt)
+4. **Synligt affärsvärde** (stakeholders bryr sig)
 
 ### Konkret process
 
 ```
-Hotspot-topp-10  ∩  Intervju-smartpunkter  ∩  Avgransbar modul
+Hotspot-topp-10  ∩  Intervju-smärtpunkter  ∩  Avgränsbar modul
          ↓
-    Det ar din slice.
+    Det är din slice.
 ```
 
-**Exempel:** Om git-historiken visar att `OrderProcessing/`-mappen andras 3x oftare an genomsnittet, och utvecklare sager "jag ar alltid radd att andra orderflodet" -- borja dar.
+**Exempel:** Om git-historiken visar att `OrderProcessing/`-mappen ändras 3x oftare än genomsnittet, och utvecklare säger "jag är alltid rädd att ändra orderflödet" — börja där.
 
 ---
 
-## 3. Fem konkreta forsta forbattringar
+## 3. Fem konkreta första förbättringar
 
 ### 1. Strangler fig runt den hetaste hotspoten
 
-Extrahera ett tydligt interface runt den mest andringsunga modulen. Andra inte insidan -- bara ytan. Detta ger:
-- Mojlighet att testa modulen isolerat
-- Frihet att refaktorera insidan utan att rora konsumenterna
-- **Effort:** 1-2 veckor. **Effekt:** Alla framtida andringar i modulen blir sakrare.
+Extrahera ett tydligt interface runt den mest ändringstunga modulen. Ändra inte insidan — bara ytan. Detta ger:
+- Möjlighet att testa modulen isolerat
+- Frihet att refaktorera insidan utan att röra konsumenterna
+- **Effort:** 1–2 veckor. **Effekt:** Alla framtida ändringar i modulen blir säkrare.
 
-### 2. Karakteriseringstester pa de 5 mest andrade filerna
+### 2. Karakteriseringstester på de 5 mest ändrade filerna
 
-Skriv tester som fangar *nuvarande beteende* (inte onskat). Anvand approval testing / snapshot testing. Syftet ar inte coverage -- det ar **fortroendenat** for refaktorering.
-- **Effort:** 3-5 dagar. **Effekt:** Utvecklare vagar andra.
+Skriv tester som fångar *nuvarande beteende* (inte önskat). Använd approval testing / snapshot testing. Syftet är inte coverage — det är **förtroendenät** för refaktorering.
+- **Effort:** 3–5 dagar. **Effekt:** Utvecklare vågar ändra.
 
 ### 3. Halvera CI-tiden
 
-Identifiera den langsammaste delen av CI-pipelinen. Typiska quick wins:
+Identifiera den långsammaste delen av CI-pipelinen. Typiska quick wins:
 - Parallelisera testsviter
 - Cacha beroenden (Docker layers, npm/Maven cache)
-- Kor bara paverkade tester vid PR (test impact analysis)
-- **Effort:** 2-3 dagar. **Effekt:** Snabbare feedback = fler deploys = mindre risk per deploy.
+- Kör bara påverkade tester vid PR (test impact analysis)
+- **Effort:** 2–3 dagar. **Effekt:** Snabbare feedback = fler deploys = mindre risk per deploy.
 
-### 4. Infor "15-minuters-regeln" for lokala byggen
+### 4. Inför "15-minuters-regeln" för lokala byggen
 
-Om en utvecklare inte kan kora en meningsfull delcheck pa <15 minuter lokalt, fixa det. Ge varje team:
-- Ett snabbkommando som kor enbart berorda tester
+Om en utvecklare inte kan köra en meningsfull delcheck på <15 minuter lokalt, fixa det. Ge varje team:
+- Ett snabbkommando som kör enbart berörda tester
 - En lokal smoke-check som tar <2 min
-- **Effort:** 1-2 dagar. **Effekt:** Kortare inner loop = fler iterationer per dag.
+- **Effort:** 1–2 dagar. **Effekt:** Kortare inner loop = fler iterationer per dag.
 
-### 5. Synliggor DORA-metriker pa en dashboard
+### 5. Synliggör DORA-metriker på en dashboard
 
-Mat fyra saker, visa dem oppet:
-- **Deploy frequency** -- hur ofta vi levererar
-- **Lead time** -- commit till produktion
-- **Change failure rate** -- andel deploys som orsakar incident
-- **MTTR** -- tid att aterstalla efter incident
+Mät fyra saker, visa dem öppet:
+- **Deploy frequency** — hur ofta vi levererar
+- **Lead time** — commit till produktion
+- **Change failure rate** — andel deploys som orsakar incident
+- **MTTR** — tid att återställa efter incident
 
-Ingen target. Bara synlighet. Team som ser sina siffror borjar forbattra dem.
-- **Effort:** 2-3 dagar med befintliga CI/CD-data. **Effekt:** Gemensam bild av var vi ar.
+Ingen target. Bara synlighet. Team som ser sina siffror börjar förbättra dem.
+- **Effort:** 2–3 dagar med befintliga CI/CD-data. **Effekt:** Gemensam bild av var vi är.
 
 ---
 
@@ -124,9 +124,9 @@ Ingen target. Bara synlighet. Team som ser sina siffror borjar forbattra dem.
 
 ```
 Vecka 1:     Git-analys + intervjuer (parallellt)
-Vecka 2:     Syntes -> valj slice -> starta forbattring 1+2+4
+Vecka 2:     Syntes → välj slice → starta förbättring 1+2+4
 Vecka 3:     CI-optimering + dashboard
-Lopande:     Mat, justera, valj nasta slice
+Löpande:     Mät, justera, välj nästa slice
 ```
 
-**Princip:** Mat fore du andrar. Andra en sak i taget. Valj det som ger mest fortroende -- inte mest coverage.
+**Princip:** Mät före du ändrar. Ändra en sak i taget. Välj det som ger mest förtroende — inte mest coverage.
