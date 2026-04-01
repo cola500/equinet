@@ -4,6 +4,8 @@ import { NextRequest } from "next/server"
 // Mock dependencies BEFORE imports
 const mockHandleWebhookEvent = vi.fn()
 const mockVerifyWebhookSignature = vi.fn()
+const mockHandlePaymentIntentSucceeded = vi.fn()
+const mockHandlePaymentIntentFailed = vi.fn()
 
 vi.mock("@/domain/subscription/SubscriptionGateway", () => ({
   getSubscriptionGateway: () => ({
@@ -14,6 +16,13 @@ vi.mock("@/domain/subscription/SubscriptionGateway", () => ({
 vi.mock("@/domain/subscription/SubscriptionServiceFactory", () => ({
   createSubscriptionService: () => ({
     handleWebhookEvent: mockHandleWebhookEvent,
+  }),
+}))
+
+vi.mock("@/domain/payment", () => ({
+  createPaymentWebhookService: () => ({
+    handlePaymentIntentSucceeded: mockHandlePaymentIntentSucceeded,
+    handlePaymentIntentFailed: mockHandlePaymentIntentFailed,
   }),
 }))
 
@@ -135,5 +144,66 @@ describe("POST /api/webhooks/stripe", () => {
       expect.any(String),
       ""
     )
+  })
+
+  it("routes payment_intent.succeeded to PaymentWebhookService", async () => {
+    const webhookEvent = {
+      type: "payment_intent.succeeded",
+      data: {
+        id: "pi_test_123",
+        metadata: { bookingId: "booking-1" },
+      },
+    }
+    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockHandlePaymentIntentSucceeded.mockResolvedValue(undefined)
+
+    const request = createWebhookRequest(JSON.stringify(webhookEvent))
+    const response = await POST(request)
+
+    expect(response.status).toBe(200)
+    expect(mockHandlePaymentIntentSucceeded).toHaveBeenCalledWith(
+      "pi_test_123",
+      { bookingId: "booking-1" }
+    )
+    expect(mockHandleWebhookEvent).not.toHaveBeenCalled()
+  })
+
+  it("routes payment_intent.payment_failed to PaymentWebhookService", async () => {
+    const webhookEvent = {
+      type: "payment_intent.payment_failed",
+      data: {
+        id: "pi_test_456",
+        metadata: { bookingId: "booking-2" },
+      },
+    }
+    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockHandlePaymentIntentFailed.mockResolvedValue(undefined)
+
+    const request = createWebhookRequest(JSON.stringify(webhookEvent))
+    const response = await POST(request)
+
+    expect(response.status).toBe(200)
+    expect(mockHandlePaymentIntentFailed).toHaveBeenCalledWith(
+      "pi_test_456",
+      { bookingId: "booking-2" }
+    )
+    expect(mockHandleWebhookEvent).not.toHaveBeenCalled()
+  })
+
+  it("routes subscription events to SubscriptionService (unchanged)", async () => {
+    const webhookEvent = {
+      type: "customer.subscription.updated",
+      data: { id: "sub_123", status: "active" },
+    }
+    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockHandleWebhookEvent.mockResolvedValue(undefined)
+
+    const request = createWebhookRequest(JSON.stringify(webhookEvent))
+    const response = await POST(request)
+
+    expect(response.status).toBe(200)
+    expect(mockHandleWebhookEvent).toHaveBeenCalledWith(webhookEvent)
+    expect(mockHandlePaymentIntentSucceeded).not.toHaveBeenCalled()
+    expect(mockHandlePaymentIntentFailed).not.toHaveBeenCalled()
   })
 })
