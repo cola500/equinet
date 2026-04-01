@@ -123,7 +123,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     label: "Kundinbjudningar",
     description: "Leverantörer kan bjuda in manuellt tillagda kunder att skapa konto",
     defaultEnabled: false,
-    clientVisible: false,
+    clientVisible: true,
     category: "provider",
   },
   push_notifications: {
