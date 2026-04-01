@@ -97,9 +97,13 @@ Normalt via `code-reviewer` subagent, eller manuellt av tech lead.
 
 ## Testning
 
-- [ ] Tester existerar for alla nya publika metoder
+- [ ] **BDD dual-loop följd** för API routes och domain services:
+  - [ ] Yttre integrationstest som kör route -> service -> gateway (ej helt mockad)
+  - [ ] Inre unit-tester för enskilda klasser/funktioner
+  - [ ] Om bara unit-tester finns: varför? Dokumentera avvikelsen i done-filen.
+- [ ] Tester existerar för alla nya publika metoder
 - [ ] Tester testar beteende, inte implementation
-- [ ] Mock-patterns foljer projektstandard (class-baserade mocks, inte `vi.fn().mockImplementation`)
+- [ ] Mock-patterns följer projektstandard (class-baserade mocks, inte `vi.fn().mockImplementation`)
 - [ ] Feature flag-test inkluderat ("returns 404 when flag disabled")
 - [ ] Inga `@ts-expect-error` i tester utan anledning
 - [ ] Edge cases: null, tom lista, ogiltig input, concurrent access
