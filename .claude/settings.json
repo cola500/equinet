@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/api-route-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/tdd-reminder.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/feature-flag-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/prisma-migration-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/e2e-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/definition-of-done.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/sprint-status-update.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-api-route-verify.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-import-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
