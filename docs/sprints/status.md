@@ -27,8 +27,7 @@ sections:
 | S4-6 Observability | fullstack | Lead | done | main | 16fb024e |
 | S4-7 Seed + verifiering | fullstack | Dev | done | feature/s4-7-seed-verification | a5df77cc |
 | S4-4 UX-polish native | fullstack | Dev | done | feature/s4-4-ux-polish-native | 9aaaadf2 |
-| S4-5 Demo-data prod | fullstack | - | pending | - | - |
-| S4-5 Demo-data prod | fullstack | - | backlog | - | - |
+| S4-5 Demo-data prod | fullstack | Dev | in_progress | feature/s4-5-demo-data-prod | - |
 
 **Sprint 3** (klar):
 
@@ -50,8 +49,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Lead | Tech lead | Review, merge | main | 2026-04-01 |
-| Dev | Fullstack | S4-3 due-for-service native | feature/s4-3-due-for-service-native | 2026-04-01 |
+| Dev | Fullstack | S4-5 Demo-data prod | feature/s4-5-demo-data-prod | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
