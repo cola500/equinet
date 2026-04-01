@@ -75,12 +75,55 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     })
   }
 
+  async updateWithAuth(
+    id: string,
+    data: UpdateSubscriptionData,
+    providerId: string
+  ): Promise<Subscription | null> {
+    try {
+      return await prisma.providerSubscription.update({
+        where: { id, providerId },
+        data,
+        select: subscriptionSelect,
+      })
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "P2025"
+      ) {
+        return null
+      }
+      throw error
+    }
+  }
+
   async delete(id: string): Promise<boolean> {
     try {
       await prisma.providerSubscription.delete({ where: { id } })
       return true
     } catch (error) {
       // P2025 = record not found
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "P2025"
+      ) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  async deleteWithAuth(id: string, providerId: string): Promise<boolean> {
+    try {
+      await prisma.providerSubscription.delete({
+        where: { id, providerId },
+      })
+      return true
+    } catch (error) {
       if (
         error &&
         typeof error === "object" &&

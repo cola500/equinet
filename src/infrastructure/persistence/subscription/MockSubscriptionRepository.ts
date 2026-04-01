@@ -77,7 +77,24 @@ export class MockSubscriptionRepository implements ISubscriptionRepository {
     return updated
   }
 
+  async updateWithAuth(
+    id: string,
+    data: UpdateSubscriptionData,
+    providerId: string
+  ): Promise<Subscription | null> {
+    const existing = this.subscriptions.get(id)
+    if (!existing || existing.providerId !== providerId) return null
+    const updated = await this.update(id, data)
+    return updated
+  }
+
   async delete(id: string): Promise<boolean> {
+    return this.subscriptions.delete(id)
+  }
+
+  async deleteWithAuth(id: string, providerId: string): Promise<boolean> {
+    const existing = this.subscriptions.get(id)
+    if (!existing || existing.providerId !== providerId) return false
     return this.subscriptions.delete(id)
   }
 }

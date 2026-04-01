@@ -32,6 +32,12 @@ export class MockCustomerReviewRepository implements ICustomerReviewRepository {
     return this.reviews.has(id)
   }
 
+  async findByIdForProvider(id: string, providerId: string): Promise<CustomerReview | null> {
+    const review = this.reviews.get(id)
+    if (!review || review.providerId !== providerId) return null
+    return review
+  }
+
   async findByBookingId(bookingId: string): Promise<CustomerReview | null> {
     for (const review of this.reviews.values()) {
       if (review.bookingId === bookingId) return review

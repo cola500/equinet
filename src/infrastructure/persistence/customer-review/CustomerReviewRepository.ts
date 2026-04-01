@@ -94,6 +94,17 @@ export class CustomerReviewRepository implements ICustomerReviewRepository {
   }
 
   // ==========================================
+  // AUTH-AWARE READ METHODS
+  // ==========================================
+
+  async findByIdForProvider(id: string, providerId: string): Promise<CustomerReview | null> {
+    return prisma.customerReview.findFirst({
+      where: { id, providerId },
+      select: customerReviewSelect,
+    })
+  }
+
+  // ==========================================
   // QUERY METHODS
   // ==========================================
 
