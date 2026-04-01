@@ -1,9 +1,26 @@
 . "$HOME/.nvm/nvm.sh" 2>/dev/null
-echo "🔒 Running pre-push quality checks..."
+
+# Block direct push to main unless LEAD_MERGE=1 is set
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" = "main" ] && [ "$LEAD_MERGE" != "1" ]; then
+  echo "BLOCKERAD: Push till main ar inte tillaten."
+  echo "Pusha din feature branch istallet: git push -u origin feature/<namn>"
+  echo ""
+  echo "(Tech lead: satt LEAD_MERGE=1 for att merga till main)"
+  exit 1
+fi
+
+echo "Running pre-push quality checks..."
 echo ""
 
-# Kolla om nya migrationer ingår i pushen
-MIGRATION_DIFF=$(git diff --name-only @{push}..HEAD 2>/dev/null | grep "prisma/migrations.*\.sql$" || echo "")
+# Detect what changed
+CHANGED_FILES=$(git diff --name-only @{push}..HEAD 2>/dev/null || git diff --name-only HEAD~1..HEAD 2>/dev/null || echo "")
+HAS_CODE=$(echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|swift)$' || true)
+HAS_PRISMA=$(echo "$CHANGED_FILES" | grep -E 'prisma/' || true)
+HAS_MD=$(echo "$CHANGED_FILES" | grep -E '\.md$' || true)
+
+# Kolla om nya migrationer ingar i pushen
+MIGRATION_DIFF=$(echo "$CHANGED_FILES" | grep "prisma/migrations.*\.sql$" || echo "")
 if [[ -n "$MIGRATION_DIFF" ]]; then
   echo ""
   echo "=========================================="
@@ -11,44 +28,46 @@ if [[ -n "$MIGRATION_DIFF" ]]; then
   echo "=========================================="
   echo "$MIGRATION_DIFF" | sed 's/^/  /'
   echo ""
-  echo "  Kör: npm run migrate:supabase"
+  echo "  Kor: npm run migrate:supabase"
   echo "=========================================="
   echo ""
 fi
 
-# Check for missing Swedish characters (å, ä, ö)
-echo "🇸🇪 Checking Swedish characters..."
-npm run check:swedish || {
-  echo "❌ Swedish character issues found! Fix before pushing."
-  exit 1
-}
+# Swedish check -- always when md or code changed (fast, <2s)
+if [[ -n "$HAS_MD" || -n "$HAS_CODE" ]]; then
+  echo "Checking Swedish characters..."
+  npm run check:swedish || {
+    echo "Swedish character issues found! Fix before pushing."
+    exit 1
+  }
+  echo ""
+fi
 
-echo ""
+# Code checks -- only if .ts/.tsx/.js/.jsx/.swift files changed
+if [[ -n "$HAS_CODE" ]]; then
+  echo "Running unit tests..."
+  npm run test:run || {
+    echo "Unit tests failed! Fix tests before pushing."
+    exit 1
+  }
+  echo ""
 
-# Run unit tests
-echo "📊 Running unit tests..."
-npm run test:run || {
-  echo "❌ Unit tests failed! Fix tests before pushing."
-  exit 1
-}
+  echo "Running TypeScript check..."
+  npx tsc --project tsconfig.typecheck.json || {
+    echo "TypeScript errors found! Fix type errors before pushing."
+    exit 1
+  }
+  echo ""
 
-echo ""
+  echo "Running lint check..."
+  npm run lint || {
+    echo "Lint errors found! Fix lint errors before pushing."
+    exit 1
+  }
+  echo ""
+else
+  echo "Only docs/config changed -- skipping test/typecheck/lint"
+  echo ""
+fi
 
-# Run TypeScript check (incremental for speed, excludes test files for memory)
-echo "🔍 Running TypeScript check..."
-npx tsc --project tsconfig.typecheck.json || {
-  echo "❌ TypeScript errors found! Fix type errors before pushing."
-  exit 1
-}
-
-echo ""
-
-# Run lint check
-echo "🔍 Running lint check..."
-npm run lint || {
-  echo "❌ Lint errors found! Fix lint errors before pushing."
-  exit 1
-}
-
-echo ""
-echo "✅ All local checks passed! Pushing to remote..."
+echo "All checks passed! Pushing to remote..."
