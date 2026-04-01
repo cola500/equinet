@@ -396,9 +396,23 @@ async function main() {
   const existingDemo = demoIds.length > 0
     ? await prisma.booking.count({ where: { customerId: { in: demoIds } } })
     : 0
+  // Track created bookings for review linking
+  const createdBookings: Array<{ id: string; customer: string; service: string; status: string }> = []
+
   if (existingDemo > 0) {
     console.log(`${existingDemo} demo bookings already exist. Skipping booking creation.`)
     console.log("Run with --reset to recreate.\n")
+
+    // Load existing completed bookings for review linking
+    const existingBookings = await prisma.booking.findMany({
+      where: { customerId: { in: demoIds }, status: "completed" },
+      select: { id: true, customerId: true, serviceId: true, status: true },
+    })
+    for (const eb of existingBookings) {
+      const customerName = Object.entries(customers).find(([, id]) => id === eb.customerId)?.[0] ?? ""
+      const serviceName = Object.entries(services).find(([, id]) => id === eb.serviceId)?.[0] ?? ""
+      createdBookings.push({ id: eb.id, customer: customerName, service: serviceName, status: eb.status })
+    }
   } else {
     const bookings = [
       // Upcoming: confirmed
@@ -481,7 +495,7 @@ async function main() {
       const serviceDef = serviceData.find((s) => s.name === b.service)
       const endTime = addMinutes(b.startTime, serviceDef?.durationMinutes ?? 60)
 
-      await prisma.booking.create({
+      const created = await prisma.booking.create({
         data: {
           customerId,
           providerId: provider.id,
@@ -498,6 +512,7 @@ async function main() {
           providerNotes: null,
         },
       })
+      createdBookings.push({ id: created.id, customer: b.customer, service: b.service, status: b.status })
       const statusLabel = {
         confirmed: "bekraftad",
         pending: "vantar",
@@ -511,7 +526,70 @@ async function main() {
   }
 
   // -------------------------------------------------------------------------
-  // 7. Ensure availability schedule exists
+  // 7. Create demo reviews (for completed bookings)
+  // -------------------------------------------------------------------------
+
+  const reviewData = [
+    {
+      customer: "Anna Johansson",
+      service: "Hovslagning",
+      rating: 5,
+      comment: "Mycket proffsigt och lugnt bemotande. Storm var helt avslappnad hela tiden.",
+    },
+    {
+      customer: "Johan Pettersson",
+      service: "Halsokontroll",
+      rating: 4,
+      comment: "Bra undersokning, fick tydlig forklaring. Lite vantetid men inget stort problem.",
+    },
+    {
+      customer: "Erik Svensson",
+      service: "Hovslagning",
+      rating: 5,
+      comment: "Alltid lika palitlig och noggrann. Saga ar alltid lugn hos Maria.",
+    },
+  ]
+
+  const completedBookings = createdBookings.filter((b) => b.status === "completed")
+
+  if (completedBookings.length > 0) {
+    let reviewCount = 0
+    for (const r of reviewData) {
+      const booking = completedBookings.find(
+        (b) => b.customer === r.customer && b.service === r.service
+      )
+      if (!booking) {
+        console.log(`  Skipped review: ${r.customer} / ${r.service} (no matching booking)`)
+        continue
+      }
+
+      const existingReview = await prisma.customerReview.findUnique({
+        where: { bookingId: booking.id },
+      })
+      if (existingReview) {
+        console.log(`  Review exists: ${r.customer} (${r.rating} stjarnor)`)
+        continue
+      }
+
+      await prisma.customerReview.create({
+        data: {
+          bookingId: booking.id,
+          providerId: provider.id,
+          customerId: customers[r.customer],
+          rating: r.rating,
+          comment: r.comment,
+        },
+      })
+      reviewCount++
+      console.log(`  Review: ${r.customer} - ${r.rating} stjarnor`)
+    }
+    console.log(`  ${reviewCount} recensioner skapade\n`)
+  } else {
+    console.log("  No completed bookings to review (run with --reset to recreate)\n")
+  }
+
+  // -------------------------------------------------------------------------
+  // 8. Ensure availability schedule exists
   // -------------------------------------------------------------------------
 
   const existingAvail = await prisma.availability.count({
