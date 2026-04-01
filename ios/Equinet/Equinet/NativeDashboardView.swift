@@ -78,6 +78,7 @@ struct NativeDashboardView: View {
         .refreshable {
             await viewModel.refresh()
         }
+        .sensoryFeedback(.success, trigger: viewModel.dashboard?.todayBookings.count ?? 0)
     }
 
     // MARK: - Priority Action

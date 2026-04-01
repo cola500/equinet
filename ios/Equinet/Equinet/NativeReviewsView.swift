@@ -33,6 +33,7 @@ struct NativeReviewsView: View {
         .refreshable {
             await viewModel.refresh()
         }
+        .sensoryFeedback(.success, trigger: viewModel.reviews.count)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .reply(let review):

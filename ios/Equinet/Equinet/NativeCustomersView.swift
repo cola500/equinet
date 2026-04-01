@@ -37,6 +37,7 @@ struct NativeCustomersView: View {
         .refreshable {
             await viewModel.refresh()
         }
+        .sensoryFeedback(.selection, trigger: viewModel.selectedFilter)
         .sheet(item: $viewModel.activeSheet) { sheet in
             sheetContent(for: sheet)
         }
