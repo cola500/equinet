@@ -17,17 +17,21 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 4: Demo-Ready Production** (docs/sprints/sprint-4.md)
+**Sprint 5: Betalning (Stripe + Swish)** (docs/sprints/sprint-5.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S4-1 Produktionsdeploy | fullstack | Dev | done | main | - |
-| S4-2 Invite live | fullstack | Johan+Lead | done | - | admin DB-override |
-| S4-3 Due-for-service native | fullstack | Dev | done | feature/s4-3-due-for-service-native | 10f78359 |
-| S4-6 Observability | fullstack | Lead | done | main | 16fb024e |
-| S4-7 Seed + verifiering | fullstack | Dev | done | feature/s4-7-seed-verification | a5df77cc |
-| S4-4 UX-polish native | fullstack | Dev | done | feature/s4-4-ux-polish-native | 9aaaadf2 |
-| S4-5 Demo-data prod | fullstack | Dev | done | feature/s4-5-demo-data-prod | 8ddd8b2a |
+| S5-1 Stripe-konto + config | fullstack | Johan | done | - | Vercel env satta |
+| S5-2 StripePaymentGateway | fullstack | - | pending | - | - |
+| S5-3 Stripe webhook-route | fullstack | - | pending | - | - |
+| S5-4 Betalning UI | fullstack | - | pending | - | - |
+| S5-5 E2E betalning | fullstack | - | backlog | - | - |
+
+**Sprint 4** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S4-1 -- S4-7 | fullstack | Dev+Lead+Johan | done |
 
 **Sprint 3** (klar):
 
