@@ -19,18 +19,18 @@ sections:
 
 **Sprint 3: Launch Readiness** (docs/sprints/sprint-3.md)
 
-| Story | Ansvarig | Status | Branch | Senaste commit |
-|-------|----------|--------|--------|----------------|
-| S3-1 Kundinbjudningar | - | pending | - | - |
-| S3-2 Push-forberedelse | - | pending | - | - |
-| S3-3 Demo-polish | - | pending | - | - |
-| S3-4 Recensioner seed | - | backlog | - | - |
+| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
+|-------|------|----------|--------|--------|----------------|
+| S3-1 Kundinbjudningar | fullstack | - | pending | - | - |
+| S3-2 Push-forberedelse | ios | - | pending | - | - |
+| S3-3 Demo-polish | fullstack | - | pending | - | - |
+| S3-4 Recensioner seed | fullstack | - | backlog | - | - |
 
 **Sprint 2** (avslutad parallellt):
 
-| Story | Ansvarig | Status | Branch | Senaste commit |
-|-------|----------|--------|--------|----------------|
-| S2-1 withApiHandler | Fullstack | done | fix/critical-security-sweep | 6404358a |
+| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
+|-------|------|----------|--------|--------|----------------|
+| S2-1 withApiHandler | fullstack | Fullstack | done | fix/critical-security-sweep | 6404358a |
 
 ## Sessioner
 

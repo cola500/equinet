@@ -6,27 +6,59 @@ status: active
 last_updated: 2026-04-01
 tags: [workflow, team, automation]
 sections:
-  - Regel
+  - Roller och kommandon
   - Steg
+  - Undantag
 ---
 
 # Auto-assign vid sessionsstart
 
-## Regel
+## Roller och kommandon
 
-Nar en session startar utan en specifik uppgift (t.ex. "kor", "fortsatt", "nasta"):
+Sessioner startas med ett kort kommando som anger roll:
+
+| Kommando | Roll | Plockar stories taggade |
+|----------|------|------------------------|
+| "kor" | Fullstack | `fullstack` eller otaggade |
+| "kor ios" | iOS-utvecklare | `ios` |
+| "kor review" | Tech lead / review | Granskar in_progress stories |
+
+Om ingen roll anges: default till fullstack.
 
 ## Steg
 
 1. Las `docs/sprints/status.md` -- vilka stories ar pending?
 2. Las det aktiva sprint-dokumentet (lankat i status.md) -- vad ar detaljerna?
-3. Valj nasta story enligt prioritetsordningen i sprint-dokumentet
-4. Registrera dig i status.md Sessioner-tabell (roll, branch, story)
-5. Skapa feature branch: `feature/<story-id>-<kort-beskrivning>`
-6. Borja arbeta enligt stationsfloden (.claude/rules/team-workflow.md)
+3. Filtrera pa din roll (se Roller-tabellen ovan)
+4. Valj nasta matchande story enligt prioritetsordningen i sprint-dokumentet
+5. Registrera dig i status.md Sessioner-tabell (roll, branch, story)
+6. Skapa feature branch: `feature/<story-id>-<kort-beskrivning>`
+7. Borja arbeta enligt stationsfloden (.claude/rules/team-workflow.md)
 
-**Om alla stories ar klara eller blockerade:**
-Rapportera till Johan: "Alla stories i [sprint] ar klara/blockerade. Vad vill du prioritera?"
+### Rollspecifika regler
+
+**Fullstack:**
+- Verifiering: `npm run check:all`
+- Tester: Vitest (BDD dual-loop for API/services)
+- Review-agenter: security-reviewer (API), cx-ux-reviewer (UI)
+
+**iOS:**
+- Verifiering: `xcodebuild test` (se CLAUDE.md iOS-testflode)
+- Folj iOS Native Screen Pattern (se CLAUDE.md)
+- Review-agenter: ios-expert, mobile-mcp for visuell verifiering
+- Tester: XCTest for ViewModels, visuell verifiering for UI
+- VIKTIGT: Verifiera auth-mekanism (Bearer JWT vs session) innan native UI anropar endpoints
+
+**Tech lead / review:**
+- Las `git log` och `git diff` for senaste commits
+- Las `status.md` for vilka stories som ar in_progress
+- Kor code-reviewer agent pa andringarna
+- Uppdatera status.md med review-resultat
+
+## Undantag
+
+**Om alla stories for din roll ar klara eller blockerade:**
+Rapportera till Johan: "Alla [roll]-stories i [sprint] ar klara/blockerade. Vad vill du prioritera?"
 
 **Om en story redan ar in_progress av en annan session:**
 Hoppa over den. Ta nasta pending story. Rask ALDRIG en story fran en aktiv session.
