@@ -16,6 +16,7 @@ import { sv } from "date-fns/locale"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import { clientLogger } from "@/lib/client-logger"
 
 interface Route {
   id: string
@@ -71,7 +72,7 @@ export default function ProviderRoutesPage() {
         setError("Kunde inte hämta rutter")
       }
     } catch (error) {
-      console.error("Error fetching routes:", error)
+      clientLogger.error("Error fetching routes:", error)
       setError("Något gick fel. Kontrollera din internetanslutning.")
     } finally {
       setIsLoadingRoutes(false)

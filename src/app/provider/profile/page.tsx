@@ -26,6 +26,7 @@ import { SubscriptionCard } from "@/components/provider/profile/SubscriptionCard
 import type { SubscriptionStatus } from "@/components/provider/profile/SubscriptionCard"
 import type { ProviderProfile } from "@/components/provider/profile/types"
 import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
+import { clientLogger } from "@/lib/client-logger"
 
 const VALID_TABS = ["profile", "availability", "settings"] as const
 type ProfileTab = typeof VALID_TABS[number]
@@ -125,7 +126,7 @@ function ProviderProfilePageContent() {
         toast.success("Personlig information uppdaterad!")
         mutateProfile()
       } catch (error) {
-        console.error("Error updating personal profile:", error)
+        clientLogger.error("Error updating personal profile:", error)
         toast.error("Kunde inte uppdatera personlig information")
       }
     })

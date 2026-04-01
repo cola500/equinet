@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { clientLogger } from "@/lib/client-logger"
 
 interface RouteStop {
   locationName: string | null
@@ -90,7 +91,7 @@ export function NearbyRoutesBanner({
           }
         }
       } catch (error) {
-        console.error("Error fetching profile location:", error)
+        clientLogger.error("Error fetching profile location:", error)
       }
     }
 
@@ -123,7 +124,7 @@ export function NearbyRoutesBanner({
           }
         }
       } catch (error) {
-        console.error("Error fetching nearby routes:", error)
+        clientLogger.error("Error fetching nearby routes:", error)
       } finally {
         setLoading(false)
       }

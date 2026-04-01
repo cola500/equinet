@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 
 interface GroupBookingParticipant {
   id: string
@@ -85,7 +86,7 @@ export default function CustomerGroupBookingsPage() {
         toast.error("Kunde inte hämta gruppbokningar")
       }
     } catch (error) {
-      console.error("Error fetching group bookings:", error)
+      clientLogger.error("Error fetching group bookings:", error)
       toast.error("Kunde inte hämta gruppbokningar")
     } finally {
       setIsLoading(false)

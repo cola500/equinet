@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { clientLogger } from "@/lib/client-logger"
 import type { ProviderProfile } from "./types"
 
 interface BusinessInfoCardProps {
@@ -79,7 +80,7 @@ export function BusinessInfoCard({ profile, onSaved, guardMutation }: BusinessIn
         toast.success("Företagsinformation uppdaterad!")
         onSaved()
       } catch (error) {
-        console.error("Error updating business profile:", error)
+        clientLogger.error("Error updating business profile:", error)
         toast.error("Kunde inte uppdatera företagsinformation")
       }
     })
@@ -123,7 +124,7 @@ export function BusinessInfoCard({ profile, onSaved, guardMutation }: BusinessIn
       setBusinessData(prev => ({ ...prev, latitude, longitude }))
       toast.success("Plats hittad!")
     } catch (error) {
-      console.error("Geocoding error:", error)
+      clientLogger.error("Geocoding error:", error)
       toast.error("Kunde inte hitta platsen. Kontrollera adressen.")
     } finally {
       setIsGeocoding(false)
@@ -148,7 +149,7 @@ export function BusinessInfoCard({ profile, onSaved, guardMutation }: BusinessIn
         toast.success("Din position har sparats!")
       },
       (error) => {
-        console.error("Geolocation error:", error)
+        clientLogger.error("Geolocation error:", error)
         setIsGeocoding(false)
         toast.error("Kunde inte hämta din position. Kontrollera behörigheter.")
       }

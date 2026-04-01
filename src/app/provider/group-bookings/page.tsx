@@ -20,6 +20,7 @@ import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { calculateDistance } from "@/lib/geo/distance"
 import { X } from "lucide-react"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 
 interface GroupBookingParticipant {
   id: string
@@ -77,7 +78,7 @@ export default function ProviderGroupBookingsPage() {
         toast.error("Kunde inte hämta grupprequests")
       }
     } catch (error) {
-      console.error("Error fetching available group bookings:", error)
+      clientLogger.error("Error fetching available group bookings:", error)
       toast.error("Kunde inte hämta grupprequests")
     } finally {
       setIsLoading(false)
@@ -133,7 +134,7 @@ export default function ProviderGroupBookingsPage() {
         setLocationLoading(false)
       },
       (err) => {
-        console.error("Geolocation error:", err)
+        clientLogger.error("Geolocation error:", err)
         switch (err.code) {
           case err.PERMISSION_DENIED:
             setLocationError("Du nekade platsåtkomst. Tillåt platsdelning i webbläsarens inställningar.")

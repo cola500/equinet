@@ -33,6 +33,7 @@ import {
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 
 interface Participant {
   id: string
@@ -120,7 +121,7 @@ export default function ProviderGroupBookingDetailPage({
         router.push("/provider/group-bookings")
       }
     } catch (error) {
-      console.error("Error fetching group booking:", error)
+      clientLogger.error("Error fetching group booking:", error)
       toast.error("Kunde inte hämta grupprequest")
     } finally {
       setIsLoading(false)
@@ -135,7 +136,7 @@ export default function ProviderGroupBookingDetailPage({
         setServices(data)
       }
     } catch (error) {
-      console.error("Error fetching services:", error)
+      clientLogger.error("Error fetching services:", error)
     }
   }, [])
 
@@ -171,7 +172,7 @@ export default function ProviderGroupBookingDetailPage({
       matchDialog.close()
       fetchDetail()
     } catch (error) {
-      console.error("Error matching:", error)
+      clientLogger.error("Error matching:", error)
       toast.error(
         error instanceof Error ? error.message : "Matchning misslyckades"
       )

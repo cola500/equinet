@@ -14,6 +14,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 
 interface RouteStop {
   id: string
@@ -84,7 +85,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
           await mutateRoute() // Refresh route data
         } catch (error: unknown) {
           const message = error instanceof Error ? error.message : "Något gick fel"
-          console.error("Error updating stop:", error)
+          clientLogger.error("Error updating stop:", error)
           toast.error(message)
         } finally {
           setUpdatingStopId(null)

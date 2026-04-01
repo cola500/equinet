@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { clientLogger } from "@/lib/client-logger"
 
 interface RouteStop {
   id: string
@@ -97,7 +98,7 @@ export default function AnnouncementsPage() {
         setError("Kunde inte hämta rutt-annonser")
       }
     } catch (error) {
-      console.error("Error fetching announcements:", error)
+      clientLogger.error("Error fetching announcements:", error)
       setError("Något gick fel. Försök igen senare.")
     } finally {
       setIsLoading(false)

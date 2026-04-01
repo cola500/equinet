@@ -20,6 +20,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 
 interface RouteStop {
   id: string
@@ -70,7 +71,7 @@ export default function ProviderAnnouncementsPage() {
         setAnnouncements(data)
       }
     } catch (error) {
-      console.error("Error fetching announcements:", error)
+      clientLogger.error("Error fetching announcements:", error)
       toast.error("Kunde inte hämta rutt-annonser")
     }
   }
@@ -93,7 +94,7 @@ export default function ProviderAnnouncementsPage() {
         toast.success("Rutt-annons avbruten!")
         fetchAnnouncements()
       } catch (error) {
-        console.error("Error cancelling announcement:", error)
+        clientLogger.error("Error cancelling announcement:", error)
         toast.error("Kunde inte avbryta rutt-annons")
       }
     })

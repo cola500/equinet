@@ -35,6 +35,7 @@ import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
+import { clientLogger } from "@/lib/client-logger"
 
 interface Payment {
   id: string
@@ -149,7 +150,7 @@ function ProviderBookingsContent() {
 
           // Stay on current filter -- booking moves within the list naturally
         } catch (error) {
-          console.error("Error updating booking:", error)
+          clientLogger.error("Error updating booking:", error)
           toast.error("Kunde inte uppdatera bokning")
         }
       },
@@ -202,7 +203,7 @@ function ProviderBookingsContent() {
           setCancellationMessage("")
           mutateBookings()
         } catch (error) {
-          console.error("Error cancelling booking:", error)
+          clientLogger.error("Error cancelling booking:", error)
           toast.error("Kunde inte avboka bokningen")
         } finally {
           setIsCancelling(false)

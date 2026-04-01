@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
+import { clientLogger } from "@/lib/client-logger"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 
@@ -154,7 +155,7 @@ function JoinGroupBookingContent() {
       toast.success("Du har gått med i grupprequesten!")
       router.push(`/customer/group-bookings/${participant.groupBookingRequestId}`)
     } catch (error) {
-      console.error("Error joining group booking:", error)
+      clientLogger.error("Error joining group booking:", error)
       toast.error(
         error instanceof Error ? error.message : "Kunde inte gå med"
       )

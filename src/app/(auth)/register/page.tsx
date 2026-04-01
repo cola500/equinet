@@ -15,6 +15,7 @@ import { PasswordStrengthIndicator } from "@/components/ui/password-strength-ind
 import { toast } from "sonner"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
+import { clientLogger } from "@/lib/client-logger"
 
 export default function RegisterPage() {
   return (
@@ -82,7 +83,7 @@ function RegisterForm() {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Något gick fel vid registrering. Kontrollera din internetanslutning."
       setError(errorMessage)
-      console.error("Registration error:", error)
+      clientLogger.error("Registration error:", error)
     } finally {
       setIsLoading(false)
     }

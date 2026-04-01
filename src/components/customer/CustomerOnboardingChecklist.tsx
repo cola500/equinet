@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle2, Circle, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { clientLogger } from "@/lib/client-logger"
 
 interface OnboardingStatus {
   profileComplete: boolean
@@ -51,7 +52,7 @@ export function CustomerOnboardingChecklist() {
         setStatus(data)
       }
     } catch (error) {
-      console.error("Error fetching customer onboarding status:", error)
+      clientLogger.error("Error fetching customer onboarding status:", error)
     } finally {
       setIsLoading(false)
     }

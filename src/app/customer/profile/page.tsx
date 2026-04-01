@@ -15,6 +15,7 @@ import Link from "next/link"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { MunicipalityWatchCard } from "@/components/municipality-watch/MunicipalityWatchCard"
 import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
+import { clientLogger } from "@/lib/client-logger"
 
 interface Profile {
   id: string
@@ -80,7 +81,7 @@ export default function CustomerProfilePage() {
         })
       }
     } catch (error) {
-      console.error("Error fetching profile:", error)
+      clientLogger.error("Error fetching profile:", error)
       toast.error("Kunde inte hämta profil")
     }
   }
@@ -115,7 +116,7 @@ export default function CustomerProfilePage() {
       setIsEditing(false)
       toast.success("Profil uppdaterad!")
     } catch (error) {
-      console.error("Error updating profile:", error)
+      clientLogger.error("Error updating profile:", error)
       toast.error("Kunde inte uppdatera profil")
     }
   }
@@ -157,7 +158,7 @@ export default function CustomerProfilePage() {
       setFormData(prev => ({ ...prev, latitude, longitude }))
       toast.success("Plats hittad!")
     } catch (error) {
-      console.error("Geocoding error:", error)
+      clientLogger.error("Geocoding error:", error)
       toast.error("Kunde inte hitta platsen. Kontrollera adressen.")
     } finally {
       setIsGeocoding(false)
@@ -182,7 +183,7 @@ export default function CustomerProfilePage() {
         toast.success("Din position har sparats!")
       },
       (error) => {
-        console.error("Geolocation error:", error)
+        clientLogger.error("Geolocation error:", error)
         setIsGeocoding(false)
         toast.error("Kunde inte hämta din position. Kontrollera behörigheter.")
       }

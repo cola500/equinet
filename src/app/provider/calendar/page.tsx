@@ -28,6 +28,7 @@ import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
 import { CalendarSkeleton } from "@/components/loading/CalendarSkeleton"
 import { CalendarBooking, AvailabilityDay } from "@/types"
+import { clientLogger } from "@/lib/client-logger"
 
 export default function ProviderCalendarPage() {
   return (
@@ -301,7 +302,7 @@ function CalendarContent() {
             toast.error("Kunde inte spara öppettider")
           }
         } catch (error) {
-          console.error("Error saving availability:", error)
+          clientLogger.error("Error saving availability:", error)
           toast.error("Kunde inte spara öppettider")
         }
       },
@@ -344,7 +345,7 @@ function CalendarContent() {
         handleDialogClose(false)
         mutateBookings()
       } catch (error) {
-        console.error("Error updating booking:", error)
+        clientLogger.error("Error updating booking:", error)
         toast.error("Kunde inte uppdatera bokning")
       }
     }, {

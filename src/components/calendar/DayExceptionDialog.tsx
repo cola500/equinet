@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { AvailabilityException } from "@/types"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { clientLogger } from "@/lib/client-logger"
 
 interface DayExceptionDialogProps {
   date: string | null // YYYY-MM-DD
@@ -98,7 +99,7 @@ export function DayExceptionDialog({
       })
       onOpenChange(false)
     } catch (error) {
-      console.error("Error saving exception:", error)
+      clientLogger.error("Error saving exception:", error)
     } finally {
       setIsSaving(false)
     }
@@ -111,7 +112,7 @@ export function DayExceptionDialog({
       await onDelete(date)
       onOpenChange(false)
     } catch (error) {
-      console.error("Error deleting exception:", error)
+      clientLogger.error("Error deleting exception:", error)
     } finally {
       setIsDeleting(false)
     }

@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
+import { clientLogger } from "@/lib/client-logger"
 import { isDemoMode } from "@/lib/demo-mode"
 
 function LoginForm() {
@@ -74,7 +75,7 @@ function LoginForm() {
       }
     } catch (error) {
       setError("Något gick fel. Försök igen.")
-      console.error("Login error:", error)
+      clientLogger.error("Login error:", error)
     } finally {
       setIsLoading(false)
     }

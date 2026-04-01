@@ -26,6 +26,7 @@ import { CustomerOnboardingChecklist } from "@/components/customer/CustomerOnboa
 import { RescheduleDialog } from "@/components/booking/RescheduleDialog"
 import { BookingCard } from "@/components/customer/bookings/BookingCard"
 import { useBookingFilters, type BookingFilter } from "@/hooks/useBookingFilters"
+import { clientLogger } from "@/lib/client-logger"
 import type { Booking, RouteOrder, CombinedBooking } from "@/components/customer/bookings/types"
 
 export default function CustomerBookingsPage() {
@@ -91,7 +92,7 @@ export default function CustomerBookingsPage() {
       setBookingToCancel(null)
       mutateAll()
     } catch (error) {
-      console.error("Error cancelling booking:", error)
+      clientLogger.error("Error cancelling booking:", error)
       toast.error("Kunde inte avboka bokningen")
     } finally {
       setIsCancelling(false)
@@ -114,7 +115,7 @@ export default function CustomerBookingsPage() {
       toast.success("Betalning genomförd!")
       mutateAll()
     } catch (error) {
-      console.error("Error processing payment:", error)
+      clientLogger.error("Error processing payment:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte genomföra betalningen")
     } finally {
       setPayingBookingId(null)
@@ -133,7 +134,7 @@ export default function CustomerBookingsPage() {
       toast.success("Recension borttagen")
       mutateAll()
     } catch (error) {
-      console.error("Error deleting review:", error)
+      clientLogger.error("Error deleting review:", error)
       toast.error("Kunde inte ta bort recensionen")
     } finally {
       setDeletingReviewId(null)

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
+import { clientLogger } from "@/lib/client-logger"
 
 interface AvailabilityDay {
   dayOfWeek: number
@@ -66,7 +67,7 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
         setSchedule(completeSchedule)
       }
     } catch (error) {
-      console.error("Error fetching schedule:", error)
+      clientLogger.error("Error fetching schedule:", error)
       toast.error("Kunde inte hämta öppettider")
     } finally {
       setIsLoading(false)
@@ -95,11 +96,11 @@ export function AvailabilitySchedule({ providerId }: AvailabilityScheduleProps) 
         fetchSchedule() // Refresh data
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error("Error response:", response.status, errorData)
+        clientLogger.error("Error response:", response.status, errorData)
         toast.error(errorData.details || errorData.error || "Kunde inte spara öppettider")
       }
     } catch (error) {
-      console.error("Error saving schedule:", error)
+      clientLogger.error("Error saving schedule:", error)
       toast.error("Nätverksfel - kunde inte spara öppettider")
     } finally {
       setIsSaving(false)

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
+import { clientLogger } from "@/lib/client-logger"
 
 interface Visit {
   id: string
@@ -37,7 +38,7 @@ export function UpcomingVisits({ providerId }: UpcomingVisitsProps) {
           setVisits(visitsWithLocation)
         }
       } catch (error) {
-        console.error("Error fetching visits:", error)
+        clientLogger.error("Error fetching visits:", error)
       } finally {
         setIsLoading(false)
       }

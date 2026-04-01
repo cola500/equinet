@@ -22,6 +22,7 @@ import { StarRating } from "@/components/review/StarRating"
 import { toast } from "sonner"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { clientLogger } from "@/lib/client-logger"
 
 export default function ProviderReviewsPage() {
   const router = useRouter()
@@ -68,7 +69,7 @@ export default function ProviderReviewsPage() {
         })
       }
     } catch (error) {
-      console.error("Error fetching review data:", error)
+      clientLogger.error("Error fetching review data:", error)
     } finally {
       setIsLoadingData(false)
     }

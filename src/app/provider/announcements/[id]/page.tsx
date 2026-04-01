@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 import {
   ResponsiveAlertDialog,
   ResponsiveAlertDialogAction,
@@ -92,7 +93,7 @@ export default function AnnouncementDetailPage() {
       const announcementData = await response.json()
       setData(announcementData)
     } catch (err) {
-      console.error("Error fetching announcement:", err)
+      clientLogger.error("Error fetching announcement:", err)
       setError(err instanceof Error ? err.message : "Något gick fel")
       toast.error("Kunde inte hämta annons-detaljer")
     } finally {
@@ -128,7 +129,7 @@ export default function AnnouncementDetailPage() {
       )
       fetchAnnouncementDetails()
     } catch (err) {
-      console.error("Error updating booking:", err)
+      clientLogger.error("Error updating booking:", err)
       toast.error("Kunde inte uppdatera bokning")
     }
   }

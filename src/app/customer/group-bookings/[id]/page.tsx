@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 import { Share2, Copy } from "lucide-react"
 
 interface Participant {
@@ -115,7 +116,7 @@ export default function GroupBookingDetailPage({
         toast.error("Kunde inte hämta grupprequest")
       }
     } catch (error) {
-      console.error("Error fetching group booking:", error)
+      clientLogger.error("Error fetching group booking:", error)
       toast.error("Kunde inte hämta grupprequest")
     } finally {
       setIsLoading(false)

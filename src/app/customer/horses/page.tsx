@@ -50,6 +50,7 @@ import { Badge } from "@/components/ui/badge"
 import { useDueForService } from "@/hooks/useDueForService"
 import { AlertTriangle, Clock } from "lucide-react"
 import { HorseIcon } from "@/components/icons/HorseIcon"
+import { clientLogger } from "@/lib/client-logger"
 import type { DueForServiceResult } from "@/domain/due-for-service/DueForServiceCalculator"
 
 interface Horse {
@@ -129,7 +130,7 @@ export default function CustomerHorsesPage() {
       setFormData(emptyForm)
       mutateHorses()
     } catch (error) {
-      console.error("Error adding horse:", error)
+      clientLogger.error("Error adding horse:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte lägga till häst")
     } finally {
       setIsSaving(false)
@@ -150,7 +151,7 @@ export default function CustomerHorsesPage() {
       setHorseToDelete(null)
       mutateHorses()
     } catch (error) {
-      console.error("Error deleting horse:", error)
+      clientLogger.error("Error deleting horse:", error)
       toast.error("Kunde inte ta bort häst")
     }
   }

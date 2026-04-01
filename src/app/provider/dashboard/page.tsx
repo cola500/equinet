@@ -24,6 +24,7 @@ import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { DashboardCharts } from "@/components/provider/DashboardCharts"
 import { PriorityActionCard } from "@/components/provider/PriorityActionCard"
 import type { PriorityRoute } from "@/components/provider/PriorityActionCard"
+import { clientLogger } from "@/lib/client-logger"
 
 export default function ProviderDashboard() {
   const { isLoading, isProvider } = useAuth()
@@ -82,7 +83,7 @@ export default function ProviderDashboard() {
         fetchOnboardingStatus(),
       ])
     } catch (error) {
-      console.error("Error fetching data:", error)
+      clientLogger.error("Error fetching data:", error)
       setError("Kunde inte hämta data. Kontrollera din internetanslutning.")
     } finally {
       setIsLoadingData(false)
@@ -123,7 +124,7 @@ export default function ProviderDashboard() {
         })
       }
     } catch (error) {
-      console.error("Error fetching review stats:", error)
+      clientLogger.error("Error fetching review stats:", error)
     }
   }
 
@@ -137,7 +138,7 @@ export default function ProviderDashboard() {
       }
     } catch (error) {
       // Non-critical -- silently ignore
-      console.error("Error fetching dashboard stats:", error)
+      clientLogger.error("Error fetching dashboard stats:", error)
     } finally {
       setIsLoadingStats(false)
     }

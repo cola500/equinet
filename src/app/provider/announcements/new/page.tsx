@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 
 interface ProviderService {
   id: string
@@ -52,7 +53,7 @@ export default function NewAnnouncementPage() {
         setServices(data.filter((s: ProviderService & { isActive?: boolean }) => s.isActive !== false))
       }
     } catch (error) {
-      console.error("Error fetching services:", error)
+      clientLogger.error("Error fetching services:", error)
       toast.error("Kunde inte hämta dina tjänster")
     } finally {
       setServicesLoading(false)
@@ -117,7 +118,7 @@ export default function NewAnnouncementPage() {
         toast.success("Rutt-annons skapad!")
         router.push("/provider/announcements")
       } catch (error) {
-        console.error("Error creating announcement:", error)
+        clientLogger.error("Error creating announcement:", error)
         toast.error(error instanceof Error ? error.message : "Kunde inte skapa rutt-annons")
       } finally {
         setIsSubmitting(false)

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import { getRouteWithFallback } from '@/lib/routing'
+import { clientLogger } from '@/lib/client-logger'
 
 // Prevent Leaflet from re-initializing icons.
 // Leaflet's _getIconUrl is a private property not in the type definitions,
@@ -104,18 +105,18 @@ export default function RouteMapVisualization({
 
     // Fetch original path (in selection order)
     if (originalPath && originalPath.length > 1 && !routedOriginalPath) {
-      console.log('Fetching ORIGINAL route for', originalPath.length, 'points')
+      clientLogger.info('Fetching ORIGINAL route for points', { count: originalPath.length })
       setIsLoadingRoutes(true)
 
       getRouteWithFallback(originalPath)
         .then(routed => {
           if (cancelled) return
-          console.log('Original route received:', routed.length, 'points')
+          clientLogger.info('Original route received', { count: routed.length })
           setRoutedOriginalPath(routed)
         })
         .catch(err => {
           if (cancelled) return
-          console.error('Original route failed:', err)
+          clientLogger.error('Original route failed:', err)
           // Fallback to straight line
           setRoutedOriginalPath(originalPath)
         })
@@ -137,18 +138,18 @@ export default function RouteMapVisualization({
     let cancelled = false
 
     if (optimizedPath && optimizedPath.length > 1 && !routedOptimizedPath) {
-      console.log('Fetching OPTIMIZED route for', optimizedPath.length, 'points')
+      clientLogger.info('Fetching OPTIMIZED route for points', { count: optimizedPath.length })
       setIsLoadingRoutes(true)
 
       getRouteWithFallback(optimizedPath)
         .then(routed => {
           if (cancelled) return
-          console.log('Optimized route received:', routed.length, 'points')
+          clientLogger.info('Optimized route received', { count: routed.length })
           setRoutedOptimizedPath(routed)
         })
         .catch(err => {
           if (cancelled) return
-          console.error('Optimized route failed:', err)
+          clientLogger.error('Optimized route failed:', err)
           // Fallback to straight line
           setRoutedOptimizedPath(optimizedPath)
         })
@@ -310,7 +311,7 @@ export default function RouteMapVisualization({
         )
         mapRef.current.fitBounds(bounds, { padding: [50, 50] })
       } catch (e) {
-        console.warn('Error fitting bounds:', e)
+        clientLogger.warn('Error fitting bounds', { error: e })
       }
     })
 

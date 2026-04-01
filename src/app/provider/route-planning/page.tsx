@@ -22,6 +22,7 @@ import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
 import { getRoute } from "@/lib/routing"
+import { clientLogger } from "@/lib/client-logger"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const RouteMapVisualization = dynamic(
@@ -178,7 +179,7 @@ export default function RoutePlanningPage() {
 
         toast.success(`Rutt optimerad! ${actualImprovement.toFixed(1)}% kortare (${actualBaselineDistanceKm.toFixed(1)} km → ${actualOptimizedDistanceKm.toFixed(1)} km)`)
       } catch (error) {
-        console.error('OSRM distance calculation failed, using Modal API distances:', error)
+        clientLogger.error('OSRM distance calculation failed, using Modal API distances:', error)
         // Fallback till Modal API:s resultat
         setOptimizationResult({
           optimizedOrderIds,
@@ -190,7 +191,7 @@ export default function RoutePlanningPage() {
         toast.success(`Rutt optimerad! ${result.improvement_percent.toFixed(1)}% kortare`)
       }
     } catch (error: unknown) {
-      console.error("Optimization error:", error)
+      clientLogger.error("Optimization error:", error)
       toast.error("Kunde inte optimera rutt: " + (error instanceof Error ? error.message : "Okänt fel"))
     } finally {
       setIsOptimizing(false)
@@ -240,7 +241,7 @@ export default function RoutePlanningPage() {
       toast.success("Rutt skapad!")
       router.push(`/provider/routes/${newRoute.id}`)
     } catch (error: unknown) {
-      console.error("Error creating route:", error)
+      clientLogger.error("Error creating route:", error)
       toast.error(error instanceof Error ? error.message : "Något gick fel")
     } finally {
       setIsCreatingRoute(false)

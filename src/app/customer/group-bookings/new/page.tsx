@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
+import { clientLogger } from "@/lib/client-logger"
 
 export default function CreateGroupBookingPage() {
   const router = useRouter()
@@ -101,7 +102,7 @@ export default function CreateGroupBookingPage() {
       toast.success("Grupprequest skapad! Dela inbjudningskoden med dina stallkompisar.")
       router.push(`/customer/group-bookings/${created.id}`)
     } catch (error) {
-      console.error("Error creating group booking:", error)
+      clientLogger.error("Error creating group booking:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte skapa grupprequest")
     } finally {
       setIsSaving(false)

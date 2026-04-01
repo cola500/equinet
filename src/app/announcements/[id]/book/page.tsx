@@ -14,6 +14,7 @@ import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { CustomerBookingCalendar } from "@/components/booking/CustomerBookingCalendar"
 import { HorseSelect, type HorseOption } from "@/components/booking/HorseSelect"
 import { useHorses } from "@/hooks/useHorses"
+import { clientLogger } from "@/lib/client-logger"
 import { CustomerLocation } from "@/hooks/useWeekAvailability"
 
 interface RouteStop {
@@ -83,7 +84,7 @@ export default function BookAnnouncementPage() {
           router.push("/announcements")
         }
       } catch (error) {
-        console.error("Error fetching announcement:", error)
+        clientLogger.error("Error fetching announcement:", error)
         toast.error("Något gick fel")
         router.push("/announcements")
       } finally {
@@ -111,7 +112,7 @@ export default function BookAnnouncementPage() {
           })
         }
       } catch (error) {
-        console.error("Error fetching customer location:", error)
+        clientLogger.error("Error fetching customer location:", error)
       }
     }
 
@@ -157,7 +158,7 @@ export default function BookAnnouncementPage() {
       toast.success("Bokning skapad!")
       router.push("/customer/bookings")
     } catch (error) {
-      console.error("Error creating booking:", error)
+      clientLogger.error("Error creating booking:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte skapa bokning")
     } finally {
       setIsSubmitting(false)

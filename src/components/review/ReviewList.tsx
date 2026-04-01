@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { Star } from "lucide-react"
+import { clientLogger } from "@/lib/client-logger"
 
 interface Review {
   id: string
@@ -68,7 +69,7 @@ export function ReviewList({
           setAverageRating(data.averageRating)
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error)
+        clientLogger.error("Error fetching reviews:", error)
       } finally {
         setIsLoading(false)
       }

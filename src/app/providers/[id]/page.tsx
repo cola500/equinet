@@ -25,6 +25,7 @@ import { FollowButton } from "@/components/follow/FollowButton"
 import { useFollowProvider } from "@/hooks/useFollowProvider"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { ProviderCardSkeleton } from "@/components/loading/ProviderCardSkeleton"
+import { clientLogger } from "@/lib/client-logger"
 import type { CustomerHorse } from "@/hooks/useBookingFlow"
 
 interface Service {
@@ -123,7 +124,7 @@ export default function ProviderDetailPage() {
           router.push("/providers")
         }
       } catch (error) {
-        console.error("Error fetching provider:", error)
+        clientLogger.error("Error fetching provider:", error)
         toast.error("Kunde inte hämta leverantör")
       } finally {
         setIsLoading(false)
@@ -141,7 +142,7 @@ export default function ProviderDetailPage() {
           })
         }
       } catch (error) {
-        console.error("Error fetching review summary:", error)
+        clientLogger.error("Error fetching review summary:", error)
       }
     }
 
@@ -160,7 +161,7 @@ export default function ProviderDetailPage() {
           setCustomerHorses(data)
         }
       } catch (error) {
-        console.error("Error fetching horses:", error)
+        clientLogger.error("Error fetching horses:", error)
       }
     }
     fetchHorses()
@@ -214,7 +215,7 @@ export default function ProviderDetailPage() {
           }
         }
       } catch (error) {
-        console.error("Error fetching location/routes:", error)
+        clientLogger.error("Error fetching location/routes:", error)
       }
     }
 
