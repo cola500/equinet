@@ -26,7 +26,7 @@ sections:
 | S4-3 Due-for-service native | fullstack | Dev | done | feature/s4-3-due-for-service-native | 10f78359 |
 | S4-6 Observability | fullstack | Lead | done | main | 16fb024e |
 | S4-7 Seed + verifiering | fullstack | Dev | done | feature/s4-7-seed-verification | a5df77cc |
-| S4-4 UX-polish native | fullstack | - | pending | - | - |
+| S4-4 UX-polish native | fullstack | Dev | in_progress | feature/s4-4-ux-polish-native | - |
 | S4-5 Demo-data prod | fullstack | - | backlog | - | - |
 
 **Sprint 3** (klar):
