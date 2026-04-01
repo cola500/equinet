@@ -3,12 +3,14 @@ title: Demo Mode
 description: Hur demo-mode fungerar -- vilka features som döljs och visas
 category: operations
 status: active
-last_updated: 2026-03-25
+last_updated: 2026-04-01
 sections:
   - Vad demo-mode gör
   - Hur man startar
   - Vad som visas
   - Vad som döljs
+  - Demo-flöde (produktion)
+  - Demo-flöde (lokal)
   - Kända begränsningar
 ---
 
@@ -121,14 +123,43 @@ Ta bort raden `NEXT_PUBLIC_DEMO_MODE=true` från `.env.local` och starta om.
 
 ---
 
-## Demo-flöde
+## Demo-flöde (produktion)
 
-1. Öppna `/login`
-2. Logga in med `provider@test.se` / `test123`
-3. Se dashboard med statistik
-4. Gå till Kunder -- se kundregister
-5. Gå till Bokningar -- skapa/bekräfta/slutför bokningar
-6. Gå till Tjänster -- se/redigera tjänster
+**URL:** `https://equinet-app.vercel.app/login`
+**Inloggning:** `provider@example.com` / `ProviderPass123!`
+**Leverantör:** Maria Lindgren, Lindgrens Hovslageri & Ridskola
+
+### Walkthrough
+
+1. Öppna `https://equinet-app.vercel.app/login`
+2. Logga in med uppgifterna ovan
+3. **Dashboard** -- statistik, kommande bokningar, pending-förfrågningar
+4. **Bokningar** -- bekräfta pending, se kommande och historik
+5. **Kunder** -- 4 kunder med hästar, bjud in ny kund
+6. **Tjänster** -- 4 tjänster (hovslagning, hovvård, ridlektion, hälsokontroll)
+7. **Kalender** -- veckoöversikt med bokade tider
+
+### Demo-data (seed)
+
+| Typ | Antal | Detaljer |
+|-----|-------|---------|
+| Kunder | 4 | Anna, Erik, Sofia, Johan |
+| Hästar | 3 | Storm, Saga, Bella |
+| Tjänster | 4 | Hovslagning, Hovvård, Ridlektion, Hälsokontroll |
+| Bokningar | 8 | 2 bekräftade, 1 pending, 4 genomförda, 1 avbokad |
+| Recensioner | 3 | Snittbetyg 4.7 |
+
+Data seedas med `npx tsx prisma/seed-demo.ts --reset` (kräver DATABASE_URL mot Supabase).
+
+---
+
+## Demo-flöde (lokal)
+
+1. Sätt `NEXT_PUBLIC_DEMO_MODE=true` i `.env.local`
+2. `npm run db:seed:demo:reset`
+3. `npm run dev`
+4. Öppna `http://localhost:3000/login`
+5. Logga in med `provider@example.com` / `ProviderPass123!`
 
 ---
 
