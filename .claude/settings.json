@@ -40,6 +40,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/auto-review.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/plan-approval-check.sh"
           }
         ]
       }
