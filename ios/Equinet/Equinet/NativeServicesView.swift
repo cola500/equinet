@@ -32,6 +32,7 @@ struct NativeServicesView: View {
             .refreshable {
                 await viewModel.refresh()
             }
+            .sensoryFeedback(.success, trigger: viewModel.services.count)
             .sheet(item: $viewModel.activeSheet) { sheet in
                 sheetContent(for: sheet)
             }

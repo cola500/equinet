@@ -229,6 +229,7 @@ struct NativeBookingsView: View {
             .refreshable {
                 await viewModel.refresh()
             }
+            .sensoryFeedback(.selection, trigger: viewModel.selectedFilter)
             .onChange(of: highlightedBookingId) { _, newId in
                 guard let id = newId else { return }
                 Task {
