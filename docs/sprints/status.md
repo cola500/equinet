@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S6-1 BDD integrationstest-audit | fullstack | Dev | review_requested | feature/s6-1-bdd-integration-audit | - |
+| S6-1 BDD integrationstest-audit | fullstack | Dev | done | feature/s6-1-bdd-integration-audit | da476ddd |
 | S6-2 Stripe E2E fungerar lokalt | fullstack | - | pending | - | - |
 | S6-3 Swish i Stripe | fullstack | - | pending (blocker) | - | - |
 
