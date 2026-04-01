@@ -39,19 +39,24 @@ Varje feature passerar genom 6 stationer i ordning.
 Detaljerade checklistor finns i `.claude/rules/team-workflow.md`.
 
 ```
-1. PLAN    -- Design, schema, API-kontrakt. Tech lead godkanner.
+1. PLAN    -- Design, schema, API-kontrakt (fran sprint-dokumentet).
 2. RED     -- Failande tester skrivna (TDD). Inga implementationsandringar.
 3. GREEN   -- Minimum implementation for att passera tester.
-4. REVIEW  -- Code review (automatisk via code-reviewer-agent).
-5. VERIFY  -- typecheck + test + lint + swedish. Alla gates grona.
-6. MERGE   -- Till main. Push efter Johans OK.
+4. REVIEW  -- AUTOMATISK: code-reviewer + security/ux/ios-agenter vid behov.
+5. VERIFY  -- check:all (webb) eller xcodebuild test (iOS). Alla gates grona.
+6. PUSH    -- Pusha FEATURE BRANCH (aldrig main). Status -> "review_requested".
+7. MERGE   -- Tech lead granskar och mergar till main.
 ```
+
+**Station 1-6 ar autonoma.** Utvecklare kor utan att fraga.
+**Station 7 ar tech lead-granskning.** Triggas via "kor review".
 
 **Regler:**
 - Hoppa ALDRIG over en station
 - Committa efter varje station (sa vi kan rulla tillbaka)
 - Om review hittar problem -- tillbaka till station 3
 - Om verify failar -- tillbaka till station 3
+- Pusha ALDRIG direkt till main -- alltid feature branch
 
 ---
 

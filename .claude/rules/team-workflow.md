@@ -194,24 +194,40 @@ Alla checklistepunkter uppfyllda.
 
 ---
 
-## Station 6: MERGE
+## Station 6: PUSH FEATURE BRANCH (utvecklare)
 
-**Vem**: Utvecklare (efter tech lead-OK)
-**Syfte**: Sakert sammanfoga med main
+**Vem**: Utvecklare
+**Syfte**: Gora arbetet tillgangligt for tech lead-granskning
 
 ### Checklista
 
 - [ ] Feature branch ar uppdaterad mot main (`git rebase main` eller merge)
 - [ ] Alla gates fortfarande grona efter rebase
-- [ ] Sprint-dokument uppdaterat (story -> done)
 - [ ] Commit-meddelanden ar beskrivande ("varfor" > "vad")
 - [ ] `git status` visar inga ocommittade andringar
+- [ ] `docs/sprints/status.md` uppdaterat: story -> "review_requested"
+- [ ] Pusha FEATURE BRANCH: `git push -u origin feature/<namn>`
 
 ### Regler
 
-- ALDRIG force-push till main
-- ALDRIG merga med failande tester
-- Push till remote BARA efter Johans OK
+- Pusha ALDRIG direkt till main
+- Pusha ALLTID din feature branch
+- Nar pushat: arbetet ar klart. Tech lead granskar och mergar.
+
+---
+
+## Station 7: MERGE (tech lead)
+
+**Vem**: Tech lead (triggas via "kor review")
+**Syfte**: Slutgranskning och merge till main
+
+### Steg
+
+1. `git pull` + las `status.md` -- vilka stories ar "review_requested"?
+2. For varje: `git diff main..origin/feature/<branch>` -- granska andringar
+3. Kor code-reviewer subagent vid behov
+4. Om godkant: merga till main, uppdatera status.md -> "done", pusha main
+5. Om problem: notera i status.md, utvecklaren fixar pa sin branch
 
 ---
 

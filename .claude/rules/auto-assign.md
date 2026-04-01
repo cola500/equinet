@@ -34,6 +34,9 @@ Om ingen roll anges: default till fullstack.
 5. Registrera dig i status.md Sessioner-tabell (roll, branch, story)
 6. Skapa feature branch: `feature/<story-id>-<kort-beskrivning>`
 7. Borja arbeta enligt stationsfloden (.claude/rules/team-workflow.md)
+8. Nar klar: pusha FEATURE BRANCH (aldrig main!)
+9. Uppdatera status.md: story -> "review_requested"
+10. Tech lead granskar och mergar (station 7)
 
 ### Rollspecifika regler
 
