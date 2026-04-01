@@ -25,6 +25,7 @@ final class AuthManagerTests: XCTestCase {
     override func tearDown() {
         authManager = nil
         mockKeychain = nil
+        PushManager.shared.setDeviceTokenForTesting(nil)
         super.tearDown()
     }
 
@@ -94,6 +95,19 @@ final class AuthManagerTests: XCTestCase {
         XCTAssertNil(authManager.sessionCookieValue)
         XCTAssertFalse(authManager.sessionCookieSecure)
         XCTAssertEqual(authManager.state, .loggedOut)
+    }
+
+    // MARK: - Logout clears push token
+
+    func testLogoutClearsPushDeviceToken() {
+        // Simulate a registered device token
+        PushManager.shared.setDeviceTokenForTesting("abc123hex")
+        XCTAssertEqual(PushManager.shared.deviceToken, "abc123hex")
+
+        authManager.logout()
+
+        // Device token should be cleared after logout
+        XCTAssertNil(PushManager.shared.deviceToken)
     }
 
     // MARK: - State properties
