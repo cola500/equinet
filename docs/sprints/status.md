@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S3-1 Kundinbjudningar | fullstack | Fullstack | done | feature/s3-1-customer-invite | a7050a2e |
-| S3-2 Push-forberedelse | fullstack | - | pending | - | - |
+| S3-2 Push-forberedelse | fullstack | Fullstack | in_progress | feature/s3-2-push-preparation | - |
 | S3-3 Demo-polish | fullstack | - | pending | - | - |
 | S3-4 Recensioner seed | fullstack | - | backlog | - | - |
 
@@ -38,6 +38,7 @@ sections:
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
 | Tech lead | Tech lead | Sprint-planering, review | main | 2026-04-01 |
+| Fullstack | Fullstack | S3-2 Push-forberedelse | feature/s3-2-push-preparation | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
