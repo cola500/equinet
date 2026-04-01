@@ -37,6 +37,11 @@ Flode: en session -> klar -> review -> nasta session.
 4. Valj nasta matchande story enligt prioritetsordningen i sprint-dokumentet
 5. Registrera dig i status.md Sessioner-tabell (roll, branch, story)
 6. Skapa feature branch: `feature/<story-id>-<kort-beskrivning>`
+7. Skriv en kort plan i `docs/plans/<story-id>-plan.md` och committa den
+   - Vilka filer andras/skapas
+   - Approach (vilka steg, i vilken ordning)
+   - Risker eller oklarheter
+   - Committa planen FORE implementation sa tech lead kan lasa den
 7. Borja arbeta enligt stationsfloden (.claude/rules/team-workflow.md)
 8. Nar klar: pusha FEATURE BRANCH (aldrig main!)
 9. Uppdatera status.md: story -> "review_requested"
