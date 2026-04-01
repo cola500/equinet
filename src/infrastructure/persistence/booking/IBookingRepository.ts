@@ -158,6 +158,22 @@ export interface BookingWithRelations {
   } | null
 }
 
+/**
+ * BookingWithQuickNoteContext - Booking with relations needed for provider-side lookups
+ *
+ * Used by findByIdForProvider to return booking with enough context
+ * for quick-note, voice-log, and similar provider operations.
+ */
+export interface BookingWithQuickNoteContext {
+  id: string
+  providerId: string
+  status: string
+  horseId: string | null
+  customer: { firstName: string; lastName: string }
+  service: { name: string }
+  horse: { name: string; breed: string | null; specialNeeds: string | null } | null
+}
+
 export interface IBookingRepository extends IRepository<Booking> {
   // ==========================================
   // COMMAND SIDE (Pure Aggregate)
@@ -256,6 +272,40 @@ export interface IBookingRepository extends IRepository<Booking> {
    * @returns Bookings with provider info (no contact) and service details
    */
   findByCustomerIdWithDetails(customerId: string): Promise<BookingWithRelations[]>
+
+  // ==========================================
+  // AUTH-AWARE READ METHODS
+  // ==========================================
+
+  /**
+   * Find booking by ID with atomic provider ownership check
+   *
+   * Uses WHERE clause with both id AND providerId to prevent IDOR.
+   * Returns null if booking not found or provider doesn't own it.
+   *
+   * @param id - Booking ID
+   * @param providerId - Provider ID for ownership verification
+   * @returns Booking with relations for provider context, or null
+   */
+  findByIdForProvider(
+    id: string,
+    providerId: string
+  ): Promise<BookingWithQuickNoteContext | null>
+
+  /**
+   * Find booking by ID with atomic customer ownership check
+   *
+   * Uses WHERE clause with both id AND customerId to prevent IDOR.
+   * Returns null if booking not found or customer doesn't own it.
+   *
+   * @param id - Booking ID
+   * @param customerId - Customer ID for ownership verification
+   * @returns Booking or null
+   */
+  findByIdForCustomer(
+    id: string,
+    customerId: string
+  ): Promise<Booking | null>
 
   // ==========================================
   // AUTH-AWARE COMMAND METHODS

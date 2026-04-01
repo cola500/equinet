@@ -8,6 +8,7 @@ import {
   IBookingRepository,
   Booking,
   BookingWithRelations,
+  BookingWithQuickNoteContext,
   CreateBookingData,
   BookingWithCustomerLocation,
 } from './IBookingRepository'
@@ -94,6 +95,53 @@ export class PrismaBookingRepository
     await prisma.booking.delete({
       where: { id },
     })
+  }
+
+  // ==========================================
+  // AUTH-AWARE READ METHODS
+  // ==========================================
+
+  /**
+   * Find booking by ID with atomic provider ownership check
+   *
+   * Uses findFirst with WHERE { id, providerId } for IDOR prevention.
+   * Returns null if booking not found or provider doesn't own it.
+   */
+  async findByIdForProvider(
+    id: string,
+    providerId: string
+  ): Promise<BookingWithQuickNoteContext | null> {
+    const booking = await prisma.booking.findFirst({
+      where: { id, providerId },
+      select: {
+        id: true,
+        providerId: true,
+        status: true,
+        horseId: true,
+        customer: { select: { firstName: true, lastName: true } },
+        service: { select: { name: true } },
+        horse: { select: { name: true, breed: true, specialNeeds: true } },
+      },
+    })
+
+    return booking as BookingWithQuickNoteContext | null
+  }
+
+  /**
+   * Find booking by ID with atomic customer ownership check
+   *
+   * Uses findFirst with WHERE { id, customerId } for IDOR prevention.
+   * Returns null if booking not found or customer doesn't own it.
+   */
+  async findByIdForCustomer(
+    id: string,
+    customerId: string
+  ): Promise<Booking | null> {
+    const booking = await prisma.booking.findFirst({
+      where: { id, customerId },
+    })
+
+    return booking ? this.mapper.toDomain(booking) : null
   }
 
   async findByCustomerId(customerId: string): Promise<Booking[]> {

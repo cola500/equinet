@@ -109,13 +109,11 @@ export async function POST(request: NextRequest) {
 
     // 3. Create horse note if observation provided
     if (validated.horseObservation && validated.horseNoteCategory) {
-      // Verify booking belongs to this provider (atomic ownership check)
-      const booking = await prisma.booking.findUnique({
-        where: { id: validated.bookingId },
-        select: { horseId: true, providerId: true },
-      })
+      // Verify booking belongs to this provider (atomic WHERE with providerId)
+      const bookingRepoForNote = new PrismaBookingRepository()
+      const booking = await bookingRepoForNote.findByIdForProvider(validated.bookingId, provider.id)
 
-      if (booking?.horseId && booking.providerId === provider.id) {
+      if (booking?.horseId) {
         await prisma.horseNote.create({
           data: {
             horseId: booking.horseId,

@@ -8,6 +8,7 @@ import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/Pr
 import { VoiceInterpretationService } from "@/domain/voice-log/VoiceInterpretationService"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import type { BookingWithQuickNoteContext } from "@/infrastructure/persistence/booking/IBookingRepository"
 import { sanitizeString } from "@/lib/sanitize"
 
 const quickNoteSchema = z.object({
@@ -58,21 +59,11 @@ export async function POST(
     // 5. Zod validation
     const validated = quickNoteSchema.parse(body)
 
-    // 6. Verify booking ownership + status (with relations for AI context)
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        providerId: true,
-        status: true,
-        horseId: true,
-        customer: { select: { firstName: true, lastName: true } },
-        service: { select: { name: true } },
-        horse: { select: { name: true, breed: true, specialNeeds: true } },
-      },
-    })
+    // 6. Verify booking ownership + status (atomic WHERE with providerId)
+    const bookingRepo = new PrismaBookingRepository()
+    const booking: BookingWithQuickNoteContext | null = await bookingRepo.findByIdForProvider(id, provider.id)
 
-    if (!booking || booking.providerId !== provider.id) {
+    if (!booking) {
       return NextResponse.json({ error: "Bokning hittades inte" }, { status: 404 })
     }
 
@@ -105,7 +96,6 @@ export async function POST(
     const actions: string[] = []
 
     // 8. Save cleaned text as providerNotes
-    const bookingRepo = new PrismaBookingRepository()
     const sanitizedText = sanitizeString(interpreted.cleanedText)
     const updated = await bookingRepo.updateProviderNotesWithAuth(
       id,
