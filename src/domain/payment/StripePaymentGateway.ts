@@ -12,10 +12,6 @@
 import Stripe from "stripe"
 import type { IPaymentGateway, PaymentRequest, PaymentResult } from "./PaymentGateway"
 
-export interface StripePaymentResult extends PaymentResult {
-  clientSecret?: string
-}
-
 export class StripePaymentGateway implements IPaymentGateway {
   private stripe: Stripe
   readonly providerName = "stripe"
@@ -24,7 +20,7 @@ export class StripePaymentGateway implements IPaymentGateway {
     this.stripe = new Stripe(secretKey)
   }
 
-  async initiatePayment(request: PaymentRequest): Promise<StripePaymentResult> {
+  async initiatePayment(request: PaymentRequest): Promise<PaymentResult> {
     try {
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount: Math.round(request.amount * 100),

@@ -25,7 +25,9 @@ import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { CustomerOnboardingChecklist } from "@/components/customer/CustomerOnboardingChecklist"
 import { RescheduleDialog } from "@/components/booking/RescheduleDialog"
 import { BookingCard } from "@/components/customer/bookings/BookingCard"
+import { PaymentDialog } from "@/components/customer/bookings/PaymentDialog"
 import { useBookingFilters, type BookingFilter } from "@/hooks/useBookingFilters"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { clientLogger } from "@/lib/client-logger"
 import type { Booking, RouteOrder, CombinedBooking } from "@/components/customer/bookings/types"
 
@@ -56,6 +58,12 @@ export default function CustomerBookingsPage() {
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
+  const [paymentDialog, setPaymentDialog] = useState<{
+    clientSecret: string
+    amount: number
+    currency: string
+  } | null>(null)
+  const stripePaymentsEnabled = useFeatureFlag("stripe_payments")
 
   useEffect(() => {
     if (!isLoading && !isCustomer) {
@@ -112,8 +120,20 @@ export default function CustomerBookingsPage() {
         throw new Error(data.error || "Betalningen misslyckades")
       }
 
-      toast.success("Betalning genomförd!")
-      mutateAll()
+      const data = await response.json()
+
+      if (data.clientSecret && data.payment.status === "pending") {
+        // Stripe: open payment dialog for card input
+        setPaymentDialog({
+          clientSecret: data.clientSecret,
+          amount: data.payment.amount,
+          currency: data.payment.currency,
+        })
+      } else {
+        // Mock gateway: instant success
+        toast.success("Betalning genomförd!")
+        mutateAll()
+      }
     } catch (error) {
       clientLogger.error("Error processing payment:", error)
       toast.error(error instanceof Error ? error.message : "Kunde inte genomföra betalningen")
@@ -281,6 +301,7 @@ export default function CustomerBookingsPage() {
                 index={index}
                 payingBookingId={payingBookingId}
                 deletingReviewId={deletingReviewId}
+                showPayment={stripePaymentsEnabled}
                 onPayment={handlePayment}
                 onCancel={(id, type) => setBookingToCancel({ id, type })}
                 onReview={(b) => setReviewBooking(b)}
@@ -317,6 +338,26 @@ export default function CustomerBookingsPage() {
           onSuccess={() => {
             setReviewBooking(null)
             mutateAll()
+          }}
+        />
+      )}
+
+      {/* Payment Dialog (Stripe) */}
+      {paymentDialog && (
+        <PaymentDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setPaymentDialog(null) }}
+          clientSecret={paymentDialog.clientSecret}
+          amount={paymentDialog.amount}
+          currency={paymentDialog.currency}
+          onSuccess={() => {
+            setPaymentDialog(null)
+            toast.success("Betalning genomförd!")
+            mutateAll()
+          }}
+          onError={(message) => {
+            setPaymentDialog(null)
+            toast.error(message)
           }}
         />
       )}

@@ -19,6 +19,7 @@ interface BookingCardProps {
   index: number
   payingBookingId: string | null
   deletingReviewId: string | null
+  showPayment?: boolean
   onPayment: (bookingId: string) => void
   onCancel: (id: string, type: "fixed" | "flexible") => void
   onReview: (booking: Booking) => void
@@ -71,6 +72,7 @@ export function BookingCard({
   index,
   payingBookingId,
   deletingReviewId,
+  showPayment = false,
   onPayment,
   onCancel,
   onReview,
@@ -146,6 +148,7 @@ export function BookingCard({
           <BookingActions
             booking={booking}
             payingBookingId={payingBookingId}
+            showPayment={showPayment}
             onPayment={onPayment}
             onCancel={onCancel}
             onReschedule={onReschedule}
@@ -327,12 +330,14 @@ function FlexibleBookingContent({
 function BookingActions({
   booking,
   payingBookingId,
+  showPayment,
   onPayment,
   onCancel,
   onReschedule,
 }: {
   booking: Booking
   payingBookingId: string | null
+  showPayment?: boolean
   onPayment: (bookingId: string) => void
   onCancel: (id: string, type: "fixed" | "flexible") => void
   onReschedule: (booking: Booking) => void
@@ -360,8 +365,8 @@ function BookingActions({
               </a>
             )}
           </div>
-        ) : booking.status === "confirmed" ||
-          booking.status === "completed" ? (
+        ) : showPayment && (booking.status === "confirmed" ||
+          booking.status === "completed") ? (
           <Button
             variant="default"
             size="sm"
