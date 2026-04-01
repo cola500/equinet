@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn(),
+}))
 vi.mock("@/lib/geocoding", () => ({ geocodeAddress: vi.fn() }))
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { geocode: vi.fn().mockResolvedValue(true) },
@@ -11,9 +14,12 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { GET } from "./route"
+import { auth } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/geocoding"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+
+const mockAuth = vi.mocked(auth)
 
 const BASE_URL = "http://localhost:3000/api/geocode"
 
@@ -28,8 +34,20 @@ function makeRequest(params: Record<string, string> = {}): NextRequest {
 describe("GET /api/geocode", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as any)
     vi.mocked(rateLimiters.geocode).mockResolvedValue(true)
     vi.mocked(getClientIP).mockReturnValue("127.0.0.1")
+  })
+
+  it("returns 401 when not authenticated", async () => {
+    mockAuth.mockResolvedValueOnce(null)
+
+    const request = makeRequest({ address: "Storgatan 1" })
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(data.error).toBe("Ej inloggad")
   })
 
   it("returns 429 when rate limited", async () => {

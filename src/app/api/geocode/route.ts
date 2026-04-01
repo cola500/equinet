@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/geocoding"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
@@ -14,7 +15,13 @@ import { logger } from "@/lib/logger"
  * - postalCode: Optional postal code (will be appended to address)
  */
 export async function GET(request: NextRequest) {
-  // Rate limiting: 30 requests per minute per IP (expensive operation)
+  // 1. Auth
+  const session = await auth()
+  if (!session) {
+    return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+  }
+
+  // 2. Rate limiting: 30 requests per minute per IP (expensive operation)
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.geocode(clientIp)
   if (!isAllowed) {

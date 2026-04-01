@@ -125,7 +125,7 @@ const nextConfig: NextConfig = {
           // Permissions Policy - expanded
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+            value: 'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()',
           },
           // XSS Protection (legacy browsers)
           {
