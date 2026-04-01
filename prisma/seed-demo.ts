@@ -444,16 +444,16 @@ async function main() {
         status: "pending",
         customerNotes: "Forsta lektionen, nybörjare",
       },
-      // Completed: last week
+      // Completed: 10 weeks ago (triggers overdue for Hovslagning 8w interval)
       {
         customer: "Anna Johansson",
         service: "Hovslagning",
         horse: "Storm",
-        date: daysFromNow(-7),
+        date: daysFromNow(-70),
         startTime: "10:00",
         status: "completed",
       },
-      // Completed: 2 weeks ago
+      // Completed: 2 weeks ago (Halsokontroll has no interval -- excluded from due-for-service)
       {
         customer: "Johan Pettersson",
         service: "Halsokontroll",
@@ -463,13 +463,22 @@ async function main() {
         customerNotes: "Haltar lite pa vanger fram",
         horseName: "Prinsen",
       },
-      // Completed: 3 weeks ago
+      // Completed: 7 weeks ago (upcoming for Hovslagning 8w interval, due in ~7 days)
       {
         customer: "Erik Svensson",
         service: "Hovslagning",
         horse: "Saga",
-        date: daysFromNow(-21),
+        date: daysFromNow(-49),
         startTime: "09:00",
+        status: "completed",
+      },
+      // Completed: 9 weeks ago (triggers overdue for Hovvard 6w interval)
+      {
+        customer: "Sofia Berg",
+        service: "Hovvard utan beslag",
+        horse: "Bella",
+        date: daysFromNow(-63),
+        startTime: "14:00",
         status: "completed",
       },
       // Cancelled
