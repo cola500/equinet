@@ -59,7 +59,30 @@ för de viktigaste.
 
 ---
 
-### S6-2: Aktivera Swish i Stripe -- PENDING (kräver företagsverifiering)
+### S6-2: Stripe E2E-test fungerar lokalt -- READY
+
+**Prioritet:** Hög
+**Typ:** Buggfix/test
+**Beskrivning:** Stripe E2E auto-skippas pga `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` inte injiceras i Turbopack dev-server via playwright webServer.env. Fix: lägg pk_test-nyckeln i `.env` (publik test-nyckel, inte hemlig). Verifiera att E2E passerar 3 gånger i rad.
+
+**Uppgifter:**
+1. Lägg till `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...` i `.env`
+2. Kör `npx playwright test e2e/stripe-payment.spec.ts` -- verifiera att den inte skippas
+3. Hantera Stripe iframe-interaktion (frameLocator) om det kräver finjustering
+4. Verifiera att befintliga mock-tester fortfarande passerar
+5. Passerar 3 gånger i rad
+
+**Acceptanskriterier:**
+- [ ] Stripe E2E kör (inte skippad) med test-nycklar
+- [ ] Betalning med test-kort 4242 4242 4242 4242 genomförs
+- [ ] Befintliga payment mock-tester oförändrade
+- [ ] `npm run check:all` passerar
+
+**Stationsflöde:** Plan -> Red -> Green -> Review -> Verify -> Merge
+
+---
+
+### S6-3: Aktivera Swish i Stripe -- PENDING (kräver företagsverifiering)
 
 **Prioritet:** Hög
 **Typ:** Config
