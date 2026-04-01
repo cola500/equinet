@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S7-1 Fas 1 RLS ownership-guards | fullstack | - | pending | - | - |
+| S7-1 Fas 1 RLS ownership-guards | fullstack | Dev | in_progress | feature/s7-1-ownership-guards | - |
 | S7-2 Push live | fullstack | - | pending (blocker: Apple Dev) | - | - |
 | S7-3 Stripe live-mode | fullstack | - | pending (blocker: Stripe) | - | - |
 
