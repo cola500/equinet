@@ -17,14 +17,19 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 6: Kvalitet + demo-feedback** (docs/sprints/sprint-6.md)
+**Sprint 7: RLS Fas 1 + lansering** (docs/sprints/sprint-7.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S6-1 BDD integrationstest-audit | fullstack | Dev | done | feature/s6-1-bdd-integration-audit | da476ddd |
-| S6-2 Stripe E2E fungerar lokalt | fullstack | Dev | done | feature/s6-2-stripe-e2e-fix | 23085a33 |
-| S6-3 Swish i Stripe | fullstack | - | pending (blocker) | - | - |
-| S6-4 RLS spike | fullstack | Dev | done | feature/s6-4-rls-spike | 48fbbd46 |
+| S7-1 Fas 1 RLS ownership-guards | fullstack | - | pending | - | - |
+| S7-2 Push live | fullstack | - | pending (blocker: Apple Dev) | - | - |
+| S7-3 Stripe live-mode | fullstack | - | pending (blocker: Stripe) | - | - |
+
+**Sprint 6** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S6-1 -- S6-4 | fullstack | Dev | done (S6-3 blockerad) |
 
 **Sprint 5** (klar):
 
