@@ -17,15 +17,19 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 5: Betalning (Stripe + Swish)** (docs/sprints/sprint-5.md)
+**Sprint 6: Kvalitet + demo-feedback** (docs/sprints/sprint-6.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S5-1 Stripe-konto + config | fullstack | Johan | done | - | Vercel env satta |
-| S5-2 StripePaymentGateway | fullstack | Dev | done | feature/s5-2-stripe-payment-gateway | 6454d5b6 |
-| S5-3 Stripe webhook-route | fullstack | Dev | done | feature/s5-3-stripe-webhook | ef250064 |
-| S5-4 Betalning UI | fullstack | Dev | done | feature/s5-4-payment-ui | 3e5bf224 |
-| S5-5 E2E betalning | fullstack | Dev | done | feature/s5-5-e2e-payment | c977d2b8 |
+| S6-1 BDD integrationstest-audit | fullstack | - | pending | - | - |
+| S6-2 Stripe E2E fungerar lokalt | fullstack | - | pending | - | - |
+| S6-3 Swish i Stripe | fullstack | - | pending (blocker) | - | - |
+
+**Sprint 5** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S5-1 -- S5-5 | fullstack | Dev+Johan | done |
 
 **Sprint 4** (klar):
 
