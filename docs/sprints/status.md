@@ -24,7 +24,7 @@ sections:
 | S7-1 Fas 1 RLS ownership-guards | fullstack | Dev | done | feature/s7-1-ownership-guards | ab6d8ced |
 | S7-2 Push live | fullstack | - | pending (blocker: Apple Dev) | - | - |
 | S7-3 Stripe live-mode | fullstack | - | pending (blocker: Stripe) | - | - |
-| S7-4 Voice logging AI-spike | fullstack | - | pending | - | - |
+| S7-4 Voice logging AI-spike | fullstack | Dev | in_progress | feature/s7-4-voice-logging-spike | - |
 
 **Sprint 6** (klar):
 
@@ -64,7 +64,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S6-4 RLS spike | feature/s6-4-rls-spike | 2026-04-01 |
+| Dev | Fullstack | S7-4 Voice logging AI-spike | feature/s7-4-voice-logging-spike | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
