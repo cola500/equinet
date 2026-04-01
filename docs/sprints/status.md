@@ -25,6 +25,7 @@ sections:
 | S7-2 Push live | fullstack | - | pending (blocker: Apple Dev) | - | - |
 | S7-3 Stripe live-mode | fullstack | - | pending (blocker: Stripe) | - | - |
 | S7-4 Voice logging AI-spike | fullstack | Dev | done | feature/s7-4-voice-logging-spike | f2e62e6f |
+| S7-5 Voice logging polish | fullstack | - | pending | - | - |
 
 **Sprint 6** (klar):
 

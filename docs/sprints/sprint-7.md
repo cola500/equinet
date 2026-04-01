@@ -134,7 +134,32 @@ Push och Stripe aktiveras när blockerare löses.
 
 ---
 
-### S7-5 -- S7-N: Demo-feedback stories -- TBD
+### S7-5: Voice logging polish (från spike-fynd) -- READY
+
+**Prioritet:** Medel
+**Typ:** Polish
+**Beskrivning:** 5 småfixar identifierade i S7-4 spike. Ingen blockerare men höjer kvaliteten.
+
+**Uppgifter:**
+
+1. Uppgradera Sonnet 4.5 -> 4.6: `"claude-sonnet-4-5-20250929"` -> `"claude-sonnet-4-6"` (1 rad)
+2. Migrera confirm-route till `withApiHandler` (~30 min, opportunistiskt)
+3. Fixa UTC-datumlogik: använd leverantörens tidszon istället för `setHours(0,0,0,0)` (~1h)
+4. Sätt `ANTHROPIC_API_KEY` i Vercel Preview-miljö (Johan, 1 min)
+5. Verifiera att SDK-timeout är rimlig (läs Anthropic SDK default)
+
+**Acceptanskriterier:**
+- [ ] Modell-ID uppdaterat till claude-sonnet-4-6
+- [ ] Confirm-route migrerad till withApiHandler
+- [ ] Datumlogik hanterar svensk tidszon
+- [ ] Alla tester gröna
+- [ ] `npm run check:all` passerar
+
+**Stationsflöde:** Plan -> Red -> Green -> Review -> Verify -> Merge
+
+---
+
+### S7-6 -- S7-N: Demo-feedback stories -- TBD
 
 > Läggs till efter leverantörsdemon.
 
