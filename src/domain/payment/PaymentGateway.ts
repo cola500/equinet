@@ -20,6 +20,7 @@ export interface PaymentResult {
   status: "pending" | "succeeded" | "failed"
   paidAt: Date | null
   error?: string
+  clientSecret?: string
 }
 
 export interface IPaymentGateway {

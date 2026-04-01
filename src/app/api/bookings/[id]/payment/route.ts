@@ -40,25 +40,30 @@ export async function POST(
       )
     }
 
-    const { payment, eventData } = result.value
+    const { payment, eventData, clientSecret } = result.value
 
-    // Dispatch domain event for side-effects (email, notification, push)
-    const dispatcher = createBookingEventDispatcher({
-      emailService: {
-        sendBookingConfirmation: sendBookingConfirmationNotification,
-        sendBookingStatusChange: sendBookingStatusChangeNotification,
-        sendPaymentConfirmation: sendPaymentConfirmationNotification,
-      },
-      notificationService,
-      logger,
-      pushService: pushDeliveryService,
-    })
+    // Only dispatch event if payment completed immediately (mock gateway)
+    // For async payments (Stripe), the webhook handles completion
+    if (payment.status === "succeeded") {
+      const dispatcher = createBookingEventDispatcher({
+        emailService: {
+          sendBookingConfirmation: sendBookingConfirmationNotification,
+          sendBookingStatusChange: sendBookingStatusChangeNotification,
+          sendPaymentConfirmation: sendPaymentConfirmationNotification,
+        },
+        notificationService,
+        logger,
+        pushService: pushDeliveryService,
+      })
 
-    await dispatcher.dispatch(createBookingPaymentReceivedEvent(eventData))
+      await dispatcher.dispatch(createBookingPaymentReceivedEvent(eventData))
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Betalning genomförd",
+      message: payment.status === "succeeded"
+        ? "Betalning genomförd"
+        : "Betalning initierad",
       payment: {
         id: payment.id,
         amount: payment.amount,
@@ -67,6 +72,7 @@ export async function POST(
         paidAt: payment.paidAt,
         invoiceNumber: payment.invoiceNumber,
       },
+      ...(clientSecret && { clientSecret }),
     })
   } catch (error) {
     if (error instanceof Response) return error

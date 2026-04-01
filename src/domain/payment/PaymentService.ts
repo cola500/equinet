@@ -71,6 +71,7 @@ export interface UpsertPaymentData {
 export interface ProcessPaymentResult {
   payment: PaymentRecord
   eventData: BookingPaymentReceivedPayload
+  clientSecret?: string
 }
 
 export type PaymentStatusResponse =
@@ -166,7 +167,7 @@ export class PaymentService {
       paymentId: payment.id,
     }
 
-    return Result.ok({ payment, eventData })
+    return Result.ok({ payment, eventData, clientSecret: paymentResult.clientSecret })
   }
 
   async getPaymentStatus(

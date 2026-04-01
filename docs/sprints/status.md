@@ -24,7 +24,7 @@ sections:
 | S5-1 Stripe-konto + config | fullstack | Johan | done | - | Vercel env satta |
 | S5-2 StripePaymentGateway | fullstack | Dev | done | feature/s5-2-stripe-payment-gateway | 6454d5b6 |
 | S5-3 Stripe webhook-route | fullstack | Dev | done | feature/s5-3-stripe-webhook | ef250064 |
-| S5-4 Betalning UI | fullstack | - | pending | - | - |
+| S5-4 Betalning UI | fullstack | Dev | review_requested | feature/s5-4-payment-ui | 3e5bf224 |
 | S5-5 E2E betalning | fullstack | - | backlog | - | - |
 
 **Sprint 4** (klar):
@@ -53,7 +53,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S5-3 Stripe webhook-route | feature/s5-3-stripe-webhook | 2026-04-01 |
+| Dev | Fullstack | S5-4 Betalning UI | feature/s5-4-payment-ui | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
