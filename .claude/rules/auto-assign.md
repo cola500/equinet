@@ -49,9 +49,15 @@ Flode: en session -> klar -> review -> nasta session.
    - Risker eller oklarheter
    - Committa planen FORE implementation sa tech lead kan lasa den
 7. Borja arbeta enligt stationsfloden (.claude/rules/team-workflow.md)
-8. Nar klar: pusha FEATURE BRANCH (aldrig main!)
-9. Uppdatera status.md: story -> "review_requested"
-10. Tech lead granskar och mergar (station 7)
+8. Nar klar: skriv `docs/done/<story-id>-done.md` med:
+   - Acceptanskriterier fran sprint-dokumentet -- bocka av varje
+   - Definition of Done (fran CLAUDE.md) -- bocka av varje
+   - Avvikelser eller kanda begransningar
+   - **Lardomar**: Vad var ovantat? Vad skulle du gora annorlunda? Gotchas for framtida sessioner?
+   - Committa filen pa feature branchen
+9. Pusha FEATURE BRANCH (aldrig main!)
+10. Uppdatera status.md: story -> "review_requested"
+11. Tech lead laser done-filen (inkl lardomar), granskar kod, och mergar (station 7)
 
 ### Rollspecifika regler
 
