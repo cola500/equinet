@@ -463,6 +463,20 @@ final class APIClient {
         KeychainHelper.saveMobileToken(jwt: tokenResponse.token, expiresAt: tokenResponse.expiresAt)
     }
 
+    // MARK: - Due for Service
+
+    func fetchDueForService(filter: DueForServiceFilter = .all) async throws -> [DueForServiceItem] {
+        var path = "/api/native/due-for-service"
+        if filter != .all {
+            path += "?filter=\(filter.rawValue)"
+        }
+        let response: DueForServiceResponse = try await authenticatedRequest(
+            path: path,
+            responseType: DueForServiceResponse.self
+        )
+        return response.items
+    }
+
     // MARK: - Private
 
     /// Generic authenticated request with token refresh on 401

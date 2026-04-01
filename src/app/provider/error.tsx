@@ -121,6 +121,7 @@ export default function ProviderError({
 
     if (isOnline) {
       console.error("Provider error:", error)
+      import("@sentry/nextjs").then(Sentry => Sentry.captureException(error)).catch(() => {})
     }
   }, [error, isOnline])
 

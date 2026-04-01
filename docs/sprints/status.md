@@ -23,9 +23,10 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S4-1 Produktionsdeploy | fullstack | Dev | done | main | - |
 | S4-2 Invite live | fullstack | Johan+Lead | done | - | admin DB-override |
-| S4-3 Due-for-service native | fullstack | - | pending | - | - |
+| S4-3 Due-for-service native | fullstack | Dev | review_requested | feature/s4-3-due-for-service-native | 10f78359 |
 | S4-4 UX-polish native | fullstack | - | pending | - | - |
 | S4-5 Demo-data prod | fullstack | - | backlog | - | - |
+| S4-6 Observability | fullstack | - | pending | - | - |
 
 **Sprint 3** (klar):
 
@@ -48,7 +49,7 @@ sections:
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
 | Lead | Tech lead | Review, merge | main | 2026-04-01 |
-| Dev | Fullstack | S4-1 klar | main | 2026-04-01 |
+| Dev | Fullstack | S4-3 due-for-service native | feature/s4-3-due-for-service-native | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
