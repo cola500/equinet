@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S3-1 Kundinbjudningar | fullstack | - | pending | - | - |
+| S3-1 Kundinbjudningar | fullstack | Fullstack | done | feature/s3-1-customer-invite | a7050a2e |
 | S3-2 Push-forberedelse | fullstack | - | pending | - | - |
 | S3-3 Demo-polish | fullstack | - | pending | - | - |
 | S3-4 Recensioner seed | fullstack | - | backlog | - | - |
