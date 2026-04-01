@@ -1,4 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load .env.local for Stripe keys (test process needs them for skip-checks).
+// Then restore DATABASE_URL to local Docker to prevent E2E against Supabase.
+dotenv.config({ path: '.env.local' });
+const LOCAL_DB = 'postgresql://postgres:postgres@localhost:5432/equinet';
+process.env.DATABASE_URL = LOCAL_DB;
+process.env.DIRECT_DATABASE_URL = LOCAL_DB;
 
 /**
  * Playwright configuration for E2E tests
@@ -117,7 +125,14 @@ export default defineConfig({
         FEATURE_RECURRING_BOOKINGS: 'true',
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',
-        PAYMENT_PROVIDER: 'mock',
+        PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'mock',
+        // Force local DB for E2E (overrides .env.local which may point to Supabase)
+        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/equinet',
+        DIRECT_DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/equinet',
+        // Pass through Stripe publishable key for Payment Element (NEXT_PUBLIC_ needed at dev-server startup)
+        ...(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && {
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+        }),
       },
     },
     ...(process.env.OFFLINE_E2E === 'true'

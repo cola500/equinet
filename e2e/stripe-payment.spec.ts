@@ -1,26 +1,30 @@
 /**
  * E2E test for Stripe Payment Element flow.
  *
- * This test requires real Stripe test keys (sk_test_... / pk_test_...).
- * It is automatically skipped when keys are missing.
+ * This test requires:
+ * - Stripe test keys in .env.local (sk_test_... / pk_test_...)
+ * - PAYMENT_PROVIDER=stripe (pass as env when running)
+ * - Dev server with Stripe.js loaded
  *
- * The test creates a confirmed booking, initiates payment via POST
- * (which creates a PaymentIntent with PAYMENT_PROVIDER=stripe),
- * fills in the Stripe Payment Element iframe with a test card,
- * and verifies the payment succeeds.
+ * Run: PAYMENT_PROVIDER=stripe npx playwright test e2e/stripe-payment.spec.ts --headed
  *
- * NOTE: This spec overrides PAYMENT_PROVIDER to 'stripe' via
- * the test setup. The default in playwright.config.ts is 'mock'
- * to protect other payment specs from Stripe-specific behavior.
+ * NOTE: Stripe Payment Element renders in iframes loaded from js.stripe.com.
+ * This can be unreliable in headless mode. Run --headed for debugging.
+ *
+ * The full payment chain is verified by:
+ * - Unit tests: StripePaymentGateway.test.ts (SDK interaction)
+ * - Integration tests: route.integration.test.ts (route -> service -> gateway)
+ * - E2E mock tests: payment.spec.ts (UI flow with instant success)
+ * This spec adds browser-level verification of the Stripe Payment Element.
  */
 
 import { test, expect, prisma } from './fixtures'
 
-// Skip entire suite if Stripe keys are not configured
 const hasStripeKeys = !!(process.env.STRIPE_SECRET_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+const isStripeProvider = process.env.PAYMENT_PROVIDER === 'stripe'
 
 test.describe('Stripe Payment Element', () => {
-  test.skip(!hasStripeKeys, 'Stripe test keys not configured -- skipping Stripe E2E')
+  test.skip(!hasStripeKeys || !isStripeProvider, 'Requires STRIPE keys + PAYMENT_PROVIDER=stripe')
 
   let testBookingId: string | null = null
 
@@ -54,7 +58,6 @@ test.describe('Stripe Payment Element', () => {
       where: { horseName: 'StripePaymentTestHorse' },
     })
 
-    // Create confirmed booking
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 30)
 
@@ -73,7 +76,6 @@ test.describe('Stripe Payment Element', () => {
     })
     testBookingId = booking.id
 
-    // Login as customer
     await page.goto('/login')
     await page.getByLabel(/email/i).fill('test@example.com')
     await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!')
@@ -89,56 +91,50 @@ test.describe('Stripe Payment Element', () => {
     }
   })
 
-  test('should complete payment with Stripe test card', async ({ page }) => {
+  test('should open payment dialog with Stripe form', async ({ page }) => {
     if (!testBookingId) {
       test.skip(true, 'No test booking created')
       return
     }
 
-    // Navigate to bookings
     await page.goto('/customer/bookings')
     await page.waitForSelector('[data-testid="booking-item"]', { timeout: 10000 })
 
-    // Find our test booking
     const bookingCard = page.locator('[data-testid="booking-item"]').filter({
       hasText: 'StripePaymentTestHorse',
     })
     await expect(bookingCard).toBeVisible({ timeout: 5000 })
 
-    // Click pay button -- this POSTs to create PaymentIntent
+    // Click pay -- creates PaymentIntent server-side
     const payButton = bookingCard.getByRole('button', { name: /betala.*kr/i })
-    await expect(payButton).toBeVisible({ timeout: 5000 })
     await payButton.click()
 
-    // Wait for PaymentDialog to appear with Stripe Element
+    // PaymentDialog should open
     await expect(page.getByText(/fyll i dina kortuppgifter/i)).toBeVisible({ timeout: 15000 })
 
-    // Stripe Payment Element renders in an iframe
-    // Wait for the iframe to load
-    const stripeFrame = page.frameLocator('iframe[name*="__privateStripeFrame"]').first()
+    // Stripe Payment Element should load (iframe from js.stripe.com)
+    const stripeIframe = page.locator('iframe[src*="stripe.com"], iframe[title*="Secure"], iframe[name*="__privateStripeFrame"]').first()
+    await stripeIframe.waitFor({ state: 'attached', timeout: 30000 })
 
-    // Fill in test card number: 4242 4242 4242 4242
-    const cardNumber = stripeFrame.getByPlaceholder(/card number|kortnummer/i)
-    await cardNumber.waitFor({ state: 'visible', timeout: 15000 })
-    await cardNumber.fill('4242424242424242')
+    // Access iframe and fill test card
+    const stripeFrame = stripeIframe.contentFrame()
+    const cardInput = stripeFrame.locator('[name="number"], [autocomplete="cc-number"]').first()
+    await cardInput.waitFor({ state: 'visible', timeout: 15000 })
+    await cardInput.fill('4242424242424242')
 
-    // Fill expiry date
-    const expiry = stripeFrame.getByPlaceholder(/mm.*yy|mm.*åå/i)
-    await expiry.fill('1230')
+    const expiryInput = stripeFrame.locator('[name="expiry"], [autocomplete="cc-exp"]').first()
+    await expiryInput.fill('1230')
 
-    // Fill CVC
-    const cvc = stripeFrame.getByPlaceholder(/cvc|cvv/i)
-    await cvc.fill('123')
+    const cvcInput = stripeFrame.locator('[name="cvc"], [autocomplete="cc-csc"]').first()
+    await cvcInput.fill('123')
 
-    // Click the pay button in the dialog
+    // Submit payment
     const dialogPayButton = page.getByRole('button', { name: /betala.*kr/i }).last()
+    await expect(dialogPayButton).toBeEnabled({ timeout: 5000 })
     await dialogPayButton.click()
 
-    // Wait for success -- either toast or badge change
-    // Stripe confirmation can take a few seconds
+    // Wait for success
     await expect(page.getByText(/betalning genomförd/i)).toBeVisible({ timeout: 30000 })
-
-    // Verify booking now shows as paid
     await expect(bookingCard.getByText(/betald/i)).toBeVisible({ timeout: 10000 })
   })
 })
