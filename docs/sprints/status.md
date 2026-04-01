@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S6-1 BDD integrationstest-audit | fullstack | Dev | done | feature/s6-1-bdd-integration-audit | da476ddd |
-| S6-2 Stripe E2E fungerar lokalt | fullstack | - | pending | - | - |
+| S6-2 Stripe E2E fungerar lokalt | fullstack | Dev | in_progress | feature/s6-2-stripe-e2e-fix | - |
 | S6-3 Swish i Stripe | fullstack | - | pending (blocker) | - | - |
 
 **Sprint 5** (klar):
@@ -57,7 +57,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S6-1 BDD integrationstest-audit | feature/s6-1-bdd-integration-audit | 2026-04-01 |
+| Dev | Fullstack | S6-2 Stripe E2E fix | feature/s6-2-stripe-e2e-fix | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
