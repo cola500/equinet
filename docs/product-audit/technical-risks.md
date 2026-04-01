@@ -61,7 +61,7 @@ sections:
 - **Prioritet**: **P0** (om kundflödet ska visas)
 
 ### R5: Oklart om produktion-deploy är aktuell
-- **Beskrivning**: Equinet är deployat på Vercel (`equinet.vercel.app`) men oklart om senaste koden är deployad. `vercel.json` har `regions: ["fra1"]` och `ignoreBuildErrors: true`.
+- **Beskrivning**: Equinet är deployat på Vercel (`equinet-app.vercel.app`) men oklart om senaste koden är deployad. `vercel.json` har `regions: ["fra1"]` och `ignoreBuildErrors: true`.
 - **Paverkan**: Demo på prod-URL kan visa gammal/trasig version. Lokalt kan det se annorlunda ut.
 - **Åtgärd**: Verifiera senaste deploy. Kor `vercel deploy` efter manuell genomkorning.
 - **Prioritet**: **P0**

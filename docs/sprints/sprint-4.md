@@ -24,7 +24,7 @@ sections:
 ## Sprint Overview
 
 Sprint 3 gjorde appen funktionellt redo. Sprint 4 gör den produktionsredo:
-equinet.vercel.app ska kunna visas live för en leverantör med självförtroende.
+equinet-app.vercel.app ska kunna visas live för en leverantör med självförtroende.
 
 **Roller:**
 - Lead: Review, merge, produktionsdeploy
@@ -47,7 +47,7 @@ equinet.vercel.app ska kunna visas live för en leverantör med självförtroend
 
 **Prioritet:** Högst
 **Typ:** Operations
-**Beskrivning:** Verifiera att equinet.vercel.app visar senaste koden. Kör demo-seed på prod-db. Testa login + kärnflöde.
+**Beskrivning:** Verifiera att equinet-app.vercel.app visar senaste koden. Kör demo-seed på prod-db. Testa login + kärnflöde.
 
 **Uppgifter:**
 
@@ -55,14 +55,14 @@ equinet.vercel.app ska kunna visas live för en leverantör med självförtroend
 2. Applicera eventuella pending migrationer mot Supabase
 3. Committa + pusha allt till main
 4. Verifiera att Vercel auto-deployar (eller kör `npm run deploy`)
-5. Testa på equinet.vercel.app:
+5. Testa på equinet-app.vercel.app:
    - Login med provider@example.com
    - Dashboard, bokningar, kunder, tjänster -- laddar korrekt?
    - Inga 500-fel i nätverksfliken
 6. Kör demo-seed på prod (om separat demo-miljö) eller verifiera befintlig data
 
 **Acceptanskriterier:**
-- [ ] equinet.vercel.app visar senaste koden
+- [ ] equinet-app.vercel.app visar senaste koden
 - [ ] Login fungerar
 - [ ] Kärnflödet (dashboard -> bokningar -> kunder) fungerar utan fel
 - [ ] `npm run migrate:status` visar inga pending migrationer
@@ -196,7 +196,7 @@ npm run dev
 # iOS: samma flow i native-appen
 
 # 6. Om prod-URL
-# Öppna equinet.vercel.app
+# Öppna equinet-app.vercel.app
 # Samma walkthrough
 ```
 

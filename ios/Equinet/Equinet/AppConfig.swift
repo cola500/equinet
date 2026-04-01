@@ -11,7 +11,7 @@ enum AppConfig {
     #if DEBUG
     static let baseURL = URL(string: "http://localhost:3000")!
     #else
-    static let baseURL = URL(string: "https://equinet.vercel.app")!
+    static let baseURL = URL(string: "https://equinet-app.vercel.app")!
     #endif
 
     /// Start URL -- skip landing page, go straight to login/dashboard

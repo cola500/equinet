@@ -53,7 +53,7 @@ npm run loadtest:all
 ### Mot Vercel/produktion
 
 ```bash
-export LOAD_TEST_BASE_URL="https://equinet.vercel.app"
+export LOAD_TEST_BASE_URL="https://equinet-app.vercel.app"
 export LOAD_TEST_SESSION_COOKIE="next-auth.session-token=..."
 npm run loadtest:all
 ```

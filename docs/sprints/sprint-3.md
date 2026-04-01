@@ -160,7 +160,7 @@ APNS_PRODUCTION=false   # true for App Store builds
 
 4. **Verifiera produktionsdeploy**
    - Kor `npm run deploy` (kvalitetscheckar + push)
-   - Verifiera att equinet.vercel.app visar senaste koden
+   - Verifiera att equinet-app.vercel.app visar senaste koden
    - Kor demo-seed pa prod-databasen (om separat demo-miljo)
 
 **Acceptanskriterier:**

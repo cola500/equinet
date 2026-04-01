@@ -182,7 +182,7 @@ final class AuthManager {
 
         let isProduction = sessionCookieSecure
         let domain = if isProduction {
-            "equinet.vercel.app"
+            "equinet-app.vercel.app"
         } else {
             AppConfig.baseURL.host() ?? "localhost"
         }
