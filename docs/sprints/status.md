@@ -25,7 +25,7 @@ sections:
 | S5-2 StripePaymentGateway | fullstack | Dev | done | feature/s5-2-stripe-payment-gateway | 6454d5b6 |
 | S5-3 Stripe webhook-route | fullstack | Dev | done | feature/s5-3-stripe-webhook | ef250064 |
 | S5-4 Betalning UI | fullstack | Dev | done | feature/s5-4-payment-ui | 3e5bf224 |
-| S5-5 E2E betalning | fullstack | Dev | in_progress | feature/s5-5-e2e-payment | - |
+| S5-5 E2E betalning | fullstack | Dev | review_requested | feature/s5-5-e2e-payment | 5deb6f8d |
 
 **Sprint 4** (klar):
 
