@@ -141,7 +141,11 @@ final class AuthManager {
         // Unregister device token from backend (fire-and-forget, before keychain is cleared)
         if let token = PushManager.shared.deviceToken {
             Task.detached {
-                try? await APIClient.shared.unregisterDeviceToken(token)
+                do {
+                    try await APIClient.shared.unregisterDeviceToken(token)
+                } catch {
+                    AppLogger.push.error("Failed to unregister device token at logout: \(error)")
+                }
             }
         }
         PushManager.shared.clearDeviceToken()

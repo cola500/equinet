@@ -25,6 +25,7 @@ final class AuthManagerTests: XCTestCase {
     override func tearDown() {
         authManager = nil
         mockKeychain = nil
+        PushManager.shared.setDeviceTokenForTesting(nil)
         super.tearDown()
     }
 
