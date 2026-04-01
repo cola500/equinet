@@ -116,6 +116,8 @@ export default defineConfig({
         FEATURE_BUSINESS_INSIGHTS: 'true',
         FEATURE_RECURRING_BOOKINGS: 'true',
         FEATURE_CUSTOMER_INVITE: 'true',
+        FEATURE_STRIPE_PAYMENTS: 'true',
+        PAYMENT_PROVIDER: 'mock',
       },
     },
     ...(process.env.OFFLINE_E2E === 'true'
