@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S4-1 Produktionsdeploy | fullstack | Dev | done | main | - |
 | S4-2 Invite live | fullstack | Johan+Lead | done | - | admin DB-override |
-| S4-3 Due-for-service native | fullstack | Dev | in_progress | feature/s4-3-due-for-service-native | - |
+| S4-3 Due-for-service native | fullstack | Dev | review_requested | feature/s4-3-due-for-service-native | 10f78359 |
 | S4-4 UX-polish native | fullstack | - | pending | - | - |
 | S4-5 Demo-data prod | fullstack | - | backlog | - | - |
 | S4-6 Observability | fullstack | - | pending | - | - |
