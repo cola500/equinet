@@ -104,7 +104,30 @@ för de viktigaste.
 
 ---
 
-### S6-3 -- S6-N: Demo-feedback stories -- TBD
+### S6-4: Spike -- RLS (Row Level Security) i Supabase -- READY
+
+**Prioritet:** Medel
+**Typ:** Research/spike
+**Beskrivning:** Utforska om RLS kan ge defense-in-depth för dataåtkomst. Inte committa till migration -- bara experiment och rekommendation.
+
+**Frågor att besvara:**
+1. Kan vi använda RLS med Prisma direkt-anslutning? (SET LOCAL per request?)
+2. Eller kräver det Supabase-klient istället för Prisma?
+3. Kan vi ha RLS på EN tabell (t.ex. Booking) som proof-of-concept utan att migrera allt?
+4. Vad är prestanda-påverkan?
+5. Hur fungerar det med serverless (connection pooling, korta sessions)?
+
+**Leverans:**
+- Dokument: `docs/research/rls-spike.md` med fynd, rekommendation, och effort-uppskattning
+- Eventuellt: en test-branch med RLS på en tabell (inte mergad)
+
+**Stationsflöde:** Förenklat (research): Plan -> Research -> Dokumentera -> Review
+
+**Tidbox:** Max 1 session. Stanna vid rekommendation, inte implementation.
+
+---
+
+### S6-5 -- S6-N: Demo-feedback stories -- TBD
 
 > Fylls i efter leverantörsdemon. Se sprint-5.md alternativ-tabell:
 >
