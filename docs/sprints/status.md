@@ -27,7 +27,7 @@ sections:
 | S4-6 Observability | fullstack | Lead | done | main | 16fb024e |
 | S4-7 Seed + verifiering | fullstack | Dev | done | feature/s4-7-seed-verification | a5df77cc |
 | S4-4 UX-polish native | fullstack | Dev | done | feature/s4-4-ux-polish-native | 9aaaadf2 |
-| S4-5 Demo-data prod | fullstack | Dev | review_requested | feature/s4-5-demo-data-prod | - |
+| S4-5 Demo-data prod | fullstack | Dev | done | feature/s4-5-demo-data-prod | 8ddd8b2a |
 
 **Sprint 3** (klar):
 
