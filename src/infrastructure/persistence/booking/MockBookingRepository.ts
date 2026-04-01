@@ -8,6 +8,7 @@ import {
   IBookingRepository,
   Booking,
   BookingWithRelations,
+  BookingWithQuickNoteContext,
   CreateBookingData,
   BookingWithCustomerLocation,
 } from './IBookingRepository'
@@ -61,6 +62,35 @@ export class MockBookingRepository
 
   async delete(id: string): Promise<void> {
     this.bookings.delete(id)
+  }
+
+  async findByIdForProvider(
+    id: string,
+    providerId: string
+  ): Promise<BookingWithQuickNoteContext | null> {
+    const booking = this.bookings.get(id)
+    if (!booking || booking.providerId !== providerId) return null
+
+    return {
+      id: booking.id,
+      providerId: booking.providerId,
+      status: booking.status,
+      horseId: booking.horseId ?? null,
+      customer: { firstName: 'Mock', lastName: 'Customer' },
+      service: { name: 'Mock Service' },
+      horse: booking.horseId
+        ? { name: booking.horseName ?? 'Mock Horse', breed: null, specialNeeds: null }
+        : null,
+    }
+  }
+
+  async findByIdForCustomer(
+    id: string,
+    customerId: string
+  ): Promise<Booking | null> {
+    const booking = this.bookings.get(id)
+    if (!booking || booking.customerId !== customerId) return null
+    return booking
   }
 
   async findByCustomerId(customerId: string): Promise<Booking[]> {

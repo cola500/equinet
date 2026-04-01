@@ -6,6 +6,7 @@ import { NextRequest } from "next/server"
 const {
   mockFindByUserId,
   mockUpdateProviderNotesWithAuth,
+  mockFindByIdForProvider,
   mockUpdateStatus,
   mockBookingFindUnique,
   mockHorseNoteCreate,
@@ -13,6 +14,7 @@ const {
 } = vi.hoisted(() => ({
   mockFindByUserId: vi.fn(),
   mockUpdateProviderNotesWithAuth: vi.fn(),
+  mockFindByIdForProvider: vi.fn(),
   mockUpdateStatus: vi.fn(),
   mockBookingFindUnique: vi.fn(),
   mockHorseNoteCreate: vi.fn(),
@@ -65,6 +67,7 @@ vi.mock("@/infrastructure/persistence/provider/ProviderRepository", () => ({
 
 vi.mock("@/infrastructure/persistence/booking/PrismaBookingRepository", () => ({
   PrismaBookingRepository: class {
+    findByIdForProvider = mockFindByIdForProvider
     updateProviderNotesWithAuth = mockUpdateProviderNotesWithAuth
   },
 }))
@@ -281,11 +284,14 @@ describe("POST /api/voice-log/confirm", () => {
   // --- Horse notes ---
 
   it("creates horse note when observation provided", async () => {
-    mockBookingFindUnique.mockResolvedValue({
+    mockFindByIdForProvider.mockResolvedValue({
       id: VALID_BOOKING_ID,
       horseId: "horse-1",
-      horseName: "Stella",
       providerId: "provider-1",
+      status: "confirmed",
+      customer: { firstName: "Mock", lastName: "Customer" },
+      service: { name: "Hovvård" },
+      horse: { name: "Stella", breed: null, specialNeeds: null },
     })
 
     const response = await POST(
@@ -312,11 +318,14 @@ describe("POST /api/voice-log/confirm", () => {
   })
 
   it("skips horse note when no horseId on booking", async () => {
-    mockBookingFindUnique.mockResolvedValue({
+    mockFindByIdForProvider.mockResolvedValue({
       id: VALID_BOOKING_ID,
       horseId: null,
-      horseName: "Stella",
       providerId: "provider-1",
+      status: "confirmed",
+      customer: { firstName: "Mock", lastName: "Customer" },
+      service: { name: "Hovvård" },
+      horse: null,
     })
 
     const response = await POST(
@@ -335,13 +344,8 @@ describe("POST /api/voice-log/confirm", () => {
   })
 
   it("verifies booking ownership before creating horse note", async () => {
-    // Booking belongs to different provider
-    mockBookingFindUnique.mockResolvedValue({
-      id: VALID_BOOKING_ID,
-      horseId: "horse-1",
-      horseName: "Stella",
-      providerId: "other-provider",
-    })
+    // findByIdForProvider returns null when provider doesn't own the booking (atomic WHERE)
+    mockFindByIdForProvider.mockResolvedValue(null)
 
     const response = await POST(
       makeRequest(

@@ -54,5 +54,9 @@ export interface ISubscriptionRepository {
   findByStripeSubscriptionId(stripeSubscriptionId: string): Promise<Subscription | null>
   create(data: CreateSubscriptionData): Promise<Subscription>
   update(id: string, data: UpdateSubscriptionData): Promise<Subscription>
+  /** Update with atomic provider ownership check. Returns null if not found or not owned. */
+  updateWithAuth(id: string, data: UpdateSubscriptionData, providerId: string): Promise<Subscription | null>
   delete(id: string): Promise<boolean>
+  /** Delete with atomic provider ownership check. Returns false if not found or not owned. */
+  deleteWithAuth(id: string, providerId: string): Promise<boolean>
 }

@@ -46,6 +46,8 @@ Normalt via `code-reviewer` subagent, eller manuellt av tech lead.
 - [ ] Alla nya routes har `auth()` med null-check -> 401
 - [ ] `providerId`/`customerId` hamtas fran session, ALDRIG fran request body
 - [ ] IDOR-skydd: andpunkt kontrollerar att resursen tillhor sessionens anvandare
+- [ ] Ny Booking-query? Använd `findByIdForProvider()`/`findByIdForCustomer()` med atomisk WHERE
+- [ ] Ny query på kärndomän? Använd repository med ownership i WHERE, aldrig direkt `prisma.X.findUnique(id)` i routes
 - [ ] Admin-routes kontrollerar `isAdmin` i session
 
 ### Input-validering

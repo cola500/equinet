@@ -40,6 +40,14 @@ export interface CreateCustomerReviewData {
 
 export interface ICustomerReviewRepository extends IRepository<CustomerReview> {
   /**
+   * Find review by ID with atomic provider ownership check
+   *
+   * Uses WHERE { id, providerId } to prevent IDOR.
+   * Returns null if not found or provider doesn't own it.
+   */
+  findByIdForProvider(id: string, providerId: string): Promise<CustomerReview | null>
+
+  /**
    * Find review by booking ID
    */
   findByBookingId(bookingId: string): Promise<CustomerReview | null>

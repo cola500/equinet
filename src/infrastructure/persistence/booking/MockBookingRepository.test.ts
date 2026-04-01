@@ -434,6 +434,73 @@ describe('MockBookingRepository', () => {
     })
   })
 
+  describe('findByIdForProvider', () => {
+    it('should return booking when provider owns it', async () => {
+      const booking = createBooking({ id: 'booking-1', providerId: 'provider-A' })
+      await repository.save(booking)
+
+      const found = await repository.findByIdForProvider('booking-1', 'provider-A')
+
+      expect(found).not.toBeNull()
+      expect(found!.id).toBe('booking-1')
+      expect(found!.providerId).toBe('provider-A')
+    })
+
+    it('should return null when provider does not own the booking', async () => {
+      const booking = createBooking({ id: 'booking-1', providerId: 'provider-A' })
+      await repository.save(booking)
+
+      const found = await repository.findByIdForProvider('booking-1', 'provider-B')
+
+      expect(found).toBeNull()
+    })
+
+    it('should return null when booking does not exist', async () => {
+      const found = await repository.findByIdForProvider('non-existent', 'provider-A')
+
+      expect(found).toBeNull()
+    })
+
+    it('should include relations context', async () => {
+      const booking = createBooking({ id: 'booking-1', providerId: 'provider-A', status: 'confirmed' })
+      await repository.save(booking)
+
+      const found = await repository.findByIdForProvider('booking-1', 'provider-A')
+
+      expect(found!.status).toBe('confirmed')
+      expect(found!.customer).toBeDefined()
+      expect(found!.service).toBeDefined()
+    })
+  })
+
+  describe('findByIdForCustomer', () => {
+    it('should return booking when customer owns it', async () => {
+      const booking = createBooking({ id: 'booking-1', customerId: 'customer-A' })
+      await repository.save(booking)
+
+      const found = await repository.findByIdForCustomer('booking-1', 'customer-A')
+
+      expect(found).not.toBeNull()
+      expect(found!.id).toBe('booking-1')
+      expect(found!.customerId).toBe('customer-A')
+    })
+
+    it('should return null when customer does not own the booking', async () => {
+      const booking = createBooking({ id: 'booking-1', customerId: 'customer-A' })
+      await repository.save(booking)
+
+      const found = await repository.findByIdForCustomer('booking-1', 'customer-B')
+
+      expect(found).toBeNull()
+    })
+
+    it('should return null when booking does not exist', async () => {
+      const found = await repository.findByIdForCustomer('non-existent', 'customer-A')
+
+      expect(found).toBeNull()
+    })
+  })
+
   describe('createWithOverlapCheck', () => {
     const createBookingData = (overrides = {}) => ({
       customerId: 'customer-456',
