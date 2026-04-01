@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 import UserNotifications
 #if os(iOS)
 import UIKit
@@ -28,16 +29,16 @@ final class PushManager {
         center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             Task { @MainActor in
                 if let error {
-                    print("[Push] Permission error: \(error.localizedDescription)")
+                    AppLogger.push.error("Permission error: \(error.localizedDescription)")
                     self.bridge?.sendPushPermissionDenied()
                     return
                 }
 
                 if granted {
-                    print("[Push] Permission granted")
+                    AppLogger.push.info("Permission granted")
                     self.registerForRemoteNotifications()
                 } else {
-                    print("[Push] Permission denied")
+                    AppLogger.push.info("Permission denied")
                     self.bridge?.sendPushPermissionDenied()
                 }
             }
@@ -55,21 +56,36 @@ final class PushManager {
     func didRegisterForRemoteNotifications(with deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         self.deviceToken = token
-        print("[Push] Device token: \(token)")
+        AppLogger.push.info("Device token received")
         bridge?.sendPushToken(token)
 
         // Register token with backend directly (fire-and-forget)
         Task.detached {
             do {
                 try await APIClient.shared.registerDeviceToken(token)
-                print("[Push] Token registered with backend")
+                AppLogger.push.info("Token registered with backend")
             } catch {
-                print("[Push] Failed to register token with backend: \(error)")
+                AppLogger.push.error("Failed to register token with backend: \(error)")
             }
         }
     }
 
     func didFailToRegisterForRemoteNotifications(with error: Error) {
-        print("[Push] Registration failed: \(error.localizedDescription)")
+        AppLogger.push.error("Registration failed: \(error.localizedDescription)")
     }
+
+    /// Clear the stored device token (called during logout).
+    func clearDeviceToken() {
+        deviceToken = nil
+        AppLogger.push.info("Device token cleared")
+    }
+
+    // MARK: - Testing
+
+    #if DEBUG
+    /// Set device token directly for testing purposes.
+    func setDeviceTokenForTesting(_ token: String?) {
+        deviceToken = token
+    }
+    #endif
 }

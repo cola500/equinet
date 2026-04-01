@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -47,6 +48,11 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.3), value: authManager.state == .authenticated)
         .onAppear {
             authManager.checkExistingAuth()
+        }
+        .onChange(of: authManager.state == .authenticated) { _, isAuthenticated in
+            if isAuthenticated {
+                PushManager.shared.requestPermission()
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard authManager.state == .authenticated else { return }
