@@ -24,6 +24,7 @@ sections:
 | S7-1 Fas 1 RLS ownership-guards | fullstack | Dev | done | feature/s7-1-ownership-guards | ab6d8ced |
 | S7-2 Push live | fullstack | - | pending (blocker: Apple Dev) | - | - |
 | S7-3 Stripe live-mode | fullstack | - | pending (blocker: Stripe) | - | - |
+| S7-4 Voice logging AI-spike | fullstack | - | pending | - | - |
 
 **Sprint 6** (klar):
 

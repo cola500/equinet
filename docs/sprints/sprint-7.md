@@ -110,7 +110,31 @@ Push och Stripe aktiveras när blockerare löses.
 
 ---
 
-### S7-4 -- S7-N: Demo-feedback stories -- TBD
+### S7-4: Voice logging AI-spike -- READY
+
+**Prioritet:** Hög
+**Typ:** Research/spike
+**Beskrivning:** `voice_logging` är default on men det är oklart om server-side AI-tolkning faktiskt fungerar. SpeechRecognizer finns på iOS och VoiceInterpretationService finns server-side, men alla tester mockar AI-anropet. Spike: ta reda på om det fungerar, vad som saknas, och om vi ska stänga av flaggan tills det är fixat.
+
+**Frågor att besvara:**
+1. Vad gör VoiceInterpretationService? Vilken AI-provider anropas (OpenAI, Anthropic, annat)?
+2. Finns det en riktig API-nyckel konfigurerad (env-var)?
+3. Fungerar det end-to-end (tal -> transkribering -> AI-tolkning -> strukturerad data)?
+4. Om det inte fungerar: vad saknas? Hur stort arbete?
+5. Ska flaggan stängas av tills det är fixat?
+
+**Leverans:**
+- Dokument: `docs/research/voice-logging-spike.md`
+- Beslut: flaggan på eller av i produktion
+- Ingen kodändring (research only)
+
+**Stationsflöde:** Förenklat (research): Plan -> Research -> Dokumentera -> Review
+
+**Tidbox:** Max 1 session.
+
+---
+
+### S7-5 -- S7-N: Demo-feedback stories -- TBD
 
 > Läggs till efter leverantörsdemon.
 
