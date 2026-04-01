@@ -61,6 +61,7 @@ struct NativeMoreView: View {
     @Bindable var servicesViewModel: ServicesViewModel
     @Bindable var reviewsViewModel: ReviewsViewModel
     @Bindable var profileViewModel: ProfileViewModel
+    @State private var dueForServiceViewModel = DueForServiceViewModel()
     let featureFlags: [String: Bool]
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
@@ -134,6 +135,8 @@ struct NativeMoreView: View {
                             navigationPath.append(temp)
                         }
                     )
+                } else if item.path == "/provider/due-for-service" {
+                    NativeDueForServiceView(viewModel: dueForServiceViewModel)
                 } else {
                     MoreWebView(
                         path: item.path,
