@@ -192,12 +192,46 @@ equinet-app.vercel.app ska kunna visas live för en leverantör med självförtr
 
 ## Prioritetsordning
 
+### S4-7: Seed-data + visuell verifiering av due-for-service -- READY
+
+**Prioritet:** Högst (nästa story)
+**Typ:** Testdata + verifiering
+**Beskrivning:** Due-for-service native-vyn kan inte verifieras utan seed-data som triggar "overdue". Completed-bokningar i demo-seed behöver vara tillräckligt gamla (>6 veckor) för att visa status.
+
+**Uppgifter:**
+
+1. Granska `prisma/seed-demo.ts` -- vilka completed-bokningar finns och hur gamla är de?
+2. Lägg till/justera completed-bokningar så minst 2 är >8 veckor gamla (triggar overdue med 6v intervall)
+3. Säkerställ att `horseServiceInterval` eller `customerHorseServiceInterval` skapas i seed
+4. Kör `npm run db:seed:demo:reset`
+5. Bygg iOS-appen och navigera till Besöksplanering i simulatorn
+6. Verifiera med mobile-mcp:
+   - Sammanfattningskort visar korrekt antal
+   - Filterknappar fungerar (Alla/Försenade/Inom 2 veckor)
+   - Hästar med overdue har röd badge
+   - Pull-to-refresh fungerar
+   - Empty state visas om filtret ger 0 träffar
+7. Dokumentera screenshots i done-filen
+
+**Acceptanskriterier:**
+- [ ] Minst 2 hästar visas som "overdue" i native-vyn
+- [ ] Filter fungerar korrekt
+- [ ] Screenshots tagna med mobile-mcp och dokumenterade
+- [ ] Seed-script fungerar med `npm run db:seed:demo:reset`
+
+**Stationsflöde:** Förenklat (data + verifiering): Green -> Verify -> Merge
+
+---
+
+## Prioritetsordning
+
 1. **S4-1** (deploy) -- DONE
 2. **S4-2** (invite live) -- DONE
-3. **S4-3** (due-for-service) -- Dev jobbar
-4. **S4-6** (observability) -- efter S4-3, innan demo
-5. **S4-4** (polish) -- professionellt intryck
-6. **S4-5** (demo-data) -- backlog, om tid finns
+3. **S4-3** (due-for-service native) -- DONE
+4. **S4-6** (observability) -- DONE (Sentry + UptimeRobot)
+5. **S4-7** (seed-data + verifiering) -- NÄSTA
+6. **S4-4** (polish) -- professionellt intryck
+7. **S4-5** (demo-data prod) -- backlog, om tid finns
 
 ---
 
