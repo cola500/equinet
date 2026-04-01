@@ -1,21 +1,16 @@
 /**
- * E2E test for Stripe Payment Element flow.
+ * E2E test for Stripe Payment Element rendering.
  *
- * This test requires:
- * - Stripe test keys in .env.local (sk_test_... / pk_test_...)
- * - PAYMENT_PROVIDER=stripe (pass as env when running)
- * - Dev server with Stripe.js loaded
+ * Verifies that:
+ * 1. PaymentIntent is created server-side (clientSecret returned)
+ * 2. PaymentDialog opens with Stripe PaymentElement
+ * 3. Stripe iframe loads with card input fields
  *
- * Run: PAYMENT_PROVIDER=stripe npx playwright test e2e/stripe-payment.spec.ts --headed
- *
- * NOTE: Stripe Payment Element renders in iframes loaded from js.stripe.com.
- * This can be unreliable in headless mode. Run --headed for debugging.
- *
- * The full payment chain is verified by:
- * - Unit tests: StripePaymentGateway.test.ts (SDK interaction)
- * - Integration tests: route.integration.test.ts (route -> service -> gateway)
- * - E2E mock tests: payment.spec.ts (UI flow with instant success)
- * This spec adds browser-level verification of the Stripe Payment Element.
+ * NOTE: Stripe officially recommends NOT automating card input in PaymentElement
+ * (https://docs.stripe.com/automated-testing). Card fill + submit is tested by:
+ * - Unit: StripePaymentGateway.test.ts (SDK interaction)
+ * - Integration: route.integration.test.ts (route -> service -> gateway)
+ * - E2E mock: payment.spec.ts (UI flow with instant success via MockPaymentGateway)
  */
 
 import { test, expect, prisma } from './fixtures'
@@ -105,36 +100,53 @@ test.describe('Stripe Payment Element', () => {
     })
     await expect(bookingCard).toBeVisible({ timeout: 5000 })
 
+    // Capture payment API response to verify PaymentIntent creation
+    const paymentResponsePromise = page.waitForResponse(
+      (resp) => resp.url().includes('/payment') && resp.request().method() === 'POST',
+      { timeout: 15000 }
+    )
+
     // Click pay -- creates PaymentIntent server-side
     const payButton = bookingCard.getByRole('button', { name: /betala.*kr/i })
     await payButton.click()
 
+    // Verify server created PaymentIntent with clientSecret
+    const paymentResponse = await paymentResponsePromise
+    expect(paymentResponse.status()).toBe(200)
+    const paymentData = await paymentResponse.json()
+    expect(paymentData.clientSecret).toBeTruthy()
+    expect(paymentData.payment.status).toBe('pending')
+
     // PaymentDialog should open
     await expect(page.getByText(/fyll i dina kortuppgifter/i)).toBeVisible({ timeout: 15000 })
 
-    // Stripe Payment Element should load (iframe from js.stripe.com)
-    const stripeIframe = page.locator('iframe[src*="stripe.com"], iframe[title*="Secure"], iframe[name*="__privateStripeFrame"]').first()
-    await stripeIframe.waitFor({ state: 'attached', timeout: 30000 })
+    // Stripe PaymentElement should render card input inside an iframe.
+    // Find the frame containing input[name="number"] (card number field).
+    let stripeFrame = null as Awaited<ReturnType<typeof page.frames>[number]> | null
+    const deadline = Date.now() + 30000
+    while (Date.now() < deadline) {
+      for (const frame of page.frames()) {
+        const hasCardInput = await frame.$('input[name="number"]').catch(() => null)
+        if (hasCardInput) {
+          stripeFrame = frame
+          break
+        }
+      }
+      if (stripeFrame) break
+      await page.waitForTimeout(500)
+    }
 
-    // Access iframe and fill test card
-    const stripeFrame = stripeIframe.contentFrame()
-    const cardInput = stripeFrame.locator('[name="number"], [autocomplete="cc-number"]').first()
-    await cardInput.waitFor({ state: 'visible', timeout: 15000 })
-    await cardInput.fill('4242424242424242')
+    // Verify Stripe iframe loaded with card fields
+    expect(stripeFrame).not.toBeNull()
+    const cardInput = await stripeFrame!.$('input[name="number"]')
+    expect(cardInput).not.toBeNull()
+    const expiryInput = await stripeFrame!.$('input[name="expiry"]')
+    expect(expiryInput).not.toBeNull()
+    const cvcInput = await stripeFrame!.$('input[name="cvc"]')
+    expect(cvcInput).not.toBeNull()
 
-    const expiryInput = stripeFrame.locator('[name="expiry"], [autocomplete="cc-exp"]').first()
-    await expiryInput.fill('1230')
-
-    const cvcInput = stripeFrame.locator('[name="cvc"], [autocomplete="cc-csc"]').first()
-    await cvcInput.fill('123')
-
-    // Submit payment
-    const dialogPayButton = page.getByRole('button', { name: /betala.*kr/i }).last()
-    await expect(dialogPayButton).toBeEnabled({ timeout: 5000 })
-    await dialogPayButton.click()
-
-    // Wait for success
-    await expect(page.getByText(/betalning genomförd/i)).toBeVisible({ timeout: 30000 })
-    await expect(bookingCard.getByText(/betald/i)).toBeVisible({ timeout: 10000 })
+    // Card input + submit is intentionally NOT automated here.
+    // Stripe recommends against it (security measures cause flaky tests).
+    // See file header for the full test coverage strategy.
   })
 })

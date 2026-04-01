@@ -44,6 +44,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/plan-approval-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/debug-discipline.sh"
           }
         ]
       }

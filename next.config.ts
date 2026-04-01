@@ -93,12 +93,13 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // Script sources - unsafe-inline required: Next.js injects inline scripts that SRI can't cover on Vercel
               isDev
-                ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: React DevTools need unsafe-eval
-                : "script-src 'self' 'unsafe-inline'", // Prod: SRI covers external scripts, inline still needed
+                ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com" // Dev: React DevTools + Stripe
+                : "script-src 'self' 'unsafe-inline' https://js.stripe.com", // Prod: inline needed + Stripe Payment Element
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
-              "connect-src 'self' https://*.supabase.co https://*.sentry.io", // API calls + Supabase Storage + Sentry
+              "connect-src 'self' https://*.supabase.co https://*.sentry.io https://api.stripe.com", // API calls + Supabase + Sentry + Stripe
+              "frame-src https://js.stripe.com", // Stripe Payment Element renders in iframe
               "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection
               "base-uri 'self'",
