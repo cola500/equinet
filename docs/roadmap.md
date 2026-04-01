@@ -70,6 +70,49 @@ sections:
 - **i18n** (om vi expanderar utanför Sverige)
 - **App Store-publicering** (kräver Apple Developer + review-process)
 
+## Feature flags -- lanseringsberedskap
+
+18 flaggor totalt. Bedömning per flagga:
+
+### Redo att lansera (flagga på, fungerar)
+
+| Flagga | Status | Vad behövs |
+|--------|--------|-----------|
+| `customer_invite` | Live i prod | Inget -- redan på |
+| `due_for_service` | Default on | Fungerar, native vy klar |
+| `help_center` | Default on | Fungerar |
+| `self_reschedule` | Default on | Fungerar |
+| `demo_mode` | Live i prod | Inget -- för demo |
+
+### Nära lansering (kod finns, behöver konfiguration)
+
+| Flagga | Vad saknas | Effort |
+|--------|-----------|--------|
+| `stripe_payments` | Slå på flaggan + live-nycklar | Config, 15 min |
+| `push_notifications` | APNs-credentials (Apple Developer) | Config, 15 min |
+| `recurring_bookings` | Default on men otillräckligt testad i prod | E2E-verifiering, 1 dag |
+
+### Kräver arbete innan lansering
+
+| Flagga | Problem | Effort |
+|--------|---------|--------|
+| `voice_logging` | Oklart om AI-tjänst (OpenAI/annat) är ansluten. SpeechRecognizer finns på iOS men server-side AI-tolkning overifierad. | Research + integration, 1-2 veckor |
+| `customer_insights` | Samma som ovan -- "AI-genererade" men oklart om faktisk AI-koppling. Tester mockar allt. | Research + integration, 1 vecka |
+| `route_planning` | Kräver Mapbox-token. Utan token: tom karta, trasig sökning. | Mapbox-konto + token + verifiering, 1-2 dagar |
+| `route_announcements` | Beroende av route_planning (rutt-annonser kopplade till rutter). | Löses med route_planning |
+| `business_insights` | Recharts-baserad analytics. Fungerar men behöver realistisk data för att se bra ut. | Polish + seed-data, 1-2 dagar |
+| `offline_mode` | Komplex (sync engine, mutation queue, circuit breaker). Bakom flagga av en anledning. Inga E2E-tester. | E2E + stabilisering, 1-2 veckor |
+| `group_bookings` | Fungerar men komplex feature. Behöver E2E-verifiering och UX-review. | E2E + review, 2-3 dagar |
+| `follow_provider` | Fungerar men beroende av att det finns flera leverantörer i systemet. | Verifiering vid skalning |
+| `municipality_watch` | Samma som follow_provider -- värde kommer med volym. | Verifiering vid skalning |
+
+### Inte aktuella nu
+
+| Flagga | Varför |
+|--------|--------|
+| `provider_subscription` | Monetarisering -- beslut efter demo. Kräver Stripe-prissättning. |
+| `stable_profiles` | Tidig feature, aldrig testad i prod. Annat fokus nu. |
+
 ## Blockerare som styr tempot
 
 | Blocker | Påverkar | Ägare | Status |
