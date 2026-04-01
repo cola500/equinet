@@ -25,7 +25,7 @@ sections:
 | S4-2 Invite live | fullstack | Johan+Lead | done | - | admin DB-override |
 | S4-3 Due-for-service native | fullstack | Dev | done | feature/s4-3-due-for-service-native | 10f78359 |
 | S4-6 Observability | fullstack | Lead | done | main | 16fb024e |
-| S4-7 Seed + verifiering | fullstack | Dev | review_requested | feature/s4-7-seed-verification | dd113731 |
+| S4-7 Seed + verifiering | fullstack | Dev | done | feature/s4-7-seed-verification | a5df77cc |
 | S4-4 UX-polish native | fullstack | - | pending | - | - |
 | S4-5 Demo-data prod | fullstack | - | backlog | - | - |
 
