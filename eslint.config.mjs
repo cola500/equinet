@@ -47,6 +47,25 @@ export default [
     },
   },
 
+  // Ownership guard: warn when API routes access core domain tables directly
+  // instead of using repository methods with ownership checks
+  {
+    files: ["src/app/api/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "MemberExpression[object.property.name='booking'][property.name='findUnique']",
+          message: "Use BookingRepository.findByIdForProvider/findByIdForCustomer instead of prisma.booking.findUnique for IDOR protection.",
+        },
+        {
+          selector: "MemberExpression[object.property.name='booking'][property.name='findFirst']",
+          message: "Use BookingRepository.findByIdForProvider/findByIdForCustomer instead of prisma.booking.findFirst for IDOR protection.",
+        },
+      ],
+    },
+  },
+
   // Sanitize library - intentionally uses control characters in regex
   {
     files: ["src/lib/sanitize.ts"],
