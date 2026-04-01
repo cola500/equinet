@@ -129,4 +129,4 @@ Dessa ska fixas nar vi andrar i berorda filer, inte som separata tasks:
 
 ### Teamkommunikation -- vad saknades?
 
-### Andring till nasta sprint?
+### Ändring till nästa sprint?

@@ -147,6 +147,21 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
     expect(res.status).toBe(404)
   })
 
+  it('returns 400 when trying to merge user with itself', async () => {
+    // findFirst returns same user as the ghost
+    vi.mocked(prisma.user.findFirst).mockResolvedValue({
+      id: TEST_UUIDS.ghostCustomer,
+      email: 'real@example.com',
+      isManualCustomer: false,
+    } as never)
+
+    const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
+    expect(res.status).toBe(400)
+
+    const data = await res.json()
+    expect(data.error).toContain('sig själv')
+  })
+
   it('returns 200 and executes merge on valid request', async () => {
     const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
     expect(res.status).toBe(200)

@@ -16,7 +16,7 @@ sections:
 # Sprint 3: Launch Readiness
 
 **Sprint Duration:** 1 vecka
-**Sprint Goal:** Gora appen redo att visa for en riktig leverantor. Kundinbjudningar live, demo polerad, push forberedd.
+**Sprint Goal:** Göra appen redo att visa för en riktig leverantör. Kundinbjudningar live, demo polerad, push förberedd.
 **Start Date:** 2026-04-01
 **Beroende:** Sprint 2 (teknikskuld) kan koras parallellt
 
@@ -24,7 +24,7 @@ sections:
 
 ## Sprint Overview
 
-Fokus: activation-lagret. En leverantor som registrerar sig ska kunna bjuda in sina kunder och fa notiser om nya bokningar. Demo-laget ska vara felfritt for en walkthrough.
+Fokus: activation-lagret. En leverantör som registrerar sig ska kunna bjuda in sina kunder och få notiser om nya bokningar. Demo-läget ska vara felfritt för en walkthrough.
 
 **Roller denna sprint:**
 - Tech lead: Arkitektur, review, sprint-planering
@@ -71,7 +71,7 @@ APNS_PRODUCTION=false   # true for App Store builds
 
 1. **Skriv tester for merge-route** (BLOCKER)
    - `POST /api/provider/customers/[customerId]/merge` har 0 tester
-   - Destruktiv operation: tar bort ghost-user, flyttar bokningar/hastar/recensioner over 11 tabeller i en transaktion
+   - Destruktiv operation: tar bort ghost-user, flyttar bokningar/hästar/recensioner över 11 tabeller i en transaktion
    - Testa: auth, IDOR, ghost-validering, real user lookup, transaction atomicity, edge cases (self-merge, redan lankad)
 
 2. **Verifiera clientVisible-flagga**
@@ -146,7 +146,7 @@ APNS_PRODUCTION=false   # true for App Store builds
 
 **Uppgifter:**
 
-1. **Dolj "Glomt losenord?" och "Registrera dig har" i demo-lage**
+1. **Dölj "Glömt lösenord?" och "Registrera dig här" i demo-läge**
    - Login-sidan visar dessa lankar som leder till ofardiga flooden
    - Gata pa `NEXT_PUBLIC_DEMO_MODE`
 
@@ -205,10 +205,10 @@ npm run dev
 # 5. Walkthrough (15 min)
 # Login: provider@example.com / ProviderPass123!
 # Dashboard -> Kalender -> Bokningar -> Kunder -> Tjanster
-# Visa: godkann bokning, oppna kund, bjud in kund (om live)
+# Visa: godkänn bokning, öppna kund, bjud in kund (om live)
 
 # 6. iOS-demo (om relevant)
-# Oppna Equinet pa simulator/enhet
+# Öppna Equinet på simulator/enhet
 # Samma login-credentials
 # Visa native-vyer: Dashboard, Kalender, Bokningar, Kunder
 ```

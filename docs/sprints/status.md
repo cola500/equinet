@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S3-1 Kundinbjudningar | fullstack | - | pending | - | - |
-| S3-2 Push-forberedelse | ios | - | pending | - | - |
+| S3-2 Push-forberedelse | fullstack | - | pending | - | - |
 | S3-3 Demo-polish | fullstack | - | pending | - | - |
 | S3-4 Recensioner seed | fullstack | - | backlog | - | - |
 
@@ -31,12 +31,13 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S2-1 withApiHandler | fullstack | Fullstack | done | fix/critical-security-sweep | 6404358a |
+| S2-2 console.* cleanup | fullstack | Fullstack | done | main | 5cef0ca8 |
 
 ## Sessioner
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Tech lead | Tech lead | Sprint-planering, review | fix/critical-security-sweep | 2026-04-01 |
+| Tech lead | Tech lead | Sprint-planering, review | main | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
@@ -46,6 +47,8 @@ sections:
 | 2026-04-01 | Stoppa withApiHandler-batch | 28/159 klart, resten opportunistiskt |
 | 2026-04-01 | Sprint 3: invite + push + demo | Activation-lager for leverantorsdemo |
 | 2026-04-01 | Apple Developer kraves for push | Johan koper, push-kod forbereds utan APNs |
+| 2026-04-01 | Sekventiellt arbete, en session at gangen | Delad working directory, parallella branches krockar |
+| 2026-04-01 | S3-2 otaggad fran ios till fullstack | Push-prep ar mest server-side TS, kan koras av fullstack |
 
 ## Blockerare
 

@@ -21,9 +21,13 @@ Sessioner startas med ett kort kommando som anger roll:
 |----------|------|------------------------|
 | "kor" | Fullstack | `fullstack` eller otaggade |
 | "kor ios" | iOS-utvecklare | `ios` |
-| "kor review" | Tech lead / review | Granskar in_progress stories |
+| "kor review" | Tech lead / review | Granskar review_requested stories |
 
 Om ingen roll anges: default till fullstack.
+
+**EN SESSION AT GANGEN.** Alla sessioner delar samma working directory.
+Kor aldrig parallella sessioner -- de krockar pa branches och filer.
+Flode: en session -> klar -> review -> nasta session.
 
 ## Steg
 

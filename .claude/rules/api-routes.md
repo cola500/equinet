@@ -91,7 +91,7 @@ src/app/api/[feature]/
 - **Error mapper per domän**: `domain/X/mapXErrorToStatus.ts` mappar domänfel till HTTP-statuskoder. Importeras av alla routes i domänen. Befintliga: horse, auth, group-booking, review, customer-review.
 - **Immutabla modeller förenklar MVP**: Skippa PUT/DELETE = halverad API-yta. Lägg till redigering vid behov.
 - **SessionUser-typ**: `(session.user as SessionUser)` från `@/types/auth` ersätter `session.user as any` i API routes. Behövs pga NextAuth-typinferens.
-- **Payload-minimering**: Varje `select`-block ska bara inkludera falt som klienten faktiskt renderar. For list-queries: granska UI-komponenten och bekrafta vilka falt som anvands. For single-entity-queries: fler falt ar OK. Anvand `groupBy` istallet for att hamta alla rader + JS-aggregering. Regler: (1) aldrig `include`, (2) aldrig `take: 10000`, (3) granska UI fore select-block.
+- **Payload-minimering**: Varje `select`-block ska bara inkludera fält som klienten faktiskt renderar. För list-queries: granska UI-komponenten och bekräfta vilka fält som används. För single-entity-queries: fler fält är OK. Använd `groupBy` istället för att hämta alla rader + JS-aggregering. Regler: (1) aldrig `include`, (2) aldrig `take: 10000`, (3) granska UI före select-block.
 
 ## AI-route-specifikt
 

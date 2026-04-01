@@ -31,17 +31,17 @@ sections:
 
 - `min-h-[44px] sm:min-h-0` inbakat i Button (default/lg), Input, SelectTrigger
 - `size="sm"` knappar far INTE automatiska touch targets -- lagg till manuellt
-- Nativa element (button, select, span, a): anvand `touch-target` CSS utility
+- Nativa element (button, select, span, a): använd `touch-target` CSS utility
 - Knapp-stacking: `flex-col gap-2 sm:flex-row`
 - Formular-grid: `grid-cols-1 sm:grid-cols-2`
 
 ## ResponsiveAlertDialog -- KRITISKA regler
 
-- **ALDRIG always-mounted** (`open={!!state}`). Anvand ALLTID villkorad rendering (`{state && <Dialog open={true}>}`)
+- **ALDRIG always-mounted** (`open={!!state}`). Använd ALLTID villkorad rendering (`{state && <Dialog open={true}>}`)
 - Barn-komponenter laser `isMobile` via React Context (inte egna `useIsMobile()`-anrop)
 - Action handlers MASTE explicit stanga dialogen (`setState(null)`) -- auto-close fungerar inte pa mobil
 - Cancel behover explicit `onClick={() => setState(null)}`
-- Rendera ALDRIG AlertDialog med AlertDialogTrigger inuti `.map()` -- anvand kontrollerad state + en dialog utanfor loopen
+- Rendera ALDRIG AlertDialog med AlertDialogTrigger inuti `.map()` -- använd kontrollerad state + en dialog utanför loopen
 
 ## VoiceTextarea
 

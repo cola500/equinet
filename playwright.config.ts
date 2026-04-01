@@ -115,6 +115,7 @@ export default defineConfig({
         FEATURE_GROUP_BOOKINGS: 'true',
         FEATURE_BUSINESS_INSIGHTS: 'true',
         FEATURE_RECURRING_BOOKINGS: 'true',
+        FEATURE_CUSTOMER_INVITE: 'true',
       },
     },
     ...(process.env.OFFLINE_E2E === 'true'
