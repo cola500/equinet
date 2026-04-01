@@ -88,6 +88,7 @@ describe("feature-flags", () => {
         push_notifications: false,
         help_center: true,
         stable_profiles: false,
+        stripe_payments: false,
         demo_mode: false,
       })
     })

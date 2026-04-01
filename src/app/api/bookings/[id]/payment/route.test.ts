@@ -75,10 +75,15 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
 // --- Imports ---
 
 import { auth } from "@/lib/auth-server"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 import {
   createBookingPaymentReceivedEvent,
 } from "@/domain/booking"
@@ -131,9 +136,19 @@ describe("POST /api/bookings/[id]/payment", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", email: "anna@example.com", userType: "customer" },
     } as never)
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockProcessPayment.mockResolvedValue(
       Result.ok({ payment: mockPaymentRecord, eventData: mockEventData }),
     )
+  })
+
+  it("returns 404 when stripe_payments flag is disabled", async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
+    const res = await POST(createRequest(BOOKING_ID), { params })
+    const body = await res.json()
+    expect(res.status).toBe(404)
+    expect(body.error).toBe("Ej tillgänglig")
+    expect(isFeatureEnabled).toHaveBeenCalledWith("stripe_payments")
   })
 
   it("returns 401 when session is null", async () => {

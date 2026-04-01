@@ -37,6 +37,7 @@ function mockBookingForStatus(overrides: Partial<BookingForStatus> = {}): Bookin
 
 function successGateway(): IPaymentGateway {
   return {
+    providerName: "mock",
     initiatePayment: vi.fn().mockResolvedValue({
       success: true,
       providerPaymentId: "mock_pay_123",
@@ -49,6 +50,7 @@ function successGateway(): IPaymentGateway {
 
 function failGateway(error?: string): IPaymentGateway {
   return {
+    providerName: "mock",
     initiatePayment: vi.fn().mockResolvedValue({
       success: false,
       providerPaymentId: "",
