@@ -24,7 +24,7 @@ sections:
 | S3-1 Kundinbjudningar | fullstack | Dev | done | feature/s3-1-customer-invite | a7050a2e |
 | S3-2 Push-forberedelse | fullstack | Dev | done | feature/s3-2-push-preparation | f3e14809 |
 | S3-3 Demo-polish | fullstack | - | pending | - | - |
-| S3-4 Recensioner seed | fullstack | - | backlog | - | - |
+| S3-4 Recensioner seed | fullstack | Dev | review_requested | feature/s3-4-reviews-seed | - |
 
 **Sprint 2** (avslutad parallellt):
 
