@@ -230,8 +230,13 @@ npm run dev
 
 ### Vad gick bra?
 
-### Vad kan forbattras?
+### Vad kan förbättras?
 
-### Ar appen redo att visas? (ja/nej + motivering)
+### Processändring till nästa sprint?
 
-### Vad ar nasta steg efter demo?
+> Varje sprint MÅSTE resultera i minst en processförbättring.
+> Om inget behöver ändras -- ifrågasätt hårdare.
+
+### Är appen redo att visas? (ja/nej + motivering)
+
+### Vad är nästa steg efter demo?

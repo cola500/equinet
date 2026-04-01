@@ -2,6 +2,10 @@
 
 > Denna fil styr hur alla Claude-sessioner samarbetar i projektet.
 > CLAUDE.md ar den tekniska referensen. Denna fil ar den organisatoriska.
+>
+> **Grundprincip: Processen evolverar varje sprint.** Inget arbetssatt ar permanent.
+> Varje sprint-retro identifierar vad som inte fungerar och fixar det.
+> Om en regel hindrar mer an den hjalper -- andra den.
 
 ## Roller
 
