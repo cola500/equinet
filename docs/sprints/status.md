@@ -17,7 +17,17 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 3: Launch Readiness** (docs/sprints/sprint-3.md)
+**Sprint 4: Demo-Ready Production** (docs/sprints/sprint-4.md)
+
+| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
+|-------|------|----------|--------|--------|----------------|
+| S4-1 Produktionsdeploy | fullstack | - | pending | - | - |
+| S4-2 Invite live | fullstack | - | pending | - | - |
+| S4-3 Due-for-service native | fullstack | - | pending | - | - |
+| S4-4 UX-polish native | fullstack | - | pending | - | - |
+| S4-5 Demo-data prod | fullstack | - | backlog | - | - |
+
+**Sprint 3** (klar):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
@@ -26,7 +36,7 @@ sections:
 | S3-3 Demo-polish | fullstack | Dev | done | feature/s3-3-demo-polish | 3682adb5 |
 | S3-4 Recensioner seed | fullstack | Dev | done | feature/s3-4-reviews-seed | 4fbf007b |
 
-**Sprint 2** (avslutad parallellt):
+**Sprint 2** (klar):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
