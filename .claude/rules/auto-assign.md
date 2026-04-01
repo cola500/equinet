@@ -29,6 +29,12 @@ Om ingen roll anges: default till fullstack.
 Kor aldrig parallella sessioner -- de krockar pa branches och filer.
 Flode: en session -> klar -> review -> nasta session.
 
+## STOPP-REGLER (bryt ALDRIG dessa)
+
+1. **Pusha ALDRIG till main.** Alltid feature branch. Pre-push hook blockerar.
+2. **Implementera ALDRIG innan planen ar godkand.** Committa planen, VANTA pa att Johan sager "godkand", borja SEDAN.
+3. **Uppdatera ALLTID status.md vid varje commit.**
+
 ## Steg
 
 1. Las `docs/sprints/status.md` -- vilka stories ar pending?
