@@ -550,20 +550,8 @@ struct DueForServiceItem: Codable, Identifiable, Sendable {
         return f
     }()
 
-    private static let isoFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    private static let isoFormatterNoFractions: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-
     private static func isoDate(_ string: String) -> Date? {
-        isoFormatter.date(from: string) ?? isoFormatterNoFractions.date(from: string)
+        try? Date(string, strategy: .iso8601)
     }
 }
 
@@ -988,6 +976,7 @@ struct NativeDueForServiceView: View {
             .refreshable {
                 await viewModel.refresh()
             }
+            .sensoryFeedback(.success, trigger: viewModel.items.count)
     }
 
     @ViewBuilder
@@ -1086,6 +1075,12 @@ struct NativeDueForServiceView: View {
         }
     }
 
+    // MARK: - Actions
+
+    private func retry() {
+        Task { await viewModel.loadItems() }
+    }
+
     // MARK: - Error
 
     private func errorView(_ message: String) -> some View {
@@ -1096,10 +1091,8 @@ struct NativeDueForServiceView: View {
                 .foregroundStyle(.secondary)
             Text(message)
                 .foregroundStyle(.secondary)
-            Button("Forsok igen") {
-                Task { await viewModel.loadItems() }
-            }
-            .buttonStyle(.bordered)
+            Button("Forsok igen", action: retry)
+                .buttonStyle(.bordered)
             Spacer()
         }
     }
@@ -1164,7 +1157,7 @@ private struct DueForServiceRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(badgeBackground)
-        .clipShape(Capsule())
+        .clipShape(.capsule)
     }
 
     private var statusIcon: String {
@@ -1217,7 +1210,7 @@ private struct SummaryCard: View {
         }
         .padding(12)
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: 12))
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(count) \(label)")
