@@ -52,6 +52,7 @@ describe("GET /api/feature-flags", () => {
       customer_invite: false,
       help_center: true,
       stable_profiles: false,
+      stripe_payments: false,
       demo_mode: false,
     })
   })

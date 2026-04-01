@@ -139,7 +139,7 @@ export class PaymentService {
       bookingId: booking.id,
       amount: booking.service.price,
       currency: "SEK",
-      provider: "mock",
+      provider: this.deps.paymentGateway.providerName,
       providerPaymentId: paymentResult.providerPaymentId,
       status: paymentResult.status,
       paidAt: paymentResult.paidAt,

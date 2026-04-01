@@ -150,6 +150,14 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
+  stripe_payments: {
+    key: "stripe_payments",
+    label: "Stripe-betalningar",
+    description: "Betalning via Stripe (kort/Swish) i bokningsflödet",
+    defaultEnabled: false,
+    clientVisible: true,
+    category: "shared",
+  },
   demo_mode: {
     key: "demo_mode",
     label: "Demo-läge",

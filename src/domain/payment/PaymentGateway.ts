@@ -23,6 +23,7 @@ export interface PaymentResult {
 }
 
 export interface IPaymentGateway {
+  readonly providerName: string
   initiatePayment(request: PaymentRequest): Promise<PaymentResult>
   checkStatus(providerPaymentId: string): Promise<PaymentResult>
 }
@@ -31,6 +32,8 @@ export interface IPaymentGateway {
 // Instant success, no external calls. Used for development/demo.
 
 export class MockPaymentGateway implements IPaymentGateway {
+  readonly providerName = "mock"
+
   async initiatePayment(_request: PaymentRequest): Promise<PaymentResult> {
     const providerPaymentId = `mock_pay_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
 
@@ -54,11 +57,22 @@ export class MockPaymentGateway implements IPaymentGateway {
 
 /**
  * Factory function to get the appropriate payment gateway.
- * Currently always returns MockPaymentGateway.
- * When adding a real provider, switch based on env variable:
- *   PAYMENT_PROVIDER=swish -> new SwishPaymentGateway()
- *   PAYMENT_PROVIDER=stripe -> new StripePaymentGateway()
+ * Switches based on PAYMENT_PROVIDER env variable.
+ * Default: MockPaymentGateway (instant success, no external calls).
  */
 export function getPaymentGateway(): IPaymentGateway {
+  const provider = process.env.PAYMENT_PROVIDER
+
+  if (provider === "stripe") {
+    const secretKey = process.env.STRIPE_SECRET_KEY
+    if (!secretKey) {
+      throw new Error("STRIPE_SECRET_KEY is required when PAYMENT_PROVIDER=stripe")
+    }
+    // Lazy import to avoid loading Stripe SDK when not needed
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { StripePaymentGateway } = require("./StripePaymentGateway")
+    return new StripePaymentGateway(secretKey)
+  }
+
   return new MockPaymentGateway()
 }

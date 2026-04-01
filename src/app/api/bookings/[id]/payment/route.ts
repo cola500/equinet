@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth-server"
 import { requireAuth } from "@/lib/roles"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 import { createPaymentService, mapPaymentErrorToStatus, mapPaymentErrorToMessage } from "@/domain/payment"
 import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { notificationService } from "@/domain/notification/NotificationService"
@@ -22,6 +23,10 @@ export async function POST(
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {
       return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
+    if (!(await isFeatureEnabled("stripe_payments"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     // Delegate to PaymentService
