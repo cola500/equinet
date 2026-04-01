@@ -43,7 +43,7 @@ sections:
 - **`select` > `include`**: Bade performance och sakerhet
 - **`$transaction` kraver `@ts-expect-error`**: Kanda TS-inferensproblem med callback-syntax
 - **NOT NULL utan default failar** om tabellen har data. Fix: `--create-only`, andra SQL till `ADD COLUMN ... DEFAULT now()`, kor `migrate dev` igen
-- **Anvand `prisma migrate dev`** for schemaandringar (INTE `db push`). Baseline migration `0_init` representerar hela schemat
+- **Använd `prisma migrate dev`** för schemaändringar (INTE `db push`). Baseline migration `0_init` representerar hela schemat
 - **Kor `get_advisors(type: "security")` efter nya tabeller** -- RLS kan missas
 
 ## Repository Pattern

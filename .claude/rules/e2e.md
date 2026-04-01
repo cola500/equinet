@@ -41,7 +41,7 @@ sections:
 
 ## Gotchas
 
-- **Undvik `waitForTimeout()`** -- anvand explicit waits (`waitFor({ state: 'visible' })`)
+- **Undvik `waitForTimeout()`** -- använd explicit waits (`waitFor({ state: 'visible' })`)
 - **Unika identifiers** med `Date.now()` for test isolation
 - **Varje test MASTE vara oberoende** -- dela ALDRIG state mellan tester
 - **`futureWeekday()`** fran `e2e/setup/e2e-utils.ts` -- garanterar vardag (man-fre)

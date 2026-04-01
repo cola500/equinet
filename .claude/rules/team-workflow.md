@@ -6,7 +6,7 @@ status: active
 last_updated: 2026-04-01
 tags: [workflow, team, review, tdd, quality]
 sections:
-  - Oversikt
+  - Översikt
   - Station 1 PLAN
   - Station 2 RED
   - Station 3 GREEN
@@ -18,7 +18,7 @@ sections:
 
 # Team Workflow -- Stationsflode
 
-## Oversikt
+## Översikt
 
 Varje feature passerar 6 stationer. Commit efter varje station.
 Om en station misslyckas, ga tillbaka till ratt station (aldrig framat).
@@ -95,7 +95,7 @@ Alla tester MASTE faila. Om nagot test passerar utan implementation -- testet te
 ### Regler
 
 - Implementera BARA det som behovs for att tester passerar
-- En logisk andring per TDD-cykel
+- En logisk ändring per TDD-cykel
 - Om en refactor bryter ett test -- revertera refactorn
 - Vid ny API route: folj api-routes.md checklista
 - Vid ny feature flag: folj feature-flags.md checklista

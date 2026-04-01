@@ -136,7 +136,7 @@ Anvands bara vid andringar i `ios/` eller `/api/native/`.
 |------|-----------|---------|
 | **Blocker** | Sakerhetssarbarhet, dataintegritetsproblem, krasch | MASTE fixas fore merge |
 | **Major** | Fel beteende, saknad validering, bruten testning | BOR fixas fore merge |
-| **Minor** | Stilproblem, suboptimal losning, saknad loggning | Kan fixas i nasta iteration |
+| **Minor** | Stilproblem, suboptimal lösning, saknad loggning | Kan fixas i nästa iteration |
 | **Suggestion** | Forbattringsforslag, alternativa approaches | Frivilligt |
 
 ### Exempel
