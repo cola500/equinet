@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireCustomer } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { logger } from "@/lib/logger"
 import { ReviewService } from "@/domain/review/ReviewService"
 import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
 import { notificationService } from "@/domain/notification/NotificationService"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const createReviewSchema = z.object({
   bookingId: z.string().min(1, "Booking ID krävs"),
@@ -17,28 +14,9 @@ const createReviewSchema = z.object({
 }).strict()
 
 // POST - Create a review for a completed booking
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
-    const { userId } = requireCustomer(session)
-
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    // Validate
-    const validated = createReviewSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "customer", schema: createReviewSchema },
+  async ({ user, body }) => {
     const reviewService = new ReviewService({
       reviewRepository: new ReviewRepository(),
       getBooking: async (id) => {
@@ -76,10 +54,10 @@ export async function POST(request: NextRequest) {
     })
 
     const result = await reviewService.createReview({
-      bookingId: validated.bookingId,
-      customerId: userId,
-      rating: validated.rating,
-      comment: validated.comment || null,
+      bookingId: body.bookingId,
+      customerId: user.userId,
+      rating: body.rating,
+      comment: body.comment || null,
     })
 
     if (result.isFailure) {
@@ -90,22 +68,5 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(result.value, { status: 201 })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error creating review", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte skapa omdöme" },
-      { status: 500 }
-    )
   }
-}
+)

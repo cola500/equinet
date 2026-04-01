@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { withApiHandler } from "@/lib/api-handler"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { createHorseService } from "@/domain/horse/HorseService"
 import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
 
@@ -17,73 +15,28 @@ const setStableSchema = z
 
 // PATCH - Set or remove stable link for a horse
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const clientIp = getClientIP(request)
-  const isAllowed = await rateLimiters.api(clientIp)
-  if (!isAllowed) {
-    return NextResponse.json(
-      { error: "För många förfrågningar. Försök igen om en minut." },
-      { status: 429 }
-    )
-  }
+  return withApiHandler(
+    { auth: "any", schema: setStableSchema, featureFlag: "stable_profiles" },
+    async ({ user, body }) => {
+      const { id } = await context.params
 
-  if (!(await isFeatureEnabled("stable_profiles"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
+      const service = createHorseService()
+      const result = await service.setStable(id, body.stableId, user.userId)
 
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-    const { id } = await context.params
+      if (result.isFailure) {
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: mapHorseErrorToStatus(result.error) }
+        )
+      }
 
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
-        { status: 400 }
-      )
-    }
+      logger.info("Horse stable updated", {
+        horseId: id,
+        stableId: body.stableId,
+        ownerId: user.userId,
+      })
 
-    // Validate input
-    const validated = setStableSchema.parse(body)
-
-    const service = createHorseService()
-    const result = await service.setStable(id, validated.stableId, session.user.id)
-
-    if (result.isFailure) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: mapHorseErrorToStatus(result.error) }
-      )
-    }
-
-    logger.info("Horse stable updated", {
-      horseId: id,
-      stableId: validated.stableId,
-      ownerId: session.user.id,
-    })
-
-    return NextResponse.json(result.value)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Failed to update horse stable", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte uppdatera stallkoppling" },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json(result.value)
+    },
+  )(request)
 }

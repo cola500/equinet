@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { withApiHandler } from "@/lib/api-handler"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { createHorseService } from "@/domain/horse/HorseService"
 import { mapHorseErrorToStatus } from "@/domain/horse/mapHorseErrorToStatus"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 
 const NOTE_CATEGORIES = [
   "veterinary",
@@ -38,123 +37,66 @@ type RouteContext = { params: Promise<{ id: string }> }
 
 // GET - List notes for a horse (owner only)
 export async function GET(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+  return withApiHandler(
+    { auth: "any" },
+    async ({ request: req, user }) => {
+      const { id: horseId } = await context.params
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
+      // Optional category filter
+      const { searchParams } = new URL(req.url)
+      const category = searchParams.get("category")
+      const validCategory = category && (NOTE_CATEGORIES as readonly string[]).includes(category)
+        ? category
+        : undefined
 
-    const { id: horseId } = await context.params
+      const service = createHorseService()
+      const result = await service.listNotes(horseId, user.userId, validCategory)
 
-    // Optional category filter
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get("category")
-    const validCategory = category && (NOTE_CATEGORIES as readonly string[]).includes(category)
-      ? category
-      : undefined
+      if (result.isFailure) {
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: mapHorseErrorToStatus(result.error) }
+        )
+      }
 
-    const service = createHorseService()
-    const result = await service.listNotes(horseId, session.user.id, validCategory)
-
-    if (result.isFailure) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: mapHorseErrorToStatus(result.error) }
-      )
-    }
-
-    return NextResponse.json(result.value)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Failed to fetch horse notes", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte hämta anteckningar" },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json(result.value)
+    },
+  )(request)
 }
 
 // POST - Create note for a horse (owner only)
 export async function POST(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
+  return withApiHandler(
+    { auth: "any", schema: noteCreateSchema },
+    async ({ user, body }) => {
+      const { id: horseId } = await context.params
 
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
-    }
-
-    const { id: horseId } = await context.params
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
-        { status: 400 }
+      const service = createHorseService()
+      const result = await service.createNote(
+        horseId,
+        {
+          category: body.category,
+          title: body.title,
+          content: body.content,
+          noteDate: new Date(body.noteDate),
+        },
+        user.userId
       )
-    }
 
-    // Validate
-    const validated = noteCreateSchema.parse(body)
+      if (result.isFailure) {
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: mapHorseErrorToStatus(result.error) }
+        )
+      }
 
-    const service = createHorseService()
-    const result = await service.createNote(
-      horseId,
-      {
-        category: validated.category,
-        title: validated.title,
-        content: validated.content,
-        noteDate: new Date(validated.noteDate),
-      },
-      session.user.id
-    )
+      logger.info("Horse note created", {
+        noteId: result.value.id,
+        horseId,
+        category: body.category,
+      })
 
-    if (result.isFailure) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: mapHorseErrorToStatus(result.error) }
-      )
-    }
-
-    logger.info("Horse note created", {
-      noteId: result.value.id,
-      horseId,
-      category: validated.category,
-    })
-
-    return NextResponse.json(result.value, { status: 201 })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Failed to create horse note", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte skapa anteckning" },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json(result.value, { status: 201 })
+    },
+  )(request)
 }

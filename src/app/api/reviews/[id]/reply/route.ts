@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { auth } from "@/lib/auth-server"
 import { authFromMobileToken } from "@/lib/mobile-auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { logger } from "@/lib/logger"
 import { ReviewService } from "@/domain/review/ReviewService"
 import { mapReviewErrorToStatus } from "@/domain/review/mapReviewErrorToStatus"
 import { ReviewRepository } from "@/infrastructure/persistence/review/ReviewRepository"
-import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 
 const replySchema = z.object({
   reply: z.string().min(1, "Svar krävs").max(500, "Svar kan vara max 500 tecken"),
@@ -31,166 +30,97 @@ async function resolveAuth(request: NextRequest): Promise<{ userId: string; user
   return { userId: session.user.id, userType: (session.user as { userType: string }).userType }
 }
 
-// POST - Add a reply to a review (provider only)
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId, userType } = await resolveAuth(request)
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
 
-    // Rate limiting (fail-closed)
-    try {
-      const clientIp = getClientIP(request)
-      const isAllowed = await rateLimiters.api(clientIp)
-      if (!isAllowed) {
-        return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+// POST - Add a reply to a review (provider only)
+export async function POST(request: NextRequest, context: RouteContext) {
+  return withApiHandler(
+    { auth: "none", schema: replySchema },
+    async ({ request: req, body }) => {
+      const { userId, userType } = await resolveAuth(req)
+      const { id: reviewId } = await context.params
+
+      if (userType !== "provider") {
+        return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
       }
-    } catch (error) {
-      if (error instanceof RateLimitServiceError) {
+
+      // Find the provider for the current user
+      const provider = await prisma.provider.findUnique({
+        where: { userId },
+        select: { id: true },
+      })
+
+      if (!provider) {
+        return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
+      }
+
+      const reviewService = new ReviewService({
+        reviewRepository: new ReviewRepository(),
+        getBooking: async () => null,
+        getProviderUserId: async () => null,
+      })
+
+      const result = await reviewService.addReply({
+        reviewId,
+        reply: body.reply,
+        providerId: provider.id,
+      })
+
+      if (result.isFailure) {
         return NextResponse.json(
-          { error: "Tjänsten är tillfälligt otillgänglig" },
-          { status: 503 }
+          { error: result.error.message },
+          { status: mapReviewErrorToStatus(result.error) }
         )
       }
-      throw error
-    }
 
-    const { id: reviewId } = await params
-
-    if (userType !== "provider") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    const validated = replySchema.parse(body)
-
-    // Find the provider for the current user
-    const provider = await prisma.provider.findUnique({
-      where: { userId },
-      select: { id: true },
-    })
-
-    if (!provider) {
-      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
-    }
-
-    const reviewService = new ReviewService({
-      reviewRepository: new ReviewRepository(),
-      getBooking: async () => null,
-      getProviderUserId: async () => null,
-    })
-
-    const result = await reviewService.addReply({
-      reviewId,
-      reply: validated.reply,
-      providerId: provider.id,
-    })
-
-    if (result.isFailure) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: mapReviewErrorToStatus(result.error) }
-      )
-    }
-
-    return NextResponse.json(result.value)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Error adding reply", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte lägga till svar" },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json(result.value)
+    },
+  )(request)
 }
 
 // DELETE - Remove a reply from a review (provider only)
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId, userType } = await resolveAuth(request)
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  return withApiHandler(
+    { auth: "none" },
+    async ({ request: req }) => {
+      const { userId, userType } = await resolveAuth(req)
+      const { id: reviewId } = await context.params
 
-    // Rate limiting (fail-closed)
-    try {
-      const clientIp = getClientIP(request)
-      const isAllowed = await rateLimiters.api(clientIp)
-      if (!isAllowed) {
-        return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+      if (userType !== "provider") {
+        return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
       }
-    } catch (error) {
-      if (error instanceof RateLimitServiceError) {
+
+      // Find the provider for the current user
+      const provider = await prisma.provider.findUnique({
+        where: { userId },
+        select: { id: true },
+      })
+
+      if (!provider) {
+        return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
+      }
+
+      const reviewService = new ReviewService({
+        reviewRepository: new ReviewRepository(),
+        getBooking: async () => null,
+        getProviderUserId: async () => null,
+      })
+
+      const result = await reviewService.deleteReply({
+        reviewId,
+        providerId: provider.id,
+      })
+
+      if (result.isFailure) {
         return NextResponse.json(
-          { error: "Tjänsten är tillfälligt otillgänglig" },
-          { status: 503 }
+          { error: result.error.message },
+          { status: mapReviewErrorToStatus(result.error) }
         )
       }
-      throw error
-    }
 
-    const { id: reviewId } = await params
-
-    if (userType !== "provider") {
-      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
-    }
-
-    // Find the provider for the current user
-    const provider = await prisma.provider.findUnique({
-      where: { userId },
-      select: { id: true },
-    })
-
-    if (!provider) {
-      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
-    }
-
-    const reviewService = new ReviewService({
-      reviewRepository: new ReviewRepository(),
-      getBooking: async () => null,
-      getProviderUserId: async () => null,
-    })
-
-    const result = await reviewService.deleteReply({
-      reviewId,
-      providerId: provider.id,
-    })
-
-    if (result.isFailure) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: mapReviewErrorToStatus(result.error) }
-      )
-    }
-
-    return new Response(null, { status: 204 })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Error deleting reply", error instanceof Error ? error : new Error(String(error)))
-    return NextResponse.json(
-      { error: "Kunde inte ta bort svar" },
-      { status: 500 }
-    )
-  }
+      return new NextResponse(null, { status: 204 })
+    },
+  )(request)
 }
