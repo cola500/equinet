@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S5-1 Stripe-konto + config | fullstack | Johan | done | - | Vercel env satta |
 | S5-2 StripePaymentGateway | fullstack | Dev | done | feature/s5-2-stripe-payment-gateway | 6454d5b6 |
-| S5-3 Stripe webhook-route | fullstack | Dev | review_requested | feature/s5-3-stripe-webhook | ef250064 |
+| S5-3 Stripe webhook-route | fullstack | Dev | done | feature/s5-3-stripe-webhook | ef250064 |
 | S5-4 Betalning UI | fullstack | - | pending | - | - |
 | S5-5 E2E betalning | fullstack | - | backlog | - | - |
 
