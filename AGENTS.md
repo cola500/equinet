@@ -57,13 +57,36 @@ Detaljerade checklistor finns i `.claude/rules/team-workflow.md`.
 
 ## Kommunikation mellan sessioner
 
+### Live-status (docs/sprints/status.md) -- OBLIGATORISK
+
+`docs/sprints/status.md` ar teamets delade tillstand. **Alla sessioner MASTE uppdatera den vid varje commit.**
+
+Filen innehaller:
+- Story-status per sprint (pending/in_progress/done)
+- Aktiva sessioner (vem gor vad pa vilken branch)
+- Beslut som paverkar andra sessioner
+- Blockerare
+
+**Workflow:**
+1. Las `status.md` vid sessionstart -- vad pagar? Vilka branches finns?
+2. Uppdatera "Sessioner"-tabellen med din roll och branch
+3. Vid varje commit: uppdatera story-status och senaste commit-hash
+4. Vid sessionsslut: rensa din rad fran Sessioner-tabellen
+
+En Claude Code hook (`sprint-status-update.sh`) paminner vid commit om filen inte ar staged.
+
 ### Sprint-dokument (docs/sprints/)
 
 Alla sessioner refererar till det aktiva sprint-dokumentet.
 Sprint-dokumentet innehaller:
-- User stories med prioritet
-- Status per story (pending, in_progress, review, done)
-- Blockerare och beroenden
+- User stories med acceptanskriterier
+- Detaljerade uppgifter per story
+- Prioritetsordning
+
+### Git ar kommunikationskanalen
+
+Tech lead laser `git log`, `git diff` och `status.md` for att folja arbetet.
+Utvecklare behover inte rapportera separat -- committa, uppdatera status.md, pusha.
 
 ### Branch-konvention
 
@@ -78,8 +101,8 @@ En branch = en story. Blanda ALDRIG arbete fran olika stories.
 ### Overgangsinformation
 
 Nar en session avslutas, lamna:
-1. Retro i `docs/retrospectives/` (vid storre arbete)
-2. Uppdaterad status i sprint-dokumentet
+1. Uppdaterad `docs/sprints/status.md` (rensa din session-rad)
+2. Retro i `docs/retrospectives/` (vid storre arbete)
 3. Commit med tydligt meddelande om var arbetet stannade
 
 ---
