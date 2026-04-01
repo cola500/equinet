@@ -162,13 +162,42 @@ equinet-app.vercel.app ska kunna visas live för en leverantör med självförtr
 
 ---
 
+### S4-6: Observability -- Sentry + uptime -- READY
+
+**Prioritet:** Hög (innan demo)
+**Typ:** Operations
+**Beskrivning:** Sentry SDK finns installerat och konfigurerat men DSN saknas -- helt inaktivt. 15 min arbete för full klient+server-felrapportering.
+
+**Uppgifter:**
+
+1. Skapa Sentry-projekt (sentry.io, gratis Developer-plan räcker)
+2. Sätt `NEXT_PUBLIC_SENTRY_DSN` + `SENTRY_ORG` + `SENTRY_PROJECT` i Vercel env
+3. Lägg till `Sentry.captureException(error)` i:
+   - `src/app/error.tsx` (global error boundary)
+   - `src/app/provider/error.tsx` (provider error boundary)
+4. Sätt upp UptimeRobot (gratis) att pinga `https://equinet-app.vercel.app/api/health` var 5 min
+5. Valfritt: installera `@vercel/analytics` i root layout
+
+**Acceptanskriterier:**
+- [ ] Sentry-dashboard visar minst ett test-event
+- [ ] Error boundaries rapporterar till Sentry
+- [ ] UptimeRobot alert konfigurerat (email till Johan)
+- [ ] `/api/health` svarar 200
+
+**Stationsflöde:** Förenklat (operations): Green -> Verify -> Merge
+
+**OBS:** Sentry-projekt och UptimeRobot kräver Johans konto-skapande. Dev sköter koden.
+
+---
+
 ## Prioritetsordning
 
-1. **S4-1** (deploy) -- grund för allt annat
-2. **S4-2** (invite live) -- synlig feature för demo
-3. **S4-3** (due-for-service) -- ny native-skärm, visar djup
-4. **S4-4** (polish) -- professionellt intryck
-5. **S4-5** (demo-data) -- backlog, om tid finns
+1. **S4-1** (deploy) -- DONE
+2. **S4-2** (invite live) -- DONE
+3. **S4-3** (due-for-service) -- Dev jobbar
+4. **S4-6** (observability) -- efter S4-3, innan demo
+5. **S4-4** (polish) -- professionellt intryck
+6. **S4-5** (demo-data) -- backlog, om tid finns
 
 ---
 
