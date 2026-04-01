@@ -24,6 +24,7 @@ sections:
 | S6-1 BDD integrationstest-audit | fullstack | Dev | done | feature/s6-1-bdd-integration-audit | da476ddd |
 | S6-2 Stripe E2E fungerar lokalt | fullstack | Dev | done | feature/s6-2-stripe-e2e-fix | 23085a33 |
 | S6-3 Swish i Stripe | fullstack | - | pending (blocker) | - | - |
+| S6-4 RLS spike | fullstack | Dev | in_progress | feature/s6-4-rls-spike | - |
 
 **Sprint 5** (klar):
 
@@ -57,7 +58,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S6-2 Stripe E2E fix | feature/s6-2-stripe-e2e-fix | 2026-04-01 |
+| Dev | Fullstack | S6-4 RLS spike | feature/s6-4-rls-spike | 2026-04-01 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
