@@ -51,6 +51,9 @@ Detaljerade checklistor finns i `.claude/rules/team-workflow.md`.
 **Station 1-6 ar autonoma.** Utvecklare kor utan att fraga.
 **Station 7 ar tech lead-granskning.** Triggas via "kor review".
 
+**VIKTIGT: En branch at gangen.** Alla sessioner delar samma working directory.
+Kor en session, lat den bli klar, kor review, sedan nasta. Aldrig parallella sessioner.
+
 **Regler:**
 - Hoppa ALDRIG over en station
 - Committa efter varje station (sa vi kan rulla tillbaka)
