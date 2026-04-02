@@ -17,15 +17,23 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 7: RLS Fas 1 + lansering** (docs/sprints/sprint-7.md)
+**Sprint 8: iOS native-migrering** (docs/sprints/sprint-8.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S7-1 Fas 1 RLS ownership-guards | fullstack | Dev | done | feature/s7-1-ownership-guards | ab6d8ced |
-| S7-2 Push live | fullstack | - | pending (blocker: Apple Dev) | - | - |
-| S7-3 Stripe live-mode | fullstack | - | pending (blocker: Stripe) | - | - |
-| S7-4 Voice logging AI-spike | fullstack | Dev | done | feature/s7-4-voice-logging-spike | f2e62e6f |
-| S7-5 Voice logging polish | fullstack | - | pending | - | - |
+| S8-1 Annonsering native | fullstack | - | pending | - | - |
+| S8-2 Business insights native | fullstack | - | pending | - | - |
+| S8-3 Voice logging polish | fullstack | - | pending | - | - |
+
+**Sprint 7** (klar, blockerare -> backlog):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S7-1 RLS Fas 1 | fullstack | Dev | done |
+| S7-4 Voice logging spike | fullstack | Dev | done |
+| S7-2 Push live | - | - | backlog (Apple Dev) |
+| S7-3 Stripe live-mode | - | - | backlog (Stripe) |
+| S7-5 Voice logging polish | - | - | flyttad till S8-3 |
 
 **Sprint 6** (klar):
 
