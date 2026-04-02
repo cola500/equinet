@@ -23,7 +23,8 @@ export interface UpdatePaymentData {
 
 export interface PaymentWebhookDeps {
   findPaymentByProviderPaymentId: (providerPaymentId: string) => Promise<PaymentForWebhook | null>
-  updatePaymentStatus: (paymentId: string, data: UpdatePaymentData) => Promise<void>
+  /** Atomic update: only modifies row if current status is NOT in guardNotInStatus. Returns affected row count. */
+  updatePaymentStatus: (paymentId: string, data: UpdatePaymentData, guardNotInStatus: string[]) => Promise<number>
   generateInvoiceNumber: () => string
   getBaseUrl: () => string
 }
@@ -51,12 +52,20 @@ export class PaymentWebhookService {
     const bookingId = metadata.bookingId || payment.bookingId
     const invoiceUrl = `${this.deps.getBaseUrl()}/api/bookings/${bookingId}/receipt`
 
-    await this.deps.updatePaymentStatus(payment.id, {
+    const updated = await this.deps.updatePaymentStatus(payment.id, {
       status: "succeeded",
       paidAt: new Date(),
       invoiceNumber,
       invoiceUrl,
-    })
+    }, ["succeeded"])
+
+    if (updated === 0) {
+      logger.info("Payment already succeeded (concurrent update), skipping", {
+        paymentId: payment.id,
+        paymentIntentId,
+      })
+      return
+    }
 
     logger.info("Payment marked as succeeded via webhook", {
       paymentId: payment.id,
@@ -84,9 +93,17 @@ export class PaymentWebhookService {
       return
     }
 
-    await this.deps.updatePaymentStatus(payment.id, {
+    const updated = await this.deps.updatePaymentStatus(payment.id, {
       status: "failed",
-    })
+    }, ["succeeded", "failed"])
+
+    if (updated === 0) {
+      logger.info("Payment already in terminal state (concurrent update), skipping", {
+        paymentId: payment.id,
+        paymentIntentId,
+      })
+      return
+    }
 
     logger.info("Payment marked as failed via webhook", {
       paymentId: payment.id,
