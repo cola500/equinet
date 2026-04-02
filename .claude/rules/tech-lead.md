@@ -29,12 +29,18 @@ Utvecklaren committar en plan på sin feature branch (lokalt).
 
 1. Läs planen **lokalt först**: `git show feature/<branch>:docs/plans/<story>-plan.md`
 2. Om inte hittas lokalt: `git fetch origin` och kolla remote
-3. Bedöm:
-   - Är scope avgränsat? (antal filer, inga arkitekturändringar utan diskussion)
-   - Följer den TDD? (RED före GREEN)
+3. **OBLIGATORISK subagent-checklista** (kör ALLA som matchar):
+   - [ ] API route eller webhook? -> tech-architect
+   - [ ] iOS Swift-filer? -> SwiftUI Pro
+   - [ ] UI-komponenter? -> cx-ux-reviewer
+   - [ ] Säkerhet/auth? -> security-reviewer
+   - [ ] Ingen av ovan? -> bara Lead
+4. Bedöm:
+   - Är scope avgränsat?
+   - Följer den TDD/BDD?
    - Saknas något? (auth, tester, edge cases)
    - Risker identifierade?
-4. Godkänn eller ge feedback till Johan
+5. Godkänn eller ge feedback till Johan
 
 ## Code review och merge (station 7)
 
