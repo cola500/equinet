@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-04-02
 sections:
   - Aktiv sprint
   - Sessioner
@@ -71,10 +71,9 @@ sections:
 
 ## Sessioner (PARALLELLT -- filbaserad uppdelning)
 
-| Session | Roll | Arbetar pa | Filer (last) | Branch |
-|---------|------|-----------|-------------|--------|
-| Dev | Fullstack | S8-1 Annonsering native | src/app/api/native/announcements/**, ios/**, src/domain/ | feature/s8-1-announcements-native |
-| Architect | Tech-architect | S9-1 Branch protection plan | .github/**, AGENTS.md, .claude/rules/tech-lead.md | main (bara docs) |
+| Session | Roll | Arbetar pa | Branch | Startad |
+|---------|------|-----------|--------|---------|
+| Lead | Tech lead | Review, merge | main | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

@@ -3,7 +3,7 @@ title: "Tech Lead -- arbetssätt"
 description: "Hur tech lead-sessionen arbetar: plan-review, code review, merge, kommunikation"
 category: rule
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-04-02
 tags: [workflow, team, tech-lead, review]
 sections:
   - Kommandon
@@ -46,9 +46,16 @@ Utvecklaren pushar sin feature branch till remote.
 4. Granska: sampla 1-2 filändringar i detalj
 5. Checka ut branchen: `git checkout feature/<branch>`
 6. Kör `npm run check:all` (webb) eller relevant iOS-testsvit
-7. Om godkänt: `git checkout main && git merge feature/<branch> --no-ff` + pusha
+7. Om godkänt: skapa PR och merga via GitHub:
+   ```bash
+   gh pr create --base main --head feature/<branch> \
+     --title "S<X>-<Y>: kort beskrivning" \
+     --body "## Summary\n- ...\n\n## Test plan\n- ..."
+   # Vänta på CI (Quality Gate Passed)
+   gh pr merge <PR-nummer> --merge --delete-branch
+   ```
 8. Om problem: meddela Johan, utvecklaren fixar
-9. Uppdatera status.md: story -> "done" + commit-hash
+9. Uppdatera status.md: story -> "done" + PR-nummer
 
 ## Kommunikation
 
