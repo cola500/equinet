@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S8-1 Annonsering native | fullstack | Dev | done | feature/s8-1-announcements-native | e58dee30 |
 | S8-2 Business insights native | fullstack | Dev | done | feature/s8-2-business-insights-native | ca247001 |
-| S8-3 Voice logging polish | fullstack | - | pending | - | - |
+| S8-3 Voice logging polish | fullstack | Dev | review_requested | feature/s8-3-voice-logging-polish | c0561918 |
 
 **Sprint 7** (klar, blockerare -> backlog):
 
