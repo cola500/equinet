@@ -20,6 +20,20 @@ sections:
 > Speglar `docs/roadmap.md`. Plockas in i sprintar vid behov.
 > Prioritetsordning inom varje kategori.
 
+## Kritiskt (från tech-architect review 2026-04-02)
+
+| Story | Effort | Varför kritiskt |
+|-------|--------|----------------|
+| Branch protection på GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
+| Verifiera Stripe webhook-idempotens | 1h | Dubbel-event kan ge dubbelbokningar |
+| Staging-databas (separat Supabase-projekt) | 2-4h | Lokal migration kan ändra prod |
+| customer_insights AI-spike | 1 dag | Overifierad -- visar "AI-insikter" som kan vara mock |
+| Onboarding-spike (registrering utan seed) | 1 dag | Förutsättning för leverantör #2 |
+| Vercel Analytics | 15 min | Core Web Vitals gratis |
+| Dependabot | 30 min | Automatiska säkerhetsuppdateringar |
+| Backup RPO/RTO-dokumentation | 1h | Med finansiell data behövs policy |
+| GDPR data retention policy | Medellång sikt | Radering av gammal data |
+
 ## Blockerare (väntar på Johan)
 
 | Story | Blockerare | Effort |
