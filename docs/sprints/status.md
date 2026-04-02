@@ -17,13 +17,22 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 8: iOS native-migrering** (docs/sprints/sprint-8.md)
+**Sprint 9: Produktionshärdning** (docs/sprints/sprint-9.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S8-1 Annonsering native | fullstack | Dev | done | feature/s8-1-announcements-native | e58dee30 |
-| S8-2 Business insights native | fullstack | Dev | done | feature/s8-2-business-insights-native | ca247001 |
-| S8-3 Voice logging polish | fullstack | Dev | done | feature/s8-3-voice-logging-polish | c0561918 |
+| S9-1 Branch protection + Dependabot | fullstack | - | pending | - | - |
+| S9-2 Webhook idempotens | fullstack | - | pending | - | - |
+| S9-3 Staging-databas | fullstack | - | pending | - | - |
+| S9-4 customer_insights spike | fullstack | - | pending | - | - |
+| S9-5 Onboarding-spike | fullstack | - | pending | - | - |
+| S9-6 Analytics + backup-docs | fullstack | - | pending | - | - |
+
+**Sprint 8** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S8-1 -- S8-3 | fullstack | Dev | done |
 
 **Sprint 7** (klar, blockerare -> backlog):
 
@@ -85,6 +94,14 @@ sections:
 | 2026-04-01 | Apple Developer kraves for push | Johan koper, push-kod forbereds utan APNs |
 | 2026-04-01 | Sekventiellt arbete, en session at gangen | Delad working directory, parallella branches krockar |
 | 2026-04-01 | S3-2 otaggad fran ios till fullstack | Push-prep ar mest server-side TS, kan koras av fullstack |
+
+## Att pusha (tech lead)
+
+| Commit | Branch | Beskrivning | Instruktion |
+|--------|--------|-------------|-------------|
+| f3d12999 | main (lokal) | CI E2E fix: skip DATABASE_URL override i CI | `LEAD_MERGE=1 git push origin main` |
+
+**Bakgrund:** `playwright.config.ts` hardkodade `DATABASE_URL=equinet` som overskrev CI:s `equinet_test`. Lagt till `if (!process.env.CI)` guard. Senast grona CI: `7a1388ac`. Brot i `c977d2b8` (Stripe E2E cleanup).
 
 ## Blockerare
 
