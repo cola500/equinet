@@ -91,7 +91,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
       expect(prisma.payment.updateMany).toHaveBeenCalledWith({
         where: {
           id: "pay-42",
-          status: { notIn: ["succeeded"] },
+          status: { notIn: ["succeeded", "failed"] },
         },
         data: expect.objectContaining({
           status: "succeeded",

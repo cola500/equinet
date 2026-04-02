@@ -43,8 +43,11 @@ export class PaymentWebhookService {
       return
     }
 
-    if (payment.status === "succeeded") {
-      logger.info("Payment already succeeded, skipping", { paymentId: payment.id })
+    if (payment.status === "succeeded" || payment.status === "failed") {
+      logger.info("Payment already in terminal state, skipping", {
+        paymentId: payment.id,
+        status: payment.status,
+      })
       return
     }
 
@@ -57,7 +60,7 @@ export class PaymentWebhookService {
       paidAt: new Date(),
       invoiceNumber,
       invoiceUrl,
-    }, ["succeeded"])
+    }, ["succeeded", "failed"])
 
     if (updated === 0) {
       logger.info("Payment already succeeded (concurrent update), skipping", {

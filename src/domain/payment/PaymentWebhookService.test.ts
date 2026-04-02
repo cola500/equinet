@@ -34,7 +34,7 @@ describe("PaymentWebhookService", () => {
           invoiceNumber: "EQ-202604-ABC123",
           invoiceUrl: "http://localhost:3000/api/bookings/booking-1/receipt",
         },
-        ["succeeded"]
+        ["succeeded", "failed"]
       )
     })
 
@@ -47,7 +47,7 @@ describe("PaymentWebhookService", () => {
       expect(deps.updatePaymentStatus).not.toHaveBeenCalled()
     })
 
-    it("does not update if payment already succeeded", async () => {
+    it("does not update if payment already in terminal state (succeeded)", async () => {
       const deps = createDeps({
         findPaymentByProviderPaymentId: vi.fn().mockResolvedValue({
           id: "pay-1",
@@ -63,7 +63,23 @@ describe("PaymentWebhookService", () => {
       expect(deps.generateInvoiceNumber).not.toHaveBeenCalled()
     })
 
-    it("passes atomic guard to updatePaymentStatus", async () => {
+    it("does not update if payment already in terminal state (failed)", async () => {
+      const deps = createDeps({
+        findPaymentByProviderPaymentId: vi.fn().mockResolvedValue({
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "failed",
+        }),
+      })
+      const service = new PaymentWebhookService(deps)
+
+      await service.handlePaymentIntentSucceeded("pi_test_123", { bookingId: "booking-1" })
+
+      expect(deps.updatePaymentStatus).not.toHaveBeenCalled()
+      expect(deps.generateInvoiceNumber).not.toHaveBeenCalled()
+    })
+
+    it("passes atomic guard for both terminal states to updatePaymentStatus", async () => {
       const deps = createDeps({
         findPaymentByProviderPaymentId: vi.fn().mockResolvedValue({
           id: "pay-1",
@@ -75,11 +91,11 @@ describe("PaymentWebhookService", () => {
 
       await service.handlePaymentIntentSucceeded("pi_test_123", { bookingId: "booking-1" })
 
-      // Third argument is the guard: don't update if already succeeded
+      // Third argument is the guard: don't update if already in terminal state
       expect(deps.updatePaymentStatus).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Object),
-        ["succeeded"]
+        ["succeeded", "failed"]
       )
     })
 
