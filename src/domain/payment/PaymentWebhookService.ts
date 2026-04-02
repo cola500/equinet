@@ -63,7 +63,7 @@ export class PaymentWebhookService {
     }, ["succeeded", "failed"])
 
     if (updated === 0) {
-      logger.info("Payment already succeeded (concurrent update), skipping", {
+      logger.info("Payment status already changed (concurrent update), skipping", {
         paymentId: payment.id,
         paymentIntentId,
       })

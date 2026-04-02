@@ -63,7 +63,7 @@ Jag rekommenderar **(a)** -- tva steg: forst atomisk status-andring, sedan invoi
 
 **Enklaste losningen:** Behall ett DB-anrop men flytta `generateInvoiceNumber()` till EFTER `updated > 0`-checken, gora en andra uppdatering for invoice-data. Eller: acceptera att nummret "slosas" (enklast, men Johan angav explicit att flytta).
 
-**Beslut:** Tva-stegs-approach. Forsta anropet satter status+paidAt (med guard). Om `updated > 0`: generera invoice, andra anropet satter invoiceNumber+invoiceUrl.
+**Beslut:** Behall ett DB-anrop. Acceptera att invoiceNumber slosas vid concurrent race -- det ar inte ett konsistensproblem, bara ett kosmetiskt nummer-gap. Enklare kod vager tyngre.
 
 ### 3. Test
 
