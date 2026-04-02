@@ -109,4 +109,3 @@ sections:
 |---------|---------|-------|--------|
 | Apple Developer Program (99 USD) | S3-2 push-lansering | Johan | Ej kopt |
 | Resend API-nyckel | S3-1 invite-email | - | Konfigurerad (verifierad) |
-# test
