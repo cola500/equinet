@@ -31,8 +31,10 @@ export const POST = withApiHandler(
     }
 
     // Get today's bookings with customer/horse details for context
-    const date = validated.date ? new Date(validated.date) : new Date()
-    date.setHours(0, 0, 0, 0)
+    // Use Europe/Stockholm to get correct date for late-night logging
+    const now = validated.date ? new Date(validated.date) : new Date()
+    const stockholmDate = now.toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" })
+    const date = new Date(stockholmDate + "T00:00:00.000Z")
 
     const bookings = await prisma.booking.findMany({
       where: {

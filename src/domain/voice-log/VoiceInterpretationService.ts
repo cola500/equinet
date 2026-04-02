@@ -182,10 +182,13 @@ Transkribering:
 "${transcript}"`
 
     try {
-      const client = new Anthropic({ apiKey: this.apiKey })
+      const client = new Anthropic({
+        apiKey: this.apiKey,
+        timeout: 60_000,
+      })
 
       const response = await client.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-sonnet-4-6-20250514",
         max_tokens: 1024,
         system: [{ type: "text" as const, text: buildSystemPrompt(vocabularyPrompt), cache_control: { type: "ephemeral" as const } }],
         messages: [{ role: "user", content: userMessage }],
@@ -252,7 +255,10 @@ Transkribering:
     const userMessage = `Kontext: ${contextInfo}\n\nAnteckning:\n"${transcript}"`
 
     try {
-      const client = new Anthropic({ apiKey: this.apiKey })
+      const client = new Anthropic({
+        apiKey: this.apiKey,
+        timeout: 60_000,
+      })
 
       const response = await client.messages.create({
         model: "claude-haiku-4-5-20251001",

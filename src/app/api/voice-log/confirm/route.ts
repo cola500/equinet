@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireProvider } from "@/lib/roles"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { createBookingService } from "@/domain/booking"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import {
   parseVocabulary,
   addCorrections,
@@ -27,40 +24,12 @@ const confirmSchema = z.object({
 }).strict()
 
 // POST /api/voice-log/confirm - Save interpreted voice log data
-export async function POST(request: NextRequest) {
-  try {
-    // Feature flag check
-    if (!(await isFeatureEnabled("voice_logging"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    // Rate limiting
-    const clientIp = getClientIP(request)
-    const isAllowed = await rateLimiters.api(clientIp)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många anrop. Försök igen om en stund." },
-        { status: 429 }
-      )
-    }
-
-    const { userId } = requireProvider(await auth())
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    const validated = confirmSchema.parse(body)
-
+export const POST = withApiHandler(
+  { auth: "provider", rateLimit: "api", featureFlag: "voice_logging", schema: confirmSchema },
+  async ({ user, body: validated }) => {
     // Get provider
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(userId)
+    const provider = await providerRepo.findByUserId(user.userId)
     if (!provider) {
       return NextResponse.json(
         { error: "Leverantör hittades inte" },
@@ -117,7 +86,7 @@ export async function POST(request: NextRequest) {
         await prisma.horseNote.create({
           data: {
             horseId: booking.horseId,
-            authorId: userId,
+            authorId: user.userId,
             category: validated.horseNoteCategory,
             title: validated.horseObservation.slice(0, 100),
             content: validated.horseObservation,
@@ -169,22 +138,5 @@ export async function POST(request: NextRequest) {
       actions,
       nextVisitWeeks: validated.nextVisitWeeks,
     })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Failed to confirm voice log", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte spara röstloggen" },
-      { status: 500 }
-    )
   }
-}
+)
