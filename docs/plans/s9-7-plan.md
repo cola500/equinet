@@ -34,14 +34,27 @@ Prisma stöder `?schema=X` i connection string sedan v5.10+.
 3. **Kör migrationer** -- `prisma migrate deploy` med `?schema=staging`
 4. **Seed + starta app** -- verifiera att appen fungerar mot staging-schema
 5. **Data-isolation** -- skapa data i staging, verifiera att det inte syns i public
-6. **E2E smoke** -- kör `npm run test:e2e:smoke` mot staging-schema (om möjligt)
-7. **Dokumentera resultat** -- `docs/research/schema-isolation-spike.md`
+6. **Testa $queryRawUnsafe mot staging-schema** (10 min) -- Tech-architect flaggade:
+   `src/app/api/providers/route.ts` rad 56-69 har `$queryRawUnsafe` med unqualified
+   tabellnamn ("AvailabilityException"). Förlitar sig på `search_path`. Verifiera att
+   queries resolvar mot staging-schemat, inte public.
+7. **E2E smoke** -- kör `npm run test:e2e:smoke` mot staging-schema (om möjligt)
+8. **PgBouncer + schema mot Supabase** (15 min, bonus) -- BLOCKER-RISK: PgBouncer
+   transaction mode + `?schema=staging` kanske INTE propagerar `search_path` korrekt.
+   Kan inte testas lokalt. Om tid finns och Johan godkänner:
+   1. `CREATE SCHEMA spike_test` i Supabase SQL Editor
+   2. `prisma migrate deploy` mot `?schema=spike_test` via pooler-URL
+   3. Enkel query-test
+   4. `DROP SCHEMA spike_test CASCADE`
+9. **Dokumentera resultat** -- `docs/research/schema-isolation-spike.md`
 
 ## Risker
 
 - Prisma kanske inte stöder `?schema=` fullt ut (RLS, migrationer, introspection)
 - Supabase free-tier kan ha begränsningar kring schemas
 - Extensions (uuid-ossp etc) kan behöva installeras per schema
+- **PgBouncer + schema**: `search_path` kanske inte propagerar i transaction mode.
+  Fallback: nytt Free Supabase-projekt (2 min, gratis, noll risk)
 
 ## Leverans
 
