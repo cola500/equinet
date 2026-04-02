@@ -53,7 +53,7 @@ Följer iOS Native Screen Pattern (CLAUDE.md): feature inventory -> API -> model
 - [ ] `npm run check:all` passerar
 - [ ] iOS-tester gröna
 
-**Stationsflöde:** Plan -> **SwiftUI Pro review av plan** -> Red -> Green -> Review -> Verify -> Merge
+**Stationsflöde:** Plan -> tech-architect review -> Red -> Green -> **SwiftUI Pro review** -> Lead review -> Verify -> Merge
 
 ---
 
@@ -81,7 +81,7 @@ Följer iOS Native Screen Pattern (CLAUDE.md): feature inventory -> API -> model
 - [ ] `npm run check:all` passerar
 - [ ] iOS-tester gröna
 
-**Stationsflöde:** Plan -> **SwiftUI Pro review av plan** -> Red -> Green -> Review -> Verify -> Merge
+**Stationsflöde:** Plan -> tech-architect review -> Red -> Green -> **SwiftUI Pro review** -> Lead review -> Verify -> Merge
 
 ---
 
