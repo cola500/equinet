@@ -23,7 +23,9 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S9-1 Branch protection + Dependabot | fullstack | Dev | done | feature/s9-1-branch-protection | 882ac9f7 |
 | S9-2 Webhook idempotens | fullstack | Dev | done | feature/s9-2-webhook-idempotency | ce411abc |
-| S9-3 Staging-databas | fullstack | - | pending | - | - |
+| S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
+| S9-7 Schema-isolation spike | fullstack | - | pending | - | - |
+| S9-3 Staging-databas | fullstack | - | parkerad (väntar spike) | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-5 Onboarding-spike | fullstack | - | pending | - | - |
 | S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
