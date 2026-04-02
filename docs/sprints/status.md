@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S9-1 Branch protection + Dependabot | fullstack | Dev | done | feature/s9-1-branch-protection | 882ac9f7 |
-| S9-2 Webhook idempotens | fullstack | - | pending | - | - |
+| S9-2 Webhook idempotens | fullstack | Dev | review_requested | feature/s9-2-webhook-idempotency | 10a424c4 |
 | S9-3 Staging-databas | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-5 Onboarding-spike | fullstack | - | pending | - | - |
@@ -82,7 +82,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S8-2 Business insights native | feature/s8-2-business-insights-native | 2026-04-02 |
+| Dev | Fullstack | S9-2 Webhook idempotens | feature/s9-2-webhook-idempotency | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
