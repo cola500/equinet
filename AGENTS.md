@@ -27,6 +27,13 @@
 - **Nar**: iOS-specifika features, native screen-konverteringar
 - **Begransningar**: Foljer iOS Native Screen Pattern (se CLAUDE.md)
 
+### Tech-architect (Claude Opus)
+
+- **Ansvar**: Arkitekturdesign, teknisk planering, API-kontrakt, infrastruktur/DevOps-stories
+- **Nar**: Nya features med arkitekturpaverkan, DevOps-andringar, sakerhetsbedomningar, sprint-planering
+- **Begransningar**: Committar ALDRIG till main utan Leads OK. Far bara rora .github/**, AGENTS.md, .claude/rules/**, docs/** (aldrig src/** eller ios/** utan explicit godkannande)
+- **Stationsflode**: Samma som utvecklare (plan -> red -> green -> review -> verify -> push -> merge)
+
 ### Specialistagenter
 
 - **security-reviewer**: Kallas EFTER implementation av API-routes eller auth-andringar
@@ -49,7 +56,7 @@ Detaljerade checklistor finns i `.claude/rules/team-workflow.md`.
 4. REVIEW  -- AUTOMATISK: code-reviewer + security/ux/ios-agenter vid behov.
 5. VERIFY  -- check:all (webb) eller xcodebuild test (iOS). Alla gates grona.
 6. PUSH    -- Pusha FEATURE BRANCH (aldrig main). Status -> "review_requested".
-7. MERGE   -- Tech lead granskar och mergar till main.
+7. MERGE   -- Tech lead skapar PR, CI passerar, mergar via GitHub.
 ```
 
 **Station 1-6 ar autonoma.** Utvecklare kor utan att fraga.
@@ -163,4 +170,4 @@ Dessa ska atagaras nar de beror av paborjat arbete, inte som separata sprintar:
 
 ---
 
-**Senast uppdaterad**: 2026-04-01
+**Senast uppdaterad**: 2026-04-02

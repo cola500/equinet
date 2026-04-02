@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-04-02
 sections:
   - Aktiv sprint
   - Sessioner
@@ -74,6 +74,7 @@ sections:
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
 | Dev | Fullstack | S7-4 Voice logging AI-spike | feature/s7-4-voice-logging-spike | 2026-04-01 |
+| Architect | Tech-architect | S9-1 Branch protection plan | feature/s9-1-branch-protection | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
