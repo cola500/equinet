@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S8-1 Annonsering native | fullstack | - | pending | - | - |
+| S8-1 Annonsering native | fullstack | Dev | in_progress | feature/s8-1-announcements-native | - |
 | S8-2 Business insights native | fullstack | - | pending | - | - |
 | S8-3 Voice logging polish | fullstack | - | pending | - | - |
 
@@ -73,7 +73,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S7-4 Voice logging AI-spike | feature/s7-4-voice-logging-spike | 2026-04-01 |
+| Dev | Fullstack | S8-1 Annonsering native | feature/s8-1-announcements-native | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
