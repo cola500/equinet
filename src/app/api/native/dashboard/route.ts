@@ -150,20 +150,18 @@ export async function GET(request: NextRequest) {
       provider.description &&
       provider.address &&
       provider.city &&
-      provider.postalCode &&
-      provider.latitude !== null &&
-      provider.longitude !== null
+      provider.postalCode
     )
     const hasServices = provider.services.length > 0
     const hasAvailability = provider.availability.length > 0
-    const isActive = provider.isActive
-    const allComplete = profileComplete && hasServices && hasAvailability && isActive
+    const hasServiceArea = provider.latitude !== null && provider.longitude !== null
+    const allComplete = profileComplete && hasServices && hasAvailability && hasServiceArea
 
     const onboarding = {
       profileComplete,
       hasServices,
       hasAvailability,
-      isActive,
+      hasServiceArea,
       allComplete,
     }
 

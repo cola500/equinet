@@ -24,13 +24,14 @@ sections:
 | S9-1 Branch protection + Dependabot | fullstack | Dev | done | feature/s9-1-branch-protection | 882ac9f7 |
 | S9-2 Webhook idempotens | fullstack | Dev | done | feature/s9-2-webhook-idempotency | ce411abc |
 | S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
-| S9-7 Schema-isolation spike | fullstack | - | pending | - | - |
-| S9-3 Staging-databas | fullstack | - | parkerad (väntar spike) | - | - |
+| S9-7 Schema-isolation spike | fullstack | Dev | done | PR #130 | 2b8a0e2a |
+| S9-5 Onboarding-spike | fullstack | Dev | done | PR #133 | 06bf42a8 |
+| S9-6 Analytics + backup-docs | fullstack | Dev | done | PR #132 | e9f0021c |
+| S9-8 Onboarding-checklista | fullstack | Dev | in_progress | feature/s9-8-onboarding-checklist | - |
+| S9-9 Verifierings-felmeddelande | fullstack | - | pending | - | - |
+| S9-10 Tom-tillstand vagledning | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
-| S9-5 Onboarding-spike | fullstack | - | pending | - | - |
-| S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
-| S9-7 Schema-isolation spike | fullstack | Dev | review_requested | feature/s9-7-schema-isolation-spike | - |
-| S9-6 Analytics + backup-docs | fullstack | - | pending | - | - |
+| S9-3 Staging-databas | fullstack | - | parkerad | - | - |
 
 **Sprint 8** (klar):
 
@@ -86,7 +87,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-7 Schema-isolation spike | feature/s9-7-schema-isolation-spike | 2026-04-02 |
+| Dev | Fullstack | S9-8 Onboarding-checklista | feature/s9-8-onboarding-checklist | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

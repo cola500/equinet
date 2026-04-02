@@ -198,7 +198,7 @@ describe("GET /api/native/dashboard", () => {
       profileComplete: true,
       hasServices: true,
       hasAvailability: true,
-      isActive: true,
+      hasServiceArea: true,
       allComplete: true,
     })
   })
@@ -211,7 +211,7 @@ describe("GET /api/native/dashboard", () => {
       profileComplete: false,
       hasServices: false,
       hasAvailability: false,
-      isActive: false,
+      hasServiceArea: false,
       allComplete: false,
     })
   })
