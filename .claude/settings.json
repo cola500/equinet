@@ -48,6 +48,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/debug-discipline.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/review-suggest.sh"
           }
         ]
       }
