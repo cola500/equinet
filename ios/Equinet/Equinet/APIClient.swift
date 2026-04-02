@@ -494,6 +494,15 @@ final class APIClient {
         )
     }
 
+    // MARK: - Insights
+
+    func fetchInsights(months: Int) async throws -> InsightsResponse {
+        try await authenticatedRequest(
+            path: "/api/native/insights?months=\(months)",
+            responseType: InsightsResponse.self
+        )
+    }
+
     // MARK: - Private
 
     /// Generic authenticated request with token refresh on 401

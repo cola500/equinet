@@ -63,6 +63,7 @@ struct NativeMoreView: View {
     @Bindable var profileViewModel: ProfileViewModel
     @State private var dueForServiceViewModel = DueForServiceViewModel()
     @State private var announcementsViewModel = AnnouncementsViewModel()
+    @State private var insightsViewModel = InsightsViewModel()
     let featureFlags: [String: Bool]
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
@@ -103,6 +104,7 @@ struct NativeMoreView: View {
                             reviewsViewModel.reset()
                             profileViewModel.reset()
                             announcementsViewModel.reset()
+                            insightsViewModel.reset()
                             bridge.clearMobileToken()
                             authManager.logout()
                         }
@@ -148,6 +150,8 @@ struct NativeMoreView: View {
                             navigationPath.append(temp)
                         }
                     )
+                } else if item.path == "/provider/insights" {
+                    NativeInsightsView(viewModel: insightsViewModel)
                 } else {
                     MoreWebView(
                         path: item.path,
