@@ -82,7 +82,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-2 Webhook idempotens | feature/s9-2-webhook-idempotency | 2026-04-02 |
+| Dev | Fullstack | S9-2b Webhook hardening | feature/s9-2b-webhook-hardening | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
