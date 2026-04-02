@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S9-1 Branch protection + Dependabot | fullstack | Dev | done | feature/s9-1-branch-protection | 882ac9f7 |
-| S9-2 Webhook idempotens | fullstack | Dev | review_requested | feature/s9-2-webhook-idempotency | ce411abc |
+| S9-2 Webhook idempotens | fullstack | Dev | done | feature/s9-2-webhook-idempotency | ce411abc |
 | S9-3 Staging-databas | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-5 Onboarding-spike | fullstack | - | pending | - | - |
@@ -109,4 +109,3 @@ sections:
 |---------|---------|-------|--------|
 | Apple Developer Program (99 USD) | S3-2 push-lansering | Johan | Ej kopt |
 | Resend API-nyckel | S3-1 invite-email | - | Konfigurerad (verifierad) |
-# test
