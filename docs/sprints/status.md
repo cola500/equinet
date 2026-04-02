@@ -27,7 +27,7 @@ sections:
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-5 Onboarding-spike | fullstack | - | pending | - | - |
 | S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
-| S9-7 Schema-isolation spike | fullstack | Dev | in_progress | feature/s9-7-schema-isolation-spike | - |
+| S9-7 Schema-isolation spike | fullstack | Dev | review_requested | feature/s9-7-schema-isolation-spike | - |
 | S9-6 Analytics + backup-docs | fullstack | - | pending | - | - |
 
 **Sprint 8** (klar):
