@@ -238,6 +238,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Vercel region MÅSTE matcha Supabase**: `regions: ["fra1"]` i `vercel.json` för `eu-central-2`.
 - **Commit innan deploy**: Deploya ALDRIG till Vercel utan att committa först.
 - **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
+- **Schema-isolation ("slot machine")**: `DATABASE_URL="...?schema=staging"` ger isolerad miljö inom samma databas. Fungerar med Prisma 6.19+, PgBouncer transaction mode och `$queryRawUnsafe`. `prisma migrate deploy` applicerar alla migrationer i det angivna schemat. Se `docs/research/schema-isolation-spike.md`.
 
 ### Offline & Sync
 
