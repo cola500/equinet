@@ -84,18 +84,21 @@ Playwright kunde inte koras pga `.next/dev/lock`-konflikt med befintlig dev-serv
 Manuella curl-tester mot port 3001 bekraftade att alla API-endpoints fungerar
 korrekt mot staging-schemat.
 
-### Steg 8: PgBouncer (EJ TESTAD)
+### Steg 8: PgBouncer + schema mot Supabase -- TESTAD, FUNGERAR
 
-PgBouncer i transaction mode kanske INTE propagerar `search_path` korrekt.
-Supabase anvander PgBouncer for sin pooler-URL (`port 6543`).
+Testat mot Supabase pooler-URL (`pgbouncer=true&schema=spike_test`):
 
-**Kan inte testas lokalt.** Kraver test mot Supabase med:
-1. `CREATE SCHEMA spike_test` i SQL Editor
-2. `prisma migrate deploy` via pooler-URL
-3. Enkel query-test
-4. `DROP SCHEMA spike_test CASCADE`
+| Test | Resultat |
+|------|----------|
+| `CREATE SCHEMA spike_test` | OK |
+| `prisma migrate deploy` (31 migrationer) | Alla applicerade |
+| `SHOW search_path` | `spike_test` (korrekt) |
+| `featureFlag.create()` + `findMany()` | OK, data i spike_test |
+| `$queryRawUnsafe` med unqualified tabell | Resolvar mot spike_test |
+| `DROP SCHEMA spike_test CASCADE` | OK, staddad |
 
-**Fallback:** Nytt Free Supabase-projekt (2 min, gratis, noll risk).
+**Slutsats:** PgBouncer transaction mode propagerar `search_path` korrekt.
+Blockerrisken var ogrundad. Schema-isolation fungerar via pooler-URL.
 
 ## PgBouncer-risk
 
@@ -104,14 +107,11 @@ Supabase erbjuder tva anslutningsmetoder:
 | Metod | Port | PgBouncer | search_path |
 |-------|------|-----------|-------------|
 | Direkt-anslutning | 5432 | Nej | Fungerar (bekraftat lokalt) |
-| Pooler (transaction mode) | 6543 | Ja | **Otestad risk** |
+| Pooler (transaction mode) | 5432 | Ja | **Fungerar (bekraftat mot Supabase)** |
 
-Prisma-dokumentationen rekommenderar direkt-anslutning for migrationer.
-For runtime-queries via pooler: `search_path` maste sattas per transaktion,
-och PgBouncer transaction mode ateranvander anslutningar mellan transaktioner.
-
-**Worst case:** Schema-parameter ignoreras av PgBouncer -> queries gar mot
-`public` schemat -> felaktig data i staging.
+Prisma satter `search_path` vid anslutning, och PgBouncer propagerar det
+korrekt i transaction mode. Bekraftat med migrationer, ORM-queries och
+`$queryRawUnsafe`.
 
 ## Rekommendation
 
@@ -122,16 +122,17 @@ Schema-baserad isolation fungerar utmarkt lokalt:
 - Separata schemas for dev, test, staging
 - Inga extra kostnader eller infrastruktur
 
-### For Supabase-produktion: VILLKORLIGT GO
+### For Supabase-produktion: GO
 
-**Alternativ A (rekommenderat): Direkt-anslutning (port 5432)**
-- Fungerar garanterat (bekraftat lokalt, samma PostgreSQL-beteende)
+**Alternativ B (rekommenderat): Schema + pooler-URL**
+- Bekraftat att PgBouncer propagerar `search_path` korrekt
+- Pooling + isolation i en losning
+- Basta balansen mellan enkelhet och prestanda
+
+**Alternativ A (fallback): Direkt-anslutning (port 5432)**
+- Fungerar garanterat
 - Nackdel: Ingen connection pooling -> max ~20 connections pa free tier
 - Tillrackligt for staging/e2e (laga trafik)
-
-**Alternativ B: Testa PgBouncer forst**
-- Krav: Johan testar manuellt mot Supabase (15 min)
-- Om det fungerar: basta losningen (pooling + isolation)
 - Om det INTE fungerar: fallback till Alternativ A eller C
 
 **Alternativ C: Separat Supabase-projekt**
@@ -143,10 +144,10 @@ Schema-baserad isolation fungerar utmarkt lokalt:
 
 | Alternativ | Effort | Risk | Kostnad |
 |------------|--------|------|---------|
+| B: Schema + pooler-URL | 30 min | Lag (bekraftat) | Gratis |
 | A: Schema + direkt-anslutning | 30 min | Lag | Gratis |
-| B: Schema + PgBouncer (test forst) | 45 min | Medel | Gratis |
 | C: Separat Supabase-projekt | 2h | Noll | Gratis |
 | D: Avvakta (lokal Docker racker) | 0 | - | Gratis |
 
-**Rekommendation:** Alternativ A for omedelbar staging-isolation.
-Alternativ C som fallback om Supabase-begransningar uppstar.
+**Rekommendation:** Alternativ B for staging-isolation med pooling.
+Alternativ C som fallback om oforutsedda problem uppstar.

@@ -34,16 +34,17 @@ Ej tillampligt (spike):
 
 1. **E2E smoke kunde inte koras** -- `.next/dev/lock` forhindrade parallell dev-server.
    Manuella curl-tester ersatte. Tillrackligt for spike-syftet.
-2. **PgBouncer-test (steg 8) ej utfort** -- Kraver tillgang till Supabase. Dokumenterat som
-   otestad risk med fallback-alternativ.
+2. **PgBouncer-test (steg 8) utfort** -- Testat mot Supabase pooler-URL.
+   `search_path` propagerar korrekt i transaction mode. Blockerrisken var ogrundad.
 
 ## Laerdomar
 
 1. **Prisma `?schema=X` fungerar battre an forvantat** -- Alla queries, inklusive
    `$queryRawUnsafe`, respekterar `search_path`. Ingen manual schema-kvalificering behovs.
 
-2. **`search_path` ar nyckeln** -- Prisma satter `search_path` vid anslutning, inte per query.
-   Det ar darfor PgBouncer transaction mode ar en risk (ateranvander anslutningar).
+2. **`search_path` propagerar via PgBouncer** -- Prisma satter `search_path` vid anslutning.
+   PgBouncer transaction mode ateranvander anslutningar men propagerar `search_path` korrekt.
+   Bekraftat mot Supabase.
 
 3. **Lokal Docker ar tillracklig for spiken** -- Inget behov av Supabase-tillgang for att
    validera grundkonceptet.
