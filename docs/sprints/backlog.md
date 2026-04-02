@@ -24,8 +24,9 @@ sections:
 
 | Story | Effort | Varför kritiskt |
 |-------|--------|----------------|
-| Branch protection på GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
-| Verifiera Stripe webhook-idempotens | 1h | Dubbel-event kan ge dubbelbokningar |
+| ~~Branch protection på GitHub~~ | ~~30 min~~ | KLAR (S9-1) |
+| ~~Verifiera Stripe webhook-idempotens~~ | ~~1h~~ | KLAR (S9-2, atomic WHERE guard) |
+| Webhook hardening (från tech-architect S9-2 review) | 30 min | Succeeded bör guarda mot "failed" + flytta invoiceNumber efter atomic write |
 | Staging-databas (separat Supabase-projekt) | 2-4h | Lokal migration kan ändra prod |
 | customer_insights AI-spike | 1 dag | Overifierad -- visar "AI-insikter" som kan vara mock |
 | Onboarding-spike (registrering utan seed) | 1 dag | Förutsättning för leverantör #2 |

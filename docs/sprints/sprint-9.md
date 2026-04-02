@@ -75,6 +75,27 @@ inte är synligt för användaren men avgörande för pålitlighet.
 
 ---
 
+### S9-2b: Webhook hardening (tech-architect feedback) -- READY
+
+**Prioritet:** Hög (nästa efter S9-2)
+**Typ:** Säkerhet/polish
+**Beskrivning:** Två förbättringar identifierade av tech-architect vid verifiering av S9-2:
+
+**Uppgifter:**
+1. Succeeded handler: ändra guard från `["succeeded"]` till `["succeeded", "failed"]` -- om failed är terminal bör succeeded inte överskriva den
+2. Flytta `generateInvoiceNumber()` + `invoiceUrl` till EFTER `count > 0`-checken -- undviker onödig generering vid concurrent race
+3. Test: verifiera att `generateInvoiceNumber` anropas exakt 0 gånger vid `count === 0`
+
+**Acceptanskriterier:**
+- [ ] Succeeded guard inkluderar "failed"
+- [ ] Invoice genereras bara vid faktisk uppdatering
+- [ ] Test för ovanstående
+
+**Effort:** 30 min
+**Stationsflöde:** Red -> Green -> Review -> Verify -> Merge
+
+---
+
 ### S9-3: Staging-databas (separat Supabase-projekt) -- READY
 
 **Prioritet:** Hög
