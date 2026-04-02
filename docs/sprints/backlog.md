@@ -55,8 +55,15 @@ sections:
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
-| RLS Fas 2: tunn vertikal slice (Booking + Supabase-klient) | 2-3 dagar | Innan leverantör #2 |
-| RLS Fas 3: opportunistisk migrering per domän | Löpande | Vid behov |
+| **RLS-migrering (7 slices, detaljplan i docs/plans/rls-migration-stories.md):** | | |
+| Slice 1: RLS-infrastruktur (Supabase-klient, auth-helper, test-setup) | 1 dag | Grund för allt |
+| Slice 2: Booking READ med RLS (policies, repository, v2-route, bevistest) | 2 dagar | 80% av säkerhetsvärdet |
+| Slice 3: Booking WRITE med RLS (insert/update/delete policies) | 1-2 dagar | Komplett Booking-skydd |
+| Slice 4: Payment med RLS | 1 dag | Finansiell data |
+| Slice 5: CustomerReview med RLS | 1 dag | Leverantörsrykte |
+| Slice 6: Horse med RLS | 1 dag | Kunddata |
+| Slice 7: Cleanup (ta bort v1-routes, deprecate Prisma-repos) | 2 dagar | Konsolidering |
+| **Totalt: ~10 dagar (2 sprintar). Trigger: innan leverantör #2.** | | |
 | Legacy docs svenska tecken (325 rader) | 0.5 dag | Låg |
 | E2E: fixa 77 skippade tester | 1-2 veckor | Låg |
 | recurring_bookings E2E-verifiering | 1 dag | Medel |
