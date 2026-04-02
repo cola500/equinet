@@ -60,8 +60,8 @@ sections:
 
 ## Kort sikt (1-2 månader)
 
-- **Staging-databas** -- separat Supabase-projekt (2-4h, kritiskt för säker utveckling)
-- **Fas 2 RLS** -- tunn vertikal slice: Booking + Supabase-klient (lös JWT-fråga i slice 1 först!)
+- **Staging-databas** -- schema-isolation bekräftad (S9-7 spike). `?schema=staging` i samma DB eller separat projekt. 30 min setup.
+- **Fas 2 RLS** -- tunn vertikal slice. Schema-isolation förenklar testning (RLS i eget schema).
 - **Onboarding utan seed-data** -- registreringsflöde för riktiga leverantörer
 - **Stripe live-betalningar** -- riktiga pengar, kräver Stripe business verification
 - **E-postverifiering** -- säkerställ att Resend levererar på egen domän
