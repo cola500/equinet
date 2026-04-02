@@ -13,7 +13,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     payment: {
       findFirst: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }))
@@ -79,7 +79,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         bookingId: "booking-42",
         status: "pending",
       } as never)
-      vi.mocked(prisma.payment.update).mockResolvedValue({} as never)
+      vi.mocked(prisma.payment.updateMany).mockResolvedValue({ count: 1 } as never)
 
       const res = await POST(createWebhookRequest(JSON.stringify(event)))
 
@@ -88,8 +88,11 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         where: { providerPaymentId: "pi_test_success" },
         select: { id: true, bookingId: true, status: true },
       })
-      expect(prisma.payment.update).toHaveBeenCalledWith({
-        where: { id: "pay-42" },
+      expect(prisma.payment.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "pay-42",
+          status: { notIn: ["succeeded"] },
+        },
         data: expect.objectContaining({
           status: "succeeded",
           paidAt: expect.any(Date),
@@ -115,7 +118,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
       const res = await POST(createWebhookRequest(JSON.stringify(event)))
 
       expect(res.status).toBe(200)
-      expect(prisma.payment.update).not.toHaveBeenCalled()
+      expect(prisma.payment.updateMany).not.toHaveBeenCalled()
     })
 
     it("handles missing payment gracefully (returns 200)", async () => {
@@ -130,7 +133,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
 
       // Returns 200 -- Stripe should not retry
       expect(res.status).toBe(200)
-      expect(prisma.payment.update).not.toHaveBeenCalled()
+      expect(prisma.payment.updateMany).not.toHaveBeenCalled()
     })
   })
 
@@ -147,13 +150,16 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         bookingId: "booking-fail",
         status: "pending",
       } as never)
-      vi.mocked(prisma.payment.update).mockResolvedValue({} as never)
+      vi.mocked(prisma.payment.updateMany).mockResolvedValue({ count: 1 } as never)
 
       const res = await POST(createWebhookRequest(JSON.stringify(event)))
 
       expect(res.status).toBe(200)
-      expect(prisma.payment.update).toHaveBeenCalledWith({
-        where: { id: "pay-fail" },
+      expect(prisma.payment.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "pay-fail",
+          status: { notIn: ["succeeded", "failed"] },
+        },
         data: { status: "failed" },
       })
     })
@@ -174,7 +180,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
       const res = await POST(createWebhookRequest(JSON.stringify(event)))
 
       expect(res.status).toBe(200)
-      expect(prisma.payment.update).not.toHaveBeenCalled()
+      expect(prisma.payment.updateMany).not.toHaveBeenCalled()
     })
   })
 })

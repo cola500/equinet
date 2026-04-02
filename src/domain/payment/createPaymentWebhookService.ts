@@ -14,11 +14,15 @@ export function createPaymentWebhookService(): PaymentWebhookService {
         },
       })
     },
-    updatePaymentStatus: async (paymentId, data) => {
-      await prisma.payment.update({
-        where: { id: paymentId },
+    updatePaymentStatus: async (paymentId, data, guardNotInStatus) => {
+      const result = await prisma.payment.updateMany({
+        where: {
+          id: paymentId,
+          status: { notIn: guardNotInStatus },
+        },
         data,
       })
+      return result.count
     },
     generateInvoiceNumber,
     getBaseUrl: () => process.env.NEXTAUTH_URL || "http://localhost:3000",
