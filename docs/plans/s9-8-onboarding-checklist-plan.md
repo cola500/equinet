@@ -44,11 +44,11 @@ API-routen `/api/provider/onboarding-status` finns och fungerar.
 
 ### 2. Uppdatera OnboardingChecklist-komponenten
 
-Nya steg (matchar sprint exakt):
+Nya steg (matchar sprint, justerad ordning):
 1. "Fyll i foretagsinformation" -> `/provider/profile`
 2. "Lagg till minst en tjanst" -> `/provider/services`
-3. "Satt oppettider" -> `/provider/profile#availability`
-4. "Lagg till serviceomrade" -> `/provider/profile#location`
+3. "Satt oppettider" -> `/provider/profile?section=availability`
+4. "Lagg till serviceomrade" -> `/provider/profile?section=location`
 
 Ta bort: "Aktivera bokningar"
 

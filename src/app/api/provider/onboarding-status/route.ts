@@ -49,32 +49,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
 
-    // Check if profile is complete:
-    // - businessName is required at registration, so always filled
-    // - description filled
-    // - address + city + postalCode filled
-    // - location (latitude + longitude) set
+    // Profile complete: business info filled (excluding location -- that's hasServiceArea)
     const profileComplete = Boolean(
       provider.businessName &&
       provider.description &&
       provider.address &&
       provider.city &&
-      provider.postalCode &&
-      provider.latitude !== null &&
-      provider.longitude !== null
+      provider.postalCode
     )
 
     const hasServices = provider.services.length > 0
     const hasAvailability = provider.availability.length > 0
-    const isActive = provider.isActive
+    const hasServiceArea = provider.latitude !== null && provider.longitude !== null
 
-    const allComplete = profileComplete && hasServices && hasAvailability && isActive
+    const allComplete = profileComplete && hasServices && hasAvailability && hasServiceArea
 
     return NextResponse.json({
       profileComplete,
       hasServices,
       hasAvailability,
-      isActive,
+      hasServiceArea,
       allComplete,
     })
   } catch (error) {

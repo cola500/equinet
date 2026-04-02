@@ -84,7 +84,7 @@ describe("GET /api/provider/onboarding-status", () => {
 
   // --- Completion booleans ---
 
-  it("returns all false when profile is incomplete and no services/availability/inactive", async () => {
+  it("returns all false when profile is incomplete and no services/availability/no location", async () => {
     mockFindFirst.mockResolvedValueOnce(
       makeProvider({
         description: null,
@@ -93,7 +93,6 @@ describe("GET /api/provider/onboarding-status", () => {
         postalCode: null,
         latitude: null,
         longitude: null,
-        isActive: false,
         services: [],
         availability: [],
       }) as never
@@ -107,15 +106,34 @@ describe("GET /api/provider/onboarding-status", () => {
       profileComplete: false,
       hasServices: false,
       hasAvailability: false,
-      isActive: false,
+      hasServiceArea: false,
       allComplete: false,
     })
   })
 
-  it("returns profileComplete=true when all profile fields filled", async () => {
+  it("does not include isActive in response", async () => {
     const res = await GET(mockRequest())
     const data = await res.json()
 
+    expect(data).not.toHaveProperty("isActive")
+  })
+
+  it("returns profileComplete=true when profile fields filled (excluding lat/lng)", async () => {
+    const res = await GET(mockRequest())
+    const data = await res.json()
+
+    expect(data.profileComplete).toBe(true)
+  })
+
+  it("returns profileComplete=true even when latitude/longitude null", async () => {
+    mockFindFirst.mockResolvedValueOnce(
+      makeProvider({ latitude: null, longitude: null }) as never
+    )
+
+    const res = await GET(mockRequest())
+    const data = await res.json()
+
+    // profileComplete no longer checks lat/lng -- that's hasServiceArea
     expect(data.profileComplete).toBe(true)
   })
 
@@ -130,7 +148,7 @@ describe("GET /api/provider/onboarding-status", () => {
     expect(data.profileComplete).toBe(false)
   })
 
-  it("returns profileComplete=false when latitude/longitude null", async () => {
+  it("returns hasServiceArea=false when latitude/longitude null", async () => {
     mockFindFirst.mockResolvedValueOnce(
       makeProvider({ latitude: null, longitude: null }) as never
     )
@@ -138,7 +156,14 @@ describe("GET /api/provider/onboarding-status", () => {
     const res = await GET(mockRequest())
     const data = await res.json()
 
-    expect(data.profileComplete).toBe(false)
+    expect(data.hasServiceArea).toBe(false)
+  })
+
+  it("returns hasServiceArea=true when latitude/longitude set", async () => {
+    const res = await GET(mockRequest())
+    const data = await res.json()
+
+    expect(data.hasServiceArea).toBe(true)
   })
 
   it("returns hasServices=true when at least one active service", async () => {
@@ -163,8 +188,21 @@ describe("GET /api/provider/onboarding-status", () => {
       profileComplete: true,
       hasServices: true,
       hasAvailability: true,
-      isActive: true,
+      hasServiceArea: true,
       allComplete: true,
     })
+  })
+
+  it("returns allComplete=false when hasServiceArea is false", async () => {
+    mockFindFirst.mockResolvedValueOnce(
+      makeProvider({ latitude: null, longitude: null }) as never
+    )
+
+    const res = await GET(mockRequest())
+    const data = await res.json()
+
+    expect(data.allComplete).toBe(false)
+    expect(data.hasServiceArea).toBe(false)
+    expect(data.profileComplete).toBe(true)
   })
 })

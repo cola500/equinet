@@ -10,7 +10,7 @@ interface OnboardingStatus {
   profileComplete: boolean
   hasServices: boolean
   hasAvailability: boolean
-  isActive: boolean
+  hasServiceArea: boolean
   allComplete: boolean
 }
 
@@ -21,10 +21,10 @@ interface ChecklistStep {
 }
 
 const CHECKLIST_STEPS: ChecklistStep[] = [
-  { key: "profileComplete", label: "Fyll i företagsprofil", href: "/provider/profile" },
+  { key: "profileComplete", label: "Fyll i företagsinformation", href: "/provider/profile" },
   { key: "hasServices", label: "Lägg till minst en tjänst", href: "/provider/services" },
-  { key: "hasAvailability", label: "Ställ in tillgänglighet", href: "/provider/profile#availability" },
-  { key: "isActive", label: "Aktivera bokningar", href: "/provider/profile" },
+  { key: "hasAvailability", label: "Ställ in tillgänglighet", href: "/provider/profile?section=availability" },
+  { key: "hasServiceArea", label: "Lägg till serviceområde", href: "/provider/profile?section=location" },
 ]
 
 const STORAGE_KEY = "equinet_onboarding_dismissed"
