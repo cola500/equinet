@@ -105,8 +105,25 @@ Kräver:
 
 ---
 
+## Schema-isolation ("slot machine") -- bekräftat 2026-04-02
+
+> Se `docs/research/schema-isolation-spike.md` för fullständiga spike-resultat.
+
+Spike S9-7 bekräftade att PostgreSQL schemas inom samma Supabase-databas ger
+fullständig miljöisolering. Relevant för RLS-migreringen:
+
+- **Testmiljö för RLS:** Skapa `rls_test`-schema, aktivera RLS där, testa utan att röra prod
+- **Parallell körning:** Prisma kan köra mot `?schema=rls_test` medan `public` är oförändrat
+- **Slot machine:** `CREATE SCHEMA X` + `prisma migrate deploy ?schema=X` ger ny miljö på sekunder
+- **PgBouncer fungerar:** `search_path` propagerar korrekt i transaction mode (testat mot Supabase)
+
+Detta förenklar fas 2 avsevärt -- RLS-policies kan testas i isolerat schema
+innan de appliceras på `public`.
+
+---
+
 ## Öppna frågor
 
-- Hur hanterar vi Prisma migrate parallellt med RLS-policies?
+- ~~Hur hanterar vi Prisma migrate parallellt med RLS-policies?~~ LÖST: schema-isolation
 - Behöver vi service-role-nyckel för admin/cron? (säkerhetsimplikation)
-- Kan vi köra Prisma och Supabase-klient mot samma tabell under migreringen?
+- ~~Kan vi köra Prisma och Supabase-klient mot samma tabell under migreringen?~~ LÖST: separata schemas

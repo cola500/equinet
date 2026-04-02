@@ -26,7 +26,7 @@ sections:
 |-------|--------|----------------|
 | Branch protection på GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
 | Verifiera Stripe webhook-idempotens | 1h | Dubbel-event kan ge dubbelbokningar |
-| Staging-databas (separat Supabase-projekt) | 2-4h | Lokal migration kan ändra prod |
+| ~~Staging-databas (separat Supabase-projekt)~~ | ~~2-4h~~ | UPPDATERAD: schema-isolation bekräftad (S9-7). Alt B: `?schema=staging` + pooler (30 min). Alt C: separat projekt (2h). |
 | customer_insights AI-spike | 1 dag | Overifierad -- visar "AI-insikter" som kan vara mock |
 | Onboarding-spike (registrering utan seed) | 1 dag | Förutsättning för leverantör #2 |
 | Vercel Analytics | 15 min | Core Web Vitals gratis |
