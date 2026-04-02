@@ -110,3 +110,25 @@ S8-1 och S8-2 foljde monster: Feature inventory -> API (BDD) -> Modeller + ViewM
 ## Larandeeffekt
 
 **Nyckelinsikt:** `.env.local` trumfar `.env` i Next.js -- det ar ett kant problem men orsakar fortfarande forvirring. `vercel env pull` skapar `.env.local` med produktions-credentials som tyst overskriver lokal config. Kontrollera ALLTID `npm run env:status` efter `vercel env pull`.
+
+---
+
+## Lead-komplettering
+
+### Vad gick bra (Lead-perspektiv)
+
+- **Tech-architect pa plan fungerade utmarkt.** Fangade feature flag mismatch (blocker) och cache-nyckel-gap (major) pa S8-1 och S8-2. Hade missats utan.
+- **Dev tog feedback direkt.** Uppdaterade planer och committade -- inget motstand.
+- **Review-flodet stabiliserat.** Plan -> tech-architect -> godkand -> implementation -> review -> merge.
+- **Done-filer med lardomar.** Alla tre stories hade dem.
+
+### Vad som inte fungerade (Lead-perspektiv)
+
+- **Parallella sessioner krockade igen.** Trots guide och fillasning i status.md. Delade filer ar svaga punkten.
+- **Lead glomde status.md igen** vid S8-1 merge.
+
+### Processandring till sprint 9
+
+1. **Inga parallella sessioner forran worktrees testats.** Filbaserad uppdelning fungerar inte tillrackligt bra.
+2. **Tech-architect alltid som subagent vid Lead-review** for iOS och API-stories. Bevisat varde.
+3. **env:status-skriptet bor varna** om .env.local pekar pa produktion.
