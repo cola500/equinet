@@ -160,6 +160,45 @@ enum SharedDataManager {
         userDefaults?.removeObject(forKey: bookingsCacheKey)
     }
 
+    // MARK: - Insights Cache (5 min TTL, per period)
+
+    private static func insightsCacheKey(months: Int) -> String {
+        "insights_cache_\(months)"
+    }
+
+    struct InsightsCache: Codable {
+        let insights: InsightsResponse
+        let cachedAt: Date
+    }
+
+    static func saveInsightsCache(_ insights: InsightsResponse, months: Int) {
+        guard let defaults = userDefaults else { return }
+        let cache = InsightsCache(insights: insights, cachedAt: .now)
+        if let encoded = try? JSONEncoder().encode(cache) {
+            defaults.set(encoded, forKey: insightsCacheKey(months: months))
+        }
+    }
+
+    static func loadInsightsCache(months: Int) -> InsightsCache? {
+        guard let defaults = userDefaults,
+              let data = defaults.data(forKey: insightsCacheKey(months: months)),
+              let cache = try? JSONDecoder().decode(InsightsCache.self, from: data) else {
+            return nil
+        }
+        let maxAge: TimeInterval = 5 * 60
+        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
+            defaults.removeObject(forKey: insightsCacheKey(months: months))
+            return nil
+        }
+        return cache
+    }
+
+    static func clearAllInsightsCache() {
+        for months in [3, 6, 12] {
+            userDefaults?.removeObject(forKey: insightsCacheKey(months: months))
+        }
+    }
+
     // MARK: - Announcements Cache (5 min TTL)
 
     private static let announcementsCacheKey = "announcements_cache_data"

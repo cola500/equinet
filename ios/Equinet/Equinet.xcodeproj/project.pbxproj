@@ -71,6 +71,7 @@
 				BookingsModels.swift,
 				CalendarModels.swift,
 				DashboardModels.swift,
+				InsightsModels.swift,
 				KeychainHelper.swift,
 				SharedDataManager.swift,
 				WidgetBooking.swift,

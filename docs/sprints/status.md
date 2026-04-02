@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S8-1 Annonsering native | fullstack | Dev | done | feature/s8-1-announcements-native | e58dee30 |
-| S8-2 Business insights native | fullstack | - | pending | - | - |
+| S8-2 Business insights native | fullstack | Dev | review_requested | feature/s8-2-business-insights-native | ca247001 |
 | S8-3 Voice logging polish | fullstack | - | pending | - | - |
 
 **Sprint 7** (klar, blockerare -> backlog):
@@ -73,7 +73,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Lead | Tech lead | Review, merge | main | 2026-04-02 |
+| Dev | Fullstack | S8-2 Business insights native | feature/s8-2-business-insights-native | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
