@@ -21,16 +21,17 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S9-1 Branch protection + Dependabot | fullstack | Dev | done | feature/s9-1-branch-protection | 882ac9f7 |
-| S9-2 Webhook idempotens | fullstack | Dev | done | feature/s9-2-webhook-idempotency | ce411abc |
-| S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
-| S9-7 Schema-isolation spike | fullstack | - | pending | - | - |
-| S9-3 Staging-databas | fullstack | - | parkerad (väntar spike) | - | - |
+| S9-1 Branch protection | fullstack | Dev | done | PR #121 | 882ac9f7 |
+| S9-2 Webhook idempotens | fullstack | Dev | done | PR #124 | ce411abc |
+| S9-2b Webhook hardening | fullstack | Dev | done | PR #126 | 322371c4 |
+| S9-7 Schema-isolation spike | fullstack | Dev | done | PR #130 | 2b8a0e2a |
+| S9-5 Onboarding-spike | fullstack | Dev | done | PR #133 (väntar CI) | 06bf42a8 |
+| S9-6 Analytics + backup | fullstack | Dev | done | PR #132 (väntar CI) | e9f0021c |
+| S9-8 Onboarding-checklista | fullstack | - | pending | - | - |
+| S9-9 Verifierings-felmeddelande | fullstack | - | pending | - | - |
+| S9-10 Tom-tillstånd vägledning | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
-| S9-5 Onboarding-spike | fullstack | - | pending | - | - |
-| S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
-| S9-7 Schema-isolation spike | fullstack | Dev | review_requested | feature/s9-7-schema-isolation-spike | - |
-| S9-6 Analytics + backup-docs | fullstack | - | pending | - | - |
+| S9-3 Staging-databas | fullstack | - | parkerad | - | - |
 
 **Sprint 8** (klar):
 

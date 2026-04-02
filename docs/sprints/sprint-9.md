@@ -177,6 +177,45 @@ inte är synligt för användaren men avgörande för pålitlighet.
 
 ---
 
+### S9-8: Onboarding-checklista på dashboard -- READY
+
+**Prioritet:** Hög (krävs för leverantör #2)
+**Typ:** Feature
+**Beskrivning:** Ny leverantör ser tom dashboard utan vägledning. Lägg till checklista:
+- [ ] Fyll i företagsinformation
+- [ ] Lägg till minst en tjänst
+- [ ] Sätt öppettider
+- [ ] Lägg till serviceområde
+
+Checklistan döljs när alla steg är klara. `OnboardingChecklist`-komponent finns redan (`src/components/provider/OnboardingChecklist.tsx`) -- verifiera att den fungerar och är synlig.
+
+**Effort:** 0.5-1 dag
+**Stationsflöde:** Plan -> Red -> Green -> Review -> Verify -> Merge
+
+---
+
+### S9-9: Fixa verifierings-felmeddelande -- READY
+
+**Prioritet:** Hög
+**Typ:** Buggfix
+**Beskrivning:** Overifierad email ger "Ogiltig email eller lösenord" istället för "Din e-post är inte verifierad". Missvisande -- leverantören tror att lösenordet är fel.
+
+**Effort:** 1-2h
+**Stationsflöde:** Red -> Green -> Review -> Verify -> Merge
+
+---
+
+### S9-10: Tom-tillstånd vägledning -- READY
+
+**Prioritet:** Medel
+**Typ:** UX
+**Beskrivning:** Tomma listor (tjänster, bokningar, kunder) visar bara "0" utan förklaring. Lägg till hjälptext: "Du har inga tjänster ännu. Lägg till din första tjänst för att börja ta emot bokningar."
+
+**Effort:** 0.5 dag
+**Stationsflöde:** Green -> Review -> Verify -> Merge
+
+---
+
 ### S9-N: Demo-feedback stories -- TBD
 
 > Läggs till efter leverantörsdemon.
@@ -188,11 +227,14 @@ inte är synligt för användaren men avgörande för pålitlighet.
 1. **S9-1** Branch protection (DONE)
 2. **S9-2** Webhook idempotens (DONE)
 3. **S9-2b** Webhook hardening (DONE)
-4. **S9-7** Schema-isolation spike (NÄSTA)
-5. **S9-4** customer_insights spike (1 dag)
-6. **S9-5** Onboarding-spike (0.5 dag)
-7. **S9-6** Analytics + backup (1.5h)
-8. **S9-3** Staging-databas (parkerad -- väntar på spike-resultat)
+4. **S9-7** Schema-isolation spike (DONE)
+5. **S9-5** Onboarding-spike (DONE)
+6. **S9-6** Analytics + backup (DONE, PR #132 väntar)
+7. **S9-8** Onboarding-checklista (NÄSTA)
+8. **S9-9** Verifierings-felmeddelande (1-2h)
+9. **S9-10** Tom-tillstånd vägledning (0.5 dag)
+10. **S9-4** customer_insights spike (1 dag)
+11. **S9-3** Staging-databas (parkerad)
 
 ---
 
