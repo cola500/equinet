@@ -62,6 +62,7 @@ struct NativeMoreView: View {
     @Bindable var reviewsViewModel: ReviewsViewModel
     @Bindable var profileViewModel: ProfileViewModel
     @State private var dueForServiceViewModel = DueForServiceViewModel()
+    @State private var announcementsViewModel = AnnouncementsViewModel()
     let featureFlags: [String: Bool]
     @Binding var pendingPath: String?
     @State private var navigationPath = NavigationPath()
@@ -101,6 +102,7 @@ struct NativeMoreView: View {
                         Button("Logga ut", role: .destructive) {
                             reviewsViewModel.reset()
                             profileViewModel.reset()
+                            announcementsViewModel.reset()
                             bridge.clearMobileToken()
                             authManager.logout()
                         }
@@ -137,6 +139,15 @@ struct NativeMoreView: View {
                     )
                 } else if item.path == "/provider/due-for-service" {
                     NativeDueForServiceView(viewModel: dueForServiceViewModel)
+                } else if item.path == "/provider/announcements" {
+                    NativeAnnouncementsView(
+                        viewModel: announcementsViewModel,
+                        onNavigateToWebPath: { path in
+                            navigationPath.removeLast()
+                            let temp = MoreMenuItem(label: "Annons", icon: "megaphone", path: path, section: "")
+                            navigationPath.append(temp)
+                        }
+                    )
                 } else {
                     MoreWebView(
                         path: item.path,
