@@ -55,7 +55,7 @@ Utvecklaren pushar sin feature branch till remote.
    gh pr merge <PR-nummer> --merge --delete-branch
    ```
 8. Om problem: meddela Johan, utvecklaren fixar
-9. Uppdatera status.md: story -> "done" + PR-nummer
+9. **OMEDELBART efter merge: uppdatera status.md** -> story "done" + commit-hash. Committa + pusha. ALDRIG skjuta på detta -- det har glömts 5+ gånger.
 
 ## Kommunikation
 
