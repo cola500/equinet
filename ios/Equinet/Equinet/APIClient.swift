@@ -477,6 +477,23 @@ final class APIClient {
         return response.items
     }
 
+    // MARK: - Announcements
+
+    func fetchAnnouncements() async throws -> [AnnouncementItem] {
+        let response: AnnouncementsListResponse = try await authenticatedRequest(
+            path: "/api/native/announcements",
+            responseType: AnnouncementsListResponse.self
+        )
+        return response.announcements
+    }
+
+    func cancelAnnouncement(id: String) async throws {
+        let (_, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/announcements/\(id)/cancel"
+        )
+    }
+
     // MARK: - Private
 
     /// Generic authenticated request with token refresh on 401

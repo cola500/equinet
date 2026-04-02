@@ -39,21 +39,33 @@ sections:
 - Leverantörsdemo (allt redo, equinet-app.vercel.app)
 - Köp Apple Developer-konto (99 USD) -> push live direkt
 - Stripe företagsverifiering påbörjad
+- **Branch protection på GitHub** (30 min, kritiskt med Stripe live-mode)
+- **Verifiera Stripe webhook-idempotens** (1h, dubbel-event-test)
+- **Verifiera databas-isolation** (dev vs prod, dokumentera risk)
 
-## Sprint 7 (efter demon)
+## Sprint 8 (pågår)
 
-- **Fas 1 RLS** -- stärk app-lagret: `findByIdForProvider()`, ESLint-regel (0.5-1 dag)
+- iOS native-migrering: annonsering + business insights
+- Voice logging polish (Sonnet 4.6, UTC-fix, confirm-route)
+
+## Nästa sprint (efter demon)
+
 - **Demo-feedback stories** -- prioriteras baserat på vad leverantören sa
 - **Push live** -- plugga in APNs-credentials (15 min, kod redan klar)
 - **Swish** -- aktivera i Stripe när företagsverifiering klar (1 rad kodändring)
 - **Stripe live-mode** -- byt från test-nycklar till live-nycklar
+- **customer_insights spike** -- fungerar AI-kopplingen? (1 dag, samma mönster som voice logging)
+- **Onboarding-spike** -- hur registrerar sig leverantör #2 utan seed-data?
+- **Vercel Analytics** (15 min) + **Dependabot** (30 min)
 
 ## Kort sikt (1-2 månader)
 
-- **Fas 2 RLS** -- tunn vertikal slice: Booking-tabell med Supabase-klient + RLS (2-3 dagar, innan leverantör #2)
+- **Staging-databas** -- separat Supabase-projekt (2-4h, kritiskt för säker utveckling)
+- **Fas 2 RLS** -- tunn vertikal slice: Booking + Supabase-klient (lös JWT-fråga i slice 1 först!)
 - **Onboarding utan seed-data** -- registreringsflöde för riktiga leverantörer
 - **Stripe live-betalningar** -- riktiga pengar, kräver Stripe business verification
 - **E-postverifiering** -- säkerställ att Resend levererar på egen domän
+- **Backup RPO/RTO** -- dokumentera policy (24h RPO på free tier, testa restore)
 
 ## Medellång sikt (2-4 månader)
 
@@ -61,6 +73,7 @@ sections:
 - **Fortnox-integration** -- fakturering, sparar leverantörer ~1h/vecka (user research)
 - **Ruttplanering** -- kräver Mapbox-token, hög efterfrågan (120 000 hästägare, ambulerande tjänster)
 - **Fas 3 RLS** -- opportunistisk migrering av kärndomäner
+- **GDPR data retention** -- policy + cron-job för radering av gammal data
 
 ## Längre sikt (4+ månader)
 
@@ -92,19 +105,29 @@ sections:
 | `push_notifications` | APNs-credentials (Apple Developer) | Config, 15 min |
 | `recurring_bookings` | Default on men otillräckligt testad i prod | E2E-verifiering, 1 dag |
 
-### Kräver arbete innan lansering
+### Genuint ofärdiga (kräver arbete)
 
-| Flagga | Problem | Effort |
-|--------|---------|--------|
-| `voice_logging` | Oklart om AI-tjänst (OpenAI/annat) är ansluten. SpeechRecognizer finns på iOS men server-side AI-tolkning overifierad. | Research + integration, 1-2 veckor |
-| `customer_insights` | Samma som ovan -- "AI-genererade" men oklart om faktisk AI-koppling. Tester mockar allt. | Research + integration, 1 vecka |
-| `route_planning` | Kräver Mapbox-token. Utan token: tom karta, trasig sökning. | Mapbox-konto + token + verifiering, 1-2 dagar |
-| `route_announcements` | Beroende av route_planning (rutt-annonser kopplade till rutter). | Löses med route_planning |
-| `business_insights` | Recharts-baserad analytics. Fungerar men behöver realistisk data för att se bra ut. | Polish + seed-data, 1-2 dagar |
-| `offline_mode` | Komplex (sync engine, mutation queue, circuit breaker). Bakom flagga av en anledning. Inga E2E-tester. | E2E + stabilisering, 1-2 veckor |
-| `group_bookings` | Fungerar men komplex feature. Behöver E2E-verifiering och UX-review. | E2E + review, 2-3 dagar |
-| `follow_provider` | Fungerar men beroende av att det finns flera leverantörer i systemet. | Verifiering vid skalning |
-| `municipality_watch` | Samma som follow_provider -- värde kommer med volym. | Verifiering vid skalning |
+| Flagga | Problem | Effort | Prioritet |
+|--------|---------|--------|-----------|
+| `voice_logging` | ~~AI-koppling oklar~~ VERIFIERAD (sprint 7 spike). Behöver Sonnet 4.6 + UTC-fix. | 0.5-1 dag | Sprint 8 (S8-3) |
+| `customer_insights` | AI-koppling OVERIFIERAD. Samma frågor som voice logging. | Spike 1 dag | Nästa sprint |
+| `route_planning` | Kräver Mapbox-token. Utan token: tom karta. | Mapbox-konto + token, 1-2 dagar | Kort sikt |
+| `route_announcements` | Beroende av route_planning. | Löses med route_planning | Kort sikt |
+| `business_insights` | Fungerar men behöver realistisk data. | Polish + seed-data, 1-2 dagar | Sprint 8 (S8-2) |
+| `group_bookings` | Komplex. Behöver E2E + UX-review. | 2-3 dagar | Medellång sikt |
+
+### Volymsberoende (rätt att vänta, inget arbete nu)
+
+| Flagga | Varför vänta |
+|--------|-------------|
+| `follow_provider` | Värde kommer med fler leverantörer i systemet |
+| `municipality_watch` | Samma -- kräver volym |
+
+### Defer (för komplex, för lite värde nu)
+
+| Flagga | Varför defer |
+|--------|-------------|
+| `offline_mode` | 1-2 veckors E2E-arbete, genererar inte intäkter, leverantörer märker inte direkt |
 
 ### Inte aktuella nu
 

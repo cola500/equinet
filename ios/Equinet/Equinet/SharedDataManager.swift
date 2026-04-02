@@ -160,6 +160,41 @@ enum SharedDataManager {
         userDefaults?.removeObject(forKey: bookingsCacheKey)
     }
 
+    // MARK: - Announcements Cache (5 min TTL)
+
+    private static let announcementsCacheKey = "announcements_cache_data"
+
+    struct AnnouncementsCache: Codable {
+        let announcements: [AnnouncementItem]
+        let cachedAt: Date
+    }
+
+    static func saveAnnouncementsCache(_ announcements: [AnnouncementItem]) {
+        guard let defaults = userDefaults else { return }
+        let cache = AnnouncementsCache(announcements: announcements, cachedAt: .now)
+        if let encoded = try? JSONEncoder().encode(cache) {
+            defaults.set(encoded, forKey: announcementsCacheKey)
+        }
+    }
+
+    static func loadAnnouncementsCache() -> AnnouncementsCache? {
+        guard let defaults = userDefaults,
+              let data = defaults.data(forKey: announcementsCacheKey),
+              let cache = try? JSONDecoder().decode(AnnouncementsCache.self, from: data) else {
+            return nil
+        }
+        let maxAge: TimeInterval = 5 * 60
+        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
+            defaults.removeObject(forKey: announcementsCacheKey)
+            return nil
+        }
+        return cache
+    }
+
+    static func clearAnnouncementsCache() {
+        userDefaults?.removeObject(forKey: announcementsCacheKey)
+    }
+
     // MARK: - Calendar Sync
 
     private static let calendarSyncMappingKey = "calendar_sync_mapping"

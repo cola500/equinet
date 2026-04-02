@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S8-1 Annonsering native | fullstack | - | pending | - | - |
+| S8-1 Annonsering native | fullstack | Dev | review_requested | feature/s8-1-announcements-native | e58dee30 |
 | S8-2 Business insights native | fullstack | - | pending | - | - |
 | S8-3 Voice logging polish | fullstack | - | pending | - | - |
 
@@ -69,11 +69,12 @@ sections:
 | S2-1 withApiHandler | fullstack | Fullstack | done | fix/critical-security-sweep | 6404358a |
 | S2-2 console.* cleanup | fullstack | Fullstack | done | main | 5cef0ca8 |
 
-## Sessioner
+## Sessioner (PARALLELLT -- filbaserad uppdelning)
 
-| Session | Roll | Arbetar pa | Branch | Startad |
-|---------|------|-----------|--------|---------|
-| Dev | Fullstack | S7-4 Voice logging AI-spike | feature/s7-4-voice-logging-spike | 2026-04-01 |
+| Session | Roll | Arbetar pa | Filer (last) | Branch |
+|---------|------|-----------|-------------|--------|
+| Dev | Fullstack | S8-1 Annonsering native | src/app/api/native/announcements/**, ios/**, src/domain/ | feature/s8-1-announcements-native |
+| Architect | Tech-architect | S9-1 Branch protection plan | .github/**, AGENTS.md, .claude/rules/tech-lead.md | main (bara docs) |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

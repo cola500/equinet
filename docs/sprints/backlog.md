@@ -20,6 +20,20 @@ sections:
 > Speglar `docs/roadmap.md`. Plockas in i sprintar vid behov.
 > Prioritetsordning inom varje kategori.
 
+## Kritiskt (från tech-architect review 2026-04-02)
+
+| Story | Effort | Varför kritiskt |
+|-------|--------|----------------|
+| Branch protection på GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
+| Verifiera Stripe webhook-idempotens | 1h | Dubbel-event kan ge dubbelbokningar |
+| Staging-databas (separat Supabase-projekt) | 2-4h | Lokal migration kan ändra prod |
+| customer_insights AI-spike | 1 dag | Overifierad -- visar "AI-insikter" som kan vara mock |
+| Onboarding-spike (registrering utan seed) | 1 dag | Förutsättning för leverantör #2 |
+| Vercel Analytics | 15 min | Core Web Vitals gratis |
+| Dependabot | 30 min | Automatiska säkerhetsuppdateringar |
+| Backup RPO/RTO-dokumentation | 1h | Med finansiell data behövs policy |
+| GDPR data retention policy | Medellång sikt | Radering av gammal data |
+
 ## Blockerare (väntar på Johan)
 
 | Story | Blockerare | Effort |
@@ -55,8 +69,15 @@ sections:
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
-| RLS Fas 2: tunn vertikal slice (Booking + Supabase-klient) | 2-3 dagar | Innan leverantör #2 |
-| RLS Fas 3: opportunistisk migrering per domän | Löpande | Vid behov |
+| **RLS-migrering (7 slices, detaljplan i docs/plans/rls-migration-stories.md):** | | |
+| Slice 1: RLS-infrastruktur (Supabase-klient, auth-helper, test-setup) | 1 dag | Grund för allt |
+| Slice 2: Booking READ med RLS (policies, repository, v2-route, bevistest) | 2 dagar | 80% av säkerhetsvärdet |
+| Slice 3: Booking WRITE med RLS (insert/update/delete policies) | 1-2 dagar | Komplett Booking-skydd |
+| Slice 4: Payment med RLS | 1 dag | Finansiell data |
+| Slice 5: CustomerReview med RLS | 1 dag | Leverantörsrykte |
+| Slice 6: Horse med RLS | 1 dag | Kunddata |
+| Slice 7: Cleanup (ta bort v1-routes, deprecate Prisma-repos) | 2 dagar | Konsolidering |
+| **Totalt: ~10 dagar (2 sprintar). Trigger: innan leverantör #2.** | | |
 | Legacy docs svenska tecken (325 rader) | 0.5 dag | Låg |
 | E2E: fixa 77 skippade tester | 1-2 veckor | Låg |
 | recurring_bookings E2E-verifiering | 1 dag | Medel |
