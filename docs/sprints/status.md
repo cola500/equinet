@@ -26,6 +26,8 @@ sections:
 | S9-3 Staging-databas | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-5 Onboarding-spike | fullstack | - | pending | - | - |
+| S9-2b Webhook hardening | fullstack | Dev | done | feature/s9-2b-webhook-hardening | 322371c4 |
+| S9-7 Schema-isolation spike | fullstack | Dev | in_progress | feature/s9-7-schema-isolation-spike | - |
 | S9-6 Analytics + backup-docs | fullstack | - | pending | - | - |
 
 **Sprint 8** (klar):
@@ -82,7 +84,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-2b Webhook hardening | feature/s9-2b-webhook-hardening | 2026-04-02 |
+| Dev | Fullstack | S9-7 Schema-isolation spike | feature/s9-7-schema-isolation-spike | 2026-04-02 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
