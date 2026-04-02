@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S8-1 Annonsering native | fullstack | Dev | review_requested | feature/s8-1-announcements-native | e58dee30 |
+| S8-1 Annonsering native | fullstack | Dev | done | feature/s8-1-announcements-native | e58dee30 |
 | S8-2 Business insights native | fullstack | - | pending | - | - |
 | S8-3 Voice logging polish | fullstack | - | pending | - | - |
 
