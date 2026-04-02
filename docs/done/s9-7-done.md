@@ -46,9 +46,13 @@ Ej tillampligt (spike):
    PgBouncer transaction mode ateranvander anslutningar men propagerar `search_path` korrekt.
    Bekraftat mot Supabase.
 
-3. **Lokal Docker ar tillracklig for spiken** -- Inget behov av Supabase-tillgang for att
-   validera grundkonceptet.
+3. **Session pooler (port 5432) fungerar, transaction pooler (6543) blockeras** --
+   Natverkskonfiguration (IPv4/IPv6) kan gora att port 6543 inte nar fram.
+   Port 5432 (session pooler) fungerar stabilt och ar tillracklig.
 
 4. **Gotcha for framtiden:** Om vi lagger till fler `$queryRawUnsafe`-queries maste vi
    komma ihag att de forlitar sig pa `search_path`, inte explicit schema-prefix. Detta
    fungerar, men ar viktigt att vara medveten om vid debugging.
+
+5. **Slot machine = snabb iteration** -- `CREATE SCHEMA X` + `prisma migrate deploy`
+   tar under 1 minut. Perfekt for engangstester, spikes och experiment.

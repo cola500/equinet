@@ -100,6 +100,18 @@ Testat mot Supabase pooler-URL (`pgbouncer=true&schema=spike_test`):
 **Slutsats:** PgBouncer transaction mode propagerar `search_path` korrekt.
 Blockerrisken var ogrundad. Schema-isolation fungerar via pooler-URL.
 
+### Steg 9: Slot machine uppsatt
+
+Separat Supabase-projekt (eu-central-1, Frankfurt) med staging-schema:
+- 31 migrationer applicerade
+- 7 testanvandare seedade
+- Anslutning via session pooler (port 5432) -- transaction pooler (6543) blockeras av natverk
+- URL:er tillagda i `.env` (utkommenterade)
+
+**Slot machine-konceptet:** Ett Supabase-projekt med multipla schemas for
+olika andamal (staging, e2e_test, experiment). Snurra upp ny miljo pa sekunder
+med `CREATE SCHEMA X` + `prisma migrate deploy ?schema=X`.
+
 ## PgBouncer-risk
 
 Supabase erbjuder tva anslutningsmetoder:
