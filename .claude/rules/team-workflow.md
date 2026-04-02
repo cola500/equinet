@@ -223,11 +223,19 @@ Alla checklistepunkter uppfyllda.
 
 ### Steg
 
-1. `git pull` + las `status.md` -- vilka stories ar "review_requested"?
+1. `git fetch origin` + las `status.md` -- vilka stories ar "review_requested"?
 2. For varje: `git diff main..origin/feature/<branch>` -- granska andringar
 3. Kor code-reviewer subagent vid behov
-4. Om godkant: merga till main, uppdatera status.md -> "done", pusha main
-5. Om problem: notera i status.md, utvecklaren fixar pa sin branch
+4. Om godkant: skapa PR och merga via GitHub:
+   ```bash
+   gh pr create --base main --head feature/<branch> \
+     --title "S<X>-<Y>: kort beskrivning" \
+     --body "## Summary\n- ..."
+   # Vanta pa CI (Quality Gate Passed)
+   gh pr merge <PR-nummer> --merge --delete-branch
+   ```
+5. OMEDELBART efter merge: uppdatera status.md -> "done" + commit-hash
+6. Om problem: notera i status.md, utvecklaren fixar pa sin branch
 
 ---
 

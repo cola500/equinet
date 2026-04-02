@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S9-1 Branch protection + Dependabot | fullstack | - | pending | - | - |
+| S9-1 Branch protection + Dependabot | fullstack | Dev | in_progress | feature/s9-1-branch-protection | - |
 | S9-2 Webhook idempotens | fullstack | - | pending | - | - |
 | S9-3 Staging-databas | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
