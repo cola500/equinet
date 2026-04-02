@@ -152,6 +152,31 @@ inte är synligt för användaren men avgörande för pålitlighet.
 
 ---
 
+### S9-7: Spike -- Schema-baserad miljöisolering ("slot machine") -- READY
+
+**Prioritet:** Hög
+**Typ:** Research/spike
+**Beskrivning:** Testa om PostgreSQL schemas inom samma Supabase-databas kan ge miljöisolering (staging, e2e_test) utan separata projekt. Plan: `.claude/plans/witty-mixing-cloud.md`.
+
+**Uppgifter:**
+1. Skapa schemas (staging, e2e_test) i lokal Docker-DB
+2. Kör `prisma migrate deploy` mot staging-schema (`?schema=staging`)
+3. Seed + starta app mot staging-schema
+4. Verifiera data-isolation mellan schemas
+5. Testa E2E smoke mot eget schema
+6. Dokumentera resultat
+
+**Acceptanskriterier:**
+- [ ] Migrationer appliceras korrekt per schema
+- [ ] App fungerar mot icke-public schema
+- [ ] Data isolerad mellan schemas
+- [ ] Research-dokument med resultat och rekommendation
+
+**Tidbox:** Max 1 session (~1 timme)
+**Stationsflöde:** Förenklat: Plan -> Research -> Dokumentera -> Review
+
+---
+
 ### S9-N: Demo-feedback stories -- TBD
 
 > Läggs till efter leverantörsdemon.
@@ -160,12 +185,14 @@ inte är synligt för användaren men avgörande för pålitlighet.
 
 ## Prioritetsordning
 
-1. **S9-1** Branch protection (30 min, kritiskt)
-2. **S9-2** Webhook idempotens (1h, säkerhet)
-3. **S9-3** Staging-databas (2-4h, DevOps)
-4. **S9-4** customer_insights spike (1 dag)
-5. **S9-5** Onboarding-spike (0.5 dag)
-6. **S9-6** Analytics + backup (1.5h)
+1. **S9-1** Branch protection (DONE)
+2. **S9-2** Webhook idempotens (DONE)
+3. **S9-2b** Webhook hardening (DONE)
+4. **S9-7** Schema-isolation spike (NÄSTA)
+5. **S9-4** customer_insights spike (1 dag)
+6. **S9-5** Onboarding-spike (0.5 dag)
+7. **S9-6** Analytics + backup (1.5h)
+8. **S9-3** Staging-databas (parkerad -- väntar på spike-resultat)
 
 ---
 
