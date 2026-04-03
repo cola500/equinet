@@ -31,12 +31,18 @@ En Prisma-migration som skapar:
 1. **`handle_new_user()`** -- PL/pgSQL trigger-funktion (SECURITY DEFINER)
 2. **`on_auth_user_created`** -- AFTER INSERT trigger på `auth.users`
 
-Triggern läser `raw_user_meta_data` för userType, firstName, lastName och skapar
-en `public.User`-rad med samma UUID.
+Triggern läser `raw_user_meta_data` för firstName och lastName, och skapar
+en `public.User`-rad med samma UUID. **userType hårdkodas till 'customer'** --
+behörighetsfält ska ALDRIG läsas från user-controlled metadata.
 
 **Varför SECURITY DEFINER?** Triggern körs i auth-schemats kontext men måste
 skriva till public-schemat. SECURITY DEFINER kör med funktionens ägar-rättigheter
 (postgres/service_role) istället för anroparens.
+
+**Varför hårdkoda userType?** `raw_user_meta_data` kan sättas av klienten vid
+sign-up. Om vi läser userType därifrån kan en angripare registrera sig som
+'provider' och få åtkomst till leverantörsfunktionalitet. Provider-uppgradering
+ska ske via en explicit, autentiserad admin-/onboarding-process.
 
 ## Filer som ändras/skapas
 
@@ -52,10 +58,11 @@ skriva till public-schemat. SECURITY DEFINER kör med funktionens ägar-rättigh
 
 Skriv integrationstester som verifierar trigger-beteendet:
 
-1. **Ny användare med alla fält** -- insert i auth.users med raw_user_meta_data -> public.User skapas med korrekt UUID, email, userType, firstName, lastName
-2. **Saknade metadata (defaults)** -- insert utan userType -> defaultar till 'customer', tomma namn
-3. **Duplicerad insert (idempotens)** -- insert med samma UUID -> no-op (ON CONFLICT DO NOTHING)
-4. **Email-verifiering** -- email_confirmed_at satt -> emailVerified=true
+1. **Ny användare med alla fält** -- insert i auth.users med raw_user_meta_data -> public.User skapas med korrekt UUID, email, userType='customer' (hårdkodat), firstName, lastName
+2. **userType ignoreras från metadata** -- även om raw_user_meta_data innehåller userType='provider', ska public.User ALLTID ha userType='customer'
+3. **Saknade metadata (defaults)** -- insert utan firstName/lastName -> tomma strängar
+4. **Duplicerad insert (idempotens)** -- insert med samma UUID -> no-op (ON CONFLICT DO NOTHING)
+5. **Email-verifiering** -- email_confirmed_at satt -> emailVerified=true
 
 **OBS:** Testerna kör mot lokal Docker-databas med `$queryRawUnsafe` för att
 simulera auth.users-inserts (vi har inte auth-schemat lokalt). Alternativ:
@@ -76,7 +83,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   INSERT INTO public."User" (
@@ -94,7 +101,7 @@ BEGIN
     NEW.id,
     NEW.email,
     '',
-    COALESCE(NEW.raw_user_meta_data->>'userType', 'customer'),
+    'customer',
     COALESCE(NEW.raw_user_meta_data->>'firstName', ''),
     COALESCE(NEW.raw_user_meta_data->>'lastName', ''),
     NEW.email_confirmed_at IS NOT NULL,
@@ -128,7 +135,8 @@ CREATE TRIGGER on_auth_user_created
 |------|-----------|
 | Trigger failar -> sign-up failar | `ON CONFLICT DO NOTHING` förhindrar duplicate-krasch. Övriga fel bubblar upp till Supabase Auth som returnerar 500. |
 | auth-schemat finns inte lokalt | Migration med `--create-only`, trigger refererar `auth.users` som bara finns på Supabase. Lokalt: `prisma migrate resolve --applied`. |
-| Obligatoriska fält saknas i metadata | `COALESCE` med defaults: userType='customer', firstName='', lastName='' |
+| Obligatoriska fält saknas i metadata | `COALESCE` med defaults: firstName='', lastName=''. userType hårdkodat till 'customer'. |
+| Angripare sätter userType='provider' i metadata | Ignoreras -- userType hårdkodas i triggern, läses aldrig från metadata |
 | passwordHash NOT NULL | Sätts till tom sträng -- Supabase Auth hanterar lösenord |
 
 ## Tester
