@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S11-1 Dual-auth helper | fullstack | Dev | review_requested | feature/s11-1-dual-auth-helper | 72eb5e50 |
 | S11-2 Migrera användare | fullstack | Dev | review_requested | feature/s11-2-migrate-users-supabase-auth | 70caa4af |
-| S11-3 Sync-trigger | fullstack | - | pending | - | - |
+| S11-3 Sync-trigger | fullstack | Dev | review_requested | feature/s11-3-sync-trigger-auth-users | e5653216 |
 | S11-4 Migrera en route | fullstack | - | pending | - | - |
 | S11-5 Login-sida | fullstack | - | backlog | - | - |
 
@@ -96,7 +96,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S11-2 Migrera användare | feature/s11-2-migrate-users-supabase-auth | 2026-04-03 |
+| Dev | Fullstack | S11-3 Sync-trigger | feature/s11-3-sync-trigger-auth-users | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
