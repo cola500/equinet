@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S11-1 Dual-auth helper | fullstack | Dev | in_progress | feature/s11-1-dual-auth-helper | 72eb5e50 |
+| S11-1 Dual-auth helper | fullstack | Dev | review_requested | feature/s11-1-dual-auth-helper | 72eb5e50 |
 | S11-2 Migrera användare | fullstack | - | pending | - | - |
 | S11-3 Sync-trigger | fullstack | - | pending | - | - |
 | S11-4 Migrera en route | fullstack | - | pending | - | - |
