@@ -10,11 +10,13 @@
  * Full integration testing happens against the Supabase dev project.
  *
  * Requires: local Docker DB running (npm run db:up)
+ * Skips automatically in CI (CI uses equinet_test DB, not equinet).
  */
 import { PrismaClient } from "@prisma/client"
 import { randomUUID } from "crypto"
 
 const DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/equinet"
+const isCI = !!process.env.CI
 
 const prisma = new PrismaClient({
   datasources: { db: { url: DATABASE_URL } },
@@ -24,7 +26,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe("handle_new_user trigger logic", () => {
+describe.skipIf(isCI)("handle_new_user trigger logic", () => {
   const testUserIds: string[] = []
 
   afterAll(async () => {
