@@ -163,7 +163,7 @@ export class CustomerInsightService {
       const client = new Anthropic({ apiKey: this.apiKey })
 
       const response = await client.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-sonnet-4-6",
         max_tokens: 1024,
         system: [{ type: "text" as const, text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" as const } }],
         messages: [{ role: "user", content: userMessage }],
