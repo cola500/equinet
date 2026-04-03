@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-02
+last_updated: 2026-04-03
 sections:
   - Aktiv sprint
   - Sessioner
@@ -17,15 +17,22 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 10: RLS Slice + Demo-feedback** (docs/sprints/sprint-10.md)
+**Sprint 11: Supabase Auth Fas 1** (docs/sprints/sprint-11.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S10-1 RLS Slice Booking READ | fullstack | Dev | review_requested | feature/s10-1-rls-slice-booking-read | - |
-| S10-2 Verifierings-felmeddelande | fullstack | - | done (S9-9) | - | - |
-| S10-3 Tom-tillstånd | fullstack | - | done (S9-10) | - | - |
-| S10-4 customer_insights spike | fullstack | - | done (S9-4) | - | - |
-| S10-5 Supabase Auth PoC | fullstack | Dev | review_requested | feature/s10-5-supabase-auth-poc | - |
+| S11-1 Dual-auth helper | fullstack | Dev | review_requested | feature/s11-1-dual-auth-helper | 72eb5e50 |
+| S11-2 Migrera användare | fullstack | - | pending | - | - |
+| S11-3 Sync-trigger | fullstack | - | pending | - | - |
+| S11-4 Migrera en route | fullstack | - | pending | - | - |
+| S11-5 Login-sida | fullstack | - | backlog | - | - |
+
+**Sprint 10** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S10-1 RLS Prisma spike | fullstack | Dev | done (Go lokalt, Supabase blockerare) |
+| S10-5 Supabase Auth PoC | fullstack | Dev | done (GO) |
 
 **Sprint 9** (klar):
 
@@ -89,7 +96,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S10-5 Supabase Auth PoC | feature/s10-5-supabase-auth-poc | 2026-04-03 |
+| Dev | Fullstack | S11-1 Dual-auth helper | feature/s11-1-dual-auth-helper | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
