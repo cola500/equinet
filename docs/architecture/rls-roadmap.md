@@ -122,8 +122,58 @@ innan de appliceras på `public`.
 
 ---
 
+## Supabase Auth -- ändrar RLS-kalkylen (2026-04-03)
+
+> Se `docs/research/supabase-auth-spike.md` för fullständig analys.
+
+Supabase Auth-spike visar att auth-migrering och RLS-migrering hänger ihop.
+Två vägar framåt:
+
+### Väg A: Prisma + set_config (nuvarande plan)
+
+```
+Prisma query → $transaction → set_config('app.provider_id', ...) → RLS filtrerar
+```
+
+- Kräver Client Extension-wrapper
+- Fungerar med befintlig NextAuth
+- `set_config()` per transaktion -- overhead ~2-5ms
+- Testad i S10-1 spike
+
+### Väg B: Supabase Auth + Supabase-klient + RLS (nytt alternativ)
+
+```
+Supabase-klient med user JWT → RLS använder auth.jwt()->>'providerId' → automatisk filtrering
+```
+
+- Kräver auth-migrering (NextAuth → Supabase Auth, 3-5 sprints)
+- RLS fungerar automatiskt via JWT claims -- ingen set_config behövs
+- Unified auth (webb + iOS), eliminerar dual auth-systemet
+- Mindre egen kod (~2000 LOC → ~300 LOC)
+
+### Rekommendation
+
+**Väg B är bättre långsiktigt.** Löser auth OCH RLS i en migrering.
+Men väg A ger RLS snabbare (1-2 dagar vs 3-5 sprints).
+
+**Beslut:** Kör S10-1 spike (väg A) för att bevisa att set_config fungerar.
+Parallellt: starta Supabase Auth PoC (fas 0 från auth-spike).
+Fatta slutgiltigt beslut efter båda spikes.
+
+### Tunna slices oavsett väg
+
+| Slice | Väg A (Prisma) | Väg B (Supabase Auth) |
+|-------|---------------|----------------------|
+| 1 | set_config infra | Auth PoC + custom claims hook |
+| 2 | Booking READ | Booking READ via Supabase-klient |
+| 3 | Booking WRITE | Booking WRITE via Supabase-klient |
+| 4+ | Fler tabeller | Fler tabeller + migrera routes |
+
+---
+
 ## Öppna frågor
 
 - ~~Hur hanterar vi Prisma migrate parallellt med RLS-policies?~~ LÖST: schema-isolation
-- Behöver vi service-role-nyckel för admin/cron? (säkerhetsimplikation)
+- ~~Behöver vi service-role-nyckel för admin/cron?~~ JA för väg A. Nej för väg B (service_role bypasses RLS, admin-routes fortsätter via Prisma)
 - ~~Kan vi köra Prisma och Supabase-klient mot samma tabell under migreringen?~~ LÖST: separata schemas
+- **NY:** Vilken väg väljer vi? Beslut efter S10-1 + Supabase Auth PoC
