@@ -34,6 +34,8 @@ ctx.user = requireProvider(sessionLike)
 
 `requireProvider`/`requireAuth`/`requireCustomer` behöver inte ändras -- de tar `SessionLike` som redan matchar `AuthUser`-fälten.
 
+**Invariant:** Adaptern MÅSTE säkerställa att `session.user.providerId` är en non-null string när `getAuthUser()` returnerar en provider-användare. Om `providerId` är `null`/`undefined` ska `requireProvider` ge 403 ("Leverantörsprofil saknas"), INTE 401.
+
 ## Filer som ändras
 
 | Fil | Ändring |
@@ -82,6 +84,10 @@ ctx.user = requireProvider(sessionLike)
 
 ## Tester
 
-- `api-handler.test.ts`: Alla befintliga tester + nytt test för "autentiserar via Bearer token"
+- `api-handler.test.ts`:
+  - Alla befintliga tester med uppdaterade mockar
+  - **Nytt test: "provider-user ger SessionLike med providerId set"** -- verifierar att adaptern mappar `getAuthUser().providerId` till `sessionLike.user.providerId` som non-null string
+  - **Nytt test: "provider utan providerId ger 403"** -- `getAuthUser()` returnerar user med `providerId: null` -> 403, inte 401
+  - Nytt test: "autentiserar via Bearer token"
 - Route-tester: Befintliga tester med uppdaterade mockar
 - Manuellt: Verifiera att `npm run check:all` passerar
