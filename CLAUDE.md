@@ -450,6 +450,7 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 - **Lita INTE på training data**: När du skriver kod som använder externa SDKs, APIs eller AI-modeller -- STOPP innan du skriver import eller install.
 - **Sök upp aktuell version**: Verifiera senaste paketversion, korrekta modell-IDs och aktuellt initialiseringsmönster via sökning.
 - **Använd det du hittar**: Skriv kod baserat på aktuell dokumentation, inte på vad du "minns" från träningsdatan.
+- **AI modell-IDn: ALLTID alias, ALDRIG daterade.** Använd `claude-sonnet-4-6` (alias), INTE `claude-sonnet-4-6-20250514` (daterat). Daterade IDn kan bli ogiltiga utan förvarning. Upptäckt i S9-4: voice logging trasig i prod pga ogiltigt daterat ID.
 
 ---
 
