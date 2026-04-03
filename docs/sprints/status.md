@@ -29,7 +29,7 @@ sections:
 | S12-2 Booking routes batch | fullstack | Dev | done | feature/s12-2-booking-routes-auth | c729cfda |
 | S12-3 Provider routes batch | fullstack | Dev | review_requested | feature/s12-3-provider-routes-auth | 27fe4df4 |
 | S12-4 Native routes batch | fullstack | - | pending | - | - |
-| S12-5 Auth routes | fullstack | - | backlog | - | - |
+| S12-5 Auth routes | fullstack | Dev-2 | in_progress | feature/s12-5-auth-routes-migration | - |
 
 **Sprint 11** (klar):
 
@@ -107,6 +107,7 @@ sections:
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
 | Dev | Fullstack | S12-3 Provider routes batch | feature/s12-3-provider-routes-auth | 2026-04-03 |
+| Dev-2 | Fullstack | S12-5 Auth routes | feature/s12-5-auth-routes-migration | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
