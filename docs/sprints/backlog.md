@@ -85,6 +85,8 @@ sections:
 | Confirm-route migrering till withApiHandler | 30 min | Låg (opportunistiskt) |
 | withApiHandler resterande routes (131 st) | Löpande | Opportunistiskt |
 | console.* i legacy docs | 0.5 dag | Låg |
+| Supabase Auth PoC (Fas 0) -- [spike](../research/supabase-auth-spike.md) | 1 sprint | Medel (före leverantör #2) |
+| Supabase Auth full migrering (Fas 1-3) | 3-5 sprints | Efter godkänd PoC |
 
 ## Betalning
 
@@ -116,3 +118,4 @@ sections:
 | Swish integration | Klar -- Stripe + Swish rekommenderat |
 | Parallella sessioner | Guide klar (docs/guides/parallel-sessions.md) |
 | Customer insights AI-koppling | EJ GJORD -- samma frågor som voice logging |
+| Supabase Auth (ersätta NextAuth) | Klar (docs/research/supabase-auth-spike.md) -- rekommendation: PoC först, sedan gradvis migrering |
