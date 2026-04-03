@@ -96,7 +96,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S11-2 Migrera användare | feature/s11-2-migrate-users-supabase-auth | 2026-04-03 |
+| Dev | Fullstack | S11-3 Sync-trigger | feature/s11-3-sync-trigger-auth-users | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
