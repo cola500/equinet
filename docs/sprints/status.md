@@ -21,11 +21,21 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S11-1 Dual-auth helper | fullstack | Dev | done | feature/s11-1-dual-auth-helper | 72eb5e50 |
-| S11-2 Migrera användare | fullstack | Dev | done | feature/s11-2-migrate-users-supabase-auth | 70caa4af |
-| S11-3 Sync-trigger | fullstack | Dev | done | feature/s11-3-sync-trigger-auth-users | e5653216 |
-| S11-4 Migrera en route | fullstack | Dev | review_requested | feature/s11-4-migrate-onboarding-status | - |
-| S11-5 Login-sida | fullstack | - | backlog | - | - |
+**Sprint 12: Supabase Auth Fas 2 -- Route-migrering** (docs/sprints/sprint-12.md)
+
+| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
+|-------|------|----------|--------|--------|----------------|
+| S12-1 Supabase login-sida | fullstack | - | pending | - | - |
+| S12-2 Booking routes batch | fullstack | - | pending | - | - |
+| S12-3 Provider routes batch | fullstack | - | pending | - | - |
+| S12-4 Native routes batch | fullstack | - | pending | - | - |
+| S12-5 Auth routes | fullstack | - | backlog | - | - |
+
+**Sprint 11** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S11-1 -- S11-4 | fullstack | Dev | done |
 
 **Sprint 10** (klar):
 
