@@ -30,7 +30,7 @@ sections:
 | S9-8 Onboarding-checklista | fullstack | Dev | in_progress | feature/s9-8-onboarding-checklist | - |
 | S9-9 Verifierings-felmeddelande | fullstack | - | pending | - | - |
 | S9-10 Tom-tillstand vagledning | fullstack | - | pending | - | - |
-| S9-4 customer_insights spike | fullstack | - | pending | - | - |
+| S9-4 customer_insights spike | fullstack | Dev | in_progress | feature/s9-4-customer-insights-spike | - |
 | S9-3 Staging-databas | fullstack | - | parkerad | - | - |
 
 **Sprint 8** (klar):
@@ -87,7 +87,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-8 Onboarding-checklista | feature/s9-8-onboarding-checklist | 2026-04-02 |
+| Dev | Fullstack | S9-4 customer_insights spike | feature/s9-4-customer-insights-spike | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
