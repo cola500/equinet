@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { requestMobileTokenForNative } from "@/lib/native-bridge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,50 +46,42 @@ function LoginForm() {
     }
   }, [searchParams])
 
+  const loginWithSupabase = async () => {
+    const supabase = createSupabaseBrowserClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (authError) {
+      if (authError.message.toLowerCase().includes("not confirmed")) {
+        setError("EMAIL_NOT_VERIFIED")
+      } else {
+        setError("Ogiltig email eller lösenord")
+      }
+      return
+    }
+
+    // Request mobile token for iOS widget (fire-and-forget)
+    requestMobileTokenForNative().catch(() => {})
+
+    // Redirect to callbackUrl if provided (must start with / to prevent open redirect)
+    const callbackUrl = searchParams.get("callbackUrl")
+    const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard"
+    router.push(redirectTo)
+    router.refresh()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
     try {
-      // Step 1: Validate credentials via web-login (returns structured error types)
-      const preCheck = await fetch("/api/auth/web-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-
-      if (!preCheck.ok) {
-        const body = await preCheck.json()
-        if (body.type === "EMAIL_NOT_VERIFIED") {
-          setError("EMAIL_NOT_VERIFIED")
-        } else {
-          setError(body.error || "Ogiltig email eller lösenord")
-        }
-        return
-      }
-
-      // Step 2: Create session via NextAuth signIn
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        setError("Ogiltig email eller lösenord")
-      } else {
-        // Request mobile token for iOS widget (fire-and-forget)
-        requestMobileTokenForNative().catch(() => {})
-        // Redirect to callbackUrl if provided (must start with / to prevent open redirect)
-        const callbackUrl = searchParams.get("callbackUrl")
-        const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard"
-        router.push(redirectTo)
-        router.refresh()
-      }
-    } catch (error) {
+      await loginWithSupabase()
+    } catch (err) {
       setError("Något gick fel. Försök igen.")
-      clientLogger.error("Login error:", error)
+      clientLogger.error("Login error:", err)
     } finally {
       setIsLoading(false)
     }
@@ -112,18 +104,7 @@ function LoginForm() {
               title="Kunde inte logga in"
               description={error}
               onRetry={() => retry(async () => {
-                const result = await signIn("credentials", {
-                  email,
-                  password,
-                  redirect: false,
-                })
-                if (result?.error) {
-                  throw new Error("Ogiltig email eller lösenord")
-                }
-                const retryCallbackUrl = searchParams.get("callbackUrl")
-                const retryRedirectTo = retryCallbackUrl && retryCallbackUrl.startsWith("/") ? retryCallbackUrl : "/dashboard"
-                router.push(retryRedirectTo)
-                router.refresh()
+                await loginWithSupabase()
               })}
               isRetrying={isRetrying}
               retryCount={retryCount}
