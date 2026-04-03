@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { NextRequest } from "next/server"
 import { Result } from "@/domain/shared"
 
-vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
+vi.mock("@/lib/auth-dual", () => ({ getAuthUser: vi.fn() }))
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
@@ -22,9 +22,10 @@ vi.mock("@/domain/horse/HorseService", () => ({
   createHorseService: () => mockService,
 }))
 
-const mockSession = {
-  user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as never
+const mockAuthUser = {
+  id: "customer-1", email: "anna@test.se", userType: "customer", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
 const mockExportResult = {
   horse: {
@@ -86,7 +87,7 @@ describe("GET /api/horses/[id]/export", () => {
   beforeEach(() => vi.clearAllMocks())
 
   it("should export horse data as JSON for owner", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.exportData.mockResolvedValue(Result.ok(mockExportResult))
 
     const request = new NextRequest("http://localhost:3000/api/horses/horse-1/export")
@@ -101,7 +102,7 @@ describe("GET /api/horses/[id]/export", () => {
   })
 
   it("should export as CSV when format=csv", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.exportData.mockResolvedValue(Result.ok(mockExportResult))
 
     const request = new NextRequest(
@@ -115,14 +116,14 @@ describe("GET /api/horses/[id]/export", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest("http://localhost:3000/api/horses/horse-1/export")
     const response = await GET(request, makeContext("horse-1"))
     expect(response.status).toBe(401)
   })
 
   it("should return 404 for non-owned horse (IDOR protection)", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.exportData.mockResolvedValue(
       Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
     )
@@ -134,7 +135,7 @@ describe("GET /api/horses/[id]/export", () => {
   })
 
   it("should return 401 when not authenticated", async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },

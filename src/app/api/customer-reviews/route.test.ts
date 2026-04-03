@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST, GET } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -44,9 +44,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should create a customer review for a completed booking', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
     vi.mocked(prisma.customerReview.create).mockResolvedValue({
@@ -78,9 +79,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should create a review without comment', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
     vi.mocked(prisma.customerReview.create).mockResolvedValue({
@@ -114,7 +116,7 @@ describe('POST /api/customer-reviews', () => {
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockRejectedValue(unauthorizedResponse)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -126,7 +128,7 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('returns 401 when session is null (POST)', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
       body: JSON.stringify({ bookingId: 'booking-1', rating: 5 }),
@@ -136,9 +138,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 403 when user is not a provider', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -153,9 +156,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 403 when provider has no providerId', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: null },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -170,9 +174,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 400 for invalid rating (too low)', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -187,9 +192,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 400 for invalid rating (too high)', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -204,9 +210,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 400 for comment exceeding 500 characters', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -225,9 +232,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 404 when booking not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -243,9 +251,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 403 when provider does not own the booking', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'other-provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'other-provider', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -261,9 +270,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 400 when booking is not completed', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
       status: 'confirmed',
@@ -282,9 +292,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 409 when customer review already exists', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
       customerReview: { id: 'existing-cr' },
@@ -303,9 +314,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should return 400 for invalid JSON', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -320,9 +332,10 @@ describe('POST /api/customer-reviews', () => {
   })
 
   it('should reject extra fields (strict mode)', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -342,9 +355,10 @@ describe('POST /api/customer-reviews', () => {
 
   // Security: providerId comes from session, not request body
   it('should not allow providerId in request body', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
       method: 'POST',
@@ -366,9 +380,10 @@ describe('GET /api/customer-reviews', () => {
   })
 
   it('should return customer reviews for the provider', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([
       {
@@ -395,9 +410,10 @@ describe('GET /api/customer-reviews', () => {
   })
 
   it('should return 403 when not a provider', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews')
     const response = await GET(request)
@@ -408,7 +424,7 @@ describe('GET /api/customer-reviews', () => {
   })
 
   it('returns 401 when session is null (GET)', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/customer-reviews')
     const response = await GET(request)
     expect(response.status).toBe(401)

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
@@ -13,8 +13,8 @@ const TEST_UUIDS = {
   service1: '66666666-6666-4666-8666-666666666666',
 }
 
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -48,9 +48,10 @@ describe('GET /api/provider/due-for-service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.providerUser, email: '', userType: 'provider', isAdmin: false,
+      providerId: TEST_UUIDS.provider, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
@@ -62,14 +63,14 @@ describe('GET /api/provider/due-for-service', () => {
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(401)
   })
 
   it('should return 401 for unauthenticated users', async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
     )
 
@@ -78,9 +79,10 @@ describe('GET /api/provider/due-for-service', () => {
   })
 
   it('should return 403 for non-provider users', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer-user', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer-user', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(403)

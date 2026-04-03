@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
 // Mock dependencies BEFORE imports
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -33,30 +33,24 @@ vi.mock("@/domain/subscription/SubscriptionServiceFactory", () => ({
   }),
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { POST } from "./route"
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimit = vi.mocked(rateLimiters.subscription)
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
-const providerSession = {
-  user: {
-    id: "user-1",
-    userType: "provider",
-    providerId: "provider-1",
-  },
-} as never
+const providerAuthUser = {
+  id: "user-1", email: "", userType: "provider", isAdmin: false,
+  providerId: "provider-1", stableId: null, authMethod: "nextauth" as const,
+}
 
-const customerSession = {
-  user: {
-    id: "user-2",
-    userType: "customer",
-    customerId: "customer-1",
-  },
-} as never
+const customerAuthUser = {
+  id: "user-2", email: "", userType: "customer", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
 function createRequest(body?: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/provider/subscription/portal", {
@@ -69,13 +63,13 @@ function createRequest(body?: unknown): NextRequest {
 describe("POST /api/provider/subscription/portal", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue(providerSession)
+    mockGetAuthUser.mockResolvedValue(providerAuthUser)
     mockRateLimit.mockResolvedValue(true)
     mockIsFeatureEnabled.mockResolvedValue(true)
   })
 
   it("returns 401 when not logged in", async () => {
-    mockAuth.mockRejectedValue(
+    mockGetAuthUser.mockRejectedValue(
       new Response(JSON.stringify({ error: "Ej inloggad" }), { status: 401 })
     )
 
@@ -86,14 +80,14 @@ describe("POST /api/provider/subscription/portal", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    mockAuth.mockResolvedValue(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
     const request = createRequest({ returnUrl: "https://example.com/dashboard" })
     const response = await POST(request)
     expect(response.status).toBe(401)
   })
 
   it("returns 403 when user is customer", async () => {
-    mockAuth.mockResolvedValue(customerSession)
+    mockGetAuthUser.mockResolvedValue(customerAuthUser)
 
     const request = createRequest({ returnUrl: "https://example.com/dashboard" })
     const response = await POST(request)

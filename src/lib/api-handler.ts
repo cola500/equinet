@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import {
   requireAuth,
   requireProvider,
@@ -72,16 +72,28 @@ export function withApiHandler<
     try {
       const ctx: Record<string, unknown> = { request }
 
-      // 1. Auth
+      // 1. Auth (dual-auth: Bearer > NextAuth > Supabase)
       const authLevel = config.auth ?? "any"
       if (authLevel !== "none") {
-        const session = await auth()
+        const authUser = await getAuthUser(request)
+        const sessionLike = authUser
+          ? {
+              user: {
+                id: authUser.id,
+                email: authUser.email,
+                userType: authUser.userType,
+                isAdmin: authUser.isAdmin,
+                providerId: authUser.providerId,
+                stableId: authUser.stableId,
+              },
+            }
+          : null
         if (authLevel === "provider") {
-          ctx.user = requireProvider(session)
+          ctx.user = requireProvider(sessionLike)
         } else if (authLevel === "customer") {
-          ctx.user = requireCustomer(session)
+          ctx.user = requireCustomer(sessionLike)
         } else {
-          ctx.user = requireAuth(session)
+          ctx.user = requireAuth(sessionLike)
         }
       }
 

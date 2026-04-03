@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { rateLimiters } from '@/lib/rate-limit'
 import { NextRequest } from 'next/server'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -73,9 +73,10 @@ describe('GET /api/services', () => {
       },
     ]
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.service.findMany).mockResolvedValue(mockServices as never)
 
@@ -93,11 +94,7 @@ describe('GET /api/services', () => {
 
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response for unauthenticated users
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Ej inloggad' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services')
 
@@ -112,9 +109,10 @@ describe('GET /api/services', () => {
 
   it('should return 403 when user is not a provider', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services')
 
@@ -129,9 +127,10 @@ describe('GET /api/services', () => {
 
   it('should return 404 when provider not found', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services')
@@ -146,7 +145,7 @@ describe('GET /api/services', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/services')
     const response = await GET(request)
     expect(response.status).toBe(401)
@@ -178,9 +177,10 @@ describe('POST /api/services', () => {
       createdAt: new Date(),
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.service.count).mockResolvedValue(0) // Service doesn't exist
     vi.mocked(prisma.service.create).mockResolvedValue(mockService as never)
@@ -207,11 +207,7 @@ describe('POST /api/services', () => {
 
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response for unauthenticated users
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Ej inloggad' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -232,7 +228,7 @@ describe('POST /api/services', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
       body: JSON.stringify({ name: 'Test', price: 100, durationMinutes: 30 }),
@@ -243,9 +239,10 @@ describe('POST /api/services', () => {
 
   it('should return 400 for invalid data - missing name', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -266,9 +263,10 @@ describe('POST /api/services', () => {
 
   it('should return 400 for invalid data - negative price', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -290,9 +288,10 @@ describe('POST /api/services', () => {
 
   it('should return 400 for invalid data - zero duration', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services', {
       method: 'POST',
@@ -314,9 +313,10 @@ describe('POST /api/services', () => {
 
   it('should return 429 when rate limited', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(rateLimiters.serviceCreate).mockResolvedValue(false) // Rate limited
 
     const request = new NextRequest('http://localhost:3000/api/services', {

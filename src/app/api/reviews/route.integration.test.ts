@@ -88,8 +88,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -119,7 +119,7 @@ vi.mock("@/lib/logger", () => ({
 // Import AFTER mocks
 // ---------------------------------------------------------------------------
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { POST } from "./route"
 
@@ -150,9 +150,10 @@ describe("POST /api/reviews (integration)", () => {
     vi.clearAllMocks()
 
     // Auth: customer session
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: CUSTOMER_ID, email: "anna@test.se", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: CUSTOMER_ID, email: "anna@test.se", userType: "customer",
+      isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth",
+    })
 
     // Prisma: booking lookup (used by getBooking in route)
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBookingData as never)
@@ -206,16 +207,17 @@ describe("POST /api/reviews (integration)", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(401)
   })
 
   it("returns 403 when user is not customer", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "provider-1", email: "prov@test.se", userType: "provider" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "provider-1", email: "prov@test.se", userType: "provider",
+      isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth",
+    })
 
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(403)

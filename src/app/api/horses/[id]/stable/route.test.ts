@@ -3,8 +3,8 @@ import { NextRequest } from "next/server"
 import { PATCH } from "./route"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -28,14 +28,15 @@ vi.mock("@/domain/horse/HorseService", () => ({
   createHorseService: () => mockHorseService,
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { Result } from "@/domain/shared"
 
-const mockSession = {
-  user: { id: "user-1", email: "anna@test.se", userType: "customer" },
-} as never
+const mockAuthUser = {
+  id: "user-1", email: "anna@test.se", userType: "customer", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost:3000/api/horses/horse-1/stable", {
@@ -50,7 +51,7 @@ const routeContext = { params: Promise.resolve({ id: "horse-1" }) }
 describe("PATCH /api/horses/[id]/stable", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
   })
@@ -69,7 +70,7 @@ describe("PATCH /api/horses/[id]/stable", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockImplementationOnce(() => {
+    vi.mocked(getAuthUser).mockImplementationOnce(() => {
       throw new Response(null, { status: 401 })
     })
     const res = await PATCH(makeRequest({ stableId: "s1" }), routeContext)
@@ -77,7 +78,7 @@ describe("PATCH /api/horses/[id]/stable", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await PATCH(makeRequest({ stableId: "s1" }), routeContext)
     expect(res.status).toBe(401)
   })

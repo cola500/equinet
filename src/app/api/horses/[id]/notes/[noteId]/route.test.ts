@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { PUT, DELETE } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { NextRequest } from "next/server"
 import { Result } from "@/domain/shared"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -35,9 +35,10 @@ vi.mock("@/domain/horse/HorseService", () => ({
   createHorseService: () => mockService,
 }))
 
-const mockSession = {
-  user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as never
+const mockAuthUser = {
+  id: "customer-1", email: "anna@test.se", userType: "customer", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
 const routeContext = {
   params: Promise.resolve({ id: "horse-1", noteId: "note-1" }),
@@ -49,7 +50,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should update a note owned by the user", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.updateNote.mockResolvedValue(Result.ok({
       id: "note-1",
       horseId: "horse-1",
@@ -80,7 +81,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",
       {
@@ -93,7 +94,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should return 404 if horse not owned (IDOR)", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.updateNote.mockResolvedValue(
       Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
     )
@@ -112,7 +113,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should return 404 if note not found on this horse", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.updateNote.mockResolvedValue(
       Result.fail({ type: "NOTE_NOT_FOUND", message: "Anteckningen hittades inte" })
     )
@@ -131,7 +132,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should return 400 for invalid category", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",
@@ -147,7 +148,7 @@ describe("PUT /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should return 400 for future noteDate", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 10)
@@ -172,7 +173,7 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should delete a note", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.deleteNote.mockResolvedValue(Result.ok(undefined))
 
     const request = new NextRequest(
@@ -188,7 +189,7 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",
       { method: "DELETE" }
@@ -198,7 +199,7 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should return 404 if horse not owned (IDOR)", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.deleteNote.mockResolvedValue(
       Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
     )
@@ -214,7 +215,7 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
   })
 
   it("should return 404 if note not found", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.deleteNote.mockResolvedValue(
       Result.fail({ type: "NOTE_NOT_FOUND", message: "Anteckningen hittades inte" })
     )
@@ -234,7 +235,7 @@ describe("DELETE /api/horses/[id]/notes/[noteId]", () => {
       JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { "Content-Type": "application/json" } }
     )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockRejectedValue(unauthorizedResponse)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes/note-1",

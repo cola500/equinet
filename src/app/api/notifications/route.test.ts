@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET, POST } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 const mockGetForUser = vi.fn()
@@ -25,9 +25,10 @@ describe("GET /api/notifications", () => {
   })
 
   it("should return notifications and unreadCount for authenticated user", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const mockNotifications = [
       {
@@ -65,9 +66,10 @@ describe("GET /api/notifications", () => {
   })
 
   it("should respect limit query parameter", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     mockGetForUser.mockResolvedValue([])
     mockGetUnreadCount.mockResolvedValue(0)
 
@@ -81,7 +83,7 @@ describe("GET /api/notifications", () => {
   })
 
   it("should return 401 for unauthenticated request", async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
     )
 
@@ -93,7 +95,7 @@ describe("GET /api/notifications", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest("http://localhost:3000/api/notifications")
     const response = await GET(request)
     expect(response.status).toBe(401)
@@ -106,7 +108,7 @@ describe("POST /api/notifications (mark all as read)", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest("http://localhost:3000/api/notifications", {
       method: "POST",
     })
@@ -115,9 +117,10 @@ describe("POST /api/notifications (mark all as read)", () => {
   })
 
   it("should mark all notifications as read", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     mockMarkAllAsRead.mockResolvedValue({ count: 3 })
 
     const request = new NextRequest("http://localhost:3000/api/notifications", {

@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { NextRequest, NextResponse } from "next/server"
 import { withApiHandler } from "./api-handler"
 
-// Mock auth-server
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+// Mock auth-dual (withApiHandler will use getAuthUser after migration)
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
+
 
 // Mock rate-limit
 vi.mock("@/lib/rate-limit", () => ({
@@ -31,18 +32,33 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
+import type { AuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { z } from "zod"
 
-const providerSession = {
-  user: { id: "user-1", email: "test@test.se", userType: "provider", isAdmin: false, providerId: "prov-1" },
-} as never
+const mockGetAuthUser = vi.mocked(getAuthUser)
 
-const customerSession = {
-  user: { id: "user-2", email: "kund@test.se", userType: "customer", isAdmin: false },
-} as never
+const providerAuthUser: AuthUser = {
+  id: "user-1",
+  email: "test@test.se",
+  userType: "provider",
+  isAdmin: false,
+  providerId: "prov-1",
+  stableId: null,
+  authMethod: "nextauth",
+}
+
+const customerAuthUser: AuthUser = {
+  id: "user-2",
+  email: "kund@test.se",
+  userType: "customer",
+  isAdmin: false,
+  providerId: null,
+  stableId: null,
+  authMethod: "nextauth",
+}
 
 function makeRequest(url = "http://localhost:3000/api/test", opts?: RequestInit) {
   return new NextRequest(url, opts)
@@ -51,7 +67,7 @@ function makeRequest(url = "http://localhost:3000/api/test", opts?: RequestInit)
 describe("withApiHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    mockGetAuthUser.mockResolvedValue(providerAuthUser)
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
   })
@@ -72,7 +88,7 @@ describe("withApiHandler", () => {
   })
 
   it("should pass customer context for auth: 'customer'", async () => {
-    vi.mocked(auth).mockResolvedValue(customerSession)
+    mockGetAuthUser.mockResolvedValue(customerAuthUser)
 
     const handler = withApiHandler({ auth: "customer" }, async (ctx) => {
       return NextResponse.json({ userId: ctx.user.userId })
@@ -98,11 +114,11 @@ describe("withApiHandler", () => {
 
     const res = await handler(makeRequest())
     expect(res.status).toBe(200)
-    expect(auth).not.toHaveBeenCalled()
+    expect(mockGetAuthUser).not.toHaveBeenCalled()
   })
 
   it("should return 401 when not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
 
     const handler = withApiHandler({ auth: "provider" }, async () => {
       return NextResponse.json({ ok: true })
@@ -113,7 +129,7 @@ describe("withApiHandler", () => {
   })
 
   it("should return 403 when wrong role", async () => {
-    vi.mocked(auth).mockResolvedValue(customerSession)
+    mockGetAuthUser.mockResolvedValue(customerAuthUser)
 
     const handler = withApiHandler({ auth: "provider" }, async () => {
       return NextResponse.json({ ok: true })
@@ -123,6 +139,51 @@ describe("withApiHandler", () => {
     const data = await res.json()
     expect(res.status).toBe(403)
     expect(data.error).toBe("Åtkomst nekad")
+  })
+
+  it("should map provider AuthUser to SessionLike with providerId set", async () => {
+    const handler = withApiHandler({ auth: "provider" }, async (ctx) => {
+      return NextResponse.json({ providerId: ctx.user.providerId })
+    })
+
+    const res = await handler(makeRequest())
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.providerId).toBe("prov-1")
+    expect(typeof data.providerId).toBe("string")
+  })
+
+  it("should return 403 when provider has null providerId", async () => {
+    mockGetAuthUser.mockResolvedValue({
+      ...providerAuthUser,
+      providerId: null,
+    })
+
+    const handler = withApiHandler({ auth: "provider" }, async () => {
+      return NextResponse.json({ ok: true })
+    })
+
+    const res = await handler(makeRequest())
+    const data = await res.json()
+    expect(res.status).toBe(403)
+    expect(data.error).toBe("Leverantörsprofil saknas")
+  })
+
+  it("should authenticate via any auth method (Bearer, NextAuth, Supabase)", async () => {
+    mockGetAuthUser.mockResolvedValue({
+      ...providerAuthUser,
+      authMethod: "bearer",
+    })
+
+    const handler = withApiHandler({ auth: "provider" }, async (ctx) => {
+      return NextResponse.json({ userId: ctx.user.userId })
+    })
+
+    const res = await handler(makeRequest())
+    const data = await res.json()
+    expect(res.status).toBe(200)
+    expect(data.userId).toBe("user-1")
   })
 
   // --- Rate limiting ---
