@@ -17,19 +17,27 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 11: Supabase Auth Fas 1** (docs/sprints/sprint-11.md)
+**Sprint 13: Supabase Auth Fas 3 -- Cleanup** (docs/sprints/sprint-13.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-**Sprint 12: Supabase Auth Fas 2 -- Route-migrering** (docs/sprints/sprint-12.md)
+| S13-1 Byt login till Supabase | fullstack | - | pending | - | - |
+| S13-2 Ta bort NextAuth + MobileToken | fullstack | - | pending | - | - |
+| S13-3 Ta bort passwordHash | fullstack | - | pending | - | - |
+| S13-4 iOS Supabase Swift SDK | fullstack | - | pending | - | - |
+| S13-5 Registrering via Supabase | fullstack | - | pending | - | - |
 
-| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
-|-------|------|----------|--------|--------|----------------|
-| S12-1 Supabase login-sida | fullstack | Dev | done | feature/s12-1-supabase-login | 73443d30 |
-| S12-2 Booking routes batch | fullstack | Dev | done | feature/s12-2-booking-routes-auth | c729cfda |
-| S12-3 Provider routes batch | fullstack | Dev | review_requested | feature/s12-3-provider-routes-auth | 27fe4df4 |
-| S12-4 Native routes batch | fullstack | - | pending | - | - |
-| S12-5 Auth routes | fullstack | Dev-2 | review_requested | feature/s12-5-auth-routes-migration | 556ebbd1 |
+**Sprint 12** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S12-1 -- S12-5 | fullstack | Dev + Dev-2 | done |
+
+**Sprint 11** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S11-1 -- S11-4 | fullstack | Dev | done |
 
 **Sprint 11** (klar):
 
