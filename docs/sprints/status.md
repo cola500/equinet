@@ -21,9 +21,9 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S11-1 Dual-auth helper | fullstack | Dev | review_requested | feature/s11-1-dual-auth-helper | 72eb5e50 |
-| S11-2 Migrera användare | fullstack | Dev | review_requested | feature/s11-2-migrate-users-supabase-auth | 70caa4af |
-| S11-3 Sync-trigger | fullstack | Dev | review_requested | feature/s11-3-sync-trigger-auth-users | e5653216 |
+| S11-1 Dual-auth helper | fullstack | Dev | done | feature/s11-1-dual-auth-helper | 72eb5e50 |
+| S11-2 Migrera användare | fullstack | Dev | done | feature/s11-2-migrate-users-supabase-auth | 70caa4af |
+| S11-3 Sync-trigger | fullstack | Dev | done | feature/s11-3-sync-trigger-auth-users | e5653216 |
 | S11-4 Migrera en route | fullstack | - | pending | - | - |
 | S11-5 Login-sida | fullstack | - | backlog | - | - |
 
