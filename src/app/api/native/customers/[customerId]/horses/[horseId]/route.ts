@@ -2,10 +2,10 @@
  * PUT /api/native/customers/[customerId]/horses/[horseId] - Update horse
  * DELETE /api/native/customers/[customerId]/horses/[horseId] - Soft-delete horse
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase).
  */
 import { NextRequest, NextResponse } from "next/server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
@@ -30,8 +30,8 @@ type RouteContext = { params: Promise<{ customerId: string; horseId: string }> }
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     // 5. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -156,8 +156,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -183,7 +183,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     // 3. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {

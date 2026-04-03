@@ -1,11 +1,11 @@
 /**
  * DELETE /api/native/calendar/exceptions/[date] - Delete availability exception
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase).
  * Deletes an availability exception for the authenticated provider.
  */
 import { NextRequest, NextResponse } from "next/server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
@@ -16,9 +16,9 @@ export async function DELETE(
   { params }: { params: Promise<{ date: string }> }
 ) {
   try {
-    // 1. Auth (Bearer token)
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    // 1. Auth (dual-auth)
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -44,7 +44,7 @@ export async function DELETE(
 
     // 3. Find provider for this user
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -74,7 +74,7 @@ export async function DELETE(
     })
 
     logger.info("Native calendar exception deleted", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       date,
     })

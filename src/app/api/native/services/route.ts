@@ -2,11 +2,11 @@
  * GET /api/native/services - Service list for native iOS app
  * POST /api/native/services - Create new service
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase).
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
@@ -27,8 +27,8 @@ const repo = new ServiceRepository()
 export async function GET(request: NextRequest) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // 3. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     const services = await repo.findByProviderId(provider.id)
 
     logger.info("Native services fetched", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       count: services.length,
     })
@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     })
 
     logger.info("Native service created", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       serviceId: service.id,
     })

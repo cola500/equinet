@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -27,11 +27,11 @@ vi.mock("@/lib/rate-limit", () => ({
 }))
 
 import { PUT, DELETE } from "./route"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, RateLimitServiceError } from "@/lib/rate-limit"
 
-const mockAuth = vi.mocked(authFromMobileToken)
+const mockAuth = vi.mocked(getAuthUser)
 const mockFindProvider = vi.mocked(prisma.provider.findUnique)
 const mockFindLink = vi.mocked(prisma.providerCustomer.findUnique)
 const mockDeleteLink = vi.mocked(prisma.providerCustomer.delete)
@@ -65,7 +65,7 @@ function createDeleteRequest() {
 describe("PUT /api/native/customers/[customerId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "token-1" })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockFindLink.mockResolvedValue({ id: "link-1" } as never)
@@ -144,7 +144,7 @@ describe("PUT /api/native/customers/[customerId]", () => {
 describe("DELETE /api/native/customers/[customerId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "token-1" })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockFindLink.mockResolvedValue({ id: "link-1" } as never)

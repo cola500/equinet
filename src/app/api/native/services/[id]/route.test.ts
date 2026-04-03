@@ -11,8 +11,8 @@ const { mockUpdateWithAuth, mockDeleteWithAuth } = vi.hoisted(() => ({
   mockDeleteWithAuth: vi.fn(),
 }))
 
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -35,11 +35,11 @@ vi.mock("@/lib/rate-limit", () => ({
 }))
 
 import { PUT, DELETE } from "./route"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, RateLimitServiceError } from "@/lib/rate-limit"
 
-const mockAuth = vi.mocked(authFromMobileToken)
+const mockAuth = vi.mocked(getAuthUser)
 const mockFindProvider = vi.mocked(prisma.provider.findUnique)
 const mockRateLimit = vi.mocked(rateLimiters.api)
 
@@ -79,7 +79,7 @@ describe("PUT /api/native/services/[id]", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "token-1" })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockUpdateWithAuth.mockResolvedValue({
@@ -159,7 +159,7 @@ describe("PUT /api/native/services/[id]", () => {
 describe("DELETE /api/native/services/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "token-1" })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockDeleteWithAuth.mockResolvedValue(true)

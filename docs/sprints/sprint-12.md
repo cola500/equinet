@@ -105,9 +105,9 @@ services, reviews, due-for-service, announcements, insights)
 
 ---
 
-### S12-5: Migrera auth routes -- BACKLOG
+### S12-5: Migrera auth routes -- READY
 
-**Prioritet:** Låg
+**Prioritet:** Medel
 **Typ:** Migrering
 **Beskrivning:** Migrera auth-specifika routes (register, verify-email, forgot/reset-password).
 Dessa kräver mer eftertanke -- de interagerar med Supabase Auth direkt.

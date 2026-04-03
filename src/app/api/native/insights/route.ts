@@ -1,11 +1,11 @@
 /**
  * GET /api/native/insights - Business insights for native iOS
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase)
  * Feature flag: business_insights (server-side gate, defense in depth)
  */
 import { NextRequest, NextResponse } from "next/server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
@@ -15,8 +15,8 @@ import { sv } from "date-fns/locale"
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
     }
 
     logger.info("Native insights fetched", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       months,
       bookingCount: totalBookings,

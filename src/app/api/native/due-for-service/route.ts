@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
@@ -16,9 +16,9 @@ interface NativeDueForServiceItem extends DueForServiceResult {
 
 export async function GET(request: NextRequest) {
   try {
-    // 1. Auth (Bearer JWT)
-    const tokenAuth = await authFromMobileToken(request)
-    if (!tokenAuth) {
+    // 1. Auth (Dual-auth: Bearer > NextAuth > Supabase)
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: tokenAuth.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
 

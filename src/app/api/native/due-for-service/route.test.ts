@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -26,7 +26,7 @@ vi.mock("@/lib/prisma", () => ({
 }))
 
 import { GET } from "./route"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
 
@@ -46,9 +46,14 @@ describe("GET /api/native/due-for-service", () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    vi.mocked(authFromMobileToken).mockResolvedValue({
-      userId: TEST_UUIDS.userId,
-      tokenId: "token-1",
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.userId,
+      email: "test@example.com",
+      userType: "provider",
+      isAdmin: false,
+      providerId: "provider-1",
+      stableId: null,
+      authMethod: "bearer" as const,
     })
 
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -63,7 +68,7 @@ describe("GET /api/native/due-for-service", () => {
   })
 
   it("returns 401 when no token", async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue(null)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await GET(makeRequest())
     expect(res.status).toBe(401)
   })

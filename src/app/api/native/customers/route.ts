@@ -2,11 +2,11 @@
  * GET /api/native/customers - Customer list for native iOS app
  * POST /api/native/customers - Add customer manually
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase).
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
@@ -22,9 +22,9 @@ const addCustomerSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    // 1. Auth (Bearer token)
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    // 1. Auth (dual-auth)
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // 3. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
     })
 
     logger.info("Native customers fetched", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       count: customers.length,
     })
@@ -237,8 +237,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Find provider
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -326,7 +326,7 @@ export async function POST(request: NextRequest) {
     })
 
     logger.info("Native customer created", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       customerId,
     })

@@ -1,11 +1,11 @@
 /**
  * POST /api/native/announcements/[id]/cancel - Cancel a provider announcement
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase)
  * Feature flag: route_planning (server-side gate)
  */
 import { NextRequest, NextResponse } from "next/server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
@@ -16,8 +16,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -45,7 +45,7 @@ export async function POST(
     }
 
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: { id: true },
     })
     if (!provider) {
@@ -94,7 +94,7 @@ export async function POST(
     })
 
     logger.info("Native announcement cancelled", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
       announcementId: id,
     })

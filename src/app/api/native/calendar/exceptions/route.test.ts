@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -25,11 +25,11 @@ vi.mock("@/lib/rate-limit", () => ({
 }))
 
 import { POST } from "./route"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, RateLimitServiceError } from "@/lib/rate-limit"
 
-const mockAuth = vi.mocked(authFromMobileToken)
+const mockAuth = vi.mocked(getAuthUser)
 const mockFindProvider = vi.mocked(prisma.provider.findUnique)
 const mockUpsert = vi.mocked(prisma.availabilityException.upsert)
 const mockRateLimit = vi.mocked(rateLimiters.api)
@@ -76,7 +76,7 @@ const mockUpsertResult = {
 describe("POST /api/native/calendar/exceptions", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "token-1" })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockUpsert.mockResolvedValue(mockUpsertResult as never)
     mockRateLimit.mockResolvedValue(true)

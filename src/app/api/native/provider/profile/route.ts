@@ -2,11 +2,11 @@
  * GET /api/native/provider/profile - Fetch provider profile for native iOS app
  * PUT /api/native/provider/profile - Update provider profile (provider + user fields)
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Dual-auth (Bearer > NextAuth > Supabase)
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import {
@@ -76,8 +76,8 @@ const profileSelect = {
 export async function GET(request: NextRequest) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     // 3. Fetch provider with user data
     const provider = await prisma.provider.findUnique({
-      where: { userId: authResult.userId },
+      where: { userId: authUser.id },
       select: profileSelect,
     })
     if (!provider) {
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     }
 
     logger.info("Native provider profile fetched", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: provider.id,
     })
 
@@ -133,8 +133,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // 1. Auth
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -189,21 +189,21 @@ export async function PUT(request: NextRequest) {
         if (lastName !== undefined) userUpdate.lastName = lastName
         if (phone !== undefined) userUpdate.phone = phone
         await tx.user.update({
-          where: { id: authResult.userId },
+          where: { id: authUser.id },
           data: userUpdate,
         })
       }
 
       if (hasProviderFields) {
         await tx.provider.update({
-          where: { userId: authResult.userId },
+          where: { userId: authUser.id },
           data: providerFields,
         })
       }
 
       // Re-fetch with full select to return consistent data
       return tx.provider.findUnique({
-        where: { userId: authResult.userId },
+        where: { userId: authUser.id },
         select: profileSelect,
       })
     })
@@ -219,7 +219,7 @@ export async function PUT(request: NextRequest) {
     invalidateProviderCache().catch(() => {})
 
     logger.info("Native provider profile updated", {
-      userId: authResult.userId,
+      userId: authUser.id,
       providerId: updatedProfile.id,
       updatedFields: Object.keys(parsed.data),
     })

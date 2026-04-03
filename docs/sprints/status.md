@@ -28,7 +28,7 @@ sections:
 | S12-1 Supabase login-sida | fullstack | Dev | done | feature/s12-1-supabase-login | 73443d30 |
 | S12-2 Booking routes batch | fullstack | Dev | done | feature/s12-2-booking-routes-auth | c729cfda |
 | S12-3 Provider routes batch | fullstack | Dev | review_requested | feature/s12-3-provider-routes-auth | 27fe4df4 |
-| S12-4 Native routes batch | fullstack | - | pending | - | - |
+| S12-4 Native routes batch | fullstack | Dev | review_requested | feature/s12-4-native-routes-auth | - |
 | S12-5 Auth routes | fullstack | - | backlog | - | - |
 
 **Sprint 11** (klar):
@@ -106,7 +106,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S12-3 Provider routes batch | feature/s12-3-provider-routes-auth | 2026-04-03 |
+| Dev | Fullstack | S12-4 Native routes batch | feature/s12-4-native-routes-auth | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
