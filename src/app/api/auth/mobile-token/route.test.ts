@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
+vi.mock("@/lib/auth-dual", () => ({ getAuthUser: vi.fn() }))
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { mobileToken: vi.fn() },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
@@ -20,18 +20,24 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { POST, DELETE } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { getMobileTokenService, authFromMobileToken } from "@/lib/mobile-auth"
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimit = vi.mocked(rateLimiters.mobileToken)
 const mockGetService = vi.mocked(getMobileTokenService)
 const mockAuthFromMobileToken = vi.mocked(authFromMobileToken)
 
-const mockSession = {
-  user: { id: "user-1", email: "test@test.se", userType: "provider" },
-} as never
+const mockAuthUser = {
+  id: "user-1",
+  email: "test@test.se",
+  userType: "provider",
+  isAdmin: false,
+  providerId: "provider-1",
+  stableId: null,
+  authMethod: "nextauth" as const,
+}
 
 const mockService = {
   generateToken: vi.fn(),
@@ -59,7 +65,7 @@ function createDeleteRequest() {
 describe("POST /api/auth/mobile-token", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue(mockSession)
+    mockGetAuthUser.mockResolvedValue(mockAuthUser)
     mockRateLimit.mockResolvedValue(true)
     mockGetService.mockReturnValue(mockService as never)
     mockService.generateToken.mockResolvedValue({
@@ -68,17 +74,8 @@ describe("POST /api/auth/mobile-token", () => {
     })
   })
 
-  it("throws 401 response when not authenticated", async () => {
-    const authResponse = new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401 }
-    )
-    mockAuth.mockRejectedValue(authResponse)
-    await expect(POST(createPostRequest())).rejects.toBe(authResponse)
-  })
-
-  it("returns 401 when session is null", async () => {
-    mockAuth.mockResolvedValue(null as never)
+  it("returns 401 when not authenticated", async () => {
+    mockGetAuthUser.mockResolvedValue(null)
     const res = await POST(createPostRequest())
     expect(res.status).toBe(401)
   })

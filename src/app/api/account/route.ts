@@ -5,7 +5,7 @@
  * Requires password confirmation and typing "RADERA".
  */
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
@@ -20,9 +20,9 @@ const deleteAccountSchema = z
 
 export async function DELETE(request: NextRequest) {
   try {
-    // 1. Auth
-    const session = await auth()
-    if (!session?.user?.id) {
+    // 1. Auth (dual: Bearer > NextAuth > Supabase)
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -47,7 +47,7 @@ export async function DELETE(request: NextRequest) {
     // 5. Execute deletion
     const service = createAccountDeletionService()
     const result = await service.deleteAccount(
-      session.user.id,
+      authUser.id,
       parsed.password,
       parsed.confirmation
     )
@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 7. Success
-    logger.security("Account deleted", "high", { userId: session.user.id })
+    logger.security("Account deleted", "high", { userId: authUser.id })
     return NextResponse.json({
       success: true,
       message: "Ditt konto har raderats",

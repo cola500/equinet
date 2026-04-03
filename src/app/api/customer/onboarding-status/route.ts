@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
@@ -10,8 +10,8 @@ import { logger } from "@/lib/logger"
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: authUser.id },
       select: {
         firstName: true,
         lastName: true,
