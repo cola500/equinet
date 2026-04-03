@@ -322,8 +322,9 @@ function ProviderBookingsContent() {
             icon={Calendar}
             title="Inga bokningar"
             description={filter === "all"
-              ? "Du har inga bokningar ännu. De dyker upp här när kunder bokar dina tjänster."
+              ? "Du har inga bokningar ännu. Se till att du har tjänster och tillgänglighet inställt, så dyker bokningar upp här när kunder bokar."
               : "Inga bokningar att visa för detta filter."}
+            action={filter === "all" ? { label: "Gå till tjänster", href: "/provider/services" } : undefined}
           />
         ) : (
           <div className="space-y-4">
