@@ -1,83 +1,42 @@
-// Auth middleware using NextAuth v5 (Edge-compatible)
+// Auth middleware using NextAuth v5 (Edge-compatible) + Supabase Auth fallback
 // IMPORTANT: Only import from auth.config.ts, NOT auth.ts (which has Prisma/bcrypt)
 import NextAuth from "next-auth"
 import { authConfig } from "@/lib/auth.config"
 import { NextResponse } from "next/server"
+import { handleAuthorization } from "@/lib/middleware-auth"
+import { getSupabaseUserFromCookie } from "@/lib/auth-supabase-edge"
 
 // Create Edge-compatible auth instance with minimal config
 const { auth } = NextAuth(authConfig)
 
-export default auth((req) => {
+export default auth(async (req) => {
   const { auth: session, nextUrl } = req
   const path = nextUrl.pathname
 
-  // If not authenticated, the auth callback in auth.config.ts handles redirect
-  if (!session?.user) {
-    // For API routes, return 401 JSON
-    if (path.startsWith('/api/')) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-    // For pages, redirect to login (handled by auth callback)
-    return NextResponse.redirect(new URL('/login', nextUrl))
+  // 1. NextAuth session (primary -- existing users)
+  if (session?.user) {
+    const result = handleAuthorization(
+      {
+        userType: session.user.userType as string,
+        isAdmin: session.user.isAdmin === true,
+      },
+      nextUrl
+    )
+    return result ?? NextResponse.next()
   }
 
-  const userType = session.user.userType
-  const isAdmin = session.user.isAdmin === true
-
-  // Admin-only routes
-  const adminPaths = ["/admin", "/api/admin"]
-  if (adminPaths.some(p => path.startsWith(p))) {
-    if (!isAdmin) {
-      if (path.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: "Åtkomst nekad" },
-          { status: 403 }
-        )
-      }
-      return NextResponse.redirect(new URL('/', nextUrl))
-    }
-    return NextResponse.next()
+  // 2. Supabase Auth session (fallback -- migrated users)
+  const supabaseUser = await getSupabaseUserFromCookie(req)
+  if (supabaseUser) {
+    const result = handleAuthorization(supabaseUser, nextUrl)
+    return result ?? NextResponse.next()
   }
 
-  // Provider-only routes
-  const providerOnlyPaths = [
-    "/api/routes",
-    "/api/route-orders/available",
-    "/provider",
-  ]
-
-  if (providerOnlyPaths.some(p => path.startsWith(p))) {
-    if (userType !== "provider") {
-      if (path.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: "Endast leverantörer har åtkomst till denna resurs" },
-          { status: 403 }
-        )
-      }
-      return NextResponse.redirect(new URL('/customer', nextUrl))
-    }
+  // 3. No auth -- block access
+  if (path.startsWith('/api/')) {
+    return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
-
-  // Customer-only routes
-  const customerOnlyPaths = [
-    "/api/route-orders/my-orders",
-    "/customer",
-  ]
-
-  if (customerOnlyPaths.some(p => path.startsWith(p))) {
-    if (userType !== "customer") {
-      if (path.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: "Endast kunder har åtkomst till denna resurs" },
-          { status: 403 }
-        )
-      }
-      return NextResponse.redirect(new URL('/provider', nextUrl))
-    }
-  }
-
-  // All other matched routes just require authentication (any userType)
-  return NextResponse.next()
+  return NextResponse.redirect(new URL('/login', nextUrl))
 })
 
 // Configure which routes require authentication
