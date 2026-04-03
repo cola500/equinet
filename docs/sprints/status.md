@@ -30,7 +30,7 @@ sections:
 | S9-8 Onboarding-checklista | fullstack | Dev | in_progress | feature/s9-8-onboarding-checklist | - |
 | S9-9 Verifierings-felmeddelande | fullstack | - | pending | - | - |
 | S9-10 Tom-tillstand vagledning | fullstack | - | pending | - | - |
-| S9-4 customer_insights spike | fullstack | Dev | in_progress | feature/s9-4-customer-insights-spike | - |
+| S9-4 customer_insights spike | fullstack | Dev | review_requested | feature/s9-4-customer-insights-spike | - |
 | S9-3 Staging-databas | fullstack | - | parkerad | - | - |
 
 **Sprint 8** (klar):
