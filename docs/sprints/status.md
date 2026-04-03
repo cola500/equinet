@@ -28,8 +28,8 @@ sections:
 | S9-5 Onboarding-spike | fullstack | Dev | done | PR #133 | 06bf42a8 |
 | S9-6 Analytics + backup-docs | fullstack | Dev | done | PR #132 | e9f0021c |
 | S9-8 Onboarding-checklista | fullstack | Dev | done | PR #135 | 0705042d |
-| S9-9 Verifierings-felmeddelande | fullstack | Dev | review_requested | feature/s9-9-verification-error-message | 0bd2229d |
-| S9-10 Tom-tillstand vagledning | fullstack | Dev | in_progress | feature/s9-10-empty-state-guidance | - |
+| S9-9 Verifierings-felmeddelande | fullstack | Dev | in_progress | feature/s9-9-verification-error-message | - |
+| S9-10 Tom-tillstand vagledning | fullstack | - | pending | - | - |
 | S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-3 Staging-databas | fullstack | - | parkerad | - | - |
 
@@ -87,7 +87,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-10 Tom-tillstand vagledning | feature/s9-10-empty-state-guidance | 2026-04-03 |
+| Dev | Fullstack | S9-9 Verifierings-felmeddelande | feature/s9-9-verification-error-message | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
