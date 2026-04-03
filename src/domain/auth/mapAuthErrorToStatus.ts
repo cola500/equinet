@@ -17,6 +17,7 @@ export function mapAuthErrorToStatus(error: AuthError): number {
     case 'INVALID_CREDENTIALS':
       return 401
     case 'EMAIL_NOT_VERIFIED':
+    case 'ACCOUNT_BLOCKED':
       return 403
     default:
       return 500
