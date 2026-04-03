@@ -25,6 +25,7 @@ sections:
 | S10-2 Verifierings-felmeddelande | fullstack | - | done (S9-9) | - | - |
 | S10-3 Tom-tillstånd | fullstack | - | done (S9-10) | - | - |
 | S10-4 customer_insights spike | fullstack | - | done (S9-4) | - | - |
+| S10-5 Supabase Auth PoC | fullstack | Dev | in_progress | feature/s10-5-supabase-auth-poc | - |
 
 **Sprint 9** (klar):
 
@@ -88,7 +89,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S10-1 RLS Slice Booking READ | feature/s10-1-rls-slice-booking-read | 2026-04-03 |
+| Dev | Fullstack | S10-5 Supabase Auth PoC | feature/s10-5-supabase-auth-poc | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
