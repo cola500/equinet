@@ -26,7 +26,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S12-1 Supabase login-sida | fullstack | Dev | done | feature/s12-1-supabase-login | 73443d30 |
-| S12-2 Booking routes batch | fullstack | Dev | in_progress | feature/s12-2-booking-routes-auth | - |
+| S12-2 Booking routes batch | fullstack | Dev | review_requested | feature/s12-2-booking-routes-auth | 7f31e853 |
 | S12-3 Provider routes batch | fullstack | - | pending | - | - |
 | S12-4 Native routes batch | fullstack | - | pending | - | - |
 | S12-5 Auth routes | fullstack | - | backlog | - | - |
