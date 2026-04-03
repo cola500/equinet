@@ -52,6 +52,24 @@ function LoginForm() {
     setIsLoading(true)
 
     try {
+      // Step 1: Validate credentials via web-login (returns structured error types)
+      const preCheck = await fetch("/api/auth/web-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!preCheck.ok) {
+        const body = await preCheck.json()
+        if (body.type === "EMAIL_NOT_VERIFIED") {
+          setError("EMAIL_NOT_VERIFIED")
+        } else {
+          setError(body.error || "Ogiltig email eller lösenord")
+        }
+        return
+      }
+
+      // Step 2: Create session via NextAuth signIn
       const result = await signIn("credentials", {
         email,
         password,
@@ -59,11 +77,7 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        if (result.error === "EMAIL_NOT_VERIFIED") {
-          setError("EMAIL_NOT_VERIFIED")
-        } else {
-          setError("Ogiltig email eller lösenord")
-        }
+        setError("Ogiltig email eller lösenord")
       } else {
         // Request mobile token for iOS widget (fire-and-forget)
         requestMobileTokenForNative().catch(() => {})

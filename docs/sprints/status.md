@@ -27,10 +27,10 @@ sections:
 | S9-7 Schema-isolation spike | fullstack | Dev | done | PR #130 | 2b8a0e2a |
 | S9-5 Onboarding-spike | fullstack | Dev | done | PR #133 | 06bf42a8 |
 | S9-6 Analytics + backup-docs | fullstack | Dev | done | PR #132 | e9f0021c |
-| S9-8 Onboarding-checklista | fullstack | Dev | in_progress | feature/s9-8-onboarding-checklist | - |
-| S9-9 Verifierings-felmeddelande | fullstack | - | pending | - | - |
+| S9-8 Onboarding-checklista | fullstack | Dev | done | PR #135 | 0705042d |
+| S9-9 Verifierings-felmeddelande | fullstack | Dev | in_progress | feature/s9-9-verification-error-message | - |
 | S9-10 Tom-tillstand vagledning | fullstack | - | pending | - | - |
-| S9-4 customer_insights spike | fullstack | Dev | review_requested | feature/s9-4-customer-insights-spike | - |
+| S9-4 customer_insights spike | fullstack | - | pending | - | - |
 | S9-3 Staging-databas | fullstack | - | parkerad | - | - |
 
 **Sprint 8** (klar):
@@ -87,7 +87,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-4 customer_insights spike | feature/s9-4-customer-insights-spike | 2026-04-03 |
+| Dev | Fullstack | S9-9 Verifierings-felmeddelande | feature/s9-9-verification-error-message | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
