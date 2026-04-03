@@ -47,12 +47,25 @@ insertar dem i auth.users via Supabase Admin API (`supabase.auth.admin.createUse
 
 ## Steg
 
+### 0. Verifiera password_hash manuellt (FÖRST)
+
+- Skapa EN testanvändare via Admin API med `encrypted_password` satt till en bcrypt-hash
+- Försök logga in med det kända lösenordet via `signInWithPassword`
+- Om det INTE fungerar: utred alternativ (t.ex. direkt SQL insert i auth.users)
+- Gå INTE vidare förrän login med kopierad hash är bekräftad
+
 ### 1. Skriv migreringsscriptet
 
 - Läs alla `User` med `isManualCustomer = false` och `isBlocked = false`
-- För varje användare: `supabase.auth.admin.createUser({ id, email, password_hash (bcrypt), email_confirm: true, user_metadata: { firstName, lastName, userType } })`
-- Hantera redan existerande (skip med log)
-- Sammanfattning i slutet: X migrerade, Y skippade, Z fel
+- För varje användare: `supabase.auth.admin.createUser()`
+  - `id`: samma UUID som i public.User
+  - `email`: från User.email
+  - `password` ELLER `encrypted_password`: bcrypt-hash (beroende på vad steg 0 bekräftar)
+  - `email_confirm: true`
+  - `user_metadata`: `{ firstName, lastName }` (presentationsdata)
+  - `app_metadata`: `{ userType, isAdmin }` (rolldata som styr claims)
+- Hantera redan existerande (skip med log av `error.code`, ALDRIG `error.message`)
+- Sammanfattning i slutet: X migrerade, Y skippade (existerande), Z fel (med error.code)
 
 ### 2. Testa mot lokal databas (dry-run)
 
@@ -73,7 +86,7 @@ insertar dem i auth.users via Supabase Admin API (`supabase.auth.admin.createUse
 
 | Risk | Mitigering |
 |------|-----------|
-| bcrypt-hash format skiljer sig | Supabase Auth stödjer bcrypt ($2a$/$2b$) -- samma som vi använder |
+| bcrypt-hash format skiljer sig | Verifieras manuellt i steg 0 INNAN scriptskrivning |
 | UUID-kollision i auth.users | Vi sätter samma UUID som i public.User -- bör inte finnas |
 | Rate limiting på Admin API | Batch i grupper om 10 med kort delay |
 | PoC-testanvändare redan i auth.users | Scriptet skippar existerande |
