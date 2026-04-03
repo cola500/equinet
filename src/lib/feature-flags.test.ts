@@ -90,6 +90,7 @@ describe("feature-flags", () => {
         stable_profiles: false,
         stripe_payments: false,
         demo_mode: false,
+        supabase_auth_poc: false,
       })
     })
 
