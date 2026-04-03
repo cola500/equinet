@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S10-1 RLS Slice Booking READ | fullstack | - | pending | - | - |
+| S10-1 RLS Slice Booking READ | fullstack | Dev | review_requested | feature/s10-1-rls-slice-booking-read | - |
 | S10-2 Verifierings-felmeddelande | fullstack | - | done (S9-9) | - | - |
 | S10-3 Tom-tillstånd | fullstack | - | done (S9-10) | - | - |
 | S10-4 customer_insights spike | fullstack | - | done (S9-4) | - | - |
@@ -88,7 +88,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S9-9 Verifierings-felmeddelande | feature/s9-9-verification-error-message | 2026-04-03 |
+| Dev | Fullstack | S10-1 RLS Slice Booking READ | feature/s10-1-rls-slice-booking-read | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

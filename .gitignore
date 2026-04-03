@@ -51,6 +51,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# spike output
+scripts/rls-spike/results.json
+
 # vercel
 .vercel
 
