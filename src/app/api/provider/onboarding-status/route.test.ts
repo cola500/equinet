@@ -4,7 +4,7 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
-vi.mock("@/lib/auth", () => ({ auth: vi.fn() }))
+vi.mock("@/lib/auth-dual", () => ({ getAuthUser: vi.fn() }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     provider: { findFirst: vi.fn() },
@@ -13,7 +13,7 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }))
 
 import { GET } from "./route"
-import { auth } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
 
@@ -21,7 +21,7 @@ function mockRequest() {
   return new NextRequest("http://localhost:3000/api/provider/onboarding-status")
 }
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockFindFirst = vi.mocked(prisma.provider.findFirst)
 
 function makeProvider(overrides: Record<string, unknown> = {}) {
@@ -44,16 +44,22 @@ function makeProvider(overrides: Record<string, unknown> = {}) {
 describe("GET /api/provider/onboarding-status", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1" },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1",
+      email: "test@example.com",
+      userType: "PROVIDER",
+      isAdmin: false,
+      providerId: "provider-1",
+      stableId: null,
+      authMethod: "nextauth",
+    })
     mockFindFirst.mockResolvedValue(makeProvider() as never)
   })
 
   // --- Auth ---
 
-  it("returns 401 when session is null", async () => {
-    mockAuth.mockResolvedValueOnce(null)
+  it("returns 401 when getAuthUser returns null", async () => {
+    mockGetAuthUser.mockResolvedValueOnce(null)
 
     const res = await GET(mockRequest())
 
@@ -62,12 +68,52 @@ describe("GET /api/provider/onboarding-status", () => {
     expect(body.error).toBe("Ej inloggad")
   })
 
-  it("returns 401 when session.user.id is missing", async () => {
-    mockAuth.mockResolvedValueOnce({ user: {} } as never)
+  it("returns 200 when authenticated via nextauth", async () => {
+    mockGetAuthUser.mockResolvedValueOnce({
+      id: "user-1",
+      email: "test@example.com",
+      userType: "PROVIDER",
+      isAdmin: false,
+      providerId: "provider-1",
+      stableId: null,
+      authMethod: "nextauth",
+    })
 
     const res = await GET(mockRequest())
 
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(200)
+  })
+
+  it("returns 200 when authenticated via bearer token", async () => {
+    mockGetAuthUser.mockResolvedValueOnce({
+      id: "user-1",
+      email: "test@example.com",
+      userType: "PROVIDER",
+      isAdmin: false,
+      providerId: "provider-1",
+      stableId: null,
+      authMethod: "bearer",
+    })
+
+    const res = await GET(mockRequest())
+
+    expect(res.status).toBe(200)
+  })
+
+  it("returns 200 when authenticated via supabase", async () => {
+    mockGetAuthUser.mockResolvedValueOnce({
+      id: "user-1",
+      email: "test@example.com",
+      userType: "PROVIDER",
+      isAdmin: false,
+      providerId: "provider-1",
+      stableId: null,
+      authMethod: "supabase",
+    })
+
+    const res = await GET(mockRequest())
+
+    expect(res.status).toBe(200)
   })
 
   // --- Provider not found ---
