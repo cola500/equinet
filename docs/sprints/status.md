@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-02
+last_updated: 2026-04-03
 sections:
   - Aktiv sprint
   - Sessioner
@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S11-1 Dual-auth helper | fullstack | - | pending | - | - |
+| S11-1 Dual-auth helper | fullstack | Dev | in_progress | feature/s11-1-dual-auth-helper | - |
 | S11-2 Migrera användare | fullstack | - | pending | - | - |
 | S11-3 Sync-trigger | fullstack | - | pending | - | - |
 | S11-4 Migrera en route | fullstack | - | pending | - | - |
@@ -96,7 +96,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S10-5 Supabase Auth PoC | feature/s10-5-supabase-auth-poc | 2026-04-03 |
+| Dev | Fullstack | S11-1 Dual-auth helper | feature/s11-1-dual-auth-helper | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
