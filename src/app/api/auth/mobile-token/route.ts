@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { getMobileTokenService, authFromMobileToken } from "@/lib/mobile-auth"
 import { MaxTokensExceededError } from "@/domain/auth/MobileTokenService"
@@ -21,16 +21,16 @@ const postBodySchema = z
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth (session cookie)
-    const session = await auth()
-    if (!session) {
+    // Auth (dual: Bearer > NextAuth > Supabase)
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Rate limit
     const clientIP = getClientIP(request)
     const isAllowed = await rateLimiters.mobileToken(
-      `${session.user.id}:${clientIP}`
+      `${authUser.id}:${clientIP}`
     )
     if (!isAllowed) {
       return NextResponse.json(
@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
 
     const service = getMobileTokenService()
     const result = await service.generateToken(
-      session.user.id,
+      authUser.id,
       parsed.data.deviceName
     )
 
     logger.info("Mobile token generated", {
-      userId: session.user.id,
+      userId: authUser.id,
       deviceName: parsed.data.deviceName,
     })
 

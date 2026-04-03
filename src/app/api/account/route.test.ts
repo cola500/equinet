@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -16,13 +16,13 @@ vi.mock("@/domain/account/AccountDeletionService", () => ({
   createAccountDeletionService: vi.fn(),
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { createAccountDeletionService } from "@/domain/account/AccountDeletionService"
 import { Result } from "@/domain/shared"
 import { DELETE } from "./route"
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimiters = vi.mocked(rateLimiters)
 const mockCreateService = vi.mocked(createAccountDeletionService)
 
@@ -36,9 +36,10 @@ function createRequest(body: unknown) {
 describe("DELETE /api/account", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "customer" },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "test@test.se", userType: "customer",
+      isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth",
+    })
     mockRateLimiters.profileUpdate.mockResolvedValue(true)
     mockCreateService.mockReturnValue({
       deleteAccount: vi.fn().mockResolvedValue(Result.ok({ deleted: true })),
@@ -46,7 +47,7 @@ describe("DELETE /api/account", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
 
     const response = await DELETE(createRequest({ confirmation: "RADERA", password: "test" }))
     const data = await response.json()

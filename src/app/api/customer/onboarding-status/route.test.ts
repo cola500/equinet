@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -27,12 +27,12 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 import { GET } from "./route"
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimiters = vi.mocked(rateLimiters)
 const mockFindUnique = vi.mocked(prisma.user.findUnique)
 
@@ -49,14 +49,14 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return 401 when not authenticated", async () => {
-    mockAuth.mockResolvedValue(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
 
     const response = await GET(createRequest())
     expect(response.status).toBe(401)
   })
 
   it("returns 429 when rate limited", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockRateLimiters.api.mockResolvedValueOnce(false)
 
     const response = await GET(createRequest())
@@ -64,7 +64,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return 404 when user not found", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue(null)
 
     const response = await GET(createRequest())
@@ -72,7 +72,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return all false for empty profile", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: null,
       lastName: null,
@@ -94,7 +94,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return profileComplete true when name and phone filled", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: "Anna",
       lastName: "Svensson",
@@ -113,7 +113,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return hasHorses true when at least one horse", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: null,
       lastName: null,
@@ -130,7 +130,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return hasBookings true when at least one booking", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: null,
       lastName: null,
@@ -147,7 +147,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return hasReviews true when at least one review", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: null,
       lastName: null,
@@ -164,7 +164,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should return allComplete true when all steps done", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: "Anna",
       lastName: "Svensson",
@@ -185,7 +185,7 @@ describe("GET /api/customer/onboarding-status", () => {
   })
 
   it("should use select with minimal fields", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user-1" } } as never)
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" })
     mockFindUnique.mockResolvedValue({
       firstName: "Anna",
       lastName: "Svensson",
