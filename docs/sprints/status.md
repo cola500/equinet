@@ -29,7 +29,7 @@ sections:
 | S12-2 Booking routes batch | fullstack | Dev | done | feature/s12-2-booking-routes-auth | c729cfda |
 | S12-3 Provider routes batch | fullstack | Dev | review_requested | feature/s12-3-provider-routes-auth | 27fe4df4 |
 | S12-4 Native routes batch | fullstack | - | pending | - | - |
-| S12-5 Auth routes | fullstack | Dev-2 | in_progress | feature/s12-5-auth-routes-migration | - |
+| S12-5 Auth routes | fullstack | Dev-2 | review_requested | feature/s12-5-auth-routes-migration | 556ebbd1 |
 
 **Sprint 11** (klar):
 
