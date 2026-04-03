@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
@@ -17,8 +17,8 @@ const FUTURE_DATE = new Date()
 FUTURE_DATE.setDate(FUTURE_DATE.getDate() + 7)
 const FUTURE_DATE_STR = FUTURE_DATE.toISOString().split('T')[0]
 
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -74,9 +74,9 @@ describe('POST /api/bookings/manual', () => {
     vi.clearAllMocks()
 
     // Default: provider session
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.providerUser, userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     // Default: provider exists
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -115,7 +115,7 @@ describe('POST /api/bookings/manual', () => {
   }
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = makeRequest({
       serviceId: TEST_UUIDS.service,
@@ -216,10 +216,10 @@ describe('POST /api/bookings/manual', () => {
     expect(data.isManualBooking).toBe(true)
   })
 
-  it('should return 401 for non-provider users', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.customer, userType: 'customer' },
-    } as never)
+  it('should return 403 for non-provider users', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = makeRequest({
       serviceId: TEST_UUIDS.service,
@@ -442,10 +442,9 @@ describe('POST /api/bookings/manual', () => {
   })
 
   it('returns 503 when rate limiter throws', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider' },
-      expires: '',
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.providerUser, userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(rateLimiters.booking).mockRejectedValueOnce(new Error('Redis down'))
 
     const request = new NextRequest('http://localhost:3000/api/bookings/manual', {

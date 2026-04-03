@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
@@ -45,13 +45,13 @@ const manualBookingSchema = z.object({
 // POST - Create manual booking (provider-only)
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Provider-only endpoint
-    if (session.user.userType !== 'provider') {
+    if (authUser.userType !== 'provider') {
       return NextResponse.json(
         { error: "Bara leverantörer kan skapa manuella bokningar" },
         { status: 403 }
@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limiting
-    const rateLimitKey = `manual-booking:${session.user.id}`
+    const rateLimitKey = `manual-booking:${authUser.id}`
     try {
       const isAllowed = await rateLimiters.booking(rateLimitKey)
       if (!isAllowed) {
         logger.security("Rate limit exceeded for manual booking", "medium", {
-          userId: session.user.id,
+          userId: authUser.id,
           endpoint: "/api/bookings/manual",
         })
         return NextResponse.json(
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Get provider ID from session (IDOR protection)
     const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(session.user.id)
+    const provider = await providerRepo.findByUserId(authUser.id)
     if (!provider) {
       return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
     }
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     logger.security("Manual booking created", "low", {
       bookingId: result.value.id,
       providerId: provider.id,
-      providerUserId: session.user.id,
+      providerUserId: authUser.id,
       customerId: result.value.customerId,
       isGhostUser: !validated.customerId,
     })

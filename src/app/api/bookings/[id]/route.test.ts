@@ -1,18 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { auth, getSession } from '@/lib/auth-server'
-import { authFromMobileToken } from '@/lib/mobile-auth'
+import { getAuthUser } from '@/lib/auth-dual'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared/types/Result'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
-  getSession: vi.fn(),
-}))
-
-vi.mock('@/lib/mobile-auth', () => ({
-  authFromMobileToken: vi.fn().mockResolvedValue(null),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -109,9 +103,9 @@ describe('PUT /api/bookings/[id]', () => {
       provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -150,9 +144,9 @@ describe('PUT /api/bookings/[id]', () => {
       customer: { firstName: 'Jane', lastName: 'Doe' },
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -177,9 +171,9 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 404 when booking does not exist', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(
       Result.fail({ type: 'BOOKING_NOT_FOUND' })
@@ -200,9 +194,9 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 400 for invalid status transition', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(
       Result.fail({
@@ -228,9 +222,9 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 400 for invalid status value (Zod)', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -247,8 +241,7 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 401 when session is null (fallback auth)', async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue(null)
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -263,9 +256,9 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 404 when provider profile not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -283,9 +276,9 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 400 for invalid JSON body', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -315,9 +308,9 @@ describe('PUT /api/bookings/[id]', () => {
       provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -353,9 +346,9 @@ describe('PUT /api/bookings/[id]', () => {
       provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -379,9 +372,9 @@ describe('PUT /api/bookings/[id]', () => {
   })
 
   it('should return 400 for too long cancellationMessage', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
 
     const longMessage = 'a'.repeat(501)
@@ -412,9 +405,9 @@ describe('PUT /api/bookings/[id]', () => {
       provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -443,7 +436,7 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'DELETE',
@@ -457,9 +450,9 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 
   it('should delete booking when provider is authorized', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(true)
 
@@ -481,9 +474,9 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 
   it('should delete booking when customer is authorized', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockDeleteWithAuth.mockResolvedValue(true)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -504,9 +497,9 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 
   it('should return 404 when booking does not exist', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(false)
 
@@ -524,9 +517,9 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 
   it('should return 404 when not authorized', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(false)
 
@@ -544,9 +537,9 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 
   it('should return 404 when provider profile not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -563,12 +556,12 @@ describe('DELETE /api/bookings/[id]', () => {
   })
 })
 
-describe('PUT /api/bookings/[id] - Dual auth (MobileToken)', () => {
+describe('PUT /api/bookings/[id] - Auth methods via getAuthUser', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('should accept MobileToken bearer auth for provider', async () => {
+  it('should work with bearer auth (getAuthUser resolves via bearer)', async () => {
     const mockUpdatedBooking = {
       id: 'booking1',
       customerId: 'customer123',
@@ -581,14 +574,9 @@ describe('PUT /api/bookings/[id] - Dual auth (MobileToken)', () => {
       provider: { businessName: 'Test Provider', user: { firstName: 'John', lastName: 'Smith' } },
     }
 
-    // Mobile token auth returns userId
-    vi.mocked(authFromMobileToken).mockResolvedValue({ userId: 'user123', tokenId: 'tok-1' })
-    // User lookup returns provider type
-    const { prisma } = await import('@/lib/prisma')
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: 'user123',
-      userType: 'provider',
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'bearer' as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -612,10 +600,8 @@ describe('PUT /api/bookings/[id] - Dual auth (MobileToken)', () => {
     )
   })
 
-  it('should return 401 when MobileToken user not found', async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue({ userId: 'nonexistent', tokenId: 'tok-1' })
-    const { prisma } = await import('@/lib/prisma')
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+  it('should return 401 when getAuthUser returns null', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
       method: 'PUT',
@@ -630,11 +616,10 @@ describe('PUT /api/bookings/[id] - Dual auth (MobileToken)', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should fall back to session auth when no bearer token', async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue(null)
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+  it('should work with session auth (getAuthUser resolves via nextauth)', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const mockUpdatedBooking = {
       id: 'booking1',
@@ -658,6 +643,6 @@ describe('PUT /api/bookings/[id] - Dual auth (MobileToken)', () => {
     })
 
     expect(response.status).toBe(200)
-    expect(auth).toHaveBeenCalled()
+    expect(getAuthUser).toHaveBeenCalled()
   })
 })

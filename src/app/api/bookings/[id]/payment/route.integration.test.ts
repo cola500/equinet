@@ -45,8 +45,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -88,7 +88,7 @@ vi.mock("@/lib/logger", () => ({
 
 // DO NOT mock @/domain/payment -- let real PaymentService + MockPaymentGateway run
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { POST } from "./route"
 
@@ -106,9 +106,9 @@ describe("POST /api/bookings/[id]/payment (integration)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "customer-1", email: "anna@example.com", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     // Prisma mocks -- these simulate the DB layer
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)

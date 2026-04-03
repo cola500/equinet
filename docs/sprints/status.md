@@ -25,8 +25,8 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S12-1 Supabase login-sida | fullstack | Dev | review_requested | feature/s12-1-supabase-login | - |
-| S12-2 Booking routes batch | fullstack | - | pending | - | - |
+| S12-1 Supabase login-sida | fullstack | Dev | done | feature/s12-1-supabase-login | 73443d30 |
+| S12-2 Booking routes batch | fullstack | Dev | review_requested | feature/s12-2-booking-routes-auth | 7f31e853 |
 | S12-3 Provider routes batch | fullstack | - | pending | - | - |
 | S12-4 Native routes batch | fullstack | - | pending | - | - |
 | S12-5 Auth routes | fullstack | - | backlog | - | - |
@@ -106,7 +106,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S11-4 Migrera onboarding-status | feature/s11-4-migrate-onboarding-status | 2026-04-03 |
+| Dev | Fullstack | S12-2 Booking routes batch | feature/s12-2-booking-routes-auth | 2026-04-03 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

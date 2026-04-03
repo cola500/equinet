@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
@@ -67,17 +67,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const session = await auth()
-    if (!session) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     const bookingRepo = new PrismaBookingRepository()
     let bookings
 
-    if (session.user.userType === "provider") {
+    if (authUser.userType === "provider") {
       const providerRepo = new ProviderRepository()
-      const provider = await providerRepo.findByUserId(session.user.id)
+      const provider = await providerRepo.findByUserId(authUser.id)
 
       if (!provider) {
         return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
       bookings = await bookingRepo.findByProviderIdWithDetails(provider.id)
     } else {
-      bookings = await bookingRepo.findByCustomerIdWithDetails(session.user.id)
+      bookings = await bookingRepo.findByCustomerIdWithDetails(authUser.id)
     }
 
     return NextResponse.json(bookings)
@@ -105,18 +105,18 @@ export async function GET(request: NextRequest) {
 // POST - Create new booking (delegated to BookingService)
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
     // Rate limiting
-    const rateLimitKey = `booking:${session.user.id}`
+    const rateLimitKey = `booking:${authUser.id}`
     try {
       const isAllowed = await rateLimiters.booking(rateLimitKey)
       if (!isAllowed) {
         logger.security("Rate limit exceeded for booking creation", "medium", {
-          userId: session.user.id,
+          userId: authUser.id,
           endpoint: "/api/bookings",
         })
         return NextResponse.json(
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     // Delegate to BookingService
     const result = await bookingService.createBooking({
-      customerId: session.user.id,
+      customerId: authUser.id,
       providerId: validatedInput.providerId,
       serviceId: validatedInput.serviceId,
       bookingDate: new Date(validatedInput.bookingDate),
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
 
       await dispatcher.dispatch(createBookingCreatedEvent({
         bookingId: b.id,
-        customerId: session.user.id,
+        customerId: authUser.id,
         providerId: validatedInput.providerId,
         providerUserId: providerUser.userId,
         customerName: b.customer ? customerName(b.customer.firstName, b.customer.lastName) : "Kund",
