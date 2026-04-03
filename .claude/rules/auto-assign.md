@@ -52,6 +52,12 @@ Flöde: en session -> klar -> review -> nästa session.
 9. När klar: skriv `docs/done/<story-id>-done.md` med:
    - Acceptanskriterier från sprint-dokumentet -- bocka av varje
    - Definition of Done (från CLAUDE.md) -- bocka av varje
+   - **Reviews körda** (OBLIGATORISKT -- lista varje):
+     - [ ] code-reviewer (station 4, alltid)
+     - [ ] security-reviewer (om API/auth ändrats)
+     - [ ] cx-ux-reviewer (om UI ändrats)
+     - [ ] tech-architect (om arkitektur/plan granskats)
+     - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: code-reviewer (enda relevanta)"
    - Avvikelser eller kända begränsningar
    - **Lärdomar**: Vad var oväntat? Vad skulle du göra annorlunda? Gotchas för framtida sessioner?
    - Committa filen på feature branchen
