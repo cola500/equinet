@@ -130,26 +130,70 @@ EN roll (provider). Testar hela kedjan i staging-schema utan att rora prod.
 
 ---
 
+### S10-5: Supabase Auth PoC (fas 0) -- READY
+
+**Prioritet:** Högst (nästa story)
+**Typ:** Research/spike
+**Beskrivning:** S10-1 visade att Prisma + set_config blockeras av Supabase-poolern.
+Supabase Auth-spike (docs/research/supabase-auth-spike.md) visar att Väg B (Supabase Auth + RLS)
+löser både auth OCH RLS. Denna PoC bevisar det i praktiken.
+
+**Uppgifter:**
+
+1. **Supabase Auth-klient setup**
+   - Installera `@supabase/ssr`
+   - Skapa browser-klient, server-klient, middleware-helpers
+   - Testa mot befintligt Supabase-projekt
+
+2. **Custom Access Token Hook**
+   - PL/pgSQL-funktion som lägger till `userType`, `providerId` i JWT claims
+   - Aktivera i Supabase Dashboard -> Auth -> Hooks
+   - Verifiera att claims finns i JWT efter login
+
+3. **EN test-route med Supabase Auth**
+   - Skapa `/api/v2/test-auth` som autenticerar via Supabase
+   - Verifiera att `providerId` finns i JWT claims
+   - Jämför med befintlig NextAuth-route
+
+4. **RLS-test med user JWT**
+   - Supabase-klient med user token mot Booking-tabell
+   - Verifiera att RLS filtrerar automatiskt (ingen set_config behövs)
+
+5. **iOS: testa Supabase Swift SDK login**
+   - Installera `supabase-swift`
+   - Enkel login-test i simulator
+
+6. **Dokumentera**
+   - `docs/research/supabase-auth-poc.md`
+   - Go/No-go för full migrering
+
+**Acceptanskriterier:**
+- [ ] Supabase Auth login fungerar (webb)
+- [ ] Custom claims (providerId) finns i JWT
+- [ ] RLS filtrerar Booking via user JWT (ingen set_config)
+- [ ] iOS login fungerar med Swift SDK
+- [ ] Research-dokument med Go/No-go
+
+**Effort:** 2-3 dagar
+**Tidbox:** Max 2 sessioner
+**Stationsflöde:** Plan -> Research -> Dokumentera -> Review
+
+---
+
 ### S10-N: Demo-feedback stories -- TBD
 
-> Laggs till efter leverantorsdemon. Kandidater fran sprint-5.md:
->
-> | Feedback | Story | Effort |
-> |----------|-------|--------|
-> | "Kundernas upplevelse" | Kundflode-polish | 1 vecka |
-> | "Rutten for dagen" | Ruttplanering (Mapbox) | 2 veckor |
-> | "Koppla Fortnox" | Fortnox-integration | 2-3 veckor |
-> | "Testa med riktiga kunder" | Onboarding utan seed | 1 vecka |
+> Läggs till efter leverantörsdemon.
 
 ---
 
 ## Prioritetsordning
 
-1. **S10-1** RLS spike (1-2 dagar, arkitekturbeslut)
-2. **S10-2** Verifierings-felmeddelande (1-2h, buggfix)
-3. **S10-3** Tom-tillstand vagledning (0.5 dag, UX)
-4. **S10-4** customer_insights spike (1 dag)
-5. **S10-N** Demo-feedback (TBD)
+1. **S10-1** RLS spike (DONE -- Go lokalt, Supabase-blockerare)
+2. **S10-2** Verifierings-felmeddelande (DONE)
+3. **S10-3** Tom-tillstånd vägledning (DONE)
+4. **S10-4** customer_insights spike (DONE)
+5. **S10-5** Supabase Auth PoC (NÄSTA)
+6. **S10-N** Demo-feedback (TBD)
 
 ---
 
@@ -157,12 +201,12 @@ EN roll (provider). Testar hela kedjan i staging-schema utan att rora prod.
 
 ### Vad gick bra?
 
-### Vad kan forbattras?
+### Vad kan förbättras?
 
-### Processandring till nasta sprint?
+### Processändring till nästa sprint?
 
-> Varje sprint MASTE resultera i minst en processforrbattring.
+> Varje sprint MÅSTE resultera i minst en processförbättring.
 
-### RLS-beslut: Go eller No-go?
+### Arkitekturbeslut: Väg A eller Väg B?
 
-### Demo-feedback som paverkade sprinten?
+### Demo-feedback som påverkade sprinten?
