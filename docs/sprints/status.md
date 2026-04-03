@@ -27,7 +27,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S12-1 Supabase login-sida | fullstack | Dev | done | feature/s12-1-supabase-login | 73443d30 |
 | S12-2 Booking routes batch | fullstack | Dev | done | feature/s12-2-booking-routes-auth | c729cfda |
-| S12-3 Provider routes batch | fullstack | Dev | in_progress | feature/s12-3-provider-routes-auth | - |
+| S12-3 Provider routes batch | fullstack | Dev | review_requested | feature/s12-3-provider-routes-auth | 27fe4df4 |
 | S12-4 Native routes batch | fullstack | - | pending | - | - |
 | S12-5 Auth routes | fullstack | - | backlog | - | - |
 
