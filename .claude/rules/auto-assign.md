@@ -19,15 +19,17 @@ Sessioner startas med ett kort kommando som anger roll:
 
 | Kommando | Roll | Plockar stories taggade |
 |----------|------|------------------------|
-| "kör" | Fullstack | `fullstack` eller otaggade |
+| "kör" | Fullstack | Nästa pending `fullstack` eller otaggad |
+| "kör S12-4" | Fullstack | Specifik story (vid parallella sessioner) |
 | "kör ios" | iOS-utvecklare | `ios` |
 | "kör review" | Tech lead / review | Granskar review_requested stories |
 
 Om ingen roll anges: default till fullstack.
+Om story-ID anges (t.ex. "kör S12-4"): plocka den specifika storyn, inte nästa pending.
 
-**EN SESSION ÅT GÅNGEN.** Alla sessioner delar samma working directory.
-Kör aldrig parallella sessioner -- de krockar på branches och filer.
-Flöde: en session -> klar -> review -> nästa session.
+**Parallella sessioner:** Möjligt med worktrees (separata mappar).
+Varje session MÅSTE ha eget story-ID ("kör S12-4", "kör S12-5").
+Skriv ALDRIG bara "kör" vid parallella sessioner -- de plockar samma story.
 
 ## STOPP-REGLER (bryt ALDRIG dessa)
 
