@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
@@ -23,8 +23,8 @@ const FUTURE_DATE_ISO = FUTURE_DATE.toISOString()
 const _FUTURE_DATE_STR = FUTURE_DATE.toISOString().split('T')[0]
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -114,9 +114,9 @@ describe('GET /api/bookings', () => {
       },
     ]
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
@@ -160,9 +160,9 @@ describe('GET /api/bookings', () => {
       },
     ]
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
@@ -180,12 +180,7 @@ describe('GET /api/bookings', () => {
   })
 
   it('should return 401 when user is not authenticated', async () => {
-    // Arrange - auth() throws Response for unauthenticated users
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
 
@@ -195,11 +190,11 @@ describe('GET /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
     const response = await GET(request)
@@ -209,9 +204,9 @@ describe('GET /api/bookings', () => {
 
   it('should return 404 when provider not found', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
@@ -252,11 +247,8 @@ describe('POST /api/bookings', () => {
 
   it('should create booking for authenticated customer', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: TEST_UUIDS.customer,
-        userType: 'customer',
-      },
+    const mockAuthUser = {
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
     }
 
     const mockService = {
@@ -293,7 +285,7 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
     // Mock $transaction to execute the callback immediately with tx object
@@ -336,7 +328,7 @@ describe('POST /api/bookings', () => {
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -353,12 +345,7 @@ describe('POST /api/bookings', () => {
   })
 
   it('should return 401 when user is not authenticated', async () => {
-    // Arrange - auth() throws Response for unauthenticated users
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -377,12 +364,12 @@ describe('POST /api/bookings', () => {
 
     // Assert
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized')
+    expect(data.error).toBe('Ej inloggad')
   })
 
   it('should return 400 when service does not exist', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
+    vi.mocked(getAuthUser).mockResolvedValue({
       user: { id: TEST_UUIDS.customer, userType: 'customer' },
     } as never)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(null)
@@ -409,11 +396,8 @@ describe('POST /api/bookings', () => {
 
   it('should return 400 when service does not belong to provider', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: TEST_UUIDS.customer,
-        userType: 'customer',
-      },
+    const mockAuthUser = {
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
     }
 
     const mockService = {
@@ -429,7 +413,7 @@ describe('POST /api/bookings', () => {
       },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
@@ -454,14 +438,11 @@ describe('POST /api/bookings', () => {
 
   it('should return 400 for invalid data - missing required fields', async () => {
     // Arrange
-    const mockSession = {
-      user: {
-        id: TEST_UUIDS.customer,
-        userType: 'customer',
-      },
+    const mockAuthUser = {
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {
       method: 'POST',
@@ -483,11 +464,8 @@ describe('POST /api/bookings', () => {
   describe('Automatic endTime calculation (US-1)', () => {
     it('should calculate endTime from service.durationMinutes when not provided', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -521,7 +499,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
@@ -557,11 +535,8 @@ describe('POST /api/bookings', () => {
 
     it('should still accept explicit endTime (backward compatibility)', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -595,7 +570,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
@@ -631,11 +606,8 @@ describe('POST /api/bookings', () => {
 
     it('should return 400 when calculated endTime exceeds business hours', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -651,7 +623,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       const request = new NextRequest('http://localhost:3000/api/bookings', {
@@ -678,11 +650,8 @@ describe('POST /api/bookings', () => {
   describe('RouteOrder Linking (Experiment 003)', () => {
     it('should link booking to routeOrderId when provided', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -726,7 +695,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
@@ -764,11 +733,8 @@ describe('POST /api/bookings', () => {
 
     it('should accept bookings without routeOrderId (backward compatibility)', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -803,7 +769,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
 
       // @ts-expect-error - Vitest type instantiation depth limitation
@@ -840,11 +806,8 @@ describe('POST /api/bookings', () => {
 
     it('should return 400 when routeOrderId does not exist', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -860,7 +823,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(null)
 
@@ -887,11 +850,8 @@ describe('POST /api/bookings', () => {
 
     it('should return 400 when routeOrder is not open', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -915,7 +875,7 @@ describe('POST /api/bookings', () => {
         providerId: TEST_UUIDS.provider,
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
@@ -942,11 +902,8 @@ describe('POST /api/bookings', () => {
 
     it('should return 400 when booking date is outside routeOrder date range', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -974,7 +931,7 @@ describe('POST /api/bookings', () => {
         providerId: TEST_UUIDS.provider,
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
@@ -1001,11 +958,8 @@ describe('POST /api/bookings', () => {
 
     it('should return 400 when provider does not match routeOrder provider', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -1029,7 +983,7 @@ describe('POST /api/bookings', () => {
         providerId: TEST_UUIDS.differentProvider, // DIFFERENT provider!
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
@@ -1056,11 +1010,8 @@ describe('POST /api/bookings', () => {
 
     it('should allow booking when routeOrder validations pass', async () => {
       // Arrange
-      const mockSession = {
-        user: {
-          id: TEST_UUIDS.customer,
-          userType: 'customer',
-        },
+      const mockAuthUser = {
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
       }
 
       const mockService = {
@@ -1104,7 +1055,7 @@ describe('POST /api/bookings', () => {
         },
       }
 
-      vi.mocked(auth).mockResolvedValue(mockSession as never)
+      vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
       vi.mocked(prisma.service.findUnique).mockResolvedValue(mockService as never)
       vi.mocked(prisma.routeOrder.findUnique).mockResolvedValue(mockRouteOrder as never)
 
@@ -1142,14 +1093,11 @@ describe('POST /api/bookings', () => {
   })
 
   it('should return 400 when provider has closed the day', async () => {
-    const mockSession = {
-      user: {
-        id: TEST_UUIDS.customer,
-        userType: 'customer',
-      },
+    const mockAuthUser = {
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession as never)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     vi.mocked(prisma.service.findUnique).mockResolvedValue({
       id: TEST_UUIDS.service,
       name: 'Hovslagning',
@@ -1185,10 +1133,9 @@ describe('POST /api/bookings', () => {
   })
 
   it('returns 503 when rate limiter throws', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.customer, role: 'CUSTOMER' },
-      expires: '',
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(rateLimiters.booking).mockRejectedValueOnce(new Error('Redis down'))
 
     const request = new NextRequest('http://localhost:3000/api/bookings', {

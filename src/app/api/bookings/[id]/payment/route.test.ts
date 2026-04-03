@@ -4,8 +4,8 @@ import { Result } from "@/domain/shared/types/Result"
 
 // --- Mocks ---
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -81,7 +81,7 @@ vi.mock("@/lib/feature-flags", () => ({
 
 // --- Imports ---
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import {
@@ -133,9 +133,9 @@ describe("POST /api/bookings/[id]/payment", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", email: "anna@example.com", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockProcessPayment.mockResolvedValue(
       Result.ok({ payment: mockPaymentRecord, eventData: mockEventData }),
@@ -152,15 +152,13 @@ describe("POST /api/bookings/[id]/payment", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await POST(createRequest(BOOKING_ID), { params })
     expect(res.status).toBe(401)
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await POST(createRequest(BOOKING_ID), { params })
     expect(res.status).toBe(401)
   })
@@ -279,21 +277,19 @@ describe("GET /api/bookings/[id]/payment", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", email: "anna@example.com", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await GET(createRequest(BOOKING_ID, "GET"), { params })
     expect(res.status).toBe(401)
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await GET(createRequest(BOOKING_ID, "GET"), { params })
     expect(res.status).toBe(401)
   })

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireAuth } from "@/lib/roles"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { isFeatureEnabled } from "@/lib/feature-flags"
@@ -17,7 +16,10 @@ export async function POST(
 ) {
   try {
     const { id: bookingId } = await params
-    const { userId } = requireAuth(await auth())
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -31,7 +33,7 @@ export async function POST(
 
     // Delegate to PaymentService
     const paymentService = createPaymentService()
-    const result = await paymentService.processPayment(bookingId, userId)
+    const result = await paymentService.processPayment(bookingId, authUser.id)
 
     if (result.isFailure) {
       return NextResponse.json(
@@ -92,7 +94,10 @@ export async function GET(
 ) {
   try {
     const { id: bookingId } = await params
-    const { userId } = requireAuth(await auth())
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
@@ -102,7 +107,7 @@ export async function GET(
 
     // Delegate to PaymentService
     const paymentService = createPaymentService()
-    const result = await paymentService.getPaymentStatus(bookingId, userId)
+    const result = await paymentService.getPaymentStatus(bookingId, authUser.id)
 
     if (result.isFailure) {
       return NextResponse.json(

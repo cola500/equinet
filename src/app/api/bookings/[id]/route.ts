@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { z } from "zod"
 import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
@@ -33,29 +32,12 @@ export async function PUT(
   try {
     const { id } = await params
 
-    // Dual auth: try MobileToken (bearer) first, then session
-    const mobileAuth = await authFromMobileToken(request)
-    let userId: string
-    let userType: string
-
-    if (mobileAuth) {
-      const user = await prisma.user.findUnique({
-        where: { id: mobileAuth.userId },
-        select: { id: true, userType: true },
-      })
-      if (!user) {
-        return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-      }
-      userId = user.id
-      userType = user.userType
-    } else {
-      const session = await auth()
-      if (!session) {
-        return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-      }
-      userId = session.user.id
-      userType = session.user.userType
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
+    const userId = authUser.id
+    const userType = authUser.userType
 
     // Rate limiting before request parsing
     const clientIp = getClientIP(request)
@@ -190,8 +172,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await auth()
-    if (!session) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -210,8 +192,8 @@ export async function DELETE(
 
     let authContext: { providerId?: string; customerId?: string }
 
-    if (session.user.userType === "provider") {
-      const provider = await providerRepo.findByUserId(session.user.id)
+    if (authUser.userType === "provider") {
+      const provider = await providerRepo.findByUserId(authUser.id)
 
       if (!provider) {
         return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
@@ -219,7 +201,7 @@ export async function DELETE(
 
       authContext = { providerId: provider.id }
     } else {
-      authContext = { customerId: session.user.id }
+      authContext = { customerId: authUser.id }
     }
 
     const deleted = await bookingRepo.deleteWithAuth(id, authContext)

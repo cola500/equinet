@@ -79,12 +79,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
-}))
-
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -123,8 +119,7 @@ vi.mock("@/domain/notification/PushDeliveryService", () => ({
 // DO NOT mock @/domain/booking -- let real BookingService, BookingStatus,
 // mapBookingErrorToStatus, mapBookingErrorToMessage run
 
-import { auth } from "@/lib/auth-server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 import { PUT, DELETE } from "./route"
@@ -192,10 +187,9 @@ describe("PUT /api/bookings/[id] (integration)", () => {
     vi.clearAllMocks()
 
     // Default: session auth as provider
-    vi.mocked(authFromMobileToken).mockResolvedValue(null)
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "provider-user-1", email: "erik@example.com", userType: "provider" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     // Provider lookup
     mockProviderRepo.findByUserId.mockResolvedValue({ id: "provider-1" })
@@ -237,9 +231,9 @@ describe("PUT /api/bookings/[id] (integration)", () => {
 
   it("customer cancels booking with message -- 200", async () => {
     // Auth as customer
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "customer-1", email: "anna@example.com", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const cancelledBooking = {
       ...mockBookingData,
@@ -267,8 +261,7 @@ describe("PUT /api/bookings/[id] (integration)", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue(null)
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const res = await PUT(
       createPutRequest({ status: "confirmed" }),
@@ -335,9 +328,9 @@ describe("PUT /api/bookings/[id] (integration)", () => {
 
   it("returns 400 when customer tries provider-only status (real BookingService validation)", async () => {
     // Auth as customer
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "customer-1", email: "anna@example.com", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const res = await PUT(
       createPutRequest({ status: "completed" }),
@@ -388,12 +381,10 @@ describe("PUT /api/bookings/[id] (integration)", () => {
     expect(body.error).toBe("Leverantör hittades inte")
   })
 
-  it("supports mobile token auth (dual auth)", async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue({ userId: "provider-user-1" })
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: "provider-user-1",
-      userType: "provider",
-    } as never)
+  it("supports bearer auth via getAuthUser", async () => {
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "bearer" as const,
+    })
 
     const res = await PUT(
       createPutRequest({ status: "confirmed" }),
@@ -401,13 +392,10 @@ describe("PUT /api/bookings/[id] (integration)", () => {
     )
 
     expect(res.status).toBe(200)
-    // Session auth should NOT have been called since mobile token succeeded
-    expect(auth).not.toHaveBeenCalled()
   })
 
-  it("returns 401 when mobile token user not found in DB", async () => {
-    vi.mocked(authFromMobileToken).mockResolvedValue({ userId: "nonexistent-user" })
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null as never)
+  it("returns 401 when getAuthUser returns null (no valid auth)", async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const res = await PUT(
       createPutRequest({ status: "confirmed" }),
@@ -427,9 +415,9 @@ describe("DELETE /api/bookings/[id] (integration)", () => {
     vi.clearAllMocks()
 
     // Default: session auth as provider
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "provider-user-1", email: "erik@example.com", userType: "provider" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     // Provider lookup
     mockProviderRepo.findByUserId.mockResolvedValue({ id: "provider-1" })
@@ -454,9 +442,9 @@ describe("DELETE /api/bookings/[id] (integration)", () => {
   })
 
   it("customer deletes own booking -- 200", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "customer-1", email: "anna@example.com", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const res = await DELETE(createDeleteRequest(), { params })
     const body = await res.json()
@@ -469,7 +457,7 @@ describe("DELETE /api/bookings/[id] (integration)", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const res = await DELETE(createDeleteRequest(), { params })
     const body = await res.json()
