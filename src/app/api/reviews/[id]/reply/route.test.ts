@@ -4,6 +4,10 @@ import { auth } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
+}))
+
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))

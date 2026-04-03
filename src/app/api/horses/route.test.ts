@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -35,9 +35,10 @@ vi.mock('@/domain/horse/HorseService', () => ({
   createHorseService: () => mockService,
 }))
 
-const mockCustomerSession = {
-  user: { id: 'customer-1', email: 'anna@test.se', userType: 'customer' },
-} as never
+const mockCustomerAuthUser = {
+  id: 'customer-1', email: 'anna@test.se', userType: 'customer', isAdmin: false,
+  providerId: null, stableId: null, authMethod: 'nextauth' as const,
+}
 
 describe('GET /api/horses', () => {
   beforeEach(() => {
@@ -74,7 +75,7 @@ describe('GET /api/horses', () => {
       },
     ]
 
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.listHorses.mockResolvedValue(Result.ok(mockHorses))
 
     const request = new NextRequest('http://localhost:3000/api/horses')
@@ -96,11 +97,7 @@ describe('GET /api/horses', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Ej inloggad' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/horses')
     const response = await GET(request)
@@ -111,14 +108,14 @@ describe('GET /api/horses', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/horses')
     const response = await GET(request)
     expect(response.status).toBe(401)
   })
 
   it('should return empty array when customer has no horses', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.listHorses.mockResolvedValue(Result.ok([]))
 
     const request = new NextRequest('http://localhost:3000/api/horses')
@@ -150,7 +147,7 @@ describe('POST /api/horses', () => {
       updatedAt: new Date(),
     }
 
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.createHorse.mockResolvedValue(Result.ok(mockHorse))
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
@@ -191,7 +188,7 @@ describe('POST /api/horses', () => {
       updatedAt: new Date(),
     }
 
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.createHorse.mockResolvedValue(Result.ok(mockHorse))
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
@@ -207,7 +204,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should return 400 when name is missing', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -222,7 +219,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should return 400 when name is empty string', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -237,7 +234,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should return 400 when birthYear is in the future', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -255,7 +252,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should return 400 when gender is invalid', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -273,7 +270,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should return 400 for invalid JSON body', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -288,11 +285,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Ej inloggad' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
@@ -307,7 +300,7 @@ describe('POST /api/horses', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/horses', {
       method: 'POST',
       body: JSON.stringify({ name: 'Blansen' }),
@@ -317,7 +310,7 @@ describe('POST /api/horses', () => {
   })
 
   it('should pass ownerId from session to service', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.createHorse.mockResolvedValue(Result.ok({
       id: 'horse-1',
       ownerId: 'customer-1',

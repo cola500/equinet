@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -33,12 +33,12 @@ vi.mock("@/domain/subscription/SubscriptionServiceFactory", () => ({
   }),
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { GET } from "./route"
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimiters = vi.mocked(rateLimiters)
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
@@ -61,7 +61,7 @@ describe("GET /api/provider/subscription/status", () => {
   // --- Auth ---
 
   it("returns 401 when not authenticated", async () => {
-    mockAuth.mockRejectedValue(
+    mockGetAuthUser.mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
     )
 
@@ -70,15 +70,16 @@ describe("GET /api/provider/subscription/status", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    mockAuth.mockResolvedValue(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
     const response = await GET(createRequest())
     expect(response.status).toBe(401)
   })
 
   it("returns 403 when user is customer", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "customer" },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const response = await GET(createRequest())
     expect(response.status).toBe(403)
@@ -90,9 +91,10 @@ describe("GET /api/provider/subscription/status", () => {
   // --- Rate limiting ---
 
   it("returns 429 when rate limited", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
     mockRateLimiters.api.mockResolvedValueOnce(false)
 
     const response = await GET(createRequest())
@@ -105,9 +107,10 @@ describe("GET /api/provider/subscription/status", () => {
   // --- Feature flag ---
 
   it("returns 404 when feature flag disabled", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
     mockIsFeatureEnabled.mockResolvedValueOnce(false)
 
     const response = await GET(createRequest())
@@ -121,9 +124,10 @@ describe("GET /api/provider/subscription/status", () => {
   // --- Business logic ---
 
   it("returns 200 with null when no subscription", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
     mockGetStatus.mockResolvedValue({
       ok: true,
       value: null,
@@ -137,9 +141,10 @@ describe("GET /api/provider/subscription/status", () => {
   })
 
   it("returns 200 with status when subscription exists", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const periodEnd = new Date("2026-03-28T00:00:00.000Z")
     mockGetStatus.mockResolvedValue({
@@ -163,9 +168,10 @@ describe("GET /api/provider/subscription/status", () => {
   })
 
   it("passes providerId from session to service", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
     mockGetStatus.mockResolvedValue({
       ok: true,
       value: null,
@@ -177,9 +183,10 @@ describe("GET /api/provider/subscription/status", () => {
   })
 
   it("returns 404 when service returns error", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
     mockGetStatus.mockResolvedValue({
       ok: false,
       error: "FEATURE_DISABLED",
@@ -195,9 +202,10 @@ describe("GET /api/provider/subscription/status", () => {
   // --- Error handling ---
 
   it("returns 500 on unexpected errors", async () => {
-    mockAuth.mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: PROVIDER_ID },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+    })
     mockGetStatus.mockRejectedValue(new Error("DB connection failed"))
 
     const response = await GET(createRequest())

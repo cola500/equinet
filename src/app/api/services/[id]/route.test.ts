@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -67,9 +67,10 @@ describe('PUT /api/services/[id]', () => {
       providerId: 'provider123',
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockUpdateWithAuth.mockResolvedValue(mockUpdatedService)
 
@@ -109,9 +110,7 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response when not authenticated
-    vi.mocked(auth).mockRejectedValue(
-      NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -128,7 +127,7 @@ describe('PUT /api/services/[id]', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
       body: JSON.stringify({ name: 'Test', price: 100, durationMinutes: 30 }),
@@ -139,9 +138,10 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 403 when user is not a provider', async () => {
     // Arrange - customer trying to update a service
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -159,9 +159,10 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 404 when provider profile not found', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -185,9 +186,10 @@ describe('PUT /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null when service not found or unauthorized
     mockUpdateWithAuth.mockResolvedValue(null)
@@ -213,9 +215,10 @@ describe('PUT /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null for unauthorized access
     mockUpdateWithAuth.mockResolvedValue(null)
@@ -236,9 +239,10 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 400 for invalid data', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -256,9 +260,10 @@ describe('PUT /api/services/[id]', () => {
 
   it('should return 400 for invalid JSON body', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'PUT',
@@ -287,9 +292,10 @@ describe('DELETE /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockDeleteWithAuth.mockResolvedValue(true)
 
@@ -311,9 +317,7 @@ describe('DELETE /api/services/[id]', () => {
 
   it('should return 401 when user is not authenticated', async () => {
     // Arrange - auth() throws Response when not authenticated
-    vi.mocked(auth).mockRejectedValue(
-      NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'DELETE',
@@ -329,7 +333,7 @@ describe('DELETE /api/services/[id]', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'DELETE',
     })
@@ -339,9 +343,10 @@ describe('DELETE /api/services/[id]', () => {
 
   it('should return 403 when user is not a provider', async () => {
     // Arrange - customer trying to delete a service
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
       method: 'DELETE',
@@ -358,9 +363,10 @@ describe('DELETE /api/services/[id]', () => {
 
   it('should return 404 when provider profile not found', async () => {
     // Arrange
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -383,9 +389,10 @@ describe('DELETE /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false when service not found
     mockDeleteWithAuth.mockResolvedValue(false)
@@ -410,9 +417,10 @@ describe('DELETE /api/services/[id]', () => {
       userId: 'user123',
     }
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user123', userType: 'provider', providerId: 'provider123' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+    })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false for unauthorized access
     mockDeleteWithAuth.mockResolvedValue(false)

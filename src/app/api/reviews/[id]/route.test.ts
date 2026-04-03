@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PUT, DELETE } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -48,9 +48,10 @@ describe('PUT /api/reviews/[id]', () => {
   })
 
   it('should update review rating and comment', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.review.update).mockResolvedValue({
       ...mockReview,
       rating: 5,
@@ -71,7 +72,7 @@ describe('PUT /api/reviews/[id]', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -84,9 +85,10 @@ describe('PUT /api/reviews/[id]', () => {
   })
 
   it('should return 404 when review not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     // updateWithAuth returns null (P2025)
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
       code: 'P2025',
@@ -105,9 +107,10 @@ describe('PUT /api/reviews/[id]', () => {
   })
 
   it('should return 403 when customer does not own the review', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'other-user', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'other-user', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     // updateWithAuth returns null because customerId doesn't match
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
       code: 'P2025',
@@ -126,9 +129,10 @@ describe('PUT /api/reviews/[id]', () => {
   })
 
   it('should return 400 for invalid rating', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const { request, params } = createRequest('review-1', 'PUT', { rating: 0 })
     const response = await PUT(request, { params })
@@ -139,9 +143,10 @@ describe('PUT /api/reviews/[id]', () => {
   })
 
   it('should return 400 for comment exceeding 500 characters', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const { request, params } = createRequest('review-1', 'PUT', {
       rating: 5,
@@ -161,9 +166,10 @@ describe('DELETE /api/reviews/[id]', () => {
   })
 
   it('should delete a review', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     vi.mocked(prisma.review.delete).mockResolvedValue(mockReview as never)
 
     const { request, params } = createRequest('review-1', 'DELETE')
@@ -173,7 +179,7 @@ describe('DELETE /api/reviews/[id]', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -186,9 +192,10 @@ describe('DELETE /api/reviews/[id]', () => {
   })
 
   it('should return 404 when review not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     // deleteWithAuth returns false (P2025)
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
       code: 'P2025',
@@ -207,9 +214,10 @@ describe('DELETE /api/reviews/[id]', () => {
   })
 
   it('should return 403 when customer does not own the review', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'other-user', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'other-user', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
     // deleteWithAuth returns false (P2025 because customerId doesn't match)
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
       code: 'P2025',

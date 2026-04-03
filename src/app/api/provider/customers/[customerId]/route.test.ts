@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { DELETE, PUT } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -32,9 +32,10 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-const providerSession = {
-  user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-} as never
+const providerAuthUser = {
+  id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+  providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+}
 
 const makeDeleteRequest = (customerId: string) =>
   new NextRequest(`http://localhost:3000/api/provider/customers/${customerId}`, {
@@ -50,29 +51,28 @@ const makePutRequest = (customerId: string, body: Record<string, unknown>) =>
 describe('DELETE /api/provider/customers/[customerId]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await DELETE(makeDeleteRequest('customer-1'))
     expect(response.status).toBe(401)
   })
 
   it('should return 401 when not authenticated', async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await DELETE(makeDeleteRequest('customer-1'))
     expect(response.status).toBe(401)
   })
 
   it('should return 403 when user is not a provider', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const response = await DELETE(makeDeleteRequest('customer-1'))
     const data = await response.json()
@@ -176,11 +176,11 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
 describe('PUT /api/provider/customers/[customerId]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await PUT(makePutRequest('customer-1', { firstName: 'Anna' }))
     expect(response.status).toBe(401)

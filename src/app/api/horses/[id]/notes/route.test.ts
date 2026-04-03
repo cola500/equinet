@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET, POST } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { NextRequest } from "next/server"
 import { Result } from "@/domain/shared"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -35,9 +35,10 @@ vi.mock("@/domain/horse/HorseService", () => ({
   createHorseService: () => mockService,
 }))
 
-const mockSession = {
-  user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as never
+const mockAuthUser = {
+  id: "customer-1", email: "anna@test.se", userType: "customer", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
 const routeContext = { params: Promise.resolve({ id: "horse-1" }) }
 
@@ -47,7 +48,7 @@ describe("GET /api/horses/[id]/notes", () => {
   })
 
   it("should return notes for horse owned by authenticated user", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.listNotes.mockResolvedValue(Result.ok([
       {
         id: "note-1",
@@ -79,14 +80,14 @@ describe("GET /api/horses/[id]/notes", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest("http://localhost:3000/api/horses/horse-1/notes")
     const response = await GET(request, routeContext)
     expect(response.status).toBe(401)
   })
 
   it("should pass category filter to service", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.listNotes.mockResolvedValue(Result.ok([]))
 
     const request = new NextRequest(
@@ -102,7 +103,7 @@ describe("GET /api/horses/[id]/notes", () => {
   })
 
   it("should return 404 if horse not found or not owned", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.listNotes.mockResolvedValue(
       Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
     )
@@ -122,7 +123,7 @@ describe("GET /api/horses/[id]/notes", () => {
       JSON.stringify({ error: "Ej inloggad" }),
       { status: 401, headers: { "Content-Type": "application/json" } }
     )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockRejectedValue(unauthorizedResponse)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes"
@@ -152,7 +153,7 @@ describe("POST /api/horses/[id]/notes", () => {
       author: { firstName: "Anna", lastName: "Svensson" },
     }
 
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.createNote.mockResolvedValue(Result.ok(mockNote))
 
     const request = new NextRequest(
@@ -180,7 +181,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
       {
@@ -197,7 +198,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should return 400 for invalid category", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -219,7 +220,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should return 400 when title is missing", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -240,7 +241,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should return 400 when noteDate is in the future", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 10)
@@ -265,7 +266,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should return 404 if horse not owned by user (IDOR protection)", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.createNote.mockResolvedValue(
       Result.fail({ type: "HORSE_NOT_FOUND", message: "Hasten hittades inte" })
     )
@@ -290,7 +291,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should return 400 for invalid JSON", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
 
     const request = new NextRequest(
       "http://localhost:3000/api/horses/horse-1/notes",
@@ -308,7 +309,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should pass authorId from session to service", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.createNote.mockResolvedValue(Result.ok({
       id: "note-new",
       horseId: "horse-1",
@@ -338,7 +339,7 @@ describe("POST /api/horses/[id]/notes", () => {
   })
 
   it("should accept note without content (optional)", async () => {
-    vi.mocked(auth).mockResolvedValue(mockSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     mockService.createNote.mockResolvedValue(Result.ok({
       id: "note-new",
       horseId: "horse-1",

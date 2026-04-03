@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
@@ -13,8 +13,8 @@ const TEST_UUIDS = {
   customer3: '55555555-5555-4555-8555-555555555555',
 }
 
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -65,9 +65,10 @@ describe('GET /api/provider/customers', () => {
     vi.clearAllMocks()
 
     // Default: authenticated provider
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.providerUser, email: '', userType: 'provider', isAdmin: false,
+      providerId: TEST_UUIDS.provider, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
@@ -81,25 +82,24 @@ describe('GET /api/provider/customers', () => {
   // --- Auth & Authorization ---
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(401)
   })
 
   it('should return 401 for unauthenticated users', async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await GET(makeRequest())
     expect(response.status).toBe(401)
   })
 
   it('should return 403 for non-provider users', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'customer-user', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'customer-user', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const response = await GET(makeRequest())
     const data = await response.json()
@@ -461,9 +461,10 @@ describe('POST /api/provider/customers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: TEST_UUIDS.providerUser, userType: 'provider', providerId: TEST_UUIDS.provider },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: TEST_UUIDS.providerUser, email: '', userType: 'provider', isAdmin: false,
+      providerId: TEST_UUIDS.provider, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
@@ -481,25 +482,24 @@ describe('POST /api/provider/customers', () => {
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await POST(makePostRequest({ firstName: 'Anna' }))
     expect(response.status).toBe(401)
   })
 
   it('should return 401 for unauthenticated users', async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
-    )
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const response = await POST(makePostRequest({ firstName: 'Anna' }))
     expect(response.status).toBe(401)
   })
 
   it('should return 403 for non-provider users', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const response = await POST(makePostRequest({ firstName: 'Anna' }))
     const data = await response.json()

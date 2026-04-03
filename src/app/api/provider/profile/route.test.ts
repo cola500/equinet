@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -29,9 +29,10 @@ vi.mock('@/lib/cache/provider-cache', () => ({
   invalidateProviderCache: vi.fn().mockResolvedValue(undefined),
 }))
 
-const providerSession = {
-  user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
-} as never
+const providerAuthUser = {
+  id: 'user-1', email: '', userType: 'provider', isAdmin: false,
+  providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+}
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
@@ -57,7 +58,7 @@ describe('GET /api/provider/profile', () => {
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
     const response = await GET(request)
@@ -65,7 +66,7 @@ describe('GET /api/provider/profile', () => {
   })
 
   it('should return provider profile with acceptingNewCustomers', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
@@ -77,7 +78,7 @@ describe('GET /api/provider/profile', () => {
   })
 
   it('should use select instead of include to prevent data leakage', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
@@ -94,7 +95,7 @@ describe('GET /api/provider/profile', () => {
   })
 
   it('should NOT include verifiedAt, createdAt, updatedAt in response', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
@@ -108,9 +109,10 @@ describe('GET /api/provider/profile', () => {
   })
 
   it('should return 403 for non-provider users', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user-1', email: '', userType: 'customer', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+    })
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')
     const response = await GET(request)
@@ -126,7 +128,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should return 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -137,7 +139,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should update acceptingNewCustomers to false', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.update).mockResolvedValue({
       ...mockProvider,
       acceptingNewCustomers: false,
@@ -166,7 +168,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should update acceptingNewCustomers to true', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.update).mockResolvedValue({
       ...mockProvider,
       acceptingNewCustomers: true,
@@ -188,7 +190,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should reject invalid acceptingNewCustomers value', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -204,7 +206,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should update reschedule settings', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.update).mockResolvedValue({
       ...mockProvider,
       rescheduleEnabled: false,
@@ -240,7 +242,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should reject rescheduleWindowHours outside valid range', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -255,7 +257,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should reject maxReschedules outside valid range', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -270,7 +272,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should update recurring booking settings', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
     vi.mocked(prisma.provider.update).mockResolvedValue({
       ...mockProvider,
       recurringEnabled: true,
@@ -300,7 +302,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should reject maxSeriesOccurrences below 2', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',
@@ -315,7 +317,7 @@ describe('PUT /api/provider/profile', () => {
   })
 
   it('should reject maxSeriesOccurrences above 52', async () => {
-    vi.mocked(auth).mockResolvedValue(providerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile', {
       method: 'PUT',

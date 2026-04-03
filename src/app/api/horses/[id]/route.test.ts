@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, PUT, DELETE } from './route'
-import { auth } from '@/lib/auth-server'
+import { getAuthUser } from '@/lib/auth-dual'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
 
 // Mock dependencies
-vi.mock('@/lib/auth-server', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/auth-dual', () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -36,9 +36,10 @@ vi.mock('@/domain/horse/HorseService', () => ({
   createHorseService: () => mockService,
 }))
 
-const mockCustomerSession = {
-  user: { id: 'customer-1', email: 'anna@test.se', userType: 'customer' },
-} as never
+const mockCustomerAuthUser = {
+  id: 'customer-1', email: 'anna@test.se', userType: 'customer', isAdmin: false,
+  providerId: null, stableId: null, authMethod: 'nextauth' as const,
+}
 
 const mockHorse = {
   id: 'horse-1',
@@ -77,7 +78,7 @@ describe('GET /api/horses/[id]', () => {
       ],
     }
 
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.getHorse.mockResolvedValue(Result.ok(horseWithBookings))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1')
@@ -95,14 +96,14 @@ describe('GET /api/horses/[id]', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1')
     const response = await GET(request, { params: makeParams('horse-1') })
     expect(response.status).toBe(401)
   })
 
   it('should return 404 when horse not found or not owned by user', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.getHorse.mockResolvedValue(
       Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
     )
@@ -116,11 +117,7 @@ describe('GET /api/horses/[id]', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Ej inloggad' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1')
     const response = await GET(request, { params: makeParams('horse-1') })
@@ -143,7 +140,7 @@ describe('PUT /api/horses/[id]', () => {
       specialNeeds: 'Ny info om hovproblem',
     }
 
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.updateHorse.mockResolvedValue(Result.ok(updatedHorse))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
@@ -163,7 +160,7 @@ describe('PUT /api/horses/[id]', () => {
   })
 
   it('should allow partial updates', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.updateHorse.mockResolvedValue(Result.ok({
       ...mockHorse,
       specialNeeds: 'Ny info',
@@ -180,7 +177,7 @@ describe('PUT /api/horses/[id]', () => {
   })
 
   it('should return 404 when horse not found or not owned', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.updateHorse.mockResolvedValue(
       Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
     )
@@ -198,7 +195,7 @@ describe('PUT /api/horses/[id]', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'PUT',
       body: JSON.stringify({ name: 'Test' }),
@@ -208,7 +205,7 @@ describe('PUT /api/horses/[id]', () => {
   })
 
   it('should return 400 for invalid data', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'PUT',
@@ -223,7 +220,7 @@ describe('PUT /api/horses/[id]', () => {
   })
 
   it('should return 400 for invalid JSON', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'PUT',
@@ -244,7 +241,7 @@ describe('DELETE /api/horses/[id]', () => {
   })
 
   it('should soft-delete horse', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.softDeleteHorse.mockResolvedValue(Result.ok(undefined))
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
@@ -259,7 +256,7 @@ describe('DELETE /api/horses/[id]', () => {
   })
 
   it('returns 401 when session is null', async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'DELETE',
     })
@@ -268,7 +265,7 @@ describe('DELETE /api/horses/[id]', () => {
   })
 
   it('should return 404 when horse not found or not owned', async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
+    vi.mocked(getAuthUser).mockResolvedValue(mockCustomerAuthUser)
     mockService.softDeleteHorse.mockResolvedValue(
       Result.fail({ type: 'HORSE_NOT_FOUND', message: 'Hasten hittades inte' })
     )
@@ -285,11 +282,7 @@ describe('DELETE /api/horses/[id]', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    const unauthorizedResponse = new Response(
-      JSON.stringify({ error: 'Ej inloggad' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthorizedResponse)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
 
     const request = new NextRequest('http://localhost:3000/api/horses/horse-1', {
       method: 'DELETE',

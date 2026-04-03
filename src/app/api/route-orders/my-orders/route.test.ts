@@ -4,7 +4,7 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
-vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
+vi.mock("@/lib/auth-dual", () => ({ getAuthUser: vi.fn() }))
 vi.mock("@/lib/feature-flags", () => ({
   isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
@@ -16,7 +16,7 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { GET } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
@@ -25,28 +25,30 @@ function mockRequest() {
   return new NextRequest("http://localhost:3000/api/route-orders/my-orders")
 }
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 const mockFindMany = vi.mocked(prisma.routeOrder.findMany)
 
-const mockCustomerSession = {
-  user: { id: "customer-1", email: "anna@test.se", userType: "customer" },
-} as never
+const mockCustomerAuthUser = {
+  id: "customer-1", email: "anna@test.se", userType: "customer", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
-const mockProviderSession = {
-  user: { id: "provider-1", email: "magnus@test.se", userType: "provider" },
-} as never
+const mockProviderAuthUser = {
+  id: "provider-1", email: "magnus@test.se", userType: "provider", isAdmin: false,
+  providerId: null, stableId: null, authMethod: "nextauth" as const,
+}
 
 describe("GET /api/route-orders/my-orders", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue(mockCustomerSession)
+    mockGetAuthUser.mockResolvedValue(mockCustomerAuthUser)
     mockIsFeatureEnabled.mockResolvedValue(true)
     mockFindMany.mockResolvedValue([])
   })
 
   it("returns 401 when auth throws Response", async () => {
-    mockAuth.mockRejectedValue(
+    mockGetAuthUser.mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -58,7 +60,7 @@ describe("GET /api/route-orders/my-orders", () => {
   })
 
   it("returns 401 when not authenticated (null session)", async () => {
-    mockAuth.mockResolvedValue(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
 
     const res = await GET(mockRequest())
     expect(res.status).toBe(401)
@@ -83,7 +85,7 @@ describe("GET /api/route-orders/my-orders", () => {
   })
 
   it("returns 403 when user is a provider", async () => {
-    mockAuth.mockResolvedValue(mockProviderSession)
+    mockGetAuthUser.mockResolvedValue(mockProviderAuthUser)
 
     const res = await GET(mockRequest())
     const body = await res.json()

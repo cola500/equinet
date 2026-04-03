@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { DELETE, GET } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { NextRequest } from "next/server"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -48,9 +48,10 @@ describe("DELETE /api/follows/:providerId", () => {
   })
 
   it("should return 200 on successful unfollow", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockUnfollow.mockResolvedValue({ ok: true, value: undefined })
@@ -63,9 +64,10 @@ describe("DELETE /api/follows/:providerId", () => {
   })
 
   it("should return 200 even when not following (idempotent)", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockUnfollow.mockResolvedValue({ ok: true, value: undefined })
@@ -81,9 +83,10 @@ describe("GET /api/follows/:providerId", () => {
   })
 
   it("should return follow status with isFollowing true", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockIsFollowing.mockResolvedValue(true)
@@ -98,9 +101,10 @@ describe("GET /api/follows/:providerId", () => {
   })
 
   it("should return follow status with isFollowing false", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockIsFollowing.mockResolvedValue(false)

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { POST, GET } from "./route"
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { NextRequest } from "next/server"
 
 // Mock dependencies
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -43,7 +43,7 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 401 when not logged in", async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: "Ej inloggad" }), { status: 401 })
     )
 
@@ -55,7 +55,7 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const response = await POST(makeRequest("POST", {
       municipality: "Kungsbacka",
       serviceTypeName: "Hovslagning",
@@ -64,9 +64,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 403 when user is not a customer", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "provider" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "provider", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const response = await POST(makeRequest("POST", {
       municipality: "Kungsbacka",
@@ -76,9 +77,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 404 when feature flag is disabled", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(false)
 
@@ -90,9 +92,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 400 for invalid JSON", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -105,9 +108,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 400 for missing municipality", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -118,9 +122,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 400 for extra fields (.strict())", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
@@ -133,9 +138,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 400 for INVALID_MUNICIPALITY", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({ ok: false, error: "INVALID_MUNICIPALITY" })
@@ -150,9 +156,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 400 for MAX_WATCHES_REACHED", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({ ok: false, error: "MAX_WATCHES_REACHED" })
@@ -167,9 +174,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should return 201 on success", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({
@@ -195,9 +203,10 @@ describe("POST /api/municipality-watches", () => {
   })
 
   it("should use customerId from session, not from body", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "session-user", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "session-user", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockAddWatch.mockResolvedValue({ ok: true, value: { id: "w1" } })
@@ -221,15 +230,16 @@ describe("GET /api/municipality-watches", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const response = await GET(makeRequest("GET"))
     expect(response.status).toBe(401)
   })
 
   it("should return customer's watches", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockGetWatches.mockResolvedValue([
@@ -251,9 +261,10 @@ describe("GET /api/municipality-watches", () => {
   })
 
   it("should return 403 for non-customer", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "u1", userType: "provider" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "u1", email: "", userType: "provider", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const response = await GET(makeRequest("GET"))
     expect(response.status).toBe(403)

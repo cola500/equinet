@@ -9,8 +9,8 @@ const { mockInterpret, mockFindByUserId, mockFindMany } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
 }))
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/prisma", () => ({
@@ -53,7 +53,7 @@ vi.mock("@/domain/voice-log/VoiceInterpretationService", () => ({
   mapVoiceLogErrorToStatus: vi.fn().mockReturnValue(500),
 }))
 
-import { auth } from "@/lib/auth-server"
+import { getAuthUser } from "@/lib/auth-dual"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
@@ -69,9 +69,10 @@ describe("POST /api/voice-log", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsFeatureEnabled.mockResolvedValue(true)
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", userType: "provider", providerId: "provider-1" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "", userType: "provider", isAdmin: false,
+      providerId: "provider-1", stableId: null, authMethod: "nextauth" as const,
+    })
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockFindMany.mockResolvedValue([])
   })
@@ -90,7 +91,7 @@ describe("POST /api/voice-log", () => {
   })
 
   it("returns 401 when not authenticated", async () => {
-    vi.mocked(auth).mockRejectedValue(
+    vi.mocked(getAuthUser).mockRejectedValue(
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
     )
 
@@ -99,15 +100,16 @@ describe("POST /api/voice-log", () => {
   })
 
   it("returns 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null as never)
+    vi.mocked(getAuthUser).mockResolvedValue(null)
     const response = await POST(makeRequest({ transcript: "test" }))
     expect(response.status).toBe(401)
   })
 
   it("returns 403 when user is not a provider", async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", userType: "customer" },
-    } as never)
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1", email: "", userType: "customer", isAdmin: false,
+      providerId: null, stableId: null, authMethod: "nextauth" as const,
+    })
 
     const response = await POST(makeRequest({ transcript: "test" }))
     expect(response.status).toBe(403)
