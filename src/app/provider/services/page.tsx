@@ -17,6 +17,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
+import { EmptyState } from "@/components/ui/empty-state"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { isDemoModeWithFlags } from "@/lib/demo-mode"
 
@@ -331,48 +332,11 @@ export default function ProviderServicesPage() {
         </div>
 
         {services.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <div className="mb-4">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Inga tjänster ännu
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Börja med att skapa din första tjänst. Lägg till tjänster som hovslagning,
-                veterinärvård, eller ridlektioner för att börja ta emot bokningar.
-              </p>
-              <Button onClick={() => serviceDialog.openDialog()} size="lg">
-                <svg
-                  className="mr-2 h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Skapa din första tjänst
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            title="Inga tjänster ännu"
+            description="Börja med att skapa din första tjänst. Lägg till tjänster som hovslagning, veterinärvård, eller ridlektioner för att börja ta emot bokningar."
+            action={{ label: "Skapa din första tjänst", onClick: () => serviceDialog.openDialog() }}
+          />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-6">
             {services.map((service) => (
