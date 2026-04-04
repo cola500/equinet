@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S14-0 iOS-verifiering Supabase Auth | fullstack | Dev | done | feature/s14-0-ios-supabase-verification | - |
+| S14-0 iOS-verifiering Supabase Auth | fullstack | Dev | done | main | 7eaeffb9 |
 | S14-1 RLS-policies | fullstack | - | pending | - | - |
 | S14-5 RLS-bevistest | fullstack | - | pending | - | - |
 | S14-2 Booking reads via Supabase | fullstack | - | pending | - | - |
