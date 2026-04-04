@@ -104,3 +104,8 @@ skills-lock.json
 e2e/__snapshots__/
 e2e/*.spec.ts-snapshots/
 s13-6-screenshots/
+
+# Supabase local dev
+supabase/.temp/
+supabase/.branches/
+supabase/.linked/

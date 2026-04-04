@@ -7,7 +7,13 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
+const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    // Override datasource for E2E: prisma.config.ts loads .env.local (Docker Postgres)
+    // but CI uses Supabase local dev on a different port. DATABASE_URL from CLI takes precedence.
+    datasourceUrl: process.env.DATABASE_URL,
+  })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 

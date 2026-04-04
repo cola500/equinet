@@ -6,6 +6,10 @@ const MIGRATION_DIR = "20260404120000_rls_read_policies"
 const MIGRATION_PATH = path.resolve(
   __dirname,
   "..",
+  "..",
+  "..",
+  "prisma",
+  "migrations",
   MIGRATION_DIR,
   "migration.sql"
 )

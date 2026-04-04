@@ -113,7 +113,8 @@ export default defineConfig({
     {
       command: 'npm run dev',
       url: 'http://localhost:3000',
-      reuseExistingServer: !process.env.CI,
+      // In CI or when using Supabase local dev, always start fresh dev server
+      reuseExistingServer: !process.env.CI && !process.env.E2E_DATABASE_URL,
       timeout: 300000, // 5 minutes (first Turbopack build can be slow)
       env: {
         FEATURE_SELF_RESCHEDULE: 'true',
@@ -128,10 +129,19 @@ export default defineConfig({
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',
         PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'mock',
-        // Force local DB for E2E (overrides .env.local which may point to Supabase)
-        // In CI, use the DATABASE_URL already set by GitHub Actions (equinet_test)
-        DATABASE_URL: process.env.CI ? process.env.DATABASE_URL! : 'postgresql://postgres:postgres@localhost:5432/equinet',
-        DIRECT_DATABASE_URL: process.env.CI ? process.env.DIRECT_DATABASE_URL! : 'postgresql://postgres:postgres@localhost:5432/equinet',
+        // Force correct DB for E2E (overrides .env.local)
+        // CI: set by supabase start. Local: default Docker or override via env.
+        DATABASE_URL: process.env.E2E_DATABASE_URL || process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/equinet',
+        DIRECT_DATABASE_URL: process.env.E2E_DATABASE_URL || process.env.DIRECT_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/equinet',
+        // Pass through Supabase env vars (CI: from supabase start, local: from env)
+        ...(process.env.NEXT_PUBLIC_SUPABASE_URL && {
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        }),
+        ...(process.env.E2E_DATABASE_URL && {
+          E2E_DATABASE_URL: process.env.E2E_DATABASE_URL,
+        }),
         // Pass through Stripe publishable key for Payment Element (NEXT_PUBLIC_ needed at dev-server startup)
         ...(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && {
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
