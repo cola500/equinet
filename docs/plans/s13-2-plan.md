@@ -9,6 +9,7 @@ sections:
   - Nuvarande tillstand
   - Strategi
   - Faser
+  - Review-fynd
   - Risker
   - Filer att ta bort
   - Filer att andra
@@ -36,18 +37,17 @@ Tre auth-kallor (Bearer JWT, NextAuth cookie, Supabase cookie) -> en (Supabase).
 
 **Drop-in replacement** -- inte batch-migrering av 135 filer.
 
-1. `auth-server.ts`: byt internals fran NextAuth till Supabase. Samma session-shape.
-   135 filer andras INTE -- de importerar fortfarande `auth()` fran auth-server.
+1. `auth-server.ts` + `middleware.ts`: byt ATOMART (samma commit).
+   auth-server byter internals till Supabase. Middleware tar bort NextAuth-wrapper.
 2. `auth-dual.ts`: ta bort Bearer + NextAuth-grenar. Bara Supabase kvar.
-3. `middleware.ts`: ta bort NextAuth. Anvand bara `getSupabaseUserFromCookie`.
-4. Klientkomponenter: byt `useSession`/`signOut` till Supabase.
-5. Radera NextAuth-filer, mobile token-filer, beroenden.
+3. Klientkomponenter: byt `useSession`/`signOut` till Supabase.
+4. Radera NextAuth-filer, mobile token-filer, beroenden.
 
 ## Faser
 
-### Fas 1: auth-server.ts drop-in (135 routes opaverkade)
+### Fas 1: auth-server.ts + middleware.ts (ATOMART)
 
-Byt `auth()` fran NextAuth till Supabase. Returnera samma session-shape:
+**auth-server.ts**: Byt `auth()` fran NextAuth till Supabase. Returnera samma session-shape:
 ```typescript
 session.user.id        // Supabase user.id
 session.user.email     // Supabase user.email
@@ -60,6 +60,24 @@ session.user.stableId  // DB-lookup
 Prisma-lookup kravs -- Supabase JWT har bara app_metadata (userType, isAdmin).
 `providerId` och `stableId` finns bara i DB.
 
+KRITISKT: Om DB-lookup returnerar null -> throw 401 Response (befintligt beteende).
+Returnera ALDRIG ett partiellt sessionobjekt.
+
+**middleware.ts**: Ta bort NextAuth, anvand bara Supabase.
+KRITISKT: Middleware MASTE trigga cookie-refresh via korrekt Supabase SSR-monster:
+```typescript
+// Skapa response FORST, lat Supabase satta cookies pa den
+const response = NextResponse.next({ request: req })
+const supabase = createServerClient(..., {
+  cookies: {
+    getAll() { return req.cookies.getAll() },
+    setAll(cookies) { cookies.forEach(({ name, value, options }) =>
+      response.cookies.set(name, value, options)) }
+  }
+})
+await supabase.auth.getUser()  // INTE getSession -- triggar refresh
+```
+
 ### Fas 2: auth-dual.ts forenkling
 
 - Ta bort Bearer-path (rad 34-42)
@@ -67,14 +85,7 @@ Prisma-lookup kravs -- Supabase JWT har bara app_metadata (userType, isAdmin).
 - Behall bara Supabase-path (rad 62-70)
 - `authMethod` blir bara `"supabase"` (ta bort "bearer"/"nextauth" fran typen)
 
-### Fas 3: middleware.ts omskrivning
-
-- Ta bort `import NextAuth` och `import { authConfig }`
-- Anvand bara `getSupabaseUserFromCookie(req)` (redan testad)
-- Behall `handleAuthorization` oforandrad
-- Exportera som standard Next.js middleware (inte NextAuth-wrapper)
-
-### Fas 4: Klientkomponenter
+### Fas 3: Klientkomponenter
 
 | Komponent | Andring |
 |-----------|--------|
@@ -84,22 +95,51 @@ Prisma-lookup kravs -- Supabase JWT har bara app_metadata (userType, isAdmin).
 | `DeleteAccountDialog.tsx` | Samma som Header |
 | `stable/profile/page.tsx` | `useSession()` -> `useAuth()` (redan wrappad) |
 
-### Fas 5: Ta bort filer
+KRITISKT: signOut MASTE ocksa rensa NextAuth-cookies explicit:
+```typescript
+// Rensa kvarliggande NextAuth-cookies
+document.cookie = "next-auth.session-token=; Max-Age=0; path=/"
+document.cookie = "__Secure-next-auth.session-token=; Max-Age=0; path=/; secure"
+```
+
+### Fas 4: Ta bort filer
 
 Se "Filer att ta bort" nedan.
 
-### Fas 6: Prisma schema + beroenden
+### Fas 5: Beroenden
 
-- Ta bort `MobileToken`-modell fran schema.prisma
-- Ta bort `mobileTokens` relation fran User-modell
-- Skapa migration: `ALTER TABLE DROP TABLE "MobileToken"`
 - Ta bort `next-auth` fran package.json
 - Ta bort `next-auth.d.ts` typfil
+- npm install for att uppdatera lockfile
 
-### Fas 7: Verifiering
+OBS: MobileToken Prisma-modell tas INTE bort har -- flyttas till S13-3
+(schema-andring efter produktionsvalidering av auth).
+
+### Fas 6: Verifiering
 
 - `npm run check:all` (typecheck + test + lint + swedish)
 - Manuell login-test (om dev-server kors)
+
+## Review-fynd (tech-architect + security-reviewer)
+
+### Atagardat i planen
+
+1. **Middleware cookie-refresh** (blocker): `setAll` maste satta cookies pa response.
+   Fixat i Fas 1 med korrekt Supabase SSR-monster.
+2. **Null-guard vid DB-lookup** (kritiskt): auth() maste returnera null/throw, aldrig
+   partiellt objekt. Fixat i Fas 1.
+3. **NextAuth-cookie cleanup** (kritiskt): signOut maste rensa kvarliggande cookies.
+   Fixat i Fas 3.
+4. **Fas 1+3 atomicitet** (major): auth-server + middleware i samma commit.
+   Fixat i strategin.
+5. **MobileToken schema-drop** (major): Flyttat till S13-3 for sakrare rollback.
+
+### Accepterade risker
+
+6. **Extra DB-roundtrip per request**: Redan monstret i auth-dual (75 routes).
+   Minimal overhead -- en findUnique by PK. Cachning adderas vid behov.
+7. **isAdmin JWT-crosscheck**: DB-lookup ar standard i projektet. RLS ger
+   extra skydd pa DB-niva. Godtagbart utan JWT-dubbelkoll.
 
 ## Risker
 
@@ -107,9 +147,9 @@ Se "Filer att ta bort" nedan.
 |------|-----------|
 | 135 routes som anvander `auth()` | Drop-in replacement -- samma interface |
 | Session-shape mismatch | Prisma-lookup ger exakt samma falt |
-| Middleware edge-kompatibilitet | `getSupabaseUserFromCookie` redan testad i prod |
+| Middleware cookie-refresh | Korrekt Supabase SSR-monster med setAll pa response |
+| Kvarliggande NextAuth-cookies | Explicit rensning i signOut |
 | Tester som mockar `auth()` | Mock-interfacet andras inte |
-| MobileToken-tabell med data | Migration droppar tabellen -- data behovs inte langre |
 | `useSession` offline-cache | Migreras till Supabase + sessionStorage-pattern |
 
 ## Filer att ta bort
@@ -129,7 +169,6 @@ Se "Filer att ta bort" nedan.
 - `src/app/api/auth/native-login/route.ts` + tester
 
 ### Tester
-- `src/lib/auth-server.test.ts` (om finns)
 - `src/lib/mobile-auth.test.ts`
 - `src/domain/auth/__tests__/MobileTokenService.test.ts`
 - `src/app/api/auth/native-login/` alla tester
@@ -140,23 +179,25 @@ Se "Filer att ta bort" nedan.
 - `src/lib/auth-server.ts` -- byt NextAuth -> Supabase (behall interface)
 - `src/lib/auth-dual.ts` -- ta bort Bearer + NextAuth, bara Supabase
 - `src/lib/auth-dual.test.ts` -- uppdatera tester
-- `middleware.ts` -- ta bort NextAuth, anvand Supabase
+- `middleware.ts` -- ta bort NextAuth, anvand Supabase med cookie-refresh
+- `src/lib/auth-supabase-edge.ts` -- eventuell uppdatering for cookie-refresh
 - `src/components/providers/SessionProvider.tsx` -- byt till Supabase
 - `src/hooks/useAuth.ts` -- byt useSession till Supabase
-- `src/components/layout/Header.tsx` -- byt signOut
+- `src/components/layout/Header.tsx` -- byt signOut + rensa NextAuth-cookies
 - `src/components/account/DeleteAccountDialog.tsx` -- byt signOut
 - `src/app/stable/profile/page.tsx` -- byt useSession till useAuth
-- `prisma/schema.prisma` -- ta bort MobileToken
 - `package.json` -- ta bort next-auth
 
 ## Definition of Done
 
 - [ ] `auth()` i auth-server returnerar samma session-shape via Supabase
+- [ ] `auth()` returnerar null/throw 401 vid saknad DB-rad (aldrig partiellt objekt)
 - [ ] auth-dual bara har Supabase-path
-- [ ] middleware anvander bara Supabase
+- [ ] middleware anvander bara Supabase med korrekt cookie-refresh
+- [ ] signOut rensar bade Supabase- och NextAuth-cookies
 - [ ] Klientkomponenter anvander Supabase for session + signOut
 - [ ] Alla NextAuth + mobile token filer borttagna
-- [ ] MobileToken borttagen fran Prisma schema
 - [ ] `next-auth` borttagen fran package.json
 - [ ] `npm run check:all` 4/4 grona
 - [ ] Inga imports av `next-auth` kvar i kodbasen
+- [ ] `app_metadata.userType` + `app_metadata.isAdmin` verifierat i Supabase
