@@ -193,6 +193,22 @@ Feature branch -> Implementation -> check:all -> Merge till main -> Radera branc
 | 2026-04 | Lead måste godkänna allt | Flaskhals, Johan behöver inte vara involverad | Self-review med subagenter, autonom sprint |
 | 2026-04 | Strict branch protection | CI-kö invaliderade PRs | Av, quality gates i pre-push hook istället |
 | 2026-04 | Daterade modell-IDn stabila | `claude-sonnet-4-6-20250514` returnerade 404 | Alias-only policy |
+| 2026-04 | CSP är statisk konfiguration | Lokal Supabase blockerades av connect-src | Dynamisk CSP per miljö (dev/CI vs prod) |
+
+---
+
+## Milstolpe: Production cutover (2026-04-04)
+
+Auth-migreringen komplett. Prod kör Supabase Auth + RLS. Resan:
+
+- **Sprint 10:** Spike -- bevisade att Supabase Auth + RLS fungerar
+- **Sprint 11:** Dual-auth helper + user-migrering
+- **Sprint 12:** Route-migrering (60+ routes)
+- **Sprint 13:** Ta bort NextAuth, MobileTokenService, bcrypt
+- **Sprint 14:** RLS live på alla kärndomäner (28 policies, 24 bevistester)
+- **Sprint 15:** Cutover -- hook + trigger + RLS på prod, 17 användare migrerade, Vercel env bytt
+
+6 sprintar. 0 regressioner. Rollback-plan aldrig behövd.
 
 ---
 
