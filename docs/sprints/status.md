@@ -26,7 +26,7 @@ sections:
 | S13-5 Registrering via Supabase | fullstack | Dev | done | main | 6e83f301 |
 | S13-2 Ta bort NextAuth + MobileToken | fullstack | Dev | done | main | dcfabc10 |
 | S13-3 Ta bort passwordHash | fullstack | Dev | done | main | 74bd9b8f |
-| S13-6 Visuell verifiering | fullstack | Dev | done | feature/s13-6-visual-verification | - |
+| S13-6 Visuell verifiering | fullstack | Dev | done | main | 81309219 |
 
 **Sprint 12** (klar):
 
