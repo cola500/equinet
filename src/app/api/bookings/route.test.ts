@@ -3,6 +3,7 @@ import { GET, POST } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 
 // Valid UUIDs for testing (version 4, variant 8/9/a/b)
@@ -21,6 +22,11 @@ const FUTURE_DATE = new Date()
 FUTURE_DATE.setDate(FUTURE_DATE.getDate() + 7)
 const FUTURE_DATE_ISO = FUTURE_DATE.toISOString()
 const _FUTURE_DATE_STR = FUTURE_DATE.toISOString().split('T')[0]
+
+// Mock Supabase server client (used by provider GET path)
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: vi.fn(),
+}))
 
 // Mock dependencies
 vi.mock('@/lib/auth-dual', () => ({
@@ -132,13 +138,8 @@ describe('GET /api/bookings', () => {
     expect(data[0].provider.businessName).toBe('Test Provider')
   })
 
-  it('should return bookings for authenticated provider', async () => {
+  it('should return bookings for authenticated provider (via Supabase RLS)', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     const mockBookings = [
       {
         id: 'booking1',
@@ -163,8 +164,15 @@ describe('GET /api/bookings', () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
-    vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
+
+    // Supabase client chain: from().select().order()
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: mockBookings, error: null }),
+        }),
+      }),
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
 
@@ -202,12 +210,20 @@ describe('GET /api/bookings', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should return 404 when provider not found', async () => {
-    // Arrange
+  it('should return empty list when provider has no bookings (RLS filters)', async () => {
+    // With Supabase RLS, a provider without bookings gets an empty array
+    // (no 404 -- RLS handles filtering via JWT providerId)
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        }),
+      }),
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/bookings')
 
@@ -216,8 +232,8 @@ describe('GET /api/bookings', () => {
     const data = await response.json()
 
     // Assert
-    expect(response.status).toBe(404)
-    expect(data.error).toBe('Leverantör hittades inte')
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(0)
   })
 })
 
