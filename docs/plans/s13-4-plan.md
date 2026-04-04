@@ -56,10 +56,15 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 1. Installera `supabase-swift` via Swift Package Manager
 2. Skapa `SupabaseManager.swift` (singleton med SupabaseClient)
 3. Utoka `AppConfig.swift` med `supabaseURL` och `supabaseAnonKey`
-4. Konfigurera SDK med App Group storage for widget-access
+4. Skapa `AppGroupKeychainStorage.swift` -- custom `AuthLocalStorage`-adapter
+   som wrapprar Keychain med App Group (`group.com.equinet.shared`).
+   Supabase SDK:ts default-lagring ar UserDefaults, men widgeten behover
+   access via App Group Keychain.
+5. Konfigurera SupabaseClient med custom storage-adaptern
 
 **Filer:**
 - Ny: `SupabaseManager.swift`
+- Ny: `AppGroupKeychainStorage.swift`
 - Andrad: `AppConfig.swift`
 - Andrad: `Equinet.xcodeproj` (SPM dependency)
 
@@ -82,26 +87,37 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 
 1. `performRequest()`: hamta `SupabaseManager.shared.client.auth.session?.accessToken`
 2. Ta bort `refreshToken()` metoden (SDK refreshar automatiskt)
-3. Vid 401: forsok `supabase.auth.refreshSession()` en gang, sedan logout
-4. Ta bort Keychain-token-lasning
+3. Ta bort `isRefreshing`-flaggan (SDK hanterar concurrent refresh internt)
+4. Vid 401: forsok `supabase.auth.refreshSession()` en gang, sedan logout
+5. Ta bort Keychain-token-lasning
 
 **Filer:**
 - Andrad: `APIClient.swift`
 
-### Fas 4: WKWebView session-delning
+### Fas 4: WKWebView session-delning via PKCE-redirect
 
-1. Efter native login: hamta session fran SDK
-2. Konstruera Supabase-cookie: `sb-zzdamokfeenencuggjjp-auth-token`
-3. Injicera cookie i WKWebView cookie store (ersatter NextAuth cookie)
-4. Ta bort `injectSessionCookie()` NextAuth-varianten i AuthManager
-5. Uppdatera cookie-observation i WebView.swift (observera Supabase-cookie istallet)
+**Approach:** Istallet for att manuellt konstruera Supabase-cookies och injicera
+dem i WKWebView (fragilt, cookie-format kan andra), anvander vi en
+server-side PKCE-exchange endpoint.
 
-**Cookie-format:** `@supabase/ssr` forvantar JSON-session i chunked cookies:
-- `sb-zzdamokfeenencuggjjp-auth-token` (eller `.0`, `.1` om stor)
-- Vardet ar base64url-kodad JSON med `access_token`, `refresh_token`, etc.
+**Flode:**
+1. Native login via Supabase SDK -> far `access_token` + `refresh_token`
+2. Skapa server-endpoint `POST /api/auth/native-session-exchange`
+   - Tar emot Supabase access_token som Bearer
+   - Verifierar token mot Supabase (`supabase.auth.getUser()`)
+   - Satter korrekta `@supabase/ssr`-cookies via `setAll()` i HTTP response
+   - Returnerar 200 + redirect-URL
+3. WKWebView navigerar till endpointen fore sidladdning
+4. Cookies satts av servern -> WKWebView ar autentiserad
+5. Ta bort `injectSessionCookie()` NextAuth-varianten i AuthManager
+6. Uppdatera cookie-observation i WebView.swift
+
+**Fordel:** Servern ager cookie-formatet. Om `@supabase/ssr` andrar
+chunking/encoding behover vi inte uppdatera iOS-appen.
 
 **Filer:**
-- Andrad: `AuthManager.swift` (ny `injectSupabaseCookie()`)
+- Ny: `src/app/api/auth/native-session-exchange/route.ts` (server-endpoint)
+- Andrad: `AuthManager.swift` (anropa exchange-endpoint after login)
 - Andrad: `WebView.swift` (cookie-observation, ta bort NextAuth-specifikt)
 
 ### Fas 5: Cleanup -- ta bort MobileToken-kod (iOS)
@@ -145,14 +161,22 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 |-----|---------|
 | `AppConfig.swift` | Lagg till supabaseURL, supabaseAnonKey |
 | `AuthManager.swift` | Byt login/logout till Supabase SDK, ta bort biometric |
-| `APIClient.swift` | Bearer fran Supabase session, ta bort refreshToken() |
+| `APIClient.swift` | Bearer fran Supabase session, ta bort refreshToken() + isRefreshing |
 | `ContentView.swift` | Ta bort biometricPrompt case |
-| `WebView.swift` | Supabase cookie-injektion istf NextAuth |
+| `WebView.swift` | Cookie-observation, ta bort NextAuth-specifikt |
 | `KeychainHelper.swift` | Ta bort MobileToken/session-cookie keys |
 | `BridgeHandler.swift` | Ta bort token-relaterade meddelanden |
 | `SharedDataManager.swift` | hasValidToken -> Supabase session |
 | `NativeLoginView.swift` | Supabase-specifik felhantering |
 | `Equinet.xcodeproj` | SPM: supabase-swift |
+
+### Nya filer
+
+| Fil | Syfte |
+|-----|-------|
+| `SupabaseManager.swift` | Singleton med SupabaseClient |
+| `AppGroupKeychainStorage.swift` | Custom AuthLocalStorage for App Group Keychain |
+| `src/app/api/auth/native-session-exchange/route.ts` | PKCE-exchange for WKWebView cookies |
 
 ## Filer att ta bort (iOS)
 
@@ -164,8 +188,8 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 | Risk | Mitigation |
 |------|-----------|
 | Supabase SDK storlek (SPM) | SDK:t ar modulart, importera bara Auth |
-| WKWebView cookie-format | Verifiera att `@supabase/ssr` laser cookie korrekt |
-| Widget tappar token-access | App Group Keychain, testa med widget |
+| Exchange-endpoint sakerhet | Verifiera token mot Supabase, rate limit, kort TTL |
+| Widget tappar token-access | App Group Keychain-adapter, testa med widget |
 | Session expires under offline | SDK buffrar refresh, testa offline-scenario |
 | Befintliga MobileToken-anrop | auth-dual.ts hanterar redan Bearer -> Supabase fallback |
 
@@ -190,7 +214,7 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 
 - [ ] iOS-appen loggar in via Supabase Swift SDK (inte /api/auth/native-login)
 - [ ] APIClient anvander Supabase access_token som Bearer
-- [ ] WKWebView-sidor ar autentiserade via Supabase-cookies
+- [ ] WKWebView-sidor ar autentiserade via PKCE-exchange endpoint
 - [ ] Biometrisk unlock borttagen
 - [ ] MobileToken-kod borttagen fran iOS-sidan
 - [ ] Alla befintliga XCTest-sviter passerar
