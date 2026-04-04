@@ -14,8 +14,6 @@ function createMockSupabaseAdmin() {
       const id = `supabase-user-${++nextId}`
       return { data: { user: { id } }, error: null }
     },
-    // Helper to make createUser return an error
-    setError: null as null | { message: string; status?: number },
   }
 }
 
@@ -167,8 +165,7 @@ describe('AuthService', () => {
       expect(result.error.type).toBe('EMAIL_ALREADY_EXISTS')
     })
 
-    it('should fail if Supabase returns error', async () => {
-      // Override createUser to return error
+    it('should return EMAIL_ALREADY_EXISTS when Supabase returns 422', async () => {
       const depsWithError: AuthServiceDeps = {
         authRepository: authRepo,
         hashPassword: async (pw) => `hashed:${pw}`,
@@ -186,6 +183,26 @@ describe('AuthService', () => {
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('EMAIL_ALREADY_EXISTS')
+    })
+
+    it('should return REGISTRATION_FAILED when Supabase returns non-422 error', async () => {
+      const depsWithError: AuthServiceDeps = {
+        authRepository: authRepo,
+        hashPassword: async (pw) => `hashed:${pw}`,
+        comparePassword: async (pw, hash) => hash === `hashed:${pw}`,
+        supabaseAdmin: {
+          createUser: async () => ({
+            data: { user: null },
+            error: { message: 'Service unavailable', status: 503 },
+          }),
+        },
+      }
+      const serviceWithError = new AuthService(depsWithError)
+
+      const result = await serviceWithError.register(customerInput)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('REGISTRATION_FAILED')
     })
 
     it('should never return passwordHash in user object', async () => {

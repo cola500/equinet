@@ -255,7 +255,7 @@ export class MockAuthRepository implements IAuthRepository {
     }
   }
 
-  async updateUserType(userId: string, userType: string): Promise<void> {
+  async updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void> {
     const user = this.users.get(userId)
     if (user) {
       user.userType = userType

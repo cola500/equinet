@@ -188,5 +188,5 @@ export interface IAuthRepository {
   /**
    * Update userType for a user (e.g., after Supabase signup + provider creation).
    */
-  updateUserType(userId: string, userType: string): Promise<void>
+  updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void>
 }

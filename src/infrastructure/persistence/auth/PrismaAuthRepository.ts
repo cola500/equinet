@@ -237,7 +237,7 @@ export class PrismaAuthRepository implements IAuthRepository {
     ])
   }
 
-  async updateUserType(userId: string, userType: string): Promise<void> {
+  async updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void> {
     await prisma.user.update({
       where: { id: userId },
       data: { userType },

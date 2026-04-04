@@ -12,6 +12,7 @@ import bcrypt from 'bcrypt'
 import { randomBytes } from 'crypto'
 import { sendEmailVerificationNotification, sendPasswordResetNotification } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 // -----------------------------------------------------------
 // Types
@@ -92,6 +93,7 @@ export type AuthErrorType =
   | 'INVALID_CREDENTIALS'
   | 'EMAIL_NOT_VERIFIED'
   | 'ACCOUNT_BLOCKED'
+  | 'REGISTRATION_FAILED'
 
 export interface AuthError {
   type: AuthErrorType
@@ -165,16 +167,25 @@ export class AuthService {
     })
 
     if (error || !data.user) {
+      // 422 = user already registered, map to EMAIL_ALREADY_EXISTS
+      if (error?.status === 422) {
+        return Result.fail({
+          type: 'EMAIL_ALREADY_EXISTS',
+          message: error.message,
+        })
+      }
+      // Other Supabase errors (rate limit, service down, etc.)
+      logger.error('Supabase createUser failed', { message: error?.message, status: error?.status })
       return Result.fail({
-        type: 'EMAIL_ALREADY_EXISTS',
-        message: error?.message || 'Kunde inte skapa konto',
+        type: 'REGISTRATION_FAILED',
+        message: 'Kunde inte skapa konto',
       })
     }
 
     const supabaseUserId = data.user.id
 
     // 2. Ensure public.User exists (sync trigger creates it, but as fallback
-    //    we create it here with ON CONFLICT DO NOTHING semantics)
+    //    we create it here if the trigger hasn't fired yet)
     await this.repo.createUser({
       id: supabaseUserId,
       email: input.email,
@@ -183,8 +194,14 @@ export class AuthService {
       lastName: input.lastName,
       phone: input.phone,
       userType: input.userType,
-    }).catch(() => {
-      // Ignore if sync trigger already created the row (unique constraint)
+    }).catch((err: unknown) => {
+      // P2002 = unique constraint -- expected when sync trigger already created the row
+      const prismaCode = (err as { code?: string })?.code
+      if (prismaCode === 'P2002') {
+        logger.info('User already exists from sync trigger, skipping createUser', { id: supabaseUserId })
+      } else {
+        logger.error('Failed to create fallback user after Supabase signup', err instanceof Error ? err : new Error(String(err)))
+      }
     })
 
     // 3. Create provider profile if applicable
@@ -504,8 +521,6 @@ export function createAuthService(): AuthService {
   // Try to create Supabase admin client for new registrations
   let supabaseAdmin: SupabaseAdminAuth | undefined
   try {
-    // Dynamic import to avoid failing when env vars are missing (e.g., in tests)
-    const { createSupabaseAdminClient } = require('@/lib/supabase/admin')
     const client = createSupabaseAdminClient()
     supabaseAdmin = {
       createUser: async (opts) => {
