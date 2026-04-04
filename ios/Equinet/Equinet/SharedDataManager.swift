@@ -269,12 +269,6 @@ enum SharedDataManager {
         userDefaults?.removeObject(forKey: calendarSyncEnabledKey)
     }
 
-    // MARK: - Token Convenience
-
-    /// Check if we have a valid mobile token
-    static var hasValidToken: Bool {
-        KeychainHelper.loadMobileToken() != nil
-    }
 
     // MARK: - Widget Refresh
 

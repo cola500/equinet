@@ -8,6 +8,7 @@
 
 import Foundation
 import OSLog
+import Supabase
 
 enum APIError: Error {
     case noToken
@@ -24,7 +25,11 @@ final class APIClient {
     static let shared = APIClient()
 
     let session: URLSession
-    private var isRefreshing = false
+
+    /// Test-only override for access token (avoids needing real Supabase session in tests)
+    #if DEBUG
+    var testAccessToken: String?
+    #endif
 
     init(session: URLSession = .shared) {
         self.session = session
@@ -430,39 +435,6 @@ final class APIClient {
         }
     }
 
-    /// Refresh the mobile token (rotation: old token revoked, new one returned)
-    func refreshToken() async throws {
-        guard let currentJwt = KeychainHelper.loadMobileToken() else {
-            throw APIError.noToken
-        }
-
-        guard let url = URL(string: "/api/auth/mobile-token/refresh", relativeTo: baseURL) else {
-            throw APIError.networkError(URLError(.badURL))
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(currentJwt)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 15
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError(URLError(.badServerResponse))
-        }
-
-        if httpResponse.statusCode == 401 {
-            KeychainHelper.clearMobileToken()
-            throw APIError.unauthorized
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw APIError.serverError(httpResponse.statusCode)
-        }
-
-        let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
-        KeychainHelper.saveMobileToken(jwt: tokenResponse.token, expiresAt: tokenResponse.expiresAt)
-    }
-
     // MARK: - Due for Service
 
     func fetchDueForService(filter: DueForServiceFilter = .all) async throws -> [DueForServiceItem] {
@@ -505,22 +477,36 @@ final class APIClient {
 
     // MARK: - Private
 
-    /// Generic authenticated request with token refresh on 401
+    /// Generic authenticated request with Supabase token refresh on 401
     private func performRequest(
         method: String,
         path: String,
-        body: [String: Any]? = nil
+        body: [String: Any]? = nil,
+        isRetryAfterRefresh: Bool = false
     ) async throws -> (Data, HTTPURLResponse) {
-        guard let jwt = KeychainHelper.loadMobileToken() else {
+        let accessToken: String
+        #if DEBUG
+        if let testToken = testAccessToken {
+            accessToken = testToken
+        } else {
+            guard let token = SupabaseManager.client.auth.currentSession?.accessToken else {
+                throw APIError.noToken
+            }
+            accessToken = token
+        }
+        #else
+        guard let token = SupabaseManager.client.auth.currentSession?.accessToken else {
             throw APIError.noToken
         }
+        accessToken = token
+        #endif
 
         guard let url = URL(string: path, relativeTo: baseURL) else {
             throw APIError.networkError(URLError(.badURL))
         }
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
 
         if let body {
@@ -552,16 +538,13 @@ final class APIClient {
             AppLogger.network.error("HTTP \(httpResponse.statusCode) for \(path): \(bodyPreview)")
         }
 
-        // Handle 401: try token refresh once
-        if httpResponse.statusCode == 401 && !isRefreshing {
-            isRefreshing = true
-            defer { isRefreshing = false }
-
+        // Handle 401: try Supabase session refresh once, then retry (no infinite loop)
+        if httpResponse.statusCode == 401 && !isRetryAfterRefresh {
             do {
-                try await refreshToken()
-                return try await performRequest(method: method, path: path, body: body)
+                _ = try await SupabaseManager.client.auth.refreshSession()
+                return try await performRequest(method: method, path: path, body: body, isRetryAfterRefresh: true)
             } catch {
-                KeychainHelper.clearMobileToken()
+                AppLogger.auth.error("Token refresh failed after 401: \(error)")
                 throw APIError.unauthorized
             }
         }
@@ -600,9 +583,3 @@ final class APIClient {
 extension APIClient: ReviewsDataFetching {}
 extension APIClient: ProfileDataFetching {}
 
-// MARK: - Response types
-
-private struct TokenResponse: Codable, Sendable {
-    let token: String
-    let expiresAt: String
-}

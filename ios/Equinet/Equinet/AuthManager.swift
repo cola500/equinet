@@ -2,21 +2,20 @@
 //  AuthManager.swift
 //  Equinet
 //
-//  Manages native authentication state: Keychain token check,
-//  biometric authentication (Face ID / Touch ID), and native login.
+//  Manages native authentication state via Supabase Swift SDK.
+//  Session persistence handled by SDK (App Group Keychain via SupabaseManager).
 //
 
 import Foundation
-import LocalAuthentication
 import Observation
 import OSLog
+import Supabase
 import WebKit
 
-enum AuthState {
-    case checking        // Startup: checking Keychain for existing token
-    case loggedOut       // No valid token -> show NativeLoginView
-    case biometricPrompt // Has valid token -> ask for Face ID / Touch ID
-    case authenticated   // Ready to show WebView with session cookie
+enum AuthState: Equatable {
+    case checking        // Startup: checking for existing Supabase session
+    case loggedOut       // No valid session -> show NativeLoginView
+    case authenticated   // Valid session -> show main app
 }
 
 @MainActor
@@ -26,17 +25,12 @@ final class AuthManager {
     private(set) var state: AuthState = .checking
     private(set) var loginError: String?
     private(set) var isLoggingIn = false
-
-    // Session cookie data (populated after login or biometric unlock)
-    private(set) var sessionCookieName: String?
-    private(set) var sessionCookieValue: String?
-    private(set) var sessionCookieSecure: Bool = false
     private(set) var userType: String?  // "provider" or "customer"
 
-    /// Keychain abstraction for testability.
+    /// Keychain abstraction (still used for userType storage).
     let keychain: KeychainStorable
 
-    /// Production factory -- call from @MainActor context to avoid concurrency warnings.
+    /// Production factory -- call from @MainActor context.
     static func createDefault() -> AuthManager {
         AuthManager(keychain: KeychainHelper.shared)
     }
@@ -47,32 +41,13 @@ final class AuthManager {
 
     // MARK: - Check existing auth
 
-    /// Called on app launch. Checks Keychain for a valid mobile token.
+    /// Called on app launch. Checks Supabase SDK for a valid session.
     func checkExistingAuth() {
-        guard keychain.load(key: KeychainHelper.mobileTokenKey) != nil else {
-            state = .loggedOut
-            return
-        }
-
-        // Has valid token -- check if biometric hardware is available
-        let context = LAContext()
-        var error: NSError?
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            // Has saved session cookie? If so, go to biometric prompt
-            if keychain.load(key: KeychainHelper.sessionCookieValueKey) != nil {
-                state = .biometricPrompt
-            } else {
-                // Token exists but no session cookie -- need fresh login
-                state = .loggedOut
-            }
+        if SupabaseManager.client.auth.currentSession != nil {
+            userType = keychain.load(key: KeychainHelper.userTypeKey)
+            state = .authenticated
         } else {
-            // No biometric hardware -- check for session cookie
-            if keychain.load(key: KeychainHelper.sessionCookieValueKey) != nil {
-                loadSessionCookieFromKeychain()
-                state = .authenticated
-            } else {
-                state = .loggedOut
-            }
+            state = .loggedOut
         }
     }
 
@@ -84,61 +59,29 @@ final class AuthManager {
         defer { isLoggingIn = false }
 
         do {
-            let response = try await performLogin(email: email, password: password)
-
-            // Save mobile token
-            _ = keychain.save(key: KeychainHelper.mobileTokenKey, value: response.token)
-            _ = keychain.save(key: KeychainHelper.tokenExpiresAtKey, value: response.expiresAt)
-
-            // Save session cookie
-            _ = keychain.save(key: KeychainHelper.sessionCookieNameKey, value: response.sessionCookie.name)
-            _ = keychain.save(key: KeychainHelper.sessionCookieValueKey, value: response.sessionCookie.value)
-            _ = keychain.save(key: KeychainHelper.sessionCookieSecureKey, value: response.sessionCookie.secure ? "true" : "false")
-
-            sessionCookieName = response.sessionCookie.name
-            sessionCookieValue = response.sessionCookie.value
-            sessionCookieSecure = response.sessionCookie.secure
-
-            // Save user type for role-based UI
-            userType = response.user.userType
-            _ = keychain.save(key: KeychainHelper.userTypeKey, value: response.user.userType)
-
-            state = .authenticated
-        } catch let error as LoginError {
-            loginError = error.message
-        } catch {
-            loginError = "Något gick fel. Försök igen."
-        }
-    }
-
-    // MARK: - Biometric authentication
-
-    func authenticateWithBiometric() async {
-        let context = LAContext()
-        context.localizedCancelTitle = "Logga in med lösenord"
-
-        do {
-            let success = try await context.evaluatePolicy(
-                .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Logga in i Equinet"
+            let session = try await SupabaseManager.client.auth.signIn(
+                email: email,
+                password: password
             )
 
-            if success {
-                loadSessionCookieFromKeychain()
-                state = .authenticated
-            } else {
-                state = .loggedOut
-            }
+            // Extract userType from JWT claims (app_metadata)
+            let resolvedUserType = resolveUserType(from: session.user)
+            userType = resolvedUserType
+            _ = keychain.save(key: KeychainHelper.userTypeKey, value: resolvedUserType)
+
+            state = .authenticated
+        } catch let error as AuthError {
+            loginError = mapAuthError(error)
         } catch {
-            // User cancelled or biometric failed
-            state = .loggedOut
+            loginError = "Något gick fel. Försök igen."
+            AppLogger.auth.error("Login failed with unexpected error: \(error)")
         }
     }
 
     // MARK: - Logout
 
     func logout() {
-        // Unregister device token from backend (fire-and-forget, before keychain is cleared)
+        // Unregister device token from backend (fire-and-forget)
         if let token = PushManager.shared.deviceToken {
             Task.detached {
                 do {
@@ -150,164 +93,104 @@ final class AuthManager {
         }
         PushManager.shared.clearDeviceToken()
 
-        // Clear Keychain credentials
-        _ = keychain.delete(key: KeychainHelper.mobileTokenKey)
-        _ = keychain.delete(key: KeychainHelper.tokenExpiresAtKey)
-        _ = keychain.delete(key: KeychainHelper.sessionCookieNameKey)
-        _ = keychain.delete(key: KeychainHelper.sessionCookieValueKey)
-        _ = keychain.delete(key: KeychainHelper.sessionCookieSecureKey)
+        // Sign out from Supabase (fire-and-forget, clears local session)
+        Task {
+            do {
+                try await SupabaseManager.client.auth.signOut(scope: .local)
+            } catch {
+                AppLogger.auth.error("Supabase signOut failed: \(error)")
+            }
+        }
+
+        // Clear userType from Keychain
         _ = keychain.delete(key: KeychainHelper.userTypeKey)
 
-        // Clear cached data (dashboard, calendar, widget)
+        // Clear cached data
         SharedDataManager.clearDashboardCache()
         SharedDataManager.clearCalendarCache()
         SharedDataManager.clearWidgetData()
-
-        sessionCookieName = nil
-        sessionCookieValue = nil
-        sessionCookieSecure = false
-        userType = nil
         SharedDataManager.clearBookingsCache()
+
+        userType = nil
         state = .loggedOut
     }
 
-    // MARK: - Cookie injection
+    // MARK: - Session exchange for WKWebView
 
-    /// Inject the session cookie into WKWebView's cookie store
-    func injectSessionCookie(into cookieStore: WKHTTPCookieStore) async {
-        guard let name = sessionCookieName,
-              let value = sessionCookieValue else {
+    /// Exchange Supabase access token for web session cookies via server endpoint.
+    /// Called before loading WKWebView pages.
+    func exchangeSessionForWebCookies(into cookieStore: WKHTTPCookieStore) async {
+        guard let session = SupabaseManager.client.auth.currentSession else {
+            AppLogger.auth.warning("No Supabase session for cookie exchange")
             return
         }
 
-        let isProduction = sessionCookieSecure
-        let domain = if isProduction {
-            "equinet-app.vercel.app"
-        } else {
-            AppConfig.baseURL.host() ?? "localhost"
-        }
+        let url = URL(string: AppConfig.sessionExchangePath, relativeTo: AppConfig.baseURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 10
 
-        var properties: [HTTPCookiePropertyKey: Any] = [
-            .name: name,
-            .value: value,
-            .path: "/",
-            .domain: domain,
-        ]
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
 
-        if isProduction {
-            properties[.secure] = true
-        }
+            guard let httpResponse = response as? HTTPURLResponse else { return }
 
-        guard let cookie = HTTPCookie(properties: properties) else {
-            AppLogger.auth.error("Failed to create HTTPCookie")
-            return
-        }
-
-        await cookieStore.setCookie(cookie)
-        AppLogger.auth.debug("Session cookie injected into WKWebView")
-    }
-
-    // MARK: - Biometric type
-
-    var biometryTypeName: String {
-        let context = LAContext()
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
-        switch context.biometryType {
-        case .faceID: return "Face ID"
-        case .touchID: return "Touch ID"
-        case .opticID: return "Optic ID"
-        case .none: return "biometri"
-        @unknown default: return "biometri"
-        }
-    }
-
-    var biometryIconName: String {
-        let context = LAContext()
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
-        switch context.biometryType {
-        case .faceID: return "faceid"
-        case .touchID: return "touchid"
-        default: return "lock.shield"
+            if httpResponse.statusCode == 200 {
+                // Extract Set-Cookie headers and inject into WKWebView
+                if let headerFields = httpResponse.allHeaderFields as? [String: String],
+                   let responseURL = httpResponse.url {
+                    let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: responseURL)
+                    for cookie in cookies {
+                        await cookieStore.setCookie(cookie)
+                    }
+                    AppLogger.auth.debug("Injected \(cookies.count) cookies into WKWebView")
+                }
+            } else {
+                AppLogger.auth.error("Session exchange failed: HTTP \(httpResponse.statusCode)")
+            }
+        } catch {
+            AppLogger.auth.error("Session exchange request failed: \(error)")
         }
     }
 
     // MARK: - Private
 
-    private func loadSessionCookieFromKeychain() {
-        sessionCookieName = keychain.load(key: KeychainHelper.sessionCookieNameKey)
-        sessionCookieValue = keychain.load(key: KeychainHelper.sessionCookieValueKey)
-        sessionCookieSecure = keychain.load(key: KeychainHelper.sessionCookieSecureKey) == "true"
-        userType = keychain.load(key: KeychainHelper.userTypeKey)
+    private func resolveUserType(from user: User) -> String {
+        // Check app_metadata for userType (set by custom access token hook)
+        if let appMetadata = user.appMetadata["userType"],
+           case let .string(type) = appMetadata {
+            return type
+        }
+        // Fallback to user_metadata
+        if let userMetadata = user.userMetadata["userType"],
+           case let .string(type) = userMetadata {
+            return type
+        }
+        return "provider"
     }
 
-    private func performLogin(email: String, password: String) async throws -> NativeLoginResponse {
-        let url = AppConfig.baseURL.appendingPathComponent("api/auth/native-login")
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 15
-
-        var body: [String: String] = [
-            "email": email,
-            "password": password,
-        ]
-        body["deviceName"] = UIDevice.current.name
-
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw LoginError(message: "Ogiltig serverrespons")
-        }
-
-        switch httpResponse.statusCode {
-        case 200:
-            return try JSONDecoder().decode(NativeLoginResponse.self, from: data)
-        case 401:
-            throw LoginError(message: "Ogiltig email eller lösenord")
-        case 403:
-            if let errorBody = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                throw LoginError(message: errorBody.error)
+    private func mapAuthError(_ error: AuthError) -> String {
+        switch error {
+        case .sessionMissing:
+            return "Sessionen har gått ut. Logga in igen."
+        case let .api(message, errorCode, _, _):
+            switch errorCode {
+            case .invalidCredentials, .userNotFound:
+                return "Ogiltig email eller lösenord"
+            case .emailNotConfirmed:
+                return "Verifiera din email innan du loggar in"
+            case .userBanned:
+                return "Kontot är inte tillgängligt"
+            case .overRequestRateLimit:
+                return "För många inloggningsförsök. Försök igen om en stund."
+            default:
+                AppLogger.auth.error("Auth API error [\(errorCode.rawValue)]: \(message)")
+                return "Inloggningen misslyckades. Försök igen."
             }
-            throw LoginError(message: "Kontot är inte tillgängligt")
-        case 409:
-            throw LoginError(message: "Max antal enheter uppnått. Ta bort en enhet först.")
-        case 429:
-            throw LoginError(message: "För många inloggningsförsök. Försök igen om 15 minuter.")
         default:
-            throw LoginError(message: "Serverfel (\(httpResponse.statusCode)). Försök igen senare.")
+            return "Något gick fel. Försök igen."
         }
     }
-}
-
-// MARK: - Response types
-
-private struct NativeLoginResponse: Decodable {
-    let token: String
-    let expiresAt: String
-    let sessionCookie: SessionCookieResponse
-    let user: UserResponse
-}
-
-private struct SessionCookieResponse: Decodable {
-    let name: String
-    let value: String
-    let maxAge: Int
-    let secure: Bool
-}
-
-private struct UserResponse: Decodable {
-    let id: String
-    let name: String
-    let userType: String
-    let providerId: String?
-}
-
-private struct ErrorResponse: Decodable {
-    let error: String
-}
-
-private struct LoginError: Error {
-    let message: String
 }

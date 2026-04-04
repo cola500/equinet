@@ -3,9 +3,8 @@
 //  Equinet
 //
 //  Main content view with state-driven navigation:
-//  - .checking: SplashView (checking Keychain)
+//  - .checking: SplashView (checking for Supabase session)
 //  - .loggedOut: NativeLoginView (email + password)
-//  - .biometricPrompt: BiometricPromptView (Face ID / Touch ID)
 //  - .authenticated: AuthenticatedView with TabView
 //
 
@@ -26,9 +25,6 @@ struct ContentView: View {
 
             case .loggedOut:
                 NativeLoginView(authManager: authManager)
-
-            case .biometricPrompt:
-                BiometricPromptView(authManager: authManager)
 
             case .authenticated:
                 if authManager.userType == "provider" {
@@ -59,7 +55,6 @@ struct ContentView: View {
             switch newPhase {
             case .active:
                 coordinator.bridge.sendToWeb(type: .appDidBecomeActive)
-                Task { await coordinator.bridge.refreshTokenIfNeeded() }
                 PendingActionStore.retryAll()
                 coordinator.calendarViewModel.loadDataForSelectedDate()
                 Task { try? await UNUserNotificationCenter.current().setBadgeCount(0) }
