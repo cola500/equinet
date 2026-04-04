@@ -83,6 +83,15 @@ jobs:
           echo "DIRECT_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
           echo "E2E_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
 
+      - name: Create .env.local for Next.js dev server
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" > .env.local
+          echo "DIRECT_DATABASE_URL=$DIRECT_DATABASE_URL" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY" >> .env.local
+          echo "E2E_DATABASE_URL=$E2E_DATABASE_URL" >> .env.local
+
       - name: Generate Prisma Client
         run: npx prisma generate
 
