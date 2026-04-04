@@ -128,7 +128,7 @@ export class MockAuthRepository implements IAuthRepository {
   }
 
   async createUser(data: CreateUserData): Promise<AuthUser> {
-    const id = `user-${++this.idCounter}`
+    const id = data.id || `user-${++this.idCounter}`
     const user: StoredUser = {
       id,
       email: data.email,
@@ -252,6 +252,13 @@ export class MockAuthRepository implements IAuthRepository {
       if (stored.id === tokenId) {
         stored.usedAt = new Date()
       }
+    }
+  }
+
+  async updateUserType(userId: string, userType: string): Promise<void> {
+    const user = this.users.get(userId)
+    if (user) {
+      user.userType = userType
     }
   }
 

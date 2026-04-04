@@ -11,10 +11,23 @@ import { PrismaAuthRepository } from '@/infrastructure/persistence/auth/PrismaAu
 import bcrypt from 'bcrypt'
 import { randomBytes } from 'crypto'
 import { sendEmailVerificationNotification, sendPasswordResetNotification } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 // -----------------------------------------------------------
 // Types
 // -----------------------------------------------------------
+
+export interface SupabaseAdminAuth {
+  createUser: (opts: {
+    email: string
+    password: string
+    email_confirm: boolean
+    user_metadata: Record<string, unknown>
+  }) => Promise<{
+    data: { user: { id: string } | null }
+    error: { message: string; status?: number } | null
+  }>
+}
 
 export interface AuthServiceDeps {
   authRepository: IAuthRepository
@@ -25,6 +38,7 @@ export interface AuthServiceDeps {
     sendVerification: (email: string, firstName: string, token: string) => Promise<unknown>
     sendPasswordReset?: (email: string, firstName: string, resetUrl: string) => Promise<unknown>
   }
+  supabaseAdmin?: SupabaseAdminAuth
 }
 
 export interface RegisterInput {
@@ -94,6 +108,7 @@ export class AuthService {
   private readonly comparePassword: AuthServiceDeps['comparePassword']
   private readonly generateToken: () => string
   private readonly emailService?: AuthServiceDeps['emailService']
+  private readonly supabaseAdmin?: SupabaseAdminAuth
 
   constructor(deps: AuthServiceDeps) {
     this.repo = deps.authRepository
@@ -101,6 +116,7 @@ export class AuthService {
     this.comparePassword = deps.comparePassword
     this.generateToken = deps.generateToken || (() => randomBytes(32).toString('hex'))
     this.emailService = deps.emailService
+    this.supabaseAdmin = deps.supabaseAdmin
   }
 
   // -----------------------------------------------------------
@@ -108,10 +124,11 @@ export class AuthService {
   // -----------------------------------------------------------
 
   async register(input: RegisterInput): Promise<Result<RegisterResult, AuthError>> {
-    // 1. Check for duplicate email
+    // 1. Check for duplicate email in local DB
     const existing = await this.repo.findUserByEmail(input.email)
     if (existing) {
       // Ghost user upgrade: in-place upgrade instead of blocking registration
+      // Ghost users use legacy bcrypt path (they already have a public.User row)
       if (existing.isManualCustomer) {
         return this.upgradeGhostUser(existing.id, input)
       }
@@ -122,10 +139,86 @@ export class AuthService {
       })
     }
 
-    // 2. Hash password
+    // 2. Route to Supabase or legacy path
+    if (this.supabaseAdmin) {
+      return this.registerViaSupabase(input)
+    }
+    return this.registerLegacy(input)
+  }
+
+  /**
+   * Register via Supabase Auth admin API.
+   * Supabase handles password hashing and email verification.
+   * Sync trigger (handle_new_user) creates public.User automatically.
+   */
+  private async registerViaSupabase(input: RegisterInput): Promise<Result<RegisterResult, AuthError>> {
+    // 1. Create user in Supabase Auth
+    const { data, error } = await this.supabaseAdmin!.createUser({
+      email: input.email,
+      password: input.password,
+      email_confirm: false,
+      user_metadata: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        ...(input.phone ? { phone: input.phone } : {}),
+      },
+    })
+
+    if (error || !data.user) {
+      return Result.fail({
+        type: 'EMAIL_ALREADY_EXISTS',
+        message: error?.message || 'Kunde inte skapa konto',
+      })
+    }
+
+    const supabaseUserId = data.user.id
+
+    // 2. Ensure public.User exists (sync trigger creates it, but as fallback
+    //    we create it here with ON CONFLICT DO NOTHING semantics)
+    await this.repo.createUser({
+      id: supabaseUserId,
+      email: input.email,
+      passwordHash: '', // Supabase handles passwords
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      userType: input.userType,
+    }).catch(() => {
+      // Ignore if sync trigger already created the row (unique constraint)
+    })
+
+    // 3. Create provider profile if applicable
+    if (input.userType === 'provider' && input.businessName) {
+      await this.repo.createProvider({
+        userId: supabaseUserId,
+        businessName: input.businessName,
+        description: input.description,
+        city: input.city,
+      })
+      await this.repo.updateUserType(supabaseUserId, 'provider')
+    }
+
+    // 4. Return user info (no verification token, no email -- Supabase handles it)
+    return Result.ok({
+      user: {
+        id: supabaseUserId,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        userType: input.userType,
+      },
+    })
+  }
+
+  /**
+   * Legacy registration path using bcrypt + custom verification.
+   * Used when supabaseAdmin is not configured (tests, fallback).
+   */
+  private async registerLegacy(input: RegisterInput): Promise<Result<RegisterResult, AuthError>> {
+    // 1. Hash password
     const passwordHash = await this.hashPassword(input.password)
 
-    // 3. Create user
+    // 2. Create user
     const user = await this.repo.createUser({
       email: input.email,
       passwordHash,
@@ -135,7 +228,7 @@ export class AuthService {
       userType: input.userType,
     })
 
-    // 4. Create provider profile if applicable
+    // 3. Create provider profile if applicable
     if (input.userType === 'provider' && input.businessName) {
       await this.repo.createProvider({
         userId: user.id,
@@ -145,7 +238,7 @@ export class AuthService {
       })
     }
 
-    // 5. Create verification token
+    // 4. Create verification token
     const token = this.generateToken()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
@@ -155,7 +248,7 @@ export class AuthService {
       expiresAt,
     })
 
-    // 6. Send verification email (fire-and-forget)
+    // 5. Send verification email (fire-and-forget)
     if (this.emailService) {
       this.emailService.sendVerification(input.email, input.firstName, token).catch(() => {
         // Logged at infrastructure level
@@ -408,6 +501,21 @@ export class AuthService {
 // -----------------------------------------------------------
 
 export function createAuthService(): AuthService {
+  // Try to create Supabase admin client for new registrations
+  let supabaseAdmin: SupabaseAdminAuth | undefined
+  try {
+    // Dynamic import to avoid failing when env vars are missing (e.g., in tests)
+    const { createSupabaseAdminClient } = require('@/lib/supabase/admin')
+    const client = createSupabaseAdminClient()
+    supabaseAdmin = {
+      createUser: async (opts) => {
+        return client.auth.admin.createUser(opts)
+      },
+    }
+  } catch {
+    logger.warn('Supabase admin client not available, using legacy registration')
+  }
+
   return new AuthService({
     authRepository: new PrismaAuthRepository(),
     hashPassword: (pw) => bcrypt.hash(pw, 10),
@@ -416,5 +524,6 @@ export function createAuthService(): AuthService {
       sendVerification: sendEmailVerificationNotification,
       sendPasswordReset: sendPasswordResetNotification,
     },
+    supabaseAdmin,
   })
 }

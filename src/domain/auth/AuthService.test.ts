@@ -2,18 +2,37 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { AuthService, type AuthServiceDeps } from './AuthService'
 import { MockAuthRepository } from '@/infrastructure/persistence/auth/MockAuthRepository'
 
+// Helper to create a mock Supabase admin client
+function createMockSupabaseAdmin() {
+  const calls: Array<{ email: string; password: string; user_metadata: Record<string, unknown> }> = []
+  let nextId = 0
+
+  return {
+    calls,
+    createUser: async (opts: { email: string; password: string; email_confirm: boolean; user_metadata: Record<string, unknown> }) => {
+      calls.push({ email: opts.email, password: opts.password, user_metadata: opts.user_metadata })
+      const id = `supabase-user-${++nextId}`
+      return { data: { user: { id } }, error: null }
+    },
+    // Helper to make createUser return an error
+    setError: null as null | { message: string; status?: number },
+  }
+}
+
 describe('AuthService', () => {
   let authRepo: MockAuthRepository
   let service: AuthService
   let sentEmails: Array<{ email: string; firstName: string; token: string }>
   let sentPasswordResetEmails: Array<{ email: string; firstName: string; resetUrl: string }>
   let tokenCounter: number
+  let mockSupabaseAdmin: ReturnType<typeof createMockSupabaseAdmin>
 
   beforeEach(() => {
     authRepo = new MockAuthRepository()
     sentEmails = []
     sentPasswordResetEmails = []
     tokenCounter = 0
+    mockSupabaseAdmin = createMockSupabaseAdmin()
 
     const deps: AuthServiceDeps = {
       authRepository: authRepo,
@@ -27,6 +46,9 @@ describe('AuthService', () => {
         sendPasswordReset: async (email, firstName, resetUrl) => {
           sentPasswordResetEmails.push({ email, firstName, resetUrl })
         },
+      },
+      supabaseAdmin: {
+        createUser: mockSupabaseAdmin.createUser,
       },
     }
 
@@ -46,7 +68,11 @@ describe('AuthService', () => {
       userType: 'customer' as const,
     }
 
-    it('should register a customer successfully', async () => {
+    // -------------------------------------------------------
+    // Supabase path (new users)
+    // -------------------------------------------------------
+
+    it('should register a customer via Supabase admin', async () => {
       const result = await service.register(customerInput)
 
       expect(result.isSuccess).toBe(true)
@@ -55,7 +81,45 @@ describe('AuthService', () => {
       expect(result.value.user.userType).toBe('customer')
     })
 
-    it('should register a provider with business info', async () => {
+    it('should call supabaseAdmin.createUser with correct params', async () => {
+      await service.register(customerInput)
+
+      expect(mockSupabaseAdmin.calls).toHaveLength(1)
+      expect(mockSupabaseAdmin.calls[0]).toMatchObject({
+        email: 'test@example.com',
+        password: 'Password123!',
+        user_metadata: {
+          firstName: 'Test',
+          lastName: 'User',
+        },
+      })
+    })
+
+    it('should NOT hash password when using Supabase path', async () => {
+      await service.register(customerInput)
+
+      // Supabase handles password hashing -- no local hash
+      const users = authRepo.getUsers()
+      // User is created by sync trigger (simulated by repo), passwordHash should be empty
+      expect(users[0].passwordHash).toBe('')
+    })
+
+    it('should NOT create verification token when using Supabase path', async () => {
+      await service.register(customerInput)
+
+      // Supabase handles email verification
+      const tokens = authRepo.getTokens()
+      expect(tokens).toHaveLength(0)
+    })
+
+    it('should NOT send verification email when using Supabase path', async () => {
+      await service.register(customerInput)
+
+      // Supabase handles email sending
+      expect(sentEmails).toHaveLength(0)
+    })
+
+    it('should register a provider with business info via Supabase', async () => {
       const result = await service.register({
         ...customerInput,
         email: 'provider@example.com',
@@ -73,7 +137,20 @@ describe('AuthService', () => {
       expect(providers[0].businessName).toBe('Test Business')
     })
 
-    it('should fail if email already exists', async () => {
+    it('should update userType to provider after Supabase user creation', async () => {
+      await service.register({
+        ...customerInput,
+        email: 'provider@example.com',
+        userType: 'provider',
+        businessName: 'Test Business',
+      })
+
+      // Sync trigger creates user as 'customer', then service updates to 'provider'
+      const users = authRepo.getUsers()
+      expect(users[0].userType).toBe('provider')
+    })
+
+    it('should fail if email already exists in local DB', async () => {
       authRepo.seedUser({
         id: 'existing-user',
         email: 'test@example.com',
@@ -90,29 +167,25 @@ describe('AuthService', () => {
       expect(result.error.type).toBe('EMAIL_ALREADY_EXISTS')
     })
 
-    it('should hash the password', async () => {
-      await service.register(customerInput)
+    it('should fail if Supabase returns error', async () => {
+      // Override createUser to return error
+      const depsWithError: AuthServiceDeps = {
+        authRepository: authRepo,
+        hashPassword: async (pw) => `hashed:${pw}`,
+        comparePassword: async (pw, hash) => hash === `hashed:${pw}`,
+        supabaseAdmin: {
+          createUser: async () => ({
+            data: { user: null },
+            error: { message: 'User already registered', status: 422 },
+          }),
+        },
+      }
+      const serviceWithError = new AuthService(depsWithError)
 
-      const users = authRepo.getUsers()
-      expect(users[0].passwordHash).toBe('hashed:Password123!')
-    })
+      const result = await serviceWithError.register(customerInput)
 
-    it('should create a verification token', async () => {
-      await service.register(customerInput)
-
-      const tokens = authRepo.getTokens()
-      expect(tokens).toHaveLength(1)
-      expect(tokens[0].token).toBe('test-token-1')
-      expect(tokens[0].expiresAt.getTime()).toBeGreaterThan(Date.now())
-    })
-
-    it('should send a verification email', async () => {
-      await service.register(customerInput)
-
-      expect(sentEmails).toHaveLength(1)
-      expect(sentEmails[0].email).toBe('test@example.com')
-      expect(sentEmails[0].firstName).toBe('Test')
-      expect(sentEmails[0].token).toBe('test-token-1')
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('EMAIL_ALREADY_EXISTS')
     })
 
     it('should never return passwordHash in user object', async () => {
@@ -163,11 +236,17 @@ describe('AuthService', () => {
         expect(users[0].isManualCustomer).toBe(false)
       })
 
-      it('should hash the password for upgraded user', async () => {
+      it('should hash the password for upgraded user (bcrypt path)', async () => {
         await service.register(customerInput)
 
         const users = authRepo.getUsers()
         expect(users[0].passwordHash).toBe('hashed:Password123!')
+      })
+
+      it('should NOT call supabaseAdmin for ghost user upgrade', async () => {
+        await service.register(customerInput)
+
+        expect(mockSupabaseAdmin.calls).toHaveLength(0)
       })
 
       it('should create a verification token for upgraded user', async () => {
