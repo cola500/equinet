@@ -27,7 +27,7 @@ sections:
 | S15-3 Byt Vercel env | fullstack | Dev | done | feature/s15-3-vercel-env | 811f794a |
 | S15-4 Smoke-test produktion | fullstack | Dev | done | feature/s15-4-smoke-test | 99d7025b |
 | S15-5 Penetrationstest | fullstack | - | pending | - | - |
-| S15-6 PoC = staging | fullstack | - | pending | - | - |
+| S15-6 PoC = staging | fullstack | Dev | done | feature/s15-6-poc-staging | - |
 
 **Sprint 14** (klar):
 
