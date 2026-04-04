@@ -151,11 +151,15 @@ sections:
 
 ## Backlogg (fran pentest S15-5)
 
+**3 HIGH verifierade som ej tillampliga (2026-04-04):**
+- ~~NextAuth-endpoint~~ -- borttagen i S13-2
+- ~~Geocode utan auth~~ -- har auth + rate limiting sedan tidigare
+- ~~user_metadata for rolldata~~ -- anvands bara for profildata
+
+**Kvarstaende LOW:**
+
 | Item | Allvarlighet | Beskrivning |
 |------|-------------|-------------|
-| Ta bort NextAuth `/api/auth/[...nextauth]` | HIGH | Endpoint kvar trots Supabase Auth-migrering. Oklart om rate limiting appliceras. |
-| Auth pa `/api/geocode` | HIGH | Oppen proxy mot extern geocoding-API. Lagg till getAuthUser() eller rate limiting. |
-| Granska user_metadata-anvandning | HIGH | Verifiera att ingen kod laser rolldata fran user_metadata (skrivbar av anvandare). |
 | robots.txt + sitemap.xml | LOW | ZAP varnar om 404. |
 | Cross-Origin-Embedder-Policy header | LOW | Lagg till via vercel.json headers. |
 | Zod .strict() pa mobile-token | LOW | Saknas pa request body. |
