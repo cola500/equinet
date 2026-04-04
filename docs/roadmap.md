@@ -43,12 +43,15 @@ sections:
 - **Verifiera Stripe webhook-idempotens** (1h, dubbel-event-test)
 - **Verifiera databas-isolation** (dev vs prod, dokumentera risk)
 
-## Sprint 8 (pågår)
+## Sprint 15 (pågår -- cutover)
 
-- iOS native-migrering: annonsering + business insights
-- Voice logging polish (Sonnet 4.6, UTC-fix, confirm-route)
+- **Auth-migrering komplett**: Supabase Auth live i prod, NextAuth borta
+- **RLS live**: 28 policies på 7 kärndomäner, bevisat med 24 tester
+- **Prod cutover klar**: hook + trigger + RLS applicerat, 17 användare migrerade, Vercel env bytt
+- **PoC = staging**: `zzdamokfeenencuggjjp` dokumenterad som staging-miljö
+- **Kvar**: Penetrationstest (S15-5)
 
-## Nästa sprint (efter demon)
+## Nästa
 
 - **Demo-feedback stories** -- prioriteras baserat på vad leverantören sa
 - **Push live** -- plugga in APNs-credentials (15 min, kod redan klar)
