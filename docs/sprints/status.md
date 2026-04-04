@@ -26,7 +26,7 @@ sections:
 | S15-2 Migrera prod-användare | fullstack | Dev | done | feature/s15-2-migrate-prod-users | 874c62d7 |
 | S15-3 Byt Vercel env | fullstack | Dev | done | feature/s15-3-vercel-env | 811f794a |
 | S15-4 Smoke-test produktion | fullstack | Dev | done | feature/s15-4-smoke-test | 99d7025b |
-| S15-5 Penetrationstest | fullstack | - | pending | - | - |
+| S15-5 Penetrationstest | fullstack | Dev | done | feature/s15-5-pentest | - |
 | S15-6 PoC = staging | fullstack | Dev | done | feature/s15-6-poc-staging | - |
 
 **Sprint 14** (klar):
