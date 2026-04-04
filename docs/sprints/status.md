@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S15-0 Fixa E2E i CI | fullstack | Dev | done | feature/s15-0-fix-e2e-ci | 6fa431a0 |
-| S15-1 Hook + trigger + RLS på prod | fullstack | - | pending | - | - |
+| S15-1 Hook + trigger + RLS på prod | fullstack | Dev | done | feature/s15-1-prod-hook-rls | f98cce1a |
 | S15-2 Migrera prod-användare | fullstack | - | pending | - | - |
 | S15-3 Byt Vercel env | fullstack | - | pending | - | - |
 | S15-4 Smoke-test produktion | fullstack | - | pending | - | - |
