@@ -131,8 +131,33 @@ setup('seed E2E test data', async () => {
     )
     console.log('  Auth user: admin@example.com')
 
-    // Small delay to ensure trigger has completed
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Wait for handle_new_user trigger to create public.User rows
+    // CI runners can be slower -- poll instead of fixed delay
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const count = await prisma.user.count({
+        where: { email: { in: ['test@example.com', 'provider@example.com', 'admin@example.com'] } },
+      })
+      if (count >= 3) break
+      console.log(`  Waiting for trigger... (${count}/3 users, attempt ${attempt + 1})`)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+
+    // Diagnostic: test signInWithPassword to verify auth works
+    const { data: signInData, error: signInError } =
+      await supabaseAdmin.auth.signInWithPassword({
+        email: 'test@example.com',
+        password: 'TestPassword123!',
+      })
+    if (signInError) {
+      console.log(`  LOGIN DIAGNOSTIC FAILED: ${signInError.message}`)
+    } else {
+      const claims = signInData.session?.access_token
+        ? JSON.parse(atob(signInData.session.access_token.split('.')[1]))
+        : null
+      console.log(
+        `  LOGIN DIAGNOSTIC OK: session=${!!signInData.session}, claims.app_metadata=${JSON.stringify(claims?.app_metadata || {})}`
+      )
+    }
 
     // 3. Update user roles via Prisma (trigger always creates as 'customer')
     await prisma.user.update({
