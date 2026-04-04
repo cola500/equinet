@@ -48,8 +48,9 @@ export interface IInviteRepository {
   invalidatePendingInvites(userId: string): Promise<void>
 
   /**
-   * Accept an invite: atomically update user (passwordHash, isManualCustomer=false,
+   * Accept an invite: atomically update user (isManualCustomer=false,
    * emailVerified=true) and mark token as used.
+   * Password is set via Supabase Auth admin API (not stored in public.User).
    */
-  acceptInvite(tokenId: string, userId: string, passwordHash: string): Promise<void>
+  acceptInvite(tokenId: string, userId: string): Promise<void>
 }

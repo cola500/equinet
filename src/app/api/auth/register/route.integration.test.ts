@@ -12,14 +12,14 @@ const mockAuthRepo = {
   createProvider: vi.fn(),
   createVerificationToken: vi.fn(),
   upgradeGhostUser: vi.fn(),
-  findUserWithCredentials: vi.fn(),
   findUserForResend: vi.fn(),
   findVerificationToken: vi.fn(),
   verifyEmail: vi.fn(),
   createPasswordResetToken: vi.fn(),
   findPasswordResetToken: vi.fn(),
   invalidatePasswordResetTokens: vi.fn(),
-  resetPassword: vi.fn(),
+  markResetTokenUsed: vi.fn(),
+  updateUserType: vi.fn(),
 }
 
 vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
@@ -29,23 +29,47 @@ vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
     createProvider = mockAuthRepo.createProvider
     createVerificationToken = mockAuthRepo.createVerificationToken
     upgradeGhostUser = mockAuthRepo.upgradeGhostUser
-    findUserWithCredentials = mockAuthRepo.findUserWithCredentials
     findUserForResend = mockAuthRepo.findUserForResend
     findVerificationToken = mockAuthRepo.findVerificationToken
     verifyEmail = mockAuthRepo.verifyEmail
     createPasswordResetToken = mockAuthRepo.createPasswordResetToken
     findPasswordResetToken = mockAuthRepo.findPasswordResetToken
     invalidatePasswordResetTokens = mockAuthRepo.invalidatePasswordResetTokens
-    resetPassword = mockAuthRepo.resetPassword
+    markResetTokenUsed = mockAuthRepo.markResetTokenUsed
+    updateUserType = mockAuthRepo.updateUserType
   },
 }))
 
-vi.mock('bcrypt', () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue('hashed-password-123'),
-    compare: vi.fn(),
-  },
-}))
+const mockSupabaseCreateUser = vi.fn().mockResolvedValue({
+  data: { user: { id: 'supabase-user-1' } },
+  error: null,
+})
+
+const mockSupabaseDeleteUser = vi.fn().mockResolvedValue({ data: {}, error: null })
+
+const mockSupabaseUpdateUserById = vi.fn().mockResolvedValue({
+  data: { user: { id: 'supabase-user-1' } },
+  error: null,
+})
+
+// The real createAuthService() factory uses require('@/lib/supabase/admin') which
+// can't be intercepted reliably by vi.mock. Instead, mock the factory to inject deps.
+vi.mock('@/domain/auth/AuthService', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('@/domain/auth/AuthService')>()
+  return {
+    ...orig,
+    createAuthService: () => {
+      return new orig.AuthService({
+        authRepository: mockAuthRepo as never,
+        supabaseAdmin: {
+          createUser: mockSupabaseCreateUser,
+          deleteUser: mockSupabaseDeleteUser,
+          updateUserById: mockSupabaseUpdateUserById,
+        },
+      })
+    },
+  }
+})
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
@@ -134,37 +158,43 @@ describe('POST /api/auth/register (integration)', () => {
     mockAuthRepo.createProvider.mockResolvedValue(undefined as never)
     mockAuthRepo.createVerificationToken.mockResolvedValue(undefined as never)
     mockAuthRepo.upgradeGhostUser.mockResolvedValue(fakeUser as never)
+    mockAuthRepo.updateUserType.mockResolvedValue(undefined as never)
+    mockSupabaseCreateUser.mockResolvedValue({
+      data: { user: { id: 'supabase-user-1' } },
+      error: null,
+    } as never)
   })
 
   // -------------------------------------------------------------------------
   // 1. Successful customer registration
   // -------------------------------------------------------------------------
 
-  it('creates user and verification token for new customer', async () => {
+  it('creates user via Supabase for new customer', async () => {
     const response = await POST(makeRequest(validCustomerBody))
     const data = await response.json()
 
     expect(response.status).toBe(200)
     expect(data.message).toBe(GENERIC_MESSAGE)
 
-    // Real AuthService called the repository
+    // Real AuthService called Supabase admin
     expect(mockAuthRepo.findUserByEmail).toHaveBeenCalledWith('customer@example.com')
+    expect(mockSupabaseCreateUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'customer@example.com',
+        password: 'Password123!',
+      })
+    )
+    // Repo createUser called as sync-trigger fallback (no passwordHash)
     expect(mockAuthRepo.createUser).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'customer@example.com',
-        passwordHash: 'hashed-password-123',
         firstName: 'Anna',
         lastName: 'Svensson',
         userType: 'customer',
       })
     )
-    expect(mockAuthRepo.createVerificationToken).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: fakeUser.id,
-        token: expect.any(String),
-        expiresAt: expect.any(Date),
-      })
-    )
+    // Supabase handles email verification -- no local token
+    expect(mockAuthRepo.createVerificationToken).not.toHaveBeenCalled()
     // Customer should NOT create a provider profile
     expect(mockAuthRepo.createProvider).not.toHaveBeenCalled()
   })
@@ -173,7 +203,7 @@ describe('POST /api/auth/register (integration)', () => {
   // 2. Successful provider registration
   // -------------------------------------------------------------------------
 
-  it('creates user, provider and verification token for new provider', async () => {
+  it('creates user and provider via Supabase for new provider', async () => {
     const providerUser: AuthUser = { ...fakeUser, email: 'provider@example.com', userType: 'provider' }
     mockAuthRepo.createUser.mockResolvedValue(providerUser as never)
 
@@ -191,13 +221,14 @@ describe('POST /api/auth/register (integration)', () => {
     )
     expect(mockAuthRepo.createProvider).toHaveBeenCalledWith(
       expect.objectContaining({
-        userId: providerUser.id,
+        userId: 'supabase-user-1',
         businessName: 'Eriks Hovvård',
         description: 'Professionell hovvård',
         city: 'Stockholm',
       })
     )
-    expect(mockAuthRepo.createVerificationToken).toHaveBeenCalledTimes(1)
+    // Supabase handles email verification -- no local token
+    expect(mockAuthRepo.createVerificationToken).not.toHaveBeenCalled()
   })
 
   // -------------------------------------------------------------------------
@@ -248,12 +279,12 @@ describe('POST /api/auth/register (integration)', () => {
     expect(mockAuthRepo.upgradeGhostUser).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: ghostUserId,
-        passwordHash: 'hashed-password-123',
         firstName: 'Anna',
         lastName: 'Svensson',
       })
     )
     expect(mockAuthRepo.createUser).not.toHaveBeenCalled()
+    // Ghost upgrade creates Supabase user + verification token
     expect(mockAuthRepo.createVerificationToken).toHaveBeenCalledTimes(1)
   })
 

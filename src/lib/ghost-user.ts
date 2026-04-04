@@ -4,6 +4,7 @@
  * Used by BookingService (manual bookings) and provider/customers (add customer).
  * A "ghost user" is a placeholder User that cannot log in, created by a provider
  * on behalf of a customer who doesn't have an account.
+ * No password is set -- ghost users have no Supabase Auth entry.
  */
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
@@ -22,7 +23,6 @@ export interface CreateGhostUserData {
  */
 export async function createGhostUser(data: CreateGhostUserData): Promise<string> {
   const { randomUUID } = await import('crypto')
-  const bcrypt = await import('bcrypt')
 
   const email = data.email || `manual-${randomUUID()}@ghost.equinet.se`
 
@@ -37,7 +37,6 @@ export async function createGhostUser(data: CreateGhostUserData): Promise<string
   const user = await prisma.user.create({
     data: {
       email,
-      passwordHash: await bcrypt.hash(randomUUID(), 10),
       userType: 'customer',
       firstName: data.firstName,
       lastName: data.lastName || '',

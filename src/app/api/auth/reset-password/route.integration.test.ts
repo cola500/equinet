@@ -8,7 +8,6 @@ import { NextRequest } from 'next/server'
 const mockAuthRepo = {
   findUserByEmail: vi.fn(),
   findUserForResend: vi.fn(),
-  findUserWithCredentials: vi.fn(),
   findVerificationToken: vi.fn(),
   findPasswordResetToken: vi.fn(),
   createUser: vi.fn(),
@@ -17,15 +16,15 @@ const mockAuthRepo = {
   verifyEmail: vi.fn(),
   invalidatePasswordResetTokens: vi.fn(),
   createPasswordResetToken: vi.fn(),
-  resetPassword: vi.fn(),
+  markResetTokenUsed: vi.fn(),
   upgradeGhostUser: vi.fn(),
+  updateUserType: vi.fn(),
 }
 
 vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
   PrismaAuthRepository: class MockPrismaAuthRepository {
     findUserByEmail = mockAuthRepo.findUserByEmail
     findUserForResend = mockAuthRepo.findUserForResend
-    findUserWithCredentials = mockAuthRepo.findUserWithCredentials
     findVerificationToken = mockAuthRepo.findVerificationToken
     findPasswordResetToken = mockAuthRepo.findPasswordResetToken
     createUser = mockAuthRepo.createUser
@@ -34,14 +33,34 @@ vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
     verifyEmail = mockAuthRepo.verifyEmail
     invalidatePasswordResetTokens = mockAuthRepo.invalidatePasswordResetTokens
     createPasswordResetToken = mockAuthRepo.createPasswordResetToken
-    resetPassword = mockAuthRepo.resetPassword
+    markResetTokenUsed = mockAuthRepo.markResetTokenUsed
     upgradeGhostUser = mockAuthRepo.upgradeGhostUser
+    updateUserType = mockAuthRepo.updateUserType
   },
 }))
 
-vi.mock('bcrypt', () => ({
-  default: { hash: vi.fn().mockResolvedValue('hashed-pw'), compare: vi.fn() },
-}))
+const mockSupabaseUpdateUserById = vi.fn().mockResolvedValue({
+  data: { user: { id: 'user-1' } },
+  error: null,
+})
+
+// The real createAuthService() factory uses require('@/lib/supabase/admin') which
+// can't be intercepted reliably by vi.mock. Instead, mock the factory to inject deps.
+vi.mock('@/domain/auth/AuthService', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('@/domain/auth/AuthService')>()
+  return {
+    ...orig,
+    createAuthService: () => {
+      return new orig.AuthService({
+        authRepository: mockAuthRepo as never,
+        supabaseAdmin: {
+          createUser: vi.fn(),
+          updateUserById: mockSupabaseUpdateUserById,
+        },
+      })
+    },
+  }
+})
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: { passwordReset: vi.fn().mockResolvedValue(true) },
@@ -112,7 +131,7 @@ describe('POST /api/auth/reset-password (integration)', () => {
 
   it('returns 200 with success message on valid reset', async () => {
     mockAuthRepo.findPasswordResetToken.mockResolvedValue(validResetToken() as never)
-    mockAuthRepo.resetPassword.mockResolvedValue(undefined as never)
+    mockAuthRepo.markResetTokenUsed.mockResolvedValue(undefined as never)
 
     const res = await POST(makeRequest({ token: VALID_TOKEN, password: VALID_PASSWORD }))
     const data = await res.json()
@@ -120,7 +139,9 @@ describe('POST /api/auth/reset-password (integration)', () => {
     expect(res.status).toBe(200)
     expect(data.message).toContain('Lösenordet har återställts')
     expect(mockAuthRepo.findPasswordResetToken).toHaveBeenCalledWith(VALID_TOKEN)
-    expect(mockAuthRepo.resetPassword).toHaveBeenCalledWith('user-1', 'token-id-1', 'hashed-pw')
+    // Password updated via Supabase, token marked as used in local DB
+    expect(mockSupabaseUpdateUserById).toHaveBeenCalledWith('user-1', { password: VALID_PASSWORD })
+    expect(mockAuthRepo.markResetTokenUsed).toHaveBeenCalledWith('token-id-1')
   })
 
   it('returns 400 when token not found', async () => {

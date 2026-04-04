@@ -8,7 +8,6 @@ import { NextRequest } from 'next/server'
 const mockAuthRepo = {
   findUserByEmail: vi.fn(),
   findUserForResend: vi.fn(),
-  findUserWithCredentials: vi.fn(),
   findVerificationToken: vi.fn(),
   findPasswordResetToken: vi.fn(),
   createUser: vi.fn(),
@@ -17,15 +16,15 @@ const mockAuthRepo = {
   verifyEmail: vi.fn(),
   invalidatePasswordResetTokens: vi.fn(),
   createPasswordResetToken: vi.fn(),
-  resetPassword: vi.fn(),
+  markResetTokenUsed: vi.fn(),
   upgradeGhostUser: vi.fn(),
+  updateUserType: vi.fn(),
 }
 
 vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
   PrismaAuthRepository: class MockPrismaAuthRepository {
     findUserByEmail = mockAuthRepo.findUserByEmail
     findUserForResend = mockAuthRepo.findUserForResend
-    findUserWithCredentials = mockAuthRepo.findUserWithCredentials
     findVerificationToken = mockAuthRepo.findVerificationToken
     findPasswordResetToken = mockAuthRepo.findPasswordResetToken
     createUser = mockAuthRepo.createUser
@@ -34,14 +33,30 @@ vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
     verifyEmail = mockAuthRepo.verifyEmail
     invalidatePasswordResetTokens = mockAuthRepo.invalidatePasswordResetTokens
     createPasswordResetToken = mockAuthRepo.createPasswordResetToken
-    resetPassword = mockAuthRepo.resetPassword
+    markResetTokenUsed = mockAuthRepo.markResetTokenUsed
     upgradeGhostUser = mockAuthRepo.upgradeGhostUser
+    updateUserType = mockAuthRepo.updateUserType
   },
 }))
 
-vi.mock('bcrypt', () => ({
-  default: { hash: vi.fn().mockResolvedValue('hashed-pw'), compare: vi.fn() },
-}))
+// The real createAuthService() factory uses require('@/lib/supabase/admin') which
+// can't be intercepted reliably by vi.mock. Instead, mock the factory to inject deps.
+vi.mock('@/domain/auth/AuthService', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('@/domain/auth/AuthService')>()
+  const email = await import('@/lib/email')
+  return {
+    ...orig,
+    createAuthService: () => {
+      return new orig.AuthService({
+        authRepository: mockAuthRepo as never,
+        emailService: {
+          sendVerification: email.sendEmailVerificationNotification,
+          sendPasswordReset: email.sendPasswordResetNotification,
+        },
+      })
+    },
+  }
+})
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: { passwordReset: vi.fn().mockResolvedValue(true) },

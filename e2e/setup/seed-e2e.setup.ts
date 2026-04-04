@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import { test as setup } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcrypt'
 import { assertSafeDatabase } from './e2e-utils'
 
 const prisma = new PrismaClient()
@@ -43,15 +42,11 @@ setup('seed E2E test data', async () => {
 
   try {
     // 2. Upsert users
-    const customerPassword = await bcrypt.hash('TestPassword123!', 10)
-    const providerPassword = await bcrypt.hash('ProviderPass123!', 10)
-
     const customer = await prisma.user.upsert({
       where: { email: 'test@example.com' },
       update: { emailVerified: true, emailVerifiedAt: new Date() },
       create: {
         email: 'test@example.com',
-        passwordHash: customerPassword,
         firstName: 'Test',
         lastName: 'Testsson',
         phone: '0701234567',
@@ -67,7 +62,6 @@ setup('seed E2E test data', async () => {
       update: { emailVerified: true, emailVerifiedAt: new Date() },
       create: {
         email: 'provider@example.com',
-        passwordHash: providerPassword,
         firstName: 'Leverantor',
         lastName: 'Testsson',
         phone: '0709876543',
@@ -78,13 +72,11 @@ setup('seed E2E test data', async () => {
     })
     console.log('  User: provider@example.com')
 
-    const adminPassword = await bcrypt.hash('AdminPass123!', 10)
     await prisma.user.upsert({
       where: { email: 'admin@example.com' },
       update: { isAdmin: true, emailVerified: true, emailVerifiedAt: new Date() },
       create: {
         email: 'admin@example.com',
-        passwordHash: adminPassword,
         firstName: 'Admin',
         lastName: 'Testsson',
         phone: '0701112233',

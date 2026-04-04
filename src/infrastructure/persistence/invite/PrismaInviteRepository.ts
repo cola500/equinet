@@ -63,12 +63,11 @@ export class PrismaInviteRepository implements IInviteRepository {
     })
   }
 
-  async acceptInvite(tokenId: string, userId: string, passwordHash: string): Promise<void> {
+  async acceptInvite(tokenId: string, userId: string): Promise<void> {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
         data: {
-          passwordHash,
           isManualCustomer: false,
           emailVerified: true,
           emailVerifiedAt: new Date(),

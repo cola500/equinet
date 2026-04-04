@@ -84,8 +84,6 @@ describe("GET /api/admin/users", () => {
       lastName: "Svensson",
       userType: "customer",
     })
-    // Must NOT expose passwordHash
-    expect(data.users[0].passwordHash).toBeUndefined()
     expect(data.total).toBe(1)
     expect(data.page).toBe(1)
     expect(data.totalPages).toBe(1)

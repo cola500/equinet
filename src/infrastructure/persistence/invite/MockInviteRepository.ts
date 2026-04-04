@@ -21,7 +21,6 @@ interface StoredUser {
   email: string
   firstName: string
   isManualCustomer: boolean
-  passwordHash: string
   emailVerified: boolean
 }
 
@@ -70,10 +69,9 @@ export class MockInviteRepository implements IInviteRepository {
     }
   }
 
-  async acceptInvite(tokenId: string, userId: string, passwordHash: string): Promise<void> {
+  async acceptInvite(tokenId: string, userId: string): Promise<void> {
     const user = this.users.get(userId)
     if (user) {
-      user.passwordHash = passwordHash
       user.isManualCustomer = false
       user.emailVerified = true
     }

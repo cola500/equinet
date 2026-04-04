@@ -144,18 +144,18 @@ async function seedData(prisma: PrismaClient) {
 
   // Users (2 providers, 2 customers)
   const users = [
-    { id: PROVIDER_A_USER_ID, email: "rls-provider-a@test.local", passwordHash: "x", userType: "provider", firstName: "Provider", lastName: "A" },
-    { id: PROVIDER_B_USER_ID, email: "rls-provider-b@test.local", passwordHash: "x", userType: "provider", firstName: "Provider", lastName: "B" },
-    { id: CUSTOMER_A_ID, email: "rls-customer-a@test.local", passwordHash: "x", userType: "customer", firstName: "Kund", lastName: "A" },
-    { id: CUSTOMER_B_ID, email: "rls-customer-b@test.local", passwordHash: "x", userType: "customer", firstName: "Kund", lastName: "B" },
+    { id: PROVIDER_A_USER_ID, email: "rls-provider-a@test.local", userType: "provider", firstName: "Provider", lastName: "A" },
+    { id: PROVIDER_B_USER_ID, email: "rls-provider-b@test.local", userType: "provider", firstName: "Provider", lastName: "B" },
+    { id: CUSTOMER_A_ID, email: "rls-customer-a@test.local", userType: "customer", firstName: "Kund", lastName: "A" },
+    { id: CUSTOMER_B_ID, email: "rls-customer-b@test.local", userType: "customer", firstName: "Kund", lastName: "B" },
   ]
 
   for (const u of users) {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO rls_test."User" (id, email, "passwordHash", "userType", "firstName", "lastName", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      `INSERT INTO rls_test."User" (id, email, "userType", "firstName", "lastName", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
        ON CONFLICT (id) DO NOTHING`,
-      u.id, u.email, u.passwordHash, u.userType, u.firstName, u.lastName
+      u.id, u.email, u.userType, u.firstName, u.lastName
     )
   }
   log("  4 users created")

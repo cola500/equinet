@@ -4,11 +4,11 @@
  * Anonymizes user data instead of hard-deleting (FK constraints).
  * Deletes purely personal records, preserves anonymized bookings/reviews.
  * Uses Result pattern for explicit error handling.
+ * Password verification via Supabase Auth (not stored in public.User).
  */
 import { Result } from '@/domain/shared'
 import { logger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcrypt'
 import { randomUUID } from 'crypto'
 import { sendAccountDeletionNotification } from '@/lib/email'
 
@@ -20,7 +20,6 @@ export interface UserForDeletion {
   id: string
   email: string
   firstName: string
-  passwordHash: string
   isAdmin: boolean
 }
 
@@ -36,7 +35,7 @@ export interface AccountDeletionServiceDeps {
   deleteUploads: (userId: string) => Promise<void>
   deleteStorageFiles: (paths: string[]) => Promise<void>
   sendDeletionEmail: (email: string, firstName: string) => Promise<void>
-  comparePassword: (plain: string, hash: string) => Promise<boolean>
+  verifyPassword: (email: string, password: string) => Promise<boolean>
 }
 
 export type AccountDeletionErrorType =
@@ -81,8 +80,8 @@ export class AccountDeletionService {
       return Result.fail({ type: 'ADMIN_ACCOUNT', message: 'Administratörskonton kan inte raderas' })
     }
 
-    // 3. Verify password
-    const passwordValid = await this.deps.comparePassword(password, user.passwordHash)
+    // 3. Verify password via Supabase Auth
+    const passwordValid = await this.deps.verifyPassword(user.email, password)
     if (!passwordValid) {
       return Result.fail({ type: 'INVALID_PASSWORD', message: 'Felaktigt lösenord' })
     }
@@ -132,6 +131,16 @@ export class AccountDeletionService {
 export function createAccountDeletionService(): AccountDeletionService {
   const anonymizedEmail = `deleted-${randomUUID()}@deleted.equinet.se`
 
+  // Create Supabase client for password verification
+  let supabaseClient: { auth: { signInWithPassword: (opts: { email: string; password: string }) => Promise<{ error: { message: string } | null }> } } | null = null
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createSupabaseAdminClient } = require('@/lib/supabase/admin')
+    supabaseClient = createSupabaseAdminClient()
+  } catch {
+    logger.warn('Supabase client not available for password verification')
+  }
+
   return new AccountDeletionService({
     findUserById: async (id) => {
       const user = await prisma.user.findUnique({
@@ -140,7 +149,6 @@ export function createAccountDeletionService(): AccountDeletionService {
           id: true,
           email: true,
           firstName: true,
-          passwordHash: true,
           isAdmin: true,
         },
       })
@@ -169,7 +177,6 @@ export function createAccountDeletionService(): AccountDeletionService {
           email: anonymizedEmail,
           firstName: 'Raderad',
           lastName: 'användare',
-          passwordHash: '',
           phone: null,
           address: null,
           city: null,
@@ -249,6 +256,13 @@ export function createAccountDeletionService(): AccountDeletionService {
       await sendAccountDeletionNotification(email, firstName)
     },
 
-    comparePassword: (plain, hash) => bcrypt.compare(plain, hash),
+    verifyPassword: async (email, password) => {
+      if (!supabaseClient) {
+        logger.error('Cannot verify password: Supabase client not available')
+        return false
+      }
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password })
+      return !error
+    },
   })
 }

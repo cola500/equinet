@@ -4,16 +4,10 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcrypt'
-
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Seeding test users...')
-
-  // Hasha lösenord
-  const customerPassword = await bcrypt.hash('TestPassword123!', 10)
-  const providerPassword = await bcrypt.hash('ProviderPass123!', 10)
 
   // Skapa eller uppdatera testkund
   const customer = await prisma.user.upsert({
@@ -24,7 +18,6 @@ async function main() {
     },
     create: {
       email: 'test@example.com',
-      passwordHash: customerPassword,
       firstName: 'Test',
       lastName: 'Testsson',
       phone: '0701234567',
@@ -44,7 +37,6 @@ async function main() {
     },
     create: {
       email: 'provider@example.com',
-      passwordHash: providerPassword,
       firstName: 'Leverantör',
       lastName: 'Testsson',
       phone: '0709876543',

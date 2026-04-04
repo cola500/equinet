@@ -59,8 +59,6 @@ describe('GET /api/customers/search', () => {
     expect(response.status).toBe(200)
     expect(data).toHaveLength(1)
     expect(data[0].firstName).toBe('Anna')
-    // Should not expose passwordHash
-    expect(data[0].passwordHash).toBeUndefined()
   })
 
   it('should return 403 for non-provider users', async () => {

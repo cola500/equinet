@@ -153,9 +153,6 @@ describe('GET /api/provider/customers', () => {
     expect(erik).toBeDefined()
     expect(erik.bookingCount).toBe(1)
 
-    // SECURITY: should NOT expose passwordHash
-    expect(anna.passwordHash).toBeUndefined()
-    expect(erik.passwordHash).toBeUndefined()
   })
 
   it('should include horse information per customer', async () => {
@@ -603,11 +600,4 @@ describe('POST /api/provider/customers', () => {
     )
   })
 
-  it('should not expose passwordHash in response', async () => {
-    const response = await POST(makePostRequest({ firstName: 'Anna' }))
-    const data = await response.json()
-
-    expect(response.status).toBe(201)
-    expect(data.customer.passwordHash).toBeUndefined()
-  })
 })

@@ -76,7 +76,6 @@ describe('GET /api/providers/[id]/reviews', () => {
     expect(data.reviews[0].booking.service.name).toBe('Hovslagning')
     // Security: no sensitive data
     expect(data.reviews[0].customer.email).toBeUndefined()
-    expect(data.reviews[0].customer.passwordHash).toBeUndefined()
   })
 
   it('should return empty reviews for provider with no reviews', async () => {

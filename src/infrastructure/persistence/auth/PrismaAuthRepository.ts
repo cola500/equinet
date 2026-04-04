@@ -1,8 +1,8 @@
 /**
  * PrismaAuthRepository - Prisma implementation for Auth domain
  *
- * All queries use `select` (never `include`) to prevent passwordHash leaks.
- * findUserWithCredentials is the ONLY method that returns passwordHash.
+ * All queries use `select` (never `include`) to prevent data leaks.
+ * Passwords are handled by Supabase Auth -- not stored in public.User.
  * verifyEmail uses $transaction for atomicity.
  */
 import { prisma } from '@/lib/prisma'
@@ -10,7 +10,6 @@ import { Prisma } from '@prisma/client'
 import type {
   IAuthRepository,
   AuthUser,
-  AuthUserWithCredentials,
   UserForResend,
   VerificationTokenWithUser,
   PasswordResetTokenWithUser,
@@ -21,7 +20,6 @@ import type {
   UpgradeGhostUserData,
 } from './IAuthRepository'
 
-// Safe user select (NEVER includes passwordHash)
 const authUserSelect = {
   id: true,
   email: true,
@@ -30,26 +28,6 @@ const authUserSelect = {
   userType: true,
 } satisfies Prisma.UserSelect
 
-// Credentials select (ONLY used for login)
-const credentialsSelect = {
-  id: true,
-  email: true,
-  firstName: true,
-  lastName: true,
-  userType: true,
-  isAdmin: true,
-  isBlocked: true,
-  passwordHash: true,
-  emailVerified: true,
-  provider: {
-    select: { id: true },
-  },
-  stable: {
-    select: { id: true },
-  },
-} satisfies Prisma.UserSelect
-
-// Minimal select for resend-verification
 const resendSelect = {
   id: true,
   firstName: true,
@@ -81,20 +59,12 @@ export class PrismaAuthRepository implements IAuthRepository {
     return prisma.user.update({
       where: { id: data.userId },
       data: {
-        passwordHash: data.passwordHash,
         firstName: data.firstName,
         lastName: data.lastName,
         phone: data.phone,
         isManualCustomer: false,
       },
       select: authUserSelect,
-    })
-  }
-
-  async findUserWithCredentials(email: string): Promise<AuthUserWithCredentials | null> {
-    return prisma.user.findUnique({
-      where: { email },
-      select: credentialsSelect,
     })
   }
 
@@ -110,7 +80,6 @@ export class PrismaAuthRepository implements IAuthRepository {
       data: {
         ...(data.id ? { id: data.id } : {}),
         email: data.email,
-        passwordHash: data.passwordHash,
         firstName: data.firstName,
         lastName: data.lastName,
         phone: data.phone,
@@ -224,17 +193,11 @@ export class PrismaAuthRepository implements IAuthRepository {
     })
   }
 
-  async resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void> {
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash },
-      }),
-      prisma.passwordResetToken.update({
-        where: { id: tokenId },
-        data: { usedAt: new Date() },
-      }),
-    ])
+  async markResetTokenUsed(tokenId: string): Promise<void> {
+    await prisma.passwordResetToken.update({
+      where: { id: tokenId },
+      data: { usedAt: new Date() },
+    })
   }
 
   async updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void> {

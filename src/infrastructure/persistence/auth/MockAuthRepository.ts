@@ -7,7 +7,6 @@
 import type {
   IAuthRepository,
   AuthUser,
-  AuthUserWithCredentials,
   UserForResend,
   VerificationTokenWithUser,
   PasswordResetTokenWithUser,
@@ -27,7 +26,6 @@ interface StoredUser {
   isAdmin?: boolean
   isBlocked?: boolean
   isManualCustomer?: boolean
-  passwordHash: string
   emailVerified: boolean
   phone?: string
 }
@@ -77,7 +75,6 @@ export class MockAuthRepository implements IAuthRepository {
   async upgradeGhostUser(data: UpgradeGhostUserData): Promise<AuthUser> {
     const user = this.users.get(data.userId)
     if (!user) throw new Error(`User not found: ${data.userId}`)
-    user.passwordHash = data.passwordHash
     user.firstName = data.firstName
     user.lastName = data.lastName
     user.phone = data.phone
@@ -89,28 +86,6 @@ export class MockAuthRepository implements IAuthRepository {
       lastName: user.lastName,
       userType: user.userType,
     }
-  }
-
-  async findUserWithCredentials(email: string): Promise<AuthUserWithCredentials | null> {
-    for (const user of this.users.values()) {
-      if (user.email === email) {
-        const provider = this.findProviderByUserId(user.id)
-        return {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          userType: user.userType,
-          isAdmin: user.isAdmin ?? false,
-          isBlocked: user.isBlocked ?? false,
-          passwordHash: user.passwordHash,
-          emailVerified: user.emailVerified,
-          provider: provider ? { id: provider.id } : null,
-          stable: null,
-        }
-      }
-    }
-    return null
   }
 
   async findUserForResend(email: string): Promise<UserForResend | null> {
@@ -135,7 +110,6 @@ export class MockAuthRepository implements IAuthRepository {
       firstName: data.firstName,
       lastName: data.lastName,
       userType: data.userType,
-      passwordHash: data.passwordHash,
       emailVerified: false,
       phone: data.phone,
     }
@@ -243,11 +217,7 @@ export class MockAuthRepository implements IAuthRepository {
     }
   }
 
-  async resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void> {
-    const user = this.users.get(userId)
-    if (user) {
-      user.passwordHash = passwordHash
-    }
+  async markResetTokenUsed(tokenId: string): Promise<void> {
     for (const stored of this.passwordResetTokens.values()) {
       if (stored.id === tokenId) {
         stored.usedAt = new Date()

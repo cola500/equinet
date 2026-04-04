@@ -14,7 +14,6 @@ function makeUser(overrides: Partial<UserForDeletion> = {}): UserForDeletion {
     id: 'user-1',
     email: 'test@example.com',
     firstName: 'Johan',
-    passwordHash: 'hashed-password',
     isAdmin: false,
     ...overrides,
   }
@@ -33,7 +32,7 @@ function makeDeps(overrides: Partial<AccountDeletionServiceDeps> = {}): AccountD
     deleteUploads: vi.fn().mockResolvedValue(undefined),
     deleteStorageFiles: vi.fn().mockResolvedValue(undefined),
     sendDeletionEmail: vi.fn().mockResolvedValue(undefined),
-    comparePassword: vi.fn().mockResolvedValue(true),
+    verifyPassword: vi.fn().mockResolvedValue(true),
     ...overrides,
   }
 }
@@ -73,7 +72,7 @@ describe('AccountDeletionService', () => {
   })
 
   it('returns INVALID_PASSWORD when password is wrong', async () => {
-    deps = makeDeps({ comparePassword: vi.fn().mockResolvedValue(false) })
+    deps = makeDeps({ verifyPassword: vi.fn().mockResolvedValue(false) })
     service = new AccountDeletionService(deps)
 
     const result = await service.deleteAccount('user-1', 'wrong-password', 'RADERA')

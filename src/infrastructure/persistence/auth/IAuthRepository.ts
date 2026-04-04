@@ -1,40 +1,22 @@
 /**
  * IAuthRepository - Repository interface for Auth domain
  *
- * Handles user registration, email verification, and credential lookup.
+ * Handles user registration, email verification, and token management.
  * Domain layer depends on this interface, not the implementation.
- *
- * Security invariants:
- * - passwordHash is ONLY returned by findUserWithCredentials (for login)
- * - All other methods return safe projections (no sensitive data)
+ * Passwords are handled by Supabase Auth -- not stored in public.User.
  */
 
 // -----------------------------------------------------------
 // Types -- safe projections
 // -----------------------------------------------------------
 
-/** Safe user data (never includes passwordHash) */
+/** Safe user data */
 export interface AuthUser {
   id: string
   email: string
   firstName: string
   lastName: string
   userType: string
-}
-
-/** User with credentials -- ONLY for login verification */
-export interface AuthUserWithCredentials {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  userType: string
-  isAdmin: boolean
-  isBlocked: boolean
-  passwordHash: string
-  emailVerified: boolean
-  provider: { id: string } | null
-  stable: { id: string } | null
 }
 
 /** Minimal user data for resend-verification */
@@ -62,7 +44,6 @@ export interface VerificationTokenWithUser {
 export interface CreateUserData {
   id?: string
   email: string
-  passwordHash: string
   firstName: string
   lastName: string
   phone?: string
@@ -106,7 +87,6 @@ export interface CreatePasswordResetTokenData {
 /** Data for upgrading a ghost user to a real account */
 export interface UpgradeGhostUserData {
   userId: string
-  passwordHash: string
   firstName: string
   lastName: string
   phone?: string
@@ -123,12 +103,6 @@ export interface IAuthRepository {
    * Sets isManualCustomer=false and updates profile fields.
    */
   upgradeGhostUser(data: UpgradeGhostUserData): Promise<AuthUser>
-
-  /**
-   * Find user with credentials for login.
-   * ONLY method that returns passwordHash.
-   */
-  findUserWithCredentials(email: string): Promise<AuthUserWithCredentials | null>
 
   /**
    * Find user for resend-verification (minimal projection)
@@ -181,9 +155,10 @@ export interface IAuthRepository {
   invalidatePasswordResetTokens(userId: string): Promise<void>
 
   /**
-   * Reset password: atomically update passwordHash and mark token as used.
+   * Mark a password reset token as used.
+   * Actual password update happens via Supabase Auth admin API.
    */
-  resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void>
+  markResetTokenUsed(tokenId: string): Promise<void>
 
   /**
    * Update userType for a user (e.g., after Supabase signup + provider creation).

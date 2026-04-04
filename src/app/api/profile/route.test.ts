@@ -439,8 +439,6 @@ describe('PUT /api/profile', () => {
       expect(data).toHaveProperty(key)
     }
 
-    // Verify no unexpected fields leak (e.g. passwordHash)
-    expect(data.passwordHash).toBeUndefined()
     expect(data.provider).toBeUndefined()
   })
 })

@@ -26,10 +26,15 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-vi.mock('bcrypt', () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue('hashed-password'),
-  },
+vi.mock('@/lib/supabase/admin', () => ({
+  createSupabaseAdminClient: () => ({
+    auth: {
+      admin: {
+        updateUserById: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+        createUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+      },
+    },
+  }),
 }))
 
 import { isFeatureEnabled } from '@/lib/feature-flags'

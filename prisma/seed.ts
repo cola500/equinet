@@ -8,8 +8,6 @@
  * Force re-seed: npm run db:seed:force
  */
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcrypt'
-
 const prisma = new PrismaClient()
 
 async function main() {
@@ -40,9 +38,6 @@ async function main() {
   }
 
   console.log('Seeding database...')
-
-  // Hash password for all test users
-  const passwordHash = await bcrypt.hash('test123', 10)
 
   // Create providers with their users and services
   const providers = [
@@ -177,7 +172,6 @@ async function main() {
     const user = await prisma.user.create({
       data: {
         ...data.user,
-        passwordHash,
         emailVerified: true,
         emailVerifiedAt: new Date(),
       },
@@ -222,7 +216,6 @@ async function main() {
   const customer = await prisma.user.create({
     data: {
       email: 'kund@test.se',
-      passwordHash,
       firstName: 'Test',
       lastName: 'Kund',
       userType: 'customer',
@@ -241,7 +234,6 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: 'admin@equinet.se',
-      passwordHash,
       firstName: 'Admin',
       lastName: 'Adminsson',
       userType: 'customer',
