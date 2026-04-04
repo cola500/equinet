@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 sections:
   - Aktiv sprint
   - Sessioner
@@ -25,7 +25,7 @@ sections:
 | S13-2 Ta bort NextAuth + MobileToken | fullstack | - | pending | - | - |
 | S13-3 Ta bort passwordHash | fullstack | - | pending | - | - |
 | S13-4 iOS Supabase Swift SDK | fullstack | - | pending | - | - |
-| S13-5 Registrering via Supabase | fullstack | Dev | in_progress | feature/s13-5-supabase-registration | - |
+| S13-5 Registrering via Supabase | fullstack | Dev | review_requested | feature/s13-5-supabase-registration | db5e4fa8 |
 
 **Sprint 12** (klar):
 
