@@ -210,7 +210,7 @@ src/
 
 ## Säkerhet
 
-**Implementerat:** Supabase Auth (lösenord, sessions, email-verifiering), RLS (Row Level Security), HTTP-only cookies, Prisma (SQL injection), React (XSS), Zod, ownership guards (`findByIdForProvider`), rate limiting (Upstash Redis), Sentry.
+**Implementerat:** Supabase Auth (managed lösenord, sessions, email-verifiering, Custom Access Token Hook), RLS (28 policies på 7 kärndomäner, 24 bevistester), HTTP-only cookies, Prisma (SQL injection), React (XSS), Zod, ownership guards (`findByIdForProvider`), rate limiting (Upstash Redis), Sentry.
 
 > Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
@@ -267,7 +267,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Kanonisk distance-modul**: `src/lib/geo/distance.ts` är enda källan för Haversine-beräkningar. Duplicera ALDRIG i API routes.
 - **CustomerLayout för alla kundsidor**: Wrappa ALLTID kundriktade sidor i `CustomerLayout` (`Header` + `BottomTabBar`).
 - **Context > splitta hook vid prop-drilling**: Wrappa i Context + extrahera delade subkomponenter. Splitta INTE hooken.
-- **MobileToken JWT-auth**: `src/domain/auth/MobileTokenService.ts` -- jose HS256, SHA-256 hash i DB, 90d expiry, max 5 aktiva per user, atomisk rotation via `revokeAndCreate` (`$transaction`). Bearer-auth helper: `authFromMobileToken(request)` i `src/lib/mobile-auth.ts`.
+- **Supabase Auth**: Managed auth med Custom Access Token Hook (PL/pgSQL). JWT claims: `providerId`, `userType`, `isAdmin`. iOS: Supabase Swift SDK + `native-session-exchange` endpoint för WKWebView cookies.
 - **Publik vs skyddad URL-konvention**: `/api/stable/*` = auth-skyddad (singularis), `/api/stables/*` = publik (pluralis). Auth.config: `startsWith('/stable/')` + `=== '/stable'` -- ALDRIG `startsWith('/stable')` som matchar båda.
 - **Publik data-allowlist**: `toPublicStable()` returnerar bara tillåtna fält (allowlist > blocklist). Nya fält exponeras inte oavsiktligt.
 
@@ -297,8 +297,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Swift Charts**: `import Charts` i SwiftUI-filer. `Chart { BarMark(x:y:) }` for bar charts, `LineMark(x:y:series:)` for line charts. `.chartForegroundStyleScale()` for legend-farger. Forsta anvandningen i session 113 (NativeInsightsView).
 - **iOS HeatmapMatrix pre-computation**: Transformera API heatmap-data (array av day/hour/count) till 2D-matris i ViewModel. `HeatmapMatrix.from(entries:)` bygger 7x(hourRange) matris med `intensity(day:hour:)` for farggradering. Vyn laser bara fran matrisen.
 - **iOS SharedDataManager cache per parameter**: `insights_cache_\(months)` ger separata caches for varje variabel. `clearAllInsightsCache()` itererar over alla varianter. Anvandbart for alla API:er med variabla parametrar.
-- **iOS dual auth-system (JWT + session-cookie)**: Native APIClient använder mobile JWT (Bearer token), WebView-sidor använder session-cookie via NextAuth `useSession()`. De är helt oberoende -- en kan fungera medan den andra failar. Vid "data laddas inte" i WebView: injicera `fetch('/api/auth/session')` via `evaluateJavaScript` och skicka resultatet genom bridge för att se session-status.
-- **iOS auth-kompatibilitet vid native-anrop**: Innan du bygger native UI som anropar en befintlig web-route, verifiera att routen stödjer Bearer JWT (`authFromMobileToken`) -- inte bara session-cookie (`auth()`). Befintliga routes under `/api/` (utan `/native/`) använder typiskt session auth. Skapa `/api/native/*`-route med Bearer auth, eller offloada till WebView.
+- **iOS auth via Supabase Swift SDK**: Login via `SupabaseManager.client.auth.signIn()`, session exchange till WKWebView via `/api/auth/native-session-exchange` (PKCE). Alla routes använder `getAuthUser(request)` som stödjer både Bearer och Supabase cookies.
 - **iOS WKWebView JS-debugging utan Safari Inspector**: Injicera JavaScript via `evaluateJavaScript` som gör `fetch()` och skickar resultat via `window.webkit.messageHandlers.equinet.postMessage()`. Logga i Swift via `AppLogger`. Fungerar på fysiska enheter utan Safari-koppling.
 - **iOS Simulator MCP**: `mobile-mcp` (`@mobilenext/mobile-mcp`) for all iOS Simulator-interaktion: screenshot, accessibility tree, tap/swipe/type, launch/install app, screen recording. Anvander XCUITest/WebDriverAgent (inga extra beroenden utover Xcode). Ersatter ios-simulator-mcp vars IDB-baserade verktyg inte fungerar med Xcode 26.
 - **iOS UI-verifiering**: Vid iOS UI-ändringar -- använd mobile-mcp för screenshots, accessibility tree och interaktion. Fixa problem direkt utan att fråga.
@@ -494,7 +493,7 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 ## Resurser
 
 - **prisma/schema.prisma** - Databasschema (source of truth)
-- **src/lib/auth-dual.ts** - Dual-auth helper (Bearer > NextAuth > Supabase)
+- **src/lib/auth-dual.ts** - Auth helper (Supabase Auth, DB-lookup för providerId)
 - **src/lib/supabase/server.ts** - Supabase server client
 - **src/lib/supabase/browser.ts** - Supabase browser client
 - [Next.js Docs](https://nextjs.org/docs) | [Prisma Docs](https://www.prisma.io/docs) | [shadcn/ui Docs](https://ui.shadcn.com)

@@ -166,26 +166,28 @@ const prismaWithExtensions = basePrisma.$extends({
 
 ### RLS Security Model
 
-**Status:** Aktiverat på alla 35 tabeller + `_prisma_migrations` sedan 2026-02-04
+**Status:** 28 policies (13 read + 15 write) på 7 kärndomäner. Aktiverat i prod sedan 2026-04-04.
 
-```sql
--- Migration: 20260204120000_enable_rls
-ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Provider" ENABLE ROW LEVEL SECURITY;
--- ... (19 fler)
-```
+**Kärndomäner med RLS-policies:**
+- Booking (provider read, customer read, provider write, customer write)
+- Payment (provider via booking JOIN, customer via booking JOIN)
+- Service (provider own, public active)
+- Horse (owner, provider via ProviderCustomer)
+- CustomerReview (provider read, customer read)
+- Notification (user own)
+- BookingSeries (provider, customer)
 
-**Approach: Deny-All**
-- Inga permissive policies definierade
-- PostgREST API (`anon` key): Blockerad helt
-- Prisma (`service_role`): Full access (bypassar RLS)
-- Supabase Dashboard: Full access
+**Approach: Authenticated + service_role**
+- `authenticated` role: Ser bara sin egen data (via JWT claims)
+- `anon` role: Blockerad helt (inga policies)
+- Prisma (`service_role`): Full access (kringgår RLS) -- för writes och admin
+- Supabase-klient (user JWT): Filtreras av RLS -- för reads (bookings, services, notifications)
+- Hjälpfunktion `rls_provider_id()` extraherar `providerId` från JWT `app_metadata`
 
-**Varför denna approach?**
-- All dataåtkomst går genom server-side Prisma (ingen frontend database access)
-- Authorization sköts i API routes (session + ownership checks)
-- RLS är "defense in depth" om `anon` key skulle läcka
-- Enklast att underhålla (inga komplexa policies)
+**Custom Access Token Hook:**
+PL/pgSQL-funktion som lägger `providerId`, `userType` och `isAdmin` i JWT vid varje token-generering. Slår upp i `public."User"` och `public."Provider"`.
+
+**24 bevistester** i `src/__tests__/rls/` verifierar cross-tenant isolation mot live Supabase.
 
 ---
 

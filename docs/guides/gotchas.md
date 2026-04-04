@@ -1419,6 +1419,18 @@ body { padding-bottom: 0 !important; }
 
 ---
 
+## Gotcha #33: CSP blockerar lokal Supabase i dev/CI
+
+**Problem:** `signInWithPassword` kastar `TypeError: Failed to fetch` i E2E-tester. Login visar "Ogiltig email eller lösenord" trots korrekta credentials. Ingen tydlig felindikation -- bara en tyst fetch-failure.
+
+**Rotorsak:** Content Security Policy (`connect-src`) tillåter bara `'self'` + `https://*.supabase.co`. Lokal Supabase (`http://localhost:54321`) matchar varken `self` (porten skiljer) eller `*.supabase.co`. CSP blockerar requesten tyst.
+
+**Lösning:** Lägg till `http://localhost:54321` i `connect-src` -- men BARA i dev/CI, inte i produktion.
+
+**Regel:** När du byter origin för en extern tjänst (Supabase, Stripe, Sentry) -- kolla alltid CSP. 5 Whys-analys avslöjade detta efter flera CI-iterationer. Hade upptäckts direkt med browser console-log i CI.
+
+---
+
 ## Relaterade Dokument
 
 - [CLAUDE.md](../CLAUDE.md) - Utvecklingsguide

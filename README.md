@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-03-08
+last_updated: 2026-04-04
 related:
   - CLAUDE.md
   - NFR.md
@@ -60,17 +60,13 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
    ```bash
    # Kopiera example-fil till .env
    cp .env.example .env
-
-   # Generera NEXTAUTH_SECRET
-   openssl rand -base64 32
-
-   # Öppna .env och ersätt your-secret-here-min-32-chars med genererat värde
    ```
 
    **Viktiga environment variables:**
    - `DATABASE_URL`: PostgreSQL connection string (lokal Docker eller Supabase)
-   - `NEXTAUTH_SECRET`: Secret för NextAuth (generera med kommandot ovan)
-   - `NEXTAUTH_URL`: App URL (default: `http://localhost:3000`)
+   - `NEXT_PUBLIC_SUPABASE_URL`: Supabase projekt-URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (server-only)
 
    > `.env.example` har lokal Docker-DB som default. För Supabase: avkommentera alternativ 2.
 
@@ -162,7 +158,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Styling**: Tailwind CSS v4
 - **UI**: shadcn/ui + Radix UI
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
-- **Autentisering**: Supabase Auth (migrering från NextAuth v5 pågår)
+- **Autentisering**: Supabase Auth (managed, med Custom Access Token Hook)
 - **Validering**: Zod + React Hook Form
 - **Testning**: Vitest (3900+ unit/integration) + Playwright (373+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)

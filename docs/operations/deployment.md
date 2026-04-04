@@ -88,25 +88,23 @@ DATABASE_URL="postgresql://user:pass@db.xxx.supabase.co:5432/postgres?pgbouncer=
 - Supabase Dashboard → Project Settings → Database
 - Välj **Session Pooler (IPv4)** connection string
 
-### 2.2 Authentication (REQUIRED)
+### 2.2 Supabase Auth (REQUIRED)
 
 ```bash
-# NextAuth Secret (generera ny för production)
-NEXTAUTH_SECRET="your-production-secret-here"
-
-# NextAuth URL (din Vercel domain)
-NEXTAUTH_URL="https://your-app.vercel.app"
+# Supabase projekt-URL och nycklar
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
-**Generera NEXTAUTH_SECRET:**
-```bash
-openssl rand -base64 32
-# Kopiera output till NEXTAUTH_SECRET
-```
+**Hitta nycklarna:**
+- Supabase Dashboard -> Project Settings -> API
+- `anon` key: publik, skickas till klienten
+- `service_role` key: server-only, kringgår RLS -- exponera ALDRIG i frontend
 
-**NEXTAUTH_URL:**
-- Tillfälligt: `https://your-project.vercel.app` (Vercel ger dig denna)
-- Custom domain: `https://equinet.se` (konfigurera under Domains)
+**Custom Access Token Hook:**
+- Aktivera i Supabase Dashboard -> Authentication -> Hooks
+- Välj `custom_access_token_hook` (skapas av Prisma-migration)
 
 ---
 
