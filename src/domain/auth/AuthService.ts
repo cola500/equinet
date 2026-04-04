@@ -12,7 +12,6 @@ import bcrypt from 'bcrypt'
 import { randomBytes } from 'crypto'
 import { sendEmailVerificationNotification, sendPasswordResetNotification } from '@/lib/email'
 import { logger } from '@/lib/logger'
-import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 // -----------------------------------------------------------
 // Types
@@ -28,6 +27,7 @@ export interface SupabaseAdminAuth {
     data: { user: { id: string } | null }
     error: { message: string; status?: number } | null
   }>
+  deleteUser?: (userId: string) => Promise<unknown>
 }
 
 export interface AuthServiceDeps {
@@ -184,35 +184,48 @@ export class AuthService {
 
     const supabaseUserId = data.user.id
 
-    // 2. Ensure public.User exists (sync trigger creates it, but as fallback
-    //    we create it here if the trigger hasn't fired yet)
-    await this.repo.createUser({
-      id: supabaseUserId,
-      email: input.email,
-      passwordHash: '', // Supabase handles passwords
-      firstName: input.firstName,
-      lastName: input.lastName,
-      phone: input.phone,
-      userType: input.userType,
-    }).catch((err: unknown) => {
-      // P2002 = unique constraint -- expected when sync trigger already created the row
-      const prismaCode = (err as { code?: string })?.code
-      if (prismaCode === 'P2002') {
-        logger.info('User already exists from sync trigger, skipping createUser', { id: supabaseUserId })
-      } else {
-        logger.error('Failed to create fallback user after Supabase signup', err instanceof Error ? err : new Error(String(err)))
-      }
-    })
-
-    // 3. Create provider profile if applicable
-    if (input.userType === 'provider' && input.businessName) {
-      await this.repo.createProvider({
-        userId: supabaseUserId,
-        businessName: input.businessName,
-        description: input.description,
-        city: input.city,
+    try {
+      // 2. Ensure public.User exists (sync trigger creates it, but as fallback
+      //    we create it here if the trigger hasn't fired yet)
+      await this.repo.createUser({
+        id: supabaseUserId,
+        email: input.email,
+        passwordHash: '', // Supabase handles passwords
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone,
+        userType: input.userType,
+      }).catch((err: unknown) => {
+        // P2002 = unique constraint -- expected when sync trigger already created the row
+        const prismaCode = (err as { code?: string })?.code
+        if (prismaCode === 'P2002') {
+          logger.info('User already exists from sync trigger, skipping createUser', { id: supabaseUserId })
+        } else {
+          throw err // Re-throw non-P2002 errors to trigger rollback
+        }
       })
-      await this.repo.updateUserType(supabaseUserId, 'provider')
+
+      // 3. Create provider profile if applicable
+      if (input.userType === 'provider' && input.businessName) {
+        await this.repo.createProvider({
+          userId: supabaseUserId,
+          businessName: input.businessName,
+          description: input.description,
+          city: input.city,
+        })
+        // Sync trigger hardcodes 'customer', so update to 'provider' after provider creation
+        await this.repo.updateUserType(supabaseUserId, 'provider')
+      }
+    } catch (err) {
+      // Rollback: delete the Supabase user to avoid zombie accounts
+      logger.error('Post-signup setup failed, rolling back Supabase user', { supabaseUserId })
+      await this.supabaseAdmin!.deleteUser?.(supabaseUserId).catch((cleanupErr: unknown) => {
+        logger.error('Failed to cleanup orphaned Supabase user', cleanupErr instanceof Error ? cleanupErr : new Error(String(cleanupErr)))
+      })
+      return Result.fail({
+        type: 'REGISTRATION_FAILED',
+        message: 'Kunde inte skapa konto',
+      })
     }
 
     // 4. Return user info (no verification token, no email -- Supabase handles it)
@@ -519,13 +532,16 @@ export class AuthService {
 
 export function createAuthService(): AuthService {
   // Try to create Supabase admin client for new registrations
+  // Dynamic import: admin.ts has 'import "server-only"' which throws in test env.
+  // DI via constructor handles testability; this factory is only called at runtime.
   let supabaseAdmin: SupabaseAdminAuth | undefined
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createSupabaseAdminClient } = require('@/lib/supabase/admin')
     const client = createSupabaseAdminClient()
     supabaseAdmin = {
-      createUser: async (opts) => {
-        return client.auth.admin.createUser(opts)
-      },
+      createUser: async (opts) => client.auth.admin.createUser(opts),
+      deleteUser: async (userId) => client.auth.admin.deleteUser(userId),
     }
   } catch {
     logger.warn('Supabase admin client not available, using legacy registration')
