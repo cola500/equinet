@@ -62,10 +62,18 @@ Skriv ALDRIG bara "kör" vid parallella sessioner -- de plockar samma story.
      - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: code-reviewer (enda relevanta)"
    - Avvikelser eller kända begränsningar
    - **Lärdomar**: Vad var oväntat? Vad skulle du göra annorlunda? Gotchas för framtida sessioner?
-   - Committa filen på feature branchen
-10. Pusha FEATURE BRANCH (aldrig main!)
-11. Uppdatera status.md: story -> "review_requested"
-12. Tech lead läser done-filen (inkl lärdomar), granskar kod, och mergar (station 7)
+   - **SAMTIDIGT:** Uppdatera status.md: story -> `done` + commit-hash
+   - Committa BÅDA filerna i samma commit
+10. Merga till main och rensa branch:
+    ```bash
+    git push -u origin feature/<story-id>-<namn>
+    git checkout main && git pull origin main
+    git merge feature/<story-id>-<namn> --no-ff
+    git push origin main
+    git branch -d feature/<story-id>-<namn>
+    git push origin --delete feature/<story-id>-<namn>
+    ```
+11. Gå till nästa pending story (steg 1)
 
 ### Rollspecifika regler
 
