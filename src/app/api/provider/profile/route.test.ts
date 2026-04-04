@@ -31,7 +31,7 @@ vi.mock('@/lib/cache/provider-cache', () => ({
 
 const providerAuthUser = {
   id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-  providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+  providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
 }
 
 vi.mock('@/lib/logger', () => ({
@@ -111,7 +111,7 @@ describe('GET /api/provider/profile', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/provider/profile')

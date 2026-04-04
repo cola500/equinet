@@ -46,7 +46,7 @@ describe('POST /api/customer-reviews', () => {
   it('should create a customer review for a completed booking', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
@@ -81,7 +81,7 @@ describe('POST /api/customer-reviews', () => {
   it('should create a review without comment', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
@@ -140,7 +140,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -158,7 +158,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 403 when provider has no providerId', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -176,7 +176,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for invalid rating (too low)', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -194,7 +194,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for invalid rating (too high)', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -212,7 +212,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for comment exceeding 500 characters', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -234,7 +234,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 404 when booking not found', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(null)
 
@@ -253,7 +253,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 403 when provider does not own the booking', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'other-provider', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'other-provider', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue(mockBooking as never)
 
@@ -272,7 +272,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 when booking is not completed', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
@@ -294,7 +294,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 409 when customer review already exists', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
@@ -316,7 +316,7 @@ describe('POST /api/customer-reviews', () => {
   it('should return 400 for invalid JSON', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -334,7 +334,7 @@ describe('POST /api/customer-reviews', () => {
   it('should reject extra fields (strict mode)', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -357,7 +357,7 @@ describe('POST /api/customer-reviews', () => {
   it('should not allow providerId in request body', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews', {
@@ -382,7 +382,7 @@ describe('GET /api/customer-reviews', () => {
   it('should return customer reviews for the provider', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
     })
 
     vi.mocked(prisma.customerReview.findMany).mockResolvedValue([
@@ -412,7 +412,7 @@ describe('GET /api/customer-reviews', () => {
   it('should return 403 when not a provider', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/customer-reviews')

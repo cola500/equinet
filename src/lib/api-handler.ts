@@ -72,7 +72,7 @@ export function withApiHandler<
     try {
       const ctx: Record<string, unknown> = { request }
 
-      // 1. Auth (dual-auth: Bearer > NextAuth > Supabase)
+      // 1. Auth (Supabase Auth)
       const authLevel = config.auth ?? "any"
       if (authLevel !== "none") {
         const authUser = await getAuthUser(request)

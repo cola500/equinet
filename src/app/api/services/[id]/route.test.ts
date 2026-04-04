@@ -69,7 +69,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockUpdateWithAuth.mockResolvedValue(mockUpdatedService)
@@ -140,7 +140,7 @@ describe('PUT /api/services/[id]', () => {
     // Arrange - customer trying to update a service
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -161,7 +161,7 @@ describe('PUT /api/services/[id]', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(null)
 
@@ -188,7 +188,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null when service not found or unauthorized
@@ -217,7 +217,7 @@ describe('PUT /api/services/[id]', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns null for unauthorized access
@@ -241,7 +241,7 @@ describe('PUT /api/services/[id]', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -262,7 +262,7 @@ describe('PUT /api/services/[id]', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -294,7 +294,7 @@ describe('DELETE /api/services/[id]', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(mockProvider)
     mockDeleteWithAuth.mockResolvedValue(true)
@@ -345,7 +345,7 @@ describe('DELETE /api/services/[id]', () => {
     // Arrange - customer trying to delete a service
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services/service1', {
@@ -365,7 +365,7 @@ describe('DELETE /api/services/[id]', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(null)
 
@@ -391,7 +391,7 @@ describe('DELETE /api/services/[id]', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false when service not found
@@ -419,7 +419,7 @@ describe('DELETE /api/services/[id]', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(mockProvider)
     // Repository returns false for unauthorized access

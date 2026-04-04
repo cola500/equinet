@@ -104,7 +104,7 @@ describe('PUT /api/bookings/[id]', () => {
     }
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
@@ -145,7 +145,7 @@ describe('PUT /api/bookings/[id]', () => {
     }
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -172,7 +172,7 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should return 404 when booking does not exist', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(
@@ -195,7 +195,7 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should return 400 for invalid status transition', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(
@@ -223,7 +223,7 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should return 400 for invalid status value (Zod)', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -257,7 +257,7 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should return 404 when provider profile not found', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(null)
 
@@ -277,7 +277,7 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should return 400 for invalid JSON body', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/bookings/booking1', {
@@ -309,7 +309,7 @@ describe('PUT /api/bookings/[id]', () => {
     }
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
@@ -347,7 +347,7 @@ describe('PUT /api/bookings/[id]', () => {
     }
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
@@ -373,7 +373,7 @@ describe('PUT /api/bookings/[id]', () => {
 
   it('should return 400 for too long cancellationMessage', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
 
@@ -406,7 +406,7 @@ describe('PUT /api/bookings/[id]', () => {
     }
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
 
@@ -451,7 +451,7 @@ describe('DELETE /api/bookings/[id]', () => {
 
   it('should delete booking when provider is authorized', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(true)
@@ -475,7 +475,7 @@ describe('DELETE /api/bookings/[id]', () => {
 
   it('should delete booking when customer is authorized', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockDeleteWithAuth.mockResolvedValue(true)
 
@@ -498,7 +498,7 @@ describe('DELETE /api/bookings/[id]', () => {
 
   it('should return 404 when booking does not exist', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(false)
@@ -518,7 +518,7 @@ describe('DELETE /api/bookings/[id]', () => {
 
   it('should return 404 when not authorized', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockDeleteWithAuth.mockResolvedValue(false)
@@ -538,7 +538,7 @@ describe('DELETE /api/bookings/[id]', () => {
 
   it('should return 404 when provider profile not found', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue(null)
 
@@ -575,7 +575,7 @@ describe('PUT /api/bookings/[id] - Auth methods via getAuthUser', () => {
     }
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'bearer' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     mockFindByUserId.mockResolvedValue({ id: 'provider123', userId: 'user123' })
     mockUpdateStatus.mockResolvedValue(Result.ok(mockUpdatedBooking))
@@ -618,7 +618,7 @@ describe('PUT /api/bookings/[id] - Auth methods via getAuthUser', () => {
 
   it('should work with session auth (getAuthUser resolves via nextauth)', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const mockUpdatedBooking = {

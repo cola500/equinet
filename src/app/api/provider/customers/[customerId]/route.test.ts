@@ -34,7 +34,7 @@ vi.mock('@/lib/prisma', () => ({
 
 const providerAuthUser = {
   id: 'user-1', email: '', userType: 'provider', isAdmin: false,
-  providerId: 'provider-1', stableId: null, authMethod: 'nextauth' as const,
+  providerId: 'provider-1', stableId: null, authMethod: 'supabase' as const,
 }
 
 const makeDeleteRequest = (customerId: string) =>
@@ -71,7 +71,7 @@ describe('DELETE /api/provider/customers/[customerId]', () => {
   it('should return 403 when user is not a provider', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const response = await DELETE(makeDeleteRequest('customer-1'))

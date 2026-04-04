@@ -75,7 +75,7 @@ describe('GET /api/services', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.service.findMany).mockResolvedValue(mockServices as never)
@@ -111,7 +111,7 @@ describe('GET /api/services', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services')
@@ -129,7 +129,7 @@ describe('GET /api/services', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
@@ -179,7 +179,7 @@ describe('POST /api/services', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.service.count).mockResolvedValue(0) // Service doesn't exist
@@ -241,7 +241,7 @@ describe('POST /api/services', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services', {
@@ -265,7 +265,7 @@ describe('POST /api/services', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services', {
@@ -290,7 +290,7 @@ describe('POST /api/services', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = new NextRequest('http://localhost:3000/api/services', {
@@ -315,7 +315,7 @@ describe('POST /api/services', () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
-      providerId: 'provider123', stableId: null, authMethod: 'nextauth' as const,
+      providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(rateLimiters.serviceCreate).mockResolvedValue(false) // Rate limited
 
