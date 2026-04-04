@@ -52,6 +52,9 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    env:
+      # Dummy URL for prisma generate during npm ci (overridden after supabase start)
+      DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
 
     steps:
       - name: Checkout code
