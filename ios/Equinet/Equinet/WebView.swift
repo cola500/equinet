@@ -186,9 +186,9 @@ struct WebView: UIViewRepresentable {
         // Observe cookie changes for session expiry detection
         context.coordinator.startObservingCookies(for: webView)
 
-        // Inject session cookie BEFORE loading the page
+        // Exchange Supabase token for web session cookies BEFORE loading the page
         Task {
-            await authManager.injectSessionCookie(into: webView.configuration.websiteDataStore.httpCookieStore)
+            await authManager.exchangeSessionForWebCookies(into: webView.configuration.websiteDataStore.httpCookieStore)
             webView.load(URLRequest(url: url))
         }
 
@@ -262,16 +262,16 @@ struct WebView: UIViewRepresentable {
         func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
             Task { @MainActor in
                 let cookies = await cookieStore.allCookies()
-                let expectedCookieName = parent.authManager.sessionCookieName ?? "next-auth.session-token"
-                let hasSessionCookie = cookies.contains { cookie in
-                    cookie.name == expectedCookieName
+                // Look for Supabase auth cookie (sb-<ref>-auth-token)
+                let hasSupabaseCookie = cookies.contains { cookie in
+                    cookie.name.hasPrefix("sb-") && cookie.name.hasSuffix("-auth-token")
                         && (cookie.domain.hasSuffix(AppConfig.baseURL.host ?? "")
                             || cookie.domain == "localhost")
                 }
 
-                // Session cookie disappeared -> user logged out or session expired
-                if !hasSessionCookie && parent.webViewReady {
-                    AppLogger.auth.info("Session cookie removed, triggering logout")
+                // Supabase cookie disappeared -> user logged out in web
+                if !hasSupabaseCookie && parent.webViewReady {
+                    AppLogger.auth.info("Supabase cookie removed, triggering logout")
                     parent.authManager.logout()
                 }
             }

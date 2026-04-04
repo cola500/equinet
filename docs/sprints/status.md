@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 sections:
   - Aktiv sprint
   - Sessioner
@@ -21,10 +21,10 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S13-1 Byt login till Supabase | fullstack | Dev | review_requested | feature/s13-1-supabase-login | 91b8e375 |
+| S13-1 Byt login till Supabase | fullstack | - | pending | - | - |
 | S13-2 Ta bort NextAuth + MobileToken | fullstack | - | pending | - | - |
 | S13-3 Ta bort passwordHash | fullstack | - | pending | - | - |
-| S13-4 iOS Supabase Swift SDK | fullstack | - | pending | - | - |
+| S13-4 iOS Supabase Swift SDK | fullstack | Dev | review_requested | feature/s13-4-ios-supabase-auth | 6097f3ca |
 | S13-5 Registrering via Supabase | fullstack | - | pending | - | - |
 
 **Sprint 12** (klar):
@@ -114,7 +114,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S13-1 Byt login till Supabase | feature/s13-1-supabase-login | 2026-04-03 |
+| Dev | Fullstack | S13-4 iOS Supabase Swift SDK | feature/s13-4-ios-supabase-auth | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

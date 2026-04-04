@@ -132,13 +132,50 @@ Supabase Swift SDK. Eliminerar dual auth-systemet.
 
 ---
 
+### S13-6: Visuell verifiering -- webb + iOS -- READY
+
+**Prioritet:** Högst (sist i sprinten, efter all kod)
+**Typ:** Verifiering
+**Beskrivning:** Fullständig visuell genomgång av hela appen -- webb och iOS.
+Säkerställ att auth-migreringen inte brutit något synligt.
+
+**Webb (Playwright MCP eller manuellt):**
+- [ ] Login med Supabase Auth fungerar
+- [ ] Dashboard laddar med data
+- [ ] Bokningar: lista, skapa, godkänn
+- [ ] Kunder: lista, detalj, bjud in
+- [ ] Tjänster: lista, skapa, redigera
+- [ ] Kalender: veckovy, bokningsblock
+- [ ] Profil: redigera, spara
+- [ ] Onboarding-checklista visas för ny leverantör
+- [ ] Demo-läge fungerar
+
+**iOS (mobile-mcp eller simulator):**
+- [ ] Login via Supabase Swift SDK
+- [ ] Dashboard med data
+- [ ] Navigation: alla tabs fungerar
+- [ ] WebView-sidor: autentiserade (cookies fungerar)
+- [ ] Annonsering, Insikter (native skärmar)
+- [ ] Logout + re-login
+
+**Acceptanskriterier:**
+- [ ] Alla checklistepunkter verifierade
+- [ ] Screenshots dokumenterade i done-fil
+- [ ] Inga synliga regressioner
+
+**Effort:** 1-2h
+**Stationsflöde:** Verify bara (ingen kod)
+
+---
+
 ## Prioritetsordning
 
-1. **S13-1** Login-byte (synlig ändring)
-2. **S13-4** iOS Swift SDK (kräver app-uppdatering)
+1. **S13-1** Login-byte (DONE)
+2. **S13-4** iOS Swift SDK (pågår)
 3. **S13-5** Registrering (ny user-flow)
 4. **S13-2** Ta bort NextAuth (cleanup)
 5. **S13-3** Ta bort passwordHash (schema)
+6. **S13-6** Visuell verifiering (SIST -- efter all kod)
 
 ---
 

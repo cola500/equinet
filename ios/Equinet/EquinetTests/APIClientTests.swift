@@ -4,6 +4,7 @@
 //
 //  Tests for APIClient using URLProtocol-based mocking.
 //  Verifies request flow, error mapping, and decoding.
+//  Uses testAccessToken override to avoid needing real Supabase session.
 //
 
 @testable import Equinet
@@ -49,14 +50,12 @@ final class APIClientTests: XCTestCase {
         config.protocolClasses = [MockURLProtocol.self]
         session = URLSession(configuration: config)
         sut = APIClient(session: session)
-
-        // Ensure a valid token exists for authenticated requests
-        KeychainHelper.saveMobileToken(jwt: "test-jwt-token", expiresAt: "2099-12-31T23:59:59.000Z")
+        sut.testAccessToken = "test-jwt-token"
     }
 
     override func tearDown() {
-        KeychainHelper.clearMobileToken()
         MockURLProtocol.mockHandler = nil
+        sut = nil
         super.tearDown()
     }
 
@@ -202,7 +201,7 @@ final class APIClientTests: XCTestCase {
     // MARK: - No Token
 
     func testNoTokenThrowsError() async {
-        KeychainHelper.clearMobileToken()
+        sut.testAccessToken = nil  // No Supabase session either
 
         do {
             _ = try await sut.fetchDashboard()

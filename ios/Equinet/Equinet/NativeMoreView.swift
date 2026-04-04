@@ -105,7 +105,7 @@ struct NativeMoreView: View {
                             profileViewModel.reset()
                             announcementsViewModel.reset()
                             insightsViewModel.reset()
-                            bridge.clearMobileToken()
+                            bridge.clearCachedData()
                             authManager.logout()
                         }
                         Button("Avbryt", role: .cancel) {}

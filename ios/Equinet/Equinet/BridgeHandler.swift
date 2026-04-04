@@ -12,6 +12,7 @@
 import Foundation
 import Observation
 import OSLog
+import Supabase
 import WebKit
 
 /// Protocol to abstract WKScriptMessage for testability.
@@ -36,9 +37,6 @@ enum BridgeMessageType: String {
     case speechRecognitionEnded = "speechRecognitionEnded"
     case speechRecognitionError = "speechRecognitionError"
     case speechAudioLevel = "speechAudioLevel"
-    case requestMobileToken = "requestMobileToken"
-    case mobileTokenReceived = "mobileTokenReceived"
-    case mobileTokenError = "mobileTokenError"
     case navigateToNativeCalendar = "navigateToNativeCalendar"
     case navigateToWebView = "navigateToWebView"
     case requestCalendarSync = "requestCalendarSync"
@@ -89,8 +87,6 @@ final class BridgeHandler {
             speechRecognizer.start()
         case BridgeMessageType.stopSpeechRecognition.rawValue:
             speechRecognizer.stop()
-        case BridgeMessageType.requestMobileToken.rawValue:
-            handleMobileTokenReceived(body["payload"] as? [String: Any])
         case BridgeMessageType.requestCalendarSync.rawValue:
             handleCalendarSyncRequest()
         case BridgeMessageType.userDidLogout.rawValue:
@@ -156,28 +152,6 @@ final class BridgeHandler {
         }
     }
 
-    // MARK: - Mobile Token
-
-    private func handleMobileTokenReceived(_ payload: [String: Any]?) {
-        guard let token = payload?["token"] as? String,
-              let expiresAt = payload?["expiresAt"] as? String else {
-            AppLogger.bridge.warning("Invalid mobile token payload")
-            sendToWeb(type: .mobileTokenError, payload: ["error": "Invalid payload"])
-            return
-        }
-
-        KeychainHelper.saveMobileToken(jwt: token, expiresAt: expiresAt)
-        AppLogger.bridge.info("Mobile token stored in Keychain")
-
-        // Confirm to web
-        sendToWeb(type: .mobileTokenReceived)
-
-        // Fetch widget data in background
-        Task {
-            await fetchAndStoreWidgetData()
-        }
-    }
-
     /// Fetch next booking from API and store in App Group for widget
     func fetchAndStoreWidgetData() async {
         do {
@@ -200,33 +174,28 @@ final class BridgeHandler {
         }
     }
 
-    /// Refresh token if nearing expiry and update widget data
+    /// Refresh Supabase session if needed and update widget data.
+    /// Supabase SDK auto-refreshes, but we call this to ensure widget data is up to date.
     func refreshTokenIfNeeded() async {
-        // Refresh if expiring within 7 days
-        guard KeychainHelper.tokenExpiresWithinDays(7),
-              KeychainHelper.loadMobileToken() != nil else {
-            return
-        }
+        guard SupabaseManager.client.auth.currentSession != nil else { return }
 
         do {
-            try await APIClient.shared.refreshToken()
-            AppLogger.bridge.info("Mobile token refreshed")
+            _ = try await SupabaseManager.client.auth.refreshSession()
+            AppLogger.bridge.info("Supabase session refreshed")
         } catch {
-            AppLogger.bridge.error("Token refresh failed: \(error.localizedDescription)")
+            AppLogger.bridge.error("Session refresh failed: \(error.localizedDescription)")
         }
 
         await fetchAndStoreWidgetData()
     }
 
-    /// Clear token, widget data, and calendar sync (called on logout)
-    func clearMobileToken() {
-        KeychainHelper.clearMobileToken()
-        KeychainHelper.clearSessionCookie()
+    /// Clear cached data and calendar sync (called on logout)
+    func clearCachedData() {
         SharedDataManager.clearWidgetData()
         SharedDataManager.clearCalendarCache()
         SharedDataManager.reloadWidgets()
         CalendarSyncManager.shared.removeAllSyncedEvents()
-        AppLogger.bridge.info("Cleared mobile token, session cookie, widget data, calendar cache, and calendar sync")
+        AppLogger.bridge.info("Cleared widget data, calendar cache, and calendar sync")
     }
 
     /// Handle logout message from web app

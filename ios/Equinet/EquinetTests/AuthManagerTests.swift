@@ -3,8 +3,8 @@
 //  EquinetTests
 //
 //  Tests for AuthManager state machine using a mock keychain.
-//  Note: Biometric tests are not possible in simulator without hardware,
-//  so we test the non-biometric paths.
+//  AuthManager now uses Supabase SDK for login/logout.
+//  These tests verify state transitions and keychain cleanup.
 //
 
 @testable import Equinet
@@ -37,63 +37,25 @@ final class AuthManagerTests: XCTestCase {
 
     // MARK: - checkExistingAuth
 
-    func testCheckExistingAuthWithoutToken_goesToLoggedOut() {
-        // No token in keychain
+    func testCheckExistingAuthWithoutSession_goesToLoggedOut() {
+        // No Supabase session (default in test env)
         authManager.checkExistingAuth()
         XCTAssertEqual(authManager.state, .loggedOut)
-    }
-
-    func testCheckExistingAuthWithTokenButNoSessionCookie_goesToLoggedOut() {
-        // Token exists but no session cookie
-        mockKeychain.save(key: KeychainHelper.mobileTokenKey, value: "some-jwt")
-        // No session cookie saved
-
-        authManager.checkExistingAuth()
-
-        // Without biometric hardware (simulator), goes to loggedOut since no session cookie
-        // The exact state depends on LAContext.canEvaluatePolicy which returns false in tests
-        // Either way without a session cookie value, should be loggedOut
-        XCTAssertEqual(authManager.state, .loggedOut)
-    }
-
-    func testCheckExistingAuthWithTokenAndSessionCookie_authenticatesOnSimulator() {
-        // Token + session cookie in keychain
-        mockKeychain.save(key: KeychainHelper.mobileTokenKey, value: "some-jwt")
-        mockKeychain.save(key: KeychainHelper.sessionCookieNameKey, value: "session-token")
-        mockKeychain.save(key: KeychainHelper.sessionCookieValueKey, value: "abc123")
-        mockKeychain.save(key: KeychainHelper.sessionCookieSecureKey, value: "false")
-
-        authManager.checkExistingAuth()
-
-        // On simulator (no biometric hardware), goes straight to authenticated
-        XCTAssertEqual(authManager.state, .authenticated)
-        XCTAssertEqual(authManager.sessionCookieName, "session-token")
-        XCTAssertEqual(authManager.sessionCookieValue, "abc123")
     }
 
     // MARK: - logout
 
-    func testLogoutClearsAllState() {
+    func testLogoutClearsKeychain() {
         // Set up some state
-        mockKeychain.save(key: KeychainHelper.mobileTokenKey, value: "jwt")
-        mockKeychain.save(key: KeychainHelper.tokenExpiresAtKey, value: "2026-06-01T00:00:00.000Z")
-        mockKeychain.save(key: KeychainHelper.sessionCookieNameKey, value: "name")
-        mockKeychain.save(key: KeychainHelper.sessionCookieValueKey, value: "value")
-        mockKeychain.save(key: KeychainHelper.sessionCookieSecureKey, value: "true")
+        mockKeychain.save(key: KeychainHelper.userTypeKey, value: "provider")
 
         authManager.logout()
 
-        // Verify keychain cleared
-        XCTAssertFalse(mockKeychain.has(key: KeychainHelper.mobileTokenKey))
-        XCTAssertFalse(mockKeychain.has(key: KeychainHelper.tokenExpiresAtKey))
-        XCTAssertFalse(mockKeychain.has(key: KeychainHelper.sessionCookieNameKey))
-        XCTAssertFalse(mockKeychain.has(key: KeychainHelper.sessionCookieValueKey))
-        XCTAssertFalse(mockKeychain.has(key: KeychainHelper.sessionCookieSecureKey))
+        // Verify userType cleared from keychain
+        XCTAssertFalse(mockKeychain.has(key: KeychainHelper.userTypeKey))
 
-        // Verify properties reset
-        XCTAssertNil(authManager.sessionCookieName)
-        XCTAssertNil(authManager.sessionCookieValue)
-        XCTAssertFalse(authManager.sessionCookieSecure)
+        // Verify state
+        XCTAssertNil(authManager.userType)
         XCTAssertEqual(authManager.state, .loggedOut)
     }
 
@@ -119,20 +81,8 @@ final class AuthManagerTests: XCTestCase {
     func testIsLoggingInStartsFalse() {
         XCTAssertFalse(authManager.isLoggingIn)
     }
-}
 
-// MARK: - AuthState Equatable conformance for testing
-
-extension AuthState: @retroactive Equatable {
-    public static func == (lhs: AuthState, rhs: AuthState) -> Bool {
-        switch (lhs, rhs) {
-        case (.checking, .checking),
-             (.loggedOut, .loggedOut),
-             (.biometricPrompt, .biometricPrompt),
-             (.authenticated, .authenticated):
-            return true
-        default:
-            return false
-        }
+    func testUserTypeStartsNil() {
+        XCTAssertNil(authManager.userType)
     }
 }
