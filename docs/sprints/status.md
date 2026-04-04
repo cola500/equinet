@@ -17,16 +17,23 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 14: RLS Live** (docs/sprints/sprint-14-draft.md)
+**Sprint 15: Cutover till produktion** (docs/sprints/sprint-15-draft.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S14-0 iOS-verifiering Supabase Auth | fullstack | Dev | done | main | 7eaeffb9 |
-| S14-1 RLS-policies | fullstack | Dev | done | feature/s14-1-rls-policies | 8f46415e |
-| S14-5 RLS-bevistest | fullstack | Dev | done | feature/s14-5-rls-proof-tests | dfa2c28c |
-| S14-2 Booking reads via Supabase | fullstack | Dev | done | feature/s14-2-booking-reads-supabase | 072ec279 |
-| S14-3 Fler reads (batch) | fullstack | Dev | done | feature/s14-3-supabase-reads-batch | f4a6f946 |
-| S14-4 Write-policies | fullstack | Dev | done | feature/s14-4-rls-write-policies | 09f28346 |
+| S15-0 Fixa E2E i CI | fullstack | Dev | in_progress | feature/s15-0-fix-e2e-ci | - |
+| S15-1 Hook + trigger + RLS på prod | fullstack | - | pending | - | - |
+| S15-2 Migrera prod-användare | fullstack | - | pending | - | - |
+| S15-3 Byt Vercel env | fullstack | - | pending | - | - |
+| S15-4 Smoke-test produktion | fullstack | - | pending | - | - |
+| S15-5 Penetrationstest | fullstack | - | pending | - | - |
+| S15-6 PoC = staging | fullstack | - | pending | - | - |
+
+**Sprint 14** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S14-0 -- S14-5 (6 stories) | fullstack | Dev | done |
 
 **Sprint 13** (klar):
 
@@ -121,7 +128,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S14-4 Write-policies | feature/s14-4-rls-write-policies | 2026-04-04 |
+| Dev | Fullstack | S15-0 Fixa E2E i CI | feature/s15-0-fix-e2e-ci | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
