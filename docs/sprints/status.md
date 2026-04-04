@@ -26,7 +26,7 @@ sections:
 | S14-5 RLS-bevistest | fullstack | Dev | done | feature/s14-5-rls-proof-tests | dfa2c28c |
 | S14-2 Booking reads via Supabase | fullstack | Dev | done | feature/s14-2-booking-reads-supabase | 072ec279 |
 | S14-3 Fler reads (batch) | fullstack | Dev | done | feature/s14-3-supabase-reads-batch | f4a6f946 |
-| S14-4 Write-policies | fullstack | Dev | in_progress | feature/s14-4-rls-write-policies | - |
+| S14-4 Write-policies | fullstack | Dev | done | feature/s14-4-rls-write-policies | 09f28346 |
 
 **Sprint 13** (klar):
 
