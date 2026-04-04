@@ -314,6 +314,12 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer (publik endpoint). AppCoordinator: `[String: Bool]` state + UserDefaults-cache (cachad vid start, fräscht i bakgrund). AuthenticatedView: trigger `.onAppear` + `.onChange(of: scenePhase)`. NativeMoreView: `visibleSections` compactMap-filtrering, tomma sektioner döljs. `handlePendingPath` söker ALLTID i `allMenuSections` (inte filtrerade).
 - **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/` i strängar. Använd `URL(string: path, relativeTo: baseURL)` för API-paths.
 
+- **RLS-bevistest mot Supabase**: `src/__tests__/rls/rls-proof.integration.test.ts` (24 tester). Seed med service_role, query med signInWithPassword-klienter. `verifyJwtClaims()` guard i beforeAll mot falska gröna. Deterministiska `b0`-prefix UUIDs, try/catch cleanup. Kräver `SUPABASE_SERVICE_ROLE_KEY` i `.env.local`.
+- **PostgREST select med relationer**: Forward: `Table!column(fields)`. Reverse: `Table(fields)` (auto-detect FK).
+- **`@updatedAt` har ingen DB-default**: Supabase-klient måste skicka `updatedAt` explicit vid INSERT/UPSERT. Gäller: User, Provider, Booking, Payment, Horse.
+- **RLS ENABLE saknas != policies saknas**: Policies kan existera utan att RLS är aktiverat. Verifiera `pg_tables.rowsecurity = true`.
+- **vi.mock Supabase-klient**: `vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: vi.fn() }))`. I test: `vi.mocked(createSupabaseServerClient).mockResolvedValue({ from: vi.fn().mockReturnValue({ select: ... }) } as never)`.
+
 **Vilken testplaybook?** Swift-fil -> iOS-testflöde. TypeScript/JS-fil -> Webb-testflöde.
 
 ### iOS-testflöde
