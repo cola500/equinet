@@ -26,7 +26,7 @@ sections:
 | S13-5 Registrering via Supabase | fullstack | Dev | done | main | 6e83f301 |
 | S13-2 Ta bort NextAuth + MobileToken | fullstack | Dev | done | main | dcfabc10 |
 | S13-3 Ta bort passwordHash | fullstack | Dev | done | main | 74bd9b8f |
-| S13-6 Visuell verifiering | fullstack | - | pending | - | - |
+| S13-6 Visuell verifiering | fullstack | Dev | done | feature/s13-6-visual-verification | - |
 
 **Sprint 12** (klar):
 
@@ -115,7 +115,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S13-3 Ta bort passwordHash | feature/s13-3-remove-password-hash | 2026-04-04 |
+| Dev | Fullstack | S13-6 Visuell verifiering | feature/s13-6-visual-verification | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
