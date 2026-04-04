@@ -6,12 +6,14 @@ status: active
 last_updated: 2026-04-04
 sections:
   - Bakgrund
+  - Review-findings och beslut
   - Approach
   - Filer som ändras
   - Filer som INTE ändras
   - Ghost user-hantering
   - Provider-registrering
   - Risker
+  - Pre-deployment gates
   - Testplan
 ---
 
@@ -31,128 +33,213 @@ Sprint 11 skapade en sync-trigger (`handle_new_user`) som automatiskt skapar
 **Mål:** Registrering sker via `supabase.auth.signUp()`. Supabase hanterar
 lösenord och email-verifiering. Sync-triggern skapar public.User.
 
+## Review-findings och beslut
+
+Self-review av tech-architect och security-reviewer (2026-04-04):
+
+### Blocker: userType i trigger (FIXAD)
+
+**Finding:** Triggern får ALDRIG läsa `userType` från `raw_user_meta_data`.
+Det är user-controlled -- en angripare kan sätta `userType: 'admin'` via
+direkt API-anrop. Sprint 11:s trigger hade explicit kommentar:
+"NEVER read from user-controlled metadata".
+
+**Beslut:** Triggern behålls hardkodad till `'customer'`. Provider-skapande
+sker via server-side API route `/api/auth/complete-registration` EFTER
+email-verifiering, med aktiv session. Se "Provider-registrering" nedan.
+
+### Major: Ghost user-kollision (HANTERAD)
+
+**Finding:** Om ghost user registrerar via signUp() skapas ny auth.users-rad
+med nytt UUID. Sync-triggern kör ON CONFLICT (id) DO NOTHING -- men ID:t
+matchar inte. Resultat: dubbla User-rader eller trigger-fail beroende på
+email unique constraint.
+
+**Beslut:** Registreringsformuläret gör server-side ghost-check FÖRE signUp().
+`POST /api/auth/check-email` returnerar `{ isGhost: true }` om email tillhör
+ghost user. Klienten faller tillbaka till befintlig `/api/auth/register`
+för ghost user upgrade. Ny användare -> signUp().
+
+### Major: Rate limiting (HANTERAD)
+
+**Finding:** IP-baserad rate limiting försvinner vid klient-side signUp().
+
+**Beslut:** Behåll server-side registration route som proxy: klient postar
+till `/api/auth/register` som har rate limiting, sanitering och Zod-validering,
+sedan anropar `supabase.auth.admin.createUser()` server-side.
+
+**Alternativ:** Gå via klient-side signUp() och lita på Supabase Auth Rate
+Limits. Enklare men degraderar säkerhetsnivån.
+
+**Slutligt beslut:** Server-side proxy. Behåller all befintlig säkerhet.
+
+### Major: Sanitering (HANTERAD med server-side proxy)
+
+**Finding:** Med klient-side signUp() sparas osanerade strängar i metadata.
+
+**Beslut:** Server-side proxy hanterar sanitering innan data skickas till
+Supabase. Befintlig sanitering behålls.
+
+### Major: Lösenordsstyrka (HANTERAD)
+
+**Finding:** Zod-validering (uppercase, lowercase, number, special char) är
+bara klient-side. Supabase minimum är 6 tecken.
+
+**Beslut:** Server-side proxy validerar med Zod FÖRE `admin.createUser()`.
+Dessutom: konfigurera "Strong" password strength i Supabase Dashboard.
+
 ## Approach
 
-### Fas 1: Byt klient-sidan (register page)
+### Ny approach: Server-side proxy (ej klient-side signUp)
 
-Byt `fetch("/api/auth/register")` till `supabase.auth.signUp()`:
+Baserat på review-findings väljer vi att behålla server-side registration
+med en viktig ändring: byt bcrypt+Prisma mot `supabase.auth.admin.createUser()`.
+
+**Flödet:**
+1. Klient -> `POST /api/auth/register` (befintlig route, uppdaterad)
+2. Route: rate limit -> sanitering -> Zod-validering -> ghost-check
+3. Om ghost user: befintlig upgrade-path (AuthService.upgradeGhostUser)
+4. Om ny user: `supabase.auth.admin.createUser()` med metadata
+5. Sync-trigger skapar public.User (hardkodad customer)
+6. Om userType='provider': `POST /api/auth/complete-registration` (ny route)
+7. Redirect till `/check-email`
+
+### Fas 1: Uppdatera register route
+
+Byt `AuthService.register()` mot Supabase admin API:
 
 ```typescript
-const supabase = createSupabaseBrowserClient()
-const { error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { firstName, lastName, phone, userType }
-  }
+// I route.ts -- efter rate limit, sanitering, Zod
+const supabase = createSupabaseAdminClient()
+const { data, error } = await supabase.auth.admin.createUser({
+  email: sanitizedEmail,
+  password: validatedData.password,
+  email_confirm: false, // Supabase skickar verifieringsmail
+  user_metadata: { firstName, lastName, phone }
 })
 ```
 
-- Behåll Zod-validering (klient-side) för lösenordsstyrka
-- Behåll PasswordStrengthIndicator
-- Behåll userType-väljare och provider-fält
-- Redirect till `/check-email` vid success
-- Hantera "User already registered" och "not confirmed" från Supabase
+Behåller: rate limiting, Zod .strict(), sanitering, ghost user upgrade.
+Tar bort: bcrypt, custom verifieringstokens, custom email-sending.
 
-### Fas 2: Utöka sync-trigger för provider
+### Fas 2: Ny route /api/auth/complete-registration
 
-Nuvarande trigger sätter alltid `userType: 'customer'`. Behöver läsa
-`raw_user_meta_data->>'userType'` och skapa Provider-profil om 'provider'.
+Skapar Provider + Stable för provider-registrering:
 
-Uppdatera `handle_new_user()`:
-- Läs userType från metadata (default 'customer' om saknas)
-- Om 'provider': skapa även Provider + Stable med businessName från metadata
-- Phone från metadata
+```typescript
+// POST /api/auth/complete-registration
+// Kräver: aktiv Supabase-session (email verifierad)
+// Body: { businessName, description, city }
+```
 
-### Fas 3: Uppdatera API route (behåll som fallback)
+Anropas från register-sidan EFTER signUp (som en andra stegs-submit),
+eller från en onboarding-sida efter email-verifiering.
 
-`/api/auth/register` behålls tills vidare men refaktoreras:
-- Tar emot samma data
-- Anropar `supabase.auth.admin.createUser()` server-side istället för bcrypt
-- Behåller rate limiting och sanitering
-- Används av: ghost user upgrade, accept-invite
+**Enklare alternativ:** Låt befintlig route hantera provider-skapande
+direkt (som den gör idag via AuthService), eftersom bcrypt-bytet inte
+påverkar Provider/Stable-skapandet. AuthService.register() skapar redan
+Provider via repo.createProvider(). Vi behöver bara byta password-hashning
+mot Supabase admin.createUser().
 
-Alternativt: ta bort routen helt och låt allt gå via klient-side signUp.
-**Beslut:** Behåll routen för ghost user upgrade. Ny registrering går via klient.
+**Slutligt beslut:** Enklare alternativet. Behåll AuthService.register()
+men byt ut steg 2 (hash password) och steg 3 (create user) mot Supabase
+admin.createUser(). Steg 4 (create provider) och steg 5-6 (verification
+token + email) tas bort (Supabase hanterar det).
+
+### Fas 3: Uppdatera register page
+
+Minimal ändring av UI:
+- Ta bort ErrorState retry-logik (route hanterar allt)
+- Hantera "User already registered" som success (redirect check-email)
 
 ## Filer som ändras
 
 | Fil | Ändring |
 |-----|---------|
-| `src/app/(auth)/register/page.tsx` | Byt till supabase.auth.signUp() |
-| `prisma/migrations/<ts>_extend_sync_trigger/migration.sql` | Provider-skapande + phone + userType |
-| `src/app/(auth)/check-email/page.tsx` | Ev. uppdatera text (Supabase skickar email) |
-| `src/app/api/auth/register/route.ts` | Behåll för ghost user, markera som legacy |
+| `src/domain/auth/AuthService.ts` | register() byter bcrypt mot supabase admin.createUser() |
+| `src/app/api/auth/register/route.ts` | Minimal: AuthService gör jobbet |
+| `src/app/(auth)/register/page.tsx` | Hantera "already registered" |
+| `src/app/(auth)/check-email/page.tsx` | Uppdatera text (Supabase skickar email) |
+| `src/domain/auth/AuthService.test.ts` | Uppdatera tester |
 | `src/app/api/auth/register/route.test.ts` | Uppdatera tester |
 | `src/app/api/auth/register/route.integration.test.ts` | Uppdatera tester |
+| `src/lib/supabase/admin.ts` | Ny: createSupabaseAdminClient() |
 
 ## Filer som INTE ändras
 
-- `src/domain/auth/AuthService.ts` -- behålls för ghost user upgrade och accept-invite
-- `src/lib/validations/auth.ts` -- Zod-schema behålls (klient-validering)
+- `prisma/migrations/` -- sync-trigger behålls som den är (hardkodad customer)
+- `src/lib/validations/auth.ts` -- Zod-schema behålls
 - `src/lib/supabase/browser.ts` -- redan korrekt
-- `src/app/(auth)/supabase-login/` -- tas bort i S13-2 (inte vår scope)
 - `middleware.ts` -- ingen ändring
+- `src/infrastructure/persistence/auth/` -- repository behålls
 
 ## Ghost user-hantering
 
-Ghost users (`isManualCustomer: true`) har redan en User-rad i Prisma.
-Supabase signUp skapar ny rad i `auth.users`, sync-triggern kör
-`ON CONFLICT (id) DO NOTHING` -- men ID:t matchar inte (UUID vs befintligt).
+Ghost users (`isManualCustomer: true`) har redan en User-rad i Prisma men
+INTE i `auth.users`. AuthService.register() kollar `findUserByEmail()` och
+kör `upgradeGhostUser()` om match.
 
-**Lösning:** Behåll `/api/auth/register` för ghost user upgrade-flödet.
-Klient-sidan kollar först om email tillhör ghost user via servern,
-och faller tillbaka till custom register-routen om så.
+**Med Supabase:** Ghost user upgrade fortsätter att använda bcrypt-path
+(befintlig AuthService.upgradeGhostUser). Vi byter INTE till Supabase
+admin.createUser() för ghost users -- de har redan en public.User-rad
+och sync-triggern skulle krocka.
 
-Enklare alternativ: låt Supabase signUp skapa ny auth.user,
-sync-triggern matchar på email istället för id (ON CONFLICT (email)).
-**Risk:** Dubbla User-rader. Avvakta -- ghost user upgrade är edge case.
+Flöde vid ghost user:
+1. Route kollar email -> hittar ghost user
+2. AuthService.upgradeGhostUser() hashar password med bcrypt, uppdaterar User
+3. Skickar verifieringsmail via Resend (befintlig)
+4. Ghost user loggar in via befintlig login (som redan stödjer Supabase)
 
-**Beslut:** Fas 1 hanterar bara nya användare. Ghost user upgrade
-behålls via befintlig route tills S13-2 (cleanup).
+**Framtida:** I S13-2 (cleanup) migrerar vi ghost users till auth.users.
 
 ## Provider-registrering
 
-Sync-triggern behöver utökas:
+Sker i AuthService.register() steg 4 (befintlig), EFTER att Supabase-user
+skapats. Ingen trigger-ändring behövs.
 
-```sql
--- Läs userType (default 'customer')
-v_user_type := COALESCE(NEW.raw_user_meta_data->>'userType', 'customer');
-
--- Skapa User med rätt userType
-INSERT INTO public."User" (..., "userType") VALUES (..., v_user_type);
-
--- Om provider: skapa Provider + Stable
-IF v_user_type = 'provider' THEN
-  INSERT INTO public."Provider" (id, "userId", "businessName", ...)
-  VALUES (gen_random_uuid(), NEW.id, COALESCE(NEW.raw_user_meta_data->>'businessName', ''), ...);
-END IF;
+```
+1. admin.createUser() -> auth.users rad skapas
+2. sync-trigger -> public.User rad skapas (userType='customer')
+3. AuthService: repo.createProvider() -> Provider + Stable skapas
+4. AuthService: repo.updateUserType(userId, 'provider')
 ```
 
-**Säkerhetsnotering:** userType från metadata är user-controlled. Men detta är
-registrering -- användaren VÄLJER sin roll. Inte samma risk som att eskalera
-en befintlig user. Sprint 11:s trigger hardkodade 'customer' som försiktighetsåtgärd
-men det var för migrerade användare, inte nya signups.
+Steg 3-4 körs server-side med rate limiting och validering.
+Trigger behålls konservativ (alltid 'customer').
 
 ## Risker
 
 | Risk | Mitigation |
 |------|-----------|
-| Supabase email-templates inte på svenska | Konfigurera i Supabase Dashboard FÖRE merge |
-| Ghost user upgrade bryts | Behåll befintlig route för ghost users |
-| Provider-skapande i trigger kan faila | Wrappa i BEGIN/EXCEPTION |
-| Dubbla lösenordskrav (Supabase + Zod) | Behåll Zod klient-side, Supabase server-side |
-| Email-verifiering via Supabase vs custom | Check-email-sidan funkar oavsett |
+| Supabase email-templates inte på svenska | Pre-deployment gate: konfigurera FÖRE deploy |
+| Ghost user upgrade krockar med sync-trigger | Ghost users använder befintlig bcrypt-path |
+| Supabase admin API kräver service_role key | Redan konfigurerad som SUPABASE_SERVICE_ROLE_KEY |
+| Race condition: trigger skapar User innan Provider-steg | Trigger kör synkront vid INSERT, Provider-skapande sker efter |
+| userType uppdateras efter trigger | UPDATE sätter 'provider' efter INSERT satte 'customer' |
+
+## Pre-deployment gates
+
+- [ ] Supabase Auth Rate Limits konfigurerade (Auth > Rate Limits i dashboard)
+- [ ] "Strong" password strength aktiverat i Supabase Auth Settings
+- [ ] "Prevent email enumeration" aktiverat (ON by default)
+- [ ] Email templates på svenska konfigurerade
+- [ ] SUPABASE_SERVICE_ROLE_KEY konfigurerad i Vercel env
 
 ## Testplan
 
 ### Unit-tester (nya/uppdaterade)
-- Register page: mock supabase.auth.signUp(), testa success/error/not-confirmed
-- Register route: behåll befintliga tester (ghost user path)
+- AuthService.register(): mock supabase admin.createUser(), testa success/error
+- AuthService.register(): ghost user path (bcrypt, oförändrad)
+- Register route: rate limiting, Zod-validering, sanitering (behålls)
+- Register route: "already registered" -> generiskt svar (behålls)
+
+### Integrationstester
+- Register route: full flow med mock Supabase admin client
+- Provider-registrering: User skapas + Provider skapas + userType uppdateras
 
 ### Manuell verifiering
-- Registrera ny customer via Supabase signUp
-- Registrera ny provider -- Provider+Stable skapas via trigger
-- Verifiera att check-email visas
-- Verifiera att email-verifieringslänk fungerar
-- Verifiera att ghost user upgrade fortfarande fungerar via legacy route
+- Registrera ny customer -> check-email visas
+- Registrera ny provider -> Provider+Stable skapas
+- Ghost user registrerar -> bcrypt upgrade path
+- Email-verifiering via Supabase fungerar
+- Supabase Dashboard: ny user synlig i auth.users
