@@ -149,6 +149,17 @@ sections:
 
 **Bakgrund:** `playwright.config.ts` hardkodade `DATABASE_URL=equinet` som overskrev CI:s `equinet_test`. Lagt till `if (!process.env.CI)` guard. Senast grona CI: `7a1388ac`. Brot i `c977d2b8` (Stripe E2E cleanup).
 
+## Backlogg (fran pentest S15-5)
+
+| Item | Allvarlighet | Beskrivning |
+|------|-------------|-------------|
+| Ta bort NextAuth `/api/auth/[...nextauth]` | HIGH | Endpoint kvar trots Supabase Auth-migrering. Oklart om rate limiting appliceras. |
+| Auth pa `/api/geocode` | HIGH | Oppen proxy mot extern geocoding-API. Lagg till getAuthUser() eller rate limiting. |
+| Granska user_metadata-anvandning | HIGH | Verifiera att ingen kod laser rolldata fran user_metadata (skrivbar av anvandare). |
+| robots.txt + sitemap.xml | LOW | ZAP varnar om 404. |
+| Cross-Origin-Embedder-Policy header | LOW | Lagg till via vercel.json headers. |
+| Zod .strict() pa mobile-token | LOW | Saknas pa request body. |
+
 ## Blockerare
 
 | Blocker | Paverkar | Agare | Status |
