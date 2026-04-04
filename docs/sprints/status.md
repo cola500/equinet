@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S14-0 iOS-verifiering Supabase Auth | fullstack | Dev | done | main | 7eaeffb9 |
 | S14-1 RLS-policies | fullstack | Dev | done | feature/s14-1-rls-policies | 8f46415e |
-| S14-5 RLS-bevistest | fullstack | - | pending | - | - |
+| S14-5 RLS-bevistest | fullstack | Dev | done | feature/s14-5-rls-proof-tests | dfa2c28c |
 | S14-2 Booking reads via Supabase | fullstack | - | pending | - | - |
 | S14-3 Fler reads (batch) | fullstack | - | pending | - | - |
 
@@ -120,7 +120,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S14-1 RLS-policies (done) | feature/s14-1-rls-policies | 2026-04-04 |
+| Dev | Fullstack | S14-5 RLS-bevistest | feature/s14-5-rls-proof-tests | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
