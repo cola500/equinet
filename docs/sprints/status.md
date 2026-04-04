@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S15-0 Fixa E2E i CI | fullstack | Dev | done | feature/s15-0-fix-e2e-ci | 6fa431a0 |
 | S15-1 Hook + trigger + RLS på prod | fullstack | Dev | done | feature/s15-1-prod-hook-rls | f98cce1a |
-| S15-2 Migrera prod-användare | fullstack | - | pending | - | - |
+| S15-2 Migrera prod-användare | fullstack | Dev | done | feature/s15-2-migrate-prod-users | 874c62d7 |
 | S15-3 Byt Vercel env | fullstack | - | pending | - | - |
 | S15-4 Smoke-test produktion | fullstack | - | pending | - | - |
 | S15-5 Penetrationstest | fullstack | - | pending | - | - |
@@ -128,7 +128,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S15-0 Fixa E2E i CI | feature/s15-0-fix-e2e-ci | 2026-04-04 |
+| Dev | Fullstack | S15-2 Migrera prod-användare | feature/s15-2-migrate-prod-users | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
