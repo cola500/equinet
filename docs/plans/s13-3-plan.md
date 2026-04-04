@@ -17,81 +17,110 @@ sections:
 ## Bakgrund
 
 Supabase Auth hanterar alla losenord i `auth.users` sedan sprint 13.
-`passwordHash`-kolumnen i `public.User` ar oredan overfloding -- nya
+`passwordHash`-kolumnen i `public.User` ar redan overfloding -- nya
 anvandare far `''` via sync-triggern. Kolumnen maste bort for att:
 
 - Eliminera PII-risk (bcrypt-hashar ar persondata)
 - Forenkla kodbasen (ta bort bcrypt-beroende)
 - Tvinga att alla losenordsoperationer gar genom Supabase
 
+**AKTIV PRODUKTIONSBUG:** `AccountDeletionService` jamfor password mot
+`user.passwordHash` som ar `''` for Supabase-anvandare. bcrypt.compare
+returnerar alltid false -> kontoborttagning blockerad. Fixas i fas 3.
+
 ## Scope
 
 **I scope:**
-1. Prisma-migration: DROP COLUMN passwordHash
-2. Uppdatera sync-trigger (ta bort passwordHash fran INSERT)
-3. Migrera losenordsoperationer till Supabase Auth admin API
-4. Ta bort bcrypt-beroende
-5. Uppdatera alla tester, seeds, E2E
+1. Migrera alla losenordsoperationer till Supabase Auth admin API
+2. Ta bort alla passwordHash-referenser i kod
+3. Prisma-migration: DROP COLUMN passwordHash (SIST)
+4. Uppdatera sync-trigger
+5. Ta bort bcrypt-beroende
+6. Uppdatera alla tester, seeds, E2E
 
 **Utanfor scope:**
 - Ta bort legacy auth routes helt (reset-password, verify-email etc.) -- separat story
 - RLS-andringar
 
+## Fasordning (ANDRAD efter tech-architect review)
+
+Schema-migrationen (DROP COLUMN) kors SIST -- annars bryts produktion
+om kod fortfarande refererar kolumnen. Ordning:
+
+```
+Fas 1: Repositories + typer (ta bort passwordHash fran interfaces)
+Fas 2: Domain services (migrera till Supabase admin API)
+Fas 3: Routes + utilities (accept-invite, ghost-user)
+Fas 4: Seeds + E2E (ta bort bcrypt-anvandning)
+Fas 5: Tester (uppdatera alla testfiler)
+Fas 6: Schema-migration (DROP COLUMN -- saker nu nar ingen kod anvander den)
+Fas 7: Cleanup (ta bort bcrypt, uppdatera docs)
+```
+
 ## Faser
 
-### Fas 1: Schema-migration
-
-**Filer:**
-- `prisma/schema.prisma` -- ta bort `passwordHash String`
-- Ny migration: `ALTER TABLE "User" DROP COLUMN "passwordHash"`
-- Uppdatera sync-trigger: ta bort `"passwordHash"` fran INSERT
-
-**Approach:** En migration med bade DROP COLUMN och uppdaterad trigger.
-
-### Fas 2: Repositories och typer
+### Fas 1: Repositories och typer
 
 **Filer att andra:**
 - `src/types/index.ts` -- ta bort passwordHash fran User interface
-- `src/infrastructure/persistence/auth/IAuthRepository.ts` -- ta bort passwordHash fran typer och metod-signaturer
-- `src/infrastructure/persistence/auth/PrismaAuthRepository.ts` -- ta bort passwordHash fran select/create
-- `src/infrastructure/persistence/auth/MockAuthRepository.ts` -- ta bort passwordHash fran mock-data
-- `src/infrastructure/persistence/invite/IInviteRepository.ts` -- uppdatera acceptInvite-signatur
-- `src/infrastructure/persistence/invite/PrismaInviteRepository.ts` -- ta bort passwordHash
-- `src/infrastructure/persistence/invite/MockInviteRepository.ts` -- ta bort passwordHash
+- `src/infrastructure/persistence/auth/IAuthRepository.ts`:
+  - Ta bort `AuthUserWithCredentials` typ (dead, login via Supabase)
+  - Ta bort `passwordHash` fran `CreateUserData`
+  - Ta bort `passwordHash` fran `UpgradeGhostUserData`
+  - Ta bort `findUserWithCredentials()` metod
+  - Byt `resetPassword(userId, tokenId, passwordHash)` -> `markResetTokenUsed(tokenId)`
+- `src/infrastructure/persistence/auth/PrismaAuthRepository.ts`:
+  - Ta bort `credentialsSelect`, `findUserWithCredentials()`
+  - Ta bort passwordHash fran `createUser()`, `upgradeGhostUser()`
+  - Byt `resetPassword()` -> `markResetTokenUsed()`
+- `src/infrastructure/persistence/auth/MockAuthRepository.ts`:
+  - Ta bort `passwordHash` fran `StoredUser`
+  - Ta bort `findUserWithCredentials()`
+  - Uppdatera alla metoder
+- `src/infrastructure/persistence/invite/IInviteRepository.ts`:
+  - Byt `acceptInvite(tokenId, userId, passwordHash)` -> `acceptInvite(tokenId, userId)`
+- `src/infrastructure/persistence/invite/PrismaInviteRepository.ts`:
+  - Ta bort passwordHash fran `acceptInvite()`
+- `src/infrastructure/persistence/invite/MockInviteRepository.ts`:
+  - Ta bort passwordHash fran `StoredUser` och `acceptInvite()`
 
-**Nyckelbeslut:**
-- `findUserWithCredentials()` -- ta bort helt (dead code, login gar genom Supabase)
-- `resetPassword()` -- byt till Supabase admin `updateUser()`
-- `upgradeGhostUser()` -- ta bort passwordHash-param
-- `createUser()` -- ta bort passwordHash-param
-
-### Fas 3: Domain services
+### Fas 2: Domain services
 
 **AuthService (`src/domain/auth/AuthService.ts`):**
-- Ta bort `hashPassword`/`comparePassword` deps
-- Ta bort `verifyCredentials()` (dead code sedan S13-1)
-- `registerLegacy()` -- skapa User utan passwordHash
-- `upgradeGhostUser()` -- skapa Supabase auth user via admin API istallet for att satta passwordHash
-- `resetPassword()` -- anvand Supabase admin `updateUser()` for att uppdatera losenord
 - Ta bort `import bcrypt`
+- Ta bort `hashPassword`/`comparePassword` deps fran interface + constructor
+- Ta bort `verifyCredentials()` helt (dead code sedan S13-1)
+- `registerLegacy()` -- ta bort helt. Alla registreringar gar genom
+  `registerViaSupabase()`. Om `supabaseAdmin` saknas -> returnera
+  REGISTRATION_FAILED. Inga fallbacks -- Supabase ar enda auth-kallan.
+- `upgradeGhostUser()` -- ta bort passwordHash. Skapa Supabase auth user
+  via `supabaseAdmin.createUser()` for ghost-usern. Repo-anropet uppdaterar
+  bara profilfalt (firstName, lastName, etc.).
+- `resetPassword()` -- anvand `supabaseAdmin.updateUser()` for losenord,
+  sedan `repo.markResetTokenUsed()` for token-markering.
+- Uppdatera `createAuthService()` factory: ta bort bcrypt-deps.
 
 **AccountDeletionService (`src/domain/account/AccountDeletionService.ts`):**
-- Byt losenordsverifiering fran bcrypt.compare till Supabase `signInWithPassword()`
-- Ta bort `comparePassword` dep och `passwordHash` fran `UserForDeletion`
+- Byt `comparePassword` dep -> `verifyPassword` som anropar
+  Supabase `signInWithPassword()` (verifierar mot auth.users)
+- Ta bort `passwordHash` fran `UserForDeletion`
 - Ta bort `import bcrypt`
+- FIXAR AKTIV BUG: kontoradering fungerar nu for Supabase-anvandare
 
-### Fas 4: Routes och utilities
+### Fas 3: Routes och utilities
 
 **accept-invite (`src/app/api/auth/accept-invite/route.ts`):**
-- Skapa Supabase Auth user for ghost-user istallet for att satta passwordHash
-- Anvand `supabase.auth.admin.createUser()` eller `updateUser()`
 - Ta bort `import bcrypt`
+- Istallet for `bcrypt.hash()` + `prisma.user.update({passwordHash})`:
+  Anvand `supabase.auth.admin.updateUserById(userId, { password })` for
+  att satta losenord i Supabase Auth, sedan uppdatera User-raden
+  (isManualCustomer=false, emailVerified=true) utan passwordHash.
 
 **ghost-user (`src/lib/ghost-user.ts`):**
-- Ta bort bcrypt-import och passwordHash-sattning
-- Ghost users har inget losenord (de kan inte logga in)
+- Ta bort `bcrypt`-import och `passwordHash`-sattning
+- Ghost users skapas utan losenord (Prisma-kolumnen finns inte langre)
 
-### Fas 5: Seeds och E2E
+### Fas 4: Seeds och E2E
 
 **Seeds:**
 - `prisma/seed.ts` -- ta bort passwordHash och bcrypt
@@ -103,12 +132,12 @@ anvandare far `''` via sync-triggern. Kolumnen maste bort for att:
 - `e2e/admin.spec.ts` -- ta bort passwordHash-anvandning
 - `e2e/customer-invite.spec.ts` -- ta bort passwordHash
 
-**Scripts (lagre prioritet, kan tas bort):**
+**Scripts (lagre prioritet):**
 - `scripts/migrate-users-to-supabase-auth.ts` -- arkivera (engangsjobb, klart)
 - `scripts/verify-password-hash.ts` -- ta bort
 - `scripts/rls-spike/test-rls.ts` -- uppdatera
 
-### Fas 6: Tester
+### Fas 5: Tester
 
 Uppdatera alla testfiler som refererar passwordHash:
 - `src/domain/auth/AuthService.test.ts`
@@ -125,10 +154,20 @@ Uppdatera alla testfiler som refererar passwordHash:
 - `src/app/api/provider/customers/route.test.ts`
 - `src/app/api/export/my-data/route.test.ts`
 
+### Fas 6: Schema-migration (SIST)
+
+**Filer:**
+- `prisma/schema.prisma` -- ta bort `passwordHash String`
+- Ny migration: `ALTER TABLE "User" DROP COLUMN "passwordHash"`
+- Uppdatera sync-trigger: ta bort `"passwordHash"` fran INSERT
+
+**Approach:** En migration med bade DROP COLUMN och uppdaterad trigger.
+Kors EFTER all kod ar uppdaterad sa att ingen refererar kolumnen.
+
 ### Fas 7: Cleanup
 
 - Ta bort `bcrypt` och `@types/bcrypt` fran package.json
-- Uppdatera docs/rules-referenser till passwordHash (kommentarer, inte kodandringar)
+- Uppdatera docs/rules-referenser till passwordHash
 - Uppdatera `.claude/rules/api-routes.md`, `testing.md`, `code-review-checklist.md`
 
 ## Risker
@@ -141,10 +180,10 @@ Uppdatera alla testfiler som refererar passwordHash:
 | resetPassword bryter | Migrera till Supabase admin updateUser |
 | Ghost user upgrade bryter | Migrera till Supabase admin createUser |
 | Account deletion password-check | Migrera till Supabase signInWithPassword |
+| registerLegacy-fallback saknas | Supabase ar enda auth-kallan, ingen fallback |
 
 ## Filer (sammanfattning)
 
-**Ta bort column:** prisma/schema.prisma + ny migration
 **Repositories (4):** IAuthRepository, PrismaAuthRepository, MockAuthRepository + invite repos
 **Services (2):** AuthService, AccountDeletionService
 **Routes (1):** accept-invite
@@ -152,7 +191,8 @@ Uppdatera alla testfiler som refererar passwordHash:
 **Types (1):** src/types/index.ts
 **Seeds (3):** seed.ts, seed-demo.ts, seed-test-users.ts
 **E2E (3):** seed-e2e.setup.ts, admin.spec.ts, customer-invite.spec.ts
-**Tester (13+):** Se fas 6
+**Tester (13+):** Se fas 5
 **Scripts (3):** migrate-users, verify-password-hash, rls-spike
+**Schema:** prisma/schema.prisma + ny migration (FAS 6, sist)
 **Docs (3):** api-routes.md, testing.md, code-review-checklist.md
 **Package (1):** ta bort bcrypt
