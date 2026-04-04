@@ -1,7 +1,7 @@
 /**
  * GET /api/native/reviews - Review list for native iOS app
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Returns paginated reviews for the provider with average rating.
  */
 import { NextRequest, NextResponse } from "next/server"

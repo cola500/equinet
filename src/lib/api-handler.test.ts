@@ -170,7 +170,7 @@ describe("withApiHandler", () => {
     expect(data.error).toBe("Leverantörsprofil saknas")
   })
 
-  it("should authenticate via any auth method (Bearer, NextAuth, Supabase)", async () => {
+  it("should authenticate via any auth method (Bearer, Supabase)", async () => {
     mockGetAuthUser.mockResolvedValue({
       ...providerAuthUser,
       authMethod: "supabase",

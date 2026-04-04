@@ -2,7 +2,7 @@
  * GET /api/native/provider/profile - Fetch provider profile for native iOS app
  * PUT /api/native/provider/profile - Update provider profile (provider + user fields)
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase)
+ * Auth: Bearer > Supabase
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"

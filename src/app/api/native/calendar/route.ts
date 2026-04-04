@@ -1,7 +1,7 @@
 /**
  * GET /api/native/calendar - Calendar data for native iOS app
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Returns bookings + availability + exceptions for a date range.
  */
 import { NextRequest, NextResponse } from "next/server"

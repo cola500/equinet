@@ -2,7 +2,7 @@
  * PUT /api/native/customers/[customerId] - Update customer
  * DELETE /api/native/customers/[customerId] - Remove manually added customer
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"

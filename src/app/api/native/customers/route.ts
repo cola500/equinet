@@ -2,7 +2,7 @@
  * GET /api/native/customers - Customer list for native iOS app
  * POST /api/native/customers - Add customer manually
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"

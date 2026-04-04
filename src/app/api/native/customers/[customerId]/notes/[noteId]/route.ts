@@ -2,7 +2,7 @@
  * PUT /api/native/customers/[customerId]/notes/[noteId] - Update note
  * DELETE /api/native/customers/[customerId]/notes/[noteId] - Delete note
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"

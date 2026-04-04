@@ -2,7 +2,7 @@
  * PUT /api/native/services/[id] - Update service
  * DELETE /api/native/services/[id] - Delete service
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * IDOR protection via repository's atomic WHERE (id + providerId).
  */
 import { NextRequest, NextResponse } from "next/server"

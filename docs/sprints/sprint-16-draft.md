@@ -29,7 +29,7 @@ och inget sätt för nya leverantörer att registrera sig.
 
 ## Stories
 
-### S16-1: Ta bort NextAuth-rester -- READY
+### S16-1: Ta bort NextAuth-rester -- READY -- PARALLELL A
 
 **Prioritet:** Hög
 **Typ:** Cleanup
@@ -49,7 +49,7 @@ auth()-anrop). Pentest flaggade kvarvarande NextAuth-endpoint. Rensa allt.
 
 ---
 
-### S16-2: Seed-scripts för Supabase Auth -- READY
+### S16-2: Seed-scripts för Supabase Auth -- READY -- PARALLELL A
 
 **Prioritet:** Hög
 **Typ:** DX (Developer Experience)
@@ -68,7 +68,7 @@ inte `auth.users`. Nya utvecklare måste köra migrationsscriptet manuellt.
 
 ---
 
-### S16-3: Onboarding-flöde för leverantör #2 -- READY
+### S16-3: Onboarding-flöde för leverantör #2 -- READY -- SEKVENTIELL (efter S16-1)
 
 **Prioritet:** Högst
 **Typ:** Feature
@@ -88,7 +88,7 @@ dåligt felmeddelande, tomma tillstånd). Checklista och tomma tillstånd fixade
 
 ---
 
-### S16-4: Admin-härdning -- MFA + audit log -- READY
+### S16-4: Admin-härdning -- MFA + audit log -- READY -- PARALLELL B (efter S16-1)
 
 **Prioritet:** Hög
 **Typ:** Säkerhet
@@ -107,12 +107,45 @@ behöver admin-rollen stärkas. Supabase stödjer MFA (TOTP) redan.
 
 ---
 
-## Prioritetsordning
+### S16-5: Spike -- Vercel + Supabase Free Tier gapanalys -- READY -- PARALLELL A
 
-1. **S16-1** Cleanup (tar bort teknisk skuld)
-2. **S16-2** Seed-scripts (förbättrar DX)
-3. **S16-3** Onboarding (förbereder för leverantör #2)
-4. **S16-4** Admin-härdning (säkerhet inför skalning)
+**Prioritet:** Medel
+**Typ:** Research / Spike
+**Beskrivning:** Vi kör Vercel Hobby + Supabase Free men använder troligen bara
+en bråkdel av vad som ingår. Inventera allt tillgängligt, jämför med vad vi
+använder, identifiera gratis kapabiliteter som ger värde.
+
+**Uppgifter:**
+1. Inventera Vercel Hobby-tier: vad ingår? (Analytics, Speed Insights, Cron Jobs,
+   Edge Config, KV, Blob, Postgres, Web Application Firewall, etc.)
+2. Inventera Supabase Free-tier: vad ingår? (Auth, Realtime, Storage, Edge Functions,
+   Cron/pg_cron, Vault, LogDrain, branching, etc.)
+3. Mappa mot vad vi faktiskt använder idag
+4. Identifiera top 5 "gratis men oanvänt" som ger mest värde
+5. Dokumentera i `docs/research/free-tier-gap-analysis.md`
+
+**Effort:** 0.5 dag (research, ingen implementation)
+**Output:** Gap-dokument med rekommendationer, redo att bli stories i sprint 17+
+
+---
+
+## Exekveringsplan
+
+```
+Fas 1 (parallellt):   S16-1 (cleanup)  |  S16-2 (seed)  |  S16-5 (spike)
+                       worktree A       |  worktree B    |  research (ingen kod)
+                             \              /                   |
+Fas 2 (merga):         merga A, sedan B till main          spike klar
+                             |
+Fas 3 (parallellt):   S16-3 (onboarding) | S16-4 (admin-härdning)
+                       worktree A         | worktree B
+                             \               /
+Fas 4:                 merga, sprint-avslut (E2E + docs + retro)
+```
+
+**Fas 1:** S16-1, S16-2 och S16-5 rör helt olika saker. S16-5 är ren research utan kodändringar.
+**Fas 3:** S16-3 och S16-4 kan köras parallellt efter att auth-cleanup (S16-1) är mergad.
+S16-3 rör registrering/onboarding-UI, S16-4 rör admin-modell + MFA. Ingen överlapp.
 
 ---
 

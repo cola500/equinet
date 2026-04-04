@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useAuth } from './useAuth'
 
-// Mock our SessionProvider's useSession (not next-auth)
+// Mock our SessionProvider's useSession
 const mockUseSession = vi.fn()
 vi.mock('@/components/providers/SessionProvider', () => ({
   useSession: () => mockUseSession(),

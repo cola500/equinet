@@ -1,7 +1,7 @@
 /**
  * GET /api/native/dashboard - Dashboard data for native iOS app
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Returns KPI stats, today's bookings, onboarding status, and priority action.
  */
 import { NextRequest, NextResponse } from "next/server"

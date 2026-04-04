@@ -2,7 +2,7 @@
  * auth-dual helper tests
  *
  * Tests the getAuthUser() function which resolves auth from Supabase Auth.
- * Previously supported Bearer (mobile token) and NextAuth -- now Supabase only.
+ * Supports Bearer (mobile token) and Supabase Auth.
  *
  * @vitest-environment node
  */

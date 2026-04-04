@@ -16,7 +16,7 @@ interface NativeDueForServiceItem extends DueForServiceResult {
 
 export async function GET(request: NextRequest) {
   try {
-    // 1. Auth (Dual-auth: Bearer > NextAuth > Supabase)
+    // 1. Auth (Bearer > Supabase)
     const authUser = await getAuthUser(request)
     if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })

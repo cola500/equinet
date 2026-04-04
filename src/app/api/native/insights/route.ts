@@ -1,7 +1,7 @@
 /**
  * GET /api/native/insights - Business insights for native iOS
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase)
+ * Auth: Bearer > Supabase
  * Feature flag: business_insights (server-side gate, defense in depth)
  */
 import { NextRequest, NextResponse } from "next/server"

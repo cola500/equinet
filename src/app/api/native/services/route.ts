@@ -2,7 +2,7 @@
  * GET /api/native/services - Service list for native iOS app
  * POST /api/native/services - Create new service
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"

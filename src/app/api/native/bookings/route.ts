@@ -1,7 +1,7 @@
 /**
  * GET /api/native/bookings - Booking list for native iOS app
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Returns bookings for the provider, optionally filtered by status.
  */
 import { NextRequest, NextResponse } from "next/server"

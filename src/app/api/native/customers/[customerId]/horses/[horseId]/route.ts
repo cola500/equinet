@@ -2,7 +2,7 @@
  * PUT /api/native/customers/[customerId]/horses/[horseId] - Update horse
  * DELETE /api/native/customers/[customerId]/horses/[horseId] - Soft-delete horse
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"

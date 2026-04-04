@@ -2,7 +2,7 @@
  * GET /api/native/customers/[customerId]/notes - List customer notes
  * POST /api/native/customers/[customerId]/notes - Create note
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
