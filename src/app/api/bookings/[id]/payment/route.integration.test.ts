@@ -107,7 +107,7 @@ describe("POST /api/bookings/[id]/payment (integration)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     // Prisma mocks -- these simulate the DB layer

@@ -13,8 +13,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 
 vi.mock("@/lib/rate-limit", () => {
@@ -39,11 +39,11 @@ vi.mock("@/lib/feature-flags", () => ({
 
 import { POST, DELETE } from "./route"
 import { prisma } from "@/lib/prisma"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, RateLimitServiceError } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 
-const mockAuth = vi.mocked(authFromMobileToken)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 function makeRequest(body: unknown, method = "POST") {
@@ -60,7 +60,7 @@ function makeRequest(body: unknown, method = "POST") {
 describe("POST /api/device-tokens", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "tok-1" })
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" })
     mockIsFeatureEnabled.mockResolvedValue(true)
   })
 
@@ -107,7 +107,7 @@ describe("POST /api/device-tokens", () => {
   })
 
   it("returns 401 without valid mobile token", async () => {
-    mockAuth.mockResolvedValue(null)
+    mockGetAuthUser.mockResolvedValue(null)
     const res = await POST(makeRequest({ token: "abc123hex" }))
     expect(res.status).toBe(401)
   })
@@ -171,7 +171,7 @@ describe("POST /api/device-tokens", () => {
 describe("DELETE /api/device-tokens", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ userId: "user-1", tokenId: "tok-1" })
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", email: "test@test.se", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" })
     mockIsFeatureEnabled.mockResolvedValue(true)
   })
 
@@ -190,7 +190,7 @@ describe("DELETE /api/device-tokens", () => {
   })
 
   it("returns 401 without valid mobile token", async () => {
-    mockAuth.mockResolvedValue(null)
+    mockGetAuthUser.mockResolvedValue(null)
     const res = await DELETE(makeRequest({ token: "abc123hex" }, "DELETE"))
     expect(res.status).toBe(401)
   })

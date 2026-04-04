@@ -9,7 +9,7 @@ export const ROLES = {
 
 export type UserRole = (typeof ROLES)[keyof typeof ROLES]
 
-// --- Session-typ (matchar next-auth Session.user) ---
+// --- Session-typ ---
 
 interface SessionLike {
   user?: {

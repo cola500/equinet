@@ -76,7 +76,7 @@ const mockUpsertResult = {
 describe("POST /api/native/calendar/exceptions", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockUpsert.mockResolvedValue(mockUpsertResult as never)
     mockRateLimit.mockResolvedValue(true)

@@ -1,19 +1,18 @@
 /**
  * GET /api/widget/next-booking - Next upcoming booking for widget
  *
- * Auth: Bearer token (mobile token).
+ * Auth: Supabase Auth (cookie or Bearer via getAuthUser).
  * Returns minimal booking data for iOS widget display.
  */
 import { NextRequest, NextResponse } from "next/server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
-    // Auth (Bearer token)
-    const authResult = await authFromMobileToken(request)
-    if (!authResult) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -22,13 +21,13 @@ export async function GET(request: NextRequest) {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
     logger.info("Widget next-booking query", {
-      userId: authResult.userId,
+      userId: authUser.id,
       today: today.toISOString(),
     })
 
     const booking = await prisma.booking.findFirst({
       where: {
-        provider: { userId: authResult.userId },
+        provider: { userId: authUser.id },
         bookingDate: { gte: today },
         status: { in: ["confirmed", "pending"] },
       },

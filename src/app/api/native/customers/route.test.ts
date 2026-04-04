@@ -78,7 +78,7 @@ function createPostRequest(body: unknown) {
 describe("GET /api/native/customers", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     // Default: no customers
@@ -193,7 +193,7 @@ describe("GET /api/native/customers", () => {
 describe("POST /api/native/customers", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockCreateGhostUser.mockResolvedValue("ghost-user-1")

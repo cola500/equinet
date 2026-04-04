@@ -1,7 +1,7 @@
 /**
  * Extracted authorization logic for middleware.
  *
- * Shared between NextAuth session and Supabase session in middleware.
+ * Used by Supabase Auth middleware for role-based authorization.
  * Returns NextResponse for blocked/redirected requests, null for allowed.
  */
 import { NextResponse } from "next/server"

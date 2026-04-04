@@ -44,12 +44,12 @@ const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const providerAuthUser = {
   id: "user-1", email: "", userType: "provider", isAdmin: false,
-  providerId: "provider-1", stableId: null, authMethod: "nextauth" as const,
+  providerId: "provider-1", stableId: null, authMethod: "supabase" as const,
 }
 
 const customerAuthUser = {
   id: "user-2", email: "", userType: "customer", isAdmin: false,
-  providerId: null, stableId: null, authMethod: "nextauth" as const,
+  providerId: null, stableId: null, authMethod: "supabase" as const,
 }
 
 function createRequest(body?: unknown): NextRequest {

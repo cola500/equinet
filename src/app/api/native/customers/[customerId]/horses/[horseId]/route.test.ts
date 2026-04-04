@@ -74,7 +74,7 @@ function createDeleteRequest() {
 describe("PUT /api/native/customers/[customerId]/horses/[horseId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockHasRelation.mockResolvedValue(true)
@@ -139,7 +139,7 @@ describe("PUT /api/native/customers/[customerId]/horses/[horseId]", () => {
 describe("DELETE /api/native/customers/[customerId]/horses/[horseId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockHasRelation.mockResolvedValue(true)

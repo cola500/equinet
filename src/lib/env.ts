@@ -18,11 +18,9 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
-  // NextAuth
-  NEXTAUTH_SECRET: z
-    .string()
-    .min(32, "NEXTAUTH_SECRET must be at least 32 characters for security"),
-  NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
+  // Supabase Auth
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
 
   // Optional: Port (for custom deployments)
   PORT: z.string().optional(),
@@ -42,23 +40,13 @@ function validateEnv(): Env {
     const env = envSchema.parse({
       NODE_ENV: process.env.NODE_ENV,
       DATABASE_URL: process.env.DATABASE_URL,
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       PORT: process.env.PORT,
     })
 
     // Additional validation for production
     if (env.NODE_ENV === "production") {
-      // Ensure HTTPS in production
-      if (env.NEXTAUTH_URL && !env.NEXTAUTH_URL.startsWith("https://")) {
-        logger.warn("WARNING: NEXTAUTH_URL should use HTTPS in production for security")
-      }
-
-      // Ensure strong secret in production
-      if (env.NEXTAUTH_SECRET.length < 64) {
-        logger.warn("WARNING: NEXTAUTH_SECRET should be at least 64 characters in production for enhanced security")
-      }
-
       // Warn if using SQLite in production
       if (env.DATABASE_URL.includes("file:")) {
         logger.warn("WARNING: Using SQLite in production. Consider using PostgreSQL for better performance and reliability.")

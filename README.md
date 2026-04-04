@@ -162,14 +162,14 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Styling**: Tailwind CSS v4
 - **UI**: shadcn/ui + Radix UI
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
-- **Autentisering**: NextAuth.js v5
+- **Autentisering**: Supabase Auth (migrering från NextAuth v5 pågår)
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (2851+ unit/integration) + Playwright (325+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (3900+ unit/integration) + Playwright (373+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
 - **Arkitektur**: DDD-Light med Repository Pattern
-- **Säkerhet**: bcrypt, Upstash Redis rate limiting, input sanitization, Sentry monitoring
+- **Säkerhet**: Supabase Auth, RLS (Row Level Security), Upstash Redis rate limiting, input sanitization, Sentry monitoring
 
 ## Projektstruktur
 
@@ -309,7 +309,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**4128+ tester** (373 E2E desktop + mobil + 3755 unit/integration) med **70% coverage**.
+**4300+ tester** (373 E2E desktop + mobil + 3900+ unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

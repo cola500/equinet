@@ -50,7 +50,7 @@ describe('PUT /api/reviews/[id]', () => {
   it('should update review rating and comment', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.review.update).mockResolvedValue({
       ...mockReview,
@@ -87,7 +87,7 @@ describe('PUT /api/reviews/[id]', () => {
   it('should return 404 when review not found', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     // updateWithAuth returns null (P2025)
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
@@ -109,7 +109,7 @@ describe('PUT /api/reviews/[id]', () => {
   it('should return 403 when customer does not own the review', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'other-user', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     // updateWithAuth returns null because customerId doesn't match
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
@@ -131,7 +131,7 @@ describe('PUT /api/reviews/[id]', () => {
   it('should return 400 for invalid rating', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const { request, params } = createRequest('review-1', 'PUT', { rating: 0 })
@@ -145,7 +145,7 @@ describe('PUT /api/reviews/[id]', () => {
   it('should return 400 for comment exceeding 500 characters', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const { request, params } = createRequest('review-1', 'PUT', {
@@ -168,7 +168,7 @@ describe('DELETE /api/reviews/[id]', () => {
   it('should delete a review', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.review.delete).mockResolvedValue(mockReview as never)
 
@@ -194,7 +194,7 @@ describe('DELETE /api/reviews/[id]', () => {
   it('should return 404 when review not found', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user-1', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     // deleteWithAuth returns false (P2025)
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {
@@ -216,7 +216,7 @@ describe('DELETE /api/reviews/[id]', () => {
   it('should return 403 when customer does not own the review', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'other-user', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     // deleteWithAuth returns false (P2025 because customerId doesn't match)
     const p2025Error = new Prisma.PrismaClientKnownRequestError('Record not found', {

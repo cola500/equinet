@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/mobile-auth", () => ({
-  authFromMobileToken: vi.fn(),
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: vi.fn(),
 }))
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -19,10 +19,10 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { GET } from "./route"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 
-const mockAuthFromMobileToken = vi.mocked(authFromMobileToken)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockFindFirst = vi.mocked(prisma.booking.findFirst)
 
 function createRequest() {
@@ -46,15 +46,15 @@ const mockBooking = {
 describe("GET /api/widget/next-booking", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuthFromMobileToken.mockResolvedValue({
-      userId: "provider-user-1",
+    mockGetAuthUser.mockResolvedValue({
+      id: "provider-user-1", email: "test@test.se", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
       tokenId: "token-1",
     })
     mockFindFirst.mockResolvedValue(mockBooking as never)
   })
 
   it("returns 401 when Bearer token is invalid", async () => {
-    mockAuthFromMobileToken.mockResolvedValue(null)
+    mockGetAuthUser.mockResolvedValue(null)
     const res = await GET(createRequest())
     expect(res.status).toBe(401)
   })

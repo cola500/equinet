@@ -134,7 +134,7 @@ describe("POST /api/bookings/[id]/payment", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "user-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "user-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     mockProcessPayment.mockResolvedValue(
@@ -278,7 +278,7 @@ describe("GET /api/bookings/[id]/payment", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "user-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "user-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
   })
 

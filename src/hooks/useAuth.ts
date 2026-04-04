@@ -1,22 +1,20 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useSession } from "@/components/providers/SessionProvider"
 import { useOnlineStatus } from "./useOnlineStatus"
 
 const SESSION_STORAGE_KEY = "equinet-auth-cache"
 
-interface CachedAuthUser {
-  id: string
-  email: string
-  name: string
-  userType: string
-  isAdmin?: boolean
-  providerId?: string | null
-  stableId?: string | null
-}
-
 interface CachedAuth {
-  user: CachedAuthUser
+  user: {
+    id: string
+    email: string
+    name: string
+    userType: string
+    isAdmin?: boolean
+    providerId?: string | null
+    stableId?: string | null
+  }
   isProvider: boolean
   isCustomer: boolean
   isAdmin: boolean
@@ -26,22 +24,22 @@ interface CachedAuth {
 }
 
 export function useAuth() {
-  const { data: session, status } = useSession()
+  const { user, status } = useSession()
   const isOnline = useOnlineStatus()
 
   // Cache session to sessionStorage when authenticated
-  if (status === "authenticated" && session?.user) {
+  if (status === "authenticated" && user) {
     try {
       sessionStorage.setItem(
         SESSION_STORAGE_KEY,
         JSON.stringify({
-          user: session.user,
-          isProvider: session.user.userType === "provider",
-          isCustomer: session.user.userType === "customer",
-          isAdmin: session.user.isAdmin === true,
-          isStableOwner: !!session.user.stableId,
-          providerId: session.user.providerId ?? null,
-          stableId: session.user.stableId ?? null,
+          user,
+          isProvider: user.userType === "provider",
+          isCustomer: user.userType === "customer",
+          isAdmin: user.isAdmin === true,
+          isStableOwner: !!user.stableId,
+          providerId: user.providerId ?? null,
+          stableId: user.stableId ?? null,
         })
       )
     } catch {
@@ -50,10 +48,10 @@ export function useAuth() {
   }
 
   // NOTE: We intentionally do NOT clear sessionStorage on "unauthenticated + online".
-  // There's a ~2s race condition where useSession() reports unauthenticated (network error)
+  // There's a ~2s race condition where the session check reports unauthenticated (network error)
   // BEFORE navigator.onLine changes to false. Clearing here would destroy the cache
   // we need for offline mode. sessionStorage auto-clears on tab close anyway,
-  // and new logins overwrite the cache (line 21-35 above).
+  // and new logins overwrite the cache (above).
 
   // Offline: try sessionStorage cache
   if (!isOnline && status !== "authenticated") {
@@ -93,14 +91,14 @@ export function useAuth() {
 
   // Online: normal behavior
   return {
-    user: session?.user,
+    user: user ?? undefined,
     isAuthenticated: status === "authenticated",
     isLoading: status === "loading",
-    isProvider: session?.user?.userType === "provider",
-    isCustomer: session?.user?.userType === "customer",
-    isAdmin: session?.user?.isAdmin === true,
-    isStableOwner: !!session?.user?.stableId,
-    providerId: session?.user?.providerId ?? null,
-    stableId: session?.user?.stableId ?? null,
+    isProvider: user?.userType === "provider",
+    isCustomer: user?.userType === "customer",
+    isAdmin: user?.isAdmin === true,
+    isStableOwner: !!user?.stableId,
+    providerId: user?.providerId ?? null,
+    stableId: user?.stableId ?? null,
   }
 }

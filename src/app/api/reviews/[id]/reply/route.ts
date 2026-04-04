@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withApiHandler } from "@/lib/api-handler"
-import { auth } from "@/lib/auth-server"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { ReviewService } from "@/domain/review/ReviewService"
@@ -12,22 +11,12 @@ const replySchema = z.object({
   reply: z.string().min(1, "Svar krävs").max(500, "Svar kan vara max 500 tecken"),
 }).strict()
 
-/**
- * Dual-auth: try Bearer JWT first, fall back to session.
- * Returns { userId, userType } or throws/returns 401 Response.
- */
 async function resolveAuth(request: NextRequest): Promise<{ userId: string; userType: string }> {
-  const mobileAuth = await authFromMobileToken(request)
-  if (mobileAuth) {
-    // Mobile tokens are provider-only (issued at login for providers)
-    return { userId: mobileAuth.userId, userType: "provider" }
-  }
-  // Fall back to session auth
-  const session = await auth()
-  if (!session) {
+  const authUser = await getAuthUser(request)
+  if (!authUser) {
     throw NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
-  return { userId: session.user.id, userType: (session.user as { userType: string }).userType }
+  return { userId: authUser.id, userType: authUser.userType }
 }
 
 type RouteContext = {

@@ -56,7 +56,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "provider", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const response = await DELETE(makeRequest("w1"))
@@ -66,7 +66,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should return 404 when watch not found", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -79,7 +79,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should return 200 on successful deletion", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -92,7 +92,7 @@ describe("DELETE /api/municipality-watches/[id]", () => {
   it("should use customerId from session for ownership check", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "session-user", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)

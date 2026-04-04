@@ -75,7 +75,7 @@ describe('POST /api/bookings/manual', () => {
 
     // Default: provider session
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: TEST_UUIDS.providerUser, userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.providerUser, userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     // Default: provider exists
@@ -218,7 +218,7 @@ describe('POST /api/bookings/manual', () => {
 
   it('should return 403 for non-provider users', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const request = makeRequest({
@@ -443,7 +443,7 @@ describe('POST /api/bookings/manual', () => {
 
   it('returns 503 when rate limiter throws', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: TEST_UUIDS.providerUser, userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.providerUser, userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(rateLimiters.booking).mockRejectedValueOnce(new Error('Redis down'))
 

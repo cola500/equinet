@@ -50,7 +50,7 @@ describe('GET /api/provider/due-for-service', () => {
 
     vi.mocked(getAuthUser).mockResolvedValue({
       id: TEST_UUIDS.providerUser, email: '', userType: 'provider', isAdmin: false,
-      providerId: TEST_UUIDS.provider, stableId: null, authMethod: 'nextauth' as const,
+      providerId: TEST_UUIDS.provider, stableId: null, authMethod: 'supabase' as const,
     })
 
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
@@ -81,7 +81,7 @@ describe('GET /api/provider/due-for-service', () => {
   it('should return 403 for non-provider users', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'customer-user', email: '', userType: 'customer', isAdmin: false,
-      providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
 
     const response = await GET(makeRequest())

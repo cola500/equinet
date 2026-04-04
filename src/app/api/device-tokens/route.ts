@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { authFromMobileToken } from "@/lib/mobile-auth"
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
-    const auth = await authFromMobileToken(request)
-    if (!auth) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Limit device tokens per user (prevent resource exhaustion)
     const existingCount = await prisma.deviceToken.count({
-      where: { userId: auth.userId },
+      where: { userId: authUser.id },
     })
     if (existingCount >= 20) {
       return NextResponse.json(
@@ -73,12 +73,12 @@ export async function POST(request: NextRequest) {
     await prisma.deviceToken.upsert({
       where: { token: data.token },
       create: {
-        userId: auth.userId,
+        userId: authUser.id,
         token: data.token,
         platform: data.platform,
       },
       update: {
-        userId: auth.userId,
+        userId: authUser.id,
         updatedAt: new Date(),
       },
     })
@@ -106,8 +106,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
-    const auth = await authFromMobileToken(request)
-    if (!auth) {
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
@@ -121,7 +121,7 @@ export async function DELETE(request: NextRequest) {
     const data = deleteSchema.parse(body)
 
     await prisma.deviceToken.deleteMany({
-      where: { token: data.token, userId: auth.userId },
+      where: { token: data.token, userId: authUser.id },
     })
 
     return NextResponse.json({ ok: true })

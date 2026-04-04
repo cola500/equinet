@@ -94,7 +94,7 @@ const mockPendingBooking = {
 describe("GET /api/native/dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProviderFull as never)
     mockFindBookings
       .mockResolvedValueOnce([mockTodayBooking] as never)   // today bookings

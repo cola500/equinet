@@ -31,12 +31,12 @@ const mockFindMany = vi.mocked(prisma.routeOrder.findMany)
 
 const mockCustomerAuthUser = {
   id: "customer-1", email: "anna@test.se", userType: "customer", isAdmin: false,
-  providerId: null, stableId: null, authMethod: "nextauth" as const,
+  providerId: null, stableId: null, authMethod: "supabase" as const,
 }
 
 const mockProviderAuthUser = {
   id: "provider-1", email: "magnus@test.se", userType: "provider", isAdmin: false,
-  providerId: null, stableId: null, authMethod: "nextauth" as const,
+  providerId: null, stableId: null, authMethod: "supabase" as const,
 }
 
 describe("GET /api/route-orders/my-orders", () => {

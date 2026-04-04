@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/lib/auth-server", () => ({
   auth: vi.fn(),
 }))
 vi.mock("@/lib/geocoding", () => ({ geocodeAddress: vi.fn() }))
@@ -14,7 +14,7 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { GET } from "./route"
-import { auth } from "@/lib/auth"
+import { auth } from "@/lib/auth-server"
 import { geocodeAddress } from "@/lib/geocoding"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"

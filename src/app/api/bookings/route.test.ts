@@ -115,7 +115,7 @@ describe('GET /api/bookings', () => {
     ]
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
 
@@ -161,7 +161,7 @@ describe('GET /api/bookings', () => {
     ]
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
     vi.mocked(prisma.booking.findMany).mockResolvedValue(mockBookings as never)
@@ -205,7 +205,7 @@ describe('GET /api/bookings', () => {
   it('should return 404 when provider not found', async () => {
     // Arrange
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
 
@@ -248,7 +248,7 @@ describe('POST /api/bookings', () => {
   it('should create booking for authenticated customer', async () => {
     // Arrange
     const mockAuthUser = {
-      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     }
 
     const mockService = {
@@ -397,7 +397,7 @@ describe('POST /api/bookings', () => {
   it('should return 400 when service does not belong to provider', async () => {
     // Arrange
     const mockAuthUser = {
-      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     }
 
     const mockService = {
@@ -439,7 +439,7 @@ describe('POST /api/bookings', () => {
   it('should return 400 for invalid data - missing required fields', async () => {
     // Arrange
     const mockAuthUser = {
-      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     }
 
     vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
@@ -465,7 +465,7 @@ describe('POST /api/bookings', () => {
     it('should calculate endTime from service.durationMinutes when not provided', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -536,7 +536,7 @@ describe('POST /api/bookings', () => {
     it('should still accept explicit endTime (backward compatibility)', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -607,7 +607,7 @@ describe('POST /api/bookings', () => {
     it('should return 400 when calculated endTime exceeds business hours', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -651,7 +651,7 @@ describe('POST /api/bookings', () => {
     it('should link booking to routeOrderId when provided', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -734,7 +734,7 @@ describe('POST /api/bookings', () => {
     it('should accept bookings without routeOrderId (backward compatibility)', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -807,7 +807,7 @@ describe('POST /api/bookings', () => {
     it('should return 400 when routeOrderId does not exist', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -851,7 +851,7 @@ describe('POST /api/bookings', () => {
     it('should return 400 when routeOrder is not open', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -903,7 +903,7 @@ describe('POST /api/bookings', () => {
     it('should return 400 when booking date is outside routeOrder date range', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -959,7 +959,7 @@ describe('POST /api/bookings', () => {
     it('should return 400 when provider does not match routeOrder provider', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -1011,7 +1011,7 @@ describe('POST /api/bookings', () => {
     it('should allow booking when routeOrder validations pass', async () => {
       // Arrange
       const mockAuthUser = {
-        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+        id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
       }
 
       const mockService = {
@@ -1094,7 +1094,7 @@ describe('POST /api/bookings', () => {
 
   it('should return 400 when provider has closed the day', async () => {
     const mockAuthUser = {
-      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     }
 
     vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
@@ -1134,7 +1134,7 @@ describe('POST /api/bookings', () => {
 
   it('returns 503 when rate limiter throws', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'nextauth' as const,
+      id: TEST_UUIDS.customer, userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })
     vi.mocked(rateLimiters.booking).mockRejectedValueOnce(new Error('Redis down'))
 
