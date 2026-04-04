@@ -24,7 +24,7 @@ sections:
 | S13-1 Byt login till Supabase | fullstack | Dev | done | main | 91b8e375 |
 | S13-4 iOS Supabase Swift SDK | fullstack | Dev | done | main | 6097f3ca |
 | S13-5 Registrering via Supabase | fullstack | Dev | done | main | 6e83f301 |
-| S13-2 Ta bort NextAuth + MobileToken | fullstack | - | pending | - | - |
+| S13-2 Ta bort NextAuth + MobileToken | fullstack | Dev | in_progress | feature/s13-2-remove-nextauth | - |
 | S13-3 Ta bort passwordHash | fullstack | - | pending | - | - |
 | S13-6 Visuell verifiering | fullstack | - | pending | - | - |
 
@@ -115,7 +115,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S13-5 Registrering via Supabase | feature/s13-5-supabase-registration | 2026-04-04 |
+| Dev | Fullstack | S13-2 Ta bort NextAuth + MobileToken | feature/s13-2-remove-nextauth | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
