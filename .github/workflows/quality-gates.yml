@@ -48,31 +48,13 @@ jobs:
       - name: Run unit tests with coverage
         run: npx vitest run --coverage --coverage.thresholds.lines=70 --coverage.thresholds.branches=60
 
-  # E2E tests
+  # E2E tests -- uses Supabase local dev for real auth
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: equinet_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
-      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: test-secret-for-ci-only
-      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-test-anon-key-placeholder
+      # Dummy URL for prisma generate during npm ci (overridden after supabase start)
+      DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
 
     steps:
       - name: Checkout code
@@ -87,14 +69,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Start Supabase local dev
+        run: npx supabase start
+
+      - name: Export Supabase keys
+        run: |
+          SUPABASE_STATUS=$(npx supabase status -o json)
+          # Use localhost instead of 127.0.0.1 for consistent cookie domain
+          SUPABASE_URL=$(echo $SUPABASE_STATUS | jq -r '.API_URL' | sed 's/127.0.0.1/localhost/')
+          echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(echo $SUPABASE_STATUS | jq -r '.ANON_KEY')" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(echo $SUPABASE_STATUS | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
+          DB_URL=$(echo $SUPABASE_STATUS | jq -r '.DB_URL' | sed 's/127.0.0.1/localhost/')
+          echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
+          echo "DIRECT_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
+          echo "E2E_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
+
+      - name: Create .env.local for Next.js dev server
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" > .env.local
+          echo "DIRECT_DATABASE_URL=$DIRECT_DATABASE_URL" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY" >> .env.local
+          echo "E2E_DATABASE_URL=$E2E_DATABASE_URL" >> .env.local
+
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Push database schema
-        run: npx prisma db push
-
-      - name: Seed test users
-        run: npx tsx prisma/seed-test-users.ts
+      - name: Run database migrations
+        run: npx prisma migrate deploy
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -122,6 +126,10 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Stop Supabase
+        if: always()
+        run: npx supabase stop
 
   # TypeScript type checking
   type-check:
@@ -249,10 +257,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
       DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: test-secret-for-ci-only
       NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-test-anon-key-placeholder
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-for-build-only
       NEXT_TELEMETRY_DISABLED: 1
 
     steps:

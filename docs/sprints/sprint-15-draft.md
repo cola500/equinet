@@ -2,7 +2,7 @@
 title: "Sprint 15: Cutover till produktion (UTKAST)"
 description: "Applicera Supabase Auth + RLS på prod-projektet, byt Vercel env"
 category: sprint
-status: draft
+status: active
 last_updated: 2026-04-04
 tags: [sprint, production, cutover, supabase, auth, rls]
 sections:
@@ -15,7 +15,7 @@ sections:
 
 # Sprint 15: Cutover till produktion (UTKAST)
 
-**Status:** UTKAST -- aktiveras efter sprint 14 (RLS Live testad mot PoC)
+**Status:** AKTIV
 **Sprint Duration:** 1 dag (planerad som en koordinerad cutover)
 **Sprint Goal:** Prod-projektet kör Supabase Auth + RLS. PoC-projektet blir staging.
 
@@ -32,14 +32,50 @@ allt på det riktiga prod-projektet (`xybyzflfxnqqyxnvjklv`).
 
 ## Förutsättningar
 
-- [ ] Sprint 13 klar (NextAuth borta, all kod via Supabase Auth)
-- [ ] Sprint 14 klar (RLS policies testade mot PoC)
-- [ ] iOS-app uppdaterad med Supabase Swift SDK (S13-4)
-- [ ] Alla användare migrerade till PoC auth.users (S11-2) -- bevisat att scriptet fungerar
+- [x] Sprint 13 klar (NextAuth borta, all kod via Supabase Auth)
+- [x] Sprint 14 klar (RLS policies testade mot PoC -- 28 policies, 24 bevistester)
+- [x] iOS-app uppdaterad med Supabase Swift SDK (S13-4, verifierad i S14-0)
+- [x] Alla användare migrerade till PoC auth.users (S11-2) -- bevisat att scriptet fungerar
+
+---
+
+## Läget vid sprintstart (Lead-bedömning från sprint 14 review)
+
+**Vad som är klart:**
+- Auth: Supabase Auth är enda källan. NextAuth, MobileTokenService och bcrypt borta.
+- RLS: 28 policies (13 read + 15 write) på 7 kärndomäner. Bevisat med 24 integrationstester.
+- iOS: Supabase Swift SDK verifierad (S14-0, 2 buggar fixade).
+- 3 routes (bookings, services, notifications) migrerade till Supabase-klient.
+- 3 968 tester gröna, 0 regressioner genom hela sprint 13-14.
+
+**Kända problem att adressera:**
+- **19 E2E-tester failar i CI** (S14-6, ej tagen): Login kräver Supabase Auth men CI har bara dummy-env. Behöver `supabase start` i GitHub Actions eller E2E auth-bypass.
+- **Migration-deployment är manuellt**: S14-1 var mergad men aldrig applicerad på Supabase -- upptäcktes bara pga bevistester. Bör verifieras i deploy-checklistan.
+- **`ENABLE ROW LEVEL SECURITY` kan missas**: Policies utan ENABLE har ingen effekt. Gotcha dokumenterad i CLAUDE.md.
+- **Rollback fungerar**: dual-auth helper (`getAuthUser()`) finns kvar. Om cutover failar: byt Vercel env -> appen faller tillbaka. ~5 min.
+
+**Risker för denna sprint:**
+- Prod-databasen rörs på riktigt (hook, trigger, RLS, user-migrering)
+- Felaktig hook = ingen kan logga in
+- Felaktig user-migrering = lösenord fungerar inte
+- Alla har testats mot PoC -- men prod kan ha data-skillnader
 
 ---
 
 ## Stories
+
+### S15-0: Fixa E2E i CI -- lokal Supabase Auth -- READY
+
+**Prioritet:** Hög (bör fixas före cutover så CI är grön)
+**Typ:** Infrastruktur
+**Beskrivning:** 19 E2E-tester failar i CI sedan S13. Login når aldrig dashboard
+pga saknad Supabase Auth-instans. Överflytt från S14-6 (ej tagen).
+
+**Approach:** `supabase start` i GitHub Actions E2E-jobb, eller auth-bypass i E2E.
+
+**Effort:** 0.5-1 dag
+
+---
 
 ### S15-1: Applicera hook + trigger + RLS på prod -- READY
 
@@ -153,6 +189,7 @@ Om cutover misslyckas:
 
 ## Prioritetsordning
 
+0. **S15-0** Fixa E2E i CI (grön CI före cutover)
 1. **S15-1** Hook + trigger + RLS på prod
 2. **S15-2** Migrera användare
 3. **S15-3** Byt Vercel env

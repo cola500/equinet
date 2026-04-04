@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://router.project-osrm.org https://*.supabase.co https://*.sentry.io", // Allow OSRM API + Supabase + Sentry
+              `connect-src 'self' https://router.project-osrm.org https://*.supabase.co https://*.sentry.io${isDev ? ' http://localhost:54321' : ''}`, // Allow OSRM API + Supabase + Sentry (+ local Supabase in dev)
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -98,7 +98,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
-              "connect-src 'self' https://*.supabase.co https://*.sentry.io https://api.stripe.com", // API calls + Supabase + Sentry + Stripe
+              `connect-src 'self' https://*.supabase.co https://*.sentry.io https://api.stripe.com${isDev ? ' http://localhost:54321' : ''}`, // API calls + Supabase + Sentry + Stripe (+ local Supabase in dev)
               "frame-src https://js.stripe.com", // Stripe Payment Element renders in iframe
               "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection

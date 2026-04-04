@@ -128,10 +128,27 @@ export default defineConfig({
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',
         PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'mock',
-        // Force local DB for E2E (overrides .env.local which may point to Supabase)
-        // In CI, use the DATABASE_URL already set by GitHub Actions (equinet_test)
-        DATABASE_URL: process.env.CI ? process.env.DATABASE_URL! : 'postgresql://postgres:postgres@localhost:5432/equinet',
-        DIRECT_DATABASE_URL: process.env.CI ? process.env.DIRECT_DATABASE_URL! : 'postgresql://postgres:postgres@localhost:5432/equinet',
+        // Force correct DB for E2E.
+        // Local: Docker Postgres. CI: Supabase local dev (set via $GITHUB_ENV).
+        DATABASE_URL: process.env.CI
+          ? process.env.DATABASE_URL!
+          : 'postgresql://postgres:postgres@localhost:5432/equinet',
+        DIRECT_DATABASE_URL: process.env.CI
+          ? process.env.DIRECT_DATABASE_URL!
+          : 'postgresql://postgres:postgres@localhost:5432/equinet',
+        // Pass through Supabase env vars explicitly (CI: from supabase start)
+        ...(process.env.NEXT_PUBLIC_SUPABASE_URL && {
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        }),
+        ...(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && {
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        }),
+        ...(process.env.SUPABASE_SERVICE_ROLE_KEY && {
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        }),
+        ...(process.env.E2E_DATABASE_URL && {
+          E2E_DATABASE_URL: process.env.E2E_DATABASE_URL,
+        }),
         // Pass through Stripe publishable key for Payment Element (NEXT_PUBLIC_ needed at dev-server startup)
         ...(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && {
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
