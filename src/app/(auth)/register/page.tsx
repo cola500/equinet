@@ -238,7 +238,7 @@ function RegisterForm() {
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="businessName">Företagsnamn *</Label>
+                    <Label htmlFor="businessName">Företagsnamn {userType === "provider" && "*"}</Label>
                     <Input
                       id="businessName"
                       type="text"

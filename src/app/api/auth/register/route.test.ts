@@ -169,6 +169,55 @@ describe('POST /api/auth/register', () => {
     expect(successData).toEqual(existingData)
   })
 
+  it('should return 400 when provider registers without businessName', async () => {
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'provider@example.com',
+        password: 'Password123!',
+        firstName: 'Provider',
+        lastName: 'User',
+        userType: 'provider',
+        // businessName missing!
+      }),
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Valideringsfel')
+  })
+
+  it('should allow customer to register without businessName', async () => {
+    mockRegister.mockResolvedValue(
+      Result.ok({
+        user: {
+          id: '789',
+          email: 'customer@example.com',
+          firstName: 'Customer',
+          lastName: 'User',
+          userType: 'customer',
+        },
+      })
+    )
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'customer@example.com',
+        password: 'Password123!',
+        firstName: 'Customer',
+        lastName: 'User',
+        userType: 'customer',
+        // No businessName -- should be fine for customers
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(200)
+  })
+
   it('should return 400 for invalid email', async () => {
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
