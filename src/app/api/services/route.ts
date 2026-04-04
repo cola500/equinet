@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { withApiHandler } from "@/lib/api-handler"
 import { ServiceRepository } from "@/infrastructure/persistence/service/ServiceRepository"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { rateLimiters } from "@/lib/rate-limit"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
@@ -15,20 +16,22 @@ const serviceSchema = z.object({
 })
 
 // GET all services for logged-in provider
+// Uses Supabase client with RLS -- service_provider_read policy filters by providerId in JWT
 export const GET = withApiHandler(
   { auth: "provider" },
-  async ({ user }) => {
-    const providerRepo = new ProviderRepository()
-    const provider = await providerRepo.findByUserId(user.userId)
+  async () => {
+    const supabase = await createSupabaseServerClient()
+    const { data, error } = await supabase
+      .from("Service")
+      .select("id, providerId, name, description, price, durationMinutes, isActive, recommendedIntervalWeeks")
+      .order("createdAt", { ascending: false })
 
-    if (!provider) {
-      return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
+    if (error) {
+      logger.error("Failed to fetch services via Supabase", new Error(error.message))
+      return NextResponse.json({ error: "Kunde inte hämta tjänster" }, { status: 500 })
     }
 
-    const serviceRepo = new ServiceRepository()
-    const services = await serviceRepo.findByProviderId(provider.id)
-
-    return NextResponse.json(services)
+    return NextResponse.json(data)
   },
 )
 
