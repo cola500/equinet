@@ -616,7 +616,7 @@ describe('PUT /api/bookings/[id] - Auth methods via getAuthUser', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should work with session auth (getAuthUser resolves via nextauth)', async () => {
+  it('should work with session auth (getAuthUser resolves via Supabase)', async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'customer123', userType: 'customer', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
     })

@@ -1,7 +1,7 @@
 /**
  * GET /api/native/announcements - Provider's route announcements for native iOS
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase)
+ * Auth: Bearer > Supabase
  * Feature flag: route_planning (server-side gate)
  */
 import { NextRequest, NextResponse } from "next/server"

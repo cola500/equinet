@@ -48,9 +48,6 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
       }
 
       toast.success("Ditt konto har raderats")
-      // Clear any lingering NextAuth cookies
-      document.cookie = "next-auth.session-token=; Max-Age=0; path=/"
-      document.cookie = "__Secure-next-auth.session-token=; Max-Age=0; path=/; secure"
       const supabase = createSupabaseBrowserClient()
       await supabase.auth.signOut()
       window.location.href = "/"

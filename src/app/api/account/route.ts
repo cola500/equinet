@@ -20,7 +20,7 @@ const deleteAccountSchema = z
 
 export async function DELETE(request: NextRequest) {
   try {
-    // 1. Auth (dual: Bearer > NextAuth > Supabase)
+    // 1. Auth (Bearer > Supabase)
     const authUser = await getAuthUser(request)
     if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })

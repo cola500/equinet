@@ -8,9 +8,6 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }))
 
-vi.mock("next-auth/react", () => ({
-  signOut: vi.fn(),
-}))
 
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (

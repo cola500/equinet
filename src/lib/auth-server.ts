@@ -1,5 +1,5 @@
 // Server-side auth utilities -- Supabase Auth
-// Drop-in replacement for the previous NextAuth-based auth().
+// Drop-in replacement for the previous auth() helper.
 // Returns the same session shape so 135+ routes don't need changes.
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
@@ -24,7 +24,7 @@ interface Session {
  * Get authenticated session in API routes.
  *
  * Reads Supabase Auth cookie, then enriches from DB (providerId, stableId, etc).
- * Returns the same session shape as the previous NextAuth-based auth().
+ * Returns a session-like shape for backwards compatibility.
  *
  * @throws {Response} 401 response if no valid session or user not found in DB
  */

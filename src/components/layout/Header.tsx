@@ -34,10 +34,6 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
 
   const handleLogout = async () => {
     notifyNativeLogout()
-    // Clear any lingering NextAuth cookies from pre-migration sessions
-    document.cookie = "next-auth.session-token=; Max-Age=0; path=/"
-    document.cookie = "__Secure-next-auth.session-token=; Max-Age=0; path=/; secure"
-    document.cookie = "next-auth.csrf-token=; Max-Age=0; path=/"
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
     window.location.href = "/"

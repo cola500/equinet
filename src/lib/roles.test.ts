@@ -6,7 +6,7 @@ import {
   requireCustomer,
 } from "./roles"
 
-// Helper: create a mock session matching next-auth Session shape
+// Helper: create a mock session
 function mockSession(overrides: {
   id?: string
   userType?: string

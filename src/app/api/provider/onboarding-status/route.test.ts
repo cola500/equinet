@@ -68,7 +68,7 @@ describe("GET /api/provider/onboarding-status", () => {
     expect(body.error).toBe("Ej inloggad")
   })
 
-  it("returns 200 when authenticated via nextauth", async () => {
+  it("returns 200 when authenticated via Supabase", async () => {
     mockGetAuthUser.mockResolvedValueOnce({
       id: "user-1",
       email: "test@example.com",

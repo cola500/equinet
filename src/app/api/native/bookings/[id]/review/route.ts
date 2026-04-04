@@ -1,7 +1,7 @@
 /**
  * POST /api/native/bookings/[id]/review - Create customer review from native iOS app
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Domain rules: booking must be completed, owned by provider, not already reviewed.
  */
 import { NextRequest, NextResponse } from "next/server"

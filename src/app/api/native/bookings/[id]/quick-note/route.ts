@@ -1,7 +1,7 @@
 /**
  * POST /api/native/bookings/[id]/quick-note - Save provider notes on a booking
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Domain rules: booking must be confirmed or completed, owned by provider.
  */
 import { NextRequest, NextResponse } from "next/server"

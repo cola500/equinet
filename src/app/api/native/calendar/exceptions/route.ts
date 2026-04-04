@@ -1,7 +1,7 @@
 /**
  * POST /api/native/calendar/exceptions - Create/update availability exception
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Upserts an availability exception for the authenticated provider.
  */
 import { NextRequest, NextResponse } from "next/server"

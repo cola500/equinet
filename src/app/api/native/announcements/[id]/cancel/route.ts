@@ -1,7 +1,7 @@
 /**
  * POST /api/native/announcements/[id]/cancel - Cancel a provider announcement
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase)
+ * Auth: Bearer > Supabase
  * Feature flag: route_planning (server-side gate)
  */
 import { NextRequest, NextResponse } from "next/server"

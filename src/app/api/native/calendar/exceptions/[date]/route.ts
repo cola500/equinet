@@ -1,7 +1,7 @@
 /**
  * DELETE /api/native/calendar/exceptions/[date] - Delete availability exception
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  * Deletes an availability exception for the authenticated provider.
  */
 import { NextRequest, NextResponse } from "next/server"

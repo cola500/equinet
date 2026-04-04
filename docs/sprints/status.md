@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S16-1 Ta bort NextAuth-rester | fullstack | - | pending | - | - |
+| S16-1 Ta bort NextAuth-rester | fullstack | Dev | done | feature/s16-1-nextauth-cleanup | - |
 | S16-2 Seed-scripts Supabase Auth | fullstack | - | pending | - | - |
 | S16-3 Onboarding leverantör #2 | fullstack | - | pending | - | - |
 | S16-4 Admin-härdning (MFA + audit) | fullstack | - | pending | - | - |

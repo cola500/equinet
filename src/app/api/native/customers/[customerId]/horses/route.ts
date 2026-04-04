@@ -2,7 +2,7 @@
  * GET /api/native/customers/[customerId]/horses - List customer horses
  * POST /api/native/customers/[customerId]/horses - Create horse
  *
- * Auth: Dual-auth (Bearer > NextAuth > Supabase).
+ * Auth: Bearer > Supabase.
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
