@@ -24,7 +24,7 @@ sections:
 | S13-1 Byt login till Supabase | fullstack | - | pending | - | - |
 | S13-2 Ta bort NextAuth + MobileToken | fullstack | - | pending | - | - |
 | S13-3 Ta bort passwordHash | fullstack | - | pending | - | - |
-| S13-4 iOS Supabase Swift SDK | fullstack | Dev | in_progress | feature/s13-4-ios-supabase-auth | - |
+| S13-4 iOS Supabase Swift SDK | fullstack | Dev | review_requested | feature/s13-4-ios-supabase-auth | 6097f3ca |
 | S13-5 Registrering via Supabase | fullstack | - | pending | - | - |
 
 **Sprint 12** (klar):
