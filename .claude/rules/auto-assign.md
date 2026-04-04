@@ -34,7 +34,7 @@ Skriv ALDRIG bara "kör" vid parallella sessioner -- de plockar samma story.
 ## STOPP-REGLER (bryt ALDRIG dessa)
 
 1. **Pusha ALDRIG till main.** Alltid feature branch. Pre-push hook blockerar.
-2. **Implementera ALDRIG innan planen är godkänd.** Committa planen, säga till Johan att planen är redo, och STOPPA. Gör INGENTING mer förrän Johan säger "godkänd". Ingen research, ingen kod, inget Supabase-anrop. VÄNTA.
+2. **Implementera ALDRIG innan planen är godkänd.** Committa planen, kör self-review med relevanta subagenter (se `.claude/rules/autonomous-sprint.md` review-matris). Om inga blockerare: planen är godkänd, kör vidare. Om blockerare: fixa och kör review igen. Fråga Johan BARA vid produktbeslut eller scope-oklarheter.
 3. **Uppdatera ALLTID status.md vid varje commit.**
 
 ## Steg
