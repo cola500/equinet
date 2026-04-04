@@ -3,10 +3,12 @@ import { NextRequest } from "next/server"
 
 // Mock @supabase/ssr
 const mockGetUser = vi.fn()
+const mockSetSession = vi.fn()
 vi.mock("@supabase/ssr", () => ({
   createServerClient: vi.fn(() => ({
     auth: {
       getUser: mockGetUser,
+      setSession: mockSetSession,
     },
   })),
 }))
@@ -34,7 +36,7 @@ vi.mock("@/lib/logger", () => ({
 import { POST } from "./route"
 import { rateLimiters } from "@/lib/rate-limit"
 
-function makeRequest(token?: string): NextRequest {
+function makeRequest(token?: string, body?: Record<string, string>): NextRequest {
   const headers = new Headers()
   headers.set("Content-Type", "application/json")
   if (token) {
@@ -43,6 +45,7 @@ function makeRequest(token?: string): NextRequest {
   return new NextRequest("http://localhost:3000/api/auth/native-session-exchange", {
     method: "POST",
     headers,
+    body: body ? JSON.stringify(body) : undefined,
   })
 }
 
@@ -104,6 +107,33 @@ describe("POST /api/auth/native-session-exchange", () => {
 
     const res = await POST(makeRequest("some-token"))
     expect(res.status).toBe(429)
+  })
+
+  it("calls setSession when refreshToken is provided in body", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "test@example.com" } },
+      error: null,
+    })
+    mockSetSession.mockResolvedValue({ error: null })
+
+    const res = await POST(
+      makeRequest("access-token", { refreshToken: "refresh-token" })
+    )
+    expect(res.status).toBe(200)
+    expect(mockSetSession).toHaveBeenCalledWith({
+      access_token: "access-token",
+      refresh_token: "refresh-token",
+    })
+  })
+
+  it("does not call setSession when no refreshToken in body", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "test@example.com" } },
+      error: null,
+    })
+
+    await POST(makeRequest("access-token"))
+    expect(mockSetSession).not.toHaveBeenCalled()
   })
 
   it("returns 503 when rate limiter service is unavailable", async () => {

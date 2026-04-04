@@ -17,16 +17,21 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 13: Supabase Auth Fas 3 -- Cleanup** (docs/sprints/sprint-13.md)
+**Sprint 14: RLS Live** (docs/sprints/sprint-14-draft.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S13-1 Byt login till Supabase | fullstack | Dev | done | main | 91b8e375 |
-| S13-4 iOS Supabase Swift SDK | fullstack | Dev | done | main | 6097f3ca |
-| S13-5 Registrering via Supabase | fullstack | Dev | done | main | 6e83f301 |
-| S13-2 Ta bort NextAuth + MobileToken | fullstack | Dev | done | main | dcfabc10 |
-| S13-3 Ta bort passwordHash | fullstack | Dev | done | main | 74bd9b8f |
-| S13-6 Visuell verifiering | fullstack | Dev | done | main | 81309219 |
+| S14-0 iOS-verifiering Supabase Auth | fullstack | Dev | done | feature/s14-0-ios-supabase-verification | - |
+| S14-1 RLS-policies | fullstack | - | pending | - | - |
+| S14-5 RLS-bevistest | fullstack | - | pending | - | - |
+| S14-2 Booking reads via Supabase | fullstack | - | pending | - | - |
+| S14-3 Fler reads (batch) | fullstack | - | pending | - | - |
+
+**Sprint 13** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S13-1 -- S13-6 | fullstack | Dev | done |
 
 **Sprint 12** (klar):
 
@@ -115,7 +120,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S13-6 Visuell verifiering | feature/s13-6-visual-verification | 2026-04-04 |
+| Dev | Fullstack | S14-0 iOS Supabase Auth | feature/s14-0-ios-supabase-verification | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

@@ -19,6 +19,15 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }))
 
+const mockAdminGetUser = vi.fn()
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient: vi.fn().mockReturnValue({
+    auth: {
+      getUser: (token: string) => mockAdminGetUser(token),
+    },
+  }),
+}))
+
 const mockPrismaFindUnique = vi.fn()
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -147,6 +156,71 @@ describe("getAuthUser", () => {
       expect(result!.providerId).toBeNull()
       expect(result!.stableId).toBeNull()
       expect(result!.userType).toBe("customer")
+    })
+  })
+
+  describe("Bearer auth (iOS native)", () => {
+    it("resolves user from Bearer token when cookie auth fails", async () => {
+      mockSupabaseGetUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: "No session" },
+      })
+      mockAdminGetUser.mockResolvedValue({
+        data: { user: { id: TEST_USER_ID, email: TEST_EMAIL } },
+        error: null,
+      })
+      mockPrismaFindUnique.mockResolvedValue(dbUserWithProvider)
+
+      const req = makeRequest({ Authorization: "Bearer valid-token" })
+      const result = await getAuthUser(req)
+
+      expect(result).not.toBeNull()
+      expect(result!.id).toBe(TEST_USER_ID)
+      expect(result!.providerId).toBe(TEST_PROVIDER_ID)
+      expect(result!.authMethod).toBe("supabase")
+      expect(mockAdminGetUser).toHaveBeenCalledWith("valid-token")
+    })
+
+    it("returns null when Bearer token is invalid", async () => {
+      mockSupabaseGetUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: "No session" },
+      })
+      mockAdminGetUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: "invalid token" },
+      })
+
+      const req = makeRequest({ Authorization: "Bearer bad-token" })
+      const result = await getAuthUser(req)
+
+      expect(result).toBeNull()
+    })
+
+    it("does not try Bearer when cookie auth succeeds", async () => {
+      mockSupabaseGetUser.mockResolvedValue({
+        data: { user: { id: TEST_USER_ID, email: TEST_EMAIL } },
+        error: null,
+      })
+      mockPrismaFindUnique.mockResolvedValue(dbUserWithProvider)
+
+      const req = makeRequest({ Authorization: "Bearer some-token" })
+      await getAuthUser(req)
+
+      expect(mockAdminGetUser).not.toHaveBeenCalled()
+    })
+
+    it("does not try Bearer when no Authorization header", async () => {
+      mockSupabaseGetUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: "No session" },
+      })
+
+      const req = makeRequest()
+      const result = await getAuthUser(req)
+
+      expect(result).toBeNull()
+      expect(mockAdminGetUser).not.toHaveBeenCalled()
     })
   })
 
