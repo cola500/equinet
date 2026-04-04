@@ -54,6 +54,7 @@ För VARJE story i sprint-dokumentets prioritetsordning:
 - `npm run check:all` (typecheck + test + lint + swedish)
 - ALLA 4 gates MÅSTE vara gröna innan vidare
 - Om fail: fixa och kör igen. Max 3 försök, sedan STOPP.
+- **Vid infrastruktur/auth-ändringar:** Kör även `npm run test:e2e:smoke` lokalt
 
 ### 7. Done-fil + status-uppdatering (SAMMA commit)
 - Skriv `docs/done/<story-id>-done.md` med:
@@ -93,19 +94,28 @@ git push origin --delete feature/<story-id>-<namn>
 
 ### 9. Nästa story
 - Gå till steg 1 med nästa pending story
-- Om alla stories klara: skriv sprint-retro och STOPPA
+- Om alla stories klara: kör sprint-avslut (se nedan)
 
 ---
 
 ## Kvalitetsgates (OBLIGATORISKA)
 
-Ingen story får mergas utan:
+### Per story (före merge)
+
 - [ ] Plan skriven och committad
 - [ ] Self-review av plan med relevanta subagenter
 - [ ] Tester skrivna FÖRE implementation (TDD)
 - [ ] `npm run check:all` 4/4 gröna
 - [ ] Done-fil med reviews-sektion
 - [ ] Inga blockers eller majors från subagenter
+- [ ] Vid schema-ändring: `npm run migrate:status` visar inga pending
+
+### Per sprint (vid avslut, före retro)
+
+- [ ] E2E smoke grön: `npm run test:e2e:smoke`
+- [ ] Migrationer applicerade på staging: `npm run migrate:status`
+- [ ] Docs uppdaterade: kör `/update-docs` (README, NFR, CLAUDE.md, gotchas)
+- [ ] Inga uncommittade ändringar: `git status` visar rent
 
 ---
 
@@ -152,11 +162,55 @@ STOPPA sprinten och meddela Johan om:
 
 ---
 
-## Sprint-retro (vid avslut)
+## Sprint-avslut (OBLIGATORISKT)
 
-När alla stories är klara, skriv `docs/retrospectives/<datum>-sprint-<N>.md` med:
+När alla stories är klara, kör dessa steg I ORDNING:
+
+### 1. Sprint-gates (kvalitetskontroll)
+```bash
+npm run test:e2e:smoke          # E2E smoke grön
+npm run migrate:status          # Inga pending migrationer
+git status                      # Rent working tree
+```
+
+### 2. Docs-uppdatering
+Kör `/update-docs` med sprint-numret. Kontrollera:
+- README.md (testantal, nya features, ändrad stack)
+- NFR.md (nya säkerhetskapabiliteter, testantal)
+- CLAUDE.md (nya key learnings, ändrade resurslänkar)
+- docs/guides/gotchas.md (nya gotchas upptäckta under sprinten)
+
+### 3. Sprint-retro
+Skriv `docs/retrospectives/<datum>-sprint-<N>.md` med:
 - Levererat (stories, tester, LOC)
 - Vad gick bra
 - Vad som inte fungerade
 - Processändring till nästa sprint
-- Meddela Johan: "Sprint X klar. Retro i docs/retrospectives/."
+
+### 4. Meddela Johan
+"Sprint X klar. Retro i docs/retrospectives/."
+
+---
+
+## Parallella sessioner med worktrees
+
+Stories som rör **helt separata filer** kan köras parallellt med git worktrees:
+
+```bash
+git worktree add ../equinet-s16-2 -b feature/s16-2-seed-scripts main
+```
+
+**Regler:**
+- Varje session MÅSTE ange story-ID (`kör S16-2`)
+- Skriv ALDRIG bara `kör` vid parallella sessioner
+- Mergea sekventiellt (en i taget, pull innan merge)
+- Radera worktree efter merge: `git worktree remove ../equinet-s16-2`
+
+**Bra kandidater för parallellisering:**
+- Cleanup + seed-scripts (olika filer)
+- iOS + webb (olika kataloger)
+- Docs + implementation (ingen överlapp)
+
+**ALDRIG parallellt:**
+- Två stories som rör samma API routes
+- Schema-ändring + route-ändring (migreringen måste vara klar först)

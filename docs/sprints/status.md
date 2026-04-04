@@ -17,17 +17,20 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 15: Cutover till produktion** (docs/sprints/sprint-15-draft.md)
+**Sprint 16: Cleanup + Onboarding** (docs/sprints/sprint-16-draft.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S15-0 Fixa E2E i CI | fullstack | Dev | done | feature/s15-0-fix-e2e-ci | 6fa431a0 |
-| S15-1 Hook + trigger + RLS på prod | fullstack | Dev | done | feature/s15-1-prod-hook-rls | f98cce1a |
-| S15-2 Migrera prod-användare | fullstack | Dev | done | feature/s15-2-migrate-prod-users | 874c62d7 |
-| S15-3 Byt Vercel env | fullstack | Dev | done | feature/s15-3-vercel-env | 811f794a |
-| S15-4 Smoke-test produktion | fullstack | Dev | done | feature/s15-4-smoke-test | 99d7025b |
-| S15-5 Penetrationstest | fullstack | Dev | done | feature/s15-5-pentest | - |
-| S15-6 PoC = staging | fullstack | Dev | done | feature/s15-6-poc-staging | - |
+| S16-1 Ta bort NextAuth-rester | fullstack | - | pending | - | - |
+| S16-2 Seed-scripts Supabase Auth | fullstack | - | pending | - | - |
+| S16-3 Onboarding leverantör #2 | fullstack | - | pending | - | - |
+| S16-4 Admin-härdning (MFA + audit) | fullstack | - | pending | - | - |
+
+**Sprint 15** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S15-0 -- S15-6 (7 stories) | fullstack | Dev | done |
 
 **Sprint 14** (klar):
 
