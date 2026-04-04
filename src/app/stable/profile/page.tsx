@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,7 +22,6 @@ interface StableProfile {
 }
 
 export default function StableProfilePage() {
-  const { update: updateSession } = useSession()
   const router = useRouter()
   const [profile, setProfile] = useState<StableProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -100,8 +98,7 @@ export default function StableProfilePage() {
 
       const data = await res.json()
       setProfile(data)
-      // Refresh session to include stableId -- must resolve BEFORE redirect
-      await updateSession({ stableId: data.stableId || data.id })
+      // stableId is now fetched from DB on each request (no JWT claim to refresh)
       toast.success("Stallprofil skapad! Lägg nu till dina stallplatser.")
       router.push("/stable/spots")
     } catch {

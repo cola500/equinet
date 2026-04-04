@@ -78,7 +78,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 403 when user is customer", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const response = await GET(createRequest())
@@ -93,7 +93,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 429 when rate limited", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
     mockRateLimiters.api.mockResolvedValueOnce(false)
 
@@ -109,7 +109,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 404 when feature flag disabled", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
     mockIsFeatureEnabled.mockResolvedValueOnce(false)
 
@@ -126,7 +126,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 200 with null when no subscription", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
     mockGetStatus.mockResolvedValue({
       ok: true,
@@ -143,7 +143,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 200 with status when subscription exists", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
 
     const periodEnd = new Date("2026-03-28T00:00:00.000Z")
@@ -170,7 +170,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("passes providerId from session to service", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
     mockGetStatus.mockResolvedValue({
       ok: true,
@@ -185,7 +185,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 404 when service returns error", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
     mockGetStatus.mockResolvedValue({
       ok: false,
@@ -204,7 +204,7 @@ describe("GET /api/provider/subscription/status", () => {
   it("returns 500 on unexpected errors", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: PROVIDER_ID, stableId: null, authMethod: "nextauth" as const,
+      providerId: PROVIDER_ID, stableId: null, authMethod: "supabase" as const,
     })
     mockGetStatus.mockRejectedValue(new Error("DB connection failed"))
 

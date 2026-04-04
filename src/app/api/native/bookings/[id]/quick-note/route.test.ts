@@ -59,7 +59,7 @@ const params = Promise.resolve({ id: "booking-1" })
 describe("POST /api/native/bookings/[id]/quick-note", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "bearer" as const })
+    mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockFindBooking.mockResolvedValue(mockBookingData as never)
     mockRateLimit.mockResolvedValue(true)

@@ -188,7 +188,7 @@ describe("PUT /api/bookings/[id] (integration)", () => {
 
     // Default: session auth as provider
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     // Provider lookup
@@ -232,7 +232,7 @@ describe("PUT /api/bookings/[id] (integration)", () => {
   it("customer cancels booking with message -- 200", async () => {
     // Auth as customer
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const cancelledBooking = {
@@ -329,7 +329,7 @@ describe("PUT /api/bookings/[id] (integration)", () => {
   it("returns 400 when customer tries provider-only status (real BookingService validation)", async () => {
     // Auth as customer
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const res = await PUT(
@@ -383,7 +383,7 @@ describe("PUT /api/bookings/[id] (integration)", () => {
 
   it("supports bearer auth via getAuthUser", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "bearer" as const,
+      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const res = await PUT(
@@ -416,7 +416,7 @@ describe("DELETE /api/bookings/[id] (integration)", () => {
 
     // Default: session auth as provider
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "provider-user-1", email: "erik@example.com", userType: "provider", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     // Provider lookup
@@ -443,7 +443,7 @@ describe("DELETE /api/bookings/[id] (integration)", () => {
 
   it("customer deletes own booking -- 200", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth" as const,
+      id: "customer-1", email: "anna@example.com", userType: "customer", isAdmin: false, providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const res = await DELETE(createDeleteRequest(), { params })

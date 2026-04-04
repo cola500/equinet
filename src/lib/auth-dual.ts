@@ -1,16 +1,12 @@
 /**
- * Dual-auth helper for parallel auth migration.
+ * Unified auth helper.
  *
- * Resolves auth from three sources in fixed priority order:
- * 1. Bearer token (iOS mobile JWT)
- * 2. NextAuth session cookie
- * 3. Supabase Auth cookie
+ * Resolves auth from Supabase Auth cookie.
+ * Previously supported Bearer (mobile token) and NextAuth -- now Supabase only.
  *
  * ALWAYS performs DB lookup for providerId/stableId/isAdmin -- never trusts JWT claims.
  */
 import { prisma } from "@/lib/prisma"
-import { authFromMobileToken } from "@/lib/mobile-auth"
-import { auth } from "@/lib/auth"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { logger } from "@/lib/logger"
 
@@ -21,44 +17,15 @@ export interface AuthUser {
   isAdmin: boolean
   providerId: string | null
   stableId: string | null
-  authMethod: "bearer" | "nextauth" | "supabase"
+  authMethod: "supabase"
 }
 
 /**
- * Resolve authenticated user from any of three auth sources.
+ * Resolve authenticated user from Supabase Auth cookie.
  *
- * Priority: Bearer > NextAuth > Supabase (fixed, no feature flag).
  * Returns null if no valid auth found.
  */
-export async function getAuthUser(request: Request): Promise<AuthUser | null> {
-  // 1. Bearer token (iOS mobile JWT)
-  try {
-    const bearerResult = await authFromMobileToken(request)
-    if (bearerResult) {
-      return enrichFromDatabase(bearerResult.userId, "", "bearer")
-    }
-  } catch (err) {
-    logger.warn("Bearer auth failed, trying NextAuth", { error: err })
-  }
-
-  // 2. NextAuth session cookie
-  try {
-    const session = await auth()
-    if (session?.user?.id) {
-      return enrichFromDatabase(
-        session.user.id,
-        session.user.email ?? "",
-        "nextauth"
-      )
-    }
-  } catch (err) {
-    // auth() throws Response(401) when no session -- that's expected, not an error
-    if (!(err instanceof Response)) {
-      logger.warn("NextAuth failed, trying Supabase", { error: err })
-    }
-  }
-
-  // 3. Supabase Auth cookie
+export async function getAuthUser(_request: Request): Promise<AuthUser | null> {
   try {
     const supabase = await createSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()

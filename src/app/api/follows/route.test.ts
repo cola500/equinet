@@ -61,7 +61,7 @@ describe("POST /api/follows", () => {
   it("should return 403 when user is not a customer", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "provider", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const response = await POST(makeRequest("POST", { providerId: PROVIDER_ID }))
@@ -71,7 +71,7 @@ describe("POST /api/follows", () => {
   it("should return 404 when feature flag is disabled", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(false)
@@ -83,7 +83,7 @@ describe("POST /api/follows", () => {
   it("should return 400 for invalid JSON", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -100,7 +100,7 @@ describe("POST /api/follows", () => {
   it("should return 404 when provider not found", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -113,7 +113,7 @@ describe("POST /api/follows", () => {
   it("should return 201 on success", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -149,7 +149,7 @@ describe("GET /api/follows", () => {
   it("should return followed providers list", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)

@@ -51,7 +51,7 @@ describe("GET /api/provider/onboarding-status", () => {
       isAdmin: false,
       providerId: "provider-1",
       stableId: null,
-      authMethod: "nextauth",
+      authMethod: "supabase",
     })
     mockFindFirst.mockResolvedValue(makeProvider() as never)
   })
@@ -76,7 +76,7 @@ describe("GET /api/provider/onboarding-status", () => {
       isAdmin: false,
       providerId: "provider-1",
       stableId: null,
-      authMethod: "nextauth",
+      authMethod: "supabase",
     })
 
     const res = await GET(mockRequest())
@@ -92,7 +92,7 @@ describe("GET /api/provider/onboarding-status", () => {
       isAdmin: false,
       providerId: "provider-1",
       stableId: null,
-      authMethod: "bearer",
+      authMethod: "supabase",
     })
 
     const res = await GET(mockRequest())

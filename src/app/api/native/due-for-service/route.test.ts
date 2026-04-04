@@ -53,7 +53,7 @@ describe("GET /api/native/due-for-service", () => {
       isAdmin: false,
       providerId: "provider-1",
       stableId: null,
-      authMethod: "bearer" as const,
+      authMethod: "supabase" as const,
     })
 
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)

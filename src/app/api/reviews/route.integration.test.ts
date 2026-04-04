@@ -152,7 +152,7 @@ describe("POST /api/reviews (integration)", () => {
     // Auth: customer session
     vi.mocked(getAuthUser).mockResolvedValue({
       id: CUSTOMER_ID, email: "anna@test.se", userType: "customer",
-      isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth",
+      isAdmin: false, providerId: null, stableId: null, authMethod: "supabase",
     })
 
     // Prisma: booking lookup (used by getBooking in route)
@@ -216,7 +216,7 @@ describe("POST /api/reviews (integration)", () => {
   it("returns 403 when user is not customer", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "provider-1", email: "prov@test.se", userType: "provider",
-      isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth",
+      isAdmin: false, providerId: null, stableId: null, authMethod: "supabase",
     })
 
     const res = await POST(makeRequest(validBody))

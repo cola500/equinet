@@ -38,7 +38,7 @@ describe("DELETE /api/account", () => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue({
       id: "user-1", email: "test@test.se", userType: "customer",
-      isAdmin: false, providerId: null, stableId: null, authMethod: "nextauth",
+      isAdmin: false, providerId: null, stableId: null, authMethod: "supabase",
     })
     mockRateLimiters.profileUpdate.mockResolvedValue(true)
     mockCreateService.mockReturnValue({

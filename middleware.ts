@@ -1,43 +1,57 @@
-// Auth middleware using NextAuth v5 (Edge-compatible) + Supabase Auth fallback
-// IMPORTANT: Only import from auth.config.ts, NOT auth.ts (which has Prisma/bcrypt)
-import NextAuth from "next-auth"
-import { authConfig } from "@/lib/auth.config"
-import { NextResponse } from "next/server"
+// Auth middleware using Supabase Auth (Edge-compatible)
+// Replaces the previous NextAuth-based middleware.
+// Reads Supabase cookies, refreshes tokens, and checks role-based access.
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
 import { handleAuthorization } from "@/lib/middleware-auth"
-import { getSupabaseUserFromCookie } from "@/lib/auth-supabase-edge"
 
-// Create Edge-compatible auth instance with minimal config
-const { auth } = NextAuth(authConfig)
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
 
-export default auth(async (req) => {
-  const { auth: session, nextUrl } = req
-  const path = nextUrl.pathname
+  // Create response first -- Supabase needs it to set refreshed cookies
+  const response = NextResponse.next({ request: req })
 
-  // 1. NextAuth session (primary -- existing users)
-  if (session?.user) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          // Set cookies on both request (for downstream) and response (for browser)
+          cookiesToSet.forEach(({ name, value, options }) => {
+            req.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  // IMPORTANT: Use getUser() not getSession() -- getUser() validates the JWT
+  // server-side and triggers token refresh when needed
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (!error && user) {
+    const appMetadata = user.app_metadata ?? {}
     const result = handleAuthorization(
       {
-        userType: session.user.userType as string,
-        isAdmin: session.user.isAdmin === true,
+        userType: (appMetadata.userType as string) ?? "customer",
+        isAdmin: (appMetadata.isAdmin as boolean) ?? false,
       },
-      nextUrl
+      req.nextUrl
     )
-    return result ?? NextResponse.next()
+    return result ?? response
   }
 
-  // 2. Supabase Auth session (fallback -- migrated users)
-  const supabaseUser = await getSupabaseUserFromCookie(req)
-  if (supabaseUser) {
-    const result = handleAuthorization(supabaseUser, nextUrl)
-    return result ?? NextResponse.next()
-  }
-
-  // 3. No auth -- block access
-  if (path.startsWith('/api/')) {
+  // No valid auth -- block access
+  if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
-  return NextResponse.redirect(new URL('/login', nextUrl))
-})
+  return NextResponse.redirect(new URL("/login", req.nextUrl))
+}
 
 // Configure which routes require authentication
 export const config = {

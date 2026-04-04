@@ -50,7 +50,7 @@ describe("DELETE /api/follows/:providerId", () => {
   it("should return 200 on successful unfollow", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -66,7 +66,7 @@ describe("DELETE /api/follows/:providerId", () => {
   it("should return 200 even when not following (idempotent)", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -85,7 +85,7 @@ describe("GET /api/follows/:providerId", () => {
   it("should return follow status with isFollowing true", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
@@ -103,7 +103,7 @@ describe("GET /api/follows/:providerId", () => {
   it("should return follow status with isFollowing false", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
     const { isFeatureEnabled } = await import("@/lib/feature-flags")
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)

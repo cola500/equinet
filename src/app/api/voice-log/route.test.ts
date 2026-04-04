@@ -71,7 +71,7 @@ describe("POST /api/voice-log", () => {
     mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "user-1", email: "", userType: "provider", isAdmin: false,
-      providerId: "provider-1", stableId: null, authMethod: "nextauth" as const,
+      providerId: "provider-1", stableId: null, authMethod: "supabase" as const,
     })
     mockFindByUserId.mockResolvedValue({ id: "provider-1" })
     mockFindMany.mockResolvedValue([])
@@ -108,7 +108,7 @@ describe("POST /api/voice-log", () => {
   it("returns 403 when user is not a provider", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "user-1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "nextauth" as const,
+      providerId: null, stableId: null, authMethod: "supabase" as const,
     })
 
     const response = await POST(makeRequest({ transcript: "test" }))

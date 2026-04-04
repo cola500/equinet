@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
-import { signOut } from "next-auth/react"
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +34,13 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
 
   const handleLogout = async () => {
     notifyNativeLogout()
-    await signOut({ callbackUrl: "/" })
+    // Clear any lingering NextAuth cookies from pre-migration sessions
+    document.cookie = "next-auth.session-token=; Max-Age=0; path=/"
+    document.cookie = "__Secure-next-auth.session-token=; Max-Age=0; path=/; secure"
+    document.cookie = "next-auth.csrf-token=; Max-Age=0; path=/"
+    const supabase = createSupabaseBrowserClient()
+    await supabase.auth.signOut()
+    window.location.href = "/"
   }
 
   return (

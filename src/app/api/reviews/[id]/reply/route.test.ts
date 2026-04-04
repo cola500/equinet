@@ -12,9 +12,7 @@ vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
 }))
 
-vi.mock('@/lib/mobile-auth', () => ({
-  authFromMobileToken: vi.fn(),
-}))
+// mobile-auth removed in S13-2
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -38,10 +36,10 @@ vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }))
 
-import { authFromMobileToken } from '@/lib/mobile-auth'
+import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters, RateLimitServiceError } from '@/lib/rate-limit'
 
-const mockMobileAuth = vi.mocked(authFromMobileToken)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimit = vi.mocked(rateLimiters.api)
 
 const mockReview = {
@@ -73,8 +71,8 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should add a reply to a review', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
@@ -100,12 +98,7 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should return 401 when not authenticated', async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    )
+    mockGetAuthUser.mockResolvedValue(null)
 
     const { request, params } = createRequest('review-1', 'POST', { reply: 'Tack!' })
     const response = await POST(request, { params })
@@ -113,9 +106,7 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should return 403 when user is not a provider', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'user-1', userType: 'customer' },
-    } as never)
+    mockGetAuthUser.mockResolvedValue({ id: 'user-1', email: 'c@test.se', userType: 'customer', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' })
 
     const { request, params } = createRequest('review-1', 'POST', { reply: 'Tack!' })
     const response = await POST(request, { params })
@@ -126,8 +117,8 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should return 404 when review not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
@@ -143,8 +134,8 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should return 403 when provider does not own the review', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'other-provider',
@@ -160,8 +151,8 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should return 400 for reply exceeding 500 characters', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
 
     const { request, params } = createRequest('review-1', 'POST', {
@@ -176,8 +167,8 @@ describe('POST /api/reviews/[id]/reply', () => {
   })
 
   it('should return 409 when reply already exists', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
@@ -203,8 +194,8 @@ describe('DELETE /api/reviews/[id]/reply', () => {
   })
 
   it('should delete a reply', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
@@ -227,8 +218,8 @@ describe('DELETE /api/reviews/[id]/reply', () => {
   })
 
   it('should return 404 when review not found', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
@@ -244,8 +235,8 @@ describe('DELETE /api/reviews/[id]/reply', () => {
   })
 
   it('should return 403 when provider does not own the review', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'other-provider',
@@ -267,19 +258,12 @@ describe('DELETE /api/reviews/[id]/reply', () => {
 describe('POST /api/reviews/[id]/reply - Bearer token auth', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockMobileAuth.mockResolvedValue(null)
+    mockGetAuthUser.mockResolvedValue(null)
     mockRateLimit.mockResolvedValue(true)
   })
 
-  it('should work with Bearer token (mobile auth)', async () => {
-    // No session needed -- mobile auth provides userId
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    )
-    mockMobileAuth.mockResolvedValue({ userId: 'provider-user-1', tokenId: 'token-1' })
+  it('should work with Supabase auth (replaces Bearer token)', async () => {
+    mockGetAuthUser.mockResolvedValue({ id: 'provider-user-1', email: 'test@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
     } as never)
@@ -302,8 +286,8 @@ describe('POST /api/reviews/[id]/reply - Bearer token auth', () => {
   })
 
   it('should return 503 when rate limiter throws RateLimitServiceError', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     mockRateLimit.mockRejectedValue(new RateLimitServiceError('Redis error'))
 
@@ -319,18 +303,12 @@ describe('POST /api/reviews/[id]/reply - Bearer token auth', () => {
 describe('DELETE /api/reviews/[id]/reply - Bearer token auth', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockMobileAuth.mockResolvedValue(null)
+    mockGetAuthUser.mockResolvedValue(null)
     mockRateLimit.mockResolvedValue(true)
   })
 
-  it('should work with Bearer token (mobile auth)', async () => {
-    vi.mocked(auth).mockRejectedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    )
-    mockMobileAuth.mockResolvedValue({ userId: 'provider-user-1', tokenId: 'token-1' })
+  it('should work with Supabase auth (replaces Bearer token)', async () => {
+    mockGetAuthUser.mockResolvedValue({ id: 'provider-user-1', email: 'test@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' })
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: 'provider-1',
     } as never)
@@ -352,8 +330,8 @@ describe('DELETE /api/reviews/[id]/reply - Bearer token auth', () => {
   })
 
   it('should return 503 when rate limiter throws RateLimitServiceError', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      user: { id: 'provider-user-1', userType: 'provider' },
+    mockGetAuthUser.mockResolvedValue({
+      id: 'provider-user-1', email: 'p@test.se', userType: 'provider', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase',
     } as never)
     mockRateLimit.mockRejectedValue(new RateLimitServiceError('Redis error'))
 

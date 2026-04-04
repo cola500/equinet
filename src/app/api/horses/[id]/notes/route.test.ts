@@ -37,7 +37,7 @@ vi.mock("@/domain/horse/HorseService", () => ({
 
 const mockAuthUser = {
   id: "customer-1", email: "anna@test.se", userType: "customer", isAdmin: false,
-  providerId: null, stableId: null, authMethod: "nextauth" as const,
+  providerId: null, stableId: null, authMethod: "supabase" as const,
 }
 
 const routeContext = { params: Promise.resolve({ id: "horse-1" }) }

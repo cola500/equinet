@@ -35,7 +35,7 @@ import { Result } from "@/domain/shared"
 
 const mockAuthUser = {
   id: "user-1", email: "anna@test.se", userType: "customer", isAdmin: false,
-  providerId: null, stableId: null, authMethod: "nextauth" as const,
+  providerId: null, stableId: null, authMethod: "supabase" as const,
 }
 
 function makeRequest(body: unknown) {

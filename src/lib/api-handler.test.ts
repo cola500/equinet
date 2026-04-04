@@ -47,7 +47,7 @@ const providerAuthUser: AuthUser = {
   isAdmin: false,
   providerId: "prov-1",
   stableId: null,
-  authMethod: "nextauth",
+  authMethod: "supabase",
 }
 
 const customerAuthUser: AuthUser = {
@@ -57,7 +57,7 @@ const customerAuthUser: AuthUser = {
   isAdmin: false,
   providerId: null,
   stableId: null,
-  authMethod: "nextauth",
+  authMethod: "supabase",
 }
 
 function makeRequest(url = "http://localhost:3000/api/test", opts?: RequestInit) {
@@ -173,7 +173,7 @@ describe("withApiHandler", () => {
   it("should authenticate via any auth method (Bearer, NextAuth, Supabase)", async () => {
     mockGetAuthUser.mockResolvedValue({
       ...providerAuthUser,
-      authMethod: "bearer",
+      authMethod: "supabase",
     })
 
     const handler = withApiHandler({ auth: "provider" }, async (ctx) => {
