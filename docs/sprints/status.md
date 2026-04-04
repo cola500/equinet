@@ -160,13 +160,19 @@ sections:
 - ~~Geocode utan auth~~ -- har auth + rate limiting sedan tidigare
 - ~~user_metadata for rolldata~~ -- anvands bara for profildata
 
-**Kvarstaende LOW:**
+**Kvarstaende:**
 
-| Item | Allvarlighet | Beskrivning |
-|------|-------------|-------------|
-| robots.txt + sitemap.xml | LOW | ZAP varnar om 404. |
-| Cross-Origin-Embedder-Policy header | LOW | Lagg till via vercel.json headers. |
-| Zod .strict() pa mobile-token | LOW | Saknas pa request body. |
+| Item | Prioritet | Effort | Beskrivning |
+|------|-----------|--------|-------------|
+| Vercel Speed Insights | MEDEL | 5 min | Installera `@vercel/speed-insights`, gratis RUM (Core Web Vitals) |
+| Supabase Realtime | MEDEL | 1-2 dagar | Live-uppdatering av bokningar via WebSocket, ersatter SWR-polling |
+| WAF Custom Rules | MEDEL | 30 min | 3 gratis firewall-regler i Vercel, blockera trafik fore funktionen |
+| pg_cron | LAG | 1h | Databasunderhall (rensa tokens, aggregera statistik) direkt i Supabase |
+| Edge Config for feature flags | LAG | 0.5-1 dag | Ultra-snabb key-value (<1ms), ersatter PostgreSQL-baserade flags |
+| robots.txt + sitemap.xml | LAG | 15 min | ZAP varnar om 404 |
+| Cross-Origin-Embedder-Policy | LAG | 15 min | Lagg till header via vercel.json |
+| Zod .strict() pa mobile-token | LAG | 30 min | Saknas pa request body |
+| Uppgradera till Vercel Pro | BLOCKER vid lansering | $20/man | Hobby tillater inte kommersiellt bruk |
 
 ## Blockerare
 
