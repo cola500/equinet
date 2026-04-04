@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Alla kända stories och uppgifter, speglar roadmap.md. Plockas in i sprintar vid behov."
 category: sprint
 status: active
-last_updated: 2026-04-02
+last_updated: 2026-04-04
 tags: [backlog, roadmap, planning]
 sections:
   - Blockerare
@@ -82,6 +82,8 @@ sections:
 | E2E: fixa 77 skippade tester | 1-2 veckor | Låg |
 | recurring_bookings E2E-verifiering | 1 dag | Medel |
 | group_bookings E2E + UX-review | 2-3 dagar | Medel |
+| iOS: `Task.detached` -> `Task` i AuthManager.logout() | 5 min | Låg (SwiftUI Pro review S13-4) |
+| iOS: Force unwrap -> guard let i AuthManager.exchangeSessionForWebCookies() | 5 min | Låg (SwiftUI Pro review S13-4) |
 | Confirm-route migrering till withApiHandler | 30 min | Låg (opportunistiskt) |
 | withApiHandler resterande routes (131 st) | Löpande | Opportunistiskt |
 | console.* i legacy docs | 0.5 dag | Låg |
