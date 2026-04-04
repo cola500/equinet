@@ -2,12 +2,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
 import { prisma } from '@/lib/prisma'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { rateLimiters } from '@/lib/rate-limit'
 import { NextRequest } from 'next/server'
 
 // Mock dependencies
 vi.mock('@/lib/auth-dual', () => ({
   getAuthUser: vi.fn(),
+}))
+
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -46,13 +51,8 @@ describe('GET /api/services', () => {
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
   })
 
-  it('should return services for authenticated provider', async () => {
+  it('should return services for authenticated provider (via Supabase RLS)', async () => {
     // Arrange
-    const mockProvider = {
-      id: 'provider123',
-      userId: 'user123',
-    }
-
     const mockServices = [
       {
         id: 'service1',
@@ -61,7 +61,6 @@ describe('GET /api/services', () => {
         price: 800,
         durationMinutes: 60,
         providerId: 'provider123',
-        createdAt: new Date(),
       },
       {
         id: 'service2',
@@ -69,7 +68,6 @@ describe('GET /api/services', () => {
         price: 600,
         durationMinutes: 45,
         providerId: 'provider123',
-        createdAt: new Date(),
       },
     ]
 
@@ -77,8 +75,14 @@ describe('GET /api/services', () => {
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
       providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(mockProvider as never)
-    vi.mocked(prisma.service.findMany).mockResolvedValue(mockServices as never)
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: mockServices, error: null }),
+        }),
+      }),
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/services')
 
@@ -125,13 +129,20 @@ describe('GET /api/services', () => {
     expect(data.error).toBe('Åtkomst nekad')
   })
 
-  it('should return 404 when provider not found', async () => {
-    // Arrange
+  it('should return empty list when provider has no services (RLS filters)', async () => {
+    // With Supabase RLS, a provider without services gets an empty array
     vi.mocked(getAuthUser).mockResolvedValue({
       id: 'user123', email: '', userType: 'provider', isAdmin: false,
       providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
-    vi.mocked(prisma.provider.findUnique).mockResolvedValue(null)
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        }),
+      }),
+    } as never)
 
     const request = new NextRequest('http://localhost:3000/api/services')
 
@@ -139,9 +150,9 @@ describe('GET /api/services', () => {
     const response = await GET(request)
     const data = await response.json()
 
-    // Assert
-    expect(response.status).toBe(404)
-    expect(data.error).toBe('Leverantör hittades inte')
+    // Assert -- RLS returns empty array, not 404
+    expect(response.status).toBe(200)
+    expect(data).toHaveLength(0)
   })
 
   it('returns 401 when session is null', async () => {

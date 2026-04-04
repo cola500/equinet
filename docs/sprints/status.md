@@ -25,7 +25,7 @@ sections:
 | S14-1 RLS-policies | fullstack | Dev | done | feature/s14-1-rls-policies | 8f46415e |
 | S14-5 RLS-bevistest | fullstack | Dev | done | feature/s14-5-rls-proof-tests | dfa2c28c |
 | S14-2 Booking reads via Supabase | fullstack | Dev | done | feature/s14-2-booking-reads-supabase | 072ec279 |
-| S14-3 Fler reads (batch) | fullstack | - | pending | - | - |
+| S14-3 Fler reads (batch) | fullstack | Dev | done | feature/s14-3-supabase-reads-batch | f4a6f946 |
 
 **Sprint 13** (klar):
 
@@ -120,7 +120,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S14-2 Booking reads via Supabase | feature/s14-2-booking-reads-supabase | 2026-04-04 |
+| Dev | Fullstack | S14-3 Fler reads (batch) | feature/s14-3-supabase-reads-batch | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
