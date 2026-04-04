@@ -60,6 +60,7 @@ export interface VerificationTokenWithUser {
 // -----------------------------------------------------------
 
 export interface CreateUserData {
+  id?: string
   email: string
   passwordHash: string
   firstName: string
@@ -183,4 +184,9 @@ export interface IAuthRepository {
    * Reset password: atomically update passwordHash and mark token as used.
    */
   resetPassword(userId: string, tokenId: string, passwordHash: string): Promise<void>
+
+  /**
+   * Update userType for a user (e.g., after Supabase signup + provider creation).
+   */
+  updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void>
 }

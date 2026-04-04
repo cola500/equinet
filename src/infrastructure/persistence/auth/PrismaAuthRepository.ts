@@ -108,6 +108,7 @@ export class PrismaAuthRepository implements IAuthRepository {
   async createUser(data: CreateUserData): Promise<AuthUser> {
     return prisma.user.create({
       data: {
+        ...(data.id ? { id: data.id } : {}),
         email: data.email,
         passwordHash: data.passwordHash,
         firstName: data.firstName,
@@ -234,5 +235,12 @@ export class PrismaAuthRepository implements IAuthRepository {
         data: { usedAt: new Date() },
       }),
     ])
+  }
+
+  async updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { userType },
+    })
   }
 }

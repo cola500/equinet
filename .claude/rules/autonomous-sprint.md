@@ -55,20 +55,20 @@ För VARJE story i sprint-dokumentets prioritetsordning:
 - ALLA 4 gates MÅSTE vara gröna innan vidare
 - Om fail: fixa och kör igen. Max 3 försök, sedan STOPP.
 
-### 7. Done-fil
+### 7. Done-fil + status-uppdatering (SAMMA commit)
 - Skriv `docs/done/<story-id>-done.md` med:
   - Acceptanskriterier bockade
   - Definition of Done bockade
   - **Reviews körda** (vilka subagenter)
   - Avvikelser
   - Lärdomar
+- **SAMTIDIGT:** Uppdatera `docs/sprints/status.md`: story -> `done` + commit-hash
+- **Committa BÅDA filerna i samma commit** (förhindrar drift)
 
 ### 8. Merga
-- Committa done-fil
 - Push feature branch till remote
 - Merge till main: `git checkout main && git merge feature/<branch> --no-ff`
 - Push main: `LEAD_MERGE=1 git push origin main`
-- Uppdatera status.md: story -> `done` + commit-hash
 - Ta bort feature branch lokalt och remote
 
 ### 9. Nästa story
