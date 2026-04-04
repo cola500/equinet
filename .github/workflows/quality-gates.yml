@@ -117,8 +117,7 @@ jobs:
       - name: Run E2E tests
         env:
           DEBUG: pw:webserver
-        # Temporary: run only login diagnostic to isolate auth issue
-        run: npx playwright test e2e/login-diagnostic.spec.ts --project=chromium
+        run: npm run test:e2e:smoke
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
