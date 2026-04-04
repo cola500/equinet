@@ -1404,6 +1404,21 @@ body { padding-bottom: 0 !important; }
 
 ---
 
+## Gotcha #32: Supabase Auth-migrering -- dual-auth under övergång
+
+**Problem:** Under migreringen från NextAuth till Supabase Auth (sprint 11-13) körs båda systemen parallellt. `getAuthUser()` i `src/lib/auth-dual.ts` provar Bearer > NextAuth > Supabase i fast ordning.
+
+**Viktigt:**
+- `getAuthUser()` gör ALLTID DB-lookup för `providerId` -- lita aldrig på JWT claims
+- Middleware stödjer båda auth-systemen (NextAuth + Supabase cookies)
+- `LEAD_MERGE=1` är borttagen -- Dev pushar direkt till main
+- iOS använder Supabase Swift SDK (S13-4), WKWebView autenticeras via `native-session-exchange`
+- Registrering använder `admin.createUser()` server-side (behåller rate limiting + sanitering)
+
+**Regel:** Vid ny route: använd `getAuthUser(request)` från `@/lib/auth-dual`, inte `auth()` eller `authFromMobileToken()`.
+
+---
+
 ## Relaterade Dokument
 
 - [CLAUDE.md](../CLAUDE.md) - Utvecklingsguide

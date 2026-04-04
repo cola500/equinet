@@ -66,7 +66,7 @@ sections:
 
 ## Projekt
 
-- **Stack**: Next.js 16 (App Router) + TypeScript + Prisma + NextAuth v5 + shadcn/ui
+- **Stack**: Next.js 16 (App Router) + TypeScript + Prisma + Supabase Auth + shadcn/ui
 - **Språk**: Svenska (UI/docs), Engelska (kod)
 - **Approach**: DDD-Light, TDD, Feature branches
 - **Databas**: Supabase (PostgreSQL)
@@ -210,7 +210,7 @@ src/
 
 ## Säkerhet
 
-**Implementerat:** bcrypt, HTTP-only cookies, CSRF (NextAuth + Origin-validering), Prisma (SQL injection), React (XSS), Zod, session + ownership checks, error sanitering, rate limiting (Upstash Redis).
+**Implementerat:** Supabase Auth (lösenord, sessions, email-verifiering), RLS (Row Level Security), HTTP-only cookies, Prisma (SQL injection), React (XSS), Zod, ownership guards (`findByIdForProvider`), rate limiting (Upstash Redis), Sentry.
 
 > Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
@@ -488,7 +488,9 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 ## Resurser
 
 - **prisma/schema.prisma** - Databasschema (source of truth)
-- **src/lib/auth.ts** - NextAuth config
+- **src/lib/auth-dual.ts** - Dual-auth helper (Bearer > NextAuth > Supabase)
+- **src/lib/supabase/server.ts** - Supabase server client
+- **src/lib/supabase/browser.ts** - Supabase browser client
 - [Next.js Docs](https://nextjs.org/docs) | [Prisma Docs](https://www.prisma.io/docs) | [shadcn/ui Docs](https://ui.shadcn.com)
 
 ---
