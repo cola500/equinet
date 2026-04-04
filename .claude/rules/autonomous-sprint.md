@@ -65,11 +65,31 @@ För VARJE story i sprint-dokumentets prioritetsordning:
 - **SAMTIDIGT:** Uppdatera `docs/sprints/status.md`: story -> `done` + commit-hash
 - **Committa BÅDA filerna i samma commit** (förhindrar drift)
 
-### 8. Merga
-- Push feature branch till remote
-- Merge till main: `git checkout main && git merge feature/<branch> --no-ff`
-- Push main: `LEAD_MERGE=1 git push origin main`
-- Ta bort feature branch lokalt och remote
+### 8. Merga (Dev äger hela flödet)
+
+```bash
+# 1. Pusha feature branch
+git push -u origin feature/<story-id>-<namn>
+
+# 2. Byt till main och merga
+git checkout main
+git pull origin main
+git merge feature/<story-id>-<namn> --no-ff -m "Merge feature/<story-id>: kort beskrivning"
+
+# 3. Pusha main
+git push origin main
+
+# 4. Rensa branch (OMEDELBART)
+git branch -d feature/<story-id>-<namn>
+git push origin --delete feature/<story-id>-<namn>
+```
+
+**REGLER:**
+- Dev mergar SJÄLV -- ingen Lead-merge behövs
+- `LEAD_MERGE=1` behövs INTE (branch protection av)
+- Feature branch MÅSTE raderas efter merge (lokalt + remote)
+- `git pull origin main` FÖRE merge (undvik divergent branches)
+- Pusha ALDRIG direkt till main utan feature branch
 
 ### 9. Nästa story
 - Gå till steg 1 med nästa pending story

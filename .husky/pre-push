@@ -1,14 +1,7 @@
 . "$HOME/.nvm/nvm.sh" 2>/dev/null
 
-# Block direct push to main unless LEAD_MERGE=1 is set
-CURRENT_BRANCH=$(git branch --show-current)
-if [ "$CURRENT_BRANCH" = "main" ] && [ "$LEAD_MERGE" != "1" ]; then
-  echo "BLOCKERAD: Push till main ar inte tillaten."
-  echo "Pusha din feature branch istallet: git push -u origin feature/<namn>"
-  echo ""
-  echo "(Tech lead: satt LEAD_MERGE=1 for att merga till main)"
-  exit 1
-fi
+# No branch protection pre-launch. Dev merges and pushes to main directly.
+# Re-enable branch protection before onboarding provider #2.
 
 echo "Running pre-push quality checks..."
 echo ""
