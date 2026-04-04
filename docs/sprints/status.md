@@ -25,6 +25,7 @@ sections:
 | S16-2 Seed-scripts Supabase Auth | fullstack | - | pending | - | - |
 | S16-3 Onboarding leverantör #2 | fullstack | - | pending | - | - |
 | S16-4 Admin-härdning (MFA + audit) | fullstack | - | pending | - | - |
+| S16-5 Free tier gapanalys | fullstack | Dev | done | - | - |
 
 **Sprint 15** (klar):
 
