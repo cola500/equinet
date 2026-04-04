@@ -75,10 +75,12 @@ jobs:
       - name: Export Supabase keys
         run: |
           SUPABASE_STATUS=$(npx supabase status -o json)
-          echo "NEXT_PUBLIC_SUPABASE_URL=$(echo $SUPABASE_STATUS | jq -r '.API_URL')" >> $GITHUB_ENV
+          # Use localhost instead of 127.0.0.1 for consistent cookie domain
+          SUPABASE_URL=$(echo $SUPABASE_STATUS | jq -r '.API_URL' | sed 's/127.0.0.1/localhost/')
+          echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(echo $SUPABASE_STATUS | jq -r '.ANON_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo $SUPABASE_STATUS | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
-          DB_URL=$(echo $SUPABASE_STATUS | jq -r '.DB_URL')
+          DB_URL=$(echo $SUPABASE_STATUS | jq -r '.DB_URL' | sed 's/127.0.0.1/localhost/')
           echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
           echo "DIRECT_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
           echo "E2E_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
