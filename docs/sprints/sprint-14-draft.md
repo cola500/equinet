@@ -44,6 +44,30 @@ Writes behålls via Prisma (service_role) tills vidare.
 
 ## Stories
 
+### S14-0: iOS-verifiering av Supabase Auth -- READY
+
+**Prioritet:** Högst (blockerar resten av sprinten)
+**Typ:** Verifiering
+**Tagg:** ios
+**Beskrivning:** Sprint 13 verifierade webben (12 sidor via Playwright MCP) men iOS
+kunde inte verifieras automatiskt. Kräver Xcode-build mot Supabase-projektet.
+
+**Uppgifter:**
+1. Bygga iOS-appen mot Supabase-projektet (`zzdamokfeenencuggjjp`)
+2. Verifiera i simulator:
+   - Login via Supabase Swift SDK
+   - Dashboard med data
+   - Navigation: alla tabs
+   - WebView-sidor: autentiserade (cookies via session-exchange)
+   - Native skärmar: annonsering, insikter
+   - Logout + re-login
+3. Fixa eventuella buggar som upptäcks
+
+**Effort:** 0.5-1 dag
+**Stationsflöde:** Red (testplan) -> Green (fixa buggar) -> Review -> Verify -> Merge
+
+---
+
 ### S14-1: RLS-policies på kärndomäner -- READY
 
 **Prioritet:** Högst
@@ -144,13 +168,39 @@ via Prisma (service_role) så detta är extra defense-in-depth.
 
 ---
 
+### S14-6: Fixa E2E i CI -- lokal Supabase Auth -- READY
+
+**Prioritet:** Hög
+**Typ:** Infrastruktur
+**Beskrivning:** Alla 19 E2E-tester som kräver login failar i CI sedan S13
+(NextAuth -> Supabase Auth). CI har ingen Supabase-instans -- login når aldrig
+dashboard.
+
+**Rotorsak:** `signInWithPassword` kräver GoTrue (Supabase Auth), men CI kör
+bara lokal PostgreSQL med dummy Supabase env-vars.
+
+**Approach:** Lägg till `supabase start` i GitHub Actions E2E-jobb. Ger lokal
+GoTrue + PostgREST. E2E-testerna kör mot riktig auth-instans.
+
+**Uppgifter:**
+1. Lägg till Supabase CLI + `supabase start` i E2E-steget i `quality-gates.yml`
+2. Sätt `NEXT_PUBLIC_SUPABASE_URL` och `SUPABASE_SERVICE_ROLE_KEY` till lokala värden
+3. Seeda auth.users i CI (migreringsscript eller SQL)
+4. Verifiera: alla 19 failande tester passerar
+
+**Effort:** 0.5-1 dag
+
+---
+
 ## Prioritetsordning
 
+0. **S14-0** iOS-verifiering av Supabase Auth (blockerare)
 1. **S14-1** Policies (grund)
 2. **S14-5** Bevistest (verifierar policies)
-3. **S14-2** Booking reads via Supabase (tunn slice)
-4. **S14-3** Fler reads (batch)
-5. **S14-4** Write-policies (backlog)
+3. **S14-6** Fixa E2E i CI (19 failande tester)
+4. **S14-2** Booking reads via Supabase (tunn slice)
+5. **S14-3** Fler reads (batch)
+6. **S14-4** Write-policies (backlog)
 
 ---
 

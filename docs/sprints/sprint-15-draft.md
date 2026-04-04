@@ -105,7 +105,26 @@ allt på det riktiga prod-projektet (`xybyzflfxnqqyxnvjklv`).
 
 ---
 
-### S15-5: PoC-projektet blir staging -- READY
+### S15-5: Penetrationstest av nya auth-flödet -- READY
+
+**Prioritet:** Hög
+**Typ:** Säkerhet
+**Beskrivning:** Pentest av det kompletta Supabase Auth + RLS-flödet i produktion. Föregående pentest (feb 2026) kördes innan auth-migreringen.
+
+**Uppgifter:**
+1. Kör security-reviewer på alla auth-relaterade routes (login, registration, session-exchange, dual-auth)
+2. Testa IDOR: kan en provider nå en annans data trots RLS?
+3. Testa privilege escalation: kan en customer bli provider/admin via manipulerade claims?
+4. Testa JWT-manipulation: funkar det att ändra providerId i token?
+5. Testa rate limiting: login brute force, API-bombardering
+6. Testa session-hantering: cookie-stöld, session fixation, replay
+7. Dokumentera resultat i `docs/security/pentest-2026-04-post-migration.md`
+
+**Effort:** 2-3h
+
+---
+
+### S15-6: PoC-projektet blir staging -- READY
 
 **Prioritet:** Medel
 **Typ:** Config
@@ -138,7 +157,8 @@ Om cutover misslyckas:
 2. **S15-2** Migrera användare
 3. **S15-3** Byt Vercel env
 4. **S15-4** Smoke-test
-5. **S15-5** PoC = staging
+5. **S15-5** Penetrationstest av nya auth-flödet
+6. **S15-6** PoC = staging
 
 ---
 

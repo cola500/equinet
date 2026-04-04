@@ -69,6 +69,7 @@ sections:
 
 ## Medellång sikt (2-4 månader)
 
+- **Admin-härdning** -- MFA obligatoriskt för admin, tidbegränsade admin-sessioner (15 min), audit log på admin-operationer. Supabase stödjer MFA redan. Kritiskt inför leverantör #2.
 - **Kundupplevelsen** -- native iOS för kunder eller polerad WebView
 - **Fortnox-integration** -- fakturering, sparar leverantörer ~1h/vecka (user research)
 - **Ruttplanering** -- kräver Mapbox-token, hög efterfrågan (120 000 hästägare, ambulerande tjänster)
