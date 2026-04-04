@@ -5,14 +5,20 @@ import { MockAuthRepository } from '@/infrastructure/persistence/auth/MockAuthRe
 // Helper to create a mock Supabase admin client
 function createMockSupabaseAdmin() {
   const calls: Array<{ email: string; password: string; user_metadata: Record<string, unknown> }> = []
+  const updateCalls: Array<{ userId: string; password: string }> = []
   let nextId = 0
 
   return {
     calls,
+    updateCalls,
     createUser: async (opts: { email: string; password: string; email_confirm: boolean; user_metadata: Record<string, unknown> }) => {
       calls.push({ email: opts.email, password: opts.password, user_metadata: opts.user_metadata })
       const id = `supabase-user-${++nextId}`
       return { data: { user: { id } }, error: null }
+    },
+    updateUserById: async (userId: string, attrs: { password: string }) => {
+      updateCalls.push({ userId, password: attrs.password })
+      return { data: { user: { id: userId } }, error: null }
     },
   }
 }
@@ -34,8 +40,6 @@ describe('AuthService', () => {
 
     const deps: AuthServiceDeps = {
       authRepository: authRepo,
-      hashPassword: async (pw) => `hashed:${pw}`,
-      comparePassword: async (pw, hash) => hash === `hashed:${pw}`,
       generateToken: () => `test-token-${++tokenCounter}`,
       emailService: {
         sendVerification: async (email, firstName, token) => {
@@ -47,6 +51,7 @@ describe('AuthService', () => {
       },
       supabaseAdmin: {
         createUser: mockSupabaseAdmin.createUser,
+        updateUserById: mockSupabaseAdmin.updateUserById,
       },
     }
 
@@ -91,15 +96,6 @@ describe('AuthService', () => {
           lastName: 'User',
         },
       })
-    })
-
-    it('should NOT hash password when using Supabase path', async () => {
-      await service.register(customerInput)
-
-      // Supabase handles password hashing -- no local hash
-      const users = authRepo.getUsers()
-      // User is created by sync trigger (simulated by repo), passwordHash should be empty
-      expect(users[0].passwordHash).toBe('')
     })
 
     it('should NOT create verification token when using Supabase path', async () => {
@@ -155,7 +151,6 @@ describe('AuthService', () => {
         firstName: 'Existing',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:old',
         emailVerified: true,
       })
 
@@ -168,8 +163,6 @@ describe('AuthService', () => {
     it('should return EMAIL_ALREADY_EXISTS when Supabase returns 422', async () => {
       const depsWithError: AuthServiceDeps = {
         authRepository: authRepo,
-        hashPassword: async (pw) => `hashed:${pw}`,
-        comparePassword: async (pw, hash) => hash === `hashed:${pw}`,
         supabaseAdmin: {
           createUser: async () => ({
             data: { user: null },
@@ -188,8 +181,6 @@ describe('AuthService', () => {
     it('should return REGISTRATION_FAILED when Supabase returns non-422 error', async () => {
       const depsWithError: AuthServiceDeps = {
         authRepository: authRepo,
-        hashPassword: async (pw) => `hashed:${pw}`,
-        comparePassword: async (pw, hash) => hash === `hashed:${pw}`,
         supabaseAdmin: {
           createUser: async () => ({
             data: { user: null },
@@ -224,7 +215,6 @@ describe('AuthService', () => {
           firstName: 'Ghost',
           lastName: '',
           userType: 'customer',
-          passwordHash: 'hashed:random-garbage',
           emailVerified: false,
           isManualCustomer: true,
         })
@@ -253,17 +243,14 @@ describe('AuthService', () => {
         expect(users[0].isManualCustomer).toBe(false)
       })
 
-      it('should hash the password for upgraded user (bcrypt path)', async () => {
+      it('should call supabaseAdmin.createUser for ghost user upgrade', async () => {
         await service.register(customerInput)
 
-        const users = authRepo.getUsers()
-        expect(users[0].passwordHash).toBe('hashed:Password123!')
-      })
-
-      it('should NOT call supabaseAdmin for ghost user upgrade', async () => {
-        await service.register(customerInput)
-
-        expect(mockSupabaseAdmin.calls).toHaveLength(0)
+        expect(mockSupabaseAdmin.calls).toHaveLength(1)
+        expect(mockSupabaseAdmin.calls[0]).toMatchObject({
+          email: 'test@example.com',
+          password: 'Password123!',
+        })
       })
 
       it('should create a verification token for upgraded user', async () => {
@@ -296,7 +283,6 @@ describe('AuthService', () => {
           firstName: 'Real',
           lastName: 'User',
           userType: 'customer',
-          passwordHash: 'hashed:old',
           emailVerified: true,
           isManualCustomer: false,
         })
@@ -331,7 +317,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: false,
       })
       authRepo.seedToken({
@@ -411,7 +396,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: false,
       })
 
@@ -437,7 +421,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: true,
       })
 
@@ -455,7 +438,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: true,
       })
 
@@ -463,106 +445,6 @@ describe('AuthService', () => {
 
       // Same response shape regardless -- enumeration prevention
       expect(result.isSuccess).toBe(true)
-    })
-  })
-
-  // ===========================================================
-  // verifyCredentials
-  // ===========================================================
-
-  describe('verifyCredentials', () => {
-    beforeEach(() => {
-      authRepo.seedUser({
-        id: 'user-1',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        userType: 'customer',
-        passwordHash: 'hashed:Password123!',
-        emailVerified: true,
-      })
-    })
-
-    it('should return user info on valid credentials', async () => {
-      const result = await service.verifyCredentials('test@example.com', 'Password123!')
-
-      expect(result.isSuccess).toBe(true)
-      expect(result.value.id).toBe('user-1')
-      expect(result.value.email).toBe('test@example.com')
-      expect(result.value.name).toBe('Test User')
-      expect(result.value.userType).toBe('customer')
-      expect(result.value.providerId).toBeNull()
-    })
-
-    it('should fail if email does not exist', async () => {
-      const result = await service.verifyCredentials('unknown@example.com', 'Password123!')
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('INVALID_CREDENTIALS')
-    })
-
-    it('should fail if password is wrong', async () => {
-      const result = await service.verifyCredentials('test@example.com', 'WrongPassword!')
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('INVALID_CREDENTIALS')
-    })
-
-    it('should fail if email is not verified', async () => {
-      authRepo.seedUser({
-        id: 'user-2',
-        email: 'unverified@example.com',
-        firstName: 'Unverified',
-        lastName: 'User',
-        userType: 'customer',
-        passwordHash: 'hashed:Password123!',
-        emailVerified: false,
-      })
-
-      const result = await service.verifyCredentials('unverified@example.com', 'Password123!')
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('EMAIL_NOT_VERIFIED')
-    })
-
-    it('should fail if account is blocked', async () => {
-      authRepo.seedUser({
-        id: 'user-blocked',
-        email: 'blocked@example.com',
-        firstName: 'Blocked',
-        lastName: 'User',
-        userType: 'customer',
-        passwordHash: 'hashed:Password123!',
-        emailVerified: true,
-        isBlocked: true,
-      })
-
-      const result = await service.verifyCredentials('blocked@example.com', 'Password123!')
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('ACCOUNT_BLOCKED')
-    })
-
-    it('should include providerId for providers', async () => {
-      authRepo.seedUser({
-        id: 'user-3',
-        email: 'provider@example.com',
-        firstName: 'Provider',
-        lastName: 'User',
-        userType: 'provider',
-        passwordHash: 'hashed:Password123!',
-        emailVerified: true,
-      })
-      authRepo.seedProvider({
-        id: 'provider-1',
-        userId: 'user-3',
-        businessName: 'Test Business',
-      })
-
-      const result = await service.verifyCredentials('provider@example.com', 'Password123!')
-
-      expect(result.isSuccess).toBe(true)
-      expect(result.value.providerId).toBe('provider-1')
     })
   })
 
@@ -578,7 +460,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: true,
       })
 
@@ -604,7 +485,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: true,
       })
 
@@ -627,7 +507,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:pw',
         emailVerified: true,
       })
 
@@ -654,7 +533,6 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         userType: 'customer',
-        passwordHash: 'hashed:OldPassword1!',
         emailVerified: true,
       })
       authRepo.seedPasswordResetToken({
@@ -671,8 +549,12 @@ describe('AuthService', () => {
 
       expect(result.isSuccess).toBe(true)
 
-      const users = authRepo.getUsers()
-      expect(users[0].passwordHash).toBe('hashed:NewPassword1!')
+      // Should call supabaseAdmin.updateUserById
+      expect(mockSupabaseAdmin.updateCalls).toHaveLength(1)
+      expect(mockSupabaseAdmin.updateCalls[0]).toMatchObject({
+        userId: 'user-1',
+        password: 'NewPassword1!',
+      })
     })
 
     it('should mark the token as used after reset', async () => {

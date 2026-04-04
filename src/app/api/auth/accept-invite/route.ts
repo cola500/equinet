@@ -4,7 +4,7 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import bcrypt from "bcrypt"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 const acceptInviteSchema = z.object({
   token: z.string().min(1),
@@ -90,15 +90,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10)
+    // Create or update Supabase Auth user with the password
+    const supabase = createSupabaseAdminClient()
+    const { error: supabaseError } = await supabase.auth.admin.updateUserById(
+      inviteToken.userId,
+      { password, email_confirm: true }
+    )
+
+    if (supabaseError) {
+      // User might not exist in auth.users yet -- try creating
+      const { error: createError } = await supabase.auth.admin.createUser({
+        id: inviteToken.userId,
+        email: inviteToken.user.email,
+        password,
+        email_confirm: true,
+        user_metadata: { firstName: inviteToken.user.firstName },
+      })
+
+      if (createError) {
+        logger.error("Failed to create Supabase Auth user for invite", {
+          userId: inviteToken.userId,
+          error: createError.message,
+        })
+        return NextResponse.json(
+          { error: "Kunde inte aktivera kontot" },
+          { status: 500 }
+        )
+      }
+    }
 
     // Atomic: upgrade user + mark token as used
     await prisma.$transaction([
       prisma.user.update({
         where: { id: inviteToken.userId },
         data: {
-          passwordHash,
           isManualCustomer: false,
           emailVerified: true,
           emailVerifiedAt: new Date(),

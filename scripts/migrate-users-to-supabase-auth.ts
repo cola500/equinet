@@ -59,7 +59,6 @@ async function run() {
     select: {
       id: true,
       email: true,
-      passwordHash: true,
       userType: true,
       firstName: true,
       lastName: true,
@@ -111,7 +110,7 @@ async function run() {
       const { data, error } = await supabase.auth.admin.createUser({
         id: user.id,
         email: user.email,
-        password_hash: user.passwordHash,
+        // passwordHash removed from User model -- this script is historical (already run)
         email_confirm: true,
         user_metadata: {
           firstName: user.firstName,

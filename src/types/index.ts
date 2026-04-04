@@ -7,7 +7,6 @@ export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' 
 export interface User {
   id: string
   email: string
-  passwordHash: string
   userType: UserType
   firstName: string
   lastName: string

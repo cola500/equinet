@@ -13,8 +13,6 @@
  */
 
 import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcrypt"
-
 const prisma = new PrismaClient()
 
 // Tag for identifying demo-created data
@@ -270,8 +268,6 @@ async function main() {
   // 4. Create demo customers
   // -------------------------------------------------------------------------
 
-  const customerPassword = await bcrypt.hash("DemoPass123!", 10)
-
   const customerData = [
     {
       email: "anna.johansson@demo.equinet.se",
@@ -310,7 +306,6 @@ async function main() {
       update: {},
       create: {
         email: c.email,
-        passwordHash: customerPassword,
         firstName: c.firstName,
         lastName: c.lastName,
         phone: c.phone,

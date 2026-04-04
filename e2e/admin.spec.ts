@@ -50,14 +50,11 @@ test.describe('Admin Dashboard & Actions', () => {
     })
 
     // Create a dedicated test user for block/unblock tests
-    const bcrypt = await import('bcrypt')
-    const hash = await bcrypt.hash('BlockTestPass123!', 10)
     const testUser = await prisma.user.upsert({
       where: { email: 'e2e-block-test@example.com' },
-      update: { isBlocked: false, passwordHash: hash },
+      update: { isBlocked: false },
       create: {
         email: 'e2e-block-test@example.com',
-        passwordHash: hash,
         firstName: 'BlockTest',
         lastName: 'User',
         phone: '0701119999',

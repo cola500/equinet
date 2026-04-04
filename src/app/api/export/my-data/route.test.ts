@@ -123,28 +123,6 @@ describe("GET /api/export/my-data", () => {
     expect(data.reviews).toHaveLength(1)
   })
 
-  it("should use select to avoid exposing passwordHash", async () => {
-    vi.mocked(auth).mockResolvedValue(mockCustomerSession)
-    // Prisma select only returns listed fields - verify select is used
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never)
-    vi.mocked(prisma.horse.findMany).mockResolvedValue([])
-    vi.mocked(prisma.booking.findMany).mockResolvedValue([])
-    vi.mocked(prisma.horseNote.findMany).mockResolvedValue([])
-    vi.mocked(prisma.review.findMany).mockResolvedValue([])
-
-    const request = new NextRequest("http://localhost:3000/api/export/my-data")
-    await GET(request)
-
-    // Verify we use select (not include) and don't request passwordHash
-    expect(prisma.user.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        select: expect.not.objectContaining({
-          passwordHash: true,
-        }),
-      })
-    )
-  })
-
   it("should return CSV with all sections when format=csv", async () => {
     vi.mocked(auth).mockResolvedValue(mockCustomerSession)
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never)

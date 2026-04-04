@@ -1,7 +1,6 @@
 export type {
   IAuthRepository,
   AuthUser,
-  AuthUserWithCredentials,
   UserForResend,
   VerificationTokenWithUser,
   CreateUserData,

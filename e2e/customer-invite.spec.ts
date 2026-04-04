@@ -43,7 +43,6 @@ test.describe('Customer Invite Flow', () => {
         userType: 'customer',
         isManualCustomer: true,
         emailVerified: false,
-        passwordHash: '',
         customerNotes: `E2E-spec:${SPEC_TAG}`,
       },
     })

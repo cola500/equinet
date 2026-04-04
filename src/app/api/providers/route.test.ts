@@ -92,7 +92,6 @@ describe('GET /api/providers', () => {
     expect(result.data[0].userId).toBeUndefined()
     expect(result.data[0].user.email).toBeUndefined()
     expect(result.data[0].user.phone).toBeUndefined()
-    expect(result.data[0].user.passwordHash).toBeUndefined()
 
     // Verify pagination metadata
     expect(result.pagination).toMatchObject({
