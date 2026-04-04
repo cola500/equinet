@@ -132,6 +132,10 @@ final class AuthManager {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 10
 
+        // Send refresh token in body so server can set proper session cookies
+        let body = ["refreshToken": session.refreshToken]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
         do {
             let (_, response) = try await URLSession.shared.data(for: request)
 

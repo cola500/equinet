@@ -1,13 +1,15 @@
 /**
  * Unified auth helper.
  *
- * Resolves auth from Supabase Auth cookie.
- * Previously supported Bearer (mobile token) and NextAuth -- now Supabase only.
+ * Resolves auth from:
+ * 1. Supabase Auth cookie (web)
+ * 2. Bearer token (iOS native -- Supabase access token)
  *
  * ALWAYS performs DB lookup for providerId/stableId/isAdmin -- never trusts JWT claims.
  */
 import { prisma } from "@/lib/prisma"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { logger } from "@/lib/logger"
 
 export interface AuthUser {
@@ -21,11 +23,13 @@ export interface AuthUser {
 }
 
 /**
- * Resolve authenticated user from Supabase Auth cookie.
+ * Resolve authenticated user.
  *
+ * Tries cookie auth first (web), then Bearer token (iOS native).
  * Returns null if no valid auth found.
  */
-export async function getAuthUser(_request: Request): Promise<AuthUser | null> {
+export async function getAuthUser(request: Request): Promise<AuthUser | null> {
+  // 1. Try Supabase cookie auth (web)
   try {
     const supabase = await createSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
@@ -33,7 +37,22 @@ export async function getAuthUser(_request: Request): Promise<AuthUser | null> {
       return enrichFromDatabase(user.id, user.email ?? "", "supabase")
     }
   } catch (err) {
-    logger.warn("Supabase auth failed", { error: err })
+    logger.warn("Supabase cookie auth failed", { error: err })
+  }
+
+  // 2. Try Bearer token (iOS native)
+  const authHeader = request.headers.get("authorization")
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7)
+    try {
+      const adminClient = createSupabaseAdminClient()
+      const { data: { user }, error } = await adminClient.auth.getUser(token)
+      if (!error && user) {
+        return enrichFromDatabase(user.id, user.email ?? "", "supabase")
+      }
+    } catch (err) {
+      logger.warn("Supabase Bearer auth failed", { error: err })
+    }
   }
 
   return null

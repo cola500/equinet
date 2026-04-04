@@ -41,12 +41,21 @@ export async function POST(request: NextRequest) {
     throw error
   }
 
-  // Extract Bearer token
+  // Extract Bearer token and refresh token
   const authHeader = request.headers.get("authorization")
   if (!authHeader?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
   const accessToken = authHeader.slice(7)
+
+  // Refresh token from body (optional for backwards compat, required for cookie setting)
+  let refreshToken: string | undefined
+  try {
+    const body = await request.json()
+    refreshToken = body.refreshToken
+  } catch {
+    // No body -- backwards compat
+  }
 
   // Create a Supabase client that will set cookies on the response
   const response = NextResponse.json({ success: true })
@@ -81,12 +90,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ogiltig token" }, { status: 401 })
   }
 
-  // Set the session on the Supabase client -- this triggers setAll() which
-  // writes the proper sb-*-auth-token cookies to the response
-  // We use admin-level setSession to trust the iOS-provided tokens
-  // Note: The cookies were already set by getUser() if the token is valid
+  // Set the session -- this triggers setAll() which writes cookies
+  if (refreshToken) {
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
+    if (sessionError) {
+      logger.warn("native-session-exchange: setSession failed", {
+        error: sessionError.message,
+      })
+    }
+  }
+
   logger.info("native-session-exchange: session exchanged", {
     userId: user.id,
+    hasCookies: !!refreshToken,
   })
 
   return response
