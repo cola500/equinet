@@ -3,7 +3,7 @@ import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
-import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { sendBookingConfirmationNotification, sendBookingStatusChangeNotification, sendPaymentConfirmationNotification } from "@/lib/email"
@@ -72,19 +72,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
-    const bookingRepo = new PrismaBookingRepository()
     let bookings
 
     if (authUser.userType === "provider") {
-      const providerRepo = new ProviderRepository()
-      const provider = await providerRepo.findByUserId(authUser.id)
+      // Supabase client with user JWT -- RLS filters by providerId automatically
+      // No WHERE clause needed: booking_provider_read policy handles it
+      const supabase = await createSupabaseServerClient()
+      const { data, error } = await supabase
+        .from("Booking")
+        .select(`
+          id, customerId, providerId, serviceId, bookingDate, startTime, endTime, status,
+          horseId, horseName, horseInfo, customerNotes, providerNotes,
+          cancellationMessage, rescheduleCount, bookingSeriesId, routeOrderId,
+          isManualBooking, createdByProviderId,
+          customer:User!customerId(firstName, lastName, email, phone),
+          service:Service!serviceId(name, price, durationMinutes),
+          horse:Horse!horseId(id, name, breed),
+          payment:Payment(id, status, amount, currency, paidAt, invoiceNumber),
+          customerReview:CustomerReview(id, rating, comment)
+        `)
+        .order("bookingDate", { ascending: false })
 
-      if (!provider) {
-        return NextResponse.json({ error: "Leverantör hittades inte" }, { status: 404 })
+      if (error) {
+        logger.error("Failed to fetch bookings via Supabase", new Error(error.message))
+        return NextResponse.json({ error: "Kunde inte hämta bokningar" }, { status: 500 })
       }
 
-      bookings = await bookingRepo.findByProviderIdWithDetails(provider.id)
+      bookings = data
     } else {
+      // Customer path stays on Prisma (migrated in S14-3)
+      const bookingRepo = new PrismaBookingRepository()
       bookings = await bookingRepo.findByCustomerIdWithDetails(authUser.id)
     }
 
