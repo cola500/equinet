@@ -46,6 +46,14 @@ Skapa SELECT-policies på kärndomänernas tabeller så att:
 | 9 | **CustomerReview** | `review_provider_read` | `"providerId" = jwt->providerId` | NY |
 | 10 | **CustomerReview** | `review_customer_read` | `"customerId" = auth.uid()` | NY |
 | 11 | **Notification** | `notification_user_read` | `"userId" = auth.uid()` | NY |
+| 12 | **BookingSeries** | `booking_series_provider_read` | `"providerId" = jwt->providerId` | NY |
+| 13 | **BookingSeries** | `booking_series_customer_read` | `"customerId" = auth.uid()` | NY |
+
+### Explicit out-of-scope (medvetet val)
+
+- **GroupBookingRequest/Participant**: Bakom feature flag, bara via Prisma (service_role). Policies läggs till vid Supabase-klient-migrering.
+- **NotificationDelivery**: Bara via service_role (cron/notifier). Inga Supabase-klient reads planerade.
+- **MobileToken, FortnoxConnection, AuditLog, SystemSetting, FeatureFlagOverride**: Admin/system-tabeller, bara via service_role. RLS deny-all (inga permissive policies) skyddar redan.
 
 ### Design-beslut
 
@@ -53,11 +61,13 @@ Skapa SELECT-policies på kärndomänernas tabeller så att:
 
 2. **Service dubbla policies**: Provider ser alla sina (även inaktiva). Kunder ser bara aktiva tjänster (för bokningsflödet). Postgres OR:ar permissive policies automatiskt.
 
-3. **Horse via ProviderCustomer**: Provider ser hästar som tillhör deras kunder. `EXISTS (SELECT 1 FROM "ProviderCustomer" WHERE "providerId" = jwt->providerId AND "customerId" = "Horse"."ownerId")`.
+3. **Horse via ProviderCustomer**: Provider ser hästar som tillhör deras kunder. `EXISTS (SELECT 1 FROM "ProviderCustomer" WHERE "providerId" = jwt->providerId AND "customerId" = "Horse"."ownerId")`. **Notera:** En kund kopplad till flera providers innebär att alla dessa providers ser kundens hästar. Detta är avsiktligt -- providern behöver se hästarnas info för att utföra tjänster.
 
 4. **Ingen FORCE ROW LEVEL SECURITY**: service_role (Prisma) ska kringgå RLS för writes, admin, cron.
 
 5. **Bara SELECT-policies**: Writes görs via Prisma (service_role). Write-policies är S14-4 (backlog).
+
+6. **ALTER befintlig booking_provider_read**: Uppdatera den befintliga PoC-policyn att använda `rls_provider_id()` för konsistens. En JWT-strukturändring ska bara behöva ändras på ett ställe.
 
 ## Approach
 
