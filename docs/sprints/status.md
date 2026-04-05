@@ -24,7 +24,7 @@ sections:
 | S16-1 Ta bort NextAuth-rester | fullstack | Dev | done | feature/s16-1-nextauth-cleanup | - |
 | S16-2 Seed-scripts Supabase Auth | fullstack | Dev | done | feature/s16-2-seed-supabase-auth | - |
 | S16-3 Onboarding leverantör #2 | fullstack | Dev | done | feature/s16-3-onboarding-flow | 5db151d6 |
-| S16-4 Admin-härdning (MFA + audit) | fullstack | - | pending | - | - |
+| S16-4 Admin-härdning (audit + session) | fullstack | Dev | in_progress | feature/s16-4-admin-hardening | - |
 | S16-5 Free tier gapanalys | fullstack | Dev | done | - | - |
 
 **Sprint 15** (klar):
@@ -132,7 +132,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S16-3 Onboarding leverantör #2 | feature/s16-3-onboarding-flow | 2026-04-04 |
+| Dev | Fullstack | S16-4 Admin-härdning | feature/s16-4-admin-hardening | 2026-04-05 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
@@ -172,6 +172,7 @@ sections:
 | robots.txt + sitemap.xml | LAG | 15 min | ZAP varnar om 404 |
 | Cross-Origin-Embedder-Policy | LAG | 15 min | Lagg till header via vercel.json |
 | Zod .strict() pa mobile-token | LAG | 30 min | Saknas pa request body |
+| MFA för admin | HOG | 1 dag | Supabase TOTP-enrollment + verifiering vid admin-login |
 | Uppgradera till Vercel Pro | BLOCKER vid lansering | $20/man | Hobby tillater inte kommersiellt bruk |
 
 ## Blockerare
