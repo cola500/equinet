@@ -395,7 +395,7 @@ export function hasSupabaseEnv(): boolean {
   // Skip for local Supabase (127.0.0.1/localhost) -- RLS proof tests
   // require pre-seeded auth users that only exist on remote Supabase.
   const isLocal =
-    url?.includes("127.0.0.1") || url?.includes("localhost:5432")
+    url?.includes("127.0.0.1") || url?.includes("localhost")
   return !!(
     url &&
     !isLocal &&

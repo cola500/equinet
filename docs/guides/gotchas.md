@@ -1456,13 +1456,13 @@ body { padding-bottom: 0 !important; }
 
 ## Gotcha #36: prisma migrate dev Fungerar Inte med Lokal Supabase
 
-**Problem:** `prisma migrate dev` skapar en shadow database for att validera migrationer. Shadow-databasen saknar Supabases `auth`-schema, sa migrationer som refererar `auth.jwt()` (t.ex. RLS-policies) failar med `ERROR: schema "auth" does not exist`.
+**Problem:** `prisma migrate dev` skapar en shadow database för att validera migrationer. Shadow-databasen saknar Supabases `auth`-schema, så migrationer som refererar `auth.jwt()` (t.ex. RLS-policies) failar med `ERROR: schema "auth" does not exist`.
 
-**Losning:**
-- **Applicera befintliga migrationer:** Anvand `prisma migrate deploy` (kors av `npm run setup`). Den skippar shadow DB och kor SQL direkt.
-- **Skapa nya migrationer:** Anvand `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/<ts>_<name>/migration.sql` for att generera SQL utan shadow DB. Eller skriv migration-filen manuellt.
+**Lösning:**
+- **Applicera befintliga migrationer:** Använd `prisma migrate deploy` (körs av `npm run setup`). Den skippar shadow DB och kör SQL direkt.
+- **Skapa nya migrationer:** Använd `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/<ts>_<name>/migration.sql` för att generera SQL utan shadow DB. Eller skriv migration-filen manuellt.
 
-**Regel:** Anvand ALDRIG `prisma migrate dev` mot lokal Supabase om det finns migrationer som refererar `auth`-schemat. Anvand `prisma migrate deploy` for att applicera och `prisma migrate diff` for att generera nya migrationer.
+**Regel:** Använd ALDRIG `prisma migrate dev` mot lokal Supabase om det finns migrationer som refererar `auth`-schemat. Använd `prisma migrate deploy` för att applicera och `prisma migrate diff` för att generera nya migrationer.
 
 ---
 
