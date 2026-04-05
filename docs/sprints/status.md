@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S16-1 Ta bort NextAuth-rester | fullstack | Dev | done | feature/s16-1-nextauth-cleanup | - |
 | S16-2 Seed-scripts Supabase Auth | fullstack | Dev | done | feature/s16-2-seed-supabase-auth | - |
-| S16-3 Onboarding leverantör #2 | fullstack | - | pending | - | - |
+| S16-3 Onboarding leverantör #2 | fullstack | Dev | done | feature/s16-3-onboarding-flow | 5db151d6 |
 | S16-4 Admin-härdning (MFA + audit) | fullstack | - | pending | - | - |
 | S16-5 Free tier gapanalys | fullstack | Dev | done | - | - |
 
@@ -132,7 +132,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S15-4 Smoke-test produktion | feature/s15-4-smoke-test | 2026-04-04 |
+| Dev | Fullstack | S16-3 Onboarding leverantör #2 | feature/s16-3-onboarding-flow | 2026-04-04 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

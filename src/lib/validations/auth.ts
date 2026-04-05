@@ -77,7 +77,15 @@ export const registerSchema = z.object({
   businessName: z.string().optional(),
   description: z.string().optional(),
   city: z.string().optional(),
-}).strict()
+}).strict().superRefine((data, ctx) => {
+  if (data.userType === 'provider' && (!data.businessName || data.businessName.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Företagsnamn krävs för leverantörer',
+      path: ['businessName'],
+    })
+  }
+})
 
 export type RegisterInput = z.infer<typeof registerSchema>
 
