@@ -103,8 +103,9 @@ export function withApiHandler<
               const payload = JSON.parse(atob(supaSession.access_token.split(".")[1]))
               tokenIssuedAt = payload.iat
             }
-          } catch {
-            // If we can't read iat, proceed without timeout enforcement
+          } catch (err) {
+            logger.warn("Failed to extract iat from admin JWT", { error: err })
+            // Proceed without timeout enforcement -- getAuthUser already DB-verified isAdmin
           }
           ctx.user = requireAdminRole(sessionLike, tokenIssuedAt)
         } else if (authLevel === "provider") {

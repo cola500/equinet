@@ -1,19 +1,35 @@
 import { NextResponse } from "next/server"
 import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
+import { z } from "zod"
+
+const querySchema = z.object({
+  cursor: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+})
 
 /**
  * GET /api/admin/audit-log
  * Returns paginated admin audit log entries.
- * Query params: cursor (string), limit (number, default 100, max 200)
+ * Query params: cursor (uuid, optional), limit (1-200, default 100)
  */
 export const GET = withApiHandler(
   { auth: "admin" },
   async ({ request }) => {
     const url = new URL(request.url)
-    const cursor = url.searchParams.get("cursor")
-    const limitParam = url.searchParams.get("limit")
-    const limit = Math.min(Math.max(parseInt(limitParam || "100", 10) || 100, 1), 200)
+    const parsed = querySchema.safeParse({
+      cursor: url.searchParams.get("cursor") ?? undefined,
+      limit: url.searchParams.get("limit") ?? undefined,
+    })
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Valideringsfel", details: parsed.error.issues },
+        { status: 400 },
+      )
+    }
+
+    const { cursor, limit } = parsed.data
 
     const [entries, total] = await Promise.all([
       prisma.adminAuditLog.findMany({

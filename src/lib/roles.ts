@@ -103,14 +103,19 @@ export function requireCustomer(session: SessionLike | null): CustomerUser {
 }
 
 /** Max admin session age in seconds (15 minutes) */
-const ADMIN_SESSION_MAX_AGE_SECONDS = 15 * 60
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 15 * 60
 
 /**
  * Kräver inloggad admin.
  * Kastar 401 om ej inloggad eller session för gammal, 403 om ej admin.
  *
+ * NOTE: This checks the session-level isAdmin flag. For full DB-verified
+ * admin check, withApiHandler also calls enrichFromDatabase() via getAuthUser()
+ * which always reads isAdmin from the database.
+ *
  * @param tokenIssuedAt - Unix timestamp (seconds) from JWT `iat` claim.
  *   If provided, enforces a 15-minute session timeout for admin operations.
+ *   If undefined, timeout check is skipped (caller couldn't extract iat).
  */
 export function requireAdminRole(
   session: SessionLike | null,

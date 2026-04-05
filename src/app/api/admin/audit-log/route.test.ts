@@ -124,15 +124,16 @@ describe("GET /api/admin/audit-log", () => {
     mockFindMany.mockResolvedValue([])
     mockCount.mockResolvedValue(0)
 
+    const cursorId = "a0000000-0000-4000-a000-000000000001"
     const request = new NextRequest(
-      "http://localhost:3000/api/admin/audit-log?cursor=some-id&limit=50"
+      `http://localhost:3000/api/admin/audit-log?cursor=${cursorId}&limit=50`
     )
     await GET(request)
 
     expect(mockFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 50,
-        cursor: { id: "some-id" },
+        cursor: { id: cursorId },
         skip: 1,
       })
     )
