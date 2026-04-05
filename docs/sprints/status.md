@@ -29,6 +29,7 @@ sections:
 | S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
 | S17-6 Edge Config feature flags | fullstack | Dev | done | feature/s17-6-edge-config | fafe44ee |
 | S17-8 Migrera admin-routes | fullstack | Dev | done | feature/s17-8-admin-routes-migration | c15cd2fb |
+| S17-9 iOS -> Supabase staging | ios | Dev | done | feature/s17-9-ios-supabase-staging | 88a132f4 |
 
 **Sprint 16** (klar):
 
