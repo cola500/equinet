@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   Bug,
   HelpCircle,
+  ScrollText,
 } from "lucide-react"
 import { BottomTabBar } from "./BottomTabBar"
 import type { TabItem, MoreMenuItem } from "./BottomTabBar"
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/admin/bug-reports", label: "Buggrapporter", icon: Bug },
   { href: "/admin/integrations", label: "Integrationer", icon: Plug },
   { href: "/admin/system", label: "System", icon: Activity },
+  { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
   { href: "/admin/notifications", label: "Notifikationer", icon: Bell },
   { href: "/admin/testing-guide", label: "Testningsguide", icon: ClipboardCheck },
   { href: "/admin/help", label: "Hjälp", icon: HelpCircle },
@@ -44,6 +46,7 @@ const mobileMoreItems: MoreMenuItem[] = [
   { href: "/admin/verifications", label: "Verifieringar", icon: ShieldCheck, matchPrefix: "/admin/verifications" },
   { href: "/admin/bug-reports", label: "Buggar", icon: Bug, matchPrefix: "/admin/bug-reports" },
   { href: "/admin/integrations", label: "Integrationer", icon: Plug, matchPrefix: "/admin/integrations" },
+  { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText, matchPrefix: "/admin/audit-log" },
   { href: "/admin/notifications", label: "Notifikationer", icon: Bell, matchPrefix: "/admin/notifications" },
   { href: "/admin/testing-guide", label: "Testguide", icon: ClipboardCheck, matchPrefix: "/admin/testing-guide" },
   { href: "/admin/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/admin/help" },

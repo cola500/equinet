@@ -4,10 +4,13 @@ import {
   requireAuth,
   requireProvider,
   requireCustomer,
+  requireAdminRole,
   type AuthenticatedUser,
   type ProviderUser,
   type CustomerUser,
+  type AdminUser,
 } from "@/lib/roles"
+import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
@@ -15,7 +18,7 @@ import { z, type ZodType } from "zod"
 
 // --- Config types ---
 
-type AuthLevel = "none" | "any" | "provider" | "customer"
+type AuthLevel = "none" | "any" | "provider" | "customer" | "admin"
 type RateLimiterKey = keyof typeof rateLimiters
 
 interface HandlerConfig<TSchema extends ZodType | undefined = undefined> {
@@ -35,9 +38,11 @@ type UserFor<TAuth extends AuthLevel> = TAuth extends "provider"
   ? ProviderUser
   : TAuth extends "customer"
     ? CustomerUser
-    : TAuth extends "any"
-      ? AuthenticatedUser
-      : never
+    : TAuth extends "admin"
+      ? AdminUser
+      : TAuth extends "any"
+        ? AuthenticatedUser
+        : never
 
 type HandlerContext<
   TAuth extends AuthLevel,
@@ -88,7 +93,22 @@ export function withApiHandler<
               },
             }
           : null
-        if (authLevel === "provider") {
+        if (authLevel === "admin") {
+          // Extract iat from JWT for admin session timeout
+          let tokenIssuedAt: number | undefined
+          try {
+            const supabase = await (await import("@/lib/supabase/server")).createSupabaseServerClient()
+            const { data: { session: supaSession } } = await supabase.auth.getSession()
+            if (supaSession?.access_token) {
+              const payload = JSON.parse(atob(supaSession.access_token.split(".")[1]))
+              tokenIssuedAt = payload.iat
+            }
+          } catch (err) {
+            logger.warn("Failed to extract iat from admin JWT", { error: err })
+            // Proceed without timeout enforcement -- getAuthUser already DB-verified isAdmin
+          }
+          ctx.user = requireAdminRole(sessionLike, tokenIssuedAt)
+        } else if (authLevel === "provider") {
           ctx.user = requireProvider(sessionLike)
         } else if (authLevel === "customer") {
           ctx.user = requireCustomer(sessionLike)
@@ -149,7 +169,28 @@ export function withApiHandler<
       }
 
       // 5. Handler
-      return await handler(ctx as HandlerContext<TAuth, TSchema>)
+      const response = await handler(ctx as HandlerContext<TAuth, TSchema>)
+
+      // 6. Audit log for admin requests (fire-and-forget)
+      if (authLevel === "admin" && ctx.user) {
+        const user = ctx.user as { userId: string; email: string }
+        const method = request.method
+        const path = new URL(request.url).pathname
+        prisma.adminAuditLog.create({
+          data: {
+            userId: user.userId,
+            userEmail: user.email,
+            action: `${method} ${path}`,
+            ipAddress: getClientIP(request),
+            userAgent: request.headers.get("user-agent") ?? undefined,
+            statusCode: response.status,
+          },
+        }).catch((err: unknown) => {
+          logger.error("Failed to write admin audit log", err instanceof Error ? err : new Error(String(err)))
+        })
+      }
+
+      return response
     } catch (error) {
       // Thrown Response (från requireAuth/requireProvider etc.)
       if (error instanceof Response) {
