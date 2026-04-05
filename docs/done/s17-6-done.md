@@ -43,13 +43,31 @@ sections:
 ## Avvikelser
 
 - **Lokal dev utan Edge Config**: Ingen EDGE_CONFIG env var lokalt -- faller tillbaka till DB. Exakt samma beteende som fore andringen.
-- **Vercel-setup kravs**: Edge Config store + scoped API-token maste skapas manuellt i Vercel Dashboard (se Task 5 i planen).
+- **Vercel-setup fixat via API**: Edge Config store + env vars skapades via Vercel REST API (inte manuellt i Dashboard).
 - **30s cache behalls for DB-fallback**: Edge Config behover ingen cache (<1ms), men DB-pathen bevarar 30s cache som forut.
+
+## Vercel-setup (2026-04-05)
+
+Allt konfigurerat via Vercel REST API + CLI:
+
+| Resurs | Varde |
+|--------|-------|
+| Edge Config store | `ecfg_s5crikolpdnbfub3oeqnm0yeltea` (slug: equinet-app-store) |
+| `EDGE_CONFIG` | Connection string (encrypted, alla miljoer) |
+| `EDGE_CONFIG_ID` | `ecfg_s5crikolpdnbfub3oeqnm0yeltea` (plain, alla miljoer) |
+| `VERCEL_API_TOKEN` | Scoped token `equinet-edge-config` (encrypted, alla miljoer, no expiration) |
+| Initial data | 20 feature flags skrivna till storen |
+| Lokal `.env.local` | Pullad via `vercel env pull` |
+| Verifierat | `get("feature_flags")` returnerar 20 flaggor lokalt |
+
+**Token-historik:** Forsta tokenen skapades med expiration (misstag), ersatt med token utan expiration. Den utgangna tokenen ar borttagen fran Dashboard.
 
 ## Lardomar
 
 - `@vercel/edge-config` ar enkelt: `get<T>(key)` for read, REST API for write. Ingen SDK for writes.
-- Edge Config Free tier: 1 store, 8 KB max. 19 boolean-flaggor = ~500 bytes. Gott om marginal.
+- Edge Config Free tier: 1 store, 8 KB max. 20 boolean-flaggor = ~500 bytes. Gott om marginal.
 - `vi.mock()` MASTE vara fore imports i Vitest (hoisting). Galler aven nar man lagger till mock i befintlig testfil.
 - Fire-and-forget med `.catch(() => {})` ar ratt monster for icke-kritiska sync-operationer.
-- VERCEL_API_TOKEN ska vara scoped (edge-config scope), inte admin-token.
+- Vercel Hobby har inga granulara token-scopes -- "Full Account" ar enda alternativet. Skapa separat token per anvandning for roterings skull.
+- Vercel CLI (OAuth-login) kan INTE skapa tokens via `vercel tokens create`. Kravs Dashboard eller classic personal access token.
+- `vercel env pull .env.local` laddar INTE EDGE_CONFIG automatiskt -- `npx tsx` kraver `source .env.local` for att lasa dem.
