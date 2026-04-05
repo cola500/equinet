@@ -25,7 +25,7 @@ sections:
 | S17-2 WAF Custom Rules | fullstack | - | pending | - | - |
 | S17-3 robots.txt + sitemap | fullstack | - | pending | - | - |
 | S17-4 pg_cron | fullstack | - | pending | - | - |
-| S17-7 Lokal dev -> supabase start | fullstack | Dev | in_progress | feature/s17-7-supabase-local-dev | - |
+| S17-7 Lokal dev -> supabase start | fullstack | Dev | done | feature/s17-7-supabase-local-dev | 092e8263 |
 | S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
 | S17-6 Edge Config feature flags | fullstack | - | pending | - | - |
 | S17-8 Migrera admin-routes | fullstack | - | pending | - | - |
