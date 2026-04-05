@@ -956,3 +956,18 @@ model StableInviteToken {
   @@index([token])
   @@index([stableId])
 }
+
+// Admin audit log -- tracks all admin API operations
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  userId     String   // No FK -- log survives user deletion
+  userEmail  String
+  action     String   // "POST /api/admin/feature-flags"
+  ipAddress  String?
+  userAgent  String?
+  statusCode Int
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}
