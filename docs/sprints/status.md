@@ -17,17 +17,24 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 16: Cleanup + Onboarding** (docs/sprints/sprint-16-draft.md) -- KLAR
+**Sprint 17: Quick Wins + Infrastruktur** (docs/sprints/sprint-17-draft.md)
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S16-1 Ta bort NextAuth-rester | fullstack | Dev | done | feature/s16-1-nextauth-cleanup | - |
-| S16-2 Seed-scripts Supabase Auth | fullstack | Dev | done | feature/s16-2-seed-supabase-auth | - |
-| S16-3 Onboarding leverantör #2 | fullstack | Dev | done | feature/s16-3-onboarding-flow | 5db151d6 |
-| S16-4 Admin-härdning (audit + session) | fullstack | Dev | done | feature/s16-4-admin-hardening | 4fa34760 |
-| S16-5 Free tier gapanalys | fullstack | Dev | done | - | - |
+| S17-1 Vercel Speed Insights | fullstack | - | pending | - | - |
+| S17-2 WAF Custom Rules | fullstack | - | pending | - | - |
+| S17-3 robots.txt + sitemap | fullstack | - | pending | - | - |
+| S17-4 pg_cron | fullstack | - | pending | - | - |
+| S17-7 Lokal dev -> supabase start | fullstack | Dev | in_progress | feature/s17-7-supabase-local-dev | - |
+| S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
+| S17-6 Edge Config feature flags | fullstack | - | pending | - | - |
+| S17-8 Migrera admin-routes | fullstack | - | pending | - | - |
 
-**Sprint-avslut:** E2E smoke 25/25, migrate:status OK, retro i docs/retrospectives/2026-04-05-sprint-16.md
+**Sprint 16** (klar):
+
+| Story | Roll | Ansvarig | Status |
+|-------|------|----------|--------|
+| S16-1 -- S16-5 (5 stories) | fullstack | Dev | done |
 
 **Sprint 15** (klar):
 
@@ -134,7 +141,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | Sprint 16 klar | main | 2026-04-05 |
+| Dev | Fullstack | S17-7 supabase start | feature/s17-7-supabase-local-dev | 2026-04-05 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
