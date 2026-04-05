@@ -102,15 +102,35 @@ export function requireCustomer(session: SessionLike | null): CustomerUser {
   return { ...user, userType: "customer" }
 }
 
+/** Max admin session age in seconds (15 minutes) */
+const ADMIN_SESSION_MAX_AGE_SECONDS = 15 * 60
+
 /**
  * Kräver inloggad admin.
- * Kastar 401 om ej inloggad, 403 om ej admin.
+ * Kastar 401 om ej inloggad eller session för gammal, 403 om ej admin.
+ *
+ * @param tokenIssuedAt - Unix timestamp (seconds) from JWT `iat` claim.
+ *   If provided, enforces a 15-minute session timeout for admin operations.
  */
-export function requireAdminRole(session: SessionLike | null): AdminUser {
+export function requireAdminRole(
+  session: SessionLike | null,
+  tokenIssuedAt?: number,
+): AdminUser {
   const user = requireAuth(session)
 
   if (!user.isAdmin) {
     throw NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
+  }
+
+  // Enforce shorter session timeout for admin
+  if (tokenIssuedAt) {
+    const ageSeconds = Math.floor(Date.now() / 1000) - tokenIssuedAt
+    if (ageSeconds > ADMIN_SESSION_MAX_AGE_SECONDS) {
+      throw NextResponse.json(
+        { error: "Admin-session utgången, logga in igen" },
+        { status: 401 },
+      )
+    }
   }
 
   return { ...user, isAdmin: true }

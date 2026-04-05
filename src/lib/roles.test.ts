@@ -4,6 +4,7 @@ import {
   requireAuth,
   requireProvider,
   requireCustomer,
+  requireAdminRole,
 } from "./roles"
 
 // Helper: create a mock session
@@ -161,5 +162,57 @@ describe("requireCustomer", () => {
 
     expect(result.userId).toBe("u2")
     expect(result.userType).toBe("customer")
+  })
+})
+
+// --- requireAdminRole ---
+
+describe("requireAdminRole", () => {
+  it("should throw 401 for null session", async () => {
+    const res = await catchResponse(() => requireAdminRole(null))
+    expect(res.status).toBe(401)
+  })
+
+  it("should throw 403 for non-admin session", async () => {
+    const session = mockSession({ isAdmin: false })
+    const res = await catchResponse(() => requireAdminRole(session))
+    expect(res.status).toBe(403)
+    expect(res.body.error).toBe("Åtkomst nekad")
+  })
+
+  it("should return AdminUser for valid admin session", () => {
+    const session = mockSession({ id: "admin-1", isAdmin: true })
+    const result = requireAdminRole(session)
+    expect(result.userId).toBe("admin-1")
+    expect(result.isAdmin).toBe(true)
+  })
+
+  it("should allow admin with fresh token (iat within 15 min)", () => {
+    const session = mockSession({ isAdmin: true })
+    const freshIat = Math.floor(Date.now() / 1000) - 5 * 60 // 5 min ago
+    const result = requireAdminRole(session, freshIat)
+    expect(result.isAdmin).toBe(true)
+  })
+
+  it("should throw 401 when admin token is older than 15 min", async () => {
+    const session = mockSession({ isAdmin: true })
+    const oldIat = Math.floor(Date.now() / 1000) - 20 * 60 // 20 min ago
+    const res = await catchResponse(() => requireAdminRole(session, oldIat))
+    expect(res.status).toBe(401)
+    expect(res.body.error).toContain("Admin-session utgången")
+  })
+
+  it("should skip timeout check when tokenIssuedAt is undefined", () => {
+    const session = mockSession({ isAdmin: true })
+    const result = requireAdminRole(session, undefined)
+    expect(result.isAdmin).toBe(true)
+  })
+
+  it("should allow admin at exactly 15 min boundary", () => {
+    const session = mockSession({ isAdmin: true })
+    const boundaryIat = Math.floor(Date.now() / 1000) - 15 * 60
+    // ageSeconds === 900, limit is > 900, so this passes
+    const result = requireAdminRole(session, boundaryIat)
+    expect(result.isAdmin).toBe(true)
   })
 })

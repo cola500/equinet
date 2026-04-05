@@ -94,7 +94,19 @@ export function withApiHandler<
             }
           : null
         if (authLevel === "admin") {
-          ctx.user = requireAdminRole(sessionLike)
+          // Extract iat from JWT for admin session timeout
+          let tokenIssuedAt: number | undefined
+          try {
+            const supabase = await (await import("@/lib/supabase/server")).createSupabaseServerClient()
+            const { data: { session: supaSession } } = await supabase.auth.getSession()
+            if (supaSession?.access_token) {
+              const payload = JSON.parse(atob(supaSession.access_token.split(".")[1]))
+              tokenIssuedAt = payload.iat
+            }
+          } catch {
+            // If we can't read iat, proceed without timeout enforcement
+          }
+          ctx.user = requireAdminRole(sessionLike, tokenIssuedAt)
         } else if (authLevel === "provider") {
           ctx.user = requireProvider(sessionLike)
         } else if (authLevel === "customer") {
