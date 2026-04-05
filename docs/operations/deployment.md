@@ -597,6 +597,47 @@ Vercel Hobby inkluderar 3 gratis firewall-regler. Konfigureras i Vercel Dashboar
 
 ---
 
+## Databasunderhall (pg_cron)
+
+Supabase pg_cron kor schemalagda underhallsjobb direkt i PostgreSQL.
+Jobben skapas via Prisma-migration `20260405100000_pg_cron_maintenance`.
+
+### Aktiva jobb
+
+| Jobb | Schema | Beskrivning |
+|------|--------|-------------|
+| `cleanup-expired-tokens` | Dagligen 03:00 UTC | Rensar utgangna tokens (30 dagars grace) fran 6 token-tabeller |
+| `cleanup-old-notification-deliveries` | Sondagar 04:00 UTC | Rensar NotificationDelivery aldre an 90 dagar |
+| `cleanup-old-read-notifications` | Sondagar 04:15 UTC | Rensar lasta Notification aldre an 365 dagar |
+
+### Verifiera jobb
+
+```sql
+-- Lista alla schemalagda jobb
+SELECT jobid, schedule, command, jobname FROM cron.job;
+
+-- Se senaste korningar
+SELECT jobid, job_pid, status, return_message, start_time, end_time
+FROM cron.job_run_details
+ORDER BY start_time DESC
+LIMIT 20;
+```
+
+### Avaktivera ett jobb
+
+```sql
+SELECT cron.unschedule('cleanup-expired-tokens');
+```
+
+### Noteringar
+
+- **VACUUM ANALYZE** kors INTE manuellt -- Supabase hanterar autovacuum.
+- Jobben kors som `postgres`-rollen (superuser).
+- pg_cron-loggar finns i `cron.job_run_details`-tabellen.
+- Rate limiting anvander Upstash Redis (ephemeral) -- ingen DB-rensning behovs.
+
+---
+
 ## Kanda risker i produktion
 
 | Risk | Konsekvens | Befintlig mitigation |
