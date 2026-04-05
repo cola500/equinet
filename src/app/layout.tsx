@@ -11,6 +11,7 @@ import { DevBanner } from "@/components/layout/DevBanner";
 import { CookieNotice } from "@/components/layout/CookieNotice";
 import { BugReportFab } from "@/components/provider/BugReportFab";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getFeatureFlags } from "@/lib/feature-flags";
 import { isDemoMode } from "@/lib/demo-mode";
 
@@ -66,6 +67,7 @@ export default async function RootLayout({
           </FeatureFlagProvider>
         </SessionProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
