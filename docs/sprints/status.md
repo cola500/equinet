@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-04
+last_updated: 2026-04-05
 sections:
   - Aktiv sprint
   - Sessioner
@@ -17,15 +17,17 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 16: Cleanup + Onboarding** (docs/sprints/sprint-16-draft.md)
+**Sprint 16: Cleanup + Onboarding** (docs/sprints/sprint-16-draft.md) -- KLAR
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S16-1 Ta bort NextAuth-rester | fullstack | Dev | done | feature/s16-1-nextauth-cleanup | - |
 | S16-2 Seed-scripts Supabase Auth | fullstack | Dev | done | feature/s16-2-seed-supabase-auth | - |
 | S16-3 Onboarding leverantör #2 | fullstack | Dev | done | feature/s16-3-onboarding-flow | 5db151d6 |
-| S16-4 Admin-härdning (audit + session) | fullstack | Dev | done | feature/s16-4-admin-hardening | 30e913fb |
+| S16-4 Admin-härdning (audit + session) | fullstack | Dev | done | feature/s16-4-admin-hardening | 4fa34760 |
 | S16-5 Free tier gapanalys | fullstack | Dev | done | - | - |
+
+**Sprint-avslut:** E2E smoke 25/25, migrate:status OK, retro i docs/retrospectives/2026-04-05-sprint-16.md
 
 **Sprint 15** (klar):
 
@@ -132,7 +134,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S16-4 Admin-härdning | feature/s16-4-admin-hardening | 2026-04-05 |
+| Dev | Fullstack | Sprint 16 klar | main | 2026-04-05 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
