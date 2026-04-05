@@ -22,6 +22,9 @@ sections:
 - [x] Jobb 3: Rensa lasta notifikationer > 365 dagar (veckovis)
 - [x] Dokumenterat i docs/operations/deployment.md
 - [x] Testat lokalt: 3 jobb registrerade i cron.job
+- [x] Migration applicerad pa Supabase prod (2026-04-05): `supabase db query --linked`
+- [x] Verifierat: 3 jobb aktiva i `cron.job` pa prod (jobid 1-3)
+- [x] Registrerad i `_prisma_migrations` pa prod
 
 ## Definition of Done
 
@@ -49,3 +52,5 @@ sections:
 - VACUUM ANALYZE fungerar inte manuellt pa managed Supabase -- autovacuum hanterar det.
 - DO-block (`DO $body$ BEGIN ... END $body$`) for att batcha flera DELETE i ett pg_cron-jobb.
 - Lokal testning med `supabase start` + `docker exec supabase_db_equinet psql` fungerar bra for SQL-migrationer.
+- `supabase db push` applicerar bara migrationer i `supabase/migrations/`, INTE `prisma/migrations/`. For Prisma-migrationer med raw SQL: anvand `supabase db query --linked` + manuell INSERT i `_prisma_migrations`.
+- `supabase link --project-ref <ref>` kravs innan `--linked`-kommandon fungerar. Lankas till `zzdamokfeenencuggjjp` (slot machine / prod).
