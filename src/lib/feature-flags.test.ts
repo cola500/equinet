@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
+
+vi.mock("./edge-config", () => ({
+  readFlagsFromEdgeConfig: vi.fn().mockResolvedValue(null),
+  syncFlagsToEdgeConfig: vi.fn().mockResolvedValue(undefined),
+}))
+
 import {
   isFeatureEnabled,
   getFeatureFlags,
@@ -10,6 +16,10 @@ import {
   _resetRedisForTesting,
 } from "./feature-flags"
 import { MockFeatureFlagRepository } from "@/infrastructure/persistence/feature-flag"
+import { readFlagsFromEdgeConfig, syncFlagsToEdgeConfig } from "./edge-config"
+
+const mockReadEdgeConfig = vi.mocked(readFlagsFromEdgeConfig)
+const mockSyncEdgeConfig = vi.mocked(syncFlagsToEdgeConfig)
 
 describe("feature-flags", () => {
   let mockRepo: MockFeatureFlagRepository
@@ -23,6 +33,8 @@ describe("feature-flags", () => {
         delete process.env[key]
       }
     }
+    mockReadEdgeConfig.mockResolvedValue(null)
+    mockSyncEdgeConfig.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -217,6 +229,54 @@ describe("feature-flags", () => {
     it("is an alias for _setRepositoryForTesting(null)", () => {
       // Should not throw
       _resetRedisForTesting()
+    })
+  })
+
+  describe("Edge Config integration", () => {
+    it("reads from Edge Config when available", async () => {
+      mockReadEdgeConfig.mockResolvedValue({
+        voice_logging: false,
+        group_bookings: true,
+      })
+
+      const flags = await getFeatureFlags()
+
+      expect(flags.voice_logging).toBe(false)
+      expect(flags.group_bookings).toBe(true)
+      // Flags not in Edge Config fall back to code default
+      expect(flags.route_planning).toBe(true)
+    })
+
+    it("falls back to DB when Edge Config returns null", async () => {
+      mockReadEdgeConfig.mockResolvedValue(null)
+      await mockRepo.upsert("voice_logging", false)
+
+      const flags = await getFeatureFlags()
+
+      expect(flags.voice_logging).toBe(false)
+    })
+
+    it("env var overrides Edge Config", async () => {
+      process.env.FEATURE_VOICE_LOGGING = "true"
+      mockReadEdgeConfig.mockResolvedValue({ voice_logging: false })
+
+      const flags = await getFeatureFlags()
+
+      expect(flags.voice_logging).toBe(true)
+    })
+
+    it("syncs to Edge Config after setFeatureFlagOverride", async () => {
+      await setFeatureFlagOverride("group_bookings", "true")
+
+      expect(mockSyncEdgeConfig).toHaveBeenCalledWith(
+        expect.objectContaining({ group_bookings: true })
+      )
+    })
+
+    it("syncs to Edge Config after removeFeatureFlagOverride", async () => {
+      await removeFeatureFlagOverride("group_bookings")
+
+      expect(mockSyncEdgeConfig).toHaveBeenCalled()
     })
   })
 })
