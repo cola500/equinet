@@ -24,7 +24,7 @@ sections:
 | S17-1 Vercel Speed Insights | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
 | S17-2 WAF Custom Rules | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
 | S17-3 robots.txt + sitemap | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
-| S17-4 pg_cron | fullstack | Dev | in_progress | feature/s17-4-pg-cron | - |
+| S17-4 pg_cron | fullstack | Dev | done | feature/s17-4-pg-cron | 2e5c172e |
 | S17-7 Lokal dev -> supabase start | fullstack | Dev | done | feature/s17-7-supabase-local-dev | 092e8263 |
 | S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
 | S17-6 Edge Config feature flags | fullstack | - | pending | - | - |

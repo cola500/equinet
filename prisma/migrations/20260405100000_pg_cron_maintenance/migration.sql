@@ -22,6 +22,8 @@ SELECT cron.schedule(
     DELETE FROM "CustomerInviteToken" WHERE "expiresAt" < NOW() - INTERVAL '30 days';
     DELETE FROM "HorseProfileToken" WHERE "expiresAt" < NOW() - INTERVAL '30 days';
     DELETE FROM "StableInviteToken" WHERE "expiresAt" < NOW() - INTERVAL '30 days';
+    -- MobileToken: expired OR revoked 30+ days ago (revoked tokens may not yet
+    -- have reached expiresAt, so both conditions are needed)
     DELETE FROM "MobileToken"
       WHERE ("expiresAt" < NOW() - INTERVAL '30 days')
          OR ("revokedAt" IS NOT NULL AND "revokedAt" < NOW() - INTERVAL '30 days');
