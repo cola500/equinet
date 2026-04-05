@@ -39,7 +39,8 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
 
 - **Node.js**: v20 eller senare
 - **npm**: v10 eller senare
-- **Docker Desktop**: För lokal PostgreSQL (rekommenderat)
+- **Docker Desktop**: Krävs av Supabase CLI för lokal utveckling
+- **Supabase CLI**: `brew install supabase/tap/supabase` (lokal auth + DB + RLS)
 - **Git**: För version control
 - **VS Code** (rekommenderat) med: ESLint, Prettier, Prisma, Tailwind CSS IntelliSense
 
@@ -63,16 +64,16 @@ Equinet är en modern bokningsplattform som kopplar samman hästägare med tjän
    ```
 
    **Viktiga environment variables:**
-   - `DATABASE_URL`: PostgreSQL connection string (lokal Docker eller Supabase)
-   - `NEXT_PUBLIC_SUPABASE_URL`: Supabase projekt-URL
+   - `DATABASE_URL`: PostgreSQL connection string (lokal Supabase port 54322)
+   - `NEXT_PUBLIC_SUPABASE_URL`: Supabase projekt-URL (lokal: `http://127.0.0.1:54321`)
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key
    - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (server-only)
 
-   > `.env.example` har lokal Docker-DB som default. För Supabase: avkommentera alternativ 2.
+   > `.env.example` har lokal Supabase som default med standardnycklar. För produktion: avkommentera alternativ 2.
 
 4. **Starta lokal databas och seeda**
    ```bash
-   # Starta PostgreSQL i Docker
+   # Starta lokal Supabase (PostgreSQL + Auth + RLS + triggers)
    npm run db:up
 
    # Kör migrationer + generera Prisma Client
@@ -117,9 +118,10 @@ Se `package.json` för alla tillgängliga scripts. De vanligaste:
 | Kommando | Beskrivning |
 |----------|-------------|
 | `npm run dev` | Utvecklingsserver (port 3000) |
-| `npm run db:up` | Starta lokal PostgreSQL (Docker) |
-| `npm run db:down` | Stoppa lokal PostgreSQL (data bevaras) |
-| `npm run db:nuke` | Radera lokal databas helt |
+| `npm run db:up` | Starta lokal Supabase (DB + Auth + RLS) |
+| `npm run db:down` | Stoppa lokal Supabase (data bevaras) |
+| `npm run db:nuke` | Aterstall lokal databas (kor om migrationer) |
+| `npm run db:status` | Visa Supabase-status (portar, nycklar) |
 | `npm run db:studio` | Prisma Studio för databasinspektering |
 | `npm run db:reset` | Återställ databas (raderar all data!) |
 | `npm run db:backup` | Backup av Supabase-data (kräver Docker) |
