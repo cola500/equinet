@@ -4,7 +4,7 @@ description: "Steg-for-steg guide for att deploya Equinet till Vercel med Supaba
 category: operations
 tags: [deployment, vercel, supabase, upstash, sentry, monitoring]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-04-05
 related:
   - docs/architecture/database.md
   - docs/guides/gotchas.md
@@ -23,6 +23,7 @@ sections:
   - "Troubleshooting"
   - "Next Steps"
   - "Support & Resources"
+  - Vercel Firewall (WAF Custom Rules)
   - Kanda risker i produktion
 ---
 
@@ -572,6 +573,27 @@ Efter lyckad deployment:
 **Supabase:**
 - Docs: https://supabase.com/docs
 - Dashboard: https://supabase.com/dashboard
+
+---
+
+## Vercel Firewall (WAF Custom Rules)
+
+Vercel Hobby inkluderar 3 gratis firewall-regler. Konfigureras i Vercel Dashboard -> Firewall.
+
+**Rekommenderade regler:**
+
+| # | Regel | Typ | Beskrivning |
+|---|-------|-----|-------------|
+| 1 | Blockera bot user-agents | Block | User-Agent matchar kanda scanners/scrapers (zgrab, nuclei, sqlmap, nikto) |
+| 2 | Rate limit /api/auth/* | Rate Limit | Extra lager utover Upstash Redis, blockerar brute force pa WAF-niva |
+| 3 | Geo-block utanfor EU | Block | Begransar trafik till EU-lander (valfritt, beror pa malgrupp) |
+
+**Konfiguration:**
+1. Vercel Dashboard -> Project -> Firewall
+2. Lagg till regler ovan
+3. Testa: verifiera att blockeringar loggas i Vercel Dashboard -> Logs
+
+**OBS:** Regel 3 (geo-block) ar valfri och beror pa om malgruppen ar enbart Sverige/EU.
 
 ---
 

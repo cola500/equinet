@@ -21,9 +21,9 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S17-1 Vercel Speed Insights | fullstack | - | pending | - | - |
-| S17-2 WAF Custom Rules | fullstack | - | pending | - | - |
-| S17-3 robots.txt + sitemap | fullstack | - | pending | - | - |
+| S17-1 Vercel Speed Insights | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
+| S17-2 WAF Custom Rules | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
+| S17-3 robots.txt + sitemap | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
 | S17-4 pg_cron | fullstack | - | pending | - | - |
 | S17-7 Lokal dev -> supabase start | fullstack | Dev | done | feature/s17-7-supabase-local-dev | 092e8263 |
 | S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
@@ -141,7 +141,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S17-7 supabase start | feature/s17-7-supabase-local-dev | 2026-04-05 |
+| Dev | Fullstack | S17-1/2/3 quick wins | feature/s17-1-2-3-quick-wins | 2026-04-05 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
