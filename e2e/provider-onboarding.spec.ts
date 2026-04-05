@@ -12,7 +12,6 @@ import { createClient } from '@supabase/supabase-js'
  * 5. See checklist progress update
  */
 
-const SPEC_TAG = 'E2E-spec:provider-onboarding'
 const UNIQUE = Date.now()
 const EMAIL = `onboarding-${UNIQUE}@example.com`
 const PASSWORD = 'OnboardTest123!'
@@ -46,9 +45,11 @@ test.describe('Provider Onboarding Flow', () => {
     supabaseUserId = data.user.id
 
     // 2. Wait for handle_new_user trigger to create public.User
-    //    Trigger fires async in Supabase -- may need several seconds
+    //    Local Docker has no trigger -- fast-path: check once, then fallback
     let userFound = false
-    for (let attempt = 0; attempt < 20; attempt++) {
+    const isLocalDb = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('localhost')
+    const maxAttempts = isLocalDb ? 2 : 10
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const user = await prisma.user.findUnique({ where: { id: supabaseUserId } })
       if (user) {
         userFound = true

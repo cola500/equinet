@@ -189,6 +189,26 @@ describe('POST /api/auth/register', () => {
     expect(data.error).toBe('Valideringsfel')
   })
 
+  it('should return 400 when provider registers with whitespace-only businessName', async () => {
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'provider@example.com',
+        password: 'Password123!',
+        firstName: 'Provider',
+        lastName: 'User',
+        userType: 'provider',
+        businessName: '   ',
+      }),
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Valideringsfel')
+  })
+
   it('should allow customer to register without businessName', async () => {
     mockRegister.mockResolvedValue(
       Result.ok({
