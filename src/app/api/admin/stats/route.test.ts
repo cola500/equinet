@@ -1,17 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GET } from "./route"
-import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+// Mock auth-dual
+const mockGetAuthUser = vi.fn()
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: (...args: unknown[]) => mockGetAuthUser(...args),
 }))
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
-      findUnique: vi.fn(),
       count: vi.fn(),
     },
     booking: {
@@ -26,6 +24,9 @@ vi.mock("@/lib/prisma", () => ({
     payment: {
       aggregate: vi.fn(),
     },
+    adminAuditLog: {
+      create: vi.fn().mockResolvedValue({}),
+    },
   },
 }))
 
@@ -34,6 +35,7 @@ vi.mock("@/lib/rate-limit", () => ({
     api: vi.fn().mockResolvedValue(true),
   },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+  RateLimitServiceError: class extends Error {},
 }))
 
 vi.mock("@/lib/logger", () => ({
@@ -45,51 +47,63 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
-const mockAdminSession = {
-  user: { id: "admin-1", email: "admin@test.se" },
-} as never
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: vi.fn().mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+    },
+  }),
+}))
+
+import { GET } from "./route"
+import { prisma } from "@/lib/prisma"
+
+const adminUser = {
+  id: "admin-1",
+  email: "admin@test.se",
+  userType: "customer",
+  isAdmin: true,
+  providerId: null,
+  stableId: null,
+  authMethod: "supabase" as const,
+}
 
 describe("GET /api/admin/stats", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetAuthUser.mockResolvedValue(adminUser)
   })
 
   it("should return dashboard stats for admin", async () => {
-    vi.mocked(auth).mockResolvedValue(mockAdminSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: "admin-1",
-      isAdmin: true,
-    } as never)
-
-    // User counts
     vi.mocked(prisma.user.count)
-      .mockResolvedValueOnce(100)  // total
-      .mockResolvedValueOnce(70)   // customers
-      .mockResolvedValueOnce(30)   // providers
-      .mockResolvedValueOnce(12)   // newThisMonth
+      .mockResolvedValueOnce(100)
+      .mockResolvedValueOnce(70)
+      .mockResolvedValueOnce(30)
+      .mockResolvedValueOnce(12)
 
-    // Booking counts
     vi.mocked(prisma.booking.count)
-      .mockResolvedValueOnce(500)  // total
-      .mockResolvedValueOnce(10)   // pending
-      .mockResolvedValueOnce(20)   // confirmed
-      .mockResolvedValueOnce(400)  // completed
-      .mockResolvedValueOnce(70)   // cancelled
-      .mockResolvedValueOnce(50)   // completedThisMonth
+      .mockResolvedValueOnce(500)
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(20)
+      .mockResolvedValueOnce(400)
+      .mockResolvedValueOnce(70)
+      .mockResolvedValueOnce(50)
 
-    // Provider counts
     vi.mocked(prisma.provider.count)
-      .mockResolvedValueOnce(30)   // total
-      .mockResolvedValueOnce(25)   // active
-      .mockResolvedValueOnce(20)   // verified
+      .mockResolvedValueOnce(30)
+      .mockResolvedValueOnce(25)
+      .mockResolvedValueOnce(20)
 
-    // Pending verifications
     vi.mocked(prisma.providerVerification.count).mockResolvedValue(3)
 
-    // Revenue
     vi.mocked(prisma.payment.aggregate)
-      .mockResolvedValueOnce({ _sum: { amount: 150000 } } as never)  // totalCompleted
-      .mockResolvedValueOnce({ _sum: { amount: 25000 } } as never)   // thisMonth
+      .mockResolvedValueOnce({ _sum: { amount: 150000 } } as never)
+      .mockResolvedValueOnce({ _sum: { amount: 25000 } } as never)
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)
@@ -123,11 +137,10 @@ describe("GET /api/admin/stats", () => {
   })
 
   it("should return 403 for non-admin users", async () => {
-    vi.mocked(auth).mockResolvedValue(mockAdminSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: "admin-1",
+    mockGetAuthUser.mockResolvedValue({
+      ...adminUser,
       isAdmin: false,
-    } as never)
+    })
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)
@@ -136,11 +149,7 @@ describe("GET /api/admin/stats", () => {
   })
 
   it("should return 401 when not authenticated", async () => {
-    const unauthResponse = new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    )
-    vi.mocked(auth).mockRejectedValue(unauthResponse)
+    mockGetAuthUser.mockResolvedValue(null)
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)
@@ -149,12 +158,6 @@ describe("GET /api/admin/stats", () => {
   })
 
   it("should handle null revenue sums", async () => {
-    vi.mocked(auth).mockResolvedValue(mockAdminSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: "admin-1",
-      isAdmin: true,
-    } as never)
-
     vi.mocked(prisma.user.count).mockResolvedValue(0)
     vi.mocked(prisma.booking.count).mockResolvedValue(0)
     vi.mocked(prisma.provider.count).mockResolvedValue(0)
@@ -173,7 +176,6 @@ describe("GET /api/admin/stats", () => {
   it("should return 429 when rate limited", async () => {
     const { rateLimiters } = await import("@/lib/rate-limit")
     vi.mocked(rateLimiters.api).mockResolvedValueOnce(false)
-    vi.mocked(auth).mockResolvedValue(mockAdminSession)
 
     const request = new NextRequest("http://localhost:3000/api/admin/stats")
     const response = await GET(request)

@@ -1,26 +1,13 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/admin-auth"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { sanitizeString } from "@/lib/sanitize"
 
-export async function GET(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const allowed = await rateLimiters.api(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    await requireAdmin(session)
-
+export const GET = withApiHandler(
+  { auth: "admin" },
+  async ({ request }) => {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status") || ""
     const from = searchParams.get("from") || ""
@@ -88,17 +75,8 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    logger.error("Failed to fetch admin bookings", error as Error)
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // ============================================================
 // PATCH -- Cancel booking as admin
@@ -110,29 +88,10 @@ const patchSchema = z.object({
   reason: z.string().min(1).max(500),
 }).strict()
 
-export async function PATCH(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const allowed = await rateLimiters.api(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    const admin = await requireAdmin(session)
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    const parsed = patchSchema.parse(body)
-    const { bookingId, reason } = parsed
+export const PATCH = withApiHandler(
+  { auth: "admin", schema: patchSchema },
+  async ({ user, body }) => {
+    const { bookingId, reason } = body
     const sanitizedReason = sanitizeString(reason)
 
     // Look up booking with provider userId for notification
@@ -192,25 +151,10 @@ export async function PATCH(request: NextRequest) {
     })
 
     logger.security(`Admin cancelled booking ${bookingId}: ${sanitizedReason}`, "high", {
-      adminId: admin.id,
+      adminId: user.userId,
       bookingId,
     })
 
     return NextResponse.json(updated)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-    logger.error("Failed to cancel admin booking", error as Error)
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

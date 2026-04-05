@@ -1,24 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/admin-auth"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { logger } from "@/lib/logger"
 
-export async function GET(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const allowed = await rateLimiters.api(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    await requireAdmin(session)
-
+export const GET = withApiHandler(
+  { auth: "admin" },
+  async () => {
     const [
       fortnoxConnections,
       totalConnected,
@@ -66,14 +52,5 @@ export async function GET(request: NextRequest) {
         totalRevenue: revenueAgg._sum.amount ?? 0,
       },
     })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    logger.error("Failed to fetch admin integrations", error as Error)
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

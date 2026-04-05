@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/admin-auth"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { sanitizeString } from "@/lib/sanitize"
@@ -14,37 +12,18 @@ const postSchema = z.object({
   linkUrl: z.string().max(200).optional(),
 }).strict()
 
-export async function POST(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const allowed = await rateLimiters.api(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    const admin = await requireAdmin(session)
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    const parsed = postSchema.parse(body)
-    const title = sanitizeString(parsed.title)
-    const message = sanitizeString(parsed.message)
-    const linkUrl = parsed.linkUrl || null
+export const POST = withApiHandler(
+  { auth: "admin", schema: postSchema },
+  async ({ user, body }) => {
+    const title = sanitizeString(body.title)
+    const message = sanitizeString(body.message)
+    const linkUrl = body.linkUrl || null
 
     // Build user filter based on target
     const where: Record<string, unknown> = {}
-    if (parsed.target === "customers") {
+    if (body.target === "customers") {
       where.userType = "customer"
-    } else if (parsed.target === "providers") {
+    } else if (body.target === "providers") {
       where.userType = "provider"
     }
 
@@ -68,27 +47,12 @@ export async function POST(request: NextRequest) {
       })),
     })
 
-    logger.security(`Admin sent system notification to ${parsed.target} (${result.count} users)`, "medium", {
-      adminId: admin.id,
-      target: parsed.target,
+    logger.security(`Admin sent system notification to ${body.target} (${result.count} users)`, "medium", {
+      adminId: user.userId,
+      target: body.target,
       count: result.count,
     })
 
     return NextResponse.json({ sent: result.count })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-    logger.error("Failed to send admin notification", error as Error)
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

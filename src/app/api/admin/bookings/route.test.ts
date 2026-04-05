@@ -1,18 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GET, PATCH } from "./route"
-import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+const mockGetAuthUser = vi.fn()
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: (...args: unknown[]) => mockGetAuthUser(...args),
 }))
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    user: {
-      findUnique: vi.fn(),
-    },
     booking: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -22,6 +17,9 @@ vi.mock("@/lib/prisma", () => ({
     notification: {
       createMany: vi.fn(),
     },
+    adminAuditLog: {
+      create: vi.fn().mockResolvedValue({}),
+    },
   },
 }))
 
@@ -30,6 +28,7 @@ vi.mock("@/lib/rate-limit", () => ({
     api: vi.fn().mockResolvedValue(true),
   },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+  RateLimitServiceError: class extends Error {},
 }))
 
 vi.mock("@/lib/logger", () => ({
@@ -41,18 +40,36 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
-const mockAdminSession = {
-  user: { id: "admin-1", email: "admin@test.se" },
-} as never
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: vi.fn().mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+    },
+  }),
+}))
+
+import { GET, PATCH } from "./route"
+import { prisma } from "@/lib/prisma"
+
+const adminUser = {
+  id: "admin-1",
+  email: "admin@test.se",
+  userType: "customer",
+  isAdmin: true,
+  providerId: null,
+  stableId: null,
+  authMethod: "supabase" as const,
+}
 
 describe("GET /api/admin/bookings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(mockAdminSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: "admin-1",
-      isAdmin: true,
-    } as never)
+    mockGetAuthUser.mockResolvedValue(adminUser)
   })
 
   it("should return paginated booking list", async () => {
@@ -143,10 +160,7 @@ describe("GET /api/admin/bookings", () => {
   })
 
   it("should return 403 for non-admin users", async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: "admin-1",
-      isAdmin: false,
-    } as never)
+    mockGetAuthUser.mockResolvedValue({ ...adminUser, isAdmin: false })
 
     const request = new NextRequest("http://localhost:3000/api/admin/bookings")
     const response = await GET(request)
@@ -174,18 +188,20 @@ const BOOKING_UUID = "a0000000-0000-4000-a000-000000000010"
 const CUSTOMER_UUID = "a0000000-0000-4000-a000-000000000020"
 const PROVIDER_USER_UUID = "a0000000-0000-4000-a000-000000000030"
 
-const mockAdminSessionPatch = {
-  user: { id: ADMIN_UUID, email: "admin@test.se" },
-} as never
+const adminUserPatch = {
+  id: ADMIN_UUID,
+  email: "admin@test.se",
+  userType: "customer",
+  isAdmin: true,
+  providerId: null,
+  stableId: null,
+  authMethod: "supabase" as const,
+}
 
 describe("PATCH /api/admin/bookings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(mockAdminSessionPatch)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: ADMIN_UUID,
-      isAdmin: true,
-    } as never)
+    mockGetAuthUser.mockResolvedValue(adminUserPatch)
   })
 
   function makePatchRequest(body: Record<string, unknown>) {
@@ -323,10 +339,7 @@ describe("PATCH /api/admin/bookings", () => {
   })
 
   it("should return 403 for non-admin", async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: ADMIN_UUID,
-      isAdmin: false,
-    } as never)
+    mockGetAuthUser.mockResolvedValue({ ...adminUserPatch, isAdmin: false })
 
     const response = await PATCH(makePatchRequest({
       bookingId: BOOKING_UUID,

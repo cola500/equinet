@@ -1,21 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { POST } from "./route"
-import { auth } from "@/lib/auth-server"
-import { prisma } from "@/lib/prisma"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
+const mockGetAuthUser = vi.fn()
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: (...args: unknown[]) => mockGetAuthUser(...args),
 }))
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
-      findUnique: vi.fn(),
       findMany: vi.fn(),
     },
     notification: {
       createMany: vi.fn(),
+    },
+    adminAuditLog: {
+      create: vi.fn().mockResolvedValue({}),
     },
   },
 }))
@@ -25,6 +25,7 @@ vi.mock("@/lib/rate-limit", () => ({
     api: vi.fn().mockResolvedValue(true),
   },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+  RateLimitServiceError: class extends Error {},
 }))
 
 vi.mock("@/lib/logger", () => ({
@@ -36,20 +37,38 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: vi.fn().mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+    },
+  }),
+}))
+
+import { POST } from "./route"
+import { prisma } from "@/lib/prisma"
+
 const ADMIN_UUID = "a0000000-0000-4000-a000-000000000001"
 
-const mockAdminSession = {
-  user: { id: ADMIN_UUID, email: "admin@test.se" },
-} as never
+const adminUser = {
+  id: ADMIN_UUID,
+  email: "admin@test.se",
+  userType: "customer",
+  isAdmin: true,
+  providerId: null,
+  stableId: null,
+  authMethod: "supabase" as const,
+}
 
 describe("POST /api/admin/notifications", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(auth).mockResolvedValue(mockAdminSession)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: ADMIN_UUID,
-      isAdmin: true,
-    } as never)
+    mockGetAuthUser.mockResolvedValue(adminUser)
   })
 
   function makePostRequest(body: Record<string, unknown>) {
@@ -165,10 +184,7 @@ describe("POST /api/admin/notifications", () => {
   })
 
   it("should return 403 for non-admin", async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: ADMIN_UUID,
-      isAdmin: false,
-    } as never)
+    mockGetAuthUser.mockResolvedValue({ ...adminUser, isAdmin: false })
 
     const response = await POST(makePostRequest({
       target: "all",

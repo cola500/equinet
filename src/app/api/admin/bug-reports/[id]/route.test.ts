@@ -1,29 +1,59 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({ auth: vi.fn() }))
+// Mock auth-dual
+const mockGetAuthUser = vi.fn()
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: (...args: unknown[]) => mockGetAuthUser(...args),
+}))
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    user: { findUnique: vi.fn() },
     bugReport: { findUnique: vi.fn(), update: vi.fn() },
+    adminAuditLog: { create: vi.fn().mockResolvedValue({}) },
   },
 }))
+
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimiters: {
+    api: vi.fn().mockResolvedValue(true),
+  },
+  getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+  RateLimitServiceError: class extends Error {},
+}))
+
 vi.mock("@/lib/logger", () => ({
-  logger: { info: vi.fn(), error: vi.fn(), security: vi.fn() },
+  logger: { info: vi.fn(), error: vi.fn(), security: vi.fn(), warn: vi.fn() },
+}))
+
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: vi.fn().mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+    },
+  }),
 }))
 
 import { GET, PATCH } from "./route"
-import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 
-const mockAuth = vi.mocked(auth)
-const mockUserFindUnique = vi.mocked(prisma.user.findUnique)
 const mockBugFindUnique = vi.mocked(prisma.bugReport.findUnique)
 const mockUpdate = vi.mocked(prisma.bugReport.update)
 
-const mockAdminSession = {
-  user: { id: "admin-1", email: "admin@test.se", userType: "provider" },
-} as never
+const adminUser = {
+  id: "admin-1",
+  email: "admin@test.se",
+  userType: "customer",
+  isAdmin: true,
+  providerId: null,
+  stableId: null,
+  authMethod: "supabase" as const,
+}
 
 const mockBug = {
   id: "bug-1",
@@ -67,19 +97,12 @@ function createPatchRequest(body: Record<string, unknown>) {
 describe("GET /api/admin/bug-reports/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue(mockAdminSession)
-    mockUserFindUnique.mockResolvedValue({
-      id: "admin-1",
-      isAdmin: true,
-    } as never)
+    mockGetAuthUser.mockResolvedValue(adminUser)
     mockBugFindUnique.mockResolvedValue(mockBug as never)
   })
 
   it("returns 403 when user is not admin", async () => {
-    mockUserFindUnique.mockResolvedValue({
-      id: "admin-1",
-      isAdmin: false,
-    } as never)
+    mockGetAuthUser.mockResolvedValue({ ...adminUser, isAdmin: false })
     const res = await GET(createGetRequest(), routeContext)
     expect(res.status).toBe(403)
   })
@@ -103,11 +126,7 @@ describe("GET /api/admin/bug-reports/[id]", () => {
 describe("PATCH /api/admin/bug-reports/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue(mockAdminSession)
-    mockUserFindUnique.mockResolvedValue({
-      id: "admin-1",
-      isAdmin: true,
-    } as never)
+    mockGetAuthUser.mockResolvedValue(adminUser)
     mockBugFindUnique.mockResolvedValue(mockBug as never)
     mockUpdate.mockResolvedValue({
       ...mockBug,
@@ -116,10 +135,7 @@ describe("PATCH /api/admin/bug-reports/[id]", () => {
   })
 
   it("returns 403 when user is not admin", async () => {
-    mockUserFindUnique.mockResolvedValue({
-      id: "admin-1",
-      isAdmin: false,
-    } as never)
+    mockGetAuthUser.mockResolvedValue({ ...adminUser, isAdmin: false })
     const res = await PATCH(
       createPatchRequest({ status: "INVESTIGATING" }),
       routeContext

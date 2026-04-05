@@ -1,14 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireAdmin } from "@/lib/admin-auth"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { logger } from "@/lib/logger"
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await auth()
-    await requireAdmin(session)
-
+export const GET = withApiHandler(
+  { auth: "admin" },
+  async ({ request }) => {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const sortBy = searchParams.get("sortBy") || "createdAt"
@@ -50,12 +46,5 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({ bugReports, total })
-  } catch (error) {
-    if (error instanceof Response) return error
-    logger.error("Failed to fetch bug reports", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte hämta buggrapporter" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

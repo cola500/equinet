@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
@@ -11,47 +11,10 @@ const reviewSchema = z.object({
   reviewNote: z.string().max(500, "Anteckning för lång (max 500 tecken)").optional(),
 })
 
-type RouteContext = { params: Promise<{ id: string }> }
-
-// PUT - Approve or reject a verification request (admin only)
-export async function PUT(request: NextRequest, context: RouteContext) {
-  try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-    const { id } = await context.params
-
-    // Admin check: fetch user and verify isAdmin flag
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, isAdmin: true },
-    })
-
-    if (!user?.isAdmin) {
-      logger.security("Non-admin attempted verification review", "medium", {
-        userId: session.user.id,
-        verificationId: id,
-      })
-      return NextResponse.json(
-        { error: "Behörighet saknas" },
-        { status: 403 }
-      )
-    }
-
-    // Parse JSON
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: "Ogiltig JSON", details: "Förfrågan måste innehålla giltig JSON" },
-        { status: 400 }
-      )
-    }
-
-    // Validate
-    const validated = reviewSchema.parse(body)
+export const PUT = withApiHandler(
+  { auth: "admin", schema: reviewSchema },
+  async ({ user, body, request }) => {
+    const id = new URL(request.url).pathname.split("/").pop()!
 
     // Fetch verification request
     const verification = await prisma.providerVerification.findUnique({
@@ -79,7 +42,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       )
     }
 
-    const isApproved = validated.action === "approve"
+    const isApproved = body.action === "approve"
     const now = new Date()
 
     // Use transaction: update verification + optionally set provider verified + create notification
@@ -91,8 +54,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         data: {
           status: isApproved ? "approved" : "rejected",
           reviewedAt: now,
-          reviewedBy: session.user.id,
-          reviewNote: validated.reviewNote,
+          reviewedBy: user.userId,
+          reviewNote: body.reviewNote,
         },
       })
 
@@ -103,7 +66,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
           data: {
             isVerified: true,
             verifiedAt: now,
-            verifiedBy: session.user.id,
+            verifiedBy: user.userId,
           },
         })
       }
@@ -115,7 +78,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
           type: isApproved ? "verification_approved" : "verification_rejected",
           message: isApproved
             ? `Din verifieringsansökan "${verification.title}" har godkänts! Du är nu verifierad.`
-            : `Din verifieringsansökan "${verification.title}" har avvisats.${validated.reviewNote ? ` Kommentar: ${validated.reviewNote}` : ""}`,
+            : `Din verifieringsansökan "${verification.title}" har avvisats.${body.reviewNote ? ` Kommentar: ${body.reviewNote}` : ""}`,
           linkUrl: "/provider/verification",
         },
       })
@@ -125,27 +88,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     logger.info("Verification request reviewed", {
       verificationId: id,
-      action: validated.action,
-      reviewedBy: session.user.id,
+      action: body.action,
+      reviewedBy: user.userId,
     })
 
     return NextResponse.json(result)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-
-    logger.error("Failed to review verification request", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte behandla verifieringsansökan" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

@@ -1,25 +1,12 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/admin-auth"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 
-export async function GET(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const allowed = await rateLimiters.api(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    await requireAdmin(session)
-
+export const GET = withApiHandler(
+  { auth: "admin" },
+  async ({ request }) => {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
     const type = searchParams.get("type") || ""
@@ -163,17 +150,8 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    logger.error("Failed to fetch admin users", error as Error)
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
 
 // ============================================================
 // PATCH -- Admin actions (block/unblock, toggle admin)
@@ -184,32 +162,13 @@ const patchSchema = z.object({
   action: z.enum(["toggleBlocked", "toggleAdmin"]),
 }).strict()
 
-export async function PATCH(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const allowed = await rateLimiters.api(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "För många förfrågningar" },
-        { status: 429 }
-      )
-    }
-
-    const session = await auth()
-    const admin = await requireAdmin(session)
-
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
-
-    const parsed = patchSchema.parse(body)
-    const { userId, action } = parsed
+export const PATCH = withApiHandler(
+  { auth: "admin", schema: patchSchema },
+  async ({ user, body }) => {
+    const { userId, action } = body
 
     // Self-block protection
-    if (action === "toggleBlocked" && userId === admin.id) {
+    if (action === "toggleBlocked" && userId === user.userId) {
       return NextResponse.json(
         { error: "Du kan inte blockera dig själv" },
         { status: 400 }
@@ -230,7 +189,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Self-admin removal protection
-    if (action === "toggleAdmin" && userId === admin.id && targetUser.isAdmin) {
+    if (action === "toggleAdmin" && userId === user.userId && targetUser.isAdmin) {
       return NextResponse.json(
         { error: "Du kan inte ta bort din egen admin-behörighet" },
         { status: 400 }
@@ -257,7 +216,7 @@ export async function PATCH(request: NextRequest) {
       }
 
       logger.security(`Admin ${action}: user ${userId} isBlocked=${newValue}`, "high", {
-        adminId: admin.id,
+        adminId: user.userId,
         targetUserId: userId,
       })
 
@@ -273,7 +232,7 @@ export async function PATCH(request: NextRequest) {
       })
 
       logger.security(`Admin ${action}: user ${userId} isAdmin=${newValue}`, "high", {
-        adminId: admin.id,
+        adminId: user.userId,
         targetUserId: userId,
       })
 
@@ -281,20 +240,5 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Ogiltig åtgärd" }, { status: 400 })
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Valideringsfel", details: error.issues },
-        { status: 400 }
-      )
-    }
-    logger.error("Failed to perform admin user action", error as Error)
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)

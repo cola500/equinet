@@ -1,15 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth-server"
-import { requireAdmin } from "@/lib/admin-auth"
+import { NextResponse } from "next/server"
+import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
-import { logger } from "@/lib/logger"
 
-// GET - List pending verification requests (admin only)
-export async function GET(_request: NextRequest) {
-  try {
-    const session = await auth()
-    await requireAdmin(session)
-
+export const GET = withApiHandler(
+  { auth: "admin" },
+  async () => {
     const verifications = await prisma.providerVerification.findMany({
       where: { status: "pending" },
       orderBy: { createdAt: "asc" },
@@ -36,15 +31,5 @@ export async function GET(_request: NextRequest) {
     })
 
     return NextResponse.json(verifications)
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-
-    logger.error("Failed to fetch pending verifications", error as Error)
-    return NextResponse.json(
-      { error: "Kunde inte hämta verifieringsansökningar" },
-      { status: 500 }
-    )
-  }
-}
+  },
+)
