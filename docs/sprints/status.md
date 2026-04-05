@@ -27,7 +27,7 @@ sections:
 | S17-4 pg_cron | fullstack | Dev | done | feature/s17-4-pg-cron | 2e5c172e |
 | S17-7 Lokal dev -> supabase start | fullstack | Dev | done | feature/s17-7-supabase-local-dev | 092e8263 |
 | S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
-| S17-6 Edge Config feature flags | fullstack | - | pending | - | - |
+| S17-6 Edge Config feature flags | fullstack | Dev | done | feature/s17-6-edge-config | fafe44ee |
 | S17-8 Migrera admin-routes | fullstack | Dev | done | feature/s17-8-admin-routes-migration | c15cd2fb |
 
 **Sprint 16** (klar):
