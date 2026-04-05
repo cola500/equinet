@@ -578,22 +578,22 @@ Efter lyckad deployment:
 
 ## Vercel Firewall (WAF Custom Rules)
 
-Vercel Hobby inkluderar 3 gratis firewall-regler. Konfigureras i Vercel Dashboard -> Firewall.
+3 gratis firewall-regler konfigurerade via Vercel REST API (2026-04-05).
 
-**Rekommenderade regler:**
+**Aktiva regler:**
 
-| # | Regel | Typ | Beskrivning |
-|---|-------|-----|-------------|
-| 1 | Blockera bot user-agents | Block | User-Agent matchar kanda scanners/scrapers (zgrab, nuclei, sqlmap, nikto) |
-| 2 | Rate limit /api/auth/* | Rate Limit | Extra lager utover Upstash Redis, blockerar brute force pa WAF-niva |
-| 3 | Geo-block utanfor EU | Block | Begransar trafik till EU-lander (valfritt, beror pa malgrupp) |
+| # | Regel | Action | Beskrivning |
+|---|-------|--------|-------------|
+| 1 | Block malicious bots | Deny (403) | User-Agent matchar kanda scanners/scrapers (zgrab, nuclei, sqlmap, nikto, masscan, dirbuster, gobuster, wfuzz, nmap, shodan, censys) |
+| 2 | Rate limit auth endpoints | Rate Limit (20 req/min/IP) | Begransar `/api/auth/*` pa WAF-niva, extra lager utover Upstash Redis |
+| 3 | Geo-block non-EU traffic | Challenge (CAPTCHA) | Trafik utanfor EU/EES + UK far verifiera sig. Lander: SE, NO, DK, FI, DE, NL, FR, ES, IT, PT, AT, BE, BG, HR, CY, CZ, EE, GR, HU, IE, LV, LT, LU, MT, PL, RO, SK, SI, GB, IS, LI, CH |
 
-**Konfiguration:**
-1. Vercel Dashboard -> Project -> Firewall
-2. Lagg till regler ovan
-3. Testa: verifiera att blockeringar loggas i Vercel Dashboard -> Logs
+**Hantering:**
+- Dashboard: Vercel Dashboard -> Project -> Firewall (visa/redigera/inaktivera)
+- API: `PATCH /v1/security/firewall/config?projectId=<ID>&teamId=<ID>` (se Vercel API docs)
+- Loggar: Vercel Dashboard -> Firewall -> Logs visar blockerade/utmanade requests
 
-**OBS:** Regel 3 (geo-block) ar valfri och beror pa om malgruppen ar enbart Sverige/EU.
+**OBS:** Regel 3 anvander Challenge istallet for Deny -- besokare utanfor EU kan fortfarande na sajten efter CAPTCHA-verifiering.
 
 ---
 
