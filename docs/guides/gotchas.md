@@ -40,6 +40,7 @@ sections:
   - 29. useSearchParams() Kräver Suspense-boundary
   - 30. jose v6 + jsdom Vitest-inkompatibilitet
   - 31. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
+  - 36. prisma migrate dev Fungerar Inte med Lokal Supabase
   - Relaterade Dokument
 ---
 
@@ -1450,6 +1451,18 @@ body { padding-bottom: 0 !important; }
 **Lösning:** Fallback i E2E-seeding: om User inte dyker upp efter kort polling, skapa den manuellt via Prisma.
 
 **Regel:** Databasfunktioner (triggers, hooks) som skapas via Supabase-specifika migrationer existerar inte i lokal Docker-postgres.
+
+---
+
+## Gotcha #36: prisma migrate dev Fungerar Inte med Lokal Supabase
+
+**Problem:** `prisma migrate dev` skapar en shadow database for att validera migrationer. Shadow-databasen saknar Supabases `auth`-schema, sa migrationer som refererar `auth.jwt()` (t.ex. RLS-policies) failar med `ERROR: schema "auth" does not exist`.
+
+**Losning:**
+- **Applicera befintliga migrationer:** Anvand `prisma migrate deploy` (kors av `npm run setup`). Den skippar shadow DB och kor SQL direkt.
+- **Skapa nya migrationer:** Anvand `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/<ts>_<name>/migration.sql` for att generera SQL utan shadow DB. Eller skriv migration-filen manuellt.
+
+**Regel:** Anvand ALDRIG `prisma migrate dev` mot lokal Supabase om det finns migrationer som refererar `auth`-schemat. Anvand `prisma migrate deploy` for att applicera och `prisma migrate diff` for att generera nya migrationer.
 
 ---
 

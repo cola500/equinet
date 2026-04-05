@@ -391,8 +391,14 @@ export async function cleanupTestData(): Promise<void> {
 }
 
 export function hasSupabaseEnv(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  // Skip for local Supabase (127.0.0.1/localhost) -- RLS proof tests
+  // require pre-seeded auth users that only exist on remote Supabase.
+  const isLocal =
+    url?.includes("127.0.0.1") || url?.includes("localhost:5432")
   return !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    url &&
+    !isLocal &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )

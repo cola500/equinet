@@ -1,7 +1,14 @@
-# Lokal PostgreSQL for utveckling
-# Starta:  npm run db:up  (eller: docker compose up -d --wait)
-# Stoppa:  npm run db:down
-# Radera:  npm run db:nuke (tar bort all data)
+# FALLBACK: Enkel PostgreSQL utan Supabase Auth/RLS/triggers.
+# Primärt dev-flöde använder numera `supabase start` (npm run db:up).
+# Denna fil behålls som fallback om Supabase CLI inte är installerat.
+#
+# Fallback-kommandon:
+#   npm run db:up:docker    (docker compose up -d --wait)
+#   npm run db:down:docker  (docker compose down)
+#   npm run db:nuke:docker  (docker compose down -v)
+#
+# OBS: Docker-DB saknar auth-schema, RLS-policies och custom_access_token_hook.
+# Ändra DATABASE_URL till postgresql://postgres:postgres@localhost:5432/equinet
 
 services:
   db:
