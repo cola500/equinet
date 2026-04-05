@@ -40,6 +40,26 @@ import { z } from "zod"
 
 const mockGetAuthUser = vi.mocked(getAuthUser)
 
+// Mock prisma for audit log
+const mockAuditCreate = vi.fn()
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    adminAuditLog: {
+      create: (...args: unknown[]) => mockAuditCreate(...args),
+    },
+  },
+}))
+
+const adminAuthUser: AuthUser = {
+  id: "admin-1",
+  email: "admin@test.se",
+  userType: "customer",
+  isAdmin: true,
+  providerId: null,
+  stableId: null,
+  authMethod: "supabase",
+}
+
 const providerAuthUser: AuthUser = {
   id: "user-1",
   email: "test@test.se",
@@ -70,6 +90,7 @@ describe("withApiHandler", () => {
     mockGetAuthUser.mockResolvedValue(providerAuthUser)
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
     vi.mocked(isFeatureEnabled).mockResolvedValue(true)
+    mockAuditCreate.mockResolvedValue({})
   })
 
   // --- Auth ---
@@ -346,5 +367,90 @@ describe("withApiHandler", () => {
     const res = await handler(makeRequest("http://localhost:3000/api/test?q=hello"))
     const data = await res.json()
     expect(data.q).toBe("hello")
+  })
+
+  // --- Admin auth ---
+
+  it("should pass admin context for auth: 'admin'", async () => {
+    mockGetAuthUser.mockResolvedValue(adminAuthUser)
+
+    const handler = withApiHandler({ auth: "admin" }, async (ctx) => {
+      return NextResponse.json({ userId: ctx.user.userId })
+    })
+
+    const res = await handler(makeRequest("http://localhost:3000/api/admin/test"))
+    expect(res.status).toBe(200)
+  })
+
+  it("should return 403 when non-admin accesses admin route", async () => {
+    mockGetAuthUser.mockResolvedValue(providerAuthUser) // isAdmin: false
+
+    const handler = withApiHandler({ auth: "admin" }, async () => {
+      return NextResponse.json({ ok: true })
+    })
+
+    const res = await handler(makeRequest())
+    expect(res.status).toBe(403)
+  })
+
+  it("should return 401 when unauthenticated accesses admin route", async () => {
+    mockGetAuthUser.mockResolvedValue(null)
+
+    const handler = withApiHandler({ auth: "admin" }, async () => {
+      return NextResponse.json({ ok: true })
+    })
+
+    const res = await handler(makeRequest())
+    expect(res.status).toBe(401)
+  })
+
+  // --- Audit log ---
+
+  it("should create audit log entry for admin requests", async () => {
+    mockGetAuthUser.mockResolvedValue(adminAuthUser)
+    mockAuditCreate.mockResolvedValue({})
+
+    const handler = withApiHandler({ auth: "admin" }, async () => {
+      return NextResponse.json({ ok: true })
+    })
+
+    await handler(makeRequest("http://localhost:3000/api/admin/system", { method: "POST" }))
+
+    // Fire-and-forget -- wait a tick for the promise to settle
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "admin-1",
+        userEmail: "admin@test.se",
+        action: "POST /api/admin/system",
+        statusCode: 200,
+      }),
+    })
+  })
+
+  it("should NOT create audit log for non-admin requests", async () => {
+    mockGetAuthUser.mockResolvedValue(providerAuthUser)
+
+    const handler = withApiHandler({ auth: "provider" }, async () => {
+      return NextResponse.json({ ok: true })
+    })
+
+    await handler(makeRequest())
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockAuditCreate).not.toHaveBeenCalled()
+  })
+
+  it("should still return response even if audit log fails", async () => {
+    mockGetAuthUser.mockResolvedValue(adminAuthUser)
+    mockAuditCreate.mockRejectedValue(new Error("DB down"))
+
+    const handler = withApiHandler({ auth: "admin" }, async () => {
+      return NextResponse.json({ ok: true })
+    })
+
+    const res = await handler(makeRequest("http://localhost:3000/api/admin/test"))
+    expect(res.status).toBe(200)
   })
 })

@@ -41,6 +41,10 @@ export interface CustomerUser extends AuthenticatedUser {
   userType: "customer"
 }
 
+export interface AdminUser extends AuthenticatedUser {
+  isAdmin: true
+}
+
 // --- Guard-funktioner ---
 
 /**
@@ -96,4 +100,18 @@ export function requireCustomer(session: SessionLike | null): CustomerUser {
   }
 
   return { ...user, userType: "customer" }
+}
+
+/**
+ * Kräver inloggad admin.
+ * Kastar 401 om ej inloggad, 403 om ej admin.
+ */
+export function requireAdminRole(session: SessionLike | null): AdminUser {
+  const user = requireAuth(session)
+
+  if (!user.isAdmin) {
+    throw NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
+  }
+
+  return { ...user, isAdmin: true }
 }
