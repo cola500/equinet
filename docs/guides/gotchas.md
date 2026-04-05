@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-03-17
+last_updated: 2026-04-05
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -1428,6 +1428,28 @@ body { padding-bottom: 0 !important; }
 **Lösning:** Lägg till `http://localhost:54321` i `connect-src` -- men BARA i dev/CI, inte i produktion.
 
 **Regel:** När du byter origin för en extern tjänst (Supabase, Stripe, Sentry) -- kolla alltid CSP. 5 Whys-analys avslöjade detta efter flera CI-iterationer. Hade upptäckts direkt med browser console-log i CI.
+
+---
+
+## Gotcha #34: Supabase-migrerade routes returnerar alla rader lokalt utan RLS
+
+**Problem:** GET /api/services (migrerad till Supabase-klient i S14) returnerar ALLA tjänster i databasen lokalt, inte bara den inloggade leverantörens. E2E-tester som verifierar per-provider data fungerar inte.
+
+**Rotorsak:** Lokal Docker-postgres har inte RLS aktiverat. Supabase-klienten kör `SELECT` utan `WHERE providerId = ...` -- det är RLS-policyn som filtrerar. Utan RLS returneras alla rader.
+
+**Lösning:** Lokalt: acceptera begränsningen, skippa E2E-tester som kräver per-provider filtrering. Längre sikt: byt till `supabase start` (lokal Supabase med RLS + triggers + auth hooks).
+
+**Regel:** Routes migrerade till Supabase-klient (S14) beter sig annorlunda lokalt vs produktion. Testa alltid filtrering mot riktig Supabase-miljö.
+
+---
+
+## Gotcha #35: Lokal Docker saknar handle_new_user-trigger
+
+**Problem:** E2E-test som skapar Supabase Auth-användare via admin API väntar på att `handle_new_user`-triggern ska skapa public.User-rad. Triggern finns inte i lokal Docker.
+
+**Lösning:** Fallback i E2E-seeding: om User inte dyker upp efter kort polling, skapa den manuellt via Prisma.
+
+**Regel:** Databasfunktioner (triggers, hooks) som skapas via Supabase-specifika migrationer existerar inte i lokal Docker-postgres.
 
 ---
 

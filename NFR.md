@@ -4,7 +4,7 @@ description: "Non-functional requirements med status, gap-analys och story-ready
 category: root
 tags: [nfr, production-readiness, security, performance, monitoring]
 status: active
-last_updated: 2026-04-04
+last_updated: 2026-04-05
 related:
   - docs/architecture/database.md
   - docs/security/pentest-2026-02-15.md
@@ -106,7 +106,8 @@ sections:
 | Rate limiting | Klart | Upstash Redis på alla API-routes (5/h login, 10/h bookings, 100/h publikt) |
 | HTTPS + Security headers | Klart | HSTS, CSP (SRI, no unsafe-inline), X-Frame-Options DENY, nosniff, COOP, CORP |
 | Lösenordskrav | Klart | Styrka-validering |
-| Audit logging | Klart | logger.security() för känsliga operationer |
+| Audit logging | Klart | AdminAuditLog-tabell (alla admin-API-operationer), logger.security() för känsliga operationer |
+| Admin session-timeout | Klart | 15 min max-ålder på admin-sessioner via JWT iat-check |
 | Row Level Security | Klart | 28 policies (13 read + 15 write) på 7 kärndomäner. 24 bevistester mot live Supabase. Se [docs/architecture/database.md](docs/architecture/database.md) |
 | GDPR data export | Klart | /api/export/my-data (JSON + CSV), GDPR Art. 20 |
 | Horse data export | Klart | /api/horses/[id]/export |

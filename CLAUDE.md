@@ -210,7 +210,7 @@ src/
 
 ## Säkerhet
 
-**Implementerat:** Supabase Auth (managed lösenord, sessions, email-verifiering, Custom Access Token Hook), RLS (28 policies på 7 kärndomäner, 24 bevistester), HTTP-only cookies, Prisma (SQL injection), React (XSS), Zod, ownership guards (`findByIdForProvider`), rate limiting (Upstash Redis), Sentry.
+**Implementerat:** Supabase Auth (managed lösenord, sessions, email-verifiering, Custom Access Token Hook), RLS (28 policies på 7 kärndomäner, 24 bevistester), HTTP-only cookies, Prisma (SQL injection), React (XSS), Zod, ownership guards (`findByIdForProvider`), rate limiting (Upstash Redis), admin audit log (AdminAuditLog, automatisk via `withApiHandler({ auth: "admin" })`), admin session-timeout (15 min via JWT iat), Sentry.
 
 > Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
