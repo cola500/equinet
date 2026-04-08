@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-08
 sections:
   - Aktiv sprint
   - Sessioner
@@ -17,7 +17,7 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 17: Quick Wins + Infrastruktur** (docs/sprints/sprint-17-draft.md)
+**Sprint 17** (klar, S17-5 flyttad till backlog):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
@@ -25,9 +25,8 @@ sections:
 | S17-2 WAF Custom Rules | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
 | S17-3 robots.txt + sitemap | fullstack | Dev | done | feature/s17-1-2-3-quick-wins | 92a4bb23 |
 | S17-4 pg_cron | fullstack | Dev | done | feature/s17-4-pg-cron | 2e5c172e |
-| S17-7 Lokal dev -> supabase start | fullstack | Dev | done | feature/s17-7-supabase-local-dev | 092e8263 |
-| S17-5 E-postverifiering Resend | fullstack | - | pending | - | - |
 | S17-6 Edge Config feature flags | fullstack | Dev | done | feature/s17-6-edge-config | fafe44ee |
+| S17-7 Lokal dev -> supabase start | fullstack | Dev | done | feature/s17-7-supabase-local-dev | 092e8263 |
 | S17-8 Migrera admin-routes | fullstack | Dev | done | feature/s17-8-admin-routes-migration | c15cd2fb |
 | S17-9 iOS -> Supabase staging | ios | Dev | done | feature/s17-9-ios-supabase-staging | 88a132f4 |
 
@@ -182,6 +181,7 @@ sections:
 | robots.txt + sitemap.xml | LAG | 15 min | ZAP varnar om 404 |
 | Cross-Origin-Embedder-Policy | LAG | 15 min | Lagg till header via vercel.json |
 | Zod .strict() pa mobile-token | LAG | 30 min | Saknas pa request body |
+| E-postverifiering Resend (S17-5) | HOG | 0.5 dag | Verifiera Resend-leverans i prod, SPF/DKIM/DMARC, invite-flöde |
 | MFA för admin | HOG | 1 dag | Supabase TOTP-enrollment + verifiering vid admin-login |
 | Uppgradera till Vercel Pro | BLOCKER vid lansering | $20/man | Hobby tillater inte kommersiellt bruk |
 

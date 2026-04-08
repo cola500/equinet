@@ -10,6 +10,7 @@
 		2E66F0AE2F5D833100BEEF5F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E66F0AD2F5D833100BEEF5F /* WidgetKit.framework */; };
 		2E66F0B02F5D833100BEEF5F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E66F0AF2F5D833100BEEF5F /* SwiftUI.framework */; };
 		2E66F0BF2F5D833200BEEF5F /* EquinetWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E66F0AB2F5D833100BEEF5F /* EquinetWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2E9EB1482F8285EF005FD014 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 2E13A0022F60A00100AAAAAB /* Supabase */; };
 		2EEA7A672F5E09D000462C9D /* LocalAuthentication.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EEA7A662F5E09D000462C9D /* LocalAuthentication.framework */; };
 /* End PBXBuildFile section */
 
@@ -52,8 +53,6 @@
 		2E66F0CE2F5D84B300BEEF5F /* EquinetWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EquinetWidgetExtension.entitlements; sourceTree = "<group>"; };
 		2EEA7A662F5E09D000462C9D /* LocalAuthentication.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthentication.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/LocalAuthentication.framework; sourceTree = DEVELOPER_DIR; };
 		2EEA7B3F2F5EC1AC00462C9D /* EquinetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EquinetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2EEA7BD02F5EC32900462C9D /* EquinetTests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = EquinetTests; sourceTree = "<group>"; };
-		2EFC6FE72F5EE28C007BF6DA /* EquinetTests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = EquinetTests; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -109,6 +108,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E9EB1482F8285EF005FD014 /* Supabase in Frameworks */,
 				2EEA7A672F5E09D000462C9D /* LocalAuthentication.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -135,8 +135,6 @@
 		2E66F0552F5CA7B300BEEF5F = {
 			isa = PBXGroup;
 			children = (
-				2EFC6FE72F5EE28C007BF6DA /* EquinetTests */,
-				2EEA7BD02F5EC32900462C9D /* EquinetTests */,
 				2E66F0CE2F5D84B300BEEF5F /* EquinetWidgetExtension.entitlements */,
 				2E66F0602F5CA7B300BEEF5F /* Equinet */,
 				2E66F0B12F5D833100BEEF5F /* EquinetWidget */,
@@ -270,13 +268,15 @@
 			);
 			mainGroup = 2E66F0552F5CA7B300BEEF5F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2E13A0012F60A00100AAAAAA /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				2E9EB2132F828693005FD014 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
+				2E9EB2142F8286B5005FD014 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2E66F05F2F5CA7B300BEEF5F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			packageReferences = (
-				2E13A0012F60A00100AAAAAA /* XCRemoteSwiftPackageReference "supabase-swift" */,
-			);
 			targets = (
 				2E66F05D2F5CA7B300BEEF5F /* Equinet */,
 				2E66F0AA2F5D833100BEEF5F /* EquinetWidgetExtension */,
@@ -701,6 +701,22 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
+			};
+		};
+		2E9EB2132F828693005FD014 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
+		2E9EB2142F8286B5005FD014 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

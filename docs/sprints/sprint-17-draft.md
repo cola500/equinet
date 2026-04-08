@@ -3,7 +3,7 @@ title: "Sprint 17: Quick Wins + Infrastruktur"
 description: "Gratis kapabiliteter från Vercel/Supabase, e-postverifiering, snabbare feature flags"
 category: sprint
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-08
 tags: [sprint, vercel, supabase, infrastructure, quick-wins]
 sections:
   - Sprint Overview
@@ -14,7 +14,7 @@ sections:
 
 # Sprint 17: Quick Wins + Infrastruktur
 
-**Status:** UTKAST -- aktiveras efter sprint 16
+**Status:** KLAR (S17-5 flyttad till backlog, 8/9 stories levererade)
 **Sprint Goal:** Plocka gratis värde från Vercel/Supabase, stärk infrastrukturen.
 
 ---
@@ -197,6 +197,26 @@ Fas 4:                 sprint-avslut (E2E + docs + retro)
 **Fas 1:** S17-1/2/3 är så små att en session kan ta alla tre. S17-4 är oberoende.
 **Fas 2:** S17-7 bör köras tidigt -- den påverkar hur alla andra stories testar lokalt.
 **Fas 3:** S17-5 och S17-6 rör konfiguration som bör verifieras sekventiellt.
+
+### S17-9: Koppla iOS-appen till Supabase staging -- READY
+
+**Prioritet:** Hög
+**Typ:** iOS / Infrastruktur
+**Tagg:** ios
+**Beskrivning:** iOS-appen behöver peka mot Supabase staging-projektet
+(`zzdamokfeenencuggjjp`) för att testa auth, RLS och hela flödet mot riktig
+Supabase-instans. Idag pekar den mot lokal dev (localhost:3000).
+
+**Uppgifter:**
+1. Konfigurera SupabaseManager med staging-URL och anon key
+2. Miljöhantering: dev (localhost) vs staging (zzdamokfeenencuggjjp) via build config
+3. Verifiera login via Supabase Swift SDK mot staging
+4. Verifiera session exchange (native -> WebView cookies)
+5. Verifiera att RLS filtrerar korrekt (provider ser bara sin data)
+6. Verifiera native skärmar: dashboard, bokningar, kunder, tjänster
+7. Dokumentera iOS-miljökonfiguration i README eller docs/
+
+**Effort:** 0.5-1 dag
 
 ---
 
