@@ -75,8 +75,7 @@ export async function GET(request: NextRequest) {
     let bookings
 
     if (authUser.userType === "provider") {
-      // Supabase client with user JWT -- RLS filters by providerId automatically
-      // No WHERE clause needed: booking_provider_read policy handles it
+      // Supabase client with RLS + explicit providerId filter (defense in depth)
       const supabase = await createSupabaseServerClient()
       const { data, error } = await supabase
         .from("Booking")
@@ -91,6 +90,7 @@ export async function GET(request: NextRequest) {
           payment:Payment(id, status, amount, currency, paidAt, invoiceNumber),
           customerReview:CustomerReview(id, rating, comment)
         `)
+        .eq("providerId", authUser.providerId!)
         .order("bookingDate", { ascending: false })
 
       if (error) {

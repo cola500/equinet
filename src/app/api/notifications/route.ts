@@ -8,7 +8,7 @@ import { logger } from "@/lib/logger"
 // Uses Supabase client with RLS -- notification_user_read policy filters by userId in JWT
 export const GET = withApiHandler(
   { auth: "any" },
-  async ({ request }) => {
+  async ({ request, user }) => {
     const limitParam = request.nextUrl.searchParams.get("limit")
     const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10), 1), 50) : 20
 
@@ -18,11 +18,13 @@ export const GET = withApiHandler(
       supabase
         .from("Notification")
         .select("id, type, message, isRead, linkUrl, createdAt")
+        .eq("userId", user.userId)
         .order("createdAt", { ascending: false })
         .limit(limit),
       supabase
         .from("Notification")
         .select("*", { count: "exact", head: true })
+        .eq("userId", user.userId)
         .eq("isRead", false),
     ])
 

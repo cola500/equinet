@@ -1432,15 +1432,15 @@ body { padding-bottom: 0 !important; }
 
 ---
 
-## Gotcha #34: Supabase-migrerade routes returnerar alla rader lokalt utan RLS
+## Gotcha #34: RLS-policies ar OR -- publika read-policies lacker data
 
-**Problem:** GET /api/services (migrerad till Supabase-klient i S14) returnerar ALLA tjänster i databasen lokalt, inte bara den inloggade leverantörens. E2E-tester som verifierar per-provider data fungerar inte.
+**Problem:** GET /api/services (migrerad till Supabase-klient i S14) returnerade ALLA aktiva tjänster fran alla providers, inte bara den inloggade leverantorens. Provider kunde valja en annan providers tjänst i manuell bokning -> "Ogiltig tjänst".
 
-**Rotorsak:** Lokal Docker-postgres har inte RLS aktiverat. Supabase-klienten kör `SELECT` utan `WHERE providerId = ...` -- det är RLS-policyn som filtrerar. Utan RLS returneras alla rader.
+**Rotorsak:** RLS-policies ar OR. `service_public_read` (`isActive = true`, for kundsökning) + `service_provider_read` (`providerId = rls_provider_id()`) = provider ser ALLA aktiva tjänster. Samma monster kan uppsta pa vilken tabell som helst med en publik read-policy.
 
-**Lösning:** Lokalt: acceptera begränsningen, skippa E2E-tester som kräver per-provider filtrering. Längre sikt: byt till `supabase start` (lokal Supabase med RLS + triggers + auth hooks).
+**Lösning:** Lagg ALLTID till explicit `.eq()` filter for ownership (providerId/userId/customerId) i Supabase-klient queries. RLS ar defense in depth, inte enda filtret. Fixat i S14-routes: `/api/services`, `/api/bookings`, `/api/notifications`.
 
-**Regel:** Routes migrerade till Supabase-klient (S14) beter sig annorlunda lokalt vs produktion. Testa alltid filtrering mot riktig Supabase-miljö.
+**Regel:** Lita ALDRIG enbart pa RLS for provider-/user-scoped endpoints. RLS-policies ar OR -- en bred policy (public read, admin read) kan laka data till fel anvandare. Explicit `.eq()` i varje query ar obligatoriskt.
 
 ---
 

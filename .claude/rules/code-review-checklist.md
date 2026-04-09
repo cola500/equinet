@@ -49,6 +49,7 @@ Normalt via `code-reviewer` subagent, eller manuellt av tech lead.
 - [ ] Ny Booking-query? Använd `findByIdForProvider()`/`findByIdForCustomer()` med atomisk WHERE
 - [ ] Ny query på kärndomän? Använd repository med ownership i WHERE, aldrig direkt `prisma.X.findUnique(id)` i routes
 - [ ] Admin-routes kontrollerar `isAdmin` i session
+- [ ] Supabase-klient query? Explicit `.eq()` for ownership -- RLS-policies ar OR, publika read-policies (t.ex. `service_public_read`) lacker data till andra providers
 
 ### Input-validering
 

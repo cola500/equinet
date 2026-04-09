@@ -19,11 +19,12 @@ const serviceSchema = z.object({
 // Uses Supabase client with RLS -- service_provider_read policy filters by providerId in JWT
 export const GET = withApiHandler(
   { auth: "provider" },
-  async () => {
+  async ({ user }) => {
     const supabase = await createSupabaseServerClient()
     const { data, error } = await supabase
       .from("Service")
       .select("id, providerId, name, description, price, durationMinutes, isActive, recommendedIntervalWeeks")
+      .eq("providerId", user.providerId)
       .order("createdAt", { ascending: false })
 
     if (error) {

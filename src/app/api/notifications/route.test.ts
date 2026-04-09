@@ -31,15 +31,19 @@ function mockSupabaseNotifications(notifications: unknown[], unreadCount: number
         return {
           select: vi.fn().mockImplementation((fields: string, opts?: { count?: string; head?: boolean }) => {
             if (opts?.head) {
-              // Count query
+              // Count query: select().eq("userId").eq("isRead")
               return {
-                eq: vi.fn().mockResolvedValue({ count: unreadCount, error: null }),
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockResolvedValue({ count: unreadCount, error: null }),
+                }),
               }
             }
-            // List query
+            // List query: select().eq("userId").order().limit()
             return {
-              order: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue({ data: notifications, error: null }),
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({ data: notifications, error: null }),
+                }),
               }),
             }
           }),

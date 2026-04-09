@@ -77,6 +77,7 @@ src/app/api/[feature]/
 - [ ] Zod med `.strict()` (avvisar okanda falt)
 - [ ] `providerId`/`customerId` fran session, ALDRIG request body
 - [ ] `select` (aldrig `include`) -- forhindrar PII-exponering (t.ex. passwordHash)
+- [ ] Supabase-klient query? Explicit `.eq()` for ownership (providerId/userId/customerId) -- lita ALDRIG enbart pa RLS (policies ar OR, publika read-policies lacker)
 - [ ] Minimal `select` -- returnera BARA falt som UI:t faktiskt anvander. Inkludera aldrig `createdAt`, `updatedAt` eller andra metadata-falt i list-queries utan bekraftad konsument.
 - [ ] Felmeddelanden pa svenska: "Ej inloggad", "Atkomst nekad", "Ogiltig JSON", "Valideringsfel", "Internt serverfel"
 - [ ] `logger` (INTE `console.*`)

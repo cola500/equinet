@@ -79,7 +79,9 @@ describe('GET /api/services', () => {
     vi.mocked(createSupabaseServerClient).mockResolvedValue({
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockServices, error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: mockServices, error: null }),
+          }),
         }),
       }),
     } as never)
@@ -139,7 +141,9 @@ describe('GET /api/services', () => {
     vi.mocked(createSupabaseServerClient).mockResolvedValue({
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
         }),
       }),
     } as never)

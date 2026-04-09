@@ -162,14 +162,16 @@ describe('GET /api/bookings', () => {
     ]
 
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
-    // Supabase client chain: from().select().order()
+    // Supabase client chain: from().select().eq().order()
     vi.mocked(createSupabaseServerClient).mockResolvedValue({
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockBookings, error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: mockBookings, error: null }),
+          }),
         }),
       }),
     } as never)
@@ -214,13 +216,15 @@ describe('GET /api/bookings', () => {
     // With Supabase RLS, a provider without bookings gets an empty array
     // (no 404 -- RLS handles filtering via JWT providerId)
     vi.mocked(getAuthUser).mockResolvedValue({
-      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: null, stableId: null, authMethod: 'supabase' as const,
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
     })
 
     vi.mocked(createSupabaseServerClient).mockResolvedValue({
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
         }),
       }),
     } as never)
