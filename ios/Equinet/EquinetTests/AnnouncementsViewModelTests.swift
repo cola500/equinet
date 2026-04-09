@@ -34,6 +34,31 @@ final class MockAnnouncementsFetcher: AnnouncementsDataFetching {
             return ann
         }
     }
+
+    func createAnnouncement(_ request: CreateAnnouncementRequest) async throws -> AnnouncementItem {
+        if shouldThrow { throw APIError.serverError(500) }
+        return makeAnnouncementItem(id: "new-ann", status: "open")
+    }
+
+    func fetchAnnouncementDetail(id: String) async throws -> AnnouncementDetailResponse {
+        if shouldThrow { throw APIError.serverError(500) }
+        return AnnouncementDetailResponse(
+            announcement: AnnouncementDetailInfo(
+                id: id, serviceType: "Test", municipality: "Stockholm",
+                dateFrom: "2026-04-10T00:00:00.000Z", dateTo: "2026-04-17T00:00:00.000Z",
+                status: "open", specialInstructions: nil,
+                createdAt: "2026-04-09T00:00:00.000Z",
+                services: [AnnouncementService(id: "s1", name: "Test")]
+            ),
+            bookings: [],
+            summary: AnnouncementSummary(total: 0, pending: 0, confirmed: 0)
+        )
+    }
+
+    func updateAnnouncementBookingStatus(announcementId: String, bookingId: String, status: String) async throws -> BookingStatusUpdateResponse {
+        if shouldThrow { throw APIError.serverError(500) }
+        return BookingStatusUpdateResponse(id: bookingId, status: status)
+    }
 }
 
 // MARK: - Test Helpers

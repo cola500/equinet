@@ -152,6 +152,14 @@ struct NativeMoreView: View {
                             viewModel: announcementsViewModel
                         )
                     }
+                } else if item.path == "/provider/group-bookings" {
+                    NativeGroupBookingsView(servicesViewModel: servicesViewModel)
+                        .navigationDestination(for: GroupBookingRequest.self) { request in
+                            GroupBookingDetailView(
+                                requestId: request.id,
+                                servicesViewModel: servicesViewModel
+                            )
+                        }
                 } else if item.path == "/provider/insights" {
                     NativeInsightsView(viewModel: insightsViewModel)
                 } else if item.path == "/provider/help" {

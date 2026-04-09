@@ -687,6 +687,23 @@ final class APIClient {
             throw APIError.decodingError(error)
         }
     }
+
+    // MARK: - Generic Authenticated Requests
+
+    /// Authenticated GET with JSON decoding.
+    func authenticatedGet<T: Decodable>(path: String) async throws -> T {
+        try await authenticatedRequest(path: path, responseType: T.self)
+    }
+
+    /// Authenticated POST with JSON body and response decoding.
+    func authenticatedPost<T: Decodable>(path: String, body: [String: Any]) async throws -> T {
+        let (data, _) = try await performRequest(method: "POST", path: path, body: body)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
 }
 
 // MARK: - Protocol conformances
