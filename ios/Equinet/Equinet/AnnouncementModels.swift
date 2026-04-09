@@ -174,10 +174,14 @@ struct AnnouncementBooking: Codable, Identifiable, Sendable {
         return f
     }()
 
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
     var formattedDate: String {
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = isoFormatter.date(from: bookingDate) else { return bookingDate }
+        guard let date = Self.isoFormatter.date(from: bookingDate) else { return bookingDate }
         return Self.dateFormatter.string(from: date)
     }
 
