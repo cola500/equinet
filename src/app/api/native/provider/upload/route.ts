@@ -35,6 +35,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate content type
+    const contentType = request.headers.get("content-type") ?? ""
+    if (!contentType.includes("multipart/form-data")) {
+      return NextResponse.json(
+        { error: "Ogiltig innehållstyp" },
+        { status: 415 }
+      )
+    }
+
     // Parse FormData
     let formData: FormData
     try {
@@ -63,8 +72,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate unique filename
-    const ext = file.name.split(".").pop() || "jpg"
+    // Generate unique filename (extension from MIME type, not file.name, to prevent path traversal)
+    const mimeToExt: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    }
+    const ext = mimeToExt[(file as File).type] || "jpg"
     const fileName = `${user.providerId}-${Date.now()}.${ext}`
 
     // Upload to Supabase Storage

@@ -199,6 +199,17 @@ describe("POST /api/native/provider/upload", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 415 for non-multipart content type", async () => {
+    const req = new Request("http://localhost/api/native/provider/upload", {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: { "Content-Type": "application/json" },
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(415)
+  })
+
   it("returns 429 when rate limited", async () => {
     mockRateLimiters.api.mockResolvedValue(false)
 
