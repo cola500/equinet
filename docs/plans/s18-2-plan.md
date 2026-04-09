@@ -17,7 +17,7 @@ sections:
 
 ## Scope
 
-Porta 22 provider-hjälpartiklar (8 sektioner) till native SwiftUI.
+Porta 28 provider-hjälpartiklar (11 sektioner) till native SwiftUI.
 All data statisk -- ingen API behövs. Perfekt för native och fungerar offline.
 
 ## Feature Inventory
@@ -32,9 +32,11 @@ All data statisk -- ingen API behövs. Perfekt för native och fungerar offline.
 | Artikelvy: tips | Blå ruta med tip-text | Blå bakgrund `RoundedRectangle` | Native |
 | Artikelvy: heading per block | `<h3>` i content-block | `Text().font(.headline)` | Native |
 | Feature flag gate | `help_center` flag i webb | Feature flag via AppCoordinator | Native |
-| 8 sektioner | Kom igang, Profil, Tjanster, Kalender, Bokningar, Dagligt arbete, Ruttplanering, Omdomen, Kunder, Planering, Hastar, Konto, Integrationer | Samma | Native |
+| 11 sektioner | Kom igang, Profil, Tjanster, Kalender, Bokningar, Dagligt arbete, Ruttplanering, Omdomen, Kunder, Planering, Hastar, Integrationer, Konto | Samma | Native |
+| Platt lista vid aktiv sokning | Webb visar platt | Platt lista vid sok, sektioner vid tom sok | Native |
 
 **Auth:** Ingen -- statisk data, inget API-anrop.
+**Feature flag:** `help_center` finns i feature-flag-definitions (default-on). iOS hamtar dynamiskt via `/api/feature-flags`. NativeMoreView har redan `featureFlag: "help_center"` pa menyposten.
 
 ## Approach
 
@@ -55,6 +57,7 @@ All data statisk -- ingen API behövs. Perfekt för native och fungerar offline.
 | `ios/Equinet/Equinet/NativeHelpView.swift` | Ny |
 | `ios/Equinet/Equinet/HelpArticleDetailView.swift` | Ny |
 | `ios/Equinet/Equinet/NativeMoreView.swift` | Redigera (lagg till native route) |
+| `ios/Equinet/EquinetTests/HelpViewModelTests.swift` | Ny |
 
 ## TDD
 
