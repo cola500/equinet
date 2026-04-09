@@ -24,7 +24,7 @@ sections:
 | S18-1 Gruppbokningar native | ios | - | pending | - | - |
 | S18-2 Hjälpcenter native | ios | Dev | done | feature/s18-2-help-center-native | 093b8163 |
 | S18-3 Annonsering CRUD native | ios | - | pending | - | - |
-| S18-4 Profilbild native | ios | - | pending | - | - |
+| S18-4 Profilbild native | ios | Dev | in_progress | feature/s18-4-profile-image-native | - |
 | S18-5 Tillgänglighetsschema (bonus) | ios | - | pending | - | - |
 
 **Sprint 17** (klar, S17-5 flyttad till backlog):
