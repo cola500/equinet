@@ -9,7 +9,10 @@ import Foundation
 
 // MARK: - Announcement Item
 
-struct AnnouncementItem: Codable, Identifiable, Sendable {
+struct AnnouncementItem: Codable, Identifiable, Hashable, Sendable {
+    static func == (lhs: AnnouncementItem, rhs: AnnouncementItem) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
     let id: String
     let serviceType: String
     let municipality: String?
@@ -100,4 +103,98 @@ struct AnnouncementsListResponse: Codable, Sendable {
 
 struct AnnouncementCancelResponse: Codable, Sendable {
     let success: Bool
+}
+
+// MARK: - Create Request
+
+struct CreateAnnouncementRequest: Codable, Sendable {
+    let serviceIds: [String]
+    let dateFrom: String
+    let dateTo: String
+    let municipality: String
+    let specialInstructions: String?
+}
+
+// MARK: - Detail Response
+
+struct AnnouncementDetailResponse: Codable, Sendable {
+    let announcement: AnnouncementDetailInfo
+    let bookings: [AnnouncementBooking]
+    let summary: AnnouncementSummary
+}
+
+struct AnnouncementDetailInfo: Codable, Sendable {
+    let id: String
+    let serviceType: String
+    let municipality: String?
+    let dateFrom: String
+    let dateTo: String
+    let status: String
+    let specialInstructions: String?
+    let createdAt: String
+    let services: [AnnouncementService]
+}
+
+struct AnnouncementBooking: Codable, Identifiable, Sendable {
+    let id: String
+    let bookingDate: String
+    let startTime: String?
+    let endTime: String?
+    let status: String
+    let horseName: String?
+    let customerNotes: String?
+    let customerName: String
+    let customerPhone: String?
+    let serviceName: String?
+    let servicePrice: Double?
+
+    var statusLabel: String {
+        switch status {
+        case "pending": return "Väntar"
+        case "confirmed": return "Bekräftad"
+        case "cancelled": return "Avbokad"
+        case "completed": return "Genomförd"
+        default: return status
+        }
+    }
+
+    var isPending: Bool { status == "pending" }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        f.locale = Locale(identifier: "sv_SE")
+        return f
+    }()
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        f.locale = Locale(identifier: "sv_SE")
+        return f
+    }()
+
+    var formattedDate: String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = isoFormatter.date(from: bookingDate) else { return bookingDate }
+        return Self.dateFormatter.string(from: date)
+    }
+
+    var timeRange: String {
+        [startTime, endTime].compactMap { $0 }.joined(separator: " – ")
+    }
+}
+
+struct AnnouncementSummary: Codable, Sendable {
+    let total: Int
+    let pending: Int
+    let confirmed: Int
+}
+
+// MARK: - Booking Status Update
+
+struct BookingStatusUpdateResponse: Codable, Sendable {
+    let id: String
+    let status: String
 }

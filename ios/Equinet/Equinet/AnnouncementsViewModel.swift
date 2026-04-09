@@ -127,6 +127,74 @@ final class AnnouncementsViewModel {
         }
     }
 
+    // MARK: - Create
+
+    func createAnnouncement(_ request: CreateAnnouncementRequest) async -> Bool {
+        actionInProgress = true
+        do {
+            _ = try await APIClient.shared.createAnnouncement(request)
+            SharedDataManager.clearAnnouncementsCache()
+            let fetched = try await fetcher.fetchAnnouncements()
+            announcements = fetched
+            SharedDataManager.saveAnnouncementsCache(fetched)
+            actionInProgress = false
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            #endif
+            return true
+        } catch {
+            actionInProgress = false
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            #endif
+            AppLogger.network.error("Failed to create announcement: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    // MARK: - Detail
+
+    var detail: AnnouncementDetailResponse?
+    private(set) var isLoadingDetail = false
+
+    func loadDetail(id: String) async {
+        isLoadingDetail = true
+        do {
+            detail = try await APIClient.shared.fetchAnnouncementDetail(id: id)
+            isLoadingDetail = false
+        } catch {
+            isLoadingDetail = false
+            AppLogger.network.error("Failed to fetch announcement detail: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Update Booking Status
+
+    func updateBookingStatus(announcementId: String, bookingId: String, newStatus: String) async -> Bool {
+        actionInProgress = true
+        do {
+            _ = try await APIClient.shared.updateAnnouncementBookingStatus(
+                announcementId: announcementId,
+                bookingId: bookingId,
+                status: newStatus
+            )
+            // Reload detail
+            await loadDetail(id: announcementId)
+            actionInProgress = false
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            #endif
+            return true
+        } catch {
+            actionInProgress = false
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            #endif
+            AppLogger.network.error("Failed to update booking status: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     // MARK: - Computed
 
     var openAnnouncements: [AnnouncementItem] {
