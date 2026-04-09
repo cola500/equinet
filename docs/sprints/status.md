@@ -21,7 +21,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S18-1 Gruppbokningar native | ios | - | pending | - | - |
+| S18-1 Gruppbokningar native | ios | Dev | done | feature/s18-1-group-bookings-native | de45d53b |
 | S18-2 Hjälpcenter native | ios | Dev | done | feature/s18-2-help-center-native | 093b8163 |
 | S18-3 Annonsering CRUD native | ios | Dev | done | feature/s18-3-announcements-crud-native | f13d5bf3 |
 | S18-4 Profilbild native | ios | Dev | done | feature/s18-4-profile-image-native | e42269e1 |
