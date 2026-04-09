@@ -435,6 +435,81 @@ final class APIClient {
         }
     }
 
+    // MARK: - Profile Image Upload
+
+    private struct UploadResponse: Codable {
+        let url: String
+    }
+
+    /// Upload profile image as multipart/form-data with Bearer auth.
+    /// Returns the public URL of the uploaded image.
+    func uploadProfileImage(imageData: Data, mimeType: String = "image/jpeg") async throws -> String {
+        let accessToken: String
+        #if DEBUG
+        if let testToken = testAccessToken {
+            accessToken = testToken
+        } else {
+            guard let token = SupabaseManager.client.auth.currentSession?.accessToken else {
+                throw APIError.noToken
+            }
+            accessToken = token
+        }
+        #else
+        guard let token = SupabaseManager.client.auth.currentSession?.accessToken else {
+            throw APIError.noToken
+        }
+        accessToken = token
+        #endif
+
+        guard let url = URL(string: "/api/native/provider/upload", relativeTo: baseURL) else {
+            throw APIError.networkError(URLError(.badURL))
+        }
+
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        // Build multipart body
+        var body = Data()
+        let ext = mimeType == "image/png" ? "png" : "jpg"
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"profile.\(ext)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        AppLogger.network.debug("uploadProfileImage: \(imageData.count) bytes")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        if httpResponse.statusCode == 401 {
+            // Try refresh and retry once
+            do {
+                _ = try await SupabaseManager.client.auth.refreshSession()
+                return try await uploadProfileImage(imageData: imageData, mimeType: mimeType)
+            } catch {
+                throw APIError.unauthorized
+            }
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let bodyPreview = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
+            AppLogger.network.error("Upload failed: HTTP \(httpResponse.statusCode): \(bodyPreview)")
+            throw APIError.serverError(httpResponse.statusCode)
+        }
+
+        let decoded = try JSONDecoder().decode(UploadResponse.self, from: data)
+        return decoded.url
+    }
+
     // MARK: - Due for Service
 
     func fetchDueForService(filter: DueForServiceFilter = .all) async throws -> [DueForServiceItem] {
