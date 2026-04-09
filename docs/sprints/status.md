@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-08
+last_updated: 2026-04-09
 sections:
   - Aktiv sprint
   - Sessioner
@@ -16,6 +16,16 @@ sections:
 > **Instruktion:** Uppdatera denna fil vid varje commit. Tech lead laser den for review och koordinering.
 
 ## Aktiv sprint
+
+**Sprint 18** ([sprint-18-draft.md](sprint-18-draft.md)):
+
+| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
+|-------|------|----------|--------|--------|----------------|
+| S18-1 Gruppbokningar native | ios | - | pending | - | - |
+| S18-2 Hjälpcenter native | ios | Dev | done | feature/s18-2-help-center-native | 093b8163 |
+| S18-3 Annonsering CRUD native | ios | - | pending | - | - |
+| S18-4 Profilbild native | ios | - | pending | - | - |
+| S18-5 Tillgänglighetsschema (bonus) | ios | - | pending | - | - |
 
 **Sprint 17** (klar, S17-5 flyttad till backlog):
 
@@ -141,7 +151,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | Fullstack | S17-1/2/3 quick wins | feature/s17-1-2-3-quick-wins | 2026-04-05 |
+| Dev | iOS | S18-2 Hjälpcenter native | feature/s18-2-help-center-native | 2026-04-09 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 

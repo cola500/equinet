@@ -152,6 +152,11 @@ struct NativeMoreView: View {
                     )
                 } else if item.path == "/provider/insights" {
                     NativeInsightsView(viewModel: insightsViewModel)
+                } else if item.path == "/provider/help" {
+                    NativeHelpView()
+                        .navigationDestination(for: HelpArticle.self) { article in
+                            HelpArticleDetailView(article: article)
+                        }
                 } else {
                     MoreWebView(
                         path: item.path,
