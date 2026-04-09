@@ -98,7 +98,7 @@ describe("GET /api/native/announcements", () => {
     mockIsFeatureEnabled.mockResolvedValue(false)
     const res = await GET(createRequest())
     expect(res.status).toBe(404)
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("route_planning")
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("route_announcements")
   })
 
   it("returns 404 when provider not found", async () => {

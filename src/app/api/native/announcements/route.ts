@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    if (!(await isFeatureEnabled("route_planning"))) {
+    if (!(await isFeatureEnabled("route_announcements"))) {
       return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
