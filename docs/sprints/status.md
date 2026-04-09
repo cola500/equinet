@@ -22,7 +22,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S18-1 Gruppbokningar native | ios | - | pending | - | - |
-| S18-2 Hjälpcenter native | ios | Dev | in_progress | feature/s18-2-help-center-native | - |
+| S18-2 Hjälpcenter native | ios | Dev | done | feature/s18-2-help-center-native | 093b8163 |
 | S18-3 Annonsering CRUD native | ios | - | pending | - | - |
 | S18-4 Profilbild native | ios | - | pending | - | - |
 | S18-5 Tillgänglighetsschema (bonus) | ios | - | pending | - | - |
