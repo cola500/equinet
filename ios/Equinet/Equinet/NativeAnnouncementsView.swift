@@ -4,7 +4,7 @@
 //
 //  Native SwiftUI view for provider's route announcements.
 //  Shows list with status badges, booking counts, and cancel action.
-//  Create/detail offloaded to WebView via onNavigateToWebPath callback.
+//  Create and detail are native SwiftUI views.
 //  Does NOT own a NavigationStack -- uses NativeMoreView's stack.
 //
 
@@ -13,7 +13,10 @@ import SwiftUI
 
 struct NativeAnnouncementsView: View {
     @Bindable var viewModel: AnnouncementsViewModel
+    @Bindable var servicesViewModel: ServicesViewModel
     var onNavigateToWebPath: ((String) -> Void)?
+
+    @State private var showCreateSheet = false
 
     var body: some View {
         content
@@ -21,9 +24,15 @@ struct NativeAnnouncementsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Skapa ny annons", systemImage: "plus") {
-                        onNavigateToWebPath?("/provider/announcements/new")
+                        showCreateSheet = true
                     }
                 }
+            }
+            .sheet(isPresented: $showCreateSheet) {
+                AnnouncementFormSheet(
+                    viewModel: viewModel,
+                    services: servicesViewModel.services
+                )
             }
             .task {
                 await viewModel.loadAnnouncements()
@@ -80,24 +89,16 @@ struct NativeAnnouncementsView: View {
             if !viewModel.openAnnouncements.isEmpty {
                 Section("Öppna") {
                     ForEach(viewModel.openAnnouncements) { announcement in
-                        AnnouncementRowView(announcement: announcement)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                onNavigateToWebPath?("/provider/announcements/\(announcement.id)")
+                        NavigationLink(value: announcement) {
+                            AnnouncementRowView(announcement: announcement)
+                        }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                viewModel.announcementToCancel = announcement
+                            } label: {
+                                Label("Avbryt annons", systemImage: "xmark.circle")
                             }
-                            .accessibilityAddTraits(.isButton)
-                            .contextMenu {
-                                Button {
-                                    onNavigateToWebPath?("/provider/announcements/\(announcement.id)")
-                                } label: {
-                                    Label("Visa detaljer", systemImage: "eye")
-                                }
-                                Button(role: .destructive) {
-                                    viewModel.announcementToCancel = announcement
-                                } label: {
-                                    Label("Avbryt annons", systemImage: "xmark.circle")
-                                }
-                            }
+                        }
                     }
                 }
             }
@@ -105,12 +106,9 @@ struct NativeAnnouncementsView: View {
             if !viewModel.closedAnnouncements.isEmpty {
                 Section("Avslutade") {
                     ForEach(viewModel.closedAnnouncements) { announcement in
-                        AnnouncementRowView(announcement: announcement)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                onNavigateToWebPath?("/provider/announcements/\(announcement.id)")
-                            }
-                            .accessibilityAddTraits(.isButton)
+                        NavigationLink(value: announcement) {
+                            AnnouncementRowView(announcement: announcement)
+                        }
                     }
                 }
             }
@@ -126,7 +124,7 @@ struct NativeAnnouncementsView: View {
             Text("Du har inga rutt-annonser ännu. Skapa en för att nå kunder i ditt område.")
         } actions: {
             Button("Skapa annons") {
-                onNavigateToWebPath?("/provider/announcements/new")
+                showCreateSheet = true
             }
             .buttonStyle(.borderedProminent)
         }

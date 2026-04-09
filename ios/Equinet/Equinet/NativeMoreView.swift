@@ -144,12 +144,14 @@ struct NativeMoreView: View {
                 } else if item.path == "/provider/announcements" {
                     NativeAnnouncementsView(
                         viewModel: announcementsViewModel,
-                        onNavigateToWebPath: { path in
-                            navigationPath.removeLast()
-                            let temp = MoreMenuItem(label: "Annons", icon: "megaphone", path: path, section: "")
-                            navigationPath.append(temp)
-                        }
+                        servicesViewModel: servicesViewModel
                     )
+                    .navigationDestination(for: AnnouncementItem.self) { announcement in
+                        AnnouncementDetailView(
+                            announcementId: announcement.id,
+                            viewModel: announcementsViewModel
+                        )
+                    }
                 } else if item.path == "/provider/insights" {
                     NativeInsightsView(viewModel: insightsViewModel)
                 } else if item.path == "/provider/help" {

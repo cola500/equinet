@@ -541,6 +541,42 @@ final class APIClient {
         )
     }
 
+    func createAnnouncement(_ request: CreateAnnouncementRequest) async throws -> AnnouncementItem {
+        let body: [String: Any] = [
+            "serviceIds": request.serviceIds,
+            "dateFrom": request.dateFrom,
+            "dateTo": request.dateTo,
+            "municipality": request.municipality,
+            "specialInstructions": request.specialInstructions as Any,
+        ].compactMapValues { $0 }
+        let (data, _) = try await performRequest(
+            method: "POST",
+            path: "/api/native/announcements",
+            body: body
+        )
+        return try JSONDecoder().decode(AnnouncementItem.self, from: data)
+    }
+
+    func fetchAnnouncementDetail(id: String) async throws -> AnnouncementDetailResponse {
+        try await authenticatedRequest(
+            path: "/api/native/announcements/\(id)/detail",
+            responseType: AnnouncementDetailResponse.self
+        )
+    }
+
+    func updateAnnouncementBookingStatus(
+        announcementId: String,
+        bookingId: String,
+        status: String
+    ) async throws -> BookingStatusUpdateResponse {
+        let (data, _) = try await performRequest(
+            method: "PATCH",
+            path: "/api/native/announcements/\(announcementId)/bookings/\(bookingId)",
+            body: ["status": status]
+        )
+        return try JSONDecoder().decode(BookingStatusUpdateResponse.self, from: data)
+    }
+
     // MARK: - Insights
 
     func fetchInsights(months: Int) async throws -> InsightsResponse {
