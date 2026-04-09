@@ -8,6 +8,7 @@
 //
 
 #if os(iOS)
+import PhotosUI
 import SwiftUI
 import OSLog
 
@@ -18,6 +19,7 @@ struct NativeProfileView: View {
 
     @State private var selectedTab = 0
     @State private var showEditSheet = false
+    @State private var selectedPhoto: PhotosPickerItem?
     // Delete account offloaded to WebView (session auth required)
 
     var body: some View {
@@ -167,11 +169,50 @@ struct NativeProfileView: View {
                     .foregroundStyle(.green)
             }
 
-            Button("Byt bild") {
-                onNavigateToWebPath?("/provider/profile?edit=image")
+            if viewModel.isUploading {
+                ProgressView()
+                    .padding(.top, 4)
+            } else {
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    Text("Byt bild")
+                        .font(.caption)
+                }
+                .onChange(of: selectedPhoto) { _, newItem in
+                    guard let newItem else { return }
+                    Task {
+                        await handlePhotoSelection(newItem)
+                    }
+                }
             }
-            .font(.caption)
         }
+    }
+
+    // MARK: - Photo Upload
+
+    private func handlePhotoSelection(_ item: PhotosPickerItem) async {
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            AppLogger.network.error("Failed to load photo data")
+            return
+        }
+
+        // Compress to JPEG, max 1MB
+        guard let image = UIImage(data: data) else { return }
+        let compressed = compressImage(image, maxBytes: 1_000_000)
+
+        _ = await viewModel.uploadProfileImage(compressed)
+        selectedPhoto = nil
+    }
+
+    private func compressImage(_ image: UIImage, maxBytes: Int) -> Data {
+        var quality: CGFloat = 0.8
+        var data = image.jpegData(compressionQuality: quality) ?? Data()
+
+        while data.count > maxBytes && quality > 0.1 {
+            quality -= 0.1
+            data = image.jpegData(compressionQuality: quality) ?? Data()
+        }
+
+        return data
     }
 
     // MARK: - Personal Info

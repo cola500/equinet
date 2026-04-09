@@ -214,6 +214,36 @@ final class ProfileViewModel {
         }
     }
 
+    // MARK: - Upload Profile Image
+
+    private(set) var isUploading = false
+
+    /// Upload profile image data (JPEG). Returns true on success.
+    func uploadProfileImage(_ imageData: Data) async -> Bool {
+        isUploading = true
+
+        do {
+            let url = try await APIClient.shared.uploadProfileImage(imageData: imageData)
+            // Update local profile with new image URL
+            if var p = profile {
+                p.profileImageUrl = url
+                profile = p
+            }
+            isUploading = false
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            #endif
+            return true
+        } catch {
+            isUploading = false
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            #endif
+            AppLogger.network.error("Failed to upload profile image: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     // MARK: - Reset (for logout)
 
     func reset() {

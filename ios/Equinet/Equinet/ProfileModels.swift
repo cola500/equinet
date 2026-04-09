@@ -29,7 +29,7 @@ struct ProviderProfile: Codable, Sendable, Identifiable {
     let latitude: Double?
     let longitude: Double?
     let serviceAreaKm: Double?
-    let profileImageUrl: String?
+    var profileImageUrl: String?
     let isActive: Bool
     let acceptingNewCustomers: Bool
     let rescheduleEnabled: Bool
