@@ -9,7 +9,7 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "setup": "prisma generate && prisma migrate deploy",
+    "setup": "prisma generate && prisma migrate deploy && npx prisma db execute --file supabase/auth-triggers.sql",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed:force": "npx tsx prisma/seed.ts --force",
     "db:seed:demo": "npx tsx prisma/seed-demo.ts",

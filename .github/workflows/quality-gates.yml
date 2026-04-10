@@ -100,6 +100,9 @@ jobs:
       - name: Run database migrations
         run: npx prisma migrate deploy
 
+      - name: Install auth triggers
+        run: npx prisma db execute --file supabase/auth-triggers.sql --url "$DATABASE_URL"
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
