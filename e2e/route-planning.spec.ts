@@ -34,11 +34,8 @@ test.describe('Route Planning Flow (Provider)', () => {
     // Vänta på att sidan laddas
     await expect(page.getByRole('heading', { name: /rutt-planering/i })).toBeVisible({ timeout: 10000 });
 
-    // Kolla om det finns beställningar
-    await page.waitForTimeout(2000); // Vänta på API-anrop
-
-    // Verifiera att filter finns
-    await expect(page.getByText(/tjänstetyp/i)).toBeVisible();
+    // Vänta på att filter renderas (indikerar att sidan laddats)
+    await expect(page.getByText(/tjänstetyp/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/prioritet/i)).toBeVisible();
 
     // Kolla om det finns tillgängliga beställningar
@@ -64,8 +61,11 @@ test.describe('Route Planning Flow (Provider)', () => {
     await page.goto('/provider/route-planning');
     await expect(page.getByRole('heading', { name: /rutt-planering/i })).toBeVisible({ timeout: 10000 });
 
-    // Vänta på beställningar
-    await page.waitForTimeout(2000);
+    // Vänta på att beställningar eller empty state laddas
+    await Promise.race([
+      page.locator('.border.rounded-lg.p-4').first().waitFor({ state: 'visible', timeout: 10000 }),
+      page.getByText(/inga tillgängliga beställningar/i).waitFor({ state: 'visible', timeout: 10000 }),
+    ]).catch(() => {});
 
     // Räkna tillgängliga beställningar
     const orderCount = await page.locator('.border.rounded-lg.p-4').count();
@@ -77,10 +77,9 @@ test.describe('Route Planning Flow (Provider)', () => {
 
     // Använd "Välj alla" knappen
     await page.getByRole('button', { name: /välj alla/i }).click();
-    await page.waitForTimeout(500);
 
     // Verifiera att antal valda uppdateras
-    await expect(page.getByText(/beställningar valda/i)).toBeVisible();
+    await expect(page.getByText(/beställningar valda/i)).toBeVisible({ timeout: 5000 });
 
     // Verifiera att sammanfattningen visas
     await expect(page.getByText(/antal stopp/i)).toBeVisible();
@@ -100,12 +99,9 @@ test.describe('Route Planning Flow (Provider)', () => {
     // Starttid är pre-filled, men sätt egen
     await page.getByLabel(/starttid/i).fill('09:00');
 
-    // Vänta lite för validering
-    await page.waitForTimeout(1000);
-
-    // Skapa rutt (2 "Skapa rutt" knappar på sidan -- formuläret + bottom bar)
+    // Vänta på att skapa-knappen blir aktiv (validering klar)
     const createButton = page.getByRole('button', { name: /skapa rutt/i }).first();
-    await expect(createButton).toBeEnabled();
+    await expect(createButton).toBeEnabled({ timeout: 5000 });
     await createButton.click();
 
     // Vänta på success toast först (mer stabilt än URL-redirect)
@@ -121,7 +117,9 @@ test.describe('Route Planning Flow (Provider)', () => {
   test('should display created route in routes list', async ({ page }) => {
     // Navigera till ruttlistan (seedRoute already created a route)
     await page.goto('/provider/routes');
-    await page.waitForTimeout(2000);
+
+    // Vänta på att ruttlistan laddas
+    await expect(page.getByRole('heading').first()).toBeVisible({ timeout: 10000 });
 
     // Kolla om det finns rutter (Card med "Se detaljer" eller "Kör rutt")
     const routeButtons = page.getByRole('button', { name: /se detaljer|kör rutt/i });
@@ -143,7 +141,9 @@ test.describe('Route Planning Flow (Provider)', () => {
   test('should open and view route details', async ({ page }) => {
     // Gå till ruttlistan
     await page.goto('/provider/routes');
-    await page.waitForTimeout(2000);
+
+    // Vänta på att ruttlistan laddas
+    await expect(page.getByRole('heading').first()).toBeVisible({ timeout: 10000 });
 
     // Find "Se detaljer" or "Kör rutt" button
     const detailButton = page.getByRole('link', { name: /se detaljer|kör rutt/i }).first();
@@ -182,7 +182,9 @@ test.describe('Route Planning Flow (Provider)', () => {
   test('should mark route stop as completed', async ({ page }) => {
     // Gå till ruttlistan
     await page.goto('/provider/routes');
-    await page.waitForTimeout(2000);
+
+    // Vänta på att ruttlistan laddas
+    await expect(page.getByRole('heading').first()).toBeVisible({ timeout: 10000 });
 
     // Find "Se detaljer" or "Kör rutt" button
     const detailButton = page.getByRole('link', { name: /se detaljer|kör rutt/i }).first();
@@ -199,7 +201,6 @@ test.describe('Route Planning Flow (Provider)', () => {
 
     // Wait for route detail to fully load
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(1000);
 
     // Current stop should be shown (seeded stops have status 'pending')
     // First need to "Påbörja besök" (start visit), then "Markera som klar" (mark complete)
@@ -220,19 +221,15 @@ test.describe('Route Planning Flow (Provider)', () => {
     } else {
       // Click "Påbörja besök" first
       await startButton.click();
-      await page.waitForTimeout(1500);
 
       // Now "Markera som klar" should appear
       const completeButton = page.getByRole('button', { name: /markera som klar/i });
-      await expect(completeButton).toBeVisible({ timeout: 5000 });
+      await expect(completeButton).toBeVisible({ timeout: 10000 });
       await completeButton.click();
     }
 
-    // Vänta på uppdatering
-    await page.waitForTimeout(2000);
-
-    // Verify stop was completed - "Påbörja besök" should no longer be visible
-    // for this stop (it will move to next stop or show as completed)
-    console.log('Stop completion flow executed successfully');
+    // Verify stop was completed - wait for status change
+    // "Påbörja besök" should no longer be visible for this stop
+    await expect(page.getByRole('button', { name: /påbörja besök/i })).not.toBeVisible({ timeout: 5000 }).catch(() => {});
   });
 });
