@@ -2,7 +2,7 @@
 title: "Sprint 19: E2E Test Hardening"
 description: "Harda E2E-testsviten: ta bort overflodiga tester, fixa flaky patterns, konsolidera overlapp"
 category: sprint
-status: draft
+status: active
 last_updated: 2026-04-10
 tags: [sprint, e2e, testing, playwright, quality]
 sections:
@@ -35,15 +35,25 @@ sections:
 
 ---
 
-## Baseline (fran session 117 full korning)
+## Baseline
 
-> Uppdateras efter forsta full korning.
+**Före sprint (session 117):**
 
 | Svit | Passed | Failed | Skipped | Tid |
 |------|--------|--------|---------|-----|
 | Smoke | 25 | 0 | 3 | 57s |
 | Critical | 33 | 10 (payment) | 3 | 5.3m |
 | Full | 350 | 0 | 81 | 41m |
+
+**Efter sprint 19:**
+
+| Mått | Före | Efter | Förändring |
+|------|------|-------|------------|
+| Spec-filer | 38 | 36 | -2 (stripe-payment + flexible-booking) |
+| Tester (approx) | ~265 | ~327 | +62 (räknemetod justerad) |
+| waitForTimeout i scope-specs | 39 | 0 | -39 (calendar 10, route-planning 8, announcements 21) |
+| waitForTimeout totalt | ~92 | ~53 | -39 |
+| Externa specs i standard-svit | 3 | 0 | Separerade till test:e2e:external |
 
 ---
 

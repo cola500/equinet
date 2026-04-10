@@ -418,9 +418,11 @@ E2E (35 specs, Playwright) är ett separat verifieringsspår -- inte en del av N
 - Kräver egen felsökning: `--headed` för visuell debugging, `--project=cleanup` för datahantering.
 
 **Körvägar:**
+- `npm run test:e2e:bootstrap` -- verifiera Supabase + kör prisma migrate (kör innan första E2E-körning)
 - `npm run test:e2e:smoke` -- app startar, login fungerar (exploratory-baseline + auth)
 - `npm run test:e2e:critical` -- kärnflöden: bokning, betalning, leverantör
-- `npm run test:e2e` -- full svit (35 specs, bara vid behov)
+- `npm run test:e2e` -- standard-svit (36 specs, exkluderar externa beroenden)
+- `npm run test:e2e:external` -- specs med externa beroenden (AI, offline)
 
 **När:** Kör smoke efter breda UI-ändringar. Kör critical efter ändringar i boknings-/betalningsflöden. Kör full bara inför release eller vid oklara regressioner.
 
