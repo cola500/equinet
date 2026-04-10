@@ -63,13 +63,43 @@ sections:
 
 ## Backlogg
 
-| Item | Prioritet | Effort | Beskrivning |
-|------|-----------|--------|-------------|
-| Uppgradera till Vercel Pro | BLOCKER vid lansering | $20/man | Hobby tillater inte kommersiellt bruk |
-| E-postverifiering Resend (S17-5) | HOG | 0.5 dag | Verifiera Resend-leverans i prod |
-| MFA for admin | HOG | 1 dag | Supabase TOTP-enrollment + verifiering |
-| Supabase Realtime | MEDEL | 1-2 dagar | Live-uppdatering via WebSocket |
-| Zod .strict() pa mobile-token | LAG | 30 min | Saknas pa request body |
+### Blockerare vid lansering
+
+| Item | Effort | Beskrivning |
+|------|--------|-------------|
+| Uppgradera till Vercel Pro | $20/man | Hobby tillater inte kommersiellt bruk |
+
+### Hog prioritet
+
+| Item | Effort | Beskrivning |
+|------|--------|-------------|
+| E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
+| MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
+
+### Vart att fixa (vid tillfalle)
+
+| Item | Effort | Motivering |
+|------|--------|------------|
+| CSP report-to | 15 min | Vi har CSP men vet inte nar den blockerar i prod. Skicka till Sentry. |
+| Dependabot auto-merge for patch | 15 min | PRs skapas men ingen mergar dem. Patch kan auto-mergas. |
+| Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
+
+### Vid lansering
+
+| Item | Effort | Motivering |
+|------|--------|------------|
+| Rate limit alerting | 30 min | Ingen trafik i prod annu. Skicka 429-hits till Sentry vid lansering. |
+| Log aggregation (Axiom/Logtail) | 0.5 dag | Sentry fangar fel men strukturerade loggar behovs for felsökning i prod. |
+| Skew protection / rolling releases | 15 min | Kraver Vercel Pro. Forhindrar att gamla klienter traffar ny server vid deploy. |
+| CORS headers | 15 min | Inga externa klienter annu (iOS ar same-origin via WKWebView). |
+| A11y-testning (axe-core) | 1 dag | Bra praxis. Kan laggas som E2E-steg med Playwright axe-integration. |
+
+### Lag prioritet
+
+| Item | Effort | Beskrivning |
+|------|--------|-------------|
+| Supabase Realtime | 1-2 dagar | Live-uppdatering via WebSocket, ersatter SWR-polling |
+| Zod .strict() pa mobile-token | 30 min | Saknas pa request body |
 
 ## Blockerare
 
