@@ -1,11 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
-// Load .env.local for Stripe keys and protect against Supabase DB locally.
+// Load .env.local for Stripe keys and local Supabase config.
 // In CI, DATABASE_URL is set correctly by GitHub Actions -- don't override it.
 if (!process.env.CI) {
   dotenv.config({ path: '.env.local' });
-  const LOCAL_DB = 'postgresql://postgres:postgres@localhost:5432/equinet';
+  // Use local Supabase CLI database (supabase start)
+  const LOCAL_DB = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
   process.env.DATABASE_URL = LOCAL_DB;
   process.env.DIRECT_DATABASE_URL = LOCAL_DB;
 }
@@ -129,13 +130,13 @@ export default defineConfig({
         FEATURE_STRIPE_PAYMENTS: 'true',
         PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'mock',
         // Force correct DB for E2E.
-        // Local: Docker Postgres. CI: Supabase local dev (set via $GITHUB_ENV).
+        // Local: Supabase CLI (supabase start). CI: set via $GITHUB_ENV.
         DATABASE_URL: process.env.CI
           ? process.env.DATABASE_URL!
-          : 'postgresql://postgres:postgres@localhost:5432/equinet',
+          : 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
         DIRECT_DATABASE_URL: process.env.CI
           ? process.env.DIRECT_DATABASE_URL!
-          : 'postgresql://postgres:postgres@localhost:5432/equinet',
+          : 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
         // Pass through Supabase env vars explicitly (CI: from supabase start)
         ...(process.env.NEXT_PUBLIC_SUPABASE_URL && {
           NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
