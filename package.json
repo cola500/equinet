@@ -34,6 +34,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:cleanup": "playwright test --project=cleanup",
+    "test:e2e:external": "playwright test e2e/customer-insights.spec.ts e2e/offline-mutations.spec.ts e2e/offline-pwa.spec.ts",
     "test:e2e:offline": "OFFLINE_E2E=true playwright test --project=offline-chromium",
     "test:e2e:smoke": "playwright test e2e/exploratory-baseline.spec.ts e2e/auth.spec.ts",
     "test:e2e:critical": "playwright test e2e/booking.spec.ts e2e/payment.spec.ts e2e/provider.spec.ts",

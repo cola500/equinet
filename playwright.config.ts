@@ -76,10 +76,11 @@ export default defineConfig({
       name: 'setup',
       testMatch: /seed-e2e\.setup\.ts/,
     },
-    // Desktop (default)
+    // Desktop (default) -- excludes external-dependency specs (offline, AI)
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: [/offline-.*\.spec\.ts/, /customer-insights\.spec\.ts/],
       dependencies: ['setup'],
       teardown: 'cleanup',
     },
@@ -87,6 +88,7 @@ export default defineConfig({
     {
       name: 'mobile',
       use: { ...devices['Pixel 7'] },
+      testIgnore: [/offline-.*\.spec\.ts/, /customer-insights\.spec\.ts/],
       dependencies: ['setup'],
       teardown: 'cleanup',
     },
