@@ -343,6 +343,59 @@ test.describe('Booking Flow (Customer)', () => {
     }
   });
 
+  test('should toggle between fixed and flexible booking', async ({ page }) => {
+    test.skip(test.info().project.name === 'mobile', 'Mobile booking flow uses different UI (MobileBookingFlow)');
+    await page.goto('/providers');
+    await page.waitForSelector('[data-testid="provider-card"]', { timeout: 10000 });
+
+    const cardWithServices = page.locator('[data-testid="provider-card"]').filter({ hasText: /Tjänster:/ });
+    const targetCard = (await cardWithServices.count()) > 0
+      ? cardWithServices.first()
+      : page.locator('[data-testid="provider-card"]').first();
+
+    await targetCard.getByRole('link', { name: /se profil|boka/i }).click();
+
+    await expect(page).toHaveURL(/\/providers\/[a-zA-Z0-9]+/);
+    await page.waitForSelector('[data-testid="service-card"]', { timeout: 10000 });
+
+    await page.locator('[data-testid="service-card"]').first()
+      .getByRole('button', { name: /boka/i }).click();
+
+    // Verifiera att booking type section är synlig
+    await expect(page.locator('[data-testid="booking-type-section"]')).toBeVisible();
+
+    // Verifiera att toggle är synlig och standard är fast tid
+    const toggle = page.locator('[data-testid="booking-type-toggle"]');
+    await expect(toggle).toBeVisible();
+
+    // Verifiera att kalenderkomponenten visas (fast tid)
+    await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 10000 });
+
+    // Verifiera att flexibel tid-formulär INTE visas
+    const flexibleSection = page.locator('[data-testid="flexible-booking-section"]');
+    await expect(flexibleSection).not.toBeVisible();
+
+    // Klicka på toggle för att byta till flexibel bokning
+    await toggle.click();
+
+    // Vänta på att flexibel section blir synlig
+    await expect(flexibleSection).toBeVisible({ timeout: 5000 });
+
+    // Verifiera att kalenderkomponenten är dold
+    await expect(page.getByText(/välj tid/i)).not.toBeVisible();
+
+    // Verifiera att prioritet-val visas
+    await expect(page.locator('[data-testid="priority-normal"]')).toBeVisible();
+    await expect(page.locator('[data-testid="priority-urgent"]')).toBeVisible();
+
+    // Toggle tillbaka till fast tid
+    await toggle.click();
+
+    // Verifiera att kalenderkomponenten visas igen
+    await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 5000 });
+    await expect(flexibleSection).not.toBeVisible();
+  });
+
   test('should display empty state when no bookings', async ({ page }) => {
     await page.goto('/customer/bookings');
 
