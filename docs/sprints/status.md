@@ -25,7 +25,7 @@ sections:
 | S19-2 Slå ihop flexible-booking | fullstack | Dev | done | feature/s19-2-merge-flexible-booking | 01a3f998 |
 | S19-3 Fixa waitForTimeout calendar | fullstack | Dev | done | feature/s19-3-calendar-waits | 503cc2e2 |
 | S19-4 Fixa waitForTimeout route-planning | fullstack | Dev | done | feature/s19-4-route-planning-waits | 2c62e9a1 |
-| S19-5 Fixa waitForTimeout announcements | fullstack | Dev | in_progress | feature/s19-5-announcements-waits | - |
+| S19-5 Fixa waitForTimeout announcements | fullstack | Dev | done | feature/s19-5-announcements-waits | a89a3a9c |
 | S19-6 Separera externa beroenden | fullstack | Dev | pending | - | - |
 | S19-7 Lokal Supabase E2E bootstrap | fullstack | Dev | done | feature/s19-7-e2e-bootstrap | d5349b77 |
 | S19-8 Baseline och retro | fullstack | Dev | pending | - | - |
