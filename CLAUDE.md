@@ -57,7 +57,7 @@ sections:
 | Production Readiness | [NFR.md](NFR.md) |
 | Röstloggning | [docs/guides/voice-logging.md](docs/guides/voice-logging.md) |
 | Pentest-rapport (feb 2026) | [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) |
-| Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (6 workflow-checklistor) |
+| Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (12 workflow-hooks) |
 | Demo-läge | [docs/demo-mode.md](docs/demo-mode.md) |
 | Produktanalys | [docs/product-audit/](docs/product-audit/) (6 dokument) |
 | Teknikförbättringar Q1 | [docs/technical-improvements-2026-q1.md](docs/technical-improvements-2026-q1.md) |
@@ -476,13 +476,13 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 **Claude Code Hooks** (`.claude/hooks/`, konfigurerade i `.claude/settings.local.json`):
 - PreToolUse (påminner FÖRE ändring):
   - `api-route-check.sh` -- Checklista vid redigering av API routes (auth, rate limit, Zod, select)
-  - `tdd-reminder.sh` -- Påminnelse om TDD när testfil saknas
+  - `tdd-reminder.sh` -- Påminnelse om TDD + BDD dual-loop för API routes/domain services
   - `feature-flag-check.sh` -- Checklista vid nya feature flags
   - `prisma-migration-check.sh` -- Påminnelse vid schemaändringar
-  - `definition-of-done.sh` -- DoD-checklista vid git commit
+  - `definition-of-done.sh` -- DoD-checklista vid git commit + done/status atomisk check
   - `e2e-check.sh` -- Checklista vid E2E-teständringar
 - PostToolUse (verifierar EFTER ändring):
-  - `post-api-route-verify.sh` -- Varnar om auth/include/console saknas i API route
+  - `post-api-route-verify.sh` -- Varnar om auth/include/console/.eq()/repository saknas i API route
   - `post-import-check.sh` -- Varnar om server-only import i klient-komponent
 
 ---

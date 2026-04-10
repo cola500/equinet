@@ -23,11 +23,11 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S20-1 Coverage-gate i CI | fullstack | Dev | done | feature/s20-1-coverage-gate | 6da03220 |
-| S20-2 Supabase .eq() ownership audit-hook | fullstack | Dev | pending | - | - |
-| S20-3 Done-fil + status atomisk commit-check | fullstack | Dev | pending | - | - |
-| S20-4 Pre-commit repository pattern-varning | fullstack | Dev | pending | - | - |
-| S20-5 BDD dual-loop paminnelse | fullstack | Dev | pending | - | - |
-| S20-6 Dokumentera och stam av | fullstack | Dev | pending | - | - |
+| S20-2 Supabase .eq() ownership audit-hook | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
+| S20-3 Done-fil + status atomisk commit-check | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
+| S20-4 Pre-commit repository pattern-varning | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
+| S20-5 BDD dual-loop paminnelse | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
+| S20-6 Dokumentera och stam av | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | - |
 
 ## Tidigare sprintar (alla klara)
 
