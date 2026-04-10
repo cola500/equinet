@@ -17,6 +17,19 @@ sections:
 
 ## Aktiv sprint
 
+**Sprint 19** ([sprint-19-e2e-hardening.md](sprint-19-e2e-hardening.md)):
+
+| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
+|-------|------|----------|--------|--------|----------------|
+| S19-1 Ta bort stripe-payment.spec.ts | fullstack | Dev | done | feature/s19-1-remove-stripe-e2e | 8f461aa0 |
+| S19-2 Slå ihop flexible-booking | fullstack | Dev | pending | - | - |
+| S19-3 Fixa waitForTimeout calendar | fullstack | Dev | pending | - | - |
+| S19-4 Fixa waitForTimeout route-planning | fullstack | Dev | pending | - | - |
+| S19-5 Fixa waitForTimeout announcements | fullstack | Dev | pending | - | - |
+| S19-6 Separera externa beroenden | fullstack | Dev | pending | - | - |
+| S19-7 Lokal Supabase E2E bootstrap | fullstack | Dev | pending | - | - |
+| S19-8 Baseline och retro | fullstack | Dev | pending | - | - |
+
 **Sprint 18** ([sprint-18-draft.md](sprint-18-draft.md)):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
@@ -151,7 +164,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev | iOS | S18-2 Hjälpcenter native | feature/s18-2-help-center-native | 2026-04-09 |
+| Dev | Fullstack | S19-1 Remove stripe E2E | feature/s19-1-remove-stripe-e2e | 2026-04-10 |
 
 ## Beslut (loggas har, diskuteras i sprint-doc)
 
