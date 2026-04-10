@@ -70,7 +70,9 @@ test.describe('Calendar & Availability (Provider)', () => {
 
     // Navigera till nästa vecka
     await page.getByRole('button', { name: /nästa/i }).click();
-    await page.waitForTimeout(500);
+
+    // Vänta på att veckonumret ändras
+    await expect(page.getByText(/vecka \d+/i)).not.toHaveText(weekText!, { timeout: 5000 });
 
     // Verifiera att veckonumret ändrades
     const newWeekText = await page.getByText(/vecka \d+/i).textContent();
@@ -79,11 +81,13 @@ test.describe('Calendar & Availability (Provider)', () => {
 
     // Navigera tillbaka till föregående vecka
     await page.getByRole('button', { name: /föregående/i }).click();
-    await page.waitForTimeout(500);
+    await expect(page.getByText(/vecka \d+/i)).not.toHaveText(newWeekText!, { timeout: 5000 });
 
     // Klicka på "Idag" för att återgå till aktuell vecka
     await page.getByRole('button', { name: /idag/i }).click();
-    await page.waitForTimeout(500);
+
+    // Vänta på att veckonumret matchar ursprunglig vecka
+    await expect(page.getByText(/vecka \d+/i)).toHaveText(weekText!, { timeout: 5000 });
 
     // Verifiera att vi är tillbaka på ursprunglig vecka
     const todayWeekText = await page.getByText(/vecka \d+/i).textContent();
@@ -98,12 +102,9 @@ test.describe('Calendar & Availability (Provider)', () => {
     // Vänta på att sidan laddas
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Vänta på att kalendern renderas
-    await page.waitForTimeout(2000);
-
-    // Klicka på en dags header (varje dag är en button i kalendern)
-    // Knapparna är i header-raden och innehåller veckodag + datum + tider
+    // Vänta på att kalendern renderas (dag-knappar med tider)
     const dayButtons = page.locator('button').filter({ hasText: /\d{2}:\d{2}/ });
+    await dayButtons.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     const dayCount = await dayButtons.count();
 
     if (dayCount === 0) {
@@ -135,10 +136,10 @@ test.describe('Calendar & Availability (Provider)', () => {
 
     // Vänta på att sidan laddas
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(2000);
 
-    // Klicka på en dags header för att öppna dialogen
+    // Vänta på att dag-knappar renderas
     const dayButtons = page.locator('button').filter({ hasText: /\d{2}:\d{2}/ });
+    await dayButtons.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     const dayCount = await dayButtons.count();
 
     if (dayCount === 0) {
@@ -174,7 +175,8 @@ test.describe('Calendar & Availability (Provider)', () => {
     const saveButton = page.getByRole('button', { name: /spara/i });
     if (await saveButton.isVisible().catch(() => false)) {
       await saveButton.click();
-      await page.waitForTimeout(1500);
+      // Vänta på att dialogen stängs efter spara
+      await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
 
     // Stäng dialogen med Escape om den fortfarande är öppen
@@ -187,10 +189,10 @@ test.describe('Calendar & Availability (Provider)', () => {
 
     // Vänta på sidan
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(2000);
 
-    // Öppna dialogen för en dag
+    // Vänta på att dag-knappar renderas
     const dayButtons = page.locator('button').filter({ hasText: /\d{2}:\d{2}/ });
+    await dayButtons.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     const dayCount = await dayButtons.count();
 
     if (dayCount === 0) {
@@ -218,7 +220,8 @@ test.describe('Calendar & Availability (Provider)', () => {
     const saveButton = page.getByRole('button', { name: /spara/i });
     if (await saveButton.isVisible().catch(() => false)) {
       await saveButton.click();
-      await page.waitForTimeout(1500);
+      // Vänta på att dialogen stängs efter spara
+      await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
 
     // Stäng dialogen med Escape om den fortfarande är öppen
@@ -268,7 +271,8 @@ test.describe('Calendar & Availability (Provider)', () => {
     const saveButton = page.getByRole('button', { name: /spara/i });
     if (await saveButton.isVisible()) {
       await saveButton.click();
-      await page.waitForTimeout(1500);
+      // Vänta på att dialogen stängs efter spara
+      await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
   });
 
@@ -339,8 +343,8 @@ test.describe('Calendar & Availability (Provider)', () => {
     // Vänta på sidan
     await expect(page.getByRole('heading', { name: /kalender/i })).toBeVisible({ timeout: 10000 });
 
-    // Vänta på att data laddas
-    await page.waitForTimeout(2000);
+    // Vänta på att tidsaxeln renderas (indikerar att kalendern laddats)
+    await expect(page.getByText(/08:00/).first()).toBeVisible({ timeout: 10000 });
 
     // Verifiera att sidan laddas utan synligt fel-state
     // Notera: "Error" kan finnas i HTML som klassnamn etc., så vi kollar synliga element
