@@ -26,7 +26,8 @@ async function gotoProviderBookingsAndWaitForData(page: import('@playwright/test
     const body = await response.text().catch(() => '');
     throw new Error(`/api/bookings returned ${response.status()}: ${body}`);
   }
-  await page.waitForTimeout(500);
+  // Vänta på att bokningslistan renderas
+  await page.locator('[data-testid="booking-item"]').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
 }
 
 test.describe('No-Show (Provider)', () => {
@@ -65,9 +66,8 @@ test.describe('No-Show (Provider)', () => {
   test('should show "Ej infunnit" button for confirmed booking', async ({ page }) => {
     await gotoProviderBookingsAndWaitForData(page);
 
-    // Click "Bekräftade" tab
+    // Click "Bekräftade" tab and wait for filtered list
     await page.getByRole('button', { name: /Bekräftade/i }).click();
-    await page.waitForTimeout(500);
 
     // Our seeded confirmed booking should appear (filter by specTag marker)
     const bookingCard = page.locator('[data-testid="booking-item"]')
@@ -84,7 +84,6 @@ test.describe('No-Show (Provider)', () => {
 
     // Click "Bekräftade" to find our confirmed booking
     await page.getByRole('button', { name: /Bekräftade/i }).click();
-    await page.waitForTimeout(500);
 
     // Find confirmed booking by specTag marker
     const bookingCard = page.locator('[data-testid="booking-item"]')
@@ -100,11 +99,9 @@ test.describe('No-Show (Provider)', () => {
       (resp) => resp.url().includes('/api/bookings/') && resp.request().method() === 'PUT',
       { timeout: 10000 }
     );
-    await page.waitForTimeout(1000);
 
     // Now switch to "Ej infunna" tab to see the no-show booking
     await page.getByRole('button', { name: /Ej infunna/i }).click();
-    await page.waitForTimeout(500);
 
     // Booking should now appear in the "Ej infunna" tab
     await expect(
@@ -129,13 +126,11 @@ test.describe('No-Show (Provider)', () => {
     );
     await page.goto('/customer/bookings');
     await apiResponsePromise;
-    await page.waitForTimeout(500);
 
     await expect(page.getByRole('heading', { name: /Mina bokningar/i })).toBeVisible({ timeout: 10000 });
 
-    // No-show bookings are in the past -- click "Tidigare" or "Alla"
+    // No-show bookings are in the past -- click "Alla"
     await page.getByRole('button', { name: 'Alla' }).click();
-    await page.waitForTimeout(500);
 
     // "Ej infunnit" badge should be visible for the no-show bookings
     await expect(page.getByText('Ej infunnit').first()).toBeVisible({ timeout: 10000 });
@@ -164,7 +159,8 @@ test.describe('No-Show (Provider)', () => {
     test.skip(!!isMobile, 'Calendar layout differs on mobile');
 
     await page.goto('/provider/calendar');
-    await page.waitForTimeout(3000);
+    // Vänta på att kalendern renderas (tidsaxel)
+    await expect(page.getByText(/08:00/).first()).toBeVisible({ timeout: 10000 });
 
     const bookingBlock = page.locator('button.absolute.border-l-4').first();
     const hasBooking = await bookingBlock.isVisible({ timeout: 5000 }).catch(() => false);

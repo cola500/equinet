@@ -31,14 +31,10 @@ test.describe('Provider Flow', () => {
 
     // Om vi är på /dashboard, vänta på redirect till /provider/dashboard
     if (page.url().includes('/dashboard') && !page.url().includes('/provider/dashboard')) {
-      // Vänta lite extra för redirect
-      await page.waitForTimeout(2000);
-
-      // Kolla om vi fortfarande är på /dashboard
-      if (page.url().includes('/dashboard') && !page.url().includes('/provider/dashboard')) {
-        // Redirecten händer inte - gå dit direkt istället
+      // Vänta på redirect eller gå dit direkt
+      await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 5000 }).catch(async () => {
         await page.goto('/provider/dashboard');
-      }
+      });
     }
   });
 
@@ -160,8 +156,11 @@ test.describe('Provider Flow', () => {
     await expect(deleteButton).toBeVisible();
     await deleteButton.click();
 
-    // Vänta på att tjänsten försvinner och sidan uppdateras
-    await page.waitForTimeout(3000);
+    // Vänta på att tjänstlistan uppdateras (antingen färre items eller toast)
+    await Promise.race([
+      page.getByText(/tjänst borttagen|borttagen/i).waitFor({ state: 'visible', timeout: 5000 }),
+      page.locator('[data-testid="service-item"]').nth(initialCount - 1).waitFor({ state: 'hidden', timeout: 5000 }),
+    ]).catch(() => {});
 
     // Räkna tjänster igen
     const newCount = await page.locator('[data-testid="service-item"]').count();
@@ -229,15 +228,11 @@ test.describe('Provider Flow', () => {
     await page.locator('[data-testid="booking-item"]').first()
       .getByRole('button', { name: /acceptera/i }).click();
 
-    // Vänta på success toast eller listan uppdateras
-    await page.waitForTimeout(2000);
-
-    // Vänta på att pending-listan uppdateras
-    await page.waitForTimeout(1000);
-
-    // Verifiera att antalet pending bokningar har minskat (bokningen flyttades till confirmed)
-    const newCount = await page.locator('[data-testid="booking-item"]').count();
-    expect(newCount).toBeLessThan(initialCount);
+    // Vänta på att pending-listan uppdateras (bokningen flyttas till confirmed)
+    await expect(async () => {
+      const newCount = await page.locator('[data-testid="booking-item"]').count();
+      expect(newCount).toBeLessThan(initialCount);
+    }).toPass({ timeout: 10000 });
   });
 
   test('should reject a pending booking', async ({ page }) => {
@@ -266,15 +261,11 @@ test.describe('Provider Flow', () => {
     await expect(page.getByText(/avboka bokning/i)).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /ja, avboka/i }).click();
 
-    // Vänta på att avbokningen genomförs
-    await page.waitForTimeout(2000);
-
-    // Vänta på att pending-listan uppdateras
-    await page.waitForTimeout(1000);
-
-    // Verifiera att antalet pending bokningar har minskat
-    const newCount = await page.locator('[data-testid="booking-item"]').count();
-    expect(newCount).toBeLessThan(initialCount);
+    // Vänta på att pending-listan uppdateras (bokningen avbokad)
+    await expect(async () => {
+      const newCount = await page.locator('[data-testid="booking-item"]').count();
+      expect(newCount).toBeLessThan(initialCount);
+    }).toPass({ timeout: 10000 });
   });
 
   test('should update provider profile', async ({ page }) => {
@@ -300,19 +291,19 @@ test.describe('Provider Flow', () => {
     // Spara ändringar (knappen heter "Spara ändringar" från koden)
     await page.getByRole('button', { name: /spara ändringar/i }).click();
 
-    // Vänta på att edit mode stängs och data sparas
-    await page.waitForTimeout(1500);
-
-    // Verifiera att nya värdet visas i display mode
-    await expect(page.getByText(/uppsala/i)).toBeVisible();
+    // Verifiera att nya värdet visas i display mode (edit mode stängs efter spara)
+    await expect(page.getByText(/uppsala/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('should display empty states appropriately', async ({ page }) => {
     // Gå till tjänster
     await page.goto('/provider/services');
 
-    // Vänta på sidan att ladda
-    await page.waitForTimeout(1000);
+    // Vänta på att sidan laddas (tjänster eller empty state)
+    await Promise.race([
+      page.locator('[data-testid="service-item"]').first().waitFor({ state: 'visible', timeout: 10000 }),
+      page.getByText(/inga tjänster|du har inte skapat några tjänster/i).waitFor({ state: 'visible', timeout: 10000 }),
+    ]).catch(() => {});
 
     // Räkna antal tjänster
     const serviceCount = await page.locator('[data-testid="service-item"]').count();
