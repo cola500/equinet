@@ -54,33 +54,22 @@ test.describe('Booking Flow (Customer)', () => {
     // Använd sökfältet (sök på "Test" som matchar "Test Stall AB")
     await page.getByPlaceholder(/sök efter företagsnamn/i).fill('Test');
 
-    // Vänta på att sökningen slutförs och UI uppdateras
-    await page.waitForTimeout(1500);
-
-    // Vänta explicit på att NÅGON av de två alternativen visas
+    // Vänta på att sökningen slutförs (providers eller empty state)
     const providerCard = page.locator('[data-testid="provider-card"]').first();
     const emptyState = page.getByText(/inga leverantörer hittades/i);
 
-    // Kolla om providers är synliga
+    await Promise.race([
+      providerCard.waitFor({ state: 'visible', timeout: 10000 }),
+      emptyState.waitFor({ state: 'visible', timeout: 10000 }),
+    ]).catch(() => {});
+
     const hasProviders = await providerCard.isVisible().catch(() => false);
     const hasEmptyState = await emptyState.isVisible().catch(() => false);
 
     if (hasProviders) {
-      // Sökresultat hittades - verifiera de visas
-      await expect(providerCard).toBeVisible({ timeout: 5000 });
+      await expect(providerCard).toBeVisible();
     } else if (hasEmptyState) {
-      // Inga resultat - verifiera empty state
-      await expect(emptyState).toBeVisible({ timeout: 5000 });
-    } else {
-      // Varken providers eller empty state - vänta och försök igen
-      await page.waitForTimeout(2000);
-      const searchResultCount = await page.locator('[data-testid="provider-card"]').count();
-      if (searchResultCount > 0) {
-        await expect(page.locator('[data-testid="provider-card"]').first()).toBeVisible({ timeout: 5000 });
-      } else {
-        // Acceptera att det kan finnas en loading state
-        console.log('Search results unclear, continuing with test');
-      }
+      await expect(emptyState).toBeVisible();
     }
 
     // Testa också ort-filter om vi har providers synliga (desktop only -- mobile hides city filter behind "Filter" button)
@@ -88,7 +77,12 @@ test.describe('Booking Flow (Customer)', () => {
     if (hasProviders && !isMobile) {
       // Testa filtrera efter ort
       await page.getByPlaceholder(/filtrera på ort/i).fill('Stockholm');
-      await page.waitForTimeout(1500);
+
+      // Vänta på att filtret appliceras
+      await Promise.race([
+        page.locator('[data-testid="provider-card"]').first().waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByText(/inga leverantörer hittades/i).waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
 
       // Verifiera resultat (kan vara 0 eller flera med båda filter)
       const hasProvidersAfterCity = await page.locator('[data-testid="provider-card"]').first().isVisible().catch(() => false);
@@ -171,7 +165,6 @@ test.describe('Booking Flow (Customer)', () => {
 
     // Navigera till nästa vecka för att hitta lediga tider
     await page.getByRole('button', { name: /nästa/i }).click();
-    await page.waitForTimeout(1000);
 
     // Klicka på första lediga (gröna) tidsknapp
     const availableSlot = page.locator('button.bg-green-100').first();
@@ -180,7 +173,6 @@ test.describe('Booking Flow (Customer)', () => {
     if (!slotVisible) {
       // Testa ytterligare en vecka framåt
       await page.getByRole('button', { name: /nästa/i }).click();
-      await page.waitForTimeout(1000);
       const slotVisible2 = await availableSlot.isVisible({ timeout: 5000 }).catch(() => false);
       if (!slotVisible2) {
         test.skip(true, 'No available time slots found');
@@ -269,11 +261,9 @@ test.describe('Booking Flow (Customer)', () => {
     // Vänta på att kalendern laddas
     await expect(page.getByText(/välj tid/i)).toBeVisible({ timeout: 10000 });
 
-    // Navigera till nästa vecka för att hitta lediga tider
+    // Navigera 2 veckor framåt för att hitta lediga tider
     await page.getByRole('button', { name: /nästa/i }).click();
-    await page.waitForTimeout(1000);
     await page.getByRole('button', { name: /nästa/i }).click();
-    await page.waitForTimeout(1000);
 
     // Klicka på första lediga (gröna) tidsknapp
     const availableSlot = page.locator('button.bg-green-100').first();
@@ -305,8 +295,8 @@ test.describe('Booking Flow (Customer)', () => {
       const submitBtn = page.getByRole('button', { name: /skicka bokningsförfrågan/i });
       if (await submitBtn.isVisible().catch(() => false)) {
         await submitBtn.click();
-        // Vänta på success eller error toast
-        await page.waitForTimeout(2000);
+        // Vänta på att dialogen stängs eller toast visas
+        await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
       }
     }
 
@@ -317,8 +307,11 @@ test.describe('Booking Flow (Customer)', () => {
     // Gå till mina bokningar
     await page.goto('/customer/bookings');
 
-    // Vänta på att sidan laddas klart
-    await page.waitForTimeout(2000);
+    // Vänta på att bokningar eller empty state laddas
+    await Promise.race([
+      page.locator('[data-testid="booking-item"]').first().waitFor({ state: 'visible', timeout: 10000 }),
+      page.getByRole('heading', { name: /inga.*bokningar/i }).waitFor({ state: 'visible', timeout: 10000 }),
+    ]).catch(() => {});
 
     // Kolla om det finns bokningar att avboka
     const bookingCount = await page.locator('[data-testid="booking-item"]').count();
@@ -405,9 +398,6 @@ test.describe('Booking Flow (Customer)', () => {
       page.getByRole('heading', { name: /inga.*bokningar/i }).waitFor({ state: 'visible', timeout: 5000 }),
       page.getByRole('heading', { name: /mina bokningar/i }).waitFor({ state: 'visible', timeout: 5000 }),
     ]).catch(() => {});
-
-    // Extra väntan för data-laddning
-    await page.waitForTimeout(1000);
 
     // Räkna antal bokningar
     const bookingCount = await page.locator('[data-testid="booking-item"]').count();

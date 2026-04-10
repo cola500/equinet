@@ -29,6 +29,7 @@ sections:
 | S19-6 Separera externa beroenden | fullstack | Dev | done | feature/s19-6-external-deps | af175f52 |
 | S19-7 Lokal Supabase E2E bootstrap | fullstack | Dev | done | feature/s19-7-e2e-bootstrap | d5349b77 |
 | S19-8 Baseline och retro | fullstack | Dev | done | feature/s19-8-retro | - |
+| S19-9 Fixa waitForTimeout booking/provider/no-show | fullstack | Dev | in_progress | feature/s19-9-remaining-waits | - |
 
 **Sprint 18** ([sprint-18-draft.md](sprint-18-draft.md)):
 
