@@ -23,7 +23,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S20-1 Coverage-gate i CI | fullstack | Dev | done | feature/s20-1-coverage-gate | 6da03220 |
-| S20-2 Supabase .eq() ownership audit-hook | fullstack | Dev | pending | - | - |
+| S20-2 Supabase .eq() ownership audit-hook | fullstack | Dev | in_progress | feature/s20-2-supabase-eq-hook | - |
 | S20-3 Done-fil + status atomisk commit-check | fullstack | Dev | pending | - | - |
 | S20-4 Pre-commit repository pattern-varning | fullstack | Dev | pending | - | - |
 | S20-5 BDD dual-loop paminnelse | fullstack | Dev | pending | - | - |

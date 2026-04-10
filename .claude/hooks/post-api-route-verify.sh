@@ -50,6 +50,25 @@ if grep -qE 'console\.(log|warn|error|info|debug)' "$FILE_PATH"; then
   WARNINGS="${WARNINGS}VARNING: Använder console.* -- byt till logger från @/lib/logger\n"
 fi
 
+# 5. Supabase-query utan .eq() ownership-filter (RLS OR-policy risk)
+if grep -q '\.from(' "$FILE_PATH" && grep -q '\.select(' "$FILE_PATH"; then
+  if ! grep -qE '\.eq\("(providerId|userId|customerId)"' "$FILE_PATH"; then
+    # Skippa publika routes
+    if [[ "$FILE_PATH" != */api/stables/* ]] && \
+       [[ "$FILE_PATH" != */api/providers/* ]] && \
+       [[ "$FILE_PATH" != */api/cron/* ]]; then
+      WARNINGS="${WARNINGS}VARNING: Supabase-query saknar .eq() ownership-filter -- RLS-policies ar OR, explicit filter kravs\n"
+    fi
+  fi
+fi
+
+# 6. Prisma direkt pa karndomaner (ska anvanda repository)
+if grep -qE 'prisma\.(booking|provider|service|customerReview|horse|follow|subscription)\.' "$FILE_PATH"; then
+  if ! grep -q '\$transaction' "$FILE_PATH"; then
+    WARNINGS="${WARNINGS}VARNING: Direkt Prisma-anrop pa karndomaner -- anvand repository pattern\n"
+  fi
+fi
+
 if [ -n "$WARNINGS" ]; then
   echo ""
   echo "POST-EDIT VERIFIERING ($(basename $(dirname "$FILE_PATH"))/route.ts):"

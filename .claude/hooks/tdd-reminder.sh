@@ -39,3 +39,17 @@ Skriv test FORST (RED -> GREEN -> REFACTOR).
 Forvantad testfil: $EXPECTED_TEST
 EOF
 fi
+
+# BDD dual-loop reminder for API routes and domain services
+if [[ "$FILE_PATH" == */src/app/api/*/route.ts ]] || \
+   [[ "$FILE_PATH" == */src/app/api/*/*/route.ts ]] || \
+   [[ "$FILE_PATH" == */src/app/api/*/*/*/route.ts ]] || \
+   [[ "$FILE_PATH" == */src/domain/*/*.ts ]]; then
+  DIR=$(dirname "$FILE_PATH")
+  INTEGRATION_TEST=$(find "$DIR" -name "*.integration.test.ts" 2>/dev/null | head -1)
+  if [[ -z "$INTEGRATION_TEST" ]]; then
+    RELATIVE=$(echo "$FILE_PATH" | sed 's|.*/src/|src/|')
+    echo "BDD DUAL-LOOP: $RELATIVE ar en API route / domain service."
+    echo "Overdag yttre integrationstest (*.integration.test.ts) som driver inre unit-tester."
+  fi
+fi
