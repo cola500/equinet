@@ -27,7 +27,7 @@ sections:
 | S19-4 Fixa waitForTimeout route-planning | fullstack | Dev | pending | - | - |
 | S19-5 Fixa waitForTimeout announcements | fullstack | Dev | pending | - | - |
 | S19-6 Separera externa beroenden | fullstack | Dev | pending | - | - |
-| S19-7 Lokal Supabase E2E bootstrap | fullstack | Dev | pending | - | - |
+| S19-7 Lokal Supabase E2E bootstrap | fullstack | Dev | in_progress | feature/s19-7-e2e-bootstrap | - |
 | S19-8 Baseline och retro | fullstack | Dev | pending | - | - |
 
 **Sprint 18** ([sprint-18-draft.md](sprint-18-draft.md)):
