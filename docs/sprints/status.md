@@ -23,7 +23,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S19-1 Ta bort stripe-payment.spec.ts | fullstack | Dev | done | feature/s19-1-remove-stripe-e2e | 8f461aa0 |
 | S19-2 Slå ihop flexible-booking | fullstack | Dev | done | feature/s19-2-merge-flexible-booking | 01a3f998 |
-| S19-3 Fixa waitForTimeout calendar | fullstack | Dev | pending | - | - |
+| S19-3 Fixa waitForTimeout calendar | fullstack | Dev | done | feature/s19-3-calendar-waits | 503cc2e2 |
 | S19-4 Fixa waitForTimeout route-planning | fullstack | Dev | pending | - | - |
 | S19-5 Fixa waitForTimeout announcements | fullstack | Dev | pending | - | - |
 | S19-6 Separera externa beroenden | fullstack | Dev | pending | - | - |
