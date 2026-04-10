@@ -28,6 +28,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e:bootstrap": "supabase status > /dev/null 2>&1 || (echo 'Starta Supabase först: npm run db:up' && exit 1) && npm run setup && echo 'E2E-redo!'",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",

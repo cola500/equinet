@@ -318,6 +318,8 @@ npm run test:ui           # Visuellt interface
 npm run test:coverage     # Med coverage
 
 # E2E (Playwright)
+npm run db:up             # Starta lokal Supabase (om inte redan igång)
+npm run test:e2e:bootstrap # Verifiera Supabase + kör prisma migrate deploy
 npm run test:e2e          # Kör alla E2E-tester
 npm run test:e2e:smoke    # Smoke: app startar, login fungerar
 npm run test:e2e:critical # Kritiska flöden: bokning, betalning, leverantör
