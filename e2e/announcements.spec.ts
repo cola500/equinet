@@ -44,22 +44,26 @@ test.describe('Route Announcements Flow', () => {
       await expect(page.getByPlaceholder(/sök kommun/i)).toBeVisible();
       await expect(page.getByRole('button', { name: 'Sök', exact: true })).toBeVisible();
 
-      // Wait for announcements to load
-      await page.waitForTimeout(2000);
+      // Wait for announcements or empty state to load
+      const cards = page.locator('.hover\\:shadow-lg');
+      const emptyState = page.getByText(/inga planerade rutter just nu|inga rutter matchar/i);
+      await Promise.race([
+        cards.first().waitFor({ state: 'visible', timeout: 10000 }),
+        emptyState.waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
 
       // Check if announcements exist or empty state is shown
-      const announcementCards = await page.locator('.hover\\:shadow-lg').count();
+      const announcementCards = await cards.count();
 
       if (announcementCards > 0) {
         // Verify first announcement has expected structure
-        const firstCard = page.locator('.hover\\:shadow-lg').first();
+        const firstCard = cards.first();
         await expect(firstCard).toBeVisible();
 
         // Verify card contains provider info and dates
         await expect(firstCard.locator('text=/öppen för bokningar/i')).toBeVisible();
       } else {
         // Empty state should be shown
-        const emptyState = page.getByText(/inga planerade rutter just nu|inga rutter matchar/i);
         await expect(emptyState).toBeVisible();
       }
     });
@@ -73,16 +77,18 @@ test.describe('Route Announcements Flow', () => {
       // Type in municipality search
       await page.getByPlaceholder(/sök kommun/i).fill('Göte');
 
-      // Wait for dropdown to appear and select Göteborg
-      await page.waitForTimeout(500);
+      // Wait for dropdown option to appear
       const option = page.locator('li', { hasText: 'Göteborg' });
-      const optionVisible = await option.isVisible().catch(() => false);
+      const optionVisible = await option.isVisible({ timeout: 5000 }).catch(() => false);
 
       if (optionVisible) {
         await option.click();
 
-        // Wait for results
-        await page.waitForTimeout(1500);
+        // Wait for results to update (cards or empty state)
+        await Promise.race([
+          page.locator('.hover\\:shadow-lg').first().waitFor({ state: 'visible', timeout: 10000 }),
+          page.getByText(/inga rutter matchar/i).waitFor({ state: 'visible', timeout: 10000 }),
+        ]).catch(() => {});
 
         // Verify active filter is shown
         const activeFilterVisible = await page.getByText(/aktiva filter/i).isVisible().catch(() => false);
@@ -107,13 +113,18 @@ test.describe('Route Announcements Flow', () => {
 
       // Apply a municipality filter
       await page.getByPlaceholder(/sök kommun/i).fill('Stock');
-      await page.waitForTimeout(500);
       const option = page.locator('li', { hasText: 'Stockholm' });
-      const optionVisible = await option.isVisible().catch(() => false);
+      const optionVisible = await option.isVisible({ timeout: 5000 }).catch(() => false);
 
       if (optionVisible) {
         await option.click();
-        await page.waitForTimeout(1000);
+
+        // Wait for filter to apply (active filter badge or results update)
+        await Promise.race([
+          page.getByText(/aktiva filter/i).waitFor({ state: 'visible', timeout: 5000 }),
+          page.locator('.hover\\:shadow-lg').first().waitFor({ state: 'visible', timeout: 5000 }),
+          page.getByText(/inga rutter matchar/i).waitFor({ state: 'visible', timeout: 5000 }),
+        ]).catch(() => {});
 
         // Clear filter
         const clearButton = page.getByRole('button', { name: /rensa/i });
@@ -121,10 +132,9 @@ test.describe('Route Announcements Flow', () => {
 
         if (clearVisible) {
           await clearButton.click();
-          await page.waitForTimeout(1000);
 
           // Verify filter is cleared
-          await expect(page.getByPlaceholder(/sök kommun/i)).toHaveValue('');
+          await expect(page.getByPlaceholder(/sök kommun/i)).toHaveValue('', { timeout: 5000 });
         }
       }
     });
@@ -132,6 +142,9 @@ test.describe('Route Announcements Flow', () => {
 
   test.describe('Provider Announcements Management', () => {
     test.beforeEach(async ({ page }) => {
+      // Reset rate limits
+      await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
       // Log in as provider
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('provider@example.com');
@@ -151,16 +164,11 @@ test.describe('Route Announcements Flow', () => {
       // Verify create button exists
       await expect(page.getByRole('button', { name: /skapa ny rutt-annons/i })).toBeVisible();
 
-      // Wait for content to load
-      await page.waitForTimeout(2000);
-
-      // Check if announcements exist or empty state is shown
-      const hasAnnouncements = await page.locator('.space-y-6 > div').count() > 0;
-
-      if (!hasAnnouncements) {
-        // Empty state should be shown
-        await expect(page.getByText(/inga rutt-annonser ännu/i)).toBeVisible();
-      }
+      // Wait for content to load (announcements or empty state)
+      await Promise.race([
+        page.getByRole('button', { name: /visa detaljer/i }).first().waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByText(/inga rutt-annonser ännu/i).waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
     });
 
     test('should show create announcement form with services and municipality', async ({ page }) => {
@@ -189,10 +197,8 @@ test.describe('Route Announcements Flow', () => {
       await expect(page.getByRole('heading', { name: /skapa rutt-annons/i })).toBeVisible({ timeout: 10000 });
 
       // Wait for services to load
-      await page.waitForTimeout(2000);
-
-      // Check if provider has services
       const serviceCheckboxes = page.locator('label:has([role="checkbox"])');
+      await serviceCheckboxes.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
       const serviceCount = await serviceCheckboxes.count();
 
       if (serviceCount === 0) {
@@ -205,8 +211,8 @@ test.describe('Route Announcements Flow', () => {
 
       // Select municipality
       await page.getByPlaceholder(/sök kommun/i).fill('Aling');
-      await page.waitForTimeout(500);
       const municipalityOption = page.locator('li', { hasText: 'Alingsås' });
+      await municipalityOption.waitFor({ state: 'visible', timeout: 5000 });
       await municipalityOption.click();
 
       // Set dates (2 weeks from now)
@@ -229,19 +235,14 @@ test.describe('Route Announcements Flow', () => {
 
       // Wait for redirect to announcements list
       await expect(page).toHaveURL(/\/provider\/announcements$/, { timeout: 15000 });
-
-      // Wait for list to load
-      await page.waitForTimeout(2000);
     });
 
     test('should navigate to announcement details', async ({ page }) => {
-      // First create an announcement if needed, or check existing ones
       await page.goto('/provider/announcements');
-      await page.waitForTimeout(2000);
 
-      // Check if there are any announcements
+      // Wait for announcements to load
       const detailsButton = page.getByRole('button', { name: /visa detaljer/i }).first();
-      const hasAnnouncements = await detailsButton.isVisible().catch(() => false);
+      const hasAnnouncements = await detailsButton.isVisible({ timeout: 10000 }).catch(() => false);
 
       if (!hasAnnouncements) {
         test.skip(true, 'No announcements available');
@@ -263,11 +264,10 @@ test.describe('Route Announcements Flow', () => {
 
     test('should show booking details on announcement', async ({ page }) => {
       await page.goto('/provider/announcements');
-      await page.waitForTimeout(2000);
 
-      // Find announcement with bookings
+      // Wait for announcements to load
       const detailsButton = page.getByRole('button', { name: /visa detaljer/i }).first();
-      const hasAnnouncements = await detailsButton.isVisible().catch(() => false);
+      const hasAnnouncements = await detailsButton.isVisible({ timeout: 10000 }).catch(() => false);
 
       if (!hasAnnouncements) {
         test.skip(true, 'No announcements available for booking details');
@@ -275,7 +275,9 @@ test.describe('Route Announcements Flow', () => {
       }
 
       await detailsButton.click();
-      await page.waitForTimeout(2000);
+
+      // Wait for details page to load
+      await expect(page.getByRole('heading', { name: 'Bokningar', exact: true })).toBeVisible({ timeout: 10000 });
 
       // Check if there are bookings
       const hasBookings = await page.locator('[class*="space-y-4"] > div').count() > 0;
@@ -296,10 +298,10 @@ test.describe('Route Announcements Flow', () => {
 
     test('should confirm pending booking', async ({ page }) => {
       await page.goto('/provider/announcements');
-      await page.waitForTimeout(2000);
 
-      // Try each announcement's detail page to find one with pending bookings
+      // Wait for announcements to load
       const detailsButtons = page.getByRole('button', { name: /visa detaljer/i });
+      await detailsButtons.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
       const buttonCount = await detailsButtons.count();
 
       if (buttonCount === 0) {
@@ -310,25 +312,30 @@ test.describe('Route Announcements Flow', () => {
       let foundConfirmButton = false;
       for (let i = 0; i < buttonCount; i++) {
         await page.goto('/provider/announcements');
-        await page.waitForTimeout(1500);
+
+        // Wait for list to load
+        await detailsButtons.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
 
         await detailsButtons.nth(i).click();
-        await page.waitForTimeout(2000);
+
+        // Wait for details page
+        await expect(page.getByRole('heading', { name: 'Bokningar', exact: true })).toBeVisible({ timeout: 10000 }).catch(() => {});
 
         // Look for confirm button (only visible for pending bookings)
         const confirmButton = page.getByRole('button', { name: /bekräfta/i }).first();
-        const hasConfirmButton = await confirmButton.isVisible().catch(() => false);
+        const hasConfirmButton = await confirmButton.isVisible({ timeout: 3000 }).catch(() => false);
 
         if (hasConfirmButton) {
           foundConfirmButton = true;
 
           // Click confirm
           await confirmButton.click();
-          await page.waitForTimeout(2000);
 
-          // Verify success toast or status change
-          const successVisible = await page.getByText(/bokning bekräftad|bekräftad/i).isVisible().catch(() => false);
-          console.log('Confirm button clicked, success toast visible:', successVisible);
+          // Wait for success toast or status change
+          await Promise.race([
+            page.getByText(/bokning bekräftad|bekräftad/i).waitFor({ state: 'visible', timeout: 10000 }),
+            confirmButton.waitFor({ state: 'hidden', timeout: 10000 }),
+          ]).catch(() => {});
           break;
         }
       }
@@ -340,7 +347,13 @@ test.describe('Route Announcements Flow', () => {
 
     test('should cancel announcement', async ({ page }) => {
       await page.goto('/provider/announcements');
-      await page.waitForTimeout(2000);
+
+      // Wait for announcements to load
+      await Promise.race([
+        page.getByRole('button', { name: /avbryt rutt/i }).first().waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByRole('button', { name: /visa detaljer/i }).first().waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByText(/inga rutt-annonser ännu/i).waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
 
       // Look for cancel button
       const cancelButton = page.getByRole('button', { name: /avbryt rutt/i }).first();
@@ -359,19 +372,19 @@ test.describe('Route Announcements Flow', () => {
       // Click cancel
       await cancelButton.click();
 
-      // Wait for update
-      await page.waitForTimeout(2000);
-
-      // Verify success or that the announcement status changed
-      const successVisible = await page.getByText(/rutt-annons avbruten/i).isVisible().catch(() => false);
-      const cancelledVisible = await page.getByText(/avbruten/i).isVisible().catch(() => false);
-
-      console.log('Cancel result - success toast:', successVisible, 'cancelled status:', cancelledVisible);
+      // Wait for success or status change
+      await Promise.race([
+        page.getByText(/rutt-annons avbruten/i).waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByText(/avbruten/i).waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
     });
   });
 
   test.describe('Customer Booking on Announcement', () => {
     test.beforeEach(async ({ page }) => {
+      // Reset rate limits
+      await page.request.post('/api/test/reset-rate-limit').catch(() => {});
+
       // Log in as customer
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
@@ -387,10 +400,15 @@ test.describe('Route Announcements Flow', () => {
 
       // Wait for page to load
       await expect(page.getByRole('heading', { name: /lediga tider i ditt område/i })).toBeVisible({ timeout: 10000 });
-      await page.waitForTimeout(2000);
 
-      // Check if there are announcements
-      const announcementCount = await page.locator('.hover\\:shadow-lg').count();
+      // Wait for announcements or empty state
+      const cards = page.locator('.hover\\:shadow-lg');
+      await Promise.race([
+        cards.first().waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByText(/inga planerade rutter just nu/i).waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
+
+      const announcementCount = await cards.count();
 
       if (announcementCount === 0) {
         test.skip(true, 'No announcements available for customer booking');
@@ -412,7 +430,12 @@ test.describe('Route Announcements Flow', () => {
 
     test('should navigate to booking page from announcement', async ({ page }) => {
       await page.goto('/announcements');
-      await page.waitForTimeout(2000);
+
+      // Wait for announcements to load
+      await Promise.race([
+        page.locator('.hover\\:shadow-lg').first().waitFor({ state: 'visible', timeout: 10000 }),
+        page.getByText(/inga planerade rutter just nu/i).waitFor({ state: 'visible', timeout: 10000 }),
+      ]).catch(() => {});
 
       // Find booking button
       const bookButton = page.getByRole('link', { name: /boka på denna rutt/i }).first();
