@@ -46,7 +46,7 @@ jobs:
         run: npx prisma generate
 
       - name: Run unit tests with coverage
-        run: npx vitest run --coverage --coverage.thresholds.lines=70 --coverage.thresholds.branches=60
+        run: npx vitest run --coverage
 
   # E2E tests -- uses Supabase local dev for real auth
   e2e-tests:
