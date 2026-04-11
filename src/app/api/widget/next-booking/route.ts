@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
+import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 
@@ -14,6 +15,16 @@ export async function GET(request: NextRequest) {
     const authUser = await getAuthUser(request)
     if (!authUser) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    // Rate limiting (after auth to avoid leaking auth state via 429)
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "För många förfrågningar" },
+        { status: 429 }
+      )
     }
 
     // Find next upcoming booking for this provider

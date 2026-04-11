@@ -26,7 +26,7 @@ sections:
 | S21-2 Auth på routing + blockera test-endpoints | fullstack | Dev | done | feature/s21-2-auth-test-endpoints | 86426123 |
 | S21-3 Auth-routes cleanup | fullstack | Dev | done | feature/s21-3-auth-routes-cleanup | 75dc7cd8 |
 | S21-4 Uptime-monitoring + Stripe alerts | fullstack | Dev | done | feature/s21-4-monitoring | - |
-| S21-5 CSP + HSTS + rate limiting | fullstack | - | pending | - | - |
+| S21-5 CSP + HSTS + rate limiting | fullstack | Dev | done | feature/s21-5-security-headers | - |
 | S21-6 Dokumentera och stäm av | fullstack | - | pending | - | - |
 
 ## Tidigare sprintar (alla klara)
