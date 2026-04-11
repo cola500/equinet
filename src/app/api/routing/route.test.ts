@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
+const { mockGetAuthUser } = vi.hoisted(() => ({
+  mockGetAuthUser: vi.fn(),
+}))
+
+vi.mock("@/lib/auth-dual", () => ({
+  getAuthUser: mockGetAuthUser,
+}))
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
@@ -41,9 +48,22 @@ function osrmSuccess(coordinates = [[18.07, 59.33], [18.08, 59.34]]) {
 describe("POST /api/routing", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetAuthUser.mockResolvedValue({ id: "user-1", providerId: "prov-1" })
     mockRateLimit.mockResolvedValue(true)
     global.fetch = mockFetch
     mockFetch.mockResolvedValue(osrmSuccess())
+  })
+
+  // --- Auth ---
+
+  it("returns 401 when not authenticated", async () => {
+    mockGetAuthUser.mockResolvedValueOnce(null)
+
+    const res = await POST(createRequest({ coordinates: [[59.33, 18.07], [59.34, 18.08]] }))
+    const data = await res.json()
+
+    expect(res.status).toBe(401)
+    expect(data.error).toBe("Ej inloggad")
   })
 
   // --- Rate limiting ---

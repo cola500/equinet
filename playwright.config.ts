@@ -130,6 +130,7 @@ export default defineConfig({
         FEATURE_RECURRING_BOOKINGS: 'true',
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',
+        ALLOW_TEST_ENDPOINTS: 'true',
         PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'mock',
         // Force correct DB for E2E.
         // Local: Supabase CLI (supabase start). CI: set via $GITHUB_ENV.
