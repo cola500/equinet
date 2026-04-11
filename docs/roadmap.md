@@ -3,158 +3,162 @@ title: "Equinet Roadmap"
 description: "Produktroadmap med prioriteringar, blockerare och tidslinje"
 category: guide
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-04-11
 tags: [roadmap, product, strategy]
 sections:
   - Produktionsredo idag
-  - Nu
-  - Sprint 7
+  - Kvar innan lansering
   - Kort sikt
-  - Medellång sikt
-  - Längre sikt
+  - Medellang sikt
+  - Langre sikt
+  - Feature flags
   - Blockerare
 ---
 
 # Equinet Roadmap
 
-> Uppdateras efter varje sprint-retro och demo-feedback.
+> Uppdateras efter varje sprint-retro. Senast: Sprint 22 (2026-04-11).
 
 ## Produktionsredo idag
 
 | Feature | Status |
 |---------|--------|
-| Bokning (skapa, hantera, bekräfta, avboka) | Live |
+| Bokning (skapa, hantera, bekrafta, avboka, ombokning) | Live |
 | Kundinbjudningar (invite ghost -> riktigt konto) | Live |
 | Kortbetalning (Stripe test-mode) | Kod klar, flagga av |
 | Push-notiser (iOS) | Kod klar, APNs saknas |
-| Demo-läge | Live |
-| iOS native (10/16 provider-skärmar) | Live |
+| Demo-lage | Live |
+| iOS native (dashboard, bokningar, kunder, tjanster, profil, kalender, mer-flik) | Live |
 | Due-for-service native | Live |
-| Sentry felrapportering | Live |
-| UptimeRobot övervakning | Live |
-| 3866 tester (unit + integration + E2E) | Gröna |
+| Aterkommande bokningar | Live (default on) |
+| Rostloggning med AI-tolkning | Live (default on) |
+| AI-drivna kundinsikter | Live (default on) |
+| Affarinsikter (tjansteanalys, tidsanalys, retention) | Live (default on) |
+| Gruppbokningar | Live (default on) |
+| Ruttplanering + annonsering | Kod klar, kraver Mapbox-token |
+| Offline PWA (mutation queue, sync) | Live (default on) |
+| Stallprofiler | Kod klar, flagga av |
+| Onboarding-wizard for nya leverantorer | Live (S22) |
+| Supabase Auth (managed, Custom Access Token Hook) | Live |
+| RLS: 28 policies pa 7 karndomaner, 24 bevistester | Live |
+| Stripe webhook idempotens (event-ID dedup) | Live (S21) |
+| Rate limiting (Upstash Redis, 9+ limiters) | Live |
+| Branch protection (PR + CI obligatoriskt) | Live (S22) |
+| Sentry felrapportering + session replay | Live |
+| Uptime-monitoring (Betterstack) | Dokumenterat (S21) |
+| Security headers (HSTS preload, pinnad CSP, COOP) | Live (S21) |
+| 4390+ tester (4018 unit/integration + 373 E2E) | Grona |
+| Coverage-gate 70% i CI | Live (S20) |
+| Backup-policy + incident response-plan | Dokumenterat (S22) |
 
-## Nu (denna vecka)
+## Kvar innan lansering
 
-- Leverantörsdemo (allt redo, equinet-app.vercel.app)
-- Köp Apple Developer-konto (99 USD) -> push live direkt
-- Stripe företagsverifiering påbörjad
-- **Branch protection på GitHub** (30 min, kritiskt med Stripe live-mode)
-- **Verifiera Stripe webhook-idempotens** (1h, dubbel-event-test)
-- **Verifiera databas-isolation** (dev vs prod, dokumentera risk)
+### Blockerare (bara Johan kan losa)
 
-## Sprint 15 (pågår -- cutover)
+| Vad | Effort | Status |
+|-----|--------|--------|
+| Apple Developer (99 USD) | Config, 15 min | Ej kopt |
+| Stripe foretagsverifiering | Config, 15 min | Pagar |
+| Uppgradera till Vercel Pro ($20/man) | Config, 5 min | Hobby tillater inte kommersiellt bruk |
 
-- **Auth-migrering komplett**: Supabase Auth live i prod, NextAuth borta
-- **RLS live**: 28 policies på 7 kärndomäner, bevisat med 24 tester
-- **Prod cutover klar**: hook + trigger + RLS applicerat, 17 användare migrerade, Vercel env bytt
-- **PoC = staging**: `zzdamokfeenencuggjjp` dokumenterad som staging-miljö
-- **Kvar**: Penetrationstest (S15-5)
+### Inga kodblockerare kvar
 
-## Nästa
+NFR Production Readiness Score: **79%** (50/63 klara). Enda P0-blocker ar Stripe live-mode -- vantar pa foretagsverifiering, inte kod.
 
-- **Demo-feedback stories** -- prioriteras baserat på vad leverantören sa
-- **Push live** -- plugga in APNs-credentials (15 min, kod redan klar)
-- **Swish** -- aktivera i Stripe när företagsverifiering klar (1 rad kodändring)
-- **Stripe live-mode** -- byt från test-nycklar till live-nycklar
-- **customer_insights spike** -- fungerar AI-kopplingen? (1 dag, samma mönster som voice logging)
-- **Onboarding-spike** -- hur registrerar sig leverantör #2 utan seed-data?
-- **Vercel Analytics** (15 min) + **Dependabot** (30 min)
+**Saker att gora vid lansering (inte fore):**
 
-## Kort sikt (1-2 månader)
+| Vad | Effort | Varfor vanta |
+|-----|--------|-------------|
+| Rate limit alerting till Sentry | 30 min | Ingen trafik annu |
+| Log aggregation (Axiom/Logtail) | 0.5 dag | Sentry racker for MVP |
+| Skew protection / rolling releases | 15 min | Kraver Vercel Pro |
 
-- **Staging-databas** -- schema-isolation bekräftad (S9-7 spike). `?schema=staging` i samma DB eller separat projekt. 30 min setup.
-- **Fas 2 RLS** -- tunn vertikal slice. Schema-isolation förenklar testning (RLS i eget schema).
-- **Onboarding utan seed-data** -- registreringsflöde för riktiga leverantörer
-- **Stripe live-betalningar** -- riktiga pengar, kräver Stripe business verification
-- **E-postverifiering** -- säkerställ att Resend levererar på egen domän
-- **Backup RPO/RTO** -- dokumentera policy (24h RPO på free tier, testa restore)
+## Kort sikt (1-2 manader efter lansering)
 
-## Medellång sikt (2-4 månader)
+| Vad | Effort | Varfor |
+|-----|--------|--------|
+| E-postverifiering Resend i prod (S22-3) | 0.5 dag | Blockerad -- kraver manuell test |
+| GDPR data retention policy + cron | 1 dag | Lagkrav, behover definierade lagringsperioder |
+| MFA for admin | 1 dag | Supabase TOTP, kritiskt vid leverantor #2 |
+| Mapbox-token + ruttplanering live | 1-2 dagar | Hor efterfragan, men kraver konto + token |
+| Lasttestning + prestandabaseline | 1-3 dagar | Vet inte om performance forsamras |
+| Preview deploy-skydd | 15 min | Aktivera Vercel Password Protection |
 
-- **Admin-härdning** -- MFA obligatoriskt för admin, tidbegränsade admin-sessioner (15 min), audit log på admin-operationer. Supabase stödjer MFA redan. Kritiskt inför leverantör #2.
-- **Kundupplevelsen** -- native iOS för kunder eller polerad WebView
-- **Fortnox-integration** -- fakturering, sparar leverantörer ~1h/vecka (user research)
-- **Ruttplanering** -- kräver Mapbox-token, hög efterfrågan (120 000 hästägare, ambulerande tjänster)
-- **Fas 3 RLS** -- opportunistisk migrering av kärndomäner
-- **GDPR data retention** -- policy + cron-job för radering av gammal data
+## Medellang sikt (2-4 manader)
 
-## Längre sikt (4+ månader)
+| Vad | Effort | Varfor |
+|-----|--------|--------|
+| Kundupplevelsen (native iOS eller polerad WebView) | 2-4 veckor | Idag ar alla kundskammar WebView |
+| Fortnox-integration (fakturering) | 2-3 veckor | Sparar leverantorer ~1h/vecka |
+| Provider subscription (monetarisering) | 1-2 veckor | Kraver prissbeslut |
+| Fler native iOS-skarmar (6 kvar) | Lopande | Rostloggning, ruttplanering, gruppbokningar, annonsering, insikter, hjalpcentral |
+| A11y-testning (axe-core + Playwright) | 1 dag | WCAG 2.1 AA |
+| Core Web Vitals-matning | 1h | LCP, FID, CLS -- Vercel Analytics |
 
-- **Fler native iOS-skärmar** (6 kvar: röstloggning, ruttplanering, annonsering, gruppbokningar, insikter, hjälp)
-- **Web Push** (browser-notiser utöver iOS)
-- **Fas 4 RLS** -- full migrering om fas 2-3 motiverar det
-- **i18n** (om vi expanderar utanför Sverige)
-- **App Store-publicering** (kräver Apple Developer + review-process)
+## Langre sikt (4+ manader)
+
+- **App Store-publicering** (kraver Apple Developer + review-process)
+- **Web Push** (browser-notiser utover iOS)
+- **i18n** (om vi expanderar utanfor Sverige)
+- **Supabase Realtime** (WebSocket, ersatter SWR-polling)
+- **2FA for leverantorskonton** (TOTP, frivilligt forst)
+
+---
 
 ## Feature flags -- lanseringsberedskap
 
-18 flaggor totalt. Bedömning per flagga:
+### Redo att lansera (default on, fungerar)
 
-### Redo att lansera (flagga på, fungerar)
+| Flagga | Status |
+|--------|--------|
+| `voice_logging` | Live -- AI-tolkning med claude-sonnet-4-6 |
+| `customer_insights` | Live -- AI-genererade kundinsikter |
+| `business_insights` | Live -- Swift Charts i iOS (S8-2) |
+| `route_planning` | Default on men kraver Mapbox-token |
+| `route_announcements` | Default on, beroende av route_planning |
+| `due_for_service` | Live, native vy klar |
+| `self_reschedule` | Live |
+| `recurring_bookings` | Live |
+| `group_bookings` | Live |
+| `offline_mode` | Live (mutation queue, sync, circuit breaker) |
+| `follow_provider` | Live (varde vid volym) |
+| `municipality_watch` | Live (varde vid volym) |
+| `help_center` | Live |
 
-| Flagga | Status | Vad behövs |
-|--------|--------|-----------|
-| `customer_invite` | Live i prod | Inget -- redan på |
-| `due_for_service` | Default on | Fungerar, native vy klar |
-| `help_center` | Default on | Fungerar |
-| `self_reschedule` | Default on | Fungerar |
-| `demo_mode` | Live i prod | Inget -- för demo |
-
-### Nära lansering (kod finns, behöver konfiguration)
+### Kraver konfiguration (kod klar)
 
 | Flagga | Vad saknas | Effort |
 |--------|-----------|--------|
-| `stripe_payments` | Slå på flaggan + live-nycklar | Config, 15 min |
-| `push_notifications` | APNs-credentials (Apple Developer) | Config, 15 min |
-| `recurring_bookings` | Default on men otillräckligt testad i prod | E2E-verifiering, 1 dag |
+| `stripe_payments` | Stripe foretagsverifiering + live-nycklar | Config, 15 min |
+| `push_notifications` | Apple Developer + APNs-credentials | Config, 15 min |
+| `customer_invite` | Sla pa flaggan | Config, 1 min |
 
-### Genuint ofärdiga (kräver arbete)
+### Beslut behovs
 
-| Flagga | Problem | Effort | Prioritet |
-|--------|---------|--------|-----------|
-| `voice_logging` | ~~AI-koppling oklar~~ VERIFIERAD (sprint 7 spike). Behöver Sonnet 4.6 + UTC-fix. | 0.5-1 dag | Sprint 8 (S8-3) |
-| `customer_insights` | AI-koppling OVERIFIERAD. Samma frågor som voice logging. | Spike 1 dag | Nästa sprint |
-| `route_planning` | Kräver Mapbox-token. Utan token: tom karta. | Mapbox-konto + token, 1-2 dagar | Kort sikt |
-| `route_announcements` | Beroende av route_planning. | Löses med route_planning | Kort sikt |
-| `business_insights` | Fungerar men behöver realistisk data. | Polish + seed-data, 1-2 dagar | Sprint 8 (S8-2) |
-| `group_bookings` | Komplex. Behöver E2E + UX-review. | 2-3 dagar | Medellång sikt |
+| Flagga | Fraga |
+|--------|-------|
+| `provider_subscription` | Vilken prismodell? Stripe subscription-infrastruktur ar klar. |
+| `stable_profiles` | Behalla eller ta bort? Aldrig testad med riktiga anvandare. |
+| `demo_mode` | Behovs efter lansering? Kan slackas. |
+| `supabase_auth_poc` | Bort -- PoC ar klar sedan S10. |
 
-### Volymsberoende (rätt att vänta, inget arbete nu)
-
-| Flagga | Varför vänta |
-|--------|-------------|
-| `follow_provider` | Värde kommer med fler leverantörer i systemet |
-| `municipality_watch` | Samma -- kräver volym |
-
-### Defer (för komplex, för lite värde nu)
-
-| Flagga | Varför defer |
-|--------|-------------|
-| `offline_mode` | 1-2 veckors E2E-arbete, genererar inte intäkter, leverantörer märker inte direkt |
-
-### Inte aktuella nu
-
-| Flagga | Varför |
-|--------|--------|
-| `provider_subscription` | Monetarisering -- beslut efter demo. Kräver Stripe-prissättning. |
-| `stable_profiles` | Tidig feature, aldrig testad i prod. Annat fokus nu. |
+---
 
 ## Blockerare som styr tempot
 
-| Blocker | Påverkar | Ägare | Status |
+| Blocker | Paverkar | Agare | Status |
 |---------|---------|-------|--------|
-| Apple Developer (99 USD/år) | Push, App Store | Johan | Ej köpt |
-| Stripe företagsverifiering | Swish, live-betalningar | Stripe | Pågår |
-| Demo-feedback | Sprint 7+ prioritering | Johan | Om par dagar |
-| Mapbox-token | Ruttplanering, provider-sök | Johan | Beslut behövs |
-| Fortnox API-access | Fakturering | Johan | Ej påbörjat |
+| Apple Developer (99 USD/ar) | Push, App Store | Johan | Ej kopt |
+| Stripe foretagsverifiering | Swish, live-betalningar | Stripe | Pagar |
+| Mapbox-token | Ruttplanering, annonsering | Johan | Beslut behovs |
+| Fortnox API-access | Fakturering | Johan | Ej paborjat |
+| Prissbeslut (subscription) | Monetarisering | Johan | Ej paborjat |
 
 ## Beslutspunkter
 
-| När | Beslut |
+| Nar | Beslut |
 |-----|--------|
-| Efter demon | Vilka features prioriterar leverantören? |
-| Innan leverantör #2 | Fas 2 RLS -- databas-skydd krävs |
-| Vid 10+ leverantörer | Prisma -> Supabase-klient fullt? |
-| Vid internationalisering | i18n-ramverk behövs |
+| Fore lansering | Vilka feature flags ska vara pa for forsta anvandarna? |
+| Vid leverantor #2 | MFA for admin obligatoriskt |
+| Vid 10+ leverantorer | Behovs Supabase Pro ($25/man)? |
+| Vid internationalisering | i18n-ramverk behovs |
