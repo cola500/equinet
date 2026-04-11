@@ -182,6 +182,25 @@ sections:
 
 ---
 
+### S19-9: Fixa waitForTimeout i booking, provider, no-show
+
+**Prioritet:** 9
+**Effort:** 2-3h
+
+Uppfoljning fran S19-3/4/5. De 3 specs med flest kvarvarande `waitForTimeout`:
+- `booking.spec.ts` (10 st)
+- `provider.spec.ts` (8 st)
+- `no-show.spec.ts` (8 st)
+
+Resterande ~25 st (utspridda pa 16 filer, 1-2 per fil) ger avtagande avkastning och ar inte varda att jaga.
+
+**Acceptanskriterier:**
+- [ ] 0 st `waitForTimeout` utan dokumenterad motivering i dessa 3 filer
+- [ ] Testerna passerar 3 ganger i rad
+- [ ] Inga regressioner i ovriga specs
+
+---
+
 ## Exekveringsplan
 
 ```
