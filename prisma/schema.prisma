@@ -845,6 +845,16 @@ model ProviderSubscription {
   @@index([status])
 }
 
+// Stripe webhook event deduplication: prevents processing the same event twice
+model StripeWebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique // Stripe event ID (evt_xxx)
+  eventType   String // e.g. "payment_intent.succeeded"
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+}
+
 // Municipality watch: customer watches a municipality + service type for notifications
 model MunicipalityWatch {
   id              String   @id @default(uuid())

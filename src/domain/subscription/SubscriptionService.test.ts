@@ -152,6 +152,7 @@ describe("SubscriptionService", () => {
       })
 
       await service.handleWebhookEvent({
+        id: "evt_test_checkout",
         type: "checkout.session.completed",
         data: {
           subscription: "sub_new",
@@ -169,6 +170,7 @@ describe("SubscriptionService", () => {
 
     it("creates subscription on checkout.session.completed if none exists", async () => {
       await service.handleWebhookEvent({
+        id: "evt_test_checkout",
         type: "checkout.session.completed",
         data: {
           subscription: "sub_new",
@@ -190,6 +192,7 @@ describe("SubscriptionService", () => {
       })
 
       await service.handleWebhookEvent({
+        id: "evt_test_updated",
         type: "customer.subscription.updated",
         data: {
           id: "sub_123",
@@ -214,6 +217,7 @@ describe("SubscriptionService", () => {
       })
 
       await service.handleWebhookEvent({
+        id: "evt_test_deleted",
         type: "customer.subscription.deleted",
         data: { id: "sub_123" },
       })
@@ -231,6 +235,7 @@ describe("SubscriptionService", () => {
       })
 
       await service.handleWebhookEvent({
+        id: "evt_test_invoice",
         type: "invoice.paid",
         data: {
           subscription: "sub_123",
@@ -245,9 +250,91 @@ describe("SubscriptionService", () => {
     it("ignores unknown event types", async () => {
       // Should not throw
       await service.handleWebhookEvent({
+        id: "evt_test_unknown",
         type: "some.unknown.event",
         data: {},
       })
+    })
+
+    it("skips update when subscription is canceled (terminal state)", async () => {
+      await repo.create({
+        providerId: "provider-1",
+        stripeSubscriptionId: "sub_123",
+        status: "canceled",
+      })
+
+      await service.handleWebhookEvent({
+        id: "evt_terminal_canceled",
+        type: "customer.subscription.updated",
+        data: {
+          id: "sub_123",
+          status: "active",
+          cancel_at_period_end: false,
+        },
+      })
+
+      const sub = await repo.findByStripeSubscriptionId("sub_123")
+      expect(sub!.status).toBe("canceled")
+    })
+
+    it("skips update when subscription is incomplete_expired (terminal state)", async () => {
+      await repo.create({
+        providerId: "provider-1",
+        stripeSubscriptionId: "sub_123",
+        status: "incomplete_expired",
+      })
+
+      await service.handleWebhookEvent({
+        id: "evt_terminal_expired",
+        type: "customer.subscription.updated",
+        data: {
+          id: "sub_123",
+          status: "active",
+          cancel_at_period_end: false,
+        },
+      })
+
+      const sub = await repo.findByStripeSubscriptionId("sub_123")
+      expect(sub!.status).toBe("incomplete_expired")
+    })
+
+    it("skips invoice.paid when subscription is canceled (terminal state)", async () => {
+      await repo.create({
+        providerId: "provider-1",
+        stripeSubscriptionId: "sub_123",
+        status: "canceled",
+      })
+
+      await service.handleWebhookEvent({
+        id: "evt_terminal_invoice",
+        type: "invoice.paid",
+        data: { subscription: "sub_123" },
+      })
+
+      const sub = await repo.findByStripeSubscriptionId("sub_123")
+      expect(sub!.status).toBe("canceled")
+    })
+
+    it("allows checkout.session.completed to reactivate canceled subscription", async () => {
+      await repo.create({
+        providerId: "provider-1",
+        stripeSubscriptionId: "sub_old",
+        status: "canceled",
+      })
+
+      await service.handleWebhookEvent({
+        id: "evt_test_checkout",
+        type: "checkout.session.completed",
+        data: {
+          subscription: "sub_new",
+          customer: "cus_new",
+          metadata: { providerId: "provider-1" },
+        },
+      })
+
+      const sub = await repo.findByProviderId("provider-1")
+      expect(sub!.status).toBe("active")
+      expect(sub!.stripeSubscriptionId).toBe("sub_new")
     })
   })
 })

@@ -123,6 +123,7 @@ export class StripeSubscriptionGateway implements ISubscriptionGateway {
       )
 
       return {
+        id: event.id,
         type: event.type,
         data: event.data.object as unknown as Record<string, unknown>,
       }

@@ -33,6 +33,13 @@ vi.mock("@/domain/subscription/SubscriptionServiceFactory", () => ({
   }),
 }))
 
+vi.mock("@/infrastructure/persistence/stripe/stripeWebhookEventRepository", () => ({
+  stripeWebhookEventRepository: {
+    tryRecordEvent: vi.fn().mockResolvedValue(true),
+    deleteEvent: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     error: vi.fn(),
@@ -65,6 +72,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
   describe("payment_intent.succeeded", () => {
     it("updates payment to succeeded with invoice number", async () => {
       const event = {
+        id: "evt_int_1",
         type: "payment_intent.succeeded",
         data: {
           id: "pi_test_success",
@@ -104,6 +112,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
 
     it("skips update when payment already succeeded", async () => {
       const event = {
+        id: "evt_int_2",
         type: "payment_intent.succeeded",
         data: { id: "pi_already_done", metadata: {} },
       }
@@ -123,6 +132,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
 
     it("handles missing payment gracefully (returns 200)", async () => {
       const event = {
+        id: "evt_int_3",
         type: "payment_intent.succeeded",
         data: { id: "pi_orphan", metadata: {} },
       }
@@ -140,6 +150,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
   describe("payment_intent.payment_failed", () => {
     it("updates payment to failed", async () => {
       const event = {
+        id: "evt_int_4",
         type: "payment_intent.payment_failed",
         data: { id: "pi_test_fail", metadata: {} },
       }
@@ -166,6 +177,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
 
     it("does not overwrite succeeded payment", async () => {
       const event = {
+        id: "evt_int_5",
         type: "payment_intent.payment_failed",
         data: { id: "pi_late_fail", metadata: {} },
       }

@@ -42,6 +42,7 @@ export interface SubscriptionInfo {
 }
 
 export interface WebhookEvent {
+  id: string
   type: string
   data: Record<string, unknown>
 }
@@ -126,6 +127,7 @@ export class MockSubscriptionGateway implements ISubscriptionGateway {
     try {
       const parsed = JSON.parse(payload)
       return {
+        id: parsed.id || `evt_mock_${Date.now()}`,
         type: parsed.type,
         data: parsed.data,
       }
