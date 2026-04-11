@@ -34,9 +34,6 @@ sections:
 
 | Story | Effort | Varför kritiskt |
 |-------|--------|----------------|
-| Branch protection på GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
-| Onboarding-spike (registrering utan seed) | 1 dag | Förutsättning för leverantör #2. Spike klar, wizard ej byggd. |
-| Backup RPO/RTO-dokumentation | 1h | Med finansiell data behövs policy |
 | GDPR data retention policy | Mellanlång sikt | Radering av gammal data |
 
 ## Kvalitet och säkerhet
@@ -44,7 +41,6 @@ sections:
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
 | Preview deploy-skydd | 15 min | Preview-deploys är publika. Aktivera Vercel Password Protection. |
-| Incident response-plan | 1h | Definiera vem som gör vad vid Stripe/Supabase-avbrott och dataintrång. |
 | Cron-endpoints x-vercel-signature | 30 min | CRON_SECRET bra, men x-vercel-signature som komplement = defense in depth. |
 | Haiku daterat modell-ID | 5 min | `claude-haiku-4-5-20251001` i VoiceInterpretationService.ts rad 264. Byt till alias `claude-haiku-4-5`. |
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
@@ -136,6 +132,11 @@ sections:
 | Uptime-monitoring + Stripe webhook alerting | S21-4 | Betterstack setup-guide + Stripe alerts docs |
 | CSP pinning + HSTS preload + rate limiting | S21-5 | Pinnad CSP, preload, rate limit pa 2 endpoints |
 | native-session-exchange Zod-validering | S21-3 | refreshToken valideras med Zod |
+| Onboarding-wizard (welcome-vy + tom-states) | S22-1/2 | Ny leverantör guidas genom setup, tydliga tom-states |
+| Branch protection på GitHub | S22-4 | PR-krav + CI obligatoriskt för merge till main |
+| Backup RPO/RTO-dokumentation | S22-4 | `docs/operations/backup-policy.md` |
+| Incident response-plan | S22-4 | `docs/operations/incident-runbook.md` |
+| Smoke-test registreringsflödet | S22-5 | 25/25 gröna, hela flödet verifierat |
 
 ## Research
 
