@@ -1,179 +1,274 @@
 ---
-title: "RLS Roadmap -- Gradvis migrering till Row Level Security"
-description: "Arkitekturbeslut och migreringsplan för Supabase RLS med tunn vertikal slice som MVP"
+title: "RLS-arkitektur -- Beslut och status"
+description: "Arkitekturbeslut: Prisma + repository som primaer dataatkomst, RLS som defense-in-depth"
 category: architecture
 status: active
-last_updated: 2026-04-01
-tags: [security, rls, supabase, prisma, architecture, roadmap]
+last_updated: 2026-04-11
+tags: [security, rls, supabase, prisma, architecture]
 sections:
-  - Beslut
-  - Fas 1 Nu
-  - Fas 2 MVP Vertikal slice
-  - Fas 3 Opportunistisk migrering
-  - Fas 4 Full migrering
+  - Sammanfattning
+  - Bakgrund
+  - Vad vi byggde
+  - Arkitekturbeslut
+  - Hur det fungerar idag
+  - Vad vi inte gor
+  - Kvarvarande arbete
 ---
 
-# RLS Roadmap
+# RLS-arkitektur -- Beslut och status
 
-## Beslut (2026-04-01)
+## Sammanfattning
 
-**Mål:** Alla kärndomäner skyddade med databas-nivå RLS innan vi skalar till flera leverantörer.
+Equinet anvander **tva lager av dataatkomstskydd** som arbetar tillsammans:
 
-**Strategi:** Gradvis. Inte big-bang-omskrivning. Tunn vertikal slice som MVP, sedan opportunistisk migrering.
+1. **Prisma + repository-monster** (primart): Alla API routes gar via repositories med
+   `WHERE providerId = ...` / `WHERE customerId = ...`. Detta ar det aktiva skyddet
+   som kontrollerar atkomst i 97% av routes.
 
-**Research:** Se `docs/research/rls-spike.md` för teknisk analys.
+2. **Supabase RLS-policies** (defense-in-depth): 28 policies pa 7 karndomaner.
+   Om en route-bug missar en ownership-check, fangar RLS det pa databasniva.
+   Inga rader lackar aven om applikationskoden har en bugg.
 
----
-
-## Fas 1: Stärk app-lagret (Alt 3) -- NU
-
-Minimal insats, omedelbara förbättringar. Kan vara en story i sprint 7.
-
-- [ ] `findById()` -> `findByIdForProvider(id, providerId)` + `findByIdForCustomer(id, customerId)` i BookingRepository
-- [ ] Samma mönster i övriga kärndomäner (Review, Horse, Service)
-- [ ] ESLint-regel: varna vid `prisma.booking.find*` utanför `src/infrastructure/`
-- [ ] Code review-checklista: "Ny query? Ownership i WHERE?"
-
-**Effort:** 0.5-1 dag
+**Beslut (2026-04-11):** Vi migrerar INTE fler routes till Supabase-klient.
+Prisma + repository forblir primar dataatkomst. RLS ar sakerhetsnatet.
 
 ---
 
-## Fas 2: MVP -- Tunn vertikal slice med Supabase-klient + RLS
+## Bakgrund
 
-EN tabell (Booking), EN roll (provider), hela kedjan: RLS-policy -> Supabase-klient -> API route -> test.
+### Problemet vi ville losa
 
-### Scope
+Nar flera leverantorer delar samma databas maste varje leverantor bara se sin egen data.
+Utan skydd kan en bugg i en API route lata leverantor A se leverantor B:s bokningar.
 
-- Booking-tabellen får RLS-policies (provider + customer + admin)
-- EN ny API-route (`/api/v2/bookings`) använder Supabase-klient istället för Prisma
-- Befintliga `/api/bookings` routes oförändrade (Prisma, fungerar som innan)
-- Feature flag `rls_v2_bookings` styr vilken route som används
+### Tva vagar utvarderades
 
-### Steg
+| | Vag A: Prisma + set_config | Vag B: Supabase Auth + RLS |
+|---|---|---|
+| **Hur** | `set_config('app.provider_id', ...)` per transaktion | JWT claims + automatisk RLS-filtrering |
+| **Fordel** | Snabbt att implementera | Unified auth, mindre egen kod |
+| **Nackdel** | Tva auth-system kvar | Kraver auth-migrering (3-5 sprints) |
 
-1. Aktivera RLS på Booking-tabellen i Supabase
-2. Skapa policies (provider ser sina, kund ser sina, admin ser alla)
-3. Installera `@supabase/supabase-js` (redan i package.json)
-4. Skapa `src/infrastructure/supabase/SupabaseBookingRepository.ts`
-5. Skapa `/api/v2/bookings/route.ts` som använder Supabase-klienten
-6. Verifiera: provider kan INTE se andras bokningar även utan WHERE
-7. Tester: integrationstester mot lokal Supabase
+**Vi valde Vag B** -- losa auth OCH RLS i en migrering. Arbetet gjordes i sprint 10-14.
 
-### Vad vi lär oss
+### Kronologi
 
-- Fungerar Supabase-klient + RLS i vår serverless-miljö?
-- Hur hanterar vi admin/cron utan JWT?
-- Prestanda-skillnad?
-- Hur svårt är det att migrera EN repository?
-
-**Effort:** 2-3 dagar
-**Trigger:** Innan vi onboardar leverantör #2
-
----
-
-## Fas 3: Opportunistisk migrering
-
-När vi rör en repository för produktarbete -- migrera den till Supabase-klient + RLS.
-
-Prioritetsordning baserad på säkerhetsrisk:
-
-| Prio | Tabell | Varför |
-|------|--------|--------|
-| 1 | Booking | Känsligast -- betalning, kunddata |
-| 2 | Payment | Finansiell data |
-| 3 | CustomerReview | Kopplad till leverantörs rykte |
-| 4 | Horse | Kunddata med hälsohistorik |
-| 5 | Provider | Företagsdata |
-| 6 | Service | Prissättning |
-| 7 | Övriga | Vid behov |
-
-**Regel:** Ny feature som rör en kärndomän -> migrera den domänens repository till Supabase + RLS.
+| Sprint | Vad |
+|--------|-----|
+| S7 | RLS-spike: teknisk analys av alternativ |
+| S9-7 | Schema-isolation bekraftad (testmiljo for RLS) |
+| S10-1 | Supabase Auth PoC: hela kedjan bevisad |
+| S10-5 | GO-beslut for Supabase Auth |
+| S11 | Dual-auth helper, anvandarmigering, sync-trigger |
+| S12 | Route-migrering till `getAuthUser()`, Supabase login |
+| S13 | NextAuth borttagen, iOS Swift SDK, passwordHash borttagen |
+| S14 | RLS-policies aktiverade, bevistester, 3 routes migrerade till Supabase-klient |
 
 ---
 
-## Fas 4: Full migrering (om det motiveras)
+## Vad vi byggde
 
-Ta bort Prisma helt, alla queries via Supabase-klient. Beslut fattas efter fas 2-3 baserat på erfarenhet.
+### Supabase Auth (klart, S10-S13)
 
-Kräver:
-- Alla kärndomäner migrerade
-- Migreringsverktyg (Prisma migrate -> Supabase migrations)
-- Alla tester omskrivna
+- Alla anvandare autentiseras via Supabase Auth
+- Custom Access Token Hook (PL/pgSQL) lagger `providerId`, `userType`, `isAdmin` i JWT
+- iOS-appen anvandar Supabase Swift SDK
+- NextAuth ar helt borttagen
 
-**Effort:** 2-4 veckor
-**Trigger:** Om fas 2-3 visar att Supabase-klient är klart bättre
+### RLS-policies (klart, S14)
+
+**28 policies pa 7 karndomaner:**
+
+| Tabell | READ-policies | WRITE-policies |
+|--------|--------------|----------------|
+| Booking | Provider (egna), Customer (egna) | Provider CRUD, Customer create/update |
+| Payment | Provider (via booking JOIN), Customer (via booking JOIN) | Provider create |
+| Service | Provider (egna), Public (aktiva) | Provider CRUD |
+| Horse | Owner, Provider (via ProviderCustomer) | Owner CRUD |
+| CustomerReview | Provider (mottagna), Customer (skrivna) | Customer create |
+| Notification | User (egna) | System |
+| BookingSeries | Provider (egna), Customer (egna) | Provider/Customer CRUD |
+
+**Hjalpfunktioner i databasen:**
+- `rls_provider_id()` -- extraherar providerId fran JWT `app_metadata`
+- `rls_user_id()` -- extraherar userId fran JWT
+- `rls_is_admin()` -- kollar admin-status i JWT
+
+**24 bevistester** i `src/__tests__/rls/rls-proof.integration.test.ts` verifierar
+cross-tenant isolation mot live Supabase. Testerna kor med riktiga anvandare
+(signInWithPassword) och bekraftar att RLS blockerar atkomst till andras data.
+
+### Migrerade routes (3 st)
+
+Dessa GET-routes anvandar Supabase-klient istallet for Prisma, och far RLS-filtrering automatiskt:
+
+- `GET /api/bookings` (provider-path)
+- `GET /api/services`
+- `GET /api/notifications`
 
 ---
 
-## Schema-isolation ("slot machine") -- bekräftat 2026-04-02
+## Arkitekturbeslut (2026-04-11)
 
-> Se `docs/research/schema-isolation-spike.md` för fullständiga spike-resultat.
+### Beslut
 
-Spike S9-7 bekräftade att PostgreSQL schemas inom samma Supabase-databas ger
-fullständig miljöisolering. Relevant för RLS-migreringen:
+**Prisma + repository-monster forblir primar dataatkomst. RLS ar defense-in-depth.**
 
-- **Testmiljö för RLS:** Skapa `rls_test`-schema, aktivera RLS där, testa utan att röra prod
-- **Parallell körning:** Prisma kan köra mot `?schema=rls_test` medan `public` är oförändrat
-- **Slot machine:** `CREATE SCHEMA X` + `prisma migrate deploy ?schema=X` ger ny miljö på sekunder
-- **PgBouncer fungerar:** `search_path` propagerar korrekt i transaction mode (testat mot Supabase)
+Vi migrerar INTE fler routes fran Prisma till Supabase-klient.
 
-Detta förenklar fas 2 avsevärt -- RLS-policies kan testas i isolerat schema
-innan de appliceras på `public`.
+### Motivering
 
----
+**1. Repository-monstret fungerar och ar val-testat**
 
-## Supabase Auth -- ändrar RLS-kalkylen (2026-04-03)
+Alla karndomaner (Booking, Provider, Service, Horse, CustomerReview, Follow, Subscription)
+anvandar repository pattern med ownership i WHERE-clauser. Detta ar bevisat genom
+~3900 enhetstester och 24 RLS-bevistester.
 
-> Se `docs/research/supabase-auth-spike.md` för fullständig analys.
-
-Supabase Auth-spike visar att auth-migrering och RLS-migrering hänger ihop.
-Två vägar framåt:
-
-### Väg A: Prisma + set_config (nuvarande plan)
-
-```
-Prisma query → $transaction → set_config('app.provider_id', ...) → RLS filtrerar
+```typescript
+// Exempel: BookingRepository
+findByIdForProvider(id: string, providerId: string) {
+  return prisma.booking.findFirst({
+    where: { id, providerId }  // Atomisk ownership-check
+  })
+}
 ```
 
-- Kräver Client Extension-wrapper
-- Fungerar med befintlig NextAuth
-- `set_config()` per transaktion -- overhead ~2-5ms
-- Testad i S10-1 spike
+**2. PostgREST (Supabase-klient) har begransningar**
 
-### Väg B: Supabase Auth + Supabase-klient + RLS (nytt alternativ)
+| Feature | Prisma | Supabase-klient (PostgREST) |
+|---------|--------|-----------------------------|
+| groupBy / aggregering | Ja | Nej |
+| Komplexa relationer | Ja (include/select) | Begransat (FK-hints) |
+| Transaktioner | `$transaction` | Nej (kraver RPC) |
+| TypeScript-typer | Genererade fran schema | Manuella eller genererade |
+| Migreringsstod | prisma migrate | Separat verktyg |
+
+Exempel: `/api/provider/customers` anvandar `groupBy` for att aggregera bokningsdata
+per kund. Detta gar inte med PostgREST -- darav stannade den pa Prisma i S14.
+
+**3. Migrering av 106 routes ger mer risk an varde**
+
+- 3-5 sprints av mekaniskt arbete
+- Tva data-access-monster under hela migreringsperioden (mer komplexitet)
+- Risk for regressioner i fungerande routes
+- Sakerhetsvinstern ar marginal -- RLS fangar redan buggar som defense-in-depth
+
+**4. Defense-in-depth ar uppnatt**
+
+Det var alltid malet. Sakerhetsarkitekturen har nu 4 lager:
 
 ```
-Supabase-klient med user JWT → RLS använder auth.jwt()->>'providerId' → automatisk filtrering
+Lager 1: Rate limiting (forhindra brute force)
+Lager 2: Auth + session (getAuthUser, JWT-validering)
+Lager 3: Repository ownership (WHERE providerId = ...)
+Lager 4: RLS-policies (databasniva, fangar buggar i lager 3)
 ```
 
-- Kräver auth-migrering (NextAuth → Supabase Auth, 3-5 sprints)
-- RLS fungerar automatiskt via JWT claims -- ingen set_config behövs
-- Unified auth (webb + iOS), eliminerar dual auth-systemet
-- Mindre egen kod (~2000 LOC → ~300 LOC)
+Om en route-bug missar ownership-checken i lager 3, blockerar RLS i lager 4.
+Det ar precis vad defense-in-depth betyder.
 
-### Rekommendation
+### Vad detta innebar i praktiken
 
-**Väg B är bättre långsiktigt.** Löser auth OCH RLS i en migrering.
-Men väg A ger RLS snabbare (1-2 dagar vs 3-5 sprints).
-
-**Beslut:** Kör S10-1 spike (väg A) för att bevisa att set_config fungerar.
-Parallellt: starta Supabase Auth PoC (fas 0 från auth-spike).
-Fatta slutgiltigt beslut efter båda spikes.
-
-### Tunna slices oavsett väg
-
-| Slice | Väg A (Prisma) | Väg B (Supabase Auth) |
-|-------|---------------|----------------------|
-| 1 | set_config infra | Auth PoC + custom claims hook |
-| 2 | Booking READ | Booking READ via Supabase-klient |
-| 3 | Booking WRITE | Booking WRITE via Supabase-klient |
-| 4+ | Fler tabeller | Fler tabeller + migrera routes |
+- **Nya routes**: Anvandar Prisma + repository med ownership-guard (som idag)
+- **RLS-policies**: Behalls och underhalls -- de ar sakerhetsnatet
+- **De 3 migrerade routes**: Behalls pa Supabase-klient (fungerar, ingen anledning att revertera)
+- **Bevistester**: Behalls och utvidgas vid behov
+- **Nya karndomaner**: Far RLS-policy nar de skapas
 
 ---
 
-## Öppna frågor
+## Hur det fungerar idag
 
-- ~~Hur hanterar vi Prisma migrate parallellt med RLS-policies?~~ LÖST: schema-isolation
-- ~~Behöver vi service-role-nyckel för admin/cron?~~ JA för väg A. Nej för väg B (service_role bypasses RLS, admin-routes fortsätter via Prisma)
-- ~~Kan vi köra Prisma och Supabase-klient mot samma tabell under migreringen?~~ LÖST: separata schemas
-- **NY:** Vilken väg väljer vi? Beslut efter S10-1 + Supabase Auth PoC
+### Dataflode (typisk API request)
+
+```
+Klient (webb/iOS)
+    |
+    v
+API Route (/api/bookings)
+    |
+    +-- getAuthUser(request)        [Lager 2: Auth]
+    |       |
+    |       +-- JWT-validering (Supabase Auth)
+    |       +-- providerId fran app_metadata
+    |
+    +-- rateLimiters.api(ip)        [Lager 1: Rate limit]
+    |
+    +-- BookingRepository           [Lager 3: Ownership]
+    |       |
+    |       +-- prisma.booking.findMany({
+    |       |     where: { providerId }    <-- Ownership i WHERE
+    |       |     select: { ... }          <-- Bara nodvandiga falt
+    |       |   })
+    |       |
+    |       +-- Prisma (service_role) -> PostgreSQL
+    |                                      |
+    |                                      +-- RLS-policy [Lager 4]
+    |                                           (redundant har, men
+    |                                            fangar buggar)
+    v
+Response (filtrerad data)
+```
+
+### Nar RLS faktiskt skyddar
+
+RLS ar inte redundant -- det skyddar i dessa scenarion:
+
+1. **Bugg i repository**: Om nagon skriver `prisma.booking.findMany({})` utan WHERE
+   -- RLS blockerar atkomst till andras data (via `service_role` kringgars RLS dock,
+   sa detta galler bara Supabase-klient-queries)
+
+2. **Supabase Dashboard / PostgREST**: Om nagon gor en direkt query via Supabase
+   Dashboard med en user JWT -- RLS filtrerar automatiskt
+
+3. **De 3 migrerade routes**: Bookings, Services, Notifications gar via Supabase-klient
+   och far full RLS-filtrering
+
+4. **Framtida Supabase Realtime**: Om vi lagger till live-uppdateringar via WebSocket
+   filterar RLS automatiskt vilka rader som broadcastas
+
+### Viktig begransning
+
+Prisma anvandar `service_role` som kringgar RLS. Det betyder att RLS-skyddet INTE
+ar aktivt for de ~106 routes som anvandar Prisma direkt. For dessa routes ar
+repository-monstret (lager 3) det enda aktiva skyddet.
+
+Detta ar ett medvetet beslut -- repository-monstret ar val-testat och vi har
+code review-hooks som varnar om ownership saknas i nya routes.
+
+---
+
+## Vad vi inte gor
+
+### Fas 3-4 fran ursprunglig roadmap (STRUKEN)
+
+Den ursprungliga planen hade:
+- **Fas 3**: Opportunistisk migrering av fler repositories till Supabase-klient
+- **Fas 4**: Ta bort Prisma helt, alla queries via Supabase-klient
+
+Dessa faser ar **strukna**. Motivering: se [Arkitekturbeslut](#arkitekturbeslut-2026-04-11).
+
+### Migrera resterande routes
+
+De ~106 routes som anvandar Prisma stannar pa Prisma. Ingen migrering planerad.
+
+---
+
+## Kvarvarande arbete
+
+### Dokumentation (lag prioritet)
+
+- [ ] Uppdatera `docs/architecture/database.md` sakerhetslager-sektion (refererar `auth()`)
+- [ ] Markera gammal RLS-research som arkiverad
+
+### Underhall (lopande)
+
+- [ ] Nya karndomaner far RLS-policy vid skapande
+- [ ] RLS-bevistester utvidgas om nya tabeller laggs till
+- [ ] Code review-hooks (`post-api-route-verify.sh`) haller koll pa ownership-guards
+
+### Inte langre aktuellt
+
+- ~~Slice 7: cleanup (ta bort v1-routes)~~ -- inga v1/v2-routes existerar
+- ~~Markera PrismaBookingRepository som @deprecated~~ -- den ar fortfarande primar
+- ~~Ta bort feature flags for RLS~~ -- inga RLS-specifika flaggor anvands
