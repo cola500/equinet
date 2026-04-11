@@ -41,29 +41,45 @@ model StripeWebhookEvent {
 I `route.ts`, EFTER signatur-verifiering, FORE dispatch:
 
 ```typescript
-const alreadyProcessed = await prisma.stripeWebhookEvent.findUnique({
-  where: { eventId: event.id }
+// Atomisk insert-or-ignore via createMany + skipDuplicates
+const result = await prisma.stripeWebhookEvent.createMany({
+  data: [{ eventId: event.id, eventType: event.type }],
+  skipDuplicates: true,
 })
-if (alreadyProcessed) {
+if (result.count === 0) {
+  // Event redan bearbetat (av annan request eller retry)
   logger.info("Duplicate Stripe event skipped", { eventId: event.id })
-  return NextResponse.json({ received: true }) // 200 sa Stripe slutar retria
+  return NextResponse.json({ received: true })
 }
-await prisma.stripeWebhookEvent.create({
-  data: { eventId: event.id, eventType: event.type }
-})
+// Forsta requesten -- fortsatt till dispatch
 ```
 
-Race condition: tva samtida requests kan passera `findUnique` samtidigt. `create` med UNIQUE constraint kastar -- fanga med try/catch, returnera 200.
+**Varfor `createMany` + `skipDuplicates`**: Atomisk INSERT ON CONFLICT DO NOTHING i PostgreSQL. Inget TOCTOU-fonster, inget try/catch for kontrollflode. `count === 0` = duplicat, `count === 1` = ny event.
+
+**Failure-hantering**: Om processing kastar EFTER dedup-insert, returneras 500 -> Stripe retriar -> dedup blockar retry -> permanent event-forlust. Losning: wrappa dispatch i try/catch, radera dedup-raden vid failure sa retry fungerar:
+
+```typescript
+try {
+  await dispatch(event)
+} catch (error) {
+  // Radera dedup sa Stripe kan retria
+  await prisma.stripeWebhookEvent.deleteMany({ where: { eventId: event.id } })
+  throw error // 500 -> Stripe retriar
+}
+```
 
 ### 3. Terminal-state-guards i SubscriptionService
 
-Lagg till guards i `handleSubscriptionUpdated` och `handleInvoicePaid`:
+Lagg till guards i `handleSubscriptionUpdated`, `handleInvoicePaid` och `handleCheckoutCompleted`:
 
-- `handleSubscriptionUpdated`: Om nuvarande status ar `canceled`, avvisa uppdatering (canceled ar terminal).
+```typescript
+const TERMINAL_STATES = new Set(["canceled", "incomplete_expired"])
+```
+
+- `handleSubscriptionUpdated`: Om nuvarande status ar i `TERMINAL_STATES`, avvisa uppdatering.
 - `handleSubscriptionDeleted`: Redan implicit OK (satter canceled).
-- `handleInvoicePaid`: Om nuvarande status ar `canceled`, avvisa (forhindra att canceled -> active).
-
-Terminal states for subscription: `canceled`.
+- `handleInvoicePaid`: Om nuvarande status ar i `TERMINAL_STATES`, avvisa (forhindra att canceled/incomplete_expired -> active).
+- `handleCheckoutCompleted`: Medvetet undantag -- ny checkout TILLATS skapa/ateraktivera (Stripe skapar ny subscription vid ny checkout).
 
 ### 4. Injicera Prisma-access i routen
 
@@ -87,26 +103,29 @@ Routen anvander redan `prisma` indirekt via factories. For dedup-tabellen kan vi
 
 ### Fas 1: RED -- SubscriptionService terminal-state-guards
 1. Test: "handleSubscriptionUpdated skips update when status is canceled" -> FAIL
-2. Test: "handleInvoicePaid skips update when status is canceled" -> FAIL
+2. Test: "handleSubscriptionUpdated skips update when status is incomplete_expired" -> FAIL
+3. Test: "handleInvoicePaid skips update when status is canceled" -> FAIL
+4. Test: "handleCheckoutCompleted allows reactivation of canceled subscription" -> FAIL (om inte redan green)
 
 ### Fas 2: GREEN -- SubscriptionService guards
-3. Implementera guards, tester grona
+5. Implementera TERMINAL_STATES Set + guards, tester grona
 
 ### Fas 3: RED -- Webhook route dedup
-4. Test: "returns 200 and skips processing for duplicate event" -> FAIL
-5. Test: "processes new event and records it" -> FAIL
-6. Test: "handles race condition (concurrent duplicate)" -> FAIL
+6. Test: "returns 200 and skips processing for duplicate event" -> FAIL
+7. Test: "processes new event and records it" -> FAIL
+8. Test: "deletes dedup record and returns 500 on processing failure" -> FAIL
 
 ### Fas 4: GREEN -- Route dedup
-7. Skapa Prisma-modell + migration
-8. Skapa stripeWebhookEventRepository
-9. Uppdatera route med dedup-logik
+9. Skapa Prisma-modell + migration
+10. Skapa stripeWebhookEventRepository (createMany skipDuplicates + delete)
+11. Uppdatera route med dedup-logik + failure-rollback
 
 ### Fas 5: REFACTOR + verify
-10. `npm run check:all`
+12. `npm run check:all`
 
 ## Risker
 
 - **Migration**: Ny tabell, ingen datamigration -- lag risk.
-- **Race condition**: UNIQUE constraint + try/catch hanterar detta.
+- **Race condition**: `createMany` + `skipDuplicates` = atomisk INSERT ON CONFLICT DO NOTHING. Inget TOCTOU-fonster.
+- **Processing failure**: Dedup-raden raderas vid failure sa Stripe kan retria.
 - **Tabellstorlek**: `processedAt`-index mojliggor framtida cleanup-cron. Inte i scope for denna story.

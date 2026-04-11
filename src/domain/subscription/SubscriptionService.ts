@@ -11,6 +11,10 @@ import type {
   CheckoutSessionResult,
   CustomerPortalResult,
 } from "./SubscriptionGateway"
+import { logger } from "@/lib/logger"
+
+/** Subscription states that cannot transition to other states via webhook events */
+const TERMINAL_STATES = new Set(["canceled", "incomplete_expired"])
 
 type SubscriptionError =
   | "FEATURE_DISABLED"
@@ -150,6 +154,14 @@ export class SubscriptionService {
     const sub = await this.repo.findByStripeSubscriptionId(stripeSubscriptionId)
     if (!sub) return
 
+    if (TERMINAL_STATES.has(sub.status)) {
+      logger.info("Subscription in terminal state, skipping update", {
+        subscriptionId: sub.id,
+        status: sub.status,
+      })
+      return
+    }
+
     const updateData: Parameters<typeof this.repo.update>[1] = {
       status: data.status as string,
       cancelAtPeriodEnd: data.cancel_at_period_end as boolean,
@@ -168,6 +180,14 @@ export class SubscriptionService {
     const sub = await this.repo.findByStripeSubscriptionId(stripeSubscriptionId)
     if (!sub) return
 
+    if (TERMINAL_STATES.has(sub.status)) {
+      logger.info("Subscription already in terminal state, skipping delete", {
+        subscriptionId: sub.id,
+        status: sub.status,
+      })
+      return
+    }
+
     await this.repo.update(sub.id, { status: "canceled" })
   }
 
@@ -177,6 +197,14 @@ export class SubscriptionService {
 
     const sub = await this.repo.findByStripeSubscriptionId(stripeSubscriptionId)
     if (!sub) return
+
+    if (TERMINAL_STATES.has(sub.status)) {
+      logger.info("Subscription in terminal state, skipping invoice.paid", {
+        subscriptionId: sub.id,
+        status: sub.status,
+      })
+      return
+    }
 
     await this.repo.update(sub.id, { status: "active" })
   }
