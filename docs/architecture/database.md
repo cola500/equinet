@@ -156,6 +156,7 @@ const prismaWithExtensions = basePrisma.$extends({
 | Stable | userId (unique), municipality+isActive, lat/long, isActive+createdAt | Stallprofiler (marketplace) |
 | StableSpot | stableId+status | Stallplatser (ledig/uthyrd) |
 | StableInviteToken | token (unique), stableId+email | Inbjudningstokens för stallägare |
+| StripeWebhookEvent | eventId (unique) | Idempotens-dedup för Stripe webhooks (S21-1) |
 | (+ 12 andra) | ... | ... |
 
 **Viktiga patterns:**

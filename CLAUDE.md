@@ -57,6 +57,8 @@ sections:
 | Production Readiness | [NFR.md](NFR.md) |
 | Röstloggning | [docs/guides/voice-logging.md](docs/guides/voice-logging.md) |
 | Pentest-rapport (feb 2026) | [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) |
+| Monitoring & Incident | [docs/operations/monitoring.md](docs/operations/monitoring.md), [incident-runbook.md](docs/operations/incident-runbook.md) |
+| Backup-policy | [docs/operations/backup-policy.md](docs/operations/backup-policy.md) |
 | Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (12 workflow-hooks) |
 | Demo-läge | [docs/demo-mode.md](docs/demo-mode.md) |
 | Produktanalys | [docs/product-audit/](docs/product-audit/) (6 dokument) |
@@ -565,4 +567,4 @@ Analys (explore-agenter) -> Pilot (2-3 filer) -> Batch (parallella agenter) -> P
 
 ---
 
-**Senast uppdaterad**: 2026-03-28
+**Senast uppdaterad**: 2026-04-11

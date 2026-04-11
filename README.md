@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-11
 related:
   - CLAUDE.md
   - NFR.md
@@ -151,7 +151,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - TypeScript Check
 - Build Check
 
-> **Note:** Branch protection är inaktiverat under MVP-fasen. Quality gates körs fortfarande men blockerar inte merge.
+**Branch Protection:** Kräver PR för merge till main, CI måste passera. Ingen force push tillåten.
 
 ## Teknisk Stack
 
@@ -162,12 +162,12 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: Supabase Auth (managed, med Custom Access Token Hook)
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (3988 unit/integration) + Playwright (373+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (4018 unit/integration) + Playwright (373+ E2E desktop + mobil) = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
 - **Arkitektur**: DDD-Light med Repository Pattern
-- **Säkerhet**: Supabase Auth, RLS (Row Level Security), Upstash Redis rate limiting, input sanitization, admin audit log, Sentry monitoring
+- **Säkerhet**: Supabase Auth, RLS (Row Level Security), Upstash Redis rate limiting, Stripe webhook idempotens, input sanitization, admin audit log, Sentry monitoring
 
 ## Projektstruktur
 
@@ -219,7 +219,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ## Databasschema
 
-**32 tabeller** -- se `prisma/schema.prisma` för fullständig definition och [docs/architecture/database.md](docs/architecture/database.md) för arkitekturbeskrivning.
+**43 modeller** -- se `prisma/schema.prisma` för fullständig definition och [docs/architecture/database.md](docs/architecture/database.md) för arkitekturbeskrivning.
 
 **Kärnmodeller:**
 - **User** - Användarkonton (kunder + leverantörer + admin)
@@ -256,7 +256,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Röstloggning / arbetslogg (diktera eller skriv, AI tolkar och mappar till bokningar)
 - No-show-spårning (markera ej infunnit, kundvarningar vid 2+)
 - AI-drivna kundinsikter (frekvens, VIP-score, riskflaggor)
-- Dashboard med trendgrafer och onboarding-checklista
+- Dashboard med trendgrafer och onboarding-wizard (guidar nya leverantörer genom setup)
 - Affärsinsikter (populära tjänster, tidsanalys, kundretention)
 
 ### iOS-app (hybrid + native SwiftUI)
@@ -307,7 +307,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**4360+ tester** (373 E2E desktop + mobil + 3988 unit/integration) med **70% coverage**.
+**4390+ tester** (373 E2E desktop + mobil + 4018 unit/integration) med **70% coverage**.
 
 ### Kör Tester
 

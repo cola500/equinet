@@ -4,7 +4,7 @@ description: "Non-functional requirements med status, gap-analys och story-ready
 category: root
 tags: [nfr, production-readiness, security, performance, monitoring]
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-11
 related:
   - docs/architecture/database.md
   - docs/security/pentest-2026-02-15.md
@@ -27,7 +27,7 @@ sections:
 
 **Projekt**: Equinet - Bokningsplattform för hästtjänster
 **Version**: v0.3.0+
-**Senast uppdaterad**: 2026-02-27
+**Senast uppdaterad**: 2026-04-11
 **Syfte**: Levande dokument som visar production readiness-status och gap med story-ready acceptance criteria.
 
 **Relaterade dokument:**
@@ -43,14 +43,14 @@ sections:
 | Kategori | Klart | Kvar | Score |
 |----------|-------|------|-------|
 | Performance & Skalbarhet | 7 | 3 | 70% |
-| Säkerhet & Privacy | 17 | 3 | 85% |
+| Säkerhet & Privacy | 19 | 3 | 86% |
 | Reliability & Availability | 5 | 2 | 71% |
-| Kodkvalitet & Testning | 8 | 3 | 73% |
+| Kodkvalitet & Testning | 11 | 1 | 92% |
 | Tillgänglighet | 4 | 3 | 57% |
 | Monitoring & Observability | 3 | 4 | 43% |
-| **Totalt** | **44** | **18** | **71%** |
+| **Totalt** | **49** | **14** | **78%** |
 
-**Prioriterade gap:** P0: 2 st (launch blockers) | P1: 4 st (inom 2 veckor) | P2: 6 st (inom 1 månad)
+**Prioriterade gap:** P0: 2 st (launch blockers) | P1: 2 st (inom 2 veckor) | P2: 5 st (inom 1 månad)
 
 ---
 
@@ -104,7 +104,7 @@ sections:
 | Auktoriseringskontroller | Klart | Supabase Auth + ownership guards + RLS |
 | GDPR-compliant API | Klart | Email/phone ej exponerat |
 | Rate limiting | Klart | Upstash Redis på alla API-routes (5/h login, 10/h bookings, 100/h publikt) |
-| HTTPS + Security headers | Klart | HSTS, CSP (SRI, no unsafe-inline), X-Frame-Options DENY, nosniff, COOP, CORP |
+| HTTPS + Security headers | Klart | HSTS (preload), CSP (pinnad connect-src), X-Frame-Options DENY, nosniff, COOP, CORP |
 | Lösenordskrav | Klart | Styrka-validering |
 | Audit logging | Klart | AdminAuditLog-tabell (alla admin-API-operationer), logger.security() för känsliga operationer |
 | Admin session-timeout | Klart | 15 min max-ålder på admin-sessioner via JWT iat-check |
@@ -114,6 +114,8 @@ sections:
 | SRI (Subresource Integrity) | Borttaget | Fungerar inte med Vercels CDN. Använder `unsafe-inline` i CSP istället. |
 | Error sanitering | Klart | Inga stack traces eller interna detaljer läcker till klienter i produktion |
 | Penetrationstestning | Klart | ZAP-baserat pentest (2026-02-27), 6/9 fynd åtgärdade, 3 accepterade/falska positiver |
+| Stripe webhook idempotens | Klart | StripeWebhookEvent dedup-tabell (UNIQUE event_id) + terminal-state-guards i SubscriptionService (S21-1) |
+| Test-endpoint-skydd | Klart | `/api/test/*` blockerade i produktion via `ALLOW_TEST_ENDPOINTS` guard (S21-2) |
 
 ### Kvarstår
 
@@ -161,7 +163,7 @@ sections:
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 3900+ tester, 335 testfiler (2026-04-04) |
+| Unit/integration-tester | Klart | 4018 tester, 336 testfiler (2026-04-11) |
 | iOS XCTest | Klart | 223 tester (APIClient, DashboardViewModel, BookingsModels, CalendarModels, CalendarViewModel, BookingsViewModel, CustomersViewModel, m.fl.) |
 | E2E-tester | Klart | Playwright, kritiska flöden |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
@@ -179,13 +181,11 @@ sections:
 | Utilities | 90% | 80% |
 | Components | 60% | 50% |
 
-**OBS:** Coverage-tracking är inte integrerat i CI ännu (se NFR-13).
+**Coverage-gate:** CI failar om coverage < 70% (sedan S20-1).
 
 ### Kvarstår
 
-- Branch protection rules (se NFR-09)
-- Dependabot/Renovate (se NFR-10)
-- Coverage-tracking i CI (se NFR-13)
+- Dependabot auto-merge för patch (konfigurerad men ingen auto-merge)
 
 ---
 
@@ -332,26 +332,26 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 - [ ] Test med 100 concurrent users utan degradering
 - [ ] Resultat dokumenterade som referens
 
-#### NFR-09: Branch protection rules
+#### ~~NFR-09: Branch protection rules~~ KLART
 **Prioritet:** P1
 **Kategori:** Kodkvalitet
 **Effort:** S (1-2h)
 **Varför:** Direkt-commits till main kan bryta produktion.
 **Acceptance Criteria:**
-- [ ] Krav på PR för merge till main
-- [ ] CI måste passera före merge
+- [x] Krav på PR för merge till main -- aktiverat S22-4
+- [x] CI måste passera före merge -- quality gates obligatoriska
 - [ ] Minst 1 approval krävs (när teamet växer)
 
-#### NFR-10: Dependabot/Renovate
+#### ~~NFR-10: Dependabot/Renovate~~ KLART
 **Prioritet:** P1
 **Kategori:** Kodkvalitet
 **Effort:** S (1-2h)
 **Varför:** Dependencies som inte uppdateras ackumulerar säkerhetsrisker och teknisk skuld.
 **Acceptance Criteria:**
-- [ ] Dependabot eller Renovate konfigurerat
-- [ ] Veckovisa PR:er för minor/patch-uppdateringar
-- [ ] Månatliga PR:er för major-uppdateringar
-- [ ] CI kör tester på dependency-PRs automatiskt
+- [x] Dependabot eller Renovate konfigurerat -- `.github/dependabot.yml` (S17)
+- [x] Veckovisa PR:er för minor/patch-uppdateringar
+- [x] Månatliga PR:er för major-uppdateringar
+- [x] CI kör tester på dependency-PRs automatiskt
 
 ---
 
@@ -377,15 +377,15 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 - [ ] LCP <2.5s, FID <100ms, CLS <0.1 för alla sidor
 - [ ] Dashboard för att följa trender
 
-#### NFR-13: Coverage-tracking i CI
+#### ~~NFR-13: Coverage-tracking i CI~~ KLART
 **Prioritet:** P2
 **Kategori:** Kodkvalitet
 **Effort:** S (1-2h)
 **Varför:** Utan mätning vet vi inte om coverage sjunker vid nya features.
 **Acceptance Criteria:**
-- [ ] `npm run test:coverage` körs i CI
+- [x] `npm run test:coverage` körs i CI -- coverage-gate 70% (S20-1)
 - [ ] Coverage-badge i README
-- [ ] CI varnar (inte failar) om coverage sjunker >2%
+- [x] CI failar om coverage < 70%
 
 #### NFR-14: 2FA för leverantörskonton
 **Prioritet:** P2
@@ -437,4 +437,4 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 ---
 
 **Dokumentägare**: Johan Lindengård
-**Senast granskad**: 2026-02-28
+**Senast granskad**: 2026-04-11
