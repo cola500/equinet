@@ -44,13 +44,13 @@ sections:
 |----------|-------|------|-------|
 | Performance & Skalbarhet | 7 | 3 | 70% |
 | Säkerhet & Privacy | 19 | 3 | 86% |
-| Reliability & Availability | 5 | 2 | 71% |
+| Reliability & Availability | 6 | 1 | 86% |
 | Kodkvalitet & Testning | 11 | 1 | 92% |
 | Tillgänglighet | 4 | 3 | 57% |
 | Monitoring & Observability | 3 | 4 | 43% |
-| **Totalt** | **49** | **14** | **78%** |
+| **Totalt** | **50** | **13** | **79%** |
 
-**Prioriterade gap:** P0: 2 st (launch blockers) | P1: 2 st (inom 2 veckor) | P2: 5 st (inom 1 månad)
+**Prioriterade gap:** P0: 1 st (launch blocker) | P1: 2 st (inom 2 veckor) | P2: 5 st (inom 1 månad)
 
 ---
 
@@ -152,7 +152,6 @@ sections:
 ### Kvarstår
 
 - Backup & disaster recovery -- dagliga backups finns på Supabase free tier (7d retention), men PITR kräver Pro. Se [docs/architecture/database.md](docs/architecture/database.md)
-- Separera dev/staging/prod-databaser (se NFR-04)
 
 ---
 
@@ -274,16 +273,16 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 - [x] Bekräftelse-email skickas före slutgiltig radering
 - [x] Grace period (t.ex. 30 dagar) före permanent radering
 
-#### NFR-04: Separera Dev/Staging/Prod-databaser
+#### ~~NFR-04: Separera Dev/Staging/Prod-databaser~~ KLART
 **Prioritet:** P0
 **Kategori:** Reliability
 **Effort:** L (1-3d)
 **Varför:** Delad databas innebär att utveckling kan påverka produktionsdata.
 **Acceptance Criteria:**
-- [ ] Tre separata Supabase-projekt (dev, staging, prod)
-- [ ] Environment-specifika DATABASE_URL i varje miljö
-- [ ] Migrations körs automatiskt vid deploy
-- [ ] Seed-data för dev/staging, ren prod
+- [x] Dev: Lokal Supabase CLI (`supabase start`, isolerad från molnet)
+- [x] Environment-specifika DATABASE_URL i varje miljö (lokal port 54322, Vercel env vars för prod)
+- [x] Migrations körs automatiskt vid deploy (`prisma migrate deploy`)
+- [x] Seed-data för dev (`npm run db:seed`), ren prod
 
 ---
 
