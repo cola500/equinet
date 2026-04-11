@@ -27,7 +27,7 @@ sections:
 | S22-3 E-postverifiering Resend | fullstack | autonom | blocked | - | Kräver manuell prod-test (Supabase + Resend) |
 | S22-4 Branch protection + ops-docs | fullstack | autonom | done | feature/s22-4-ops-docs | - |
 | S22-5 Smoke-test registreringsflödet | fullstack | autonom | done | feature/s22-5-smoke-test | - |
-| S22-6 Dokumentera och stäm av | fullstack | - | pending | - | - |
+| S22-6 Dokumentera och stäm av | fullstack | autonom | done | feature/s22-6-docs | - |
 
 ## Tidigare sprintar (alla klara)
 
