@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { OnboardingWelcome } from "./OnboardingWelcome"
 import { describe, it, expect, beforeEach, vi } from "vitest"
@@ -105,14 +105,16 @@ describe("OnboardingWelcome", () => {
     expect(onDismiss).toHaveBeenCalled()
   })
 
-  it("returns null when dismissed via localStorage (within 7 days)", () => {
+  it("returns null when dismissed via localStorage (within 7 days)", async () => {
     localStorageMock.getItem.mockImplementation((key: string) =>
       key === "equinet_onboarding_dismissed" ? String(Date.now()) : null
     )
 
     const { container } = render(<OnboardingWelcome status={defaultStatus} />)
 
-    expect(container.innerHTML).toBe("")
+    await waitFor(() => {
+      expect(container.innerHTML).toBe("")
+    })
   })
 
   it("shows when dismiss has expired (older than 7 days)", () => {
@@ -133,7 +135,7 @@ describe("OnboardingWelcome", () => {
       />
     )
 
-    const progressBar = screen.getByRole("progressbar")
+    const progressBar = screen.getByRole("progressbar", { name: "Onboarding-framsteg" })
     expect(progressBar).toHaveAttribute("aria-valuenow", "2")
     expect(progressBar).toHaveAttribute("aria-valuemax", "4")
   })

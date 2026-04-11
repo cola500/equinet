@@ -202,7 +202,10 @@ export default function ProviderDashboard() {
             {/* Onboarding Welcome for new providers */}
             {!onboardingComplete && onboardingStatus && (
               <div className="mb-8">
-                <OnboardingWelcome status={onboardingStatus} />
+                <OnboardingWelcome
+                  status={onboardingStatus}
+                  onDismiss={() => setOnboardingComplete(true)}
+                />
               </div>
             )}
 

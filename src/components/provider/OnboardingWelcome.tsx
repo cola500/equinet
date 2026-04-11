@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,20 +14,21 @@ interface OnboardingWelcomeProps {
   onDismiss?: () => void
 }
 
-function isDismissedInStorage(): boolean {
-  const dismissedAt = localStorage.getItem(ONBOARDING_STORAGE_KEY)
-  if (!dismissedAt) return false
-  const dismissedTime = Number(dismissedAt)
-  const sevenDays = 7 * 24 * 60 * 60 * 1000
-  if (!isNaN(dismissedTime) && Date.now() - dismissedTime < sevenDays) {
-    return true
-  }
-  localStorage.removeItem(ONBOARDING_STORAGE_KEY)
-  return false
-}
-
 export function OnboardingWelcome({ status, onDismiss }: OnboardingWelcomeProps) {
-  const [dismissed, setDismissed] = useState(() => isDismissedInStorage())
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    const dismissedAt = localStorage.getItem(ONBOARDING_STORAGE_KEY)
+    if (dismissedAt) {
+      const dismissedTime = Number(dismissedAt)
+      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      if (!isNaN(dismissedTime) && Date.now() - dismissedTime < sevenDays) {
+        setDismissed(true)
+      } else {
+        localStorage.removeItem(ONBOARDING_STORAGE_KEY)
+      }
+    }
+  }, [])
 
   if (dismissed) return null
 
@@ -56,6 +57,7 @@ export function OnboardingWelcome({ status, onDismiss }: OnboardingWelcomeProps)
           </div>
           <div
             role="progressbar"
+            aria-label="Onboarding-framsteg"
             aria-valuenow={completedCount}
             aria-valuemin={0}
             aria-valuemax={totalSteps}
