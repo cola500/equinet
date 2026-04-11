@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle2, Circle, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface OnboardingStatus {
+export interface OnboardingStatus {
   profileComplete: boolean
   hasServices: boolean
   hasAvailability: boolean
@@ -14,20 +14,20 @@ interface OnboardingStatus {
   allComplete: boolean
 }
 
-interface ChecklistStep {
+export interface ChecklistStep {
   key: keyof Omit<OnboardingStatus, "allComplete">
   label: string
   href: string
 }
 
-const CHECKLIST_STEPS: ChecklistStep[] = [
+export const CHECKLIST_STEPS: ChecklistStep[] = [
   { key: "profileComplete", label: "Fyll i företagsinformation", href: "/provider/profile" },
   { key: "hasServices", label: "Lägg till minst en tjänst", href: "/provider/services" },
   { key: "hasAvailability", label: "Ställ in tillgänglighet", href: "/provider/profile?section=availability" },
   { key: "hasServiceArea", label: "Lägg till serviceområde", href: "/provider/profile?section=location" },
 ]
 
-const STORAGE_KEY = "equinet_onboarding_dismissed"
+export const ONBOARDING_STORAGE_KEY = "equinet_onboarding_dismissed"
 
 export function OnboardingChecklist() {
   const [status, setStatus] = useState<OnboardingStatus | null>(null)
@@ -36,7 +36,7 @@ export function OnboardingChecklist() {
 
   useEffect(() => {
     // Check localStorage for dismissed state (with 7-day timeout)
-    const dismissedAt = localStorage.getItem(STORAGE_KEY)
+    const dismissedAt = localStorage.getItem(ONBOARDING_STORAGE_KEY)
     if (dismissedAt) {
       const dismissedTime = Number(dismissedAt)
       const sevenDays = 7 * 24 * 60 * 60 * 1000
@@ -44,7 +44,7 @@ export function OnboardingChecklist() {
         setIsDismissed(true)
       } else {
         // Expired or legacy "true" value -- clear it
-        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(ONBOARDING_STORAGE_KEY)
       }
     }
     fetchStatus()
@@ -66,7 +66,7 @@ export function OnboardingChecklist() {
   }
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, String(Date.now()))
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, String(Date.now()))
     setIsDismissed(true)
   }
 
