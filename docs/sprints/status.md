@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-10
+last_updated: 2026-04-11
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,21 +18,22 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 20** ([sprint-20-process-enforcement.md](sprint-20-process-enforcement.md)):
+**Sprint 21** ([sprint-21-launch-hardening.md](sprint-21-launch-hardening.md)):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S20-1 Coverage-gate i CI | fullstack | Dev | done | feature/s20-1-coverage-gate | 6da03220 |
-| S20-2 Supabase .eq() ownership audit-hook | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
-| S20-3 Done-fil + status atomisk commit-check | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
-| S20-4 Pre-commit repository pattern-varning | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
-| S20-5 BDD dual-loop paminnelse | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | 78db8837 |
-| S20-6 Dokumentera och stam av | fullstack | Dev | done | feature/s20-2-supabase-eq-hook | - |
+| S21-1 Stripe webhook idempotens | fullstack | Dev | in_progress | feature/s21-1-stripe-idempotency | - |
+| S21-2 Auth på routing + blockera test-endpoints | fullstack | - | pending | - | - |
+| S21-3 Auth-routes cleanup | fullstack | - | pending | - | - |
+| S21-4 Uptime-monitoring + Stripe alerts | fullstack | - | pending | - | - |
+| S21-5 CSP + HSTS + rate limiting | fullstack | - | pending | - | - |
+| S21-6 Dokumentera och stäm av | fullstack | - | pending | - | - |
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S20 | Process enforcement | 6/6 done |
 | S19 | E2E-hardening | 9/9 done |
 | S18 | iOS native-migrering | 4/5 done (S18-5 bonus pending) |
 | S17 | Infra & cleanup | 8/8 done |
@@ -52,7 +53,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv) | - | - | - | - |
+| Dev-117 | fullstack | S21 autonom | feature/s21-* | 2026-04-11 |
 
 ## Beslut
 
