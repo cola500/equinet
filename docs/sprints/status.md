@@ -18,21 +18,22 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 21** ([sprint-21-launch-hardening.md](sprint-21-launch-hardening.md)):
+**Sprint 22** ([sprint-22-launch-ready.md](sprint-22-launch-ready.md)):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S21-1 Stripe webhook idempotens | fullstack | Dev | done | feature/s21-1-stripe-idempotency | fae57716 |
-| S21-2 Auth på routing + blockera test-endpoints | fullstack | Dev | done | feature/s21-2-auth-test-endpoints | 86426123 |
-| S21-3 Auth-routes cleanup | fullstack | Dev | done | feature/s21-3-auth-routes-cleanup | 75dc7cd8 |
-| S21-4 Uptime-monitoring + Stripe alerts | fullstack | Dev | done | feature/s21-4-monitoring | - |
-| S21-5 CSP + HSTS + rate limiting | fullstack | Dev | done | feature/s21-5-security-headers | - |
-| S21-6 Dokumentera och stäm av | fullstack | Dev | done | feature/s21-6-docs | - |
+| S22-1 Onboarding welcome-vy | fullstack | autonom | in_progress | feature/s22-1-onboarding-welcome | - |
+| S22-2 Tom-state-förbättringar | fullstack | - | pending | - | - |
+| S22-3 E-postverifiering Resend | fullstack | - | pending | - | - |
+| S22-4 Branch protection + ops-docs | fullstack | - | pending | - | - |
+| S22-5 Smoke-test registreringsflödet | fullstack | - | pending | - | - |
+| S22-6 Dokumentera och stäm av | fullstack | - | pending | - | - |
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S21 | Härdning inför lansering | 6/6 done |
 | S20 | Process enforcement | 6/6 done |
 | S19 | E2E-hardening | 9/9 done |
 | S18 | iOS native-migrering | 4/5 done (S18-5 bonus pending) |
@@ -53,7 +54,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Dev-117 | fullstack | S21 autonom | feature/s21-* | 2026-04-11 |
+| Sprint 22 autonom | fullstack | S22-1 | feature/s22-1-onboarding-welcome | 2026-04-11 |
 
 ## Beslut
 
