@@ -239,6 +239,9 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Commit innan deploy**: Deploya ALDRIG till Vercel utan att committa först.
 - **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
 - **Schema-isolation ("slot machine")**: `DATABASE_URL="...?schema=staging"` ger isolerad miljö inom samma databas. Fungerar med Prisma 6.19+, PgBouncer transaction mode och `$queryRawUnsafe`. `prisma migrate deploy` applicerar alla migrationer i det angivna schemat. Se `docs/research/schema-isolation-spike.md`.
+- **NODE_ENV opålitlig på Vercel**: Vercel sätter `production` på ALLA deploys inkl preview. Använd explicita env-variabler (`ALLOW_TEST_ENDPOINTS`) istället för `NODE_ENV`-guards för test-endpoints.
+- **Stripe webhook event-ID dedup**: `createMany` + `skipDuplicates` = atomisk INSERT ON CONFLICT DO NOTHING. Vid processing-failure: radera dedup-raden så Stripe kan retria.
+- **Stripe subscription terminal states**: `canceled` räcker inte -- `incomplete_expired` är också terminal. Bygg `TERMINAL_STATES = new Set([...])` istället för hårdkodad jämförelse.
 
 ### Offline & Sync
 

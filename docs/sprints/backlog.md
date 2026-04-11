@@ -32,30 +32,33 @@ sections:
 
 ## Kritiskt
 
-| Story | Effort | Varfor kritiskt |
+| Story | Effort | Varför kritiskt |
 |-------|--------|----------------|
-| Branch protection pa GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
-| Verifiera Stripe webhook-idempotens | 1h | Dubbel-event kan ge dubbelbokningar. Ingen event-ID dedup idag. |
+| Branch protection på GitHub | 30 min | Direkta commits till main med Stripe live = oacceptabelt |
 | Onboarding-spike (registrering utan seed) | 1 dag | Förutsättning för leverantör #2. Spike klar, wizard ej byggd. |
-| Backup RPO/RTO-dokumentation | 1h | Med finansiell data behovs policy |
-| GDPR data retention policy | Mellanlang sikt | Radering av gammal data |
+| Backup RPO/RTO-dokumentation | 1h | Med finansiell data behövs policy |
+| GDPR data retention policy | Mellanlång sikt | Radering av gammal data |
 
-## Kvalitet och sakerhet
+## Kvalitet och säkerhet
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
+| Preview deploy-skydd | 15 min | Preview-deploys är publika. Aktivera Vercel Password Protection. |
+| Incident response-plan | 1h | Definiera vem som gör vad vid Stripe/Supabase-avbrott och dataintrång. |
+| Cron-endpoints x-vercel-signature | 30 min | CRON_SECRET bra, men x-vercel-signature som komplement = defense in depth. |
 | Haiku daterat modell-ID | 5 min | `claude-haiku-4-5-20251001` i VoiceInterpretationService.ts rad 264. Byt till alias `claude-haiku-4-5`. |
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
-| MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
-| CSP report-to | 15 min | Vi har CSP men vet inte nar den blockerar i prod. Skicka till Sentry. |
-| Dependabot auto-merge for patch | 15 min | PRs skapas men ingen mergar dem. Patch kan auto-mergas. |
-| Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
+| MFA för admin | 1 dag | Supabase TOTP-enrollment + verifiering |
+| CSP report-to | 15 min | Vi har CSP men vet inte när den blockerar i prod. Skicka till Sentry. |
+| Dependabot auto-merge för patch | 15 min | PRs skapas men ingen mergar dem. Patch kan auto-mergas. |
+| Migrationstest på ren DB i CI | 30 min | CI kör migrate deploy, inte reset. Fångar inte trasiga migrationer från scratch. |
 | Legacy docs svenska tecken (325 rader) | 0.5 dag | ASCII-substitut i ~10 filer (onboarding-spike, voice-logging-spike, m.fl.) |
-| E2E: fixa 77 skippade tester | 1-2 veckor | Lag prioritet |
+| E2E: fixa 77 skippade tester | 1-2 veckor | Låg prioritet |
 | recurring_bookings E2E-verifiering | 1 dag | Medel |
 | group_bookings E2E + UX-review | 2-3 dagar | Medel |
-| withApiHandler resterande routes (131 st) | Lopande | Opportunistiskt |
-| console.* i legacy docs | 0.5 dag | Lag prioritet |
+| withApiHandler resterande routes (131 st) | Löpande | Opportunistiskt |
+| accept-invite affärslogik till AuthService | 1h | Komplex logik (token-validering, Supabase user creation, atomisk upgrade) direkt i route. Bör ligga i domain service. |
+| console.* i legacy docs | 0.5 dag | Låg prioritet |
 
 ## iOS
 
@@ -127,6 +130,12 @@ sections:
 | Staging-databas / schema-isolation | S9-7 | Schema-isolation bekraftad |
 | Preview-miljo ANTHROPIC_API_KEY | S17 | Konfigurerat |
 | Supabase Auth full migrering (Fas 0-3) | S10-S13 | PoC, dual-auth, route-migrering, NextAuth borttagen, iOS Swift SDK |
+| Stripe webhook idempotens + SubscriptionService guards | S21-1 | StripeWebhookEvent dedup-tabell, TERMINAL_STATES guards |
+| Auth pa /api/routing + blockera test-endpoints | S21-2 | getAuthUser + ALLOW_TEST_ENDPOINTS env guard |
+| Auth-routes cleanup (getClientIP, .strict(), 503) | S21-3 | 6 auth-routes uppgraderade |
+| Uptime-monitoring + Stripe webhook alerting | S21-4 | Betterstack setup-guide + Stripe alerts docs |
+| CSP pinning + HSTS preload + rate limiting | S21-5 | Pinnad CSP, preload, rate limit pa 2 endpoints |
+| native-session-exchange Zod-validering | S21-3 | refreshToken valideras med Zod |
 
 ## Research
 
