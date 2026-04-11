@@ -14,6 +14,7 @@ import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
+import { OnboardingWelcome } from "@/components/provider/OnboardingWelcome"
 import { StarRating } from "@/components/review/StarRating"
 import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 import { isDemoModeWithFlags } from "@/lib/demo-mode"
@@ -45,6 +46,12 @@ export default function ProviderDashboard() {
   }>({ bookingTrend: [], revenueTrend: [] })
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [onboardingComplete, setOnboardingComplete] = useState(true)
+  const [onboardingStatus, setOnboardingStatus] = useState<{
+    profileComplete: boolean
+    hasServices: boolean
+    hasAvailability: boolean
+    hasServiceArea: boolean
+  } | null>(null)
   const [showCharts, setShowCharts] = useState<boolean | null>(null)
   const allFlags = useFeatureFlags()
   const demo = isDemoModeWithFlags(allFlags)
@@ -150,6 +157,12 @@ export default function ProviderDashboard() {
       if (response.ok) {
         const data = await response.json()
         setOnboardingComplete(data.allComplete ?? true)
+        setOnboardingStatus({
+          profileComplete: data.profileComplete,
+          hasServices: data.hasServices,
+          hasAvailability: data.hasAvailability,
+          hasServiceArea: data.hasServiceArea,
+        })
       }
     } catch {
       // Non-critical -- default to complete
@@ -166,7 +179,9 @@ export default function ProviderDashboard() {
 
   return (
     <ProviderLayout>
-      <h1 className="text-3xl font-bold mb-8">Välkommen tillbaka!</h1>
+      <h1 className="text-3xl font-bold mb-8">
+        {onboardingComplete ? "Välkommen tillbaka!" : "Välkommen till Equinet!"}
+      </h1>
 
         {error && !isOnline ? (
           <OfflineErrorState onRetry={fetchData} />
@@ -184,6 +199,13 @@ export default function ProviderDashboard() {
           <DashboardSkeleton />
         ) : (
           <>
+            {/* Onboarding Welcome for new providers */}
+            {!onboardingComplete && onboardingStatus && (
+              <div className="mb-8">
+                <OnboardingWelcome status={onboardingStatus} />
+              </div>
+            )}
+
             {/* Priority action -- "Vad ska jag göra nu?" */}
             <FirstUseTooltip
               id="dashboard-priority"
