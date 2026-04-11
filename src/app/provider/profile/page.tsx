@@ -520,6 +520,9 @@ function ProviderProfilePageContent() {
       {/* Tab: Tillgänglighet */}
       {activeTab === "availability" && (
         <>
+          <p className="text-sm text-gray-600 mb-4">
+            Ställ in vilka tider du är tillgänglig så att kunder kan boka. Markera de dagar och tider du jobbar.
+          </p>
           {providerId && <AvailabilitySchedule providerId={providerId} />}
         </>
       )}
