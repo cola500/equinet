@@ -5,10 +5,11 @@ import { clearAllInMemoryRateLimits, resetRateLimit } from '@/lib/rate-limit'
  * Test-only endpoint to reset ALL rate limits (in-memory + Upstash).
  * Prevents rate limit accumulation across E2E test runs.
  *
- * BLOCKED in production via NODE_ENV check.
+ * BLOCKED unless ALLOW_TEST_ENDPOINTS env var is explicitly set.
+ * This prevents access on Vercel (prod + preview) where the var is not configured.
  */
 export async function POST() {
-  if (process.env.NODE_ENV === 'production') {
+  if (!process.env.ALLOW_TEST_ENDPOINTS) {
     return new Response('Not found', { status: 404 })
   }
 

@@ -23,7 +23,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S21-1 Stripe webhook idempotens | fullstack | Dev | done | feature/s21-1-stripe-idempotency | fae57716 |
-| S21-2 Auth på routing + blockera test-endpoints | fullstack | - | pending | - | - |
+| S21-2 Auth på routing + blockera test-endpoints | fullstack | Dev | done | feature/s21-2-auth-test-endpoints | 86426123 |
 | S21-3 Auth-routes cleanup | fullstack | - | pending | - | - |
 | S21-4 Uptime-monitoring + Stripe alerts | fullstack | - | pending | - | - |
 | S21-5 CSP + HSTS + rate limiting | fullstack | - | pending | - | - |

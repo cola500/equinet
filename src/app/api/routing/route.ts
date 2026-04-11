@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
+  // Auth check
+  const authUser = await getAuthUser(request)
+  if (!authUser) {
+    return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+  }
+
   // Rate limiting: 100 requests per minute per IP
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.api(clientIp)
