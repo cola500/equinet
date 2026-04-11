@@ -56,6 +56,28 @@ sections:
 | accept-invite affärslogik till AuthService | 1h | Komplex logik (token-validering, Supabase user creation, atomisk upgrade) direkt i route. Bör ligga i domain service. |
 | console.* i legacy docs | 0.5 dag | Låg prioritet |
 
+## Kodeffektivitet (tech debt)
+
+### Content-as-code (~4 000 rader, 4% av prod)
+
+| Fil | Rader | Problem | Lösning | Effort |
+|-----|-------|---------|---------|--------|
+| `src/lib/help/articles.provider.ts` | 1335 | Hjälpartiklar hårdkodade i TypeScript | Flytta till markdown-filer, läs vid build | 0.5 dag |
+| `src/lib/help/articles.customer.ts` | 788 | Samma | Samma | Ingår ovan |
+| `src/lib/email/templates.ts` | 1012 | HTML-templates som strängar, svårt att underhålla | React Email eller separata .html-filer | 1 dag |
+| `src/app/admin/testing-guide/page.tsx` | 901 | Admin-intern, inte kundvänd, onödigt stor | Flytta till markdown, rendera med MDX | 0.5 dag |
+
+### Stora filer (>500 rader, gräns i CLAUDE.md)
+
+| Fil | Rader | Åtgärd | Effort |
+|-----|-------|--------|--------|
+| `BookingService.ts` | 986 | Dela: skapa `BookingCancellationService`, `BookingRescheduleService` | 0.5 dag |
+| `PrismaBookingRepository.ts` | 834 | 6 select-block. Extrahera gemensamma selects till konstanter. | 1h |
+| `ManualBookingDialog.tsx` | 752 | Extrahera steg-komponenter (StepSelectCustomer, StepSelectTime, etc.) | 0.5 dag |
+| `CustomerCard.tsx` | 660 | Extrahera tabs till egna komponenter | 1h |
+| `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
+| 13 filer runt 520-620 | - | Gränsfall, åtgärda vid nästa ändring | Löpande |
+
 ## iOS
 
 | Story | Effort | Prioritet |
