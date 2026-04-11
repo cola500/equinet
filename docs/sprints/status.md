@@ -22,7 +22,7 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S22-1 Onboarding welcome-vy | fullstack | autonom | in_progress | feature/s22-1-onboarding-welcome | - |
+| S22-1 Onboarding welcome-vy | fullstack | autonom | done | feature/s22-1-onboarding-welcome | fc20b705 |
 | S22-2 Tom-state-förbättringar | fullstack | - | pending | - | - |
 | S22-3 E-postverifiering Resend | fullstack | - | pending | - | - |
 | S22-4 Branch protection + ops-docs | fullstack | - | pending | - | - |
