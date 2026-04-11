@@ -318,14 +318,23 @@ function ProviderBookingsContent() {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <EmptyState
-            icon={Calendar}
-            title="Inga bokningar"
-            description={filter === "all"
-              ? "Du har inga bokningar ännu. Se till att du har tjänster och tillgänglighet inställt, så dyker bokningar upp här när kunder bokar."
-              : "Inga bokningar att visa för detta filter."}
-            action={filter === "all" ? { label: "Gå till tjänster", href: "/provider/services" } : undefined}
-          />
+          <div className="space-y-4">
+            <EmptyState
+              icon={Calendar}
+              title="Inga bokningar"
+              description={filter === "all"
+                ? "Du har inga bokningar ännu. Se till att du har tjänster och tillgänglighet inställt, så dyker bokningar upp här när kunder bokar."
+                : "Inga bokningar att visa för detta filter."}
+              action={filter === "all" ? { label: "Gå till tjänster", href: "/provider/services" } : undefined}
+            />
+            {filter === "all" && (
+              <p className="text-center text-sm text-gray-500">
+                <Link href="/provider/dashboard" className="text-green-600 hover:underline">
+                  Tillbaka till kom igång
+                </Link>
+              </p>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             {filteredBookings.map((booking) => (

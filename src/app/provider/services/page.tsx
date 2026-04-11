@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { useServices } from "@/hooks/useServices"
 import { useDialogState } from "@/hooks/useDialogState"
@@ -332,11 +333,18 @@ export default function ProviderServicesPage() {
         </div>
 
         {services.length === 0 ? (
-          <EmptyState
-            title="Inga tjänster ännu"
-            description="Börja med att skapa din första tjänst. Lägg till tjänster som hovslagning, veterinärvård, eller ridlektioner för att börja ta emot bokningar."
-            action={{ label: "Skapa din första tjänst", onClick: () => serviceDialog.openDialog() }}
-          />
+          <div className="space-y-4">
+            <EmptyState
+              title="Inga tjänster ännu"
+              description="Börja med att skapa din första tjänst. Lägg till tjänster som hovslagning, veterinärvård, eller ridlektioner för att börja ta emot bokningar."
+              action={{ label: "Skapa din första tjänst", onClick: () => serviceDialog.openDialog() }}
+            />
+            <p className="text-center text-sm text-gray-500">
+              <Link href="/provider/dashboard" className="text-green-600 hover:underline">
+                Tillbaka till kom igång
+              </Link>
+            </p>
+          </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-6">
             {services.map((service) => (
