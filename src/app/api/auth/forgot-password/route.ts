@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { createAuthService } from "@/domain/auth/AuthService"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
@@ -11,13 +11,23 @@ const forgotPasswordSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting by IP (3 attempts per hour)
-    const clientIP = getClientIP(request)
-    const isAllowed = await rateLimiters.passwordReset(clientIP)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många försök. Vänta innan du försöker igen." },
-        { status: 429 }
-      )
+    try {
+      const clientIP = getClientIP(request)
+      const isAllowed = await rateLimiters.passwordReset(clientIP)
+      if (!isAllowed) {
+        return NextResponse.json(
+          { error: "För många försök. Vänta innan du försöker igen." },
+          { status: 429 }
+        )
+      }
+    } catch (error) {
+      if (error instanceof RateLimitServiceError) {
+        return NextResponse.json(
+          { error: "Tjänsten är tillfälligt otillgänglig" },
+          { status: 503 }
+        )
+      }
+      throw error
     }
 
     let body

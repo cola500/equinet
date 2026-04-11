@@ -16,6 +16,8 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
     registration: vi.fn(() => true),
   },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+  RateLimitServiceError: class RateLimitServiceError extends Error {},
 }))
 
 describe('POST /api/auth/register', () => {

@@ -7,7 +7,7 @@ import { logger } from "@/lib/logger"
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1, "Token krävs"),
-})
+}).strict()
 
 export async function POST(request: NextRequest) {
   try {

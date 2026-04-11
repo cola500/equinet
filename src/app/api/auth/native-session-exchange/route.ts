@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 
 import { logger } from "@/lib/logger"
 import {
@@ -7,6 +8,10 @@ import {
   rateLimiters,
   RateLimitServiceError,
 } from "@/lib/rate-limit"
+
+const exchangeBodySchema = z.object({
+  refreshToken: z.string().min(1, "refreshToken krävs"),
+}).strict()
 
 /**
  * POST /api/auth/native-session-exchange
@@ -48,13 +53,16 @@ export async function POST(request: NextRequest) {
   }
   const accessToken = authHeader.slice(7)
 
-  // Refresh token from body (optional for backwards compat, required for cookie setting)
+  // Refresh token from body (required for cookie setting)
   let refreshToken: string | undefined
   try {
     const body = await request.json()
-    refreshToken = body.refreshToken
+    const parsed = exchangeBodySchema.safeParse(body)
+    if (parsed.success) {
+      refreshToken = parsed.data.refreshToken
+    }
   } catch {
-    // No body -- backwards compat
+    // No body -- backwards compat (iOS versions without refresh token)
   }
 
   // Create a Supabase client that will set cookies on the response
