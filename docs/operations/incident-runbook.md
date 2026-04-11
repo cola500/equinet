@@ -4,7 +4,7 @@ description: "Vanliga driftstorningar och steg-for-steg-losningar for databas, S
 category: operations
 tags: [incidents, runbook, troubleshooting, rollback, escalation]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-04-11
 related:
   - deployment.md
   - environments.md
@@ -200,4 +200,24 @@ Prisma stodjer inte automatisk rollback. Vid problematisk migration:
 
 ---
 
-*Senast uppdaterad: 2026-02-28*
+## Kontaktinfo och eskalering
+
+| Tjanst | Kontakt | Notering |
+|--------|---------|----------|
+| **Supabase** | Dashboard + support@supabase.io | Status: status.supabase.com |
+| **Stripe** | Dashboard + support.stripe.com | Status: status.stripe.com |
+| **Vercel** | Dashboard + vercel.com/help | Status: vercel-status.com |
+| **Resend** | Dashboard + resend.com/support | Status: status.resend.com |
+| **Upstash (Redis)** | Dashboard + support@upstash.com | Status: status.upstash.com |
+| **Sentry** | Dashboard (sentry.io) | - |
+
+### Vid dataintrang
+
+1. Stang av paverkade API-nycklar omedelbart
+2. Kontakta Supabase support for logganalys
+3. Dokumentera handelsen (tidpunkt, paverkan, atgard)
+4. Meddela paverkade anvandare om persondata berors (GDPR, 72h)
+
+---
+
+*Senast uppdaterad: 2026-04-11*
