@@ -75,6 +75,8 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
     registration: vi.fn().mockResolvedValue(true),
   },
+  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+  RateLimitServiceError: class RateLimitServiceError extends Error {},
 }))
 
 vi.mock('@/lib/email', () => ({

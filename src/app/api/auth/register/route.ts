@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { rateLimiters } from "@/lib/rate-limit"
+import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { registerSchema } from "@/lib/validations/auth"
 import { sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/sanitize"
 import { createAuthService } from "@/domain/auth/AuthService"
@@ -9,17 +9,25 @@ import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting - Check IP address (before JSON parsing to prevent spam)
-    const identifier = request.headers.get('x-forwarded-for') ||
-                      request.headers.get('x-real-ip') ||
-                      'unknown'
+    // Rate limiting
+    const identifier = getClientIP(request)
 
-    const isAllowed = await rateLimiters.registration(identifier)
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "För många registreringsförsök. Försök igen om en timme." },
-        { status: 429 }
-      )
+    try {
+      const isAllowed = await rateLimiters.registration(identifier)
+      if (!isAllowed) {
+        return NextResponse.json(
+          { error: "För många registreringsförsök. Försök igen om en timme." },
+          { status: 429 }
+        )
+      }
+    } catch (error) {
+      if (error instanceof RateLimitServiceError) {
+        return NextResponse.json(
+          { error: "Tjänsten är tillfälligt otillgänglig" },
+          { status: 503 }
+        )
+      }
+      throw error
     }
 
     let body
@@ -30,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validera input
-    const validatedData = registerSchema.parse(body)
+    const validatedData = registerSchema.strict().parse(body)
 
     // Sanitize all user inputs
     const sanitizedEmail = sanitizeEmail(validatedData.email)
