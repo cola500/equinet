@@ -4,7 +4,7 @@ description: "Oversikt av overvakningsverktyg, loggning, viktiga metrics och kan
 category: operations
 tags: [monitoring, logging, vercel, supabase, sentry, cron]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-04-11
 related:
   - deployment.md
   - incident-runbook.md
@@ -42,6 +42,33 @@ sections:
 | Aktiva connections | Supabase Dashboard -> Database -> Connections |
 | Slow queries | Supabase Dashboard -> Database -> Query Performance |
 | Storage-anvandning | Supabase Dashboard -> Storage |
+
+### Uptime-monitoring (Betterstack)
+
+| Vad | Hur |
+|-----|-----|
+| Endpoint | `https://equinet.vercel.app/api/health` |
+| Intervall | 5 minuter |
+| Alert-kanal | E-post till Johan |
+
+**Setup-steg:**
+1. Skapa konto pa [betterstack.com](https://betterstack.com) (gratis plan)
+2. Lagg till monitor: URL = `https://equinet.vercel.app/api/health`, intervall = 5 min
+3. Konfigurera alert-kanal (e-post)
+4. Verifiera att monitorn ar gron
+
+### Stripe webhook alerting
+
+| Vad | Hur |
+|-----|-----|
+| Dashboard | Stripe Dashboard -> Developers -> Webhooks -> webhook-endpoint |
+| Alerts | Aktivera e-post-alerts for misslyckade webhooks |
+
+**Setup-steg:**
+1. Ga till Stripe Dashboard -> Developers -> Webhooks
+2. Valj webhook-endpointen (`/api/webhooks/stripe`)
+3. Klicka "Edit" -> aktivera "Email alerts for failed deliveries"
+4. Verifiera att alerts ar aktiva
 
 ### Sentry (konfigurerat, ej fullt aktiverat)
 
@@ -130,7 +157,7 @@ Cron-jobb autentiseras med `CRON_SECRET` (Bearer token).
 ## Kanda begransningar
 
 1. **Ingen centraliserad logg-aggregering** -- loggar lever i Vercel och forsvinner efter 24h-7d beroende pa plan
-2. **Ingen proaktiv alerting** -- man maste aktivt overvaka dashboards
+2. **Uptime-alerting via Betterstack** -- grundlaggande, men saknar anpassade troskelvarningar
 3. **Sentry ar forberett men inte fullt aktiverat** -- DSN konfigurerad men klientintegration behover slutforas
 4. **Ingen APM (Application Performance Monitoring)** -- saknar distribuerade traces over tjanstgranser
 
@@ -138,4 +165,4 @@ Cron-jobb autentiseras med `CRON_SECRET` (Bearer token).
 
 ---
 
-*Senast uppdaterad: 2026-02-28*
+*Senast uppdaterad: 2026-04-11*
