@@ -25,7 +25,7 @@ sections:
 | S23-1 Spike tokenförbrukning | fullstack | autonom | done | feature/s23-1-token-spike | - |
 | S23-2 Selektiva process-rules | fullstack | autonom | done | feature/s23-2-selective-rules | - |
 | S23-3 Auto-generera kodkartan | fullstack | autonom | done | feature/s23-3-codemap-gen | - |
-| S23-4 Feature flag -> fil-mapping | fullstack | - | pending | - | - |
+| S23-4 Feature flag -> fil-mapping | fullstack | autonom | done | feature/s23-4-flag-mapping | - |
 | S23-5 Komprimera CLAUDE.md | fullstack | - | pending | - | - |
 | S23-6 JSDoc domän-metadata | fullstack | - | pending | - | - |
 | S23-7 Dokumentera och mät | fullstack | - | pending | - | - |
