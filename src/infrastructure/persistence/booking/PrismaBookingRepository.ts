@@ -420,14 +420,7 @@ export class PrismaBookingRepository
         createdByProviderId: true,
 
         // Relations - minimal data needed for provider view
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true, // Provider CAN see customer contact
-            phone: true, // Provider needs to contact customer
-          },
-        },
+        customer: CUSTOMER_CONTACT_SELECT,
         service: SERVICE_SELECT,
         horse: HORSE_BASIC_SELECT,
         // Payment information for provider view
@@ -592,13 +585,7 @@ export class PrismaBookingRepository
 
           // Relations for email notification
           customer: CUSTOMER_EMAIL_SELECT,
-          service: {
-            select: {
-              name: true,
-              price: true,
-              durationMinutes: true,
-            },
-          },
+          service: SERVICE_SELECT,
           provider: PROVIDER_SELECT,
         },
       })
@@ -650,29 +637,9 @@ export class PrismaBookingRepository
           createdByProviderId: true,
           createdAt: true,
           updatedAt: true,
-          customer: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-            },
-          },
-          service: {
-            select: {
-              name: true,
-              price: true,
-              durationMinutes: true,
-            },
-          },
-          horse: {
-            select: {
-              id: true,
-              name: true,
-              breed: true,
-              gender: true,
-            },
-          },
+          customer: CUSTOMER_CONTACT_SELECT,
+          service: SERVICE_SELECT,
+          horse: HORSE_FULL_SELECT,
         },
       })
 

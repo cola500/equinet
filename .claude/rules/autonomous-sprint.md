@@ -290,3 +290,9 @@ Se `.claude/rules/parallel-sessions.md` för fullständig guide om vilka domäne
 | Arkitektur, säkerhet, komplexa beroenden | Opus | Kräver djup förståelse |
 | Mekanisk refactoring, docs, config | Sonnet | Snabbare, billigare, tillräckligt |
 | Triviala ändringar | Haiku | Minsta möjliga kostnad |
+
+### Gotchas (S25 erfarenhet)
+
+- **Worktree-agenter kan blockeras av rättigheter.** Write/Edit/Bash kan nekas i worktree-kontext. Om agenten rapporterar rättighetsproblem: gör arbetet själv i huvudsessionen istället.
+- **Docs-stories i worktree är tveksamt värde.** Overhead (spawn + merge + cleanup) överstiger ofta tidsvinsten för 30-min docs-stories. Överväg att köra docs-stories direkt i huvudsessionen.
+- **Rensa alltid worktree efter avslutat arbete:** `git worktree remove <path>`, `git branch -d <branch>`, `git worktree prune`.
