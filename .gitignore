@@ -105,6 +105,9 @@ e2e/__snapshots__/
 e2e/*.spec.ts-snapshots/
 s13-6-screenshots/
 
+# Personal Claude Code config
+CLAUDE.local.md
+
 # Supabase local dev
 supabase/.temp/
 supabase/.branches/
