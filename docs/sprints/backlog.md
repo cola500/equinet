@@ -40,7 +40,6 @@ sections:
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
-| Preview deploy-skydd | 15 min | Preview-deploys är publika. Aktivera Vercel Password Protection. |
 | Cron-endpoints x-vercel-signature | 30 min | CRON_SECRET bra, men x-vercel-signature som komplement = defense in depth. |
 | Haiku daterat modell-ID | 5 min | `claude-haiku-4-5-20251001` i VoiceInterpretationService.ts rad 264. Byt till alias `claude-haiku-4-5`. |
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
@@ -77,6 +76,18 @@ sections:
 | `CustomerCard.tsx` | 660 | Extrahera tabs till egna komponenter | 1h |
 | `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
 | 13 filer runt 520-620 | - | Gränsfall, åtgärda vid nästa ändring | Löpande |
+
+## Agent-navigering (kodkarta)
+
+**Hypotes:** Agenter sparar 3-5 sökningar per uppgift med en domänkarta i `.claude/rules/code-map.md`. Testat med "lägg till fält på hästar": 10 tool calls -> 3 tool calls (70% reduktion). Största vinsten: agenten missar inte filer (t.ex. native-routes, provider-routes).
+
+**Steg 0 (klart):** Manuellt genererad kodkarta i `.claude/rules/code-map.md` -- 20 domäner, 169 routes, alla UI-sidor.
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| Auto-generera kodkartan | 2h | Script som läser `src/domain/`, `src/app/api/`, `src/app/` och genererar `code-map.md`. Körs vid behov eller som hook. Förhindrar att kartan blir inaktuell. |
+| Feature flag -> fil-mapping | 1h | Utöka kodkartan: vilka filer berörs av varje feature flag. Grep-baserat. Hjälper vid "slå på/av feature X". |
+| Domän-metadata i koden | 2h | JSDoc överst i varje Service: vilka routes konsumerar den, vilka repos den använder, vilken feature flag. Agenter läser vid `Read` utan att behöva kartan. |
 
 ## iOS
 
@@ -159,6 +170,7 @@ sections:
 | Backup RPO/RTO-dokumentation | S22-4 | `docs/operations/backup-policy.md` |
 | Incident response-plan | S22-4 | `docs/operations/incident-runbook.md` |
 | Smoke-test registreringsflödet | S22-5 | 25/25 gröna, hela flödet verifierat |
+| Preview deploy-skydd | Privat repo | Vercel Authentication aktiverades automatiskt vid privat GitHub-repo |
 
 ## Research
 

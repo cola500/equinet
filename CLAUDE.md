@@ -59,6 +59,7 @@ sections:
 | Pentest-rapport (feb 2026) | [docs/security/pentest-2026-02-15.md](docs/security/pentest-2026-02-15.md) |
 | Monitoring & Incident | [docs/operations/monitoring.md](docs/operations/monitoring.md), [incident-runbook.md](docs/operations/incident-runbook.md) |
 | Backup-policy | [docs/operations/backup-policy.md](docs/operations/backup-policy.md) |
+| Kodkarta (domän -> filer) | [.claude/rules/code-map.md](.claude/rules/code-map.md) |
 | Claude Code Hooks | [.claude/hooks/](.claude/hooks/) (12 workflow-hooks) |
 | Demo-läge | [docs/demo-mode.md](docs/demo-mode.md) |
 | Produktanalys | [docs/product-audit/](docs/product-audit/) (6 dokument) |
