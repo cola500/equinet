@@ -285,39 +285,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Payload-minimering i select-block**: List-queries ska BARA returnera fält som UI:t använder. Granska komponenten före varje ny `select`-block. Använd `groupBy` för aggregering istället för att hämta alla rader + JS-loop. Undvik `createdAt`/`updatedAt` i list-responses om de inte renderas.
 - **Rate limiter fail-closed**: `RateLimitServiceError` kastas vid Redis-fel. Routes med inner try/catch runt `rateLimiters.*` returnerar `503 "Tjänsten är tillfälligt otillgänglig"`. Övriga routes fångar via yttre catch -> 500.
 - **Strukturerad loggning**: Server: `logger` från `@/lib/logger`. Klient: `clientLogger` från `@/lib/client-logger`. iOS: `AppLogger` från `AppLogger.swift` (os.log). Använd ALDRIG `console.*`/`print()` direkt i produktionskod.
-- **iOS import OSLog gotcha**: `os.Logger`-stränginterpolering kräver `import OSLog` i den anropande filen, inte bara där Logger definieras. Swift resolvar `OSLogMessage` vid call-site.
-- **iOS widget extension target-membership**: Nya .swift-filer som används av delade filer (KeychainHelper, SharedDataManager) MÅSTE läggas till i `membershipExceptions` i `project.pbxproj` för widget extension target.
-- **iOS Xcode target-skapande förstör pbxproj**: Xcode re-serialiserar PBXFileSystemSynchronizedRootGroup vid ny target och tappar befintliga `PBXFileSystemSynchronizedBuildFileExceptionSet`. ALLTID spara backup + diff efter manuella Xcode-steg.
-- **iOS Xcode DerivedData vid branch-byte**: Efter `git merge`/`checkout` som lägger till nya .swift-filer kan Xcode ge "Cannot find type X in scope" trots att filerna finns på disk. Fix: `rm -rf ~/Library/Developer/Xcode/DerivedData/Equinet-*`, stäng och öppna om projektet, bygg. PBXFileSystemSynchronizedRootGroup ska auto-upptäcka filer, men DerivedData-indexet blir stale.
-- **iOS optimistisk UI**: Spara `oldState` före mutation, uppdatera UI direkt, reverta vid error. Kräver `withStatus()`-copy-metod på Codable struct. Haptic `.success`/`.error` efter resultat.
-- **iOS nya Codable-fält bakåtkompatibla**: Nya fält som `serviceId` måste vara optionella (`String?`) om cachad data kan sakna dem. API:t skickar alltid, men SharedDataManager-cache kan ha äldre format.
-- **iOS context menu > swipeActions i kalender**: `contextMenu` undviker krock med TabView page-swipe. Ger native long-press-meny med haptic.
-- **iOS callback-pattern för navigering**: NativeCalendarView tar `onNavigateToWeb: ((String) -> Void)?` istället för att exponera ContentViews state-binding. Ägaren (ContentView) styr navigeringslogiken.
-- **iOS test bundle ID prefix**: Test-target MÅSTE ha bundle ID som är prefix av parent app (`com.equinet.Equinet.EquinetTests`), annars: "Embedded binary's bundle identifier is not prefixed".
-- **iOS Xcode 26 kräver explicit .xctestplan**: `shouldAutocreateTestPlan` är otillförlitligt. Skapa ALLTID `EquinetTests.xctestplan` manuellt och referera med `container:EquinetTests.xctestplan` i schemat. Utan fysisk fil: "test plan could not be read".
-- **iOS XCTest setup**: `xcodebuild test -project ... -scheme Equinet -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:EquinetTests`
-- **iOS CI simctl vs xcodebuild**: `simctl list devices` och `xcodebuild -showdestinations` returnerar OLIKA UDID:er. Använd ALDRIG simctl-UDID som xcodebuild-destination. Använd namnbaserad destination (`name=iPhone 17 Pro`) eller UDID från `xcodebuild -showdestinations`. CI: dynamiskt Xcode-val med `ls -d /Applications/Xcode_*.app | sort -V | tail -1`.
-- **iOS CSS-injektion för att dölja webb-chrome**: WKWebView visar webbens BottomTabBar + Header ovanpå native TabView. Fix: injicera CSS i `WebView.swift` med `nav[class*="fixed"][class*="bottom-0"] { display: none !important }` och `header.border-b { display: none !important }`. Använd specifika selektorer, inte generella.
-- **iOS NativeMoreView NavigationStack-mönster**: Native meny (SwiftUI List + sektioner) med NavigationLink som pushar WebView-wrapper (MoreWebView) för sub-sidor. Varje push skapar ny WebView-instans med delad BridgeHandler. `webViewReady: .constant(true)` för att undvika splash-overlay.
-- **iOS Turbopack hot-reload gotcha**: Nya API route-filer (`src/app/api/*/route.ts`) registreras inte alltid av Turbopack hot-reload. Dev-servern kan returnera 404 trots att filen finns. Fix: starta om dev-servern (`npm run dev`).
-- **iOS Swift Charts**: `import Charts` i SwiftUI-filer. `Chart { BarMark(x:y:) }` for bar charts, `LineMark(x:y:series:)` for line charts. `.chartForegroundStyleScale()` for legend-farger. Forsta anvandningen i session 113 (NativeInsightsView).
-- **iOS HeatmapMatrix pre-computation**: Transformera API heatmap-data (array av day/hour/count) till 2D-matris i ViewModel. `HeatmapMatrix.from(entries:)` bygger 7x(hourRange) matris med `intensity(day:hour:)` for farggradering. Vyn laser bara fran matrisen.
-- **iOS SharedDataManager cache per parameter**: `insights_cache_\(months)` ger separata caches for varje variabel. `clearAllInsightsCache()` itererar over alla varianter. Anvandbart for alla API:er med variabla parametrar.
-- **iOS auth via Supabase Swift SDK**: Login via `SupabaseManager.client.auth.signIn()`, session exchange till WKWebView via `/api/auth/native-session-exchange` (PKCE). Alla routes använder `getAuthUser(request)` som stödjer både Bearer och Supabase cookies.
-- **iOS WKWebView JS-debugging utan Safari Inspector**: Injicera JavaScript via `evaluateJavaScript` som gör `fetch()` och skickar resultat via `window.webkit.messageHandlers.equinet.postMessage()`. Logga i Swift via `AppLogger`. Fungerar på fysiska enheter utan Safari-koppling.
-- **iOS Simulator MCP**: `mobile-mcp` (`@mobilenext/mobile-mcp`) for all iOS Simulator-interaktion: screenshot, accessibility tree, tap/swipe/type, launch/install app, screen recording. Anvander XCUITest/WebDriverAgent (inga extra beroenden utover Xcode). Ersatter ios-simulator-mcp vars IDB-baserade verktyg inte fungerar med Xcode 26.
-- **iOS UI-verifiering**: Vid iOS UI-ändringar -- använd mobile-mcp för screenshots, accessibility tree och interaktion. Fixa problem direkt utan att fråga.
-- **iOS WKWebView retain cycle**: `WKUserContentController.add(_:name:)` håller STARK referens till handler. Wrappa ALLTID i `WeakScriptMessageHandler` med `weak var delegate`. Komplettera med `dismantleUIView` som kör `removeScriptMessageHandler` + `removeAllUserScripts`.
-- **iOS viewport-fit=cover statiskt**: Använd `export const viewport: Viewport = { viewportFit: "cover" }` i Next.js layout.tsx -- INTE dynamisk JS-injektion. Ger `env(safe-area-inset-*)` från första rendering. Behåll JS-injektion som fallback.
-- **iOS Static DateFormatter**: DateFormatter är dyrt att skapa. Använd `private static let` på struct-nivå i SwiftUI-vyer. Särskilt viktigt i scroll-tunga vyer (kalender, listor).
-- **iOS Native Screen Pattern (WebView->SwiftUI)**: 8 steg: **(0) Feature Inventory (OBLIGATORISKT)**: Läs webbsidans page-komponent + alla subkomponenter rad för rad. Lista ALLA datapunkter, interaktioner, navigeringslänkar, dialoger, statuslogik, felhantering, offlinebeteende och feature flags. Skapa tabell `| Feature | Webb | Native | Beslut |` där beslut = Native/Offload/Skip/Later med motivering. Tabellen granskas INNAN implementation startar. "Vi glömde" är inte ett giltigt beslut. Verifiera auth-mekanism per endpoint: `auth()` (session) vs `authFromMobileToken()` (Bearer JWT) -- native har bara JWT, offloada session-only endpoints till WebView. (1) Aggregerat API `/api/native/<screen>` med all data i ett anrop, (2) Codable structs + enum med unknown-fallback, (3) SharedDataManager-cache (5min TTL), (4) `@State`-baserad vy med callbacks (`onNavigateToTab`, `onNavigateToWebPath`), (5) Tab-nav via callback, icke-tab via `pendingMorePath` -> Mer-tab -> onChange pushar NavigationPath, (6) Cache-clear i AuthManager.logout(), (7) Nya modellfiler i widget `membershipExceptions` om SharedDataManager refererar dem. **Extra DoD för native-konvertering**: Visuell jämförelse (screenshot webb vs native), interaktionsjämförelse (varje klickbar element har motsvarighet eller beslut), alla datapunkter har beslut, simulator-verifiering med mobile-mcp.
-- **iOS pendingMorePath programmatisk navigation**: Sätt `coordinator.pendingMorePath = "/path"` + `coordinator.selectedTab = .more`. NativeMoreView.onChange pushar matchande MoreMenuItem eller temporärt item. Nollställs direkt efter push.
-- **iOS NativeMoreView native-routing**: I `navigationDestination(for: MoreMenuItem.self)` -- kolla `item.path == "/provider/X"` -> visa native vy istället för MoreWebView. Lägg till `navigationDestination(for: ModelType.self)` för detalj-push.
-- **iOS Segmented Picker för tabs i detaljvy**: Använd `Picker(.segmented)` + `switch` -- INTE SwiftUI TabView (krockar med swipe-to-delete i List). Varje tab är en `@ViewBuilder` computed property.
-- **iOS CustomerSheetType enum-pattern**: `enum SheetType: Identifiable` med en enda `.sheet(item:)` modifier. Varje case har egen presentationDetents. Undviker multipla `.sheet`-modifiers som kan krocka.
+> iOS-specifika learnings har flyttats till `.claude/rules/ios-learnings.md` (laddas selektivt vid `ios/**`).
 - **Visuell UX-verifiering med Playwright MCP**: Vid UI-ändringar -- starta worktree dev-server (`npx next dev -p 3001`) FÖRST, skapa testdata via API, batcha screenshots (logga in -> navigera alla sidor -> verifiera). Huvudrepots dev-server (port 3000) reflekterar INTE worktree-ändringar. Värt det för loading states, a11y, formatering, layoutskift -- inte för ren affärslogik.
-- **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer (publik endpoint). AppCoordinator: `[String: Bool]` state + UserDefaults-cache (cachad vid start, fräscht i bakgrund). AuthenticatedView: trigger `.onAppear` + `.onChange(of: scenePhase)`. NativeMoreView: `visibleSections` compactMap-filtrering, tomma sektioner döljs. `handlePendingPath` söker ALLTID i `allMenuSections` (inte filtrerade).
-- **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/` i strängar. Använd `URL(string: path, relativeTo: baseURL)` för API-paths.
 
 - **RLS-bevistest mot Supabase**: `src/__tests__/rls/rls-proof.integration.test.ts` (24 tester). Seed med service_role, query med signInWithPassword-klienter. `verifyJwtClaims()` guard i beforeAll mot falska gröna. Deterministiska `b0`-prefix UUIDs, try/catch cleanup. Kräver `SUPABASE_SERVICE_ROLE_KEY` i `.env.local`.
 - **PostgREST select med relationer**: Forward: `Table!column(fields)`. Reverse: `Table(fields)` (auto-detect FK).
@@ -330,44 +299,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 
 ### iOS-testflöde
 
-Full `EquinetTests` tar ~4 min pga simulator-overhead (EventKit, WebView, Speech). ViewModel-testerna tar <1s. **Kör alltid Nivå 1 först. Kör Nivå 2 bara inför PR eller vid bred påverkan.**
-
-**Nivå 1 -- Under arbete (default):** Kör bara berörda testsviter:
-```bash
-xcodebuild test -project Equinet.xcodeproj -scheme Equinet \
-  -destination 'platform=iOS Simulator,id=<UDID>' \
-  -only-testing:EquinetTests/BookingsViewModelTests \
-  -only-testing:EquinetTests/BookingsModelsTests
-```
-
-**Nivå 2 -- Inför PR eller bred påverkan:** Kör full svit en gång:
-```bash
-xcodebuild test ... -only-testing:EquinetTests
-```
-
-**Mappning ändrad fil -> testsvit:**
-
-| Fil | Testsvit |
-|-----|----------|
-| BookingsModels | BookingsModelsTests + BookingsViewModelTests |
-| DashboardViewModel | DashboardViewModelTests |
-| CalendarViewModel | CalendarViewModelTests |
-| APIClient | APIClientTests |
-| CustomersViewModel | CustomersViewModelTests |
-| ServicesViewModel | ServicesViewModelTests |
-| ReviewsViewModel | ReviewsViewModelTests |
-| ProfileViewModel | ProfileViewModelTests |
-| AuthManager | AuthManagerTests |
-
-**Långsamma sviter (bara Nivå 2):** CalendarSyncManagerTests (~2.5 min), BridgeHandlerTests (~22s), SpeechRecognizerTests (~23s).
-
-**Observability:**
-- Kör testsviten EN gång. Kör ALDRIG om bara för att räkna resultat.
-- xcodebuild visar `Executed` tre gånger (suite, bundle, selected) -- det är samma körning, inte tre.
-- **Debugging:** Full output, ingen grep -- visar var det hakar.
-- **Slutverifiering:** `grep -E "(Executed|failed)" | tail -1` ger en ren sammanfattning.
-
-**Fallback:** Om något känns fel, kör Nivå 2 utan `-only-testing:` och utan grep-filter. Full output visar exakt var det hakar.
+> Se `.claude/rules/ios-learnings.md` för fullständigt iOS-testflöde med Nivå 1/2 och fil->testsvit-mappning.
 
 ### Webb-testflöde
 
