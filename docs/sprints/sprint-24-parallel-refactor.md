@@ -24,16 +24,29 @@ sections:
 
 ---
 
-## Parallelliseringsplan
+## Sessionstilldelning
 
-```
-Session 1 (huvudrepo):  S24-1 -> S24-2 -> S24-3 -> S24-4   (webb)
-Session 2 (worktree):   S24-5 -> S24-6 -> S24-7 -> S24-8   (ios + docs)
-```
+**VIKTIGT: Varje session kör BARA sina tilldelade stories. Rör INTE den andra sessionens stories.**
 
-**Domänöverlapp:** Ingen. Session 1 rör `src/domain/`, `src/components/`, `src/app/api/`, `.github/`. Session 2 rör `ios/`, `docs/`, `src/lib/help/`, `.claude/rules/`.
+### Session 1 (huvudrepo, `claude --model opus`)
+Kör BARA dessa stories i denna ordning:
+- **S24-1** Extrahera BookingValidation
+- **S24-2** ManualBookingDialog steg-split
+- **S24-3** Snabba säkerhetsfixar
+- **S24-4** Dependabot auto-merge
 
-**Undantag:** S24-6 (hjälpartiklar) rör `src/lib/help/` som tekniskt ligger i `src/`. Men inga andra stories rör den katalogen, så ingen konflikt.
+### Session 2 (worktree, `claude --model sonnet`)
+Kör BARA dessa stories i denna ordning:
+- **S24-5** iOS cleanup
+- **S24-6** Hjälpartiklar till markdown
+- **S24-7** Legacy docs svenska tecken
+
+**Session 2 SKA INTE röra:** S24-1, S24-2, S24-3, S24-4. De tillhör session 1.
+**Session 1 SKA INTE röra:** S24-5, S24-6, S24-7. De tillhör session 2.
+
+**Filöverlapp:** Ingen. Session 1 rör `src/domain/`, `src/components/`, `src/app/api/`, `.github/`. Session 2 rör `ios/`, `docs/`, `src/lib/help/`.
+
+**S24-8** (parallel-sprint-regler) är redan klar -- applicerad på auto-assign.md.
 
 **Startordning:** Session 1 FÖRST. Vänta tills den registrerat sig i status.md. SEDAN session 2.
 
