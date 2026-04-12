@@ -1,12 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import type { HelpRole } from "@/lib/help/types"
-import {
-  getAllArticles,
-  getArticleSections,
-  searchArticles,
-} from "@/lib/help/index"
+import type { HelpArticle, HelpRole } from "@/lib/help/types"
+import { filterArticles } from "@/lib/help/search"
 import {
   Accordion,
   AccordionContent,
@@ -17,22 +13,27 @@ import { HelpSearch } from "./HelpSearch"
 import { HelpArticleCard } from "./HelpArticleCard"
 
 interface HelpCenterProps {
+  initialArticles: HelpArticle[]
+  sections: string[]
   role: HelpRole
   basePath: string
 }
 
-export function HelpCenter({ role, basePath }: HelpCenterProps) {
-  const allArticlesForRole = getAllArticles(role)
+export function HelpCenter({
+  initialArticles,
+  sections,
+  role,
+  basePath,
+}: HelpCenterProps) {
   const [query, setQuery] = useState("")
-  const [articles, setArticles] = useState(allArticlesForRole)
-  const sections = getArticleSections(role)
+  const [articles, setArticles] = useState(initialArticles)
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setArticles(searchArticles(query, role))
+      setArticles(filterArticles(initialArticles, query, role))
     }, 200)
     return () => clearTimeout(timer)
-  }, [query, role])
+  }, [query, role, initialArticles])
 
   const handleQueryChange = useCallback((newQuery: string) => {
     setQuery(newQuery)
@@ -55,7 +56,7 @@ export function HelpCenter({ role, basePath }: HelpCenterProps) {
         query={query}
         onQueryChange={handleQueryChange}
         resultCount={articles.length}
-        totalCount={allArticlesForRole.length}
+        totalCount={initialArticles.length}
       />
 
       {visibleSections.length === 0 ? (

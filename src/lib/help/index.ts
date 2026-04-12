@@ -1,6 +1,5 @@
 import type { HelpArticle, HelpRole } from "./types"
-import { customerArticles } from "./articles.customer"
-import { providerArticles } from "./articles.provider"
+import { providerArticles, customerArticles } from "./loader"
 import { adminArticles } from "./articles.admin"
 
 const allArticles: HelpArticle[] = [
@@ -30,10 +29,10 @@ export function searchArticles(
   query: string,
   role?: HelpRole
 ): HelpArticle[] {
-  const q = query.toLowerCase().trim()
-  if (!q) return getAllArticles(role)
-
   const articles = getAllArticles(role)
+  const q = query.toLowerCase().trim()
+  if (!q) return articles
+
   return articles.filter(
     (a) =>
       a.title.toLowerCase().includes(q) ||

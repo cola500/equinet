@@ -1,26 +1,20 @@
-"use client"
-
-import { useParams } from "next/navigation"
 import { notFound } from "next/navigation"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { HelpArticleView } from "@/components/help/HelpArticleView"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { getFeatureFlags } from "@/lib/feature-flags"
 import { getArticle } from "@/lib/help/index"
 
-export default function ProviderHelpArticlePage() {
-  const params = useParams()
-  const slug = params.slug as string
-  const helpEnabled = useFeatureFlag("help_center")
+interface Props {
+  params: Promise<{ slug: string }>
+}
 
-  if (!helpEnabled) {
-    notFound()
-  }
+export default async function ProviderHelpArticlePage({ params }: Props) {
+  const { slug } = await params
+  const flags = await getFeatureFlags()
+  if (!flags["help_center"]) notFound()
 
   const article = getArticle(slug, "provider")
-
-  if (!article) {
-    notFound()
-  }
+  if (!article) notFound()
 
   return (
     <ProviderLayout>

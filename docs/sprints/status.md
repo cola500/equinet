@@ -26,9 +26,9 @@ sections:
 | S24-2 ManualBookingDialog steg-split | fullstack (webb) | - | pending | - | - |
 | S24-3 Snabba säkerhetsfixar | fullstack (webb) | - | pending | - | - |
 | S24-4 Dependabot auto-merge | fullstack (infra) | - | pending | - | - |
-| S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |
-| S24-6 Hjälpartiklar till markdown | fullstack (docs) | - | pending | - | - |
-| S24-7 Legacy docs svenska tecken | fullstack (docs) | - | pending | - | - |
+| S24-5 iOS cleanup | fullstack (ios) | Session 2 | done | feature/s24-5-ios-cleanup | ee19c0fe |
+| S24-6 Hjälpartiklar till markdown | fullstack (docs) | Session 2 | done | feature/s24-6-help-articles-markdown | pending-commit |
+| S24-7 Legacy docs svenska tecken | fullstack (docs) | Session 2 | in_progress | feature/s24-6-help-articles-markdown | - |
 | S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | pending | - | - |
 
 ## Tidigare sprintar (alla klara)
