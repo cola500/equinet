@@ -25,7 +25,7 @@ sections:
 | S24-1 Extrahera BookingValidation | fullstack (webb) | Session 1 | done | feature/s24-1-booking-validation | - |
 | S24-2 ManualBookingDialog steg-split | fullstack (webb) | Session 1 | done | feature/s24-2-manual-booking-dialog | - |
 | S24-3 Snabba säkerhetsfixar | fullstack (webb) | Session 1 | done | feature/s24-3-security-fixes | - |
-| S24-4 Dependabot auto-merge | fullstack (infra) | - | pending | - | - |
+| S24-4 Dependabot auto-merge | fullstack (infra) | Session 1 | done | feature/s24-4-dependabot-auto-merge | - |
 | S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |
 | S24-6 Hjälpartiklar till markdown | fullstack (docs) | - | pending | - | - |
 | S24-7 Legacy docs svenska tecken | fullstack (docs) | - | pending | - | - |
@@ -86,8 +86,6 @@ sections:
 
 | Item | Effort | Motivering |
 |------|--------|------------|
-| CSP report-to | 15 min | Vi har CSP men vet inte nar den blockerar i prod. Skicka till Sentry. |
-| Dependabot auto-merge for patch | 15 min | PRs skapas men ingen mergar dem. Patch kan auto-mergas. |
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
 
 ### Vid lansering
