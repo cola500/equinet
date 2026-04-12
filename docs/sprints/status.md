@@ -18,21 +18,23 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 22** ([sprint-22-launch-ready.md](sprint-22-launch-ready.md)):
+**Sprint 23** ([sprint-23-token-efficiency.md](sprint-23-token-efficiency.md)):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S22-1 Onboarding welcome-vy | fullstack | autonom | done | feature/s22-1-onboarding-welcome | fc20b705 |
-| S22-2 Tom-state-förbättringar | fullstack | autonom | done | feature/s22-2-empty-states | f77b3858 |
-| S22-3 E-postverifiering Resend | fullstack | autonom | blocked | - | Kräver manuell prod-test (Supabase + Resend) |
-| S22-4 Branch protection + ops-docs | fullstack | autonom | done | feature/s22-4-ops-docs | - |
-| S22-5 Smoke-test registreringsflödet | fullstack | autonom | done | feature/s22-5-smoke-test | - |
-| S22-6 Dokumentera och stäm av | fullstack | autonom | done | feature/s22-6-docs | - |
+| S23-1 Spike tokenförbrukning | fullstack | autonom | done | feature/s23-1-token-spike | - |
+| S23-2 Selektiva process-rules | fullstack | - | pending | - | - |
+| S23-3 Auto-generera kodkartan | fullstack | - | pending | - | - |
+| S23-4 Feature flag -> fil-mapping | fullstack | - | pending | - | - |
+| S23-5 Komprimera CLAUDE.md | fullstack | - | pending | - | - |
+| S23-6 JSDoc domän-metadata | fullstack | - | pending | - | - |
+| S23-7 Dokumentera och mät | fullstack | - | pending | - | - |
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S22 | Lanseringsklar | 5/6 done (S22-3 blocked) |
 | S21 | Härdning inför lansering | 6/6 done |
 | S20 | Process enforcement | 6/6 done |
 | S19 | E2E-hardening | 9/9 done |
@@ -54,7 +56,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Sprint 22 autonom | fullstack | S22-1 | feature/s22-1-onboarding-welcome | 2026-04-11 |
+| Sprint 23 autonom | fullstack | S23-1 | feature/s23-1-token-spike | 2026-04-12 |
 
 ## Beslut
 
