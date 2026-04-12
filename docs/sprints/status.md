@@ -18,16 +18,14 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 25** ([sprint-25-parallel-test.md](sprint-25-parallel-test.md)):
+**Sprint 26** ([sprint-26-subagent-test.md](sprint-26-subagent-test.md)):
 
-| Story | Domän | Status |
-|-------|-------|--------|
-| S25-1 CustomerCard.tsx extrahera tabs | webb | done |
-| S25-2 PrismaBookingRepository selects | webb | done |
-| S25-3 Dokumentera worktree-agent-mönster | docs | done |
-| S25-4 Backlog + roadmap cleanup | docs | done |
-
-> Sprint 25 avslutad 2026-04-12. PR #162 mergad.
+| Story | Domän | Approach | Status |
+|-------|-------|----------|--------|
+| S26-1 useProviderCustomers refactoring | webb | Baseline | pending |
+| S26-2 accept-invite till AuthService | webb (auth) | Research-agent | pending |
+| S26-3 Parallella reviews | webb | Review-agenter | pending |
+| S26-4 Sprint-retro med mätdata | docs | Direkt | pending |
 
 ## Tidigare sprintar (alla klara)
 

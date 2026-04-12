@@ -67,7 +67,6 @@ sections:
 | Fil | Rader | Åtgärd | Effort |
 |-----|-------|--------|--------|
 | `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
-| `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
 | 10+ filer runt 520-620 | - | Gränsfall, åtgärda vid nästa ändring | Löpande |
 
 ## Agent-navigering (kodkarta)
