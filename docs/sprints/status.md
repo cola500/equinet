@@ -18,23 +18,24 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 23** ([sprint-23-token-efficiency.md](sprint-23-token-efficiency.md)):
+**Sprint 24** ([sprint-24-parallel-refactor.md](sprint-24-parallel-refactor.md)):
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S23-1 Spike tokenförbrukning | fullstack | autonom | done | feature/s23-1-token-spike | - |
-| S23-2 Selektiva process-rules | fullstack | autonom | done | feature/s23-2-selective-rules | - |
-| S23-3 Auto-generera kodkartan | fullstack | autonom | done | feature/s23-3-codemap-gen | - |
-| S23-4 Feature flag -> fil-mapping | fullstack | autonom | done | feature/s23-4-flag-mapping | - |
-| S23-5 Komprimera CLAUDE.md | fullstack | autonom | done | feature/s23-5-compress-claude | - |
-| S23-6 JSDoc domän-metadata | fullstack | autonom | done | feature/s23-6-jsdoc-metadata | - |
-| S23-8 CLAUDE.md under 200 + CC-optimeringar | fullstack | autonom | done | feature/s23-8-claude-compress | - |
-| S23-7 Dokumentera och mät | fullstack | autonom | done | feature/s23-7-measure | - |
+| S24-1 Extrahera BookingValidation | fullstack (webb) | Session 1 | done | feature/s24-1-booking-validation | - |
+| S24-2 ManualBookingDialog steg-split | fullstack (webb) | - | pending | - | - |
+| S24-3 Snabba säkerhetsfixar | fullstack (webb) | - | pending | - | - |
+| S24-4 Dependabot auto-merge | fullstack (infra) | - | pending | - | - |
+| S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |
+| S24-6 Hjälpartiklar till markdown | fullstack (docs) | - | pending | - | - |
+| S24-7 Legacy docs svenska tecken | fullstack (docs) | - | pending | - | - |
+| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | pending | - | - |
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S23 | Token-effektivitet | 8/8 done |
 | S22 | Lanseringsklar | 5/6 done (S22-3 blocked) |
 | S21 | Härdning inför lansering | 6/6 done |
 | S20 | Process enforcement | 6/6 done |
@@ -57,7 +58,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Sprint 23 autonom | fullstack | S23-1 | feature/s23-1-token-spike | 2026-04-12 |
+| Sprint 24 Session 1 | fullstack (webb) | S24-1 done, S24-2 next | feature/s24-1-booking-validation | 2026-04-12 |
 
 ## Beslut
 

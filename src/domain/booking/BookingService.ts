@@ -17,18 +17,17 @@
  * API layer calls this service; service calls repositories.
  */
 import { Result } from '@/domain/shared/types/Result'
-import { TimeSlot } from '@/domain/shared/TimeSlot'
-import { Location } from '@/domain/shared/Location'
 import {
   IBookingRepository,
   BookingWithRelations,
   CreateBookingData,
-  BookingWithCustomerLocation,
 } from '@/infrastructure/persistence/booking/IBookingRepository'
-import { PrismaBookingRepository } from '@/infrastructure/persistence/booking/PrismaBookingRepository'
-import { TravelTimeService, BookingWithLocation } from './TravelTimeService'
+import { TravelTimeService } from './TravelTimeService'
 import { BookingStatus } from './BookingStatus'
-import { prisma } from '@/lib/prisma'
+import { BookingValidation } from './BookingValidation'
+
+// Re-export createBookingService from its new home for backwards compatibility
+export { createBookingService } from './createBookingService'
 
 /**
  * DTO for creating a booking
@@ -206,7 +205,11 @@ export interface UpdateStatusDTO {
 const PROVIDER_ONLY_STATUSES = ['confirmed', 'completed', 'no_show']
 
 export class BookingService {
-  constructor(private readonly deps: BookingServiceDeps) {}
+  private readonly validation: BookingValidation
+
+  constructor(private readonly deps: BookingServiceDeps) {
+    this.validation = new BookingValidation(deps)
+  }
 
   /**
    * Create a new booking with full validation
@@ -218,12 +221,12 @@ export class BookingService {
     dto: CreateBookingDTO
   ): Promise<Result<BookingWithRelations, BookingError>> {
     // 1. Validate service
-    const serviceResult = await this.validateService(dto.serviceId, dto.providerId)
+    const serviceResult = await this.validation.validateService(dto.serviceId, dto.providerId)
     if (serviceResult.isFailure) return Result.fail(serviceResult.error)
     const service = serviceResult.value
 
     // 2. Validate provider
-    const providerResult = await this.validateProvider(dto.providerId)
+    const providerResult = await this.validation.validateProvider(dto.providerId)
     if (providerResult.isFailure) return Result.fail(providerResult.error)
     const provider = providerResult.value
 
@@ -243,18 +246,18 @@ export class BookingService {
     }
 
     // 4. Check if provider has closed this day
-    const closedDayCheck = await this.validateClosedDay(dto.providerId, dto.bookingDate)
+    const closedDayCheck = await this.validation.validateClosedDay(dto.providerId, dto.bookingDate)
     if (closedDayCheck.isFailure) {
       return Result.fail(closedDayCheck.error)
     }
 
     // 5. Calculate end time + validate time slot
-    const timeSlot = this.validateTimeSlot(dto.startTime, dto.endTime, service.durationMinutes)
+    const timeSlot = this.validation.validateTimeSlot(dto.startTime, dto.endTime, service.durationMinutes)
     if (timeSlot.isFailure) return Result.fail(timeSlot.error)
 
     // 6. Validate route order if provided
     if (dto.routeOrderId && this.deps.getRouteOrder) {
-      const routeOrderValidation = await this.validateRouteOrder(
+      const routeOrderValidation = await this.validation.validateRouteOrder(
         dto.routeOrderId,
         dto.providerId,
         dto.bookingDate
@@ -268,7 +271,7 @@ export class BookingService {
     // 8. Validate travel time if service is configured
     let travelTimeMinutes: number | undefined
     if (this.deps.travelTimeService && this.deps.getCustomerLocation) {
-      const travelValidation = await this.validateTravelTime(
+      const travelValidation = await this.validation.validateTravelTime(
         dto.customerId,
         dto.providerId,
         dto.bookingDate,
@@ -414,16 +417,16 @@ export class BookingService {
     }
 
     // 2. Validate service
-    const serviceResult = await this.validateService(dto.serviceId, dto.providerId)
+    const serviceResult = await this.validation.validateService(dto.serviceId, dto.providerId)
     if (serviceResult.isFailure) return Result.fail(serviceResult.error)
     const service = serviceResult.value
 
     // 3. Validate provider
-    const providerResult = await this.validateProvider(dto.providerId)
+    const providerResult = await this.validation.validateProvider(dto.providerId)
     if (providerResult.isFailure) return Result.fail(providerResult.error)
 
     // 4. Check if provider has closed this day
-    const closedDayCheck = await this.validateClosedDay(dto.providerId, dto.bookingDate)
+    const closedDayCheck = await this.validation.validateClosedDay(dto.providerId, dto.bookingDate)
     if (closedDayCheck.isFailure) return Result.fail(closedDayCheck.error)
 
     // 5. Resolve customer ID (existing or ghost user)
@@ -451,7 +454,7 @@ export class BookingService {
     }
 
     // 6. Calculate end time + validate time slot
-    const timeSlot = this.validateTimeSlot(dto.startTime, dto.endTime, service.durationMinutes)
+    const timeSlot = this.validation.validateTimeSlot(dto.startTime, dto.endTime, service.durationMinutes)
     if (timeSlot.isFailure) return Result.fail(timeSlot.error)
 
     // 7. Create booking with atomic overlap check
@@ -559,7 +562,7 @@ export class BookingService {
     }
 
     // 8. Calculate end time + validate time slot
-    const timeSlot = this.validateTimeSlot(dto.newStartTime, undefined, service.durationMinutes)
+    const timeSlot = this.validation.validateTimeSlot(dto.newStartTime, undefined, service.durationMinutes)
     if (timeSlot.isFailure) return Result.fail(timeSlot.error)
 
     // 9. New date must be in the future
@@ -571,7 +574,7 @@ export class BookingService {
     }
 
     // 11. Check closed day
-    const closedDayCheck = await this.validateClosedDay(booking.providerId, newBookingDate)
+    const closedDayCheck = await this.validation.validateClosedDay(booking.providerId, newBookingDate)
     if (closedDayCheck.isFailure) {
       return Result.fail(closedDayCheck.error)
     }
@@ -604,390 +607,4 @@ export class BookingService {
 
     return Result.ok(updated)
   }
-
-  // --- Shared validation helpers ---
-
-  /**
-   * Validate that a service exists, is active, and belongs to the given provider.
-   */
-  private async validateService(
-    serviceId: string,
-    providerId: string
-  ): Promise<Result<ServiceInfo, BookingError>> {
-    const service = await this.deps.getService(serviceId)
-
-    if (!service || !service.isActive) {
-      return Result.fail({ type: 'INACTIVE_SERVICE' })
-    }
-
-    if (service.providerId !== providerId) {
-      return Result.fail({ type: 'SERVICE_PROVIDER_MISMATCH' })
-    }
-
-    return Result.ok(service)
-  }
-
-  /**
-   * Validate that a provider exists and is active.
-   */
-  private async validateProvider(
-    providerId: string
-  ): Promise<Result<ProviderInfo, BookingError>> {
-    const provider = await this.deps.getProvider(providerId)
-
-    if (!provider || !provider.isActive) {
-      return Result.fail({ type: 'INACTIVE_PROVIDER' })
-    }
-
-    return Result.ok(provider)
-  }
-
-  /**
-   * Calculate end time (if needed) and validate as TimeSlot.
-   */
-  private validateTimeSlot(
-    startTime: string,
-    endTime: string | undefined,
-    durationMinutes: number
-  ): Result<{ startTime: string; endTime: string }, BookingError> {
-    const resolvedEndTime = endTime || this.calculateEndTime(startTime, durationMinutes)
-    const timeSlotResult = TimeSlot.create(startTime, resolvedEndTime)
-
-    if (timeSlotResult.isFailure) {
-      return Result.fail({ type: 'INVALID_TIMES', message: timeSlotResult.error })
-    }
-
-    return Result.ok({
-      startTime: timeSlotResult.value.startTime,
-      endTime: timeSlotResult.value.endTime,
-    })
-  }
-
-  /**
-   * Calculate end time from start time and duration
-   */
-  private calculateEndTime(startTime: string, durationMinutes: number): string {
-    const [hours, minutes] = startTime.split(':').map(Number)
-    const startMinutes = hours * 60 + minutes
-    const endMinutes = startMinutes + durationMinutes
-
-    const endHours = Math.floor(endMinutes / 60)
-    const endMins = endMinutes % 60
-
-    return `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`
-  }
-
-  /**
-   * Validate that the provider has not closed the day via AvailabilityException
-   */
-  private async validateClosedDay(
-    providerId: string,
-    bookingDate: Date
-  ): Promise<Result<void, BookingError>> {
-    if (!this.deps.getAvailabilityException) {
-      return Result.ok(undefined)
-    }
-
-    const exception = await this.deps.getAvailabilityException(providerId, bookingDate)
-
-    if (!exception) {
-      return Result.ok(undefined)
-    }
-
-    if (exception.isClosed) {
-      const message = exception.reason
-        ? `Leverantören är stängd detta datum: ${exception.reason}`
-        : 'Leverantören är stängd detta datum'
-      return Result.fail({ type: 'PROVIDER_CLOSED', message })
-    }
-
-    // Exception exists but isClosed=false means alternative hours -- allow booking
-    return Result.ok(undefined)
-  }
-
-  /**
-   * Validate route order for booking
-   */
-  private async validateRouteOrder(
-    routeOrderId: string,
-    providerId: string,
-    bookingDate: Date
-  ): Promise<Result<void, BookingError>> {
-    if (!this.deps.getRouteOrder) {
-      return Result.ok(undefined)
-    }
-
-    const routeOrder = await this.deps.getRouteOrder(routeOrderId)
-
-    if (!routeOrder) {
-      return Result.fail({
-        type: 'INVALID_ROUTE_ORDER',
-        message: 'RouteOrder hittades inte',
-      })
-    }
-
-    if (routeOrder.status !== 'open') {
-      return Result.fail({
-        type: 'INVALID_ROUTE_ORDER',
-        message: 'Rutten är inte längre öppen för bokningar',
-      })
-    }
-
-    if (bookingDate < routeOrder.dateFrom || bookingDate > routeOrder.dateTo) {
-      return Result.fail({
-        type: 'INVALID_ROUTE_ORDER',
-        message: 'Bokningsdatum måste vara inom ruttens datum-spann',
-      })
-    }
-
-    if (providerId !== routeOrder.providerId) {
-      return Result.fail({
-        type: 'INVALID_ROUTE_ORDER',
-        message: 'Provider matchar inte rutt-annonsen',
-      })
-    }
-
-    return Result.ok(undefined)
-  }
-
-  /**
-   * Validate travel time for a new booking
-   *
-   * Checks that there's enough time to travel between existing bookings
-   * and the new booking based on geographic locations.
-   *
-   * @returns Travel time in minutes if valid, or error if insufficient time
-   */
-  private async validateTravelTime(
-    customerId: string,
-    providerId: string,
-    bookingDate: Date,
-    startTime: string,
-    endTime: string,
-    provider: ProviderInfo
-  ): Promise<Result<number | undefined, BookingError>> {
-    // Check if travel time validation is configured
-    if (!this.deps.travelTimeService || !this.deps.getCustomerLocation) {
-      return Result.ok(undefined)
-    }
-
-    // Get customer location
-    const customerLocation = await this.deps.getCustomerLocation(customerId)
-
-    // Resolve location for the new booking (customer location or provider fallback)
-    const newBookingLocation = this.resolveBookingLocation(
-      customerLocation,
-      provider
-    )
-
-    // Get existing bookings with their customer locations
-    const existingBookingsData = await this.deps.bookingRepository.findByProviderAndDateWithLocation(
-      providerId,
-      bookingDate
-    )
-
-    // Convert to BookingWithLocation format
-    const existingBookings: BookingWithLocation[] = existingBookingsData.map(
-      (booking: BookingWithCustomerLocation) => ({
-        id: booking.id,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        location: this.resolveBookingLocationFromCustomer(booking.customer, provider),
-      })
-    )
-
-    // Create new booking data for validation
-    const newBooking: BookingWithLocation = {
-      id: 'new-booking',
-      startTime,
-      endTime,
-      location: newBookingLocation,
-    }
-
-    // Validate travel time
-    const result = this.deps.travelTimeService.hasEnoughTravelTime(
-      newBooking,
-      existingBookings
-    )
-
-    if (!result.valid) {
-      return Result.fail({
-        type: 'INSUFFICIENT_TRAVEL_TIME',
-        message: result.error || 'Otillräcklig restid mellan bokningar',
-        requiredMinutes: result.requiredGapMinutes || 0,
-        actualMinutes: result.actualGapMinutes || 0,
-      })
-    }
-
-    return Result.ok(result.travelTimeMinutes)
-  }
-
-  /**
-   * Resolve location for a booking based on customer location or provider fallback
-   */
-  private resolveBookingLocation(
-    customerLocation: CustomerLocationInfo | null,
-    provider: ProviderInfo
-  ): Location | undefined {
-    // Priority 1: Customer's saved address
-    if (customerLocation?.latitude && customerLocation?.longitude) {
-      const result = Location.create(
-        customerLocation.latitude,
-        customerLocation.longitude,
-        customerLocation.address || undefined
-      )
-      if (result.isSuccess) {
-        return result.value
-      }
-    }
-
-    // Priority 2: Provider's home address (fallback)
-    if (provider.latitude && provider.longitude) {
-      const result = Location.create(provider.latitude, provider.longitude)
-      if (result.isSuccess) {
-        return result.value
-      }
-    }
-
-    // No location available - will use default buffer
-    return undefined
-  }
-
-  /**
-   * Resolve location from existing booking's customer data
-   */
-  private resolveBookingLocationFromCustomer(
-    customer: { latitude: number | null; longitude: number | null; address: string | null },
-    provider: ProviderInfo
-  ): Location | undefined {
-    // Priority 1: Customer's location from the booking
-    if (customer.latitude && customer.longitude) {
-      const result = Location.create(
-        customer.latitude,
-        customer.longitude,
-        customer.address || undefined
-      )
-      if (result.isSuccess) {
-        return result.value
-      }
-    }
-
-    // Priority 2: Provider's home address (fallback)
-    if (provider.latitude && provider.longitude) {
-      const result = Location.create(provider.latitude, provider.longitude)
-      if (result.isSuccess) {
-        return result.value
-      }
-    }
-
-    return undefined
-  }
-}
-
-/**
- * Factory function for creating BookingService with production dependencies
- *
- * Follows the same pattern as createGroupBookingService().
- * Centralizes DI wiring so routes can use a single function call.
- */
-export function createBookingService(): BookingService {
-  return new BookingService({
-    bookingRepository: new PrismaBookingRepository(),
-    getService: async (id) => {
-      return prisma.service.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          providerId: true,
-          durationMinutes: true,
-          isActive: true,
-        },
-      })
-    },
-    getProvider: async (id) => {
-      return prisma.provider.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          userId: true,
-          isActive: true,
-          acceptingNewCustomers: true,
-          latitude: true,
-          longitude: true,
-        },
-      })
-    },
-    getAvailabilityException: async (providerId, date) => {
-      return prisma.availabilityException.findUnique({
-        where: { providerId_date: { providerId, date } },
-        select: {
-          isClosed: true,
-          reason: true,
-          startTime: true,
-          endTime: true,
-        },
-      })
-    },
-    getRouteOrder: async (id) => {
-      const routeOrder = await prisma.routeOrder.findUnique({
-        where: { id },
-        select: {
-          dateFrom: true,
-          dateTo: true,
-          status: true,
-          providerId: true,
-        },
-      })
-      if (!routeOrder || !routeOrder.providerId) {
-        return null
-      }
-      return {
-        dateFrom: routeOrder.dateFrom,
-        dateTo: routeOrder.dateTo,
-        status: routeOrder.status,
-        providerId: routeOrder.providerId,
-      }
-    },
-    getCustomerLocation: async (customerId) => {
-      return prisma.user.findUnique({
-        where: { id: customerId },
-        select: {
-          latitude: true,
-          longitude: true,
-          address: true,
-        },
-      })
-    },
-    hasCompletedBookingWith: async (providerId, customerId) => {
-      const count = await prisma.booking.count({
-        where: { providerId, customerId, status: 'completed' },
-      })
-      return count > 0
-    },
-    getProviderRescheduleSettings: async (providerId) => {
-      return prisma.provider.findUnique({
-        where: { id: providerId },
-        select: {
-          rescheduleEnabled: true,
-          rescheduleWindowHours: true,
-          maxReschedules: true,
-          rescheduleRequiresApproval: true,
-        },
-      })
-    },
-    travelTimeService: new TravelTimeService(),
-    createGhostUser: async (data) => {
-      const parts = data.name.trim().split(/\s+/)
-      const firstName = parts[0]
-      const lastName = parts.slice(1).join(' ') || ''
-
-      const { createGhostUser } = await import('@/lib/ghost-user')
-      return createGhostUser({
-        firstName,
-        lastName,
-        phone: data.phone,
-        email: data.email,
-      })
-    },
-  })
 }
