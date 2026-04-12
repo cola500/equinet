@@ -18,26 +18,23 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 24** ([sprint-24-parallel-refactor.md](sprint-24-parallel-refactor.md)):
+**Sprint 25** ([sprint-25-parallel-test.md](sprint-25-parallel-test.md)):
 
-| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
-|-------|------|----------|--------|--------|----------------|
-| S24-1 Extrahera BookingValidation | webb | done |
-| S24-2 ManualBookingDialog steg-split | webb | done |
-| S24-3 Snabba säkerhetsfixar | webb | done |
-| S24-4 Dependabot auto-merge | infra | done |
-| S24-5 iOS cleanup | ios | done |
-| S24-6 Hjälpartiklar till markdown | docs | done |
-| S24-7 Legacy docs svenska tecken | docs | done |
-| S24-8 Applicera parallel-sprint-regler | docs | done |
+| Story | Domän | Status |
+|-------|-------|--------|
+| S25-1 CustomerCard.tsx extrahera tabs | webb | pending |
+| S25-2 PrismaBookingRepository selects | webb | pending |
+| S25-3 Dokumentera worktree-agent-mönster | docs | pending |
+| S25-4 Backlog + roadmap cleanup | docs | pending |
 
-> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<id>.md`
-> Denna tabell uppdateras BARA av tech lead vid merge/avslut -- aldrig av dev-sessioner.
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
+> Denna tabell uppdateras BARA av tech lead vid merge/avslut.
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S24 | Parallell refactoring | 8/8 done (första parallella sprinten) |
 | S23 | Token-effektivitet | 8/8 done |
 | S22 | Lanseringsklar | 5/6 done (S22-3 blocked) |
 | S21 | Härdning inför lansering | 6/6 done |
