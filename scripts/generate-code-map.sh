@@ -149,5 +149,37 @@ for section in "provider:Provider (leverantör)" "customer:Kund" "admin:Admin"; 
   echo "" >> "$OUT"
 done
 
+# --- Feature flag mapping ---
+echo "" >> "$OUT"
+echo "## Feature flag -> fil-mapping" >> "$OUT"
+echo "" >> "$OUT"
+echo "> Vilka filer berörs om en flagga ändras? Genererat via grep." >> "$OUT"
+echo "" >> "$OUT"
+
+# Extract flag keys from definitions file
+defs="$ROOT/src/lib/feature-flag-definitions.ts"
+if [ -f "$defs" ]; then
+  flag_keys=$(grep -oP '^\s+\K\w+(?=:\s*\{)' "$defs" 2>/dev/null || grep -E '^\s+[a-z_]+:\s*\{' "$defs" | sed 's/:.*//' | tr -d ' ')
+
+  for flag in $flag_keys; do
+    # Search for flag references in ts/tsx files (exclude definitions file itself and test files)
+    refs=$(grep -rl "\"$flag\"\|'$flag'" "$ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null \
+      | grep -v "feature-flag-definitions" \
+      | grep -v "\.test\." \
+      | grep -v "__tests__" \
+      | sort -u)
+
+    if [ -n "$refs" ]; then
+      echo "### \`$flag\`" >> "$OUT"
+      echo "" >> "$OUT"
+      for ref in $refs; do
+        rel=$(echo "$ref" | sed "s|$ROOT/||")
+        echo "- \`$rel\`" >> "$OUT"
+      done
+      echo "" >> "$OUT"
+    fi
+  done
+fi
+
 echo "Code map generated: $OUT"
 wc -l "$OUT"

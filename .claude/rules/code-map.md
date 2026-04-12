@@ -236,3 +236,192 @@
 | users | `src/app/admin/users/page.tsx` |
 | verifications | `src/app/admin/verifications/page.tsx` |
 
+
+## Feature flag -> fil-mapping
+
+> Vilka filer berörs om en flagga ändras? Genererat via grep.
+
+### `voice_logging`
+
+- `src/app/api/voice-log/confirm/route.ts`
+- `src/app/api/voice-log/route.ts`
+- `src/app/provider/bookings/page.tsx`
+- `src/app/provider/calendar/page.tsx`
+- `src/app/provider/dashboard/page.tsx`
+- `src/components/layout/ProviderNav.tsx`
+
+### `route_planning`
+
+- `src/app/api/native/announcements/[id]/cancel/route.ts`
+- `src/app/api/route-orders/[id]/bookings/route.ts`
+- `src/app/api/route-orders/[id]/route.ts`
+- `src/app/api/route-orders/announcements/route.ts`
+- `src/app/api/route-orders/available/route.ts`
+- `src/app/api/route-orders/my-orders/route.ts`
+- `src/app/api/route-orders/route.ts`
+- `src/app/api/routes/[id]/route.ts`
+- `src/app/api/routes/[id]/stops/[stopId]/route.ts`
+- `src/app/api/routes/my-routes/route.ts`
+- `src/app/api/routes/route.ts`
+- `src/app/provider/dashboard/page.tsx`
+- `src/components/layout/ProviderNav.tsx`
+
+### `route_announcements`
+
+- `src/app/announcements/page.tsx`
+- `src/app/api/native/announcements/[id]/detail/route.ts`
+- `src/app/api/native/announcements/route.ts`
+- `src/components/layout/ProviderNav.tsx`
+
+### `customer_insights`
+
+- `src/app/api/provider/customers/[customerId]/insights/route.ts`
+
+### `due_for_service`
+
+- `src/app/api/customer/due-for-service/route.ts`
+- `src/app/api/customer/horses/[horseId]/intervals/route.ts`
+- `src/app/api/native/due-for-service/route.ts`
+- `src/app/api/provider/due-for-service/route.ts`
+- `src/app/customer/horses/[id]/page.tsx`
+- `src/components/layout/ProviderNav.tsx`
+- `src/domain/notification/RouteAnnouncementNotifierFactory.ts`
+- `src/hooks/useDueForService.ts`
+
+### `group_bookings`
+
+- `src/app/api/group-bookings/[id]/match/route.ts`
+- `src/app/api/group-bookings/[id]/participants/[pid]/route.ts`
+- `src/app/api/group-bookings/[id]/route.ts`
+- `src/app/api/group-bookings/available/route.ts`
+- `src/app/api/group-bookings/join/route.ts`
+- `src/app/api/group-bookings/preview/route.ts`
+- `src/app/api/group-bookings/route.ts`
+- `src/app/api/native/group-bookings/[id]/match/route.ts`
+- `src/app/api/native/group-bookings/[id]/route.ts`
+- `src/app/api/native/group-bookings/available/route.ts`
+- `src/components/layout/CustomerNav.tsx`
+- `src/components/layout/ProviderNav.tsx`
+
+### `business_insights`
+
+- `src/app/api/native/insights/route.ts`
+- `src/app/provider/insights/page.tsx`
+- `src/components/layout/ProviderNav.tsx`
+
+### `self_reschedule`
+
+- `src/app/api/bookings/[id]/reschedule/route.ts`
+- `src/app/provider/profile/page.tsx`
+
+### `recurring_bookings`
+
+- `src/app/api/booking-series/[id]/cancel/route.ts`
+- `src/app/api/booking-series/[id]/route.ts`
+- `src/app/api/booking-series/route.ts`
+- `src/app/provider/profile/page.tsx`
+- `src/components/booking/RecurringSection.tsx`
+- `src/components/calendar/ManualBookingDialog.tsx`
+- `src/domain/booking/BookingSeriesService.ts`
+
+### `offline_mode`
+
+- `src/app/provider/debug/page.tsx`
+- `src/components/calendar/ManualBookingDialog.tsx`
+- `src/components/provider/InstallPrompt.tsx`
+- `src/components/provider/OfflineBanner.tsx`
+- `src/components/providers/SWRProvider.tsx`
+- `src/hooks/useDebugLogger.ts`
+- `src/hooks/useMutationSync.ts`
+- `src/hooks/useOfflineGuard.ts`
+- `src/hooks/usePendingMutation.ts`
+
+### `follow_provider`
+
+- `src/app/api/follows/[providerId]/route.ts`
+- `src/app/api/follows/route.ts`
+- `src/app/api/route-orders/route.ts`
+- `src/app/providers/[id]/page.tsx`
+- `src/app/providers/page.tsx`
+
+### `municipality_watch`
+
+- `src/app/api/municipality-watches/[id]/route.ts`
+- `src/app/api/municipality-watches/route.ts`
+- `src/app/api/route-orders/route.ts`
+- `src/app/customer/profile/page.tsx`
+- `src/domain/notification/RouteAnnouncementNotifierFactory.ts`
+
+### `provider_subscription`
+
+- `src/app/api/provider/subscription/checkout/route.ts`
+- `src/app/api/provider/subscription/portal/route.ts`
+- `src/app/api/provider/subscription/status/route.ts`
+- `src/app/provider/profile/page.tsx`
+- `src/domain/subscription/SubscriptionServiceFactory.ts`
+
+### `customer_invite`
+
+- `src/app/api/auth/accept-invite/route.ts`
+- `src/app/api/provider/customers/[customerId]/invite/route.ts`
+- `src/app/api/provider/customers/[customerId]/merge/route.ts`
+
+### `push_notifications`
+
+- `src/app/api/device-tokens/route.ts`
+- `src/domain/notification/PushDeliveryService.ts`
+
+### `help_center`
+
+- `src/app/customer/help/[slug]/page.tsx`
+- `src/app/customer/help/page.tsx`
+- `src/app/provider/help/[slug]/page.tsx`
+- `src/app/provider/help/page.tsx`
+- `src/app/provider/profile/page.tsx`
+- `src/app/provider/route-planning/page.tsx`
+- `src/app/provider/voice-log/page.tsx`
+- `src/components/layout/CustomerNav.tsx`
+- `src/components/layout/ProviderNav.tsx`
+
+### `stable_profiles`
+
+- `src/app/api/horses/[id]/stable/route.ts`
+- `src/app/api/stable/invites/[id]/route.ts`
+- `src/app/api/stable/invites/route.ts`
+- `src/app/api/stable/profile/route.ts`
+- `src/app/api/stable/spots/[spotId]/route.ts`
+- `src/app/api/stable/spots/route.ts`
+- `src/app/api/stables/[stableId]/route.ts`
+- `src/app/api/stables/invites/[token]/accept/route.ts`
+- `src/app/api/stables/invites/[token]/route.ts`
+- `src/app/api/stables/route.ts`
+- `src/app/customer/profile/page.tsx`
+- `src/app/stable/invites/page.tsx`
+- `src/app/stable/layout.tsx`
+- `src/app/stables/[stableId]/page.tsx`
+- `src/app/stables/page.tsx`
+- `src/components/customer/horses/HorseInfoSection.tsx`
+- `src/components/layout/CustomerNav.tsx`
+- `src/components/layout/Header.tsx`
+
+### `stripe_payments`
+
+- `src/app/api/bookings/[id]/payment/route.ts`
+- `src/app/customer/bookings/page.tsx`
+
+### `demo_mode`
+
+- `src/app/provider/debug/page.tsx`
+- `src/app/provider/export/page.tsx`
+- `src/app/provider/profile/page.tsx`
+- `src/app/provider/reviews/page.tsx`
+- `src/app/provider/routes/page.tsx`
+- `src/app/provider/services/page.tsx`
+- `src/app/provider/settings/integrations/page.tsx`
+- `src/app/provider/verification/page.tsx`
+- `src/components/layout/Header.tsx`
+
+### `supabase_auth_poc`
+
+- `src/app/api/v2/test-auth/route.ts`
+
