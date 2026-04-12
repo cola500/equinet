@@ -26,10 +26,10 @@ sections:
 | S24-2 ManualBookingDialog steg-split | fullstack (webb) | Session 1 | done | feature/s24-2-manual-booking-dialog | - |
 | S24-3 Snabba säkerhetsfixar | fullstack (webb) | Session 1 | done | feature/s24-3-security-fixes | - |
 | S24-4 Dependabot auto-merge | fullstack (infra) | Session 1 | done | feature/s24-4-dependabot-auto-merge | - |
-| S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |
-| S24-6 Hjälpartiklar till markdown | fullstack (docs) | - | pending | - | - |
-| S24-7 Legacy docs svenska tecken | fullstack (docs) | - | pending | - | - |
-| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | pending | - | - |
+| S24-5 iOS cleanup | fullstack (ios) | Session 2 | done | feature/s24-5-ios-cleanup | - |
+| S24-6 Hjälpartiklar till markdown | fullstack (docs) | Session 2 | done | feature/s24-6-help-articles-markdown | - |
+| S24-7 Legacy docs svenska tecken | fullstack (docs) | Session 2 | done | feature/s24-5-ios-cleanup | - |
+| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | done | - | applicerad på auto-assign.md |
 
 ## Tidigare sprintar (alla klara)
 
