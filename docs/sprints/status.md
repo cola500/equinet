@@ -23,7 +23,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S23-1 Spike tokenförbrukning | fullstack | autonom | done | feature/s23-1-token-spike | - |
-| S23-2 Selektiva process-rules | fullstack | - | pending | - | - |
+| S23-2 Selektiva process-rules | fullstack | autonom | done | feature/s23-2-selective-rules | - |
 | S23-3 Auto-generera kodkartan | fullstack | - | pending | - | - |
 | S23-4 Feature flag -> fil-mapping | fullstack | - | pending | - | - |
 | S23-5 Komprimera CLAUDE.md | fullstack | - | pending | - | - |

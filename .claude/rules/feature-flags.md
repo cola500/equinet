@@ -3,8 +3,11 @@ title: "Feature Flags"
 description: "Prioritetsordning, standardmonster och checklista for feature flags"
 category: rule
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-04-12
 tags: [feature-flags, server, client, testing]
+paths:
+  - "src/lib/feature-flag*"
+  - "src/components/providers/FeatureFlagProvider*"
 sections:
   - Prioritetsordning
   - Filer

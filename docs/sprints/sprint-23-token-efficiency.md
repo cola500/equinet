@@ -2,7 +2,7 @@
 title: "Sprint 23: Token-effektivitet"
 description: "Minska tokenförbrukning per session genom smartare kontext, kodkarta och dedup"
 category: sprint
-status: draft
+status: active
 last_updated: 2026-04-12
 tags: [sprint, tokens, efficiency, agent, dx]
 sections:
@@ -58,20 +58,19 @@ Systematisk genomgång av all automatiskt laddad kontext. Identifiera vad som ka
 **Effort:** 1h
 **Roll:** fullstack
 
-Baserat på spiken: lägg till `paths:`-frontmatter på rules som bara behövs i specifika situationer.
+Baserat på spiken (S23-1): lägg till `paths:`-frontmatter på rules som kan göras selektiva.
 
-**Troliga kandidater:**
-- `auto-assign.md` -> laddas vid `docs/sprints/*`
-- `autonomous-sprint.md` -> laddas vid `docs/sprints/*`
-- `team-workflow.md` -> laddas vid `docs/sprints/*`, `docs/done/*`, `docs/plans/*`
-- `tech-lead.md` -> laddas vid `docs/sprints/*`
-- `code-review-checklist.md` -> laddas vid `src/app/api/**`
-- `code-map.md` -> laddas vid `src/**` (inte vid docs-only arbete)
+**OBS (spike-fynd):** auto-assign.md, autonomous-sprint.md och team-workflow.md KAN INTE göras selektiva -- de triggas av "kör"-kommandon i chatten, inte filändringar. Paths-matchning funkar inte för dem.
+
+**Filer att göra selektiva (3 st, 338 rader):**
+- `code-review-checklist.md` (154 rader) -> `paths: ["src/**"]`
+- `feature-flags.md` (106 rader) -> `paths: ["src/lib/feature-flag*", "src/components/providers/FeatureFlagProvider*"]`
+- `tech-lead.md` (78 rader) -> `paths: ["docs/sprints/*"]`
 
 **Acceptanskriterier:**
-- [ ] Minst 4 rules-filer gjorda selektiva
-- [ ] Kontext per session minskar med >400 rader
-- [ ] Sprint-flödet fungerar fortfarande (auto-assign triggar vid "kör")
+- [ ] 3 rules-filer gjorda selektiva med paths-frontmatter
+- [ ] Kontext per session minskar med ~338 rader
+- [ ] Sprint-flödet fungerar fortfarande (auto-assign, autonomous-sprint, team-workflow oförändrade)
 
 ---
 
@@ -117,22 +116,33 @@ Utöka kodkartan med en sektion som mappar varje feature flag till de filer som 
 
 ---
 
-### S23-5: Komprimera CLAUDE.md Key Learnings
+### S23-5: Komprimera CLAUDE.md + rensa MEMORY.md
 
 **Prioritet:** 5
 **Effort:** 1h
 **Roll:** fullstack
 
-CLAUDE.md har 179 bullet points under Key Learnings. Många är iOS-specifika (laddas alltid, behövs sällan). Dela upp:
+Tre åtgärder från spiken (S23-1), totalt ~200 rader besparing:
 
-- **CLAUDE.md** behåller: Serverless, Domain Patterns, Utvecklingsmönster (webb)
-- **Ny `.claude/rules/ios-learnings.md`** med `paths: ["ios/**"]`: alla iOS-learnings
-- **Rensa** learnings som redan finns i rules-filer (duplicering)
+**1. Flytta iOS-learnings (120 rader)**
+- Ny `.claude/rules/ios-learnings.md` med `paths: ["ios/**"]`
+- Flytta alla 33 iOS-bullet points + iOS-testflödet från CLAUDE.md
+- CLAUDE.md behåller: Serverless, Domain Patterns, Utvecklingsmönster (webb), RLS
+
+**2. Rensa MEMORY.md sessionshistorik (50 rader)**
+- Ta bort "Senaste sessioner" (session 112-116) -- tillgänglig via `git log`
+- Komprimera Feature Flags och iOS-arkitektur-sektionerna
+
+**3. Ta bort duplicerad Testing-sektion (30 rader)**
+- BDD dual-loop beskrivs både i CLAUDE.md och `.claude/rules/testing.md`
+- CLAUDE.md refererar testing.md istället för att duplicera
 
 **Acceptanskriterier:**
-- [ ] CLAUDE.md Key Learnings krympt med >50 rader
-- [ ] iOS-learnings i separat selektiv fil
+- [ ] CLAUDE.md krympt med >150 rader
+- [ ] iOS-learnings i separat selektiv fil med paths: ["ios/**"]
+- [ ] MEMORY.md sessionshistorik borttagen
 - [ ] Inga learnings förlorade (flyttade, inte raderade)
+- [ ] Testing-referens istället för duplicering
 
 ---
 
