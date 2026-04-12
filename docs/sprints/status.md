@@ -22,14 +22,17 @@ sections:
 
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
-| S24-1 Extrahera BookingValidation | fullstack (webb) | Session 1 | done | feature/s24-1-booking-validation | - |
-| S24-2 ManualBookingDialog steg-split | fullstack (webb) | Session 1 | done | feature/s24-2-manual-booking-dialog | - |
-| S24-3 Snabba säkerhetsfixar | fullstack (webb) | Session 1 | done | feature/s24-3-security-fixes | - |
-| S24-4 Dependabot auto-merge | fullstack (infra) | Session 1 | done | feature/s24-4-dependabot-auto-merge | - |
-| S24-5 iOS cleanup | fullstack (ios) | Session 2 | done | feature/s24-5-ios-cleanup | - |
-| S24-6 Hjälpartiklar till markdown | fullstack (docs) | Session 2 | done | feature/s24-6-help-articles-markdown | - |
-| S24-7 Legacy docs svenska tecken | fullstack (docs) | Session 2 | done | feature/s24-5-ios-cleanup | - |
-| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | done | - | applicerad på auto-assign.md |
+| S24-1 Extrahera BookingValidation | webb | done |
+| S24-2 ManualBookingDialog steg-split | webb | done |
+| S24-3 Snabba säkerhetsfixar | webb | done |
+| S24-4 Dependabot auto-merge | infra | done |
+| S24-5 iOS cleanup | ios | done |
+| S24-6 Hjälpartiklar till markdown | docs | done |
+| S24-7 Legacy docs svenska tecken | docs | done |
+| S24-8 Applicera parallel-sprint-regler | docs | done |
+
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<id>.md`
+> Denna tabell uppdateras BARA av tech lead vid merge/avslut -- aldrig av dev-sessioner.
 
 ## Tidigare sprintar (alla klara)
 
