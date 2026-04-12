@@ -89,7 +89,7 @@ Sessionen delades i tva context windows. Den andra borjade med att lasa filer so
 - **Bearer-auth helper**: `authFromMobileToken(request)` extraherar + verifierar i ett steg
 
 ### Vitest + jose gotcha
-`@vitest-environment node` MASTE anges som kommentardirektiv i testfiler som anvander jose. jsdom-miljon saknar korrekt Uint8Array-hantering for jose v6.
+`@vitest-environment node` MASTE anges som kommentardirektiv i testfiler som använder jose. jsdom-miljon saknar korrekt Uint8Array-hantering for jose v6.
 
 ### Atomisk repository-operation
 `revokeAndCreate(revokeId, createData)` wrappat i `prisma.$transaction([])` for operationer som maste lyckas eller misslyckas tillsammans.
@@ -103,17 +103,17 @@ Sessionen delades i tva context windows. Den andra borjade med att lasa filer so
 4. Varfor? Projektet har `environment: "jsdom"` i vitest.config.ts (for React-komponenter)
 5. Varfor? Det finns ingen per-fil override som standard
 
-**Atgard:** `@vitest-environment node` som kommentardirektiv i alla server-only testfiler som anvander kryptografi
+**Åtgärd:** `@vitest-environment node` som kommentardirektiv i alla server-only testfiler som använder kryptografi
 **Status:** Implementerad
 
 ### Problem: Sakerhetsagent rapporterade felaktiga fynd
 1. Varfor? Agenten sa att rate limiting saknades pa POST /mobile-token (det fanns)
 2. Varfor? Agenten laste filerna men missade `rateLimiters.mobileToken`-anropet
-3. Varfor? Agenten hade inte kontext om vilka andringar som gjorts under sessionen
+3. Varfor? Agenten hade inte kontext om vilka ändringar som gjorts under sessionen
 4. Varfor? Background-agenten startades innan feature flag-borttagningen var klar
 5. Varfor? Agenten laste originalkoden, inte den uppdaterade versionen
 
-**Atgard:** Starta sakerhetsagenten EFTER alla andringar ar klara, inte parallellt med pagaende arbete
+**Åtgärd:** Starta sakerhetsagenten EFTER alla ändringar ar klara, inte parallellt med pågående arbete
 **Status:** Lard for framtida sessioner
 
 ## Larandeeffekt

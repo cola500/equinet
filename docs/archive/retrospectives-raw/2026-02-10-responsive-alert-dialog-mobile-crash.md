@@ -27,7 +27,7 @@
 Utan tillgang till browser-konsol (felet var pa mobiltelefon i produktion) identifierades grundorsaken genom att jamfora vilka sidor som kraschade vs fungerade. Korrelationen "alla sidor med ResponsiveAlertDialog kraschar" pekade direkt pa boven.
 
 ### 2. Snabb fix utan logikandringar
-Fixen var en ren rendering-andring: flytta fran always-mounted (`open={!!state}`) till conditionally-mounted (`{state && <Dialog open={true}>}`). Noll affarslogik andrades, noll tester behövde uppdateras.
+Fixen var en ren rendering-ändring: flytta fran always-mounted (`open={!!state}`) till conditionally-mounted (`{state && <Dialog open={true}>}`). Noll affarslogik andrades, noll tester behövde uppdateras.
 
 ### 3. Defensiv fix av alla drabbade sidor
 Alla tre sidor med ResponsiveAlertDialog fixades i samma session, inklusive `group-bookings/[id]` som annu inte rapporterats som kraschad men hade samma monster.
@@ -76,4 +76,4 @@ Pa desktop stanger AlertDialogCancel dialogen automatiskt (Radix-beteende). Pa m
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Komponenter som byter mellan tva olika bibliotek (Radix AlertDialog vs vaul Drawer) baserat pa viewport bor ALDRIG alltid-monteras med `open={false}`. Kontextbytet vid hydration ar inte atomart ur vaul:s perspektiv. Anvand villkorad rendering sa att komponenten bara mountar nar den ska visas -- da sker ingen kontextswitch.
+**Nyckelinsikt:** Komponenter som byter mellan tva olika bibliotek (Radix AlertDialog vs vaul Drawer) baserat pa viewport bor ALDRIG alltid-monteras med `open={false}`. Kontextbytet vid hydration ar inte atomart ur vaul:s perspektiv. Använd villkorad rendering sa att komponenten bara mountar nar den ska visas -- da sker ingen kontextswitch.

@@ -22,7 +22,7 @@ sections:
 
 ---
 
-## Oversikt
+## Översikt
 
 | Miljo | URL | Databas (Supabase) | Auth | Deploy |
 |-------|-----|--------------------|------|--------|
@@ -45,7 +45,7 @@ Startas med `npm run db:up` (Docker Compose, `postgres:17-alpine`).
 
 ### Miljovariabler
 
-Konfigureras i `.env`. Se `.env.example` for alla tillgangliga variabler.
+Konfigureras i `.env`. Se `.env.example` for alla tillgängliga variabler.
 
 **Skillnader mot produktion:**
 - Rate limiting: In-memory fallback (hogre granser)
@@ -149,7 +149,7 @@ Next.js prioriterar `.env.local` over `.env`. Om du har bade filer och de inneha
 .env        -> Lokal Docker (ignoreras)
 ```
 
-**Losning:** Ta bort `.env.local` for lokal utveckling, eller uppdatera `DATABASE_URL` i bada filerna.
+**Lösning:** Ta bort `.env.local` for lokal utveckling, eller uppdatera `DATABASE_URL` i bada filerna.
 
 ---
 

@@ -38,7 +38,7 @@ sections:
 
 **Alla fixade:** 3 migrationer applicerade, 5 registrerade, 1 failed-post borttagen.
 
-## Atgarder
+## Åtgärder
 
 ### 1. OBLIGATORISK: Ny done-fil-checklista (omedelbart)
 
@@ -80,7 +80,7 @@ Utoka `npm run deploy` att:
 
 ### 5. OVERVÄG: Byt till Supabase-migrationer (langsiktigt)
 
-Prisma-migrationer i `prisma/migrations/` och Supabase-migrationer i `supabase/migrations/` ar tva separata system. Ren SQL (RLS, pg_cron, triggers) passar battre i `supabase/migrations/` som kan koras via `supabase db push`. Schema-andringar (modeller) forblir i Prisma.
+Prisma-migrationer i `prisma/migrations/` och Supabase-migrationer i `supabase/migrations/` ar tva separata system. Ren SQL (RLS, pg_cron, triggers) passar battre i `supabase/migrations/` som kan koras via `supabase db push`. Schema-ändringar (modeller) forblir i Prisma.
 
 **Risk:** Tva migrationssystem okar komplexitet. Beslut kravs fran lead.
 

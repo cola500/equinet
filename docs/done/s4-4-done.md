@@ -14,7 +14,7 @@ sections:
 
 ## Acceptanskriterier
 
-- [x] Minst 3 polish-forbattringar genomforda (5 vyer fick haptics)
+- [x] Minst 3 polish-forbattringar genomförda (5 vyer fick haptics)
 - [x] iOS-tester grona (85 tester, 0 failures)
 - [ ] Visuell verifiering med mobile-mcp (haptics kravs fysisk enhet)
 

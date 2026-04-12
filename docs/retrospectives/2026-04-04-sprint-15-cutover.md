@@ -28,7 +28,7 @@ sections:
 |-------|-------------|-----|
 | S15-0 | Fixa E2E i CI (lokal Supabase) | (fran tidigare session) |
 | S15-1 | Hook + trigger + RLS pa prod (7 migrationer) | (fran tidigare session) |
-| S15-2 | Migrera 17 anvandare (14 med losenord) | ~1h |
+| S15-2 | Migrera 17 anvandare (14 med lösenord) | ~1h |
 | S15-3 | Vercel env -> prod Supabase | ~30min |
 | S15-4 | Smoke-test + RLS-bugg fixad | ~30min |
 | S15-5 | Pentest: manuellt + OWASP ZAP + security-reviewer | ~1h |
@@ -39,7 +39,7 @@ sections:
 ## Cutover lyckad?
 
 **JA.** Supabase Auth + RLS kor i produktion. Alla sidor fungerar.
-Login, bokningar, kunder, tjanster, kalender, recensioner -- verifierat via Playwright.
+Login, bokningar, kunder, tjänster, kalender, recensioner -- verifierat via Playwright.
 
 ---
 
@@ -65,7 +65,7 @@ Login, bokningar, kunder, tjanster, kalender, recensioner -- verifierat via Play
 
 1. **`.env.local` trumfade `.env.supabase`**: Migrationsscriptet laste fran lokala
    Docker-databasen istallet for prod. Ledde till 13 misslyckade user-skapanden
-   (fel UUID:n). Losning: explicit `parseEnvFile()` istallet for `dotenv`.
+   (fel UUID:n). Lösning: explicit `parseEnvFile()` istallet for `dotenv`.
    **Tid forlorad: ~30 min debugging.**
 
 2. **PoC och prod har olika UUID:n**: Antog att user-ID:n matchade, men PoC
@@ -103,7 +103,7 @@ Login, bokningar, kunder, tjanster, kalender, recensioner -- verifierat via Play
 | Metrisk | Varde |
 |---------|-------|
 | Stories | 7/7 (100%) |
-| Anvandare migrerade | 17 (14 med losenord, 3 utan) |
+| Anvandare migrerade | 17 (14 med lösenord, 3 utan) |
 | RLS-policies (totalt) | 30 (28 fran S14 + 2 nya User-policies) |
 | Pentest fynd (kritiska) | 0 |
 | Pentest fynd (pre-existerande HIGH) | 3 (backloggade) |
@@ -122,5 +122,5 @@ Login, bokningar, kunder, tjanster, kalender, recensioner -- verifierat via Play
 
 2. **Sprint 16 planering**: Fokus TBD -- iOS native auth? Stripe live? Features?
 
-3. **PoC-projektet som staging**: Borja anvanda for preview-deployer,
+3. **PoC-projektet som staging**: Borja använde for preview-deployer,
    verifiera att migrationer appliceras pa bada miljoerna.

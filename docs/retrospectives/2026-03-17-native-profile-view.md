@@ -55,7 +55,7 @@ Varje fas verifierades med tester + typecheck/build innan nasta fas paborrjades.
 ServicesViewModel/ServiceModels/ServiceFormSheet var perfekta forlagor. Kodstrukturen ar nastan identisk vilket gor framtida underhall lattare.
 
 ### 3. Agent-granskning fangade kritisk bugg
-Code-reviewer-agenten identifierade att `/api/account` anvander session auth (cookies), inte Bearer JWT. Delete account fran native app skulle alltid ge 401. Fixades genom att offloada till WebView.
+Code-reviewer-agenten identifierade att `/api/account` använder session auth (cookies), inte Bearer JWT. Delete account fran native app skulle alltid ge 401. Fixades genom att offloada till WebView.
 
 ### 4. Parallella agenter sparade tid
 Fas 0 (ios-expert + cx-ux-reviewer) och Fas 6 (code-reviewer + security-reviewer) korde parallellt utan konflikter. Total agentgranskningstid: ~3 min per par, men med noll vantetid tack vare bakgrundskörning.
@@ -70,7 +70,7 @@ Filen skapades innan auth-kompatibiliteten verifierades. Code review avslojjade 
 ### 2. GeocodeResult ar dead code
 Modellen skapades enligt planen men geocoding-funktionalitet implementerades inte (webbens adress-geocoding ar komplex). Borde ha tagits bort fran planen.
 
-**Prioritet:** LAG -- skadar inte, kan anvandas vid framtida geocoding-implementation.
+**Prioritet:** LAG -- skadar inte, kan används vid framtida geocoding-implementation.
 
 ### 3. TDD RED-steg svart pa iOS
 Kompilerade sprak (Swift) kraver att tester och implementation kompilerar tillsammans. Det ar omojligt att se testet "faila av ratt anledning" separat. Varde av TDD pa iOS-sidan ar mer i designdrivning (DI-protokoll, mock) an i red-green-cykeln.
@@ -80,7 +80,7 @@ Kompilerade sprak (Swift) kraver att tester och implementation kompilerar tillsa
 ## Patterns att spara
 
 ### Native Profile Pattern
-Profil-vyer med blandade lager (provider + user) anvander `$transaction` i API:t for atomisk uppdatering. Zod-schemat har bade provider-falt och user-falt, API:t separerar dem i transaktionen:
+Profil-vyer med blandade lager (provider + user) använder `$transaction` i API:t for atomisk uppdatering. Zod-schemat har bade provider-falt och user-falt, API:t separerar dem i transaktionen:
 
 ```typescript
 const { firstName, lastName, phone, ...providerFields } = parsed.data
@@ -92,23 +92,23 @@ await prisma.$transaction(async (tx) => {
 ```
 
 ### Segmented Picker i Sheet
-ProfileFormSheet anvander `Picker(.segmented)` for att vaxla mellan "Personligt" och "Foretag" inne i ett sheet. Undviker ett overladdat scrollformular och ger fokuserade redigeringsupplevelser per sektion.
+ProfileFormSheet använder `Picker(.segmented)` for att vaxla mellan "Personligt" och "Företag" inne i ett sheet. Undviker ett overladdat scrollformular och ger fokuserade redigeringsupplevelser per sektion.
 
 ### Auth-kompatibilitetskontroll for native endpoints
-Innan du lagger till native-anrop till befintliga web-routes, kontrollera alltid om routen anvander `auth()` (session/cookie) eller `authFromMobileToken()` (Bearer JWT). Native app har bara Bearer JWT.
+Innan du lagger till native-anrop till befintliga web-routes, kontrollera alltid om routen använder `auth()` (session/cookie) eller `authFromMobileToken()` (Bearer JWT). Native app har bara Bearer JWT.
 
 ## 5 Whys (Root-Cause Analysis)
 
-### Problem: DeleteAccountSheet skapades men kan inte anvandas (auth mismatch)
-1. Varfor? `/api/account` anvander session-cookie auth, inte Bearer JWT
+### Problem: DeleteAccountSheet skapades men kan inte används (auth mismatch)
+1. Varfor? `/api/account` använder session-cookie auth, inte Bearer JWT
 2. Varfor? Routen skapades for webben (NextAuth session) innan native-appen existerade
 3. Varfor? Planen antog att alla befintliga routes var kompatibla med native
 4. Varfor? Feature inventory kontrollerade UI-features men inte auth-mekanism per endpoint
 5. Varfor? Checklistan for native screen pattern saknar "auth-kompatibilitetskontroll"
 
-**Atgard:** Lagg till "Verifiera auth-mekanism per endpoint (session vs Bearer)" i CLAUDE.md native screen pattern steg 0.
+**Åtgärd:** Lagg till "Verifiera auth-mekanism per endpoint (session vs Bearer)" i CLAUDE.md native screen pattern steg 0.
 **Status:** Att gora
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Vid native-konvertering: verifiera alltid att underliggande API-routes stodjer Bearer JWT-auth innan du bygger native UI som anropar dem. Befintliga web-routes anvander session-cookies som inte finns i native-appen.
+**Nyckelinsikt:** Vid native-konvertering: verifiera alltid att underliggande API-routes stodjer Bearer JWT-auth innan du bygger native UI som anropar dem. Befintliga web-routes använder session-cookies som inte finns i native-appen.

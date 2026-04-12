@@ -18,7 +18,7 @@
 | Lager | Filer | Beskrivning |
 |-------|-------|-------------|
 | UI | `WeekCalendar.tsx` | Now-line (rod linje for aktuell tid), statusikoner pa bokningsblock, hover-hints, kontextuell popup med ref-baserad click-outside, exporterade `positionToTime`/`getNowPosition` for testning |
-| UI | `MonthCalendar.tsx` | Kontextuell popup vid klick pa dag ("Skapa bokning" / "Andra tillganglighet"), byte fran `<button>` till `<div role="button">` for valid HTML |
+| UI | `MonthCalendar.tsx` | Kontextuell popup vid klick pa dag ("Skapa bokning" / "Andra tillgänglighet"), byte fran `<button>` till `<div role="button">` for valid HTML |
 | UI | `BookingBlock.tsx` | Statusikoner (pending/confirmed/completed/paid), hover-hints med tid/service/kund |
 | UI | `BookingDetailDialog.tsx` | Klickbar telefon-lank (`tel:`) |
 | UI | `ManualBookingDialog.tsx` | Prefill av datum/tid fran popup-klick, fix for auto-oppning av service-dropdown |
@@ -71,7 +71,7 @@ useEffect(() => {
 ```
 `setTimeout(0)` forhindrar att samma klick som oppnade popupen ocksa stanger den. Robustare an `stopPropagation` som kan blockera andra event-lyssnare.
 
-### Undvik nastlade `<button>` -- anvand `<div role="button">`
+### Undvik nastlade `<button>` -- använd `<div role="button">`
 Nar en container-knapp innehaller andra klickbara element (boknings-prickar, popups), byt yttre `<button>` till `<div role="button" tabIndex={0}>` med `onKeyDown` for Enter/Space. Undviker invalid HTML och React-varningar.
 
 ## Larandeeffekt

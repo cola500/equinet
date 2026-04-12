@@ -44,7 +44,7 @@ Kordes: code-reviewer (enda relevanta -- mekanisk migrering, ingen ny sakerhet/U
 
 ## Laerdomar
 
-- **En wrapper-andring > 30 filredigeringar**: Att andtra `withApiHandler` internt istallet for varje route individuellt var ratt approach. S12-2 andrade varje route manuellt (routes anvande inte wrappern). S12-3s routes anvande alla wrappern, sa en enda andring racker.
+- **En wrapper-ändring > 30 filredigeringar**: Att andtra `withApiHandler` internt istallet for varje route individuellt var ratt approach. S12-2 andrade varje route manuellt (routes anvande inte wrappern). S12-3s routes anvande alla wrappern, sa en enda ändring racker.
 - **Integrationstester ALLTID i scope**: Samma gotcha som S12-2 -- integrationstester som mockar auth missas i planeringen. Gor ALLTID `grep -r 'auth-server' --include='*.test.ts' --include='*.integration.test.ts'` for att hitta alla.
 - **AuthUser -> SessionLike adapter**: Konverteringen ar enkel men MASTE testa providerId-invarianten explicit. `requireProvider` ger 403 "Leverantorsprofil saknas" vid null providerId, inte 401.
-- **Parallella agenter for mekaniska andringar**: 3 parallella agenter hanterade 29 testfiler pa ~6 minuter. Filerna overlappar inte sa inga merge-konflikter.
+- **Parallella agenter for mekaniska ändringar**: 3 parallella agenter hanterade 29 testfiler pa ~6 minuter. Filerna overlappar inte sa inga merge-konflikter.

@@ -14,7 +14,7 @@ sections:
 
 # S7-1: Ownership Guards -- Plan
 
-## Oversikt
+## Översikt
 
 Ersatt generiska `findById()` med ownership-scoped metoder i repositories.
 Migrera routes fran manuella ownership-checks till atomiska WHERE-villkor.
@@ -47,14 +47,14 @@ Utforskning av alla 7 karndoman-repositories visar:
 Testa att de returnerar null nar ownership inte matchar.
 
 **GREEN**: Implementera i IBookingRepository + PrismaBookingRepository.
-Anvand `findFirst` med `where: { id, providerId }` (atomisk WHERE).
+Använd `findFirst` med `where: { id, providerId }` (atomisk WHERE).
 Markera `findById()` som `@deprecated`.
 
 **REFACTOR**: Migrera anropare:
-- `/api/voice-log/confirm/route.ts` -> anvand `findByIdForProvider()`
-- `/api/provider/bookings/[id]/quick-note/route.ts` -> anvand `findByIdForProvider()`
-- `/api/reviews/route.ts` -> anvand `findByIdForCustomer()`
-- `/api/customer-reviews/route.ts` -> anvand `findByIdForProvider()`
+- `/api/voice-log/confirm/route.ts` -> använd `findByIdForProvider()`
+- `/api/provider/bookings/[id]/quick-note/route.ts` -> använd `findByIdForProvider()`
+- `/api/reviews/route.ts` -> använd `findByIdForCustomer()`
+- `/api/customer-reviews/route.ts` -> använd `findByIdForProvider()`
 - Uppdatera MockBookingRepository i tester
 
 ### Fas 2: CustomerReviewRepository + SubscriptionRepository (TDD)
@@ -76,7 +76,7 @@ Lagg till `no-restricted-syntax` i `.eslintrc.json` som varnar vid:
 ### Fas 4: Dokumentation
 
 Uppdatera code review-checklistan med:
-- "Ny query pa karndoman? Anvand repository med ownership i WHERE"
+- "Ny query pa karndoman? Använd repository med ownership i WHERE"
 - "Direkt prisma.X.find* i route? Flytta till repository"
 
 ## Risker
@@ -84,9 +84,9 @@ Uppdatera code review-checklistan med:
 1. **Tester med MockBookingRepository** -- maste uppdateras med nya metoder.
    Manga testfiler. Liten risk men mangden arbete kan vara storre an forvantat.
 2. **Admin-routes** -- admin behover `findById()` utan ownership.
-   Losning: behall `findById()` som `@deprecated` med kommentar "admin only".
-3. **Booking-receipt route** -- anvander OR-villkor (provider ELLER customer).
-   Losning: separat `findByIdForReceipt(id, providerId?, customerId?)`.
+   Lösning: behall `findById()` som `@deprecated` med kommentar "admin only".
+3. **Booking-receipt route** -- använder OR-villkor (provider ELLER customer).
+   Lösning: separat `findByIdForReceipt(id, providerId?, customerId?)`.
 
 ## Filer som andras
 

@@ -20,7 +20,7 @@ sections:
 
 ## Fortnox
 
-Fortnox-integrationen gor det mojligt for leverantorer att automatiskt skicka fakturor for genomforda bokningar till sitt Fortnox-konto.
+Fortnox-integrationen gor det möjligt for leverantörer att automatiskt skicka fakturor for genomförda bokningar till sitt Fortnox-konto.
 
 ### OAuth-flode
 
@@ -103,7 +103,7 @@ Koppla bort Fortnox-integrationen.
 
 ### POST /api/integrations/fortnox/sync
 
-Synka osynkade fakturor till Fortnox. Hittar genomforda bokningar med lyckade betalningar som inte skickats.
+Synka osynkade fakturor till Fortnox. Hittar genomförda bokningar med lyckade betalningar som inte skickats.
 
 **Auth:** Required (provider)
 **Rate limiter:** `api` (100/min produktion)

@@ -24,7 +24,7 @@
 
 ## Vad gick bra
 
-### 1. Systematisk kartlaggning fore andring
+### 1. Systematisk kartlaggning fore ändring
 Grep-sokning over hela API-lagret identifierade ~85 engelska felmeddelanden innan nagot andrades. Ger trygghet att inget missas.
 
 ### 2. Parallellisering med agenter

@@ -44,7 +44,7 @@ via Anthropic docs/API. Om forandrat: uppdatera.
 ### 2. Testa lokalt end-to-end (15 min)
 
 1. Starta dev-servern (`npm run dev`)
-2. Logga in som leverantor
+2. Logga in som leverantör
 3. Ga till kundregistret, valj en kund med bokningshistorik
 4. Klicka "Visa insikter"
 5. Verifiera: far vi ett svar? Visar UI:t ratt data?

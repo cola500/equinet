@@ -152,7 +152,7 @@ Dev pushar feature branch -> Tech lead kor check:all lokalt ->
 
 **Problem:**
 - Ingen CI-verifiering pa PR-niva (bara lokala gates)
-- Force push till main mojlig
+- Force push till main möjlig
 - `--no-verify` kringgara pre-push hook
 - Ingen approvalspårning
 
@@ -180,7 +180,7 @@ Dev pushar feature branch ->
 - Pre-push hook -- **fortfarande aktiv** (fangar problem lokalt fore push)
 - `check:all` -- **fortfarande relevant** (kor lokalt innan push for snabb feedback)
 
-### AGENTS.md-andringar
+### AGENTS.md-ändringar
 
 Station 7 i stationsflodets beskrivning andras fran:
 ```
@@ -193,9 +193,9 @@ Till:
 
 ## Risker
 
-| Risk | Sannolikhet | Konsekvens | Atgard |
+| Risk | Sannolikhet | Konsekvens | Åtgärd |
 |------|-------------|-----------|--------|
-| Johan maste vara approver | Hog | Blockerar merge | Satt Johan + Claude-bot som approvers, eller sank till 0 required approvals och anvand bara CI-gate |
+| Johan maste vara approver | Hog | Blockerar merge | Satt Johan + Claude-bot som approvers, eller sank till 0 required approvals och använd bara CI-gate |
 | CI flaky -> blockerar merge | Lag | Forsening | security-audit ar redan `continue-on-error`, ovriga ar stabila |
 | Dependabot-storm (manga PRs) | Medel | Brus | Gruppering (minor+patch batched), limit 10 PRs |
 

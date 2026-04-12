@@ -30,7 +30,7 @@
 - **apiCacheMatcher + connectivityNotifier**: SW fanger misslyckade API-requests och triggar omedelbar offline-detektion
 - Tillsammans ger de robust offline-detektion pa alla plattformar
 
-### 2. Minimal andring, maximal effekt
+### 2. Minimal ändring, maximal effekt
 - Bara 5 filer, +157/-7 rader. Liten blast radius. Ingen ny arkitektur -- byggde pa befintliga patterns (`connectivityNotifier`, `probeConnectivity()`).
 
 ### 3. Bra testtackning for edge cases

@@ -32,7 +32,7 @@ Extraherade `KeychainStorable`-protokoll fran KeychainHelper, skapade MockKeycha
 ## Vad som gick bra
 
 - **PBXFileSystemSynchronizedRootGroup med exceptions** -- vi forstar nu hur Xcode hanterar fil-delning mellan targets. `membershipExceptions` i exception sets styr vilka filer som ingar i respektive target.
-- **UserDefaults DI-pattern** fungerade perfekt for PendingActionStore. Minimalt invasiv andring: en ny `init(defaults:)` parameter med default-varde `UserDefaults.standard`.
+- **UserDefaults DI-pattern** fungerade perfekt for PendingActionStore. Minimalt invasiv ändring: en ny `init(defaults:)` parameter med default-varde `UserDefaults.standard`.
 - **KeychainStorable protocol + adapter pattern** gav testbar AuthManager utan att andra befintliga call-sites. ProductionKeychain-adaptern wrappar KeychainHelper statiska metoder.
 - **Fasindelning efter beroendegrad** (inga beroenden -> UserDefaults -> Keychain) gav smidig progression med tidig feedback.
 
@@ -54,7 +54,7 @@ Extraherade `KeychainStorable`-protokoll fran KeychainHelper, skapade MockKeycha
 
 8. **Xcode 26 kraver explicit .xctestplan-fil**: `shouldAutocreateTestPlan = "YES"` i schemat fungerar INTE tillforlitligt. Xcode skapar en `TestPlans`-referens (`container:EquinetTests`) men genererar inte den fysiska filen. Fix: skapa `EquinetTests.xctestplan` manuellt och referera med `container:EquinetTests.xctestplan` i schemat.
 
-9. **Xcode cachar testplan-referens i UserInterfaceState.xcuserstate**: Aven efter att schemat uppdaterats kan Xcode anvanda en cachad (trasig) referens. Att rensa xcuserstate hjalper ibland men loser inte grundproblemet.
+9. **Xcode cachar testplan-referens i UserInterfaceState.xcuserstate**: Aven efter att schemat uppdaterats kan Xcode använde en cachad (trasig) referens. Att rensa xcuserstate hjalper ibland men loser inte grundproblemet.
 
 ## 5 Whys: Varfor tappade Xcode exception sets?
 
@@ -75,15 +75,15 @@ Extraherade `KeychainStorable`-protokoll fran KeychainHelper, skapade MockKeycha
 5. **Varfor blandar Xcode tva approaches?** Xcode 26 migrerade fran `Testables` till `TestPlans` men GUI:t skapar ibland bada -- inkonsekvent serialisering.
 
 **Rotorsak**: Xcode 26 kraver en fysisk `.xctestplan`-fil nar schemat har ett `TestPlans`-block. Auto-create ar otillforlitligt.
-**Atgard**: Skapa ALLTID en explicit `.xctestplan`-fil vid nytt test-target. Committa den. Referera med `.xctestplan`-extension i schemat.
+**Åtgärd**: Skapa ALLTID en explicit `.xctestplan`-fil vid nytt test-target. Committa den. Referera med `.xctestplan`-extension i schemat.
 **Status**: Implementerad.
 
 ## Vad kan forbattras
 
 ### 1. Pbxproj-hantering via CLI ar fragilt
-Vi spenderade majoritet av sessionstiden pa att fixa pbxproj-problem (tappade exception sets, Info.plist-konflikter, testplan-referenser). Varje manuell Xcode-andring riskerar att forsta befintlig konfiguration.
+Vi spenderade majoritet av sessionstiden pa att fixa pbxproj-problem (tappade exception sets, Info.plist-konflikter, testplan-referenser). Varje manuell Xcode-ändring riskerar att forsta befintlig konfiguration.
 
-**Prioritet:** HOG -- overkvag att anvanda xcodeproj (Ruby gem) eller tuist for att generera pbxproj deterministiskt.
+**Prioritet:** HOG -- overkvag att använde xcodeproj (Ruby gem) eller tuist for att generera pbxproj deterministiskt.
 
 ### 2. Ingen CI for iOS-tester
 iOS-testerna kors bara lokalt via CLI. Inga GitHub Actions for xcodebuild test.

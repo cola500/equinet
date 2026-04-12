@@ -22,7 +22,7 @@ sections:
 
 ## Kontext
 
-Fas 1 (installbar PWA + lasbara offline-data for leverantorer) ar implementerad och mergad.
+Fas 1 (installbar PWA + lasbara offline-data for leverantörer) ar implementerad och mergad.
 Denna plan beskriver framtida faser for att bygga ut offline-stodet.
 
 **Implementerat (fas 1 -- session 47, 2026-02-19):**
@@ -54,13 +54,13 @@ Denna plan beskriver framtida faser for att bygga ut offline-stodet.
 ### Implementerade operationer
 | Operation | Endpoint | Status |
 |-----------|----------|--------|
-| Markera bokning genomford | `PATCH /api/bookings/:id` | Klar |
+| Markera bokning genomförd | `PATCH /api/bookings/:id` | Klar |
 | Uppdatera bokningsanteckning | `PATCH /api/bookings/:id` | Klar |
 | Uppdatera ruttstopp-status | `PATCH /api/routes/:id/stops` | Klar |
 | Logga arbete (text) | `POST /api/voice-log` | Ej implementerad |
 
 ### Tekniska val (avvikelser fran ursprunglig plan)
-- **Ingen Background Sync API** -- anvander istallet `useOnlineStatus` + manuell sync vid ateranslutning (fungerar pa alla plattformar inkl. Safari)
+- **Ingen Background Sync API** -- använder istallet `useOnlineStatus` + manuell sync vid ateranslutning (fungerar pa alla plattformar inkl. Safari)
 - **Last-write-wins** -- ingen manuell merge (for enkel MVP, konfliktdetektering planerad i fas 3)
 - **Rate-limit-medvetenhet** -- 429-svar atergar till pending (inte failed), exponentiell backoff med Retry-After-stod
 - **Stale recovery** -- stuck "syncing"-mutations aterstalls till "pending" vid varje sync-runda
@@ -77,7 +77,7 @@ Denna plan beskriver framtida faser for att bygga ut offline-stodet.
 - **Versionsstamplar**: Lagg till `updatedAt` + `version` pa Booking/RouteStop
 - **Optimistic concurrency**: Skicka version med mutation, servern avvisar om stale
 - **Konflikt-UI**: Toast med "Denna bokning har andrats av nagon annan. Vill du skriva over?"
-- **Sync-status-sida**: Visa alla pending/failed mutations for leverantoren med retry/discard-knappar
+- **Sync-status-sida**: Visa alla pending/failed mutations for leverantören med retry/discard-knappar
 
 ### Befintlig datamodell (implementerad i fas 2)
 ```
@@ -106,17 +106,17 @@ PendingMutation {
 - Samma 4h cache-staleness
 
 ### Risker
-- Kunder har generellt battre natatkomst an leverantorer (larre behov)
+- Kunder har generellt battre natatkomst an leverantörer (larre behov)
 - Annonskrav: annonsdata kan bli inaktuell snabbt (platser fylls)
 
 ---
 
 ## Fas 5: Smart Pre-fetching
 
-**Mal:** Proaktivt cacha data som leverantoren sannolikt behover.
+**Mal:** Proaktivt cacha data som leverantören sannolikt behover.
 
 ### Approach
-- **Ruttbaserad pre-fetch**: Nar leverantoren oppnar ruttplanering, cacha alla bokningar + kunddata for den ruttens stopp
+- **Ruttbaserad pre-fetch**: Nar leverantören oppnar ruttplanering, cacha alla bokningar + kunddata for den ruttens stopp
 - **Schemabaserad pre-fetch**: Cacha morgondagens bokningar automatiskt pa kvallen (om WiFi)
 - **Selective sync**: Bara synka data som andrats sedan senaste sync (delta-sync med `updatedAt`)
 

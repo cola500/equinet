@@ -42,13 +42,13 @@ sections:
 | Docs | `e2e-test-review.md` | Plan med fullstandig dokumentation av alla batchar |
 | Docs | `CLAUDE.md` | Button type="button" gotcha |
 
-### Batch-oversikt
+### Batch-översikt
 
 | Batch | Scope | Pass | Skip | Fixar |
 |-------|-------|------|------|-------|
 | 1: Infrastruktur | admin, auth, security-headers, feature-flag-toggle | 92 | 26 | Nav-selektorer, env-overrides |
 | 2: Bokningar | booking, calendar, manual-booking, flexible, group | 41 | 19 | CalendarHeader bugg, bokningsflode |
-| 3: Leverantor | provider, profile-edit, notes, accepting-customers | 50 | 6 | Profilsida flikar, CardTitle, svenska regex |
+| 3: Leverantör | provider, profile-edit, notes, accepting-customers | 50 | 6 | Profilsida flikar, CardTitle, svenska regex |
 | 4: Kund | profile, registry, reviews, insights, due-for-service | 44 | 0 | Tab-namn, mobil regex |
 | 5: Rutter & socialt | route-planning, announcements, notification, municipality, follow | 66 | 0 | Strict mode, heading, combobox-id |
 | 6: Ovrigt | recurring, reschedule, horses, payment, insights, offline, exploratory | 139 | 47 | Feature flag pollution (rotorsak) |
@@ -112,7 +112,7 @@ await page.getByRole('button', { name: /installningar/i }).click()
 await expect(page.getByText('Ombokningsinstallningar')).toBeVisible()
 ```
 
-### Strict mode-losningar (prioritetsordning)
+### Strict mode-lösningar (prioritetsordning)
 1. `{ exact: true }` -- nar text finns i bade kort och lang variant
 2. `{ level: 1 }` -- nar heading matchas pa flera nivaer
 3. `.first()` -- nar element dupliceras (titel + beskrivning)
@@ -128,7 +128,7 @@ await expect(page.getByText('Ombokningsinstallningar')).toBeVisible()
 4. **Varfor hade FLAG_DEFAULTS fel varden?** Mappen underhalls manuellt och synkades inte nar feature flag definitions andrades (env-overrides lades till utan att specen uppdaterades).
 5. **Varfor saknas automatisk synkronisering?** Det finns inget system som validerar att E2E feature flag-tester matchar feature-flag-definitions.ts.
 
-**Atgard:** Systemfix implementerad -- env-overrides i playwright.config.ts gor flaggor immuna mot DB-state. Feature-flag-toggle.spec.ts uppdaterad att skilja mellan toggleable och env-override flaggor.
+**Åtgärd:** Systemfix implementerad -- env-overrides i playwright.config.ts gor flaggor immuna mot DB-state. Feature-flag-toggle.spec.ts uppdaterad att skilja mellan toggleable och env-override flaggor.
 **Status:** Implementerad
 
 ### Problem: CalendarHeader triggade form-submit i bokningsdialogen
@@ -139,7 +139,7 @@ await expect(page.getByText('Ombokningsinstallningar')).toBeVisible()
 4. **Varfor testades inte CalendarHeader i form-kontext?** Unit-tester for CalendarHeader renderade den utanfor `<form>`.
 5. **Varfor saknas en lint-regel for buttons i forms?** React/HTML tillater implicit `type="submit"` -- det ar standard-beteende, inte ett fel.
 
-**Atgard:** Fixade alla 7 knappar i CalendarHeader med `type="button"`. Lade till gotcha i CLAUDE.md. Framtida pattern: ALLA Button-element inuti forms som INTE ska submita MASTE ha `type="button"`.
+**Åtgärd:** Fixade alla 7 knappar i CalendarHeader med `type="button"`. Lade till gotcha i CLAUDE.md. Framtida pattern: ALLA Button-element inuti forms som INTE ska submita MASTE ha `type="button"`.
 **Status:** Implementerad
 
 ## Larandeeffekt

@@ -14,7 +14,7 @@ sections:
 
 ## Acceptanskriterier
 
-- [x] Alla auth-routes anvander getClientIP() (register fixad)
+- [x] Alla auth-routes använder getClientIP() (register fixad)
 - [x] Alla Zod-scheman har .strict() (register, resend-verification, verify-email, native-session-exchange)
 - [x] RateLimitServiceError -> 503 i alla auth-routes (register, resend-verification, forgot-password, reset-password)
 - [x] refreshToken valideras med Zod i native-session-exchange
@@ -30,4 +30,4 @@ sections:
 ## Reviews
 
 - Kordes: code-reviewer (inline, mekanisk migrering)
-- Skippad plan-review (mekaniska andringar med tydligt monster)
+- Skippad plan-review (mekaniska ändringar med tydligt monster)

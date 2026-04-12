@@ -31,7 +31,7 @@ Webb-sidan `/provider/insights` har foljande features:
 
 ### Auth-verifiering
 
-- GET `/api/provider/insights?months=N` -- anvander `auth()` (session-cookie). **Behover native endpoint med Bearer JWT.**
+- GET `/api/provider/insights?months=N` -- använder `auth()` (session-cookie). **Behover native endpoint med Bearer JWT.**
 
 ### Feature flags
 
@@ -90,7 +90,7 @@ Webb-sidan `/provider/insights` har foljande features:
 
 ## Risker
 
-1. **Swift Charts** -- Forsta anvandningen i projektet. Behover importera Charts-framework. Tillgangligt fran iOS 16+.
+1. **Swift Charts** -- Forsta anvandningen i projektet. Behover importera Charts-framework. Tillgängligt fran iOS 16+.
 2. **Heatmap-rendering** -- CSS grid till SwiftUI Grid krav anpassning. 7 dagar x ~12 timmar = ~84 celler. Maste vara performant.
 3. **Berakningslogik-duplicering** -- Befintlig route har komplex berakningslogik. Extrahera till delad service for att undvika duplicering.
 4. **Cache per period** -- Olika perioder ger olika data. Cache-nyckel: `insights_cache_\(months)`. Tre separata caches (3/6/12). Alla rensas vid logout.

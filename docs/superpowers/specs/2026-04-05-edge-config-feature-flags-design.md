@@ -15,7 +15,7 @@ sections:
 
 # S17-6: Edge Config for feature flags
 
-## Oversikt
+## Översikt
 
 Byt read-path for feature flags fran PostgreSQL (30s cache, ~50ms) till Vercel Edge Config (<1ms global). DB kvar som source of truth for writes och som fallback.
 
@@ -60,7 +60,7 @@ Synk skickar hela flag-state (inte bara andrad flagga) for att Edge Config allti
 1. `getFeatureFlags()` anropas
 2. For varje flagga: kolla env var forst (synkront)
 3. **NYTT:** Lasa alla flaggor fran Edge Config (`getAll()`)
-4. Om Edge Config returerar data: anvand den
+4. Om Edge Config returerar data: använd den
 5. Om Edge Config failar/saknas: fall tillbaka till PostgreSQL (befintligt beteende)
 6. Fyll i saknade flaggor med kod-defaults
 
@@ -68,17 +68,17 @@ Synk skickar hela flag-state (inte bara andrad flagga) for att Edge Config allti
 
 Oforandrat. Klienten pollar `/api/feature-flags` var 60:e sekund. API-routen anropar `getFeatureFlags()` som nu laser fran Edge Config istallet for DB.
 
-## Andringar per fil
+## Ändringar per fil
 
 ### Nya filer
 
-| Fil | Innehall |
+| Fil | Innehåll |
 |-----|----------|
 | `src/lib/edge-config.ts` | Edge Config read/write wrapper. Exporterar `readFlagsFromEdgeConfig()` och `syncFlagsToEdgeConfig()`. Hanterar graceful fallback om env vars saknas. |
 
 ### Andrade filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/lib/feature-flags.ts` | `getFeatureFlags()`: lasa Edge Config forst, DB som fallback. `setFeatureFlagOverride()`: efter DB-upsert, anropa `syncFlagsToEdgeConfig()`. |
 | `src/lib/feature-flags.test.ts` | Nya tester for Edge Config-lasning och fallback. |
@@ -86,11 +86,11 @@ Oforandrat. Klienten pollar `/api/feature-flags` var 60:e sekund. API-routen anr
 
 ### Oforandra filer
 
-- `feature-flag-definitions.ts` -- ingen andring
-- `FeatureFlagProvider.tsx` -- ingen andring
-- `/api/feature-flags/route.ts` -- ingen andring (anropar getFeatureFlags() som vanligt)
-- `/api/admin/settings/route.ts` -- ingen andring (anropar setFeatureFlagOverride() som vanligt)
-- `IFeatureFlagRepository.ts` -- ingen andring (DB-skrivning kvar)
+- `feature-flag-definitions.ts` -- ingen ändring
+- `FeatureFlagProvider.tsx` -- ingen ändring
+- `/api/feature-flags/route.ts` -- ingen ändring (anropar getFeatureFlags() som vanligt)
+- `/api/admin/settings/route.ts` -- ingen ändring (anropar setFeatureFlagOverride() som vanligt)
+- `IFeatureFlagRepository.ts` -- ingen ändring (DB-skrivning kvar)
 
 ## Edge Config setup
 
@@ -152,7 +152,7 @@ async function syncFlagsToEdgeConfig(flags: Record<string, boolean>): Promise<vo
    - `syncFlagsToEdgeConfig()` ar tyst vid saknade env vars (graceful skip)
 
 2. `feature-flags.test.ts` (utoka befintliga):
-   - `getFeatureFlags()` laser fran Edge Config nar tillgangligt
+   - `getFeatureFlags()` laser fran Edge Config nar tillgängligt
    - `getFeatureFlags()` faller tillbaka till DB nar Edge Config failar
    - `setFeatureFlagOverride()` synkar till Edge Config efter DB-write
 
@@ -173,4 +173,4 @@ Fallback-logiken gor att systemet ALLTID fungerar utan Edge Config.
 
 - **Edge Config Free tier:** 1 store, 8 KB max. 19 flaggor (boolean) = ~500 bytes. Gott om marginal.
 - **Write-latens:** REST API-write tar ~200ms. Acceptabelt for admin-toggle (inte hot path).
-- **Lokal dev:** Ingen Edge Config lokalt. Systemet faller tillbaka till DB. Inga andringar i dev-workflow.
+- **Lokal dev:** Ingen Edge Config lokalt. Systemet faller tillbaka till DB. Inga ändringar i dev-workflow.

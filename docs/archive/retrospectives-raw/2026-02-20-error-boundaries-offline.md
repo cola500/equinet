@@ -50,7 +50,7 @@ Bara provider/error.tsx har unit-tester. Globala error.tsx ar nastan identisk oc
 ```
 error.tsx: useOnlineStatus() -> offline? visa WifiOff-UI : visa generisk error-UI
 ```
-Monstret: error.tsx renderas UTANFOR sidans komponenttrad, sa hall den enkel (inline markup, minimala imports). Anvand `useOnlineStatus()` for att skilja offline-fel fran riktiga buggar.
+Monstret: error.tsx renderas UTANFOR sidans komponenttrad, sa hall den enkel (inline markup, minimala imports). Använd `useOnlineStatus()` for att skilja offline-fel fran riktiga buggar.
 
 ### Inline markup i error boundaries
 Importera ALDRIG layout-komponenter (ProviderLayout etc.) i error.tsx. Om error boundary:n kraschar av en import visar Next.js sin inbyggda error-overlay (dev) eller blank sida (prod) -- exakt det problem vi forsaker losa.

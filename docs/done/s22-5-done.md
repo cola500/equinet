@@ -27,7 +27,7 @@ E2E smoke-svit (1.0 min, chromium + mobile + cleanup):
 | Test | Resultat |
 |------|----------|
 | Registrera ny kund | PASS |
-| Registrera ny leverantor | PASS |
+| Registrera ny leverantör | PASS |
 | Logga in som befintlig kund | PASS |
 | Felmeddelande vid ogiltig inloggning | PASS |
 | Logga ut | PASS |

@@ -33,7 +33,7 @@ sections:
 
 | Lager | Filer | Beskrivning |
 |-------|-------|-------------|
-| API Routes | 6 route-filer under `src/app/api/native/customers/` | GET/POST kunder, PUT/DELETE kund, GET/POST hastar, PUT/DELETE hast, GET/POST anteckningar, PUT/DELETE anteckning |
+| API Routes | 6 route-filer under `src/app/api/native/customers/` | GET/POST kunder, PUT/DELETE kund, GET/POST hästar, PUT/DELETE hast, GET/POST anteckningar, PUT/DELETE anteckning |
 | API Tester | 6 test-filer | 88 tester: auth (401), rate limit (429/503), validation (400), IDOR (404), happy path |
 | iOS Models | `CustomerModels.swift` | CustomerSummary (Hashable), CustomerHorse, CustomerNote, CustomerFilter, CustomerDetailTab, API response wrappers |
 | iOS ViewModel | `CustomersViewModel.swift` | @Observable med DI-protokoll, lokal filtrering+sok, optimistic delete, CRUD for kunder/hastar/anteckningar |
@@ -52,10 +52,10 @@ Planen hade 6 faser. /implement-skillen drev TDD-cykeln fas for fas med automati
 BookingsViewModel/NativeBookingsView-monstret kopplades direkt till CustomersViewModel/NativeCustomersView. DI-protokoll, optimistic UI, filter-bar, empty states -- allt ateranvandes. Minimalt nytankande behovdes.
 
 ### 3. Parallella utforskningsagenter sparade tid
-Tre Explore-agenter laste alla monsterfiler (API routes, iOS views, provider routes) parallellt medan jag vantade. Nar de var klara hade jag full oversikt over alla patterns.
+Tre Explore-agenter laste alla monsterfiler (API routes, iOS views, provider routes) parallellt medan jag vantade. Nar de var klara hade jag full översikt over alla patterns.
 
 ### 4. Simulator-verifiering med mobile-mcp
-Alla tre tabs (Oversikt, Hastar, Anteckningar) verifierades visuellt i simulator. Kundkortet visade korrekt data (namn, senaste bokning, telefon). Empty state for anteckningar med CTA-knapp.
+Alla tre tabs (Översikt, Hästar, Anteckningar) verifierades visuellt i simulator. Kundkortet visade korrekt data (namn, senaste bokning, telefon). Empty state for anteckningar med CTA-knapp.
 
 ## Vad kan forbattras
 
@@ -89,4 +89,4 @@ Security-reviewern rapporterade "saknad rate limiting pa samtliga sex routes" --
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Native Screen Pattern ar nu bevisat pa 4 skarmar (Dashboard, Kalender, Bokningar, Kunder). Monstret ar stabilt: aggregerat API + Codable models + DI ViewModel + SwiftUI vy + coordinator-agande. Nasta skarm (t.ex. Tjanster) kan implementeras pa under en session.
+**Nyckelinsikt:** Native Screen Pattern ar nu bevisat pa 4 skarmar (Dashboard, Kalender, Bokningar, Kunder). Monstret ar stabilt: aggregerat API + Codable models + DI ViewModel + SwiftUI vy + coordinator-agande. Nasta skarm (t.ex. Tjänster) kan implementeras pa under en session.

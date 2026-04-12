@@ -15,7 +15,7 @@ sections:
 
 ## Acceptanskriterier
 
-- [x] Feature inventory genomford
+- [x] Feature inventory genomförd
 - [x] Native vy visar intakter, tjanstefordelning, kundretention
 - [x] Swift Charts for grafer (inte WebView Recharts)
 - [x] ViewModel-tester (13 XCTest, BDD inre loop)
@@ -33,7 +33,7 @@ sections:
 ## Avvikelser
 
 1. **Berakningslogik duplicerad** mellan `/api/provider/insights` och `/api/native/insights`. Planerat beslut -- extrahera till delad service vid behov (refactoring).
-2. **Ingen Redis-cache pa native route** -- webbrouten anvander Upstash Redis-cache (10 min). Native routen forlitar sig pa SharedDataManager (5 min, klient-side). Kan laggas till vid behov.
+2. **Ingen Redis-cache pa native route** -- webbrouten använder Upstash Redis-cache (10 min). Native routen forlitar sig pa SharedDataManager (5 min, klient-side). Kan laggas till vid behov.
 3. **Info-popovers** implementerade som vanliga labels -- SwiftUI `.help()` modifier ar iOS 17+ och ger begransad kontroll. Kan forbattras med `.popover()` vid behov.
 
 ## Lardomar

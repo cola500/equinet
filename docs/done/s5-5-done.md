@@ -39,7 +39,7 @@ sections:
 3. **Stripe E2E spec** (`e2e/stripe-payment.spec.ts`):
    - Auto-skippar om `STRIPE_SECRET_KEY` saknas
    - Testar: klicka betala -> PaymentDialog -> fylla i kort (4242) -> bekraftelse
-   - Anvander `frameLocator` for Stripe iframe-interaktion
+   - Använder `frameLocator` for Stripe iframe-interaktion
 
 4. **Playwright config**:
    - `FEATURE_STRIPE_PAYMENTS: 'true'` -- betalningsknapp synlig i E2E
@@ -52,6 +52,6 @@ sections:
 
 ## Lardomar
 
-- **vi.mock() maste inkludera ALLA exports**: `NotificationType` enum fran NotificationService anvandes av BookingEventHandlers. Mock utan den ger "No export defined". Losning: `importOriginal` + spread.
+- **vi.mock() maste inkludera ALLA exports**: `NotificationType` enum fran NotificationService användes av BookingEventHandlers. Mock utan den ger "No export defined". Lösning: `importOriginal` + spread.
 - **BDD dual-loop-gap**: Unit-tester av routen (mockad service) fangade inte integrationsproblem. Integrationstester med riktig service + mockad Prisma ar den yttre loopen som saknade.
 - **PAYMENT_PROVIDER override i Playwright config**: Skyddar befintliga mock-tester fran att brytas av `.env.local` som satter `stripe`.

@@ -27,10 +27,10 @@ Med Stripe ar flödet asynkront: POST skapar PaymentIntent -> PaymentDialog med 
 Befintliga `payment.spec.ts`-tester forvantar instant success (mock).
 Med `PAYMENT_PROVIDER=stripe` returneras `pending` + `clientSecret` istallet.
 
-**Losning:** Overridea `PAYMENT_PROVIDER=mock` i playwright.config webServer.env.
+**Lösning:** Overridea `PAYMENT_PROVIDER=mock` i playwright.config webServer.env.
 Stripe-specen kör separat med `PAYMENT_PROVIDER=stripe` via env-override.
 
-### Fas 1: Config-andringar
+### Fas 1: Config-ändringar
 
 1. Lagg till `FEATURE_STRIPE_PAYMENTS: 'true'` i playwright.config webServer.env
 2. Lagg till `PAYMENT_PROVIDER: 'mock'` i playwright.config webServer.env (skyddar befintliga tester)
@@ -61,7 +61,7 @@ med iframes via `page.frameLocator()`.
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `playwright.config.ts` | Lagg till FEATURE_STRIPE_PAYMENTS + PAYMENT_PROVIDER=mock |
 | `e2e/stripe-payment.spec.ts` | NY -- Stripe Payment Element E2E |

@@ -15,7 +15,7 @@ sections:
 
 # Backup-policy och Disaster Recovery
 
-## Oversikt
+## Översikt
 
 | Mett | Varde | Kommentar |
 |------|-------|-----------|
@@ -30,7 +30,7 @@ Supabase kor dagliga backups automatiskt for alla planer:
 
 | Plan | Retention | PITR |
 |------|-----------|------|
-| **Free** | Ej specificerad | Ej tillganglig |
+| **Free** | Ej specificerad | Ej tillgänglig |
 | **Pro** | 7 dagar | Tillval (2 min RPO) |
 | **Team** | 14 dagar | Tillval (2 min RPO) |
 | **Enterprise** | 30 dagar | Tillval (2 min RPO) |
@@ -79,19 +79,19 @@ psql "$DATABASE_URL" < backup-20260402.sql
 
 ### Viktiga steg efter restore
 
-- [ ] Aterstall custom role-losenord (sparas INTE i backup)
-- [ ] Aterskapa replication slots/subscriptions om de anvandes
+- [ ] Aterstall custom role-lösenord (sparas INTE i backup)
+- [ ] Aterskapa replication slots/subscriptions om de användes
 - [ ] Verifiera att appen fungerar (smoke test)
 - [ ] Kontrollera att migrationer ar i sync (`npm run migrate:status`)
 
 ## Vad som INTE inkluderas i backup
 
-| Vad | Inkluderat? | Atgard |
+| Vad | Inkluderat? | Åtgärd |
 |-----|-------------|--------|
 | Databas (tabeller, index) | Ja | Automatiskt |
 | Prisma-migrationshistorik | Ja | Automatiskt |
 | Storage API-objekt (filer) | **Nej** | Separat backup vid behov |
-| Custom role-losenord | **Nej** | Dokumentera separat |
+| Custom role-lösenord | **Nej** | Dokumentera separat |
 | Environment variables | **Nej** | Finns i Vercel + `.env` |
 | Edge Functions | **Nej** | Finns i git |
 

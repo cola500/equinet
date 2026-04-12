@@ -67,7 +67,7 @@ Idedokumentet beskriver en hyperrelevant notis som kombinerar:
 
 ## Fas 1: Kund-synlig "due for service"-status -- KLAR
 
-**Mal:** Kunder ser direkt pa sin hastlista vilka hastar som behover service. Ger omedelbart varde -- kunder far proaktiv information utan att leverantoren behover gora nagot.
+**Mal:** Kunder ser direkt pa sin hastlista vilka hästar som behover service. Ger omedelbart varde -- kunder far proaktiv information utan att leverantören behover gora nagot.
 
 ### 1.1 Extrahera DueForServiceCalculator -- KLAR
 
@@ -135,7 +135,7 @@ export class DueForServiceService {
 
 Logik:
 1. Hamta completed bookings dar `customerId = X` OCH `horseId IS NOT NULL` OCH `service.recommendedIntervalWeeks IS NOT NULL`
-2. Hamta alla `HorseServiceInterval`-overrides for kundens hastar
+2. Hamta alla `HorseServiceInterval`-overrides for kundens hästar
 3. Deduplicate: behall senaste booking per (horseId, serviceId)
 4. Kor `calculateDueStatus` pa varje
 5. Sortera: mest bradskande forst (`daysUntilDue` ascending)
@@ -175,7 +175,7 @@ Foljer standard API-route-struktur:
 Testfall:
 1. 401 for oautentiserad
 2. 403 for provider-anvandare
-3. Returnerar overdue/upcoming hastar
+3. Returnerar overdue/upcoming hästar
 4. Feature flag avstangd -> tomt/404
 5. horseId-filter fungerar
 6. Ownership check: kan inte fraga om annan kunds hast
@@ -205,14 +205,14 @@ export function useDueForService() {
 
 ### 1.7 Kundstyrda serviceintervall (bonus, ej i ursprunglig plan) -- KLAR
 
-Utokade fas 1 med mojlighet for kunder att satta egna intervall per hast+tjanst:
+Utokade fas 1 med möjlighet for kunder att satta egna intervall per hast+tjänst:
 
 - **Ny modell:** `CustomerHorseServiceInterval` (horseId, serviceId, intervalWeeks, unique constraint)
 - **Migration:** `20260223121939_add_customer_horse_service_interval` (applicerad pa Supabase 2026-02-23)
 - **3-tier prioritet:** Kundintervall > Provider-rekommendation > Service default
 - **CRUD API:** `GET/PUT/DELETE /api/customer/horses/[horseId]/intervals` + tester
 - **UI:** Fliksystem pa hastdetaljsidan (Historik/Intervall/Info) med URL-state
-- **Hastar utan recommendedIntervalWeeks** inkluderas om kund satt intervall
+- **Hästar utan recommendedIntervalWeeks** inkluderas om kund satt intervall
 
 ### Fas 1 sammanfattning
 
@@ -240,10 +240,10 @@ Utokade fas 1 med mojlighet for kunder att satta egna intervall per hast+tjanst:
 
 ## Fas 2: Hyperrelevant notis (Due + Ruttannons)
 
-**Mal:** Foljare med forsenade hastar far en personlig notis nar leverantoren annonserar i deras kommun:
+**Mal:** Foljare med forsenade hästar far en personlig notis nar leverantören annonserar i deras kommun:
 > "Blansen behovde skos for 2 veckor sedan. Anna har lediga tider i Kungsbacka nasta vecka."
 
-Foljare utan forsenade hastar far standard ruttannons-notisen (oforandrat beteende).
+Foljare utan forsenade hästar far standard ruttannons-notisen (oforandrat beteende).
 
 ### 2.1 DueForServiceLookup (adapter)
 
@@ -272,7 +272,7 @@ export class PrismaDueForServiceLookup implements DueForServiceLookup {
 
 **Andra:** `src/domain/notification/RouteAnnouncementNotifier.ts`
 
-Andringar i `NotifierDeps`:
+Ändringar i `NotifierDeps`:
 ```typescript
 interface NotifierDeps {
   // ... befintliga deps ...
@@ -340,7 +340,7 @@ Nya testfall:
 1. Foljare MED overdue hast -> forbattrat meddelande med hastnamn
 2. Foljare UTAN overdue hast -> standard meddelande
 3. `dueForServiceLookup` undefined (feature av) -> alla far standard
-4. Flera overdue hastar -> valjer mest forsenade
+4. Flera overdue hästar -> valjer mest forsenade
 5. Dedup fungerar for forbattrade notiser
 6. Email-template skiljer sig for forbattrade notiser
 7. Metadata inkluderar `overdueHorseName`
@@ -509,7 +509,7 @@ I loopen efter in-app + email:
 
 ---
 
-## Oversikt
+## Översikt
 
 | | Nya filer | Andrade filer | Migration | Beroenden | Status |
 |-----|-----------|---------------|-----------|-----------|--------|

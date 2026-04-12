@@ -48,7 +48,7 @@ sections:
 **Detaljer:**
 - Auth: `await auth()` (inloggad anvandare)
 - Rate limit: 5 rapporter/timme per anvandare (ny `bugReport` limiter)
-- Zod-schema: title (required, trim, max 200), description (required, trim, max 5000), reproductionSteps (optional, max 5000), pageUrl (max 500), userAgent (optional, max 500), platform (optional, max 100). Anvand `.strict()`.
+- Zod-schema: title (required, trim, max 200), description (required, trim, max 5000), reproductionSteps (optional, max 5000), pageUrl (max 500), userAgent (optional, max 500), platform (optional, max 100). Använd `.strict()`.
 - `userRole` harledds fran session.user.userType (CUSTOMER/PROVIDER/ADMIN/UNKNOWN)
 - `userId` fran session.user.id
 - Returnera `{ id, status }` med 201
@@ -105,7 +105,7 @@ sections:
 - `src/components/provider/BugReportFab.tsx`
 - `src/components/provider/BugReportFab.test.tsx`
 
-**Andringar:**
+**Ändringar:**
 - Ta bort `useFeatureFlag("offline_mode")` gate -- visa for ALLA inloggade (`useAuth().isAuthenticated`)
 - Ta bort beroenden: `useFeatureFlags`, `useOnlineStatus`, `getDebugLogs`, `submitBugReport` (fran offline/)
 - Lagg till falt: titel (Input), beskrivning (textarea), steg att aterskapa (textarea, valfritt)

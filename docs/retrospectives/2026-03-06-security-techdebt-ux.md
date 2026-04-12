@@ -62,7 +62,7 @@ Rate limiting la till pa 34 routes med ett konsekvent 4-raders monster per handl
 
 ## Vad kan forbattras
 
-### 1. Agent-genererade rate-limit-andringar brot tester
+### 1. Agent-genererade rate-limit-ändringar brot tester
 Agenterna la till `request`-parametrar till route-handlers men uppdaterade inte motsvarande tester. Kraver alltid en efterfoljande test-fix-runda.
 
 **Prioritet:** MEDEL -- latt att fixa men bor undvikas genom battre agent-prompter.
@@ -80,8 +80,8 @@ For att lagga till rate limiting pa en route utan att andra affarslogik:
 2. Lagg till 4-raders rate check efter auth men fore JSON-parsing
 3. Uppdatera testfilen: lagg till rate-limit mock + anpassa handler-anrop om parametrar andrades
 
-### Parallell agent-batch for mekaniska andringar
-Dela upp monotona andringar i 3+ parallella agenter med 10-12 filer vardera. Inkludera alltid: (1) tydligt monster att folja, (2) "Do NOT modify test files", (3) "Use Edit tool, not Write".
+### Parallell agent-batch for mekaniska ändringar
+Dela upp monotona ändringar i 3+ parallella agenter med 10-12 filer vardera. Inkludera alltid: (1) tydligt monster att folja, (2) "Do NOT modify test files", (3) "Use Edit tool, not Write".
 
 ### Badge i BottomTabBar
 `TabItem.badge?: number` + villkorlig rendering med absolut positionerad `<span>`. Drivs av SWR-data (useBookings) i ProviderNav via useMemo.
@@ -95,7 +95,7 @@ Dela upp monotona andringar i 3+ parallella agenter med 10-12 filer vardera. Ink
 4. Varfor? Agent-prompten sa "Do NOT modify test files"
 5. Varfor? Vi ville undvika att agenterna brot testlogik, men det ledde till att test-kompatibilitet inte verifierades
 
-**Atgard:** Vid framtida sweeps, inkludera i prompten: "Om du andrar en handlers signatur, uppdatera ALLA anrop i motsvarande testfil ocksa. Kor testet efter andringen."
+**Åtgärd:** Vid framtida sweeps, inkludera i prompten: "Om du andrar en handlers signatur, uppdatera ALLA anrop i motsvarande testfil ocksa. Kor testet efter andringen."
 **Status:** Att gora (framtida agent-prompter)
 
 ## Larandeeffekt

@@ -15,7 +15,7 @@ sections:
 
 - [x] Uptime-monitoring dokumenterad i docs/operations/monitoring.md
 - [x] Stripe webhook-alerts dokumenterade
-- [x] Setup-steg for bada tjanster beskrivna
+- [x] Setup-steg for bada tjänster beskrivna
 
 ## Manuella steg (kraver kontoinloggning)
 

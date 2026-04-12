@@ -17,7 +17,7 @@ sections:
 ## Acceptanskriterier
 
 - [x] iOS-appen loggar in via Supabase Swift SDK (inte /api/auth/native-login)
-- [x] APIClient anvander Supabase access_token som Bearer
+- [x] APIClient använder Supabase access_token som Bearer
 - [x] WKWebView-sidor autentiseras via PKCE-exchange endpoint
 - [x] Biometrisk unlock borttagen
 - [x] MobileToken-kod borttagen fran iOS-sidan
@@ -35,7 +35,7 @@ sections:
 
 - Kordes: code-reviewer (inbyggt i implement-flode)
 - security-reviewer: manuell security-check pa exchange endpoint (auth, rate limit, logging OK)
-- cx-ux-reviewer: ej relevant (ingen UI-andring, login-vyn oforandrad)
+- cx-ux-reviewer: ej relevant (ingen UI-ändring, login-vyn oforandrad)
 - tech-architect: plan granskad av tech lead fore implementation
 
 ## Avvikelser fran plan
@@ -43,7 +43,7 @@ sections:
 1. **AppGroupKeychainStorage inte skapad** -- Supabase SDK:ts inbyggda
    `KeychainLocalStorage(accessGroup:)` stodjer App Group direkt, ingen custom
    adapter behovdes.
-2. **Fas 6 (NativeLoginView) krävde ingen andring** -- Vyn delegerar redan till
+2. **Fas 6 (NativeLoginView) krävde ingen ändring** -- Vyn delegerar redan till
    AuthManager.login() som nu har Supabase-felhantering.
 3. **BiometricPromptView borttagen helt** -- Planen sa "om separat fil",
    den var separat och togs bort.

@@ -35,7 +35,7 @@ Ej tillampligt:
    obligatorisk komplement pa free tier.
 
 2. **Storage API-objekt inkluderas INTE i backup** -- viktigt att veta om
-   vi borjar anvanda Supabase Storage for bilder.
+   vi borjar använde Supabase Storage for bilder.
 
-3. **PITR kraver Pro + Small compute** -- inte tillganglig pa free tier.
+3. **PITR kraver Pro + Small compute** -- inte tillgänglig pa free tier.
    2 min RPO ar bra for produktion med riktiga kunder.

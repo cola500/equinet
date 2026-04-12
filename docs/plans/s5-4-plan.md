@@ -40,7 +40,7 @@ Uppdatera API-route och PaymentService att returnera `clientSecret` vid pending-
    - Hanterar success/error/loading states
    - Poll GET /api/bookings/[id]/payment for status-uppdatering efter confirm
 4. Uppdatera BookingCard:
-   - "Betala"-knapp -> POST for clientSecret -> oppna PaymentDialog
+   - "Betala"-knapp -> POST for clientSecret -> öppna PaymentDialog
    - Om status already "succeeded" (mock gateway) -> visa success direkt
    - Om status "pending" + clientSecret -> visa Stripe form
 
@@ -51,7 +51,7 @@ Nar flaggan ar av: ingen betalningsknapp (samma som fore).
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/domain/payment/PaymentGateway.ts` | Lagg till `clientSecret?` i PaymentResult |
 | `src/domain/payment/PaymentService.ts` | Propagera clientSecret |

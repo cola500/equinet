@@ -30,7 +30,7 @@ sections:
 
 ## Avvikelser
 
-1. **Inga nya tester** -- alla 3 andringar ar refactoring/config. Befintliga 34 voice-log-tester taecker beteendet.
+1. **Inga nya tester** -- alla 3 ändringar ar refactoring/config. Befintliga 34 voice-log-tester taecker beteendet.
 2. **noteDate i confirm-route** -- beholl `new Date()` (timestamp, inte dagfiltrering). Ingen tidszonfix behovs.
 3. **Haiku-modellen ej uppgraderad** -- planen specificerade bara Sonnet. Haiku 4.5 ar senaste.
 

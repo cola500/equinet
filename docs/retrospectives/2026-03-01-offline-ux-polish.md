@@ -19,7 +19,7 @@ sections:
 # Retrospektiv: UX-polish offline-upplevelse
 
 **Datum:** 2026-03-01
-**Scope:** Forbattra kommunikationen till leverantorer som arbetar offline -- tydligare feedback, visuellt inaktiverade kontroller, och varningsmeddelanden.
+**Scope:** Forbattra kommunikationen till leverantörer som arbetar offline -- tydligare feedback, visuellt inaktiverade kontroller, och varningsmeddelanden.
 
 ---
 
@@ -64,7 +64,7 @@ sections:
 ## Vad gick bra
 
 ### 1. UX-granskningen fangade riktiga problem
-CX-UX-reviewer-agenten identifierade 6 konkreta UX-luckor som alla hade direkt paverkan pa anvandares trygghetskansla. Inget var overengineering -- varje fix adresserade ett scenario dar leverantorer i falt skulle bli osekra.
+CX-UX-reviewer-agenten identifierade 6 konkreta UX-luckor som alla hade direkt paverkan pa anvandares trygghetskansla. Inget var overengineering -- varje fix adresserade ett scenario dar leverantörer i falt skulle bli osekra.
 
 ### 2. Minimal kod, stor effekt
 UX-polishen var +30/-18 rader over 5 filer. Inga nya beroenden, inga nya komponenter, inga arkitekturella andringar. Befintliga hooks (`useOfflineGuard`, `useOnlineStatus`) ateranvandes direkt.
@@ -99,4 +99,4 @@ For varje UI-kontroll som inte fungerar offline:
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Teknisk korrekthet (mutation queue, optimistiska uppdateringar, synk-motor) ar nodvandig men inte tillracklig for en bra offline-upplevelse. Anvandaren maste kunna **se** att systemet fungerar -- disabled states, forklarande texter och trygghetsgivande badges ar lika viktiga som den underliggande infrastrukturen.
+**Nyckelinsikt:** Teknisk korrekthet (mutation queue, optimistiska uppdateringar, synk-motor) ar nödvändig men inte tillracklig for en bra offline-upplevelse. Anvandaren maste kunna **se** att systemet fungerar -- disabled states, forklarande texter och trygghetsgivande badges ar lika viktiga som den underliggande infrastrukturen.

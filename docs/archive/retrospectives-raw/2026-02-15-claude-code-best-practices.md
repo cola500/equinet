@@ -38,7 +38,7 @@ Notification-hook (macOS-notis vid vantan) och PostToolUse-hook (paminnelse om /
 ## Vad kan forbattras
 
 ### 1. Svenska tecken saknas i rules-filer
-Rules-filerna anvander ASCII-substitut (t.ex. "forst" istallet for "forst", "anvand" istallet for "anvand"). Detta bryter mot projektets regel om korrekta a, a, o.
+Rules-filerna använder ASCII-substitut (t.ex. "forst" istallet for "forst", "använd" istallet for "använd"). Detta bryter mot projektets regel om korrekta a, a, o.
 
 **Prioritet:** LAG -- reglerna ar maskinlasta av Claude, inte manniskor. Funktionen paverkas inte.
 
@@ -58,7 +58,7 @@ paths:
 **Princip:** Kontextspecifika regler via glob-matchning > monolitisk CLAUDE.md. Claude foljer korta, fokuserade instruktioner battre an langa, generella.
 
 ### CLAUDE.md som index-fil
-CLAUDE.md bor vara en oversikt med lankar till detaljer -- inte en komplett referens. Snabbreferens-tabell + tvarskraende learnings + workflow. Detaljregler i rules-filer och docs/.
+CLAUDE.md bor vara en översikt med lankar till detaljer -- inte en komplett referens. Snabbreferens-tabell + tvarskraende learnings + workflow. Detaljregler i rules-filer och docs/.
 
 ## Larandeeffekt
 

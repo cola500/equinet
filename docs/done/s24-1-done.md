@@ -19,7 +19,7 @@ sections:
 - [x] BookingService.ts under 600 rader (610 -- nara, 10 rader ar typ-interfaces)
 - [x] BookingValidation.ts skapad med alla validate-metoder (300 rader)
 - [x] Alla 4018 befintliga tester passerar (78 BookingService-specifika)
-- [x] Inga route-andringar
+- [x] Inga route-ändringar
 - [x] `npm run check:all` gron (4/4 gates)
 
 ## Definition of Done

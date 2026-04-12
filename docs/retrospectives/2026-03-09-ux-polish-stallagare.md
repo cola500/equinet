@@ -45,7 +45,7 @@ sections:
 Alla UX-forbattringar anvande komponenter som redan fanns i kodbasen: `ResponsiveAlertDialog`, `MunicipalitySelect`, `Checkbox` (shadcn), `BottomTabBar` med `MoreMenuItem`. Noll nya komponenter behov skapas.
 
 ### 2. Minimal riskprofil
-Alla andringar var isolerade UI-forandringar utan affarslogik. Repository-andringen (lagga till `token` i list-response) var den enda backend-andring -- enkel select-block-utvidgning med noll risk for regression.
+Alla ändringar var isolerade UI-forandringar utan affarslogik. Repository-ändringen (lagga till `token` i list-response) var den enda backend-ändring -- enkel select-block-utvidgning med noll risk for regression.
 
 ### 3. Plandriven implementation
 UX-reviewerns rapport gav en precis lista av problem med exakta filreferenser. Implementationen folj planen fas-for-fas utan avvikelser. Resultatet: snabb, fokuserad session.

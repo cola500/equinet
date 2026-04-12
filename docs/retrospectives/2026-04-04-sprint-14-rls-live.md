@@ -66,7 +66,7 @@ S14-1 var mergad till main men aldrig deployad till Supabase. Vi upptackte det b
 **Prioritet:** HOG -- en migration som aldrig deployas kan ge falsk sakerhetskanstand.
 
 ### 2. Provider/customers-route kunde inte migreras
-GET /api/provider/customers anvander 5 Prisma-queries med groupBy och komplex aggregering. PostgREST stodjer inte detta. Behover antingen Supabase RPC (server-side function) eller behallas pa Prisma.
+GET /api/provider/customers använder 5 Prisma-queries med groupBy och komplex aggregering. PostgREST stodjer inte detta. Behover antingen Supabase RPC (server-side function) eller behallas pa Prisma.
 
 **Prioritet:** LAG -- defense-in-depth genom RLS read-policies racker. Route-migrering ar bonus.
 
@@ -122,7 +122,7 @@ Kedja from().select().order() med vi.fn().mockReturnValue.
 4. Varfor? Supabase-projektet har ingen CI/CD-pipeline for migrationer.
 5. Varfor? Migrationsdeployment har behandlats som manuellt steg utan verifiering.
 
-**Atgard:** Lagg till ett CI-steg eller npm-script som jamfor lokala migrationer med Supabase (`_prisma_migrations`-tabell). `npm run migrate:status` finns redan men kors inte automatiskt.
+**Åtgärd:** Lagg till ett CI-steg eller npm-script som jamfor lokala migrationer med Supabase (`_prisma_migrations`-tabell). `npm run migrate:status` finns redan men kors inte automatiskt.
 **Status:** Att gora
 
 ### Problem: ENABLE ROW LEVEL SECURITY saknades pa 2 tabeller
@@ -132,7 +132,7 @@ Kedja from().select().order() med vi.fn().mockReturnValue.
 4. Varfor? S14-1 planen antog att RLS redan var aktiverat pa alla tabeller.
 5. Varfor? Ingen verifiering av `pg_tables.rowsecurity` i testsviten.
 
-**Atgard:** RLS-bevistesterna (S14-5) fangar nu detta. Aven: lagg till ENABLE RLS i framtida migrations om nya tabeller laggs till.
+**Åtgärd:** RLS-bevistesterna (S14-5) fangar nu detta. Aven: lagg till ENABLE RLS i framtida migrations om nya tabeller laggs till.
 **Status:** Implementerad (S14-5 tester bevisar)
 
 ## Larandeeffekt

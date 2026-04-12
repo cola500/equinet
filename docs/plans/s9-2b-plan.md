@@ -59,7 +59,7 @@ const invoiceNumber = this.deps.generateInvoiceNumber()
 - (a) Gor en andra DB-uppdatering for invoiceNumber/invoiceUrl efter guard, eller
 - (b) Genererar invoiceNumber FORE men kastar det vid duplicate (nuvarande beteende, bara slott)
 
-Jag rekommenderar **(a)** -- tva steg: forst atomisk status-andring, sedan invoice-data. Alternativt kan vi behalla ett anrop men flytta genereringen sa den bara kors nar `updated > 0`.
+Jag rekommenderar **(a)** -- tva steg: forst atomisk status-ändring, sedan invoice-data. Alternativt kan vi behalla ett anrop men flytta genereringen sa den bara kors nar `updated > 0`.
 
 **Enklaste losningen:** Behall ett DB-anrop men flytta `generateInvoiceNumber()` till EFTER `updated > 0`-checken, gora en andra uppdatering for invoice-data. Eller: acceptera att nummret "slosas" (enklast, men Johan angav explicit att flytta).
 
@@ -73,7 +73,7 @@ Lagg till i `PaymentWebhookService.test.ts`:
 
 ## Filer som andras
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/domain/payment/PaymentWebhookService.ts` | Guard + invoiceNumber-flytt |
 | `src/domain/payment/PaymentWebhookService.test.ts` | Nya tester |

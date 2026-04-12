@@ -42,7 +42,7 @@ sections:
 
 ## Avvikelser
 
-- Ingen andring i signaturverifieringen -- ateranvander SubscriptionGateway.verifyWebhookSignature()
+- Ingen ändring i signaturverifieringen -- ateranvander SubscriptionGateway.verifyWebhookSignature()
   som delar STRIPE_WEBHOOK_SECRET for alla event-typer
 
 ## Lardomar

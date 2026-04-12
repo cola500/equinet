@@ -35,7 +35,7 @@ sections:
 |---|---------|-----|
 | 6 | **3 sidor 1000+ rader** | `provider/profile/page.tsx` (1028), `customer/horses/[id]/page.tsx` (1017), `providers/page.tsx` (1013) |
 | 7 | **Direkt Prisma i 5+ routes** (bryter repository pattern) | `route-orders/route.ts`, `route-orders/available/route.ts`, `verification-requests/route.ts`, `bookings/[id]/reschedule/route.ts` |
-| 8 | **Fetch-pattern duplicerat 12+ ganger** | `useState(data) + useState(loading) + useState(error) + useEffect(fetch)` -- bor anvanda SWR konsekvent |
+| 8 | **Fetch-pattern duplicerat 12+ ganger** | `useState(data) + useState(loading) + useState(error) + useEffect(fetch)` -- bor använde SWR konsekvent |
 | 9 | **Error mapping inline** (review/customer-review routes) | Bor folja samma domain-monster som horse/auth/group-booking |
 | 10 | **17 API-routes utan tester** | Routes, profile, Fortnox-integration, admin-verification m.fl. |
 
@@ -59,14 +59,14 @@ Samma avstandsberakning finns i:
 - `src/app/api/providers/route.ts:15-38` -- privat funktion
 - `src/app/api/route-orders/announcements/route.ts:10-33` -- privat funktion
 
-**Atgard:** Anvand `src/lib/geo/distance.ts` overallt, ta bort ovriga.
+**Åtgärd:** Använd `src/lib/geo/distance.ts` overallt, ta bort ovriga.
 
 ### 2. Repository pattern-brott
 
 Karndomaner med repositories (korrekt):
 - Booking, Provider, Service, Review, CustomerReview, Horse, Follow
 
-Routes som anvander Prisma direkt for karndomaner:
+Routes som använder Prisma direkt for karndomaner:
 - `route-orders/route.ts` -- direkt `prisma.provider`, `prisma.service`
 - `route-orders/available/route.ts:89` -- direkt `prisma.provider`
 - `verification-requests/route.ts:51,63` -- direkt `prisma.provider`
@@ -87,7 +87,7 @@ Bor extraheras till `domain/review/mapReviewErrorToStatus.ts` och `domain/custom
 |-----|-------|----------------|
 | `provider/customers/page.tsx` | 1268 | Kundlista + insikter + anteckningar + kontakt |
 | `domain/booking/BookingService.ts` | 1048 | Tidsvalidering + overlap + manuell bokning |
-| `provider/profile/page.tsx` | 1028 | Profilredigering + installningar + tillganglighet |
+| `provider/profile/page.tsx` | 1028 | Profilredigering + installningar + tillgänglighet |
 | `customer/horses/[id]/page.tsx` | 1017 | Hastdetalj + tidslinje + intervall + paminnelser |
 | `providers/page.tsx` | 1013 | 20 useState, sok + filter + geo + favoriter |
 
@@ -103,14 +103,14 @@ Bor extraheras till `domain/review/mapReviewErrorToStatus.ts` och `domain/custom
 
 Resulterar i 22 props som passas identiskt till `MobileBookingFlow` + `DesktopBookingDialog`.
 
-**Atgard:** Dela i `useBookingModal()`, `useBookingForm()`, `useFlexibleForm()`, `useRecurringBooking()`, `useBookingSubmit()`.
+**Åtgärd:** Dela i `useBookingModal()`, `useBookingForm()`, `useFlexibleForm()`, `useRecurringBooking()`, `useBookingSubmit()`.
 
 ### 6. Testtackning -- saknade tester
 
 **Hog prioritet (affarslogik):**
 - `api/bookings/[id]/payment/route.ts` (239 rader) -- betalningshantering
 - `api/routes/route.ts` (210 rader) -- rutthantering
-- `api/route-orders/available/route.ts` (133 rader) -- tillgangliga ruttordrar
+- `api/route-orders/available/route.ts` (133 rader) -- tillgängliga ruttordrar
 - `api/routes/[id]/stops/[stopId]/route.ts` (133 rader) -- ruttstopp
 - `api/profile/route.ts` (131 rader) -- anvandarprofil
 - `api/providers/visiting-area/route.ts` (118 rader) -- besoksomraden

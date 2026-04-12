@@ -34,7 +34,7 @@ dubbla bokningsbekraftelser, statusuppdateringar eller notiser.
 3. **Webhook triggar INTE email/notiser**: Notiser skickas fran payment-routen
    (`src/app/api/bookings/[id]/payment/route.ts`), inte fran webhook-hanteraren.
 
-### Bedomning
+### Bedömning
 
 Den befintliga status-guarden ar **tillracklig** for nuvarande arkitektur:
 - Statusen ar idempotent (samma varde skrivs)
@@ -69,14 +69,14 @@ Den befintliga status-guarden ar tillracklig. Dokumenteras som framtida forbattr
 
 ## Risker
 
-| Risk | Sannolikhet | Atgard |
+| Risk | Sannolikhet | Åtgärd |
 |------|-------------|--------|
 | Race condition vid samtidiga webhooks | Lag (serverless, idempotent write) | Accepterad risk, dokumenteras |
 | Framtida kod lagger till email i webhook | Medel | Kommentar i koden + test som verifierar inga sidoeffekter |
 
 ## Filer som andras
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/domain/payment/PaymentWebhookService.test.ts` | **NY** -- unit-tester for idempotens |
 | `src/domain/payment/PaymentWebhookService.ts` | Eventuell kommentar om idempotens-skydd |

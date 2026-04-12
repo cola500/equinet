@@ -18,7 +18,7 @@ sections:
 
 # S13-4: iOS Supabase Swift SDK
 
-## Oversikt
+## Översikt
 
 **Story:** Som utvecklare vill jag att iOS-appen autentiserar via Supabase Auth
 sa att vi har en enda auth-kalla och kan ta bort MobileTokenService.
@@ -33,7 +33,7 @@ sa att vi har en enda auth-kalla och kan ta bort MobileTokenService.
 **Mal:**
 - iOS loggar in via Supabase Swift SDK (`supabase.auth.signIn`)
 - SDK:t hanterar session, refresh, lagring
-- APIClient anvander Supabase access_token som Bearer
+- APIClient använder Supabase access_token som Bearer
 - WKWebView far Supabase-cookies (inte NextAuth session-cookie)
 - Biometrisk unlock TAS BORT (laggs till senare vid behov)
 
@@ -47,7 +47,7 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 - Biometrisk unlock skippas (Supabase SDK hailer sessionen vid liv automatiskt)
 - App Group Keychain anvands for widget-access
 - Befintlig bridge-kommunikation for token-delning tas bort (onodvandigt nar bade
-  nativ och web anvander Supabase direkt)
+  nativ och web använder Supabase direkt)
 
 ## Faser
 
@@ -79,7 +79,7 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 7. Ta bort `authenticateWithBiometric()`
 
 **Filer:**
-- Andrad: `AuthManager.swift` (stor andring)
+- Andrad: `AuthManager.swift` (stor ändring)
 - Andrad: `ContentView.swift` (ta bort biometric case)
 - Borttagen: `BiometricPromptView.swift` (om den finns som separat fil)
 
@@ -97,7 +97,7 @@ login, logout, token refresh, session persistence. iOS-appen slutar anropa
 ### Fas 4: WKWebView session-delning via PKCE-redirect
 
 **Approach:** Istallet for att manuellt konstruera Supabase-cookies och injicera
-dem i WKWebView (fragilt, cookie-format kan andra), anvander vi en
+dem i WKWebView (fragilt, cookie-format kan andra), använder vi en
 server-side PKCE-exchange endpoint.
 
 **Flode:**
@@ -146,7 +146,7 @@ chunking/encoding behover vi inte uppdatera iOS-appen.
 
 1. Uppdatera AuthManagerTests (mock SupabaseClient)
 2. Uppdatera APIClientTests (mock session.accessToken)
-3. Testa: login success, login failure (fel losenord), logout, session expired
+3. Testa: login success, login failure (fel lösenord), logout, session expired
 4. Testa: WKWebView cookie-injektion
 5. Testa: widget-access till token via App Group
 
@@ -157,7 +157,7 @@ chunking/encoding behover vi inte uppdatera iOS-appen.
 
 ## Filer att andra
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `AppConfig.swift` | Lagg till supabaseURL, supabaseAnonKey |
 | `AuthManager.swift` | Byt login/logout till Supabase SDK, ta bort biometric |
@@ -197,8 +197,8 @@ chunking/encoding behover vi inte uppdatera iOS-appen.
 
 ### Manuell verifiering (mobile-mcp)
 
-- [ ] Login med korrekt losenord -> dashboard visas
-- [ ] Login med fel losenord -> felmeddelande
+- [ ] Login med korrekt lösenord -> dashboard visas
+- [ ] Login med fel lösenord -> felmeddelande
 - [ ] Logout -> login-skarm visas
 - [ ] App-restart -> fortfarande inloggad (session persistent)
 - [ ] WebView-sidor fungerar (cookie-delning)
@@ -213,7 +213,7 @@ chunking/encoding behover vi inte uppdatera iOS-appen.
 ## Acceptanskriterier
 
 - [ ] iOS-appen loggar in via Supabase Swift SDK (inte /api/auth/native-login)
-- [ ] APIClient anvander Supabase access_token som Bearer
+- [ ] APIClient använder Supabase access_token som Bearer
 - [ ] WKWebView-sidor ar autentiserade via PKCE-exchange endpoint
 - [ ] Biometrisk unlock borttagen
 - [ ] MobileToken-kod borttagen fran iOS-sidan

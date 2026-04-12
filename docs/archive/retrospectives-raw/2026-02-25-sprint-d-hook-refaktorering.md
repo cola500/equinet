@@ -22,8 +22,8 @@
 | UI (ny) | `HorseSelector.tsx` | Delad hast-valjare + kommentarer (108 rader) |
 | UI (ny) | `RecurringSection.tsx` | Delad aterkommande-toggle (92 rader) |
 | UI (ny) | `FlexibleBookingForm.tsx` | Delat flexibelt bokningsformular (110 rader) |
-| UI (mod) | `MobileBookingFlow.tsx` | 679 -> 330 rader (-51%), anvander context + subkomponenter |
-| UI (mod) | `DesktopBookingDialog.tsx` | 585 -> 246 rader (-58%), anvander context + subkomponenter |
+| UI (mod) | `MobileBookingFlow.tsx` | 679 -> 330 rader (-51%), använder context + subkomponenter |
+| UI (mod) | `DesktopBookingDialog.tsx` | 585 -> 246 rader (-58%), använder context + subkomponenter |
 | UI (mod) | `providers/[id]/page.tsx` | 22-prop `bookingDialogProps` -> `BookingFlowProvider` wrapper |
 | Docs | Design, plan, GOTCHAS.md | Design-doc, implementationsplan, ny gotcha #28 |
 
@@ -48,7 +48,7 @@ Genom att snabbt checka ut main och kora samma E2E-test bekraftade vi att failur
 ### 2. MobileBookingFlow blev 330 rader istallet for mal 180
 Step-navigation, selectType-steget och footer-knapparna ar unika for mobile och kan inte extraheras utan att bryta Drawer-strukturen. Uppskattningen var for optimistisk.
 
-**Prioritet:** LAG -- 330 rader ar acceptabelt, ingen ytterligare atgard behövs.
+**Prioritet:** LAG -- 330 rader ar acceptabelt, ingen ytterligare åtgärd behövs.
 
 ## Patterns att spara
 
@@ -64,10 +64,10 @@ Nar en hook returnerar manga varden som passas identiskt till 2+ konsumenter: wr
 1. Varfor? `showSummary` ar `true` nar dialogen oppnas
 2. Varfor? State aterstalldes inte vid forra stangningen
 3. Varfor? `handleOpenChange` anropas bara vid anvandarinteraktion (X-knapp/overlay)
-4. Varfor? Radix Dialog's `onOpenChange` triggar inte vid programmatisk `open`-andring
-5. Varfor? Radix designval -- kontrollerad komponent rapporterar bara anvandar-initierade andringar, inte prop-andringar
+4. Varfor? Radix Dialog's `onOpenChange` triggar inte vid programmatisk `open`-ändring
+5. Varfor? Radix designval -- kontrollerad komponent rapporterar bara anvandar-initierade ändringar, inte prop-ändringar
 
-**Atgard:** `useEffect(() => { if (isOpen) setShowSummary(false) }, [isOpen])` -- aterstall state vid varje oppning. Dokumenterat som GOTCHAS.md #28.
+**Åtgärd:** `useEffect(() => { if (isOpen) setShowSummary(false) }, [isOpen])` -- aterstall state vid varje oppning. Dokumenterat som GOTCHAS.md #28.
 **Status:** Implementerad
 
 ## Larandeeffekt

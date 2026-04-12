@@ -59,10 +59,10 @@ Factory-funktioner validerar INTE att payload matchar interface vid runtime. Om 
 ## Test-lead: Testkvalitet
 
 ### 1. Behavior-based route-tester ar migreringsakra
-POST /api/bookings behovde NOLL mock-andringar trots att hela side-effect-implementationen byttes ut. PUT-routen behovde bara 3 rader ny mock. Testa HTTP-kontrakt, inte implementation details.
+POST /api/bookings behovde NOLL mock-ändringar trots att hela side-effect-implementationen byttes ut. PUT-routen behovde bara 3 rader ny mock. Testa HTTP-kontrakt, inte implementation details.
 
 ### 2. Factory pattern for testdata skapar lasbar kod
-`createdEvent()`, `statusChangedEvent()`, `paymentEvent()` med override-mojlighet ger koncisa tester. 14 handler-tester utan duplicerad testdata.
+`createdEvent()`, `statusChangedEvent()`, `paymentEvent()` med override-möjlighet ger koncisa tester. 14 handler-tester utan duplicerad testdata.
 
 ### 3. DI med mock-factories eliminerar vi.mock-komplexitet
 `createMockEmailService()`, `createMockNotificationService()`, `createMockLogger()` ger full kontroll utan att mocka moduler. Handler-testerna ar rena unit tests med isolerade dependencies.

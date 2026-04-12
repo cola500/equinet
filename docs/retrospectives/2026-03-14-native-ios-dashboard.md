@@ -17,7 +17,7 @@ sections:
 # Retrospektiv: Native iOS Dashboard
 
 **Datum:** 2026-03-14
-**Scope:** Migrera leverantorens dashboard (Tab 1, "Oversikt") fran WebView till native SwiftUI med aggregerat API-anrop
+**Scope:** Migrera leverantorens dashboard (Tab 1, "Översikt") fran WebView till native SwiftUI med aggregerat API-anrop
 
 ---
 
@@ -54,7 +54,7 @@ sections:
 Planen identifierade 3 problem i forvag: logout-cache-lask, NativeMoreView-navigation, datum-hantering. Alla tre var riktiga problem som annars hade dykt upp sent.
 
 ### 3. Referensfiler som monsterkopiering
-calendar/route.ts och NativeCalendarView.swift anvandes som mall. Samma auth-pattern, samma cache-pattern, samma navigation-callback-pattern. Minimerade designbeslut under implementation.
+calendar/route.ts och NativeCalendarView.swift användes som mall. Samma auth-pattern, samma cache-pattern, samma navigation-callback-pattern. Minimerade designbeslut under implementation.
 
 ### 4. Aggregerat API-endpoint istallet for multipla anrop
 Ett enda GET-anrop returnerar all dashboard-data (4 parallella Prisma-queries server-side). iOS-klienten behovde bara en fetch-metod och en response-struct. Enklare cache, enklare felhantering.
@@ -98,7 +98,7 @@ coordinator.selectedTab = .more
 NativeMoreView reagerar via `.onChange(of: pendingPath)` och pushar matchande MoreMenuItem (eller temporar).
 
 ### Priority Action Pattern
-Server beraknar prioriterad atgard (pending > onboarding > none). Klienten visar ratt kort med ratt ikon och navigering. Undviker duplicerad logik pa klienten.
+Server beraknar prioriterad åtgärd (pending > onboarding > none). Klienten visar ratt kort med ratt ikon och navigering. Undviker duplicerad logik pa klienten.
 
 ## 5 Whys (Root-Cause Analysis)
 
@@ -110,7 +110,7 @@ Server beraknar prioriterad atgard (pending > onboarding > none). Klienten visar
 4. **Varfor?** SharedDataManager finns i membershipExceptions (widget behovde den), men dess nya beroende (DashboardModels) lades inte till.
 5. **Varfor?** Det finns inget automatiskt beroendeanalys-steg -- manuell pbxproj-redigering kravs.
 
-**Atgard:** Gotchan ar dokumenterad i CLAUDE.md ("iOS widget extension target-membership"). Framover: nar SharedDataManager far nya beroenden (Codable-typer), kontrollera ALLTID membershipExceptions.
+**Åtgärd:** Gotchan ar dokumenterad i CLAUDE.md ("iOS widget extension target-membership"). Framover: nar SharedDataManager far nya beroenden (Codable-typer), kontrollera ALLTID membershipExceptions.
 **Status:** Implementerad (dokumenterad sedan session 91)
 
 ## Larandeeffekt

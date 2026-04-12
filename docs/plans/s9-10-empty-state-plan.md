@@ -18,14 +18,14 @@ Tre leverantorssidor har tomma tillstand som kan forbattras:
 
 | Sida | Nuvarande | Forbattring |
 |------|-----------|-------------|
-| Tjanster | Manuell Card+SVG+knapp | Byt till EmptyState-komponent (konsistens) |
-| Bokningar | EmptyState med ikon+text, ingen action | Lagg till action om inga tjanster finns |
-| Kunder | EmptyState med ikon+text+action | Redan bra -- ingen andring |
-| Dashboard | EmptyState for tjanster+bokningar | Redan bra -- ingen andring |
+| Tjänster | Manuell Card+SVG+knapp | Byt till EmptyState-komponent (konsistens) |
+| Bokningar | EmptyState med ikon+text, ingen action | Lagg till action om inga tjänster finns |
+| Kunder | EmptyState med ikon+text+action | Redan bra -- ingen ändring |
+| Dashboard | EmptyState for tjänster+bokningar | Redan bra -- ingen ändring |
 
 ## Forandringar
 
-### 1. Tjanster: byt manuell Card till EmptyState
+### 1. Tjänster: byt manuell Card till EmptyState
 
 Ersatt ~40 rader manuell Card/SVG/Button med EmptyState-komponent.
 EmptyState stodjer inte onClick-action -- bara href. Lagg till onClick-stod
@@ -33,17 +33,17 @@ EmptyState stodjer inte onClick-action -- bara href. Lagg till onClick-stod
 EmptyState stodjer redan onClick via action.onClick.
 
 Dock: den befintliga knappen oppnar serviceDialog. EmptyState action stodjer
-onClick -- anvand det.
+onClick -- använd det.
 
 ### 2. Bokningar: kontextuell tom-tillstand
 
 Nar `filter === "all"` och inga bokningar:
-- Om inga tjanster heller -> "Skapa tjanster forst for att borja ta emot bokningar" med action till /provider/services
-- Om tjanster finns -> "Inga bokningar annu. De dyker upp har nar kunder bokar dina tjanster." (befintlig text)
+- Om inga tjänster heller -> "Skapa tjänster forst for att borja ta emot bokningar" med action till /provider/services
+- Om tjänster finns -> "Inga bokningar annu. De dyker upp har nar kunder bokar dina tjanster." (befintlig text)
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/app/provider/services/page.tsx` | Byt manuell Card till EmptyState |
 | `src/app/provider/bookings/page.tsx` | Lagg till kontextuell tom-tillstand |

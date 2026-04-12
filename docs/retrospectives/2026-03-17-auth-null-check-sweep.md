@@ -51,10 +51,10 @@ if (!session) {
 
 | Fore (engelska) | Efter (svenska) |
 |-----------------|-----------------|
-| "Provider not found" | "Leverantor hittades inte" |
+| "Provider not found" | "Leverantör hittades inte" |
 | "Unauthorized" | "Ej inloggad" |
 | "Internal error" | "Internt serverfel" |
-| "Service not found" | "Tjanst hittades inte" |
+| "Service not found" | "Tjänst hittades inte" |
 | "User not found" | "Anvandare hittades inte" |
 | "Provider profile not found" | "Leverantorsprofil hittades inte" |
 
@@ -79,9 +79,9 @@ it('returns 401 when not authenticated', async () => {
 - Ingen merge-konflikt (varje agent editerade separata filer)
 - Total tid: ~15 min (langsta agenten) istallet for ~1h sekventiellt
 
-### Mekanisk andring = lag risk
+### Mekanisk ändring = lag risk
 - Samma pattern i alla filer -- ingen kreativ tolkning kravdes
-- Befintliga tester fangade omedelbart om nagon andring brot logiken
+- Befintliga tester fangade omedelbart om nagon ändring brot logiken
 - Ingen enda regression
 
 ### Explore-agenter fore implementation
@@ -98,7 +98,7 @@ it('returns 401 when not authenticated', async () => {
 - Lat prioritet -- routerna ar skyddade aven utan tester
 
 ### Varianter i auth-monster
-- Nagra routes anvander helper-funktioner (`authorizeProvider`, `authorizeCustomer`) istallet for direkt `auth()`
+- Nagra routes använder helper-funktioner (`authorizeProvider`, `authorizeCustomer`) istallet for direkt `auth()`
 - Dessa fick ocksa fixar men monstret ar annorlunda -- kan vara vart att konsolidera i framtiden
 
 ### Provider/onboarding-status anvande `new Response()` istallet for `NextResponse.json()`
@@ -108,8 +108,8 @@ it('returns 401 when not authenticated', async () => {
 
 ## Patterns att spara
 
-### Parallell agent-batch for mekaniska andringar
-Nar en andring ar identisk i manga filer (guard, import-byte, strangbyte):
+### Parallell agent-batch for mekaniska ändringar
+Nar en ändring ar identisk i manga filer (guard, import-byte, strangbyte):
 1. Explore-agent identifierar alla filer
 2. Dela i 4-5 batchar per API-doman
 3. Kora parallella agenter (en per batch)

@@ -111,7 +111,7 @@ Seed-skriptet (`prisma/seed.ts`) skapar redan rimlig data. Det vi kan behöva ju
 | **Bokningår (historik)** | **Begränsat** -- seed-test-users skapar 1 bokning | **Ja -- behöver 4-5 bokningar i olika status** |
 | **Recensioner** | **Saknas i seed** | **Ja -- behöver 2-3 recensioner** |
 | **Hästar kopplade till kund** | **Saknas i seed** | **Ja -- behöver 2 hästar för test-kunden** |
-| **Kunder kopplade till leverantor** | **Delvis** | **Kolla -- kan behöva ProviderCustomer-koppling** |
+| **Kunder kopplade till leverantör** | **Delvis** | **Kolla -- kan behöva ProviderCustomer-koppling** |
 
 ### Minimal seed-utvidgning
 
@@ -216,7 +216,7 @@ Leverantor-kund-koppling:
 **Logga in som Anna (leverantör)**
 - Öppna `/login`
 - Email: `provider@test.se`, lösenord: `test123`
-- (Eller anvand seed-leverantör: Erik/Anna/Lars beroende på vilken som har bäst data)
+- (Eller använd seed-leverantör: Erik/Anna/Lars beroende på vilken som har bäst data)
 
 > "Det här är Annas dashboard. Hon ser sin statistik -- hur många aktiva tjänster,
 > kommande bokningar, och snittbetyg."
@@ -285,13 +285,13 @@ Leverantor-kund-koppling:
 
 > "Sofia har sina hästar registrerade. Hon ser Blansens hela servicehistorik."
 
-**Sök leverantor**
-- Gå till "Sök leverantor" (`/providers`)
+**Sök leverantör**
+- Gå till "Sök leverantör" (`/providers`)
 - (Se till att listan visar leverantörer -- seed-data måste matcha)
 
 > "Sofia söker hovslagare i sitt område. Hon ser vilka som finns, deras betyg och priser."
 
-**Klicka på leverantor**
+**Klicka på leverantör**
 - Välj Anna
 - Visa profil: tjänster, recensioner, öppettider
 

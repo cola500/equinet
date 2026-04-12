@@ -46,7 +46,7 @@ Analysen identifierade tre hypoteser och rankade Hypotes 1 (navigator.onLine lju
 Att skriva 5 tester fore implementation klargjorde alla edge cases: fallback (TypeError, AbortError), re-throw (non-network, utan options, flag off). Implementationen blev 11 rader i hooken.
 
 ### 3. Minimal fix med maximal effekt
-Fixen skyddar ALLA mutationer som anvander `guardMutation` med `offlineOptions` -- inte bara ManualBookingDialog. Framtida offline-mutationer far automatiskt samma fallback.
+Fixen skyddar ALLA mutationer som använder `guardMutation` med `offlineOptions` -- inte bara ManualBookingDialog. Framtida offline-mutationer far automatiskt samma fallback.
 
 ## Vad kan forbattras
 
@@ -64,7 +64,7 @@ Fixen skyddar ALLA mutationer som anvander `guardMutation` med `offlineOptions` 
 4. Varfor hade POST-mutationer ingen detektionsvag? `guardMutation` designades med antagandet att `isOnline` alltid ar korrekt -- online-path hade ingen felhantering.
 5. Varfor antogs det? Ursprunglig implementation fokuserade pa explicit offline-koning (isOnline=false). Edge caset "online men natverket ar nere" testades aldrig.
 
-**Atgard:** `guardMutation` fangar nu natverksfel i online-path och faller tillbaka till offline-koning. Dessutom 10s timeout i ManualBookingDialog for att hantera hangande fetch.
+**Åtgärd:** `guardMutation` fangar nu natverksfel i online-path och faller tillbaka till offline-koning. Dessutom 10s timeout i ManualBookingDialog for att hantera hangande fetch.
 **Status:** Implementerad
 
 ## Larandeeffekt

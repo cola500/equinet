@@ -74,7 +74,7 @@ Mal: kartlagga vad som fungerar, fixa det som ar trasigt, identifiera tackningsg
 5. `group-bookings.spec.ts`: `.first()` pa alla `getByText` for card-namn (text finns i bade titel och beskrivning)
 6. `group-bookings.spec.ts`: `button 'x'` -> `getByRole('button', { name: /ta bort platsfilter/i })`
 
-### Batch 3: Leverantor (KLAR -- 50 pass, 6 skip, 0 fail)
+### Batch 3: Leverantör (KLAR -- 50 pass, 6 skip, 0 fail)
 
 | Spec | Tester | Status | Fixar |
 |------|--------|--------|-------|
@@ -210,7 +210,7 @@ som gor dem immuna mot DB-forurening mellan specs.
 
 | Feature | Sidor | Kommentar |
 |---------|-------|-----------|
-| Hjalpsystem | /customer/help, /provider/help, /admin/help | Struktur testad, innehall ej |
+| Hjalpsystem | /customer/help, /provider/help, /admin/help | Struktur testad, innehåll ej |
 | Hasttidslinje | /provider/horse-timeline/[horseId] | Ny vy, otestad |
 | Export | /customer/export, /provider/export | Data-export |
 | Admin verifieringar | /admin/verifications | Onboarding-compliance |

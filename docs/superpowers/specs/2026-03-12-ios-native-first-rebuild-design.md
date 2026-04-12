@@ -117,7 +117,7 @@ protocol CustomerRepositoryProtocol {
 }
 ```
 
-Konkreta implementationer (`APICalendarRepository`, `APIBookingRepository`, etc.) anvander befintliga `APIClient`. Mock-implementationer for tester och previews.
+Konkreta implementationer (`APICalendarRepository`, `APIBookingRepository`, etc.) använder befintliga `APIClient`. Mock-implementationer for tester och previews.
 
 ### ViewModel-monster (foljande CalendarViewModels befintliga DI-pattern)
 
@@ -146,9 +146,9 @@ class BookingListViewModel {
 
 ### Problem
 
-Nuvarande implementation anvander `UIPageViewController` via `UIViewControllerRepresentable` (`PagedDayView`). Detta skapar 3 lager: UIPageViewController > UIHostingController > UIScrollView, som leder till gesture-konflikter mellan horisontell swipe och vertikal scroll.
+Nuvarande implementation använder `UIPageViewController` via `UIViewControllerRepresentable` (`PagedDayView`). Detta skapar 3 lager: UIPageViewController > UIHostingController > UIScrollView, som leder till gesture-konflikter mellan horisontell swipe och vertikal scroll.
 
-### Losning: iOS 17 ScrollView + scrollTargetBehavior
+### Lösning: iOS 17 ScrollView + scrollTargetBehavior
 
 Nested ScrollViews: yttre horisontell for dag-paging, inre vertikal for tidsrutnat.
 
@@ -185,7 +185,7 @@ ScrollView(.horizontal) {
 - Inga UIKit-bridging-buggar
 - `.refreshable` ger native pull-to-refresh utan UIKit
 
-**Migration:** `PagedDayView.swift` (UIViewControllerRepresentable) ersatts helt. `NativeCalendarView` refaktoreras att anvanda den nya scroll-baserade paging direkt.
+**Migration:** `PagedDayView.swift` (UIViewControllerRepresentable) ersatts helt. `NativeCalendarView` refaktoreras att använde den nya scroll-baserade paging direkt.
 
 ---
 
@@ -209,7 +209,7 @@ Agenten anvands for code review och teknisk radgivning under alla foljande steg.
 - Skapa `AuthenticatedView` med `TabView` (5 flikar: Kalender, Bokningar, Kunder, Dashboard, Mer)
 - Migrera overlay-logik fran ContentView (offline-banner, reconnected-banner, progress, splash) till AuthenticatedView
 - Varje flik wrappar befintlig `WebView` med ratt URL-path
-- Flytta kalender-tab till `CalendarCoordinator` (anvander befintlig `NativeCalendarView` -- annu ej fixad)
+- Flytta kalender-tab till `CalendarCoordinator` (använder befintlig `NativeCalendarView` -- annu ej fixad)
 - ContentView delegerar till `AuthenticatedView` efter auth
 - AppCoordinator observerar `AuthManager.state` for global logout (alla native-vyer dismissas)
 - Fixa `print()` i AuthManager -> AppLogger (cleanup)
@@ -341,7 +341,7 @@ Agenten anvands for code review och teknisk radgivning under alla foljande steg.
 
 - Skapa `CustomerRepository` (protocol + API-implementation)
 - Skapa `CustomerListViewModel` + `CustomerDetailViewModel`
-- Skapa `CustomerListView` (sok + lista) och `CustomerDetailView` (hastar, bokningar, anteckningar)
+- Skapa `CustomerListView` (sok + lista) och `CustomerDetailView` (hästar, bokningar, anteckningar)
 - Skapa `CustomersCoordinator` med NavigationPath
 - Expandera `APIClient` med kund-endpoints
 
@@ -353,7 +353,7 @@ Agenten anvands for code review och teknisk radgivning under alla foljande steg.
 
 - Overgangsanimationer mellan native-vyer
 - **Deep linking:** `AppCoordinator.handleDeepLink(url)` parser URL -> `selectedTab` + push pa ratt coordinators `NavigationPath`. Push-notifikationer (nu via `NotificationCenter.default.post(.navigateToURL)`) omdirigeras till AppCoordinator istallet for WebView.
-- Dashboard som native-vy (statistik, idag-oversikt, snabbatgarder)
+- Dashboard som native-vy (statistik, idag-översikt, snabbatgarder)
 - **Offline-cache:** Varje Repository far en cache-implementation som foljer `SharedDataManager`-monstret (App Group UserDefaults). Samma pattern som `CalendarCaching`-protokollet i CalendarViewModel.
 - Dark mode-verifiering
 - Anpassa dialoger (fullskarms-sheet for komplexa formulur)
@@ -379,7 +379,7 @@ Ny agent i `.claude/agents/ios-expert.md`:
 
 ## Kritiska filer att modifiera
 
-| Fil | Steg | Andring |
+| Fil | Steg | Ändring |
 |-----|------|---------|
 | `ContentView.swift` | 1 | Delegera till AuthenticatedView |
 | `NativeCalendarView.swift` | 2 | Stor refaktorering -- SwiftUI scroll-paging |

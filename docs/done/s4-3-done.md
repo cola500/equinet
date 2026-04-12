@@ -15,7 +15,7 @@ sections:
 
 ## Acceptanskriterier
 
-- [x] Feature inventory genomford och granskad
+- [x] Feature inventory genomförd och granskad
 - [x] Native vy visar kunder med service-intervall och dagar sedan senast
 - [x] ViewModel-tester skrivna och grona (9 tester)
 - [x] API route-tester skrivna och grona (7 tester)
@@ -51,7 +51,7 @@ sections:
 2. **Boka-knapp** -- Skippades (beslut i feature inventory). Kraver WebView-navigering
    till kalender -- hanteras battre med helhetsflodet senare.
 
-3. **Visuell verifiering** -- Ej genomford i denna session. Kraver dev-server med
+3. **Visuell verifiering** -- Ej genomförd i denna session. Kraver dev-server med
    seed-data som har completed bookings med service-intervall.
 
 ## Lardomar

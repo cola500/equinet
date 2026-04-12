@@ -42,7 +42,7 @@ sections:
    - Lazy import for att undvika att ladda Stripe SDK i onödan
 
 3. **IPaymentGateway utokad** med `providerName: string`:
-   - PaymentService anvander `this.deps.paymentGateway.providerName` istallet for hardkodad "mock"
+   - PaymentService använder `this.deps.paymentGateway.providerName` istallet for hardkodad "mock"
    - Sparar korrekt provider i Payment-tabellen
 
 4. **Feature flag** `stripe_payments` (default: false):

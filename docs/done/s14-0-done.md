@@ -19,7 +19,7 @@ sections:
 - [x] Bygga iOS-appen mot Supabase-projektet (zzdamokfeenencuggjjp)
 - [x] Login via Supabase Swift SDK
 - [x] Dashboard med data
-- [x] Navigation: alla tabs (Oversikt, Kalender, Bokningar, Mer)
+- [x] Navigation: alla tabs (Översikt, Kalender, Bokningar, Mer)
 - [x] WebView-sidor: autentiserade (Ruttplanering via session exchange)
 - [x] Native skarmar: Kunder
 - [x] Logout + re-login
@@ -48,7 +48,7 @@ Kordes: code-reviewer (enda relevanta -- verifieringsstory med bugfixar, ingen n
 5. Inte ersatt -> S13-6 verifierade bara webben
 
 **Fix:** La till Supabase Bearer token-verifiering i auth-dual.ts.
-Anvander `createSupabaseAdminClient().auth.getUser(token)` for att verifiera
+Använder `createSupabaseAdminClient().auth.getUser(token)` for att verifiera
 access tokens fran iOS. Cookie-auth forst (webb), sedan Bearer (iOS).
 
 **Filer:** `src/lib/auth-dual.ts`, `src/lib/auth-dual.test.ts`
@@ -73,13 +73,13 @@ Schema-isolation (`?schema=staging`) fungerar for data men INTE for auth.
 Custom Access Token Hook laser fran `public."User"`, inte schema-specifik.
 
 **Konsekvens:** Slot machine-monstret kraver att public-schemats User-tabells
-IDs matchar auth.users IDs. Seedskript maste anvanda auth.users IDn, inte
+IDs matchar auth.users IDs. Seedskript maste använde auth.users IDn, inte
 auto-genererade UUIDs.
 
 ## Laerdomar
 
 1. **Verifiering av auth-migrering MASTE inkludera iOS** -- webben och iOS
-   anvander helt olika auth-mekanismer (cookies vs Bearer). Att verifiera
+   använder helt olika auth-mekanismer (cookies vs Bearer). Att verifiera
    bara webben missar kritiska buggar.
 2. **getUser() != setSession()** i Supabase SSR -- getUser verifierar bara,
    setSession ar det som satter cookies. Viktig skillnad.

@@ -161,7 +161,7 @@ sections:
 
 ### 17. Ruttannonser (`route_announcements`)
 - **Beskrivning**: Leverantör annonserar rutter; kunder som följer eller bevakar kommunen får notiser.
-- **Roll**: Leverantor, Kund
+- **Roll**: Leverantör, Kund
 - **Status**: **Delvis fungerande**
 - **Kod**: `src/app/announcements/`, `src/app/api/route-orders/announcements/`, `src/domain/notification/RouteAnnouncementNotifier.ts`
 - **Belägg**: Publik sida för annonsering, notifier med dedup-tabell.
@@ -177,10 +177,10 @@ sections:
 
 ### 19. Besöksplanering (`due_for_service`)
 - **Beskrivning**: Visar hästar som snart behöver service baserat på intervall.
-- **Roll**: Leverantor, Kund
+- **Roll**: Leverantör, Kund
 - **Status**: **Fungerande**
 - **Kod**: `src/app/provider/due-for-service/`, `src/app/api/provider/due-for-service/`, `src/app/api/customer/due-for-service/`
-- **Belägg**: 4.5 KB service, 10.5 KB tester. Beräknar baserat på senaste bokning + intervall. Både leverantor- och kundvy.
+- **Belägg**: 4.5 KB service, 10.5 KB tester. Beräknar baserat på senaste bokning + intervall. Både leverantör- och kundvy.
 
 ### 20. Gruppbokningar (`group_bookings`)
 - **Beskrivning**: Kunder skapar gemensamma bokningsförfrågan (t.ex. hovslagare till stället).

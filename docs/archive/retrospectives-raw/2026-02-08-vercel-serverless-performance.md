@@ -31,7 +31,7 @@ Istallet for att gissa gick vi steg for steg: Supabase-loggar -> connection coun
 Vercel defaultar till `iad1` (Virginia) om man inte satter region explicit. Med Supabase i `eu-central-2` (Zurich) blev varje query ~150ms istallet for ~5ms. Multiplicerat med 3 queries per request + dubbel-fetch = 900ms+ per sidladdning.
 
 ### 3. Supabase MCP-verktyg for snabb diagnostik
-`get_advisors`, `execute_sql` (pg_stat_activity) och `get_logs` gav snabb insyn i databas-halsa utan att behova logga in i dashboarden.
+`get_advisors`, `execute_sql` (pg_stat_activity) och `get_logs` gav snabb insyn i databas-hälsa utan att behova logga in i dashboarden.
 
 ## Vad kan forbattras
 

@@ -268,7 +268,7 @@ Mar:  [=========] 107 commits -- iOS native + stall. Mer fokuserat.
 
 6. **Rostloggning** (~5 commits) -- iOS SpeechRecognizer + backend VoiceInterpretationService. **Oklart om AI-tolkning fungerar. Imponerande koncept men oklart om det ger värde idag.**
 
-7. **Kommun-bevakning + Följa leverantor** (~5+5 commits) -- Fungerar tekniskt men ger värde forst när det finns många användare. **Trevligt för MVP men inte kritiskt.**
+7. **Kommun-bevakning + Följa leverantör** (~5+5 commits) -- Fungerar tekniskt men ger värde forst när det finns många användare. **Trevligt för MVP men inte kritiskt.**
 
 8. **DX-förbättringar (hooks, check:all, flags:validate)** (~3 commits) -- Förbättrar utvecklarupplevelsen men noll användarvärde. **Ratt för ett team, överflödigt för en ensam utvecklare.**
 

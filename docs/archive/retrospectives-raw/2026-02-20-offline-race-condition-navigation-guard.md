@@ -43,7 +43,7 @@ Komponenten hade ingen testfil alls. Nu har den 5 tester som ocksa dokumenterar 
 ### 1. Offline-navigeringsskydd saknas for CustomerLayout
 BottomTabBar och ProviderNav har nu offline-skydd, men kundsidornas navigering (CustomerLayout/CustomerBottomTabBar) har inte samma skydd. En kund som navigerar offline far fortfarande RSC-krasch.
 
-**Prioritet:** MEDEL -- kunder anvander troligen inte appen offline lika ofta som leverantorer, men det ar en inkonsekvent upplevelse.
+**Prioritet:** MEDEL -- kunder använder troligen inte appen offline lika ofta som leverantörer, men det ar en inkonsekvent upplevelse.
 
 ### 2. Ingen E2E-verifiering av offline-navigering
 Testerna ar unit-tester som mockar useOnlineStatus. Riktigt offline-beteende i webblasaren (SW + RSC + navigering) testas inte automatiskt. Manuell testplan i PR ar den enda verifieringen.
@@ -91,7 +91,7 @@ Nyckelinsikt: tillat klick pa AKTIV flik (ingen navigering sker). Blockera bara 
 1. Varfor? Appen visar `/~offline` eller blank skarm vid klick pa flik.
 2. Varfor? RSC-request till servern failar, SW har inte sidan cachad.
 3. Varfor? SW cachar bara sidor som besokts online (runtime caching). Prefetch hamnar i separat cache.
-4. Varfor? Next.js Link-prefetch anvander `rscPrefetch`-cache men navigering anvander `rsc`-cache -- tva separata caches.
+4. Varfor? Next.js Link-prefetch använder `rscPrefetch`-cache men navigering använder `rsc`-cache -- tva separata caches.
 5. Varfor? Next.js App Router ar designat for server-rendering, inte offline. SW kan inte bridga gapet mellan prefetch och navigering.
 
 **Åtgärd:** Blockera navigering klient-side med `e.preventDefault()` + toast. Förhindra att RSC-requesten ens skickas.
@@ -99,4 +99,4 @@ Nyckelinsikt: tillat klick pa AKTIV flik (ingen navigering sker). Blockera bara 
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Nar tva browser-APIs har olika tidslinje (useSession ~2s fore navigator.onLine) kan man INTE anvanda en kombination av dem for att dra slutsatser. "unauthenticated + online" betyder INTE "anvandaren loggade ut" -- det kan lika garna betyda "natverket precis gick ner". Losningen ar att undvika destruktiva operationer (cache-rensning) baserat pa ambiguosa signaler.
+**Nyckelinsikt:** Nar tva browser-APIs har olika tidslinje (useSession ~2s fore navigator.onLine) kan man INTE använde en kombination av dem for att dra slutsatser. "unauthenticated + online" betyder INTE "anvandaren loggade ut" -- det kan lika garna betyda "natverket precis gick ner". Losningen ar att undvika destruktiva operationer (cache-rensning) baserat pa ambiguosa signaler.

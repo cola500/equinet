@@ -33,6 +33,6 @@ sections:
 
 ## Lardomar
 
-- **Minimal andring**: Hela migreringen var 2 raders andringar i route.ts (import + anrop). `getAuthUser()` abstraherar bort komplexiteten.
+- **Minimal ändring**: Hela migreringen var 2 raders ändringar i route.ts (import + anrop). `getAuthUser()` abstraherar bort komplexiteten.
 - **Testmigrering enkel**: Mock-byte fran `auth` till `getAuthUser` var rakt pa. `AuthUser`-interfacet gor testerna tydligare an det gamla `session.user`-monstret.
 - **Alla tre auth-metoder testade**: Bearer, NextAuth och Supabase -- aven om routen inte branchar pa authMethod ar det bra dokumentation.

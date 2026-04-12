@@ -56,7 +56,7 @@ if (result.count === 0) {
 
 **Varfor `createMany` + `skipDuplicates`**: Atomisk INSERT ON CONFLICT DO NOTHING i PostgreSQL. Inget TOCTOU-fonster, inget try/catch for kontrollflode. `count === 0` = duplicat, `count === 1` = ny event.
 
-**Failure-hantering**: Om processing kastar EFTER dedup-insert, returneras 500 -> Stripe retriar -> dedup blockar retry -> permanent event-forlust. Losning: wrappa dispatch i try/catch, radera dedup-raden vid failure sa retry fungerar:
+**Failure-hantering**: Om processing kastar EFTER dedup-insert, returneras 500 -> Stripe retriar -> dedup blockar retry -> permanent event-forlust. Lösning: wrappa dispatch i try/catch, radera dedup-raden vid failure sa retry fungerar:
 
 ```typescript
 try {
@@ -83,12 +83,12 @@ const TERMINAL_STATES = new Set(["canceled", "incomplete_expired"])
 
 ### 4. Injicera Prisma-access i routen
 
-Routen anvander redan `prisma` indirekt via factories. For dedup-tabellen kan vi anvanda Prisma direkt i routen (det ar infra, inte domanlogik) via en tunn helper:
+Routen använder redan `prisma` indirekt via factories. For dedup-tabellen kan vi använde Prisma direkt i routen (det ar infra, inte domanlogik) via en tunn helper:
 - `src/infrastructure/persistence/stripe/stripeWebhookEventRepository.ts` med `isProcessed(eventId)` + `markProcessed(eventId, eventType)`.
 
 ## Filer som andras/skapas
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `prisma/schema.prisma` | Ny modell `StripeWebhookEvent` |
 | `src/infrastructure/persistence/stripe/stripeWebhookEventRepository.ts` | NY: isProcessed + markProcessed |

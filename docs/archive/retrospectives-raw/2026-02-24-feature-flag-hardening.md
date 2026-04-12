@@ -70,7 +70,7 @@ if (!(await isFeatureEnabled("flag_name"))) {
 }
 ```
 - Alltid 404 (doljer att feature existerar)
-- Alltid "Ej tillganglig" som felmeddelande
+- Alltid "Ej tillgänglig" som felmeddelande
 - Test: `mockIsFeatureEnabled.mockResolvedValueOnce(false)` + expect 404
 
 ## 5 Whys (Root-Cause Analysis)
@@ -82,7 +82,7 @@ if (!(await isFeatureEnabled("flag_name"))) {
 4. Varfor? Commit `f121831` (migrate flags from Redis to PostgreSQL) lade till Prisma-importer utan att separera klient-safe exports
 5. Varfor? Det fanns inget monster/regel for att skilja klient-safe metadata fran server-only logik i feature flag-systemet
 
-**Atgard:** Skapade `feature-flag-definitions.ts` (klient-safe) + `.claude/rules/feature-flags.md` (dokumenterar monster). Alla framtida feature-flag-importer i klient-kod pekar pa definitions-filen.
+**Åtgärd:** Skapade `feature-flag-definitions.ts` (klient-safe) + `.claude/rules/feature-flags.md` (dokumenterar monster). Alla framtida feature-flag-importer i klient-kod pekar pa definitions-filen.
 **Status:** Implementerad
 
 ### Problem: Merge-konflikt i feature-flag-defaults
@@ -92,7 +92,7 @@ if (!(await isFeatureEnabled("flag_name"))) {
 4. Varfor? Branch:en levde parallellt med main utan rebasing
 5. Varfor? Ingen process for att rebasera langlivade branches
 
-**Atgard:** Uppdaterade `feature-flag-definitions.ts` till att matcha main:s alla-true-defaults vid merge-tillfallet.
+**Åtgärd:** Uppdaterade `feature-flag-definitions.ts` till att matcha main:s alla-true-defaults vid merge-tillfallet.
 **Status:** Implementerad (for denna gang). Rebase-policy: att gora.
 
 ## Larandeeffekt

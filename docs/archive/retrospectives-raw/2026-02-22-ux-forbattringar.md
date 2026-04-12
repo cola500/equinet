@@ -22,13 +22,13 @@
 | Domain | `AuthService.ts`, `AuthService.test.ts` | requestPasswordReset (1h token, enumeration prevention), resetPassword (validate+hash+atomic) |
 | Email | `email-service.ts`, `templates.ts`, `index.ts` | sendPasswordResetNotification, passwordResetEmail template |
 | API | `forgot-password/route.ts` + test, `reset-password/route.ts` + test | Rate limiting, Zod .strict(), svenska felmeddelanden, 16 nya route-tester |
-| Auth UI | `forgot-password/page.tsx`, `reset-password/page.tsx`, `login/page.tsx` | Glomt losenord-lank + tva nya sidor |
+| Auth UI | `forgot-password/page.tsx`, `reset-password/page.tsx`, `login/page.tsx` | Glomt lösenord-lank + tva nya sidor |
 | Navigation | `ProviderNav.tsx` | Desktop "Mer"-dropdown med click-outside, sekundara items filtrade pa feature flags |
 | Layout | `notifications/page.tsx` | Dynamisk CustomerLayout/ProviderLayout baserat pa userType |
 | Sok | `providers/page.tsx`, `providers/[id]/page.tsx` | Profilbilder, sortering, filter-state i URL (replaceState), router.back() for bevarade filter |
 | Bokning | `DesktopBookingDialog.tsx`, `MobileBookingFlow.tsx`, `useBookingFlow.ts` | Sammanfattningssteg ("confirm") fore submission pa bade desktop och mobil |
 | Content | `faq/page.tsx` | Expanderad fran 1 till 8 FAQ-items med native details/summary |
-| Profil | `provider/profile/page.tsx` | 3-fliksystem: Profil, Tillganglighet, Bokningsinstallningar |
+| Profil | `provider/profile/page.tsx` | 3-fliksystem: Profil, Tillgänglighet, Bokningsinstallningar |
 | CSS | `globals.css` | Semantiska status-designtokens (--status-confirmed, --status-pending, etc.) |
 | A11y | `OfflineBanner.tsx`, `provider/bookings/page.tsx`, `customer/bookings/page.tsx` | aria-live="polite", aria-pressed pa filter-knappar |
 | Loading | `CustomerListSkeleton.tsx`, `InsightsChartSkeleton.tsx` | Ersatter generiska spinners med skeleton-loaders |
@@ -44,7 +44,7 @@ Att kora typecheck mellan varje fas fangade problem tidigt. Noll ackumulerade er
 Losenordsaterstellningen foljer exakt samma monster som EmailVerificationToken (schema, repository, service, route, test). AuthService utokades organiskt utan ny arkitektur. MockAuthRepository fick nya metoder som speglar befintliga patterns.
 
 ### 3. Bred UX-forbattring utan UI-ramverksbyte
-15 forbattringar genomfordes utan att introducera nya beroenden. FAQ anvander native `<details>/<summary>`, profil-flikar anvander enkel state, sortering ar client-side. Minimal komplexitet for maximal UX-forbattring.
+15 forbattringar genomfördes utan att introducera nya beroenden. FAQ använder native `<details>/<summary>`, profil-flikar använder enkel state, sortering ar client-side. Minimal komplexitet for maximal UX-forbattring.
 
 ### 4. Security-first pa publika routes
 Bade forgot-password och reset-password ar publika (inget auth-krav) men har rate limiting, enumeration prevention (konstant response), Zod .strict(), och atomar $transaction for losenordsuppdatering. Security-checken gav 8/8 PASS.
@@ -59,7 +59,7 @@ CSS-variablerna for status-farger (--status-confirmed etc.) lades till i globals
 ### 2. Ingen commit mellan faser
 Alla 15 items committades i en enda stor commit (42 filer). Vid problem hade det varit svarare att identifiera vilken fas som introducerade en regression. MEMORY.md flaggar redan "COMMITTA ALLTID efter varje fas" -- regeln foljdes inte.
 
-**Prioritet:** MEDEL -- risken ar begransad for UX-andringar utan affarslogik, men principen bor foljas
+**Prioritet:** MEDEL -- risken ar begransad for UX-ändringar utan affarslogik, men principen bor foljas
 
 ### 3. Context clear mitt i implementation
 Sessionen delade sig i tva delar (fas 1-5 + fas 6-7) pa grund av context-begransning. Statusfilen i memory fungerade bra for overlamning, men det skapar overhead.

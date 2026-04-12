@@ -10,7 +10,7 @@ sections:
 
 # S21-3: Auth-routes cleanup
 
-## Andringar per fil
+## Ändringar per fil
 
 | Fil | getClientIP | .strict() | RateLimitServiceError 503 | Ovrigt |
 |-----|-------------|-----------|---------------------------|--------|
@@ -21,4 +21,4 @@ sections:
 | reset-password | OK | Redan OK | Lagg till inner try/catch | - |
 | native-session-exchange | OK | Lagg till Zod pa refreshToken | Redan OK | - |
 
-Mekaniska andringar -- enkel TDD: skriv test for 503 + .strict() rejection, implementera, verify.
+Mekaniska ändringar -- enkel TDD: skriv test for 503 + .strict() rejection, implementera, verify.

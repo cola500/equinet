@@ -1106,7 +1106,7 @@ Skapa en klientsida med:
 - Filtrera pa status via dropdown (Alla, Ny, Under utredning, Planerad, Fixad, Avfardad)
 - Sortera pa datum (standard) eller prioritet
 - Klickbar rad -> navigera till `/admin/bug-reports/[id]`
-- Anvand `useSWR` for datahemtning (konsekvent med resten av appen)
+- Använd `useSWR` for datahemtning (konsekvent med resten av appen)
 - Status-badges med farger: NEW=blue, INVESTIGATING=amber, PLANNED=purple, FIXED=green, DISMISSED=gray
 - Prioritet-badges: P0=red, P1=orange, P2=yellow, P3=gray
 
@@ -1123,7 +1123,7 @@ Skapa en klientsida med:
 - Redigerbar prioritet (dropdown)
 - Redigerbar intern kommentar (textarea)
 - Spara-knapp som PATCH:ar till `/api/admin/bug-reports/[id]`
-- Toast-bekraftelse vid sparad andring
+- Toast-bekraftelse vid sparad ändring
 - Tillbaka-lank till listan
 
 ### Task 5.3: Lagg till Buggrapporter i AdminNav

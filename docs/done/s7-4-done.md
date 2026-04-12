@@ -28,7 +28,7 @@ Fran sprint-dokumentet:
 
 ## Definition of Done
 
-- [x] Fungerar som forvantat -- Research genomford, alla fragor besvarade
+- [x] Fungerar som forvantat -- Research genomförd, alla fragor besvarade
 - [x] Saker -- Sakerhetsgranskning ingick i spiken (Zod, ownership, injection-skydd)
 - [x] Docs uppdaterade -- `docs/research/voice-logging-spike.md`
 - [x] Tidbox: Max 1 session -- Korrekt
@@ -52,5 +52,5 @@ Inga avvikelser fran planen.
 4. **UTC-tidszonsbuggen ar en kand begransning.** `setHours(0,0,0,0)` pa servern (UTC)
    kan missa sena svenska bokningar. Bor fixas om anvandare rapporterar problem.
 
-5. **confirm-route saknar `withApiHandler`** medan interpret-route anvander det.
+5. **confirm-route saknar `withApiHandler`** medan interpret-route använder det.
    Inkonsekvent men inte felaktigt -- alla sakerhetscheckar ar manuellt implementerade.

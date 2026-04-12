@@ -33,7 +33,7 @@
 ## Vad gick bra
 
 ### 1. Repository-pattern skyddade implementationen
-`updateProviderNotesWithAuth` anvander atomart WHERE (`id + providerId`) for IDOR-skydd. Samma monster som ovriga booking-operationer -- inget nytt pattern behovdes.
+`updateProviderNotesWithAuth` använder atomart WHERE (`id + providerId`) for IDOR-skydd. Samma monster som ovriga booking-operationer -- inget nytt pattern behovdes.
 
 ### 2. Villkorlig synlighet i timeline ar ren och enkel
 providerNotes syns i timeline BARA for provider (via `isProvider`-flagga). Agaren och publika vyer (hastpass) ser det inte. Implementerat i `timeline.ts` och `HorseService.ts` med minimal kodandring.

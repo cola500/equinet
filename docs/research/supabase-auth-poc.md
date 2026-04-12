@@ -29,7 +29,7 @@ Allt fungerar. Provider ser bara sina egna bokningar via RLS, anon-anvandare ser
 
 | Test | Resultat |
 |------|----------|
-| Supabase Auth login (email+losenord) | **OK** |
+| Supabase Auth login (email+lösenord) | **OK** |
 | Custom claims i JWT (userType, providerId, isAdmin) | **OK** |
 | RLS: provider ser bara sina bokningar | **OK** -- 1 bokning returnerad (av 2 i tabellen) |
 | RLS: anon ser ingenting | **OK** -- tom lista |
@@ -99,7 +99,7 @@ Anvandaren finns i bade `auth.users` och `public.User` + `public.Provider` med m
    for Prisma migrate. Port 6543 (transaction mode) hangar. Direct connection (`db.*.supabase.co`)
    ar inte nåbar.
 
-3. **RLS utan FORCE**: Vi anvander `ENABLE ROW LEVEL SECURITY` men INTE `FORCE`.
+3. **RLS utan FORCE**: Vi använder `ENABLE ROW LEVEL SECURITY` men INTE `FORCE`.
    Det betyder att service_role (Prisma) kringgar RLS -- befintliga routes paverkas inte.
    Bara queries via Supabase-klienten med user JWT filtreras.
 
@@ -111,13 +111,13 @@ Anvandaren finns i bade `auth.users` och `public.User` + `public.Provider` med m
 
 **GO.**
 
-| Kriterium | Bedomning |
+| Kriterium | Bedömning |
 |-----------|-----------|
-| Login fungerar | Ja -- email+losenord via Supabase Auth |
+| Login fungerar | Ja -- email+lösenord via Supabase Auth |
 | Custom claims | Ja -- userType, providerId, isAdmin i JWT |
 | RLS filtrerar | Ja -- provider ser bara sina bokningar |
 | RLS blockerar | Ja -- anon ser ingenting |
-| Prisma-kompatibilitet | Ja -- service_role kringgar RLS, inga andringar behovs |
+| Prisma-kompatibilitet | Ja -- service_role kringgar RLS, inga ändringar behovs |
 | Performance | Acceptabelt -- hook ar en enkel SELECT med JOIN |
 
 **Risker att hantera i full migrering:**

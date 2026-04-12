@@ -21,7 +21,7 @@ sections:
 - [x] Dashboard laddar med data
 - [x] Bokningar laddar med kunddata (efter RLS-fix)
 - [x] Kunder laddar
-- [x] Tjanster laddar (17 tjanster)
+- [x] Tjänster laddar (17 tjänster)
 - [x] Kalender laddar
 - [x] Recensioner laddar (tom, forvantat)
 - [x] RLS: provider ser bara sin data
@@ -31,10 +31,10 @@ sections:
 | Sida | Status | Notering |
 |------|--------|----------|
 | Login | OK | Supabase Auth, custom claims i JWT |
-| Dashboard | OK | 17 tjanster, grafer |
+| Dashboard | OK | 17 tjänster, grafer |
 | Kalender | OK | Veckovy med tider |
 | Bokningar | OK (efter fix) | 21 bokningar med kundinfo |
-| Tjanster | OK | 17 tjanster |
+| Tjänster | OK | 17 tjänster |
 | Kunder | OK | Kundlista med bokningsdata |
 | Recensioner | OK | Tom lista (forvantat) |
 | Health | OK | `database: connected` |

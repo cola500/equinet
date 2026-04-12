@@ -47,7 +47,7 @@ Skrev 13 tester forst, fick RED (fil saknas), skapade komponent, fixade 2 testfe
 BookingDetailDialog gick fran ~500 till ~400 rader. Tre lokala state-variabler (`providerNotes`, `isEditingNotes`, `isSavingNotes`) och `guardMutation`-anropet flyttades in i den nya komponenten. Funktionaliteten ar identisk men nu ateranvandbar.
 
 ### 3. API:t levererade redan data
-`providerNotes` returnerades redan fran PrismaBookingRepository (rad 360) -- ingen backend-andring behovdes. Det enda som saknades var `providerNotes` i TypeScript-interfacet pa bokningssidan.
+`providerNotes` returnerades redan fran PrismaBookingRepository (rad 360) -- ingen backend-ändring behovdes. Det enda som saknades var `providerNotes` i TypeScript-interfacet pa bokningssidan.
 
 ### 4. Visuell verifiering fangade ratt saker
 Playwright MCP bekraftade alla tre scenarierna: tom anteckning (lank), befintlig anteckning (bla ruta), redigeringslage (textarea + mikrofon + rakare). Bade pa bokningssidan och i kalenderdialogen.
@@ -70,4 +70,4 @@ Knappen i BookingNotesSection (den textlank som visas utan anteckning) skriver "
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Nar API:t redan returnerar data men UI:t inte anvander den, ar losningen ofta att bara lagga till faltet i TypeScript-interfacet och skapa en UI-komponent -- ingen backend-andring alls. "Kolla vad API:t redan ger dig" ar ett bra forsta steg.
+**Nyckelinsikt:** Nar API:t redan returnerar data men UI:t inte använder den, ar losningen ofta att bara lagga till faltet i TypeScript-interfacet och skapa en UI-komponent -- ingen backend-ändring alls. "Kolla vad API:t redan ger dig" ar ett bra forsta steg.

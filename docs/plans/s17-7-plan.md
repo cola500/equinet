@@ -84,12 +84,12 @@ funktionen och GRANTs -- detta fungerar aven mot lokal Supabase.
 ### Fas 5: CI-paverkan
 
 - CI kors med separat testdatabas (`equinet_test` i GitHub Actions)
-- CI anvander INTE `db:up` -- migrationer kors direkt
+- CI använder INTE `db:up` -- migrationer kors direkt
 - **Ingen CI-paverkan forvantad** -- vi andrar bara lokala dev-scripts
 
 ## Risker
 
-| Risk | Sannolikhet | Atgard |
+| Risk | Sannolikhet | Åtgärd |
 |------|-------------|--------|
 | Prisma migrate mot Supabase-roller (supabase_auth_admin etc) krockar | Lag | Testa lokalt, GRANTs i migration.sql fungerar |
 | Port-konflikt om Docker PostgreSQL ocksa kors | Lag | Dokumentera: kor `db:down` pa Docker forst |

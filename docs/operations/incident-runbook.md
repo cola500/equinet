@@ -38,7 +38,7 @@ npm run env:status        # Vilken databas ar aktiv?
 npm run migrate:status    # Finns det pending migrationer?
 ```
 
-### Losning
+### Lösning
 
 **Supabase:**
 1. Kontrollera Supabase Dashboard -> Database Health
@@ -64,7 +64,7 @@ npm run migrate:status    # Visar pending, drift och misslyckade
 npm run migrate:check     # Snabb oversikt av senaste 5
 ```
 
-### Losning
+### Lösning
 1. Logga in pa Supabase SQL Editor
 2. Kontrollera `_prisma_migrations`:
    ```sql
@@ -93,7 +93,7 @@ npm run migrate:check     # Snabb oversikt av senaste 5
 1. Stripe Dashboard -> Developers -> Webhooks -> Event log
 2. Vercel-loggar for `/api/webhooks/stripe`
 
-### Losning
+### Lösning
 
 **Signaturfel:**
 - Kontrollera att `STRIPE_WEBHOOK_SECRET` i Vercel matchar webhook-konfigurationen i Stripe Dashboard
@@ -119,7 +119,7 @@ npm run migrate:check     # Snabb oversikt av senaste 5
 1. Upstash Console -> Data Browser (sok pa anvandarnyckel)
 2. Vercel-loggar (filtrera pa status 429)
 
-### Losning
+### Lösning
 
 **Enstaka anvandare:**
 - Rate limits aterstalls automatiskt (sliding window)
@@ -137,14 +137,14 @@ npm run migrate:check     # Snabb oversikt av senaste 5
 
 ### Symptom
 - Kunder far inte bokningsbekraftelser
-- Leverantorer far inte paminnelser
+- Leverantörer far inte paminnelser
 
 ### Diagnos
 1. Kontrollera `RESEND_API_KEY` i Vercel miljovariabler
 2. Resend Dashboard -> Logs
 3. Vercel-loggar (sok pa "email" eller "resend")
 
-### Losning
+### Lösning
 - **`DISABLE_EMAILS="true"`**: E-post ar medvetet avaktiverat. Ta bort eller satt till `false`.
 - **API-nyckelfel**: Regenerera nyckel i Resend Dashboard, uppdatera i Vercel
 - **Bounce/spam**: Kontrollera avsandaradress (`FROM_EMAIL`) och DNS (SPF/DKIM)
@@ -161,7 +161,7 @@ npm run migrate:check     # Snabb oversikt av senaste 5
 1. Vercel Dashboard -> Crons -> Execution log
 2. Kontrollera att `CRON_SECRET` matchar i Vercel miljovariabler
 
-### Losning
+### Lösning
 - **401-fel**: `CRON_SECRET` saknas eller ar fel. Uppdatera i Vercel Project Settings.
 - **500-fel**: Las Vercel-loggarna for det specifika cron-jobbet
 - **Manuell korning**: Anropa endpointen direkt med `Authorization: Bearer <CRON_SECRET>`
@@ -180,7 +180,7 @@ npm run migrate:check     # Snabb oversikt av senaste 5
 
 Prisma stodjer inte automatisk rollback. Vid problematisk migration:
 
-1. Skriv en ny migration som ateroverar andringar
+1. Skriv en ny migration som ateroverar ändringar
 2. Applicera med `npm run migrate:supabase`
 3. Deploya ny version
 
@@ -190,19 +190,19 @@ Prisma stodjer inte automatisk rollback. Vid problematisk migration:
 
 ## Eskalering
 
-| Niva | Atgard |
+| Niva | Åtgärd |
 |------|--------|
 | P1 (Sidan nere) | Rollback deploy + kontrollera databas |
 | P2 (Feature trasig) | Avaktivera feature flag via Admin -> System |
 | P3 (Prestandaproblem) | Kontrollera Supabase queries + Vercel functions |
 
-> Feature flags kan anvandas for att snabbt avaktivera problematiska features utan deploy.
+> Feature flags kan används for att snabbt avaktivera problematiska features utan deploy.
 
 ---
 
 ## Kontaktinfo och eskalering
 
-| Tjanst | Kontakt | Notering |
+| Tjänst | Kontakt | Notering |
 |--------|---------|----------|
 | **Supabase** | Dashboard + support@supabase.io | Status: status.supabase.com |
 | **Stripe** | Dashboard + support.stripe.com | Status: status.stripe.com |
@@ -215,7 +215,7 @@ Prisma stodjer inte automatisk rollback. Vid problematisk migration:
 
 1. Stang av paverkade API-nycklar omedelbart
 2. Kontakta Supabase support for logganalys
-3. Dokumentera handelsen (tidpunkt, paverkan, atgard)
+3. Dokumentera handelsen (tidpunkt, paverkan, åtgärd)
 4. Meddela paverkade anvandare om persondata berors (GDPR, 72h)
 
 ---

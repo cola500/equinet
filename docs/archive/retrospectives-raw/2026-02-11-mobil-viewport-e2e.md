@@ -32,7 +32,7 @@
 ## Vad gick bra
 
 ### 1. 80% av testerna passerade direkt pa mobil
-Utan nagra andringar passerade 77 av 103 E2E-tester pa mobil viewport. Det visar att appen ar valbyggd responsivt och att testerna ar relativt viewport-agnostiska (anvander `page.goto()` istallet for UI-navigation).
+Utan nagra ändringar passerade 77 av 103 E2E-tester pa mobil viewport. Det visar att appen ar valbyggd responsivt och att testerna ar relativt viewport-agnostiska (använder `page.goto()` istallet for UI-navigation).
 
 ### 2. Snabb identifiering av rotorsaker
 Genom att kora testerna, lasa error-context-filer och analysera page snapshots kunde vi kategorisera alla 20 failures i 9 kategorier. De flesta berodde pa forvantat beteende (mobil visar dagvy, MobileBookingFlow, etc.) -- inte buggar.
@@ -47,7 +47,7 @@ Fixarna i announcements.spec.ts (strict mode violations) och auth.spec.ts (breda
 
 ## Vad kan forbattras
 
-### 1. ResponsiveAlertDialog bor anvanda React Context
+### 1. ResponsiveAlertDialog bor använde React Context
 Varje sub-komponent har en egen `useIsMobile()` hook, vilket kan ge mismatch. Bor refaktoreras till ett delat Context sa alla barn garanterat far samma varde.
 
 **Prioritet:** HOG -- Runtime-krasch pa mobil vid delete-dialoger.
@@ -71,7 +71,7 @@ test('my test', async ({ page }) => {
   // rest of test...
 });
 ```
-Anvand `test.info().project.name` for att villkorligt skippa tester som kraver fundamentalt annorlunda UI pa mobil. Ger tydlig dokumentation av varfor testet inte kor.
+Använd `test.info().project.name` for att villkorligt skippa tester som kraver fundamentalt annorlunda UI pa mobil. Ger tydlig dokumentation av varfor testet inte kor.
 
 ### Viewport-medveten assertion
 ```typescript
@@ -82,10 +82,10 @@ if (test.info().project.name !== 'mobile') {
 For element med `hidden sm:block` -- skippa assertion pa mobil istallet for att skippa hela testet.
 
 ### Strict mode violation-fix
-Desktop-nav med `hidden md:block` gor att `getByText(/text/i)` matchar dolda element pa mobil. Anvand:
+Desktop-nav med `hidden md:block` gor att `getByText(/text/i)` matchar dolda element pa mobil. Använd:
 - `getByRole('heading', { name: '...', exact: true })` istallet for `getByText`
 - Exakta textmatchningar: `getByText('Tjanster *')` istallet for `getByText(/tjanster/i)`
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** Att lagga till mobil viewport i E2E ar enkelt (1 rad config) men exponerar viktiga problem: responsiva CSS-klasser som doljer element (`hidden sm:block`) orsakar strict mode violations i Playwright, och komponenter som byter bibliotek vid viewport-andring (Radix AlertDialog -> vaul Drawer) ar sarbara for hydration-mismatch.
+**Nyckelinsikt:** Att lagga till mobil viewport i E2E ar enkelt (1 rad config) men exponerar viktiga problem: responsiva CSS-klasser som doljer element (`hidden sm:block`) orsakar strict mode violations i Playwright, och komponenter som byter bibliotek vid viewport-ändring (Radix AlertDialog -> vaul Drawer) ar sarbara for hydration-mismatch.

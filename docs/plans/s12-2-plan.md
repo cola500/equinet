@@ -40,7 +40,7 @@ Mekanisk migrering, samma monster for alla:
 3. **Null-check**: `!session` -> `!authUser`, return 401
 4. **Properties**: `session.user.id` -> `authUser.id`, `session.user.userType` -> `authUser.userType`
 5. **Specialfall PUT**: Ta bort manuell Bearer-check, ersatt med `getAuthUser()`
-6. **Specialfall payment**: Ta bort `requireAuth()` wrapper, anvand direkt null-check
+6. **Specialfall payment**: Ta bort `requireAuth()` wrapper, använd direkt null-check
 
 Stationsflode: Plan -> Red -> Green -> Review -> Verify -> Merge
 
@@ -66,6 +66,6 @@ Stationsflode: Plan -> Red -> Green -> Review -> Verify -> Merge
 
 ## Risker
 
-- **Lag**: Inga -- mekanisk andring, bevisat monster
+- **Lag**: Inga -- mekanisk ändring, bevisat monster
 - **PUT dual-auth**: Redan fungerar, men manuell kod ersatts med `getAuthUser()` som gor samma sak
 - **requireAuth wrapper**: Maste forstas korrekt -- den kastar Response, vi byter till null-check + return

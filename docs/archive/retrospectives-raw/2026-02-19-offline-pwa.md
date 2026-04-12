@@ -1,7 +1,7 @@
 # Retrospektiv: Offline PWA-stod for Equinet
 
 **Datum:** 2026-02-19
-**Scope:** Installbar PWA med offline-stod for leverantorer (lasbara data)
+**Scope:** Installbar PWA med offline-stod for leverantörer (lasbara data)
 
 ---
 
@@ -34,7 +34,7 @@
 ## Vad gick bra
 
 ### 1. Ren separation med feature flag
-Hela offline-funktionaliteten ar gatad bakom `offline_mode`-flaggan (default: false). Inget paverkar befintliga anvandare forran flaggan slas pa. SWRProvider byter fetcher villkorligt -- enda andringen i befintlig SWR-setup.
+Hela offline-funktionaliteten ar gatad bakom `offline_mode`-flaggan (default: false). Inget paverkar befintliga anvandare forran flaggan slas pa. SWRProvider byter fetcher villkorligt -- enda ändringen i befintlig SWR-setup.
 
 ### 2. TDD fangade designbeslut tidigt
 55 tester skrevs fore implementation. Testerna definierade kontrakten: 4h cache-staleness, vilka endpoints som ar cachebara, att reconnection-bannern forsvinner efter 3s. Ingen omskrivning behrovdes.
@@ -48,17 +48,17 @@ Bara 2 befintliga komponenter andrades (SWRProvider +5 rader, ProviderLayout +4 
 ## Vad kan forbattras
 
 ### 1. SVG-ikoner istallet for PNG
-PWA-manifestet anvander SVG-ikoner. De flesta moderna browsers stodjer detta, men vissa aldre Android-versioner kraver PNG. For produktion bor riktiga designade PNG-ikoner skapas (192x192, 512x512).
+PWA-manifestet använder SVG-ikoner. De flesta moderna browsers stodjer detta, men vissa aldre Android-versioner kraver PNG. For produktion bor riktiga designade PNG-ikoner skapas (192x192, 512x512).
 
 **Prioritet:** LAG -- SVG fungerar for MVP/test, PNG-ikoner ar en designuppgift
 
 ### 2. Offline-fetcher cachar bara 3 endpoints
-`/api/bookings`, `/api/routes/my-routes`, `/api/provider/profile` ar cachebara. Andra provider-endpoints (kunder, tjanster, insikter) ar inte med. Utbyggnad kraver manuell mappning per endpoint.
+`/api/bookings`, `/api/routes/my-routes`, `/api/provider/profile` ar cachebara. Andra provider-endpoints (kunder, tjänster, insikter) ar inte med. Utbyggnad kraver manuell mappning per endpoint.
 
 **Prioritet:** MEDEL -- utoka nar anvandare rapporterar vilken data de behover offline
 
 ### 3. Ingen write-back (mutation offline)
-Denna iteration ar read-only. Leverantorer kan se data offline men inte markera bokningar som klara eller uppdatera ruttstopp. Background Sync ar nasta steg.
+Denna iteration ar read-only. Leverantörer kan se data offline men inte markera bokningar som klara eller uppdatera ruttstopp. Background Sync ar nasta steg.
 
 **Prioritet:** MEDEL -- planerad som fas 2+ i planen
 
@@ -89,7 +89,7 @@ SW-filer (`src/sw.ts`) ska exkluderas fran bade `tsconfig.json` OCH `tsconfig.ty
 4. Varfor? TS-konfigens merge-strategi ar "replace" for arrays, inte "merge"
 5. Varfor? TypeScript-designbeslut -- arrays i config ar atomara
 
-**Atgard:** Lade till `src/sw.ts` i BADA tsconfig-filernas exclude. Dokumenterat som pattern ("Service Worker tsconfig-isolation") ovan.
+**Åtgärd:** Lade till `src/sw.ts` i BADA tsconfig-filernas exclude. Dokumenterat som pattern ("Service Worker tsconfig-isolation") ovan.
 **Status:** Implementerad
 
 ### Problem: Feature flag-tester brot nar offline_mode lades till
@@ -99,7 +99,7 @@ SW-filer (`src/sw.ts`) ska exkluderas fran bade `tsconfig.json` OCH `tsconfig.ty
 4. Varfor? Flag-registret vaxer organiskt -- varje ny flagga bryter exakt-tester
 5. Varfor? `toEqual` ar brittle for register som vaxer over tid
 
-**Atgard:** Fixade testerna genom att lagga till `offline_mode: false`. Framtida forbattring: byt `toEqual` mot `toMatchObject` + separat langdcheck, sa nya flaggor bara bryter langd-testet.
+**Åtgärd:** Fixade testerna genom att lagga till `offline_mode: false`. Framtida forbattring: byt `toEqual` mot `toMatchObject` + separat langdcheck, sa nya flaggor bara bryter langd-testet.
 **Status:** Quick fix implementerad, storre refactor parkerad
 
 ## Larandeeffekt

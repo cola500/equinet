@@ -70,7 +70,7 @@ PATCH-handlern gar rakt till `session.user.userType` utan att kontrollera att se
 Datum- och tidsvalidering som ateranvands i 10+ routes. Importera `dateSchema`, `timeSchema` eller `strictTimeSchema` istallet for att skriva inline regex. `strictTimeSchema` validerar timmar 00-23 och minuter 00-59. `timeSchema` accepterar alla tvaciffriga tal (enklare, for routes som inte behover strikt validering).
 
 ### updateMany + fallback findUnique for IDOR-skydd
-route-orders PATCH anvander `updateMany` med agare-villkor i WHERE, sedan `findUnique` for att avgora om felet ar 404, 403 eller 400. Bra monster for atomic ownership-check utan race condition.
+route-orders PATCH använder `updateMany` med agare-villkor i WHERE, sedan `findUnique` for att avgora om felet ar 404, 403 eller 400. Bra monster for atomic ownership-check utan race condition.
 
 ## Larandeeffekt
 

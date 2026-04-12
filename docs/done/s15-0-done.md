@@ -34,7 +34,7 @@ sections:
 
 - **tech-architect**: Godkand plan. Rekommenderade approach A (supabase start). Identifierade: config.toml hook-aktivering, prisma migrate deploy istallet for db push, ta bort separat postgres-service.
 - **security-reviewer**: 0 kritiska. 1 major: NODE_ENV-guard verifierad pa `/api/test/reset-rate-limit`. Rekommenderade LOCAL-prefix pa CI-env (ej implementerat -- deterministiska nycklar behover inget prefix).
-- **code-reviewer**: Godkand plan. Identifierade: losenord i seed (fixat), build-jobbets NEXTAUTH-env (rensat), trigger vs upsert (klargjort).
+- **code-reviewer**: Godkand plan. Identifierade: lösenord i seed (fixat), build-jobbets NEXTAUTH-env (rensat), trigger vs upsert (klargjort).
 
 ## Avvikelser
 
@@ -50,6 +50,6 @@ sections:
 
 - **`.env.local` trumfar alltid**: Next.js `loadEnvConfig` ger `.env.local` hogsta prioritet. Playwright `webServer.env` kan INTE overrida den. CI-miljo (utan `.env.local`) ar det ratta stallet att testa Supabase-integration.
 - **dotenv@17 auto-injicerar**: `dotenv@17.2.3` (dotenvx) laddar `.env.local` automatiskt aven utan explicit `config()`. PrismaClient i E2E behover explicit `datasourceUrl` for att undvika att prisma.config.ts env tar over.
-- **prisma.config.ts laddar env**: Prisma 6 `prisma.config.ts` gor `import "dotenv/config"` som laddar `.env` + `.env.local`. PrismaClient runtime arver detta. Anvand `datasourceUrl` for explicit override.
+- **prisma.config.ts laddar env**: Prisma 6 `prisma.config.ts` gor `import "dotenv/config"` som laddar `.env` + `.env.local`. PrismaClient runtime arver detta. Använd `datasourceUrl` for explicit override.
 - **supabase db reset**: Rensar BADE `auth.users` och `public.*` -- anvandbart for idempotent E2E-seed.
 - **Trigger ar synkron**: PostgreSQL triggers (handle_new_user) kor synkront inom samma transaktion. 1s delay i seed ar tillracklig marginal.

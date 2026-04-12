@@ -18,7 +18,7 @@ sections:
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
 
-Hastintervall bestammer hur ofta en hast behover en viss tjanst (t.ex. hovvard var 6:e vecka). Intervall kan sattas av bade kund och leverantor, med en tydlig prioritetsordning.
+Hastintervall bestammer hur ofta en hast behover en viss tjänst (t.ex. hovvard var 6:e vecka). Intervall kan sattas av bade kund och leverantör, med en tydlig prioritetsordning.
 
 ---
 
@@ -38,7 +38,7 @@ Hastintervall bestammer hur ofta en hast behover en viss tjanst (t.ex. hovvard v
 
 ### GET /api/customer/horses/[horseId]/intervals
 
-Hamta intervall och tillgangliga tjanster for en hast.
+Hamta intervall och tillgängliga tjänster for en hast.
 
 **Auth:** Required (customer, maste aga hasten)
 **Rate limiter:** `api` (100/min produktion)
@@ -96,7 +96,7 @@ Skapa eller uppdatera kundintervall (upsert pa `horseId + serviceId`).
 
 ### DELETE /api/customer/horses/[horseId]/intervals
 
-Ta bort kundintervall (atergar till leverantor-/tjanstestandard).
+Ta bort kundintervall (atergar till leverantör-/tjanstestandard).
 
 **Auth:** Required (customer, maste aga hasten)
 **Rate limiter:** `api` (100/min produktion)
@@ -169,7 +169,7 @@ Skapa eller uppdatera leverantorsintervall (upsert pa `horseId + providerId + se
 
 ## GET /api/provider/due-for-service
 
-Dashboard-endpoint for leverantorer: visar vilka hastar som ar overdue eller snart behover tjanst.
+Dashboard-endpoint for leverantörer: visar vilka hästar som ar overdue eller snart behover tjanst.
 
 **Auth:** Required (provider)
 **Rate limiter:** `api` (100/min produktion)

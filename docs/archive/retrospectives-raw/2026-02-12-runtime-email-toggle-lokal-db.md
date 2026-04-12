@@ -57,7 +57,7 @@ Vi andrade `.env` men glomde att Vercel CLI skapat `.env.local` som overskrider 
 **Prioritet:** MEDEL -- sparad som gotcha i MEMORY.md, men borde fangas i planfasen nasta gang.
 
 ### 2. DISABLE_EMAILS i .env var redan satt
-Anvandaren kunde inte anvanda runtime-togglen forst -- env-variabeln fran session 18 var fortfarande aktiv. Planen borde ha inkluderat att rensa env-variabeln som en explicit fas.
+Anvandaren kunde inte använde runtime-togglen forst -- env-variabeln fran session 18 var fortfarande aktiv. Planen borde ha inkluderat att rensa env-variabeln som en explicit fas.
 
 **Prioritet:** LAG -- en-gongs-problem, UI:t visar tydligt "Avstangt via miljoevariabel".
 

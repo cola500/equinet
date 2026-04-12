@@ -63,7 +63,7 @@ Prisma-lookup kravs -- Supabase JWT har bara app_metadata (userType, isAdmin).
 KRITISKT: Om DB-lookup returnerar null -> throw 401 Response (befintligt beteende).
 Returnera ALDRIG ett partiellt sessionobjekt.
 
-**middleware.ts**: Ta bort NextAuth, anvand bara Supabase.
+**middleware.ts**: Ta bort NextAuth, använd bara Supabase.
 KRITISKT: Middleware MASTE trigga cookie-refresh via korrekt Supabase SSR-monster:
 ```typescript
 // Skapa response FORST, lat Supabase satta cookies pa den
@@ -87,7 +87,7 @@ await supabase.auth.getUser()  // INTE getSession -- triggar refresh
 
 ### Fas 3: Klientkomponenter
 
-| Komponent | Andring |
+| Komponent | Ändring |
 |-----------|--------|
 | `SessionProvider.tsx` | NextAuth SessionProvider -> Supabase session via context |
 | `useAuth.ts` | `useSession()` -> Supabase `onAuthStateChange` + user |
@@ -113,7 +113,7 @@ Se "Filer att ta bort" nedan.
 - npm install for att uppdatera lockfile
 
 OBS: MobileToken Prisma-modell tas INTE bort har -- flyttas till S13-3
-(schema-andring efter produktionsvalidering av auth).
+(schema-ändring efter produktionsvalidering av auth).
 
 ### Fas 6: Verifiering
 
@@ -145,7 +145,7 @@ OBS: MobileToken Prisma-modell tas INTE bort har -- flyttas till S13-3
 
 | Risk | Mitigation |
 |------|-----------|
-| 135 routes som anvander `auth()` | Drop-in replacement -- samma interface |
+| 135 routes som använder `auth()` | Drop-in replacement -- samma interface |
 | Session-shape mismatch | Prisma-lookup ger exakt samma falt |
 | Middleware cookie-refresh | Korrekt Supabase SSR-monster med setAll pa response |
 | Kvarliggande NextAuth-cookies | Explicit rensning i signOut |
@@ -179,7 +179,7 @@ OBS: MobileToken Prisma-modell tas INTE bort har -- flyttas till S13-3
 - `src/lib/auth-server.ts` -- byt NextAuth -> Supabase (behall interface)
 - `src/lib/auth-dual.ts` -- ta bort Bearer + NextAuth, bara Supabase
 - `src/lib/auth-dual.test.ts` -- uppdatera tester
-- `middleware.ts` -- ta bort NextAuth, anvand Supabase med cookie-refresh
+- `middleware.ts` -- ta bort NextAuth, använd Supabase med cookie-refresh
 - `src/lib/auth-supabase-edge.ts` -- eventuell uppdatering for cookie-refresh
 - `src/components/providers/SessionProvider.tsx` -- byt till Supabase
 - `src/hooks/useAuth.ts` -- byt useSession till Supabase
@@ -193,9 +193,9 @@ OBS: MobileToken Prisma-modell tas INTE bort har -- flyttas till S13-3
 - [ ] `auth()` i auth-server returnerar samma session-shape via Supabase
 - [ ] `auth()` returnerar null/throw 401 vid saknad DB-rad (aldrig partiellt objekt)
 - [ ] auth-dual bara har Supabase-path
-- [ ] middleware anvander bara Supabase med korrekt cookie-refresh
+- [ ] middleware använder bara Supabase med korrekt cookie-refresh
 - [ ] signOut rensar bade Supabase- och NextAuth-cookies
-- [ ] Klientkomponenter anvander Supabase for session + signOut
+- [ ] Klientkomponenter använder Supabase for session + signOut
 - [ ] Alla NextAuth + mobile token filer borttagna
 - [ ] `next-auth` borttagen fran package.json
 - [ ] `npm run check:all` 4/4 grona

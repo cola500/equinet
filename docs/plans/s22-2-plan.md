@@ -12,21 +12,21 @@ sections:
 
 # S22-2: Tom-state-forbattringar
 
-## Oversikt
+## Översikt
 
-Nya leverantorer som navigerar till tjanster, bokningar eller tillganglighet ska se tydligare tom-states med CTA och aterlank till onboarding.
+Nya leverantörer som navigerar till tjänster, bokningar eller tillgänglighet ska se tydligare tom-states med CTA och aterlank till onboarding.
 
 ## Approach
 
-1. **Tjanster** (`/provider/services`): Befintlig empty state ar bra. Lagg till "Tillbaka till kom igang"-lank nar allComplete === false.
+1. **Tjänster** (`/provider/services`): Befintlig empty state ar bra. Lagg till "Tillbaka till kom igang"-lank nar allComplete === false.
 2. **Bokningar** (`/provider/bookings`): Befintlig empty state ar bra. Lagg till "Tillbaka till kom igang"-lank nar allComplete === false.
-3. **Tillganglighet** (profil): Schemat visar alltid defaults -- ingen empty state. Lagg till en guide-text ovanfor schemat: "Stall in vilka tider du ar tillganglig sa att kunder kan boka."
+3. **Tillgänglighet** (profil): Schemat visar alltid defaults -- ingen empty state. Lagg till en guide-text ovanfor schemat: "Stall in vilka tider du ar tillgänglig sa att kunder kan boka."
 
-Implementation: Fetcha onboarding-status med SWR/fetch i tjanster och bokningar, visa lank villkorligt. For tillganglighet: lagg till informationstext.
+Implementation: Fetcha onboarding-status med SWR/fetch i tjänster och bokningar, visa lank villkorligt. For tillgänglighet: lagg till informationstext.
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/app/provider/services/page.tsx` | Lagg till onboarding-lank i empty state |
 | `src/app/provider/bookings/page.tsx` | Lagg till onboarding-lank i empty state |

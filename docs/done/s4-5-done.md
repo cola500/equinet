@@ -29,9 +29,9 @@ sections:
 1. **Verifierade prod-data** -- Supabase hade 6 providers men 0 bokningar/tjanster/kunder
 2. **Korde seed-demo.ts mot Supabase** -- skapade realistisk demo-data:
    - 4 kunder (Anna, Erik, Sofia, Johan)
-   - 3 hastar (Storm, Saga, Bella)
-   - 4 tjanster (Hovslagning, Hovvard, Ridlektion, Halsokontroll)
-   - 8 bokningar (2 bekraftade, 1 pending, 4 genomforda, 1 avbokad)
+   - 3 hästar (Storm, Saga, Bella)
+   - 4 tjänster (Hovslagning, Hovvard, Ridlektion, Halsokontroll)
+   - 8 bokningar (2 bekraftade, 1 pending, 4 genomförda, 1 avbokad)
    - 3 recensioner (snitt 4.7)
 3. **Satte NEXT_PUBLIC_DEMO_MODE=true pa Vercel** (Production env)
 4. **Triggade redeploy** -- `vercel deploy --prod`, bekraftade fra1-region
@@ -41,7 +41,7 @@ sections:
 ## Avvikelser
 
 - Ingen kodandring -- bara data-seeding, env-var och dokumentation
-- Gammal "Hovslagning Standard"-tjanst deaktiverades (hade FK-constraints, kunde inte raderas)
+- Gammal "Hovslagning Standard"-tjänst deaktiverades (hade FK-constraints, kunde inte raderas)
 
 ## Lardomar
 

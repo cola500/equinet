@@ -36,7 +36,7 @@ Tack vare att koden ar organiserad i tydliga lager (IRepository -> Repository ->
 Alla 1336 befintliga tester forblev grona trots att Horse-interfacet utokades med tva nya falt. Nullable falt + `toMatchObject` i tester = frikopplat. Bara `makeHorse`-fixturen i HorseService.test och export-utils.test behovde uppdateras.
 
 ### 3. git mv bevarade historik
-Genom att anvanda `git mv` istallet for att radera+skapa nya filer bevaras filhistoriken, vilket gor framtida `git log` och `git blame` mer anvandbart.
+Genom att använde `git mv` istallet for att radera+skapa nya filer bevaras filhistoriken, vilket gor framtida `git log` och `git blame` mer anvandbart.
 
 ### 4. Custom SQL migration for rename
 Prisma auto-detekterar inte renames (den gor DROP + CREATE). Genom att skriva custom migration-SQL (`ALTER TABLE ... RENAME TO`) undveks dataloss och onodiga index-ombyggnader.

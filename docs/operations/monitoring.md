@@ -38,7 +38,7 @@ sections:
 
 | Vad | Hur |
 |-----|-----|
-| Databas-halsa | Supabase Dashboard -> Database Health |
+| Databas-hälsa | Supabase Dashboard -> Database Health |
 | Aktiva connections | Supabase Dashboard -> Database -> Connections |
 | Slow queries | Supabase Dashboard -> Database -> Query Performance |
 | Storage-anvandning | Supabase Dashboard -> Storage |

@@ -31,7 +31,7 @@ Equinet har en klient-only buggrapportsfunktion (`BugReportFab.tsx`) som generer
 ## Arkitekturbeslut
 
 - **Stodoman** -- Prisma direkt i routes (inget repository-pattern). Motivering: ingen komplex affarslogik, konsekvent med andra admin-routes (reviews, verifications, users).
-- **Tillganglighet** -- Alla inloggade anvandare (kund/leverantor/admin), inte bara offline-mode.
+- **Tillgänglighet** -- Alla inloggade anvandare (kund/leverantor/admin), inte bara offline-mode.
 - **Prioritetsskala** -- P0-P3 (standard bugtracking) istallet for HOG/MEDEL/LAG.
 
 ## Datamodell
@@ -87,7 +87,7 @@ model BugReport {
 | GET | `/api/admin/bug-reports/[id]` | Admin | Detalj |
 | PATCH | `/api/admin/bug-reports/[id]` | Admin | Uppdatera status/prio/note |
 
-## UI-andringar
+## UI-ändringar
 
 ### BugReportFab (refaktorering)
 - Ta bort offline-mode gate, visa for alla inloggade

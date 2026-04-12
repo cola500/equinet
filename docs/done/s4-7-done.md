@@ -14,7 +14,7 @@ sections:
 
 ## Acceptanskriterier
 
-- [x] Minst 2 hastar visas som "overdue" i native-vyn (Bella 22d, Storm 15d)
+- [x] Minst 2 hästar visas som "overdue" i native-vyn (Bella 22d, Storm 15d)
 - [x] Filter fungerar korrekt (Alla=3, Forsenade=2, Inom 2 veckor=1)
 - [x] Screenshots tagna med mobile-mcp och verifierade
 - [x] Seed-script fungerar med `npm run db:seed:demo:reset`
@@ -26,15 +26,15 @@ sections:
 - [x] Feature branch, alla tester grona
 - [ ] Mergad till main (vantar review)
 
-## Andringar
+## Ändringar
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `prisma/seed-demo.ts` | Storm: -7d -> -70d, Saga: -21d -> -49d, +Bella Hovvard -63d |
 
 ## Verifierade scenarios
 
-| Hast | Tjanst | Dagar sedan | Intervall | Status | Dagar |
+| Hast | Tjänst | Dagar sedan | Intervall | Status | Dagar |
 |------|--------|-------------|-----------|--------|-------|
 | Bella | Hovvard utan beslag | 63d | 6v | Forsenad | -22d |
 | Storm | Hovslagning | 70d | 8v | Forsenad | -15d |
@@ -42,7 +42,7 @@ sections:
 
 ## Lardomar
 
-1. **Xcode 26 simulator**: iPhone 16 Pro finns inte -- anvand iPhone 17 Pro.
+1. **Xcode 26 simulator**: iPhone 16 Pro finns inte -- använd iPhone 17 Pro.
 2. **Seed-data for due-for-service**: Completed-bokningar maste vara aldre an
    service-intervallet for att trigga overdue. 70 dagar > 8 veckor (56 dagar).
 3. **mobile-mcp dialog-hantering**: iOS-simulatorn visar push-notis-dialog och

@@ -64,7 +64,7 @@ sections:
 
 ### Steg 6: $queryRawUnsafe (tech-architect-flaggad)
 
-**Bakgrund:** `src/app/api/providers/route.ts` rad 56-69 anvander
+**Bakgrund:** `src/app/api/providers/route.ts` rad 56-69 använder
 `$queryRawUnsafe` med unqualified tabellnamn `"AvailabilityException"`.
 
 | Test | Resultat |
@@ -138,7 +138,7 @@ Schema-baserad isolation fungerar utmarkt lokalt:
 
 **Alternativ B (rekommenderat): Schema + pooler-URL**
 - Bekraftat att PgBouncer propagerar `search_path` korrekt
-- Pooling + isolation i en losning
+- Pooling + isolation i en lösning
 - Basta balansen mellan enkelhet och prestanda
 
 **Alternativ A (fallback): Direkt-anslutning (port 5432)**

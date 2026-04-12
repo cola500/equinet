@@ -24,7 +24,7 @@ sections:
 
 **Feature flag:** `follow_provider` maste vara aktiverad.
 
-Kunder kan folja leverantorer for att fa notiser vid nya ruttannonseringar.
+Kunder kan folja leverantörer for att fa notiser vid nya ruttannonseringar.
 
 ---
 
@@ -60,13 +60,13 @@ Folj en leverantor.
 - `404` -- Feature flag avaktiverad eller `"Leverantor hittades inte"`
 - `429` -- Rate limit
 
-> Operationen ar idempotent -- att folja en redan foljd leverantor returnerar framgang.
+> Operationen ar idempotent -- att folja en redan foljd leverantör returnerar framgang.
 
 ---
 
 ## GET /api/follows
 
-Lista alla foljda leverantorer for inloggad kund.
+Lista alla foljda leverantörer for inloggad kund.
 
 **Auth:** Required (customer)
 **Rate limiter:** `api` (100/min produktion)
@@ -132,7 +132,7 @@ Sluta folja en leverantor.
 }
 ```
 
-> Operationen ar idempotent -- att avfolja en ej foljd leverantor returnerar framgang.
+> Operationen ar idempotent -- att avfolja en ej foljd leverantör returnerar framgang.
 
 **Felkoder:**
 - `403` -- Inte kund
@@ -143,11 +143,11 @@ Sluta folja en leverantor.
 
 ## Koppling till ruttannonseringar
 
-Nar en leverantor skapar en ruttannonsering notifieras alla foljare i relevant kommun via:
+Nar en leverantör skapar en ruttannonsering notifieras alla foljare i relevant kommun via:
 - **In-app-notis** (typ `ROUTE_ANNOUNCEMENT_NEW`)
-- **E-postnotis** med information om leverantoren och rutten
+- **E-postnotis** med information om leverantören och rutten
 
-Om kunden har hastar som ar overdue for den annonserade tjansten inkluderas denna information i notisen.
+Om kunden har hästar som ar overdue for den annonserade tjänsten inkluderas denna information i notisen.
 
 > Se [notifications.md](notifications.md) for detaljer om NotificationDelivery och dedup-logik.
 

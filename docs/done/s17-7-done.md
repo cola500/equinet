@@ -44,7 +44,7 @@ sections:
 
 ## Avvikelser
 
-- **prisma migrate dev fungerar inte**: Shadow DB saknar auth-schema. Losning: `prisma migrate deploy` for applicering, `prisma migrate diff` for generering. Dokumenterat som Gotcha #36.
+- **prisma migrate dev fungerar inte**: Shadow DB saknar auth-schema. Lösning: `prisma migrate deploy` for applicering, `prisma migrate diff` for generering. Dokumenterat som Gotcha #36.
 - **RLS-bevistester skippas lokalt**: Testanvandare finns bara pa remote Supabase. Guard uppdaterad att detektera lokal miljo.
 - **Gotcha-numrering**: #32-35 saknas i sections-listan (de ar definierade langre ner i filen fran andra branches).
 

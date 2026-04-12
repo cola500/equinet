@@ -64,7 +64,7 @@ sections:
 
 **Besparing**: 917 rader (auto-assign + autonomous-sprint + code-review-checklist + feature-flags + team-workflow + tech-lead) gor selektiva. Laddas bara vid matchande paths.
 
-**Problem**: "kor" och "kor sprint" triggar inte paths-matchning -- de ar chat-kommandon, inte filandringar. Losning:
+**Problem**: "kor" och "kor sprint" triggar inte paths-matchning -- de ar chat-kommandon, inte filandringar. Lösning:
 - auto-assign.md, autonomous-sprint.md, team-workflow.md, tech-lead.md maste FORTFARANDE vara alltid-laddade ELLER triggas pa annat satt
 - **Alternativ**: Konsolidera auto-assign + autonomous-sprint + team-workflow till EN fil (~300 rader istallet for 579)
 
@@ -82,7 +82,7 @@ sections:
 | E2E patterns | ~10 | **Flytta** till memory topic-fil |
 | Gotchas | ~15 | **Behal** -- komprimera |
 | iOS-app arkitektur | ~30 | **Flytta** till memory topic-fil |
-| Senaste sessioner (4 st) | ~40 | **Ta bort** -- gammal historik, tillganglig via git log |
+| Senaste sessioner (4 st) | ~40 | **Ta bort** -- gammal historik, tillgänglig via git log |
 
 **Besparing**: ~70 rader (ta bort sessionshistorik + komprimera redundant info).
 
@@ -123,7 +123,7 @@ Ny `.claude/rules/ios-learnings.md` med `paths: ["ios/**"]`. 33 bullet points + 
 
 ### 3. Rensa MEMORY.md sessionshistorik
 
-Ta bort "Senaste sessioner" (session 112-116) -- tillganglig via git log.
+Ta bort "Senaste sessioner" (session 112-116) -- tillgänglig via git log.
 Komprimera Feature Flags och iOS-arkitektur-sektionerna.
 
 **Besparing: ~50 rader fran MEMORY.md**
@@ -140,7 +140,7 @@ Sla ihop auto-assign + autonomous-sprint. Kvar som forslag -- riskerar att bryta
 
 ## Beraknad besparing
 
-| Atgard | Rader sparade | Risk |
+| Åtgärd | Rader sparade | Risk |
 |--------|--------------|------|
 | Selektiva process-rules (#1) | 338 | Lag |
 | iOS-learnings separat (#2) | 120 | Lag |

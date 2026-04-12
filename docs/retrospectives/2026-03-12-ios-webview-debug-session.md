@@ -17,7 +17,7 @@ sections:
 # Retrospektiv: iOS WebView debug-session
 
 **Datum:** 2026-03-12
-**Scope:** Debugging av varfor Oversikt- och Bokningar-flikarna i iOS-appen visade skeleton/loading-state utan data, trots att Kalendern (native) fungerade.
+**Scope:** Debugging av varfor Översikt- och Bokningar-flikarna i iOS-appen visade skeleton/loading-state utan data, trots att Kalendern (native) fungerade.
 
 ---
 
@@ -75,20 +75,20 @@ Nar WKWebView-sidor inte fungerar som forvantat, injicera JavaScript via `evalua
 Detta undviker behovet av Safari Web Inspector och fungerar pa fysiska enheter.
 
 ### Session-cookie vs Mobile JWT -- tva separata auth-varldar
-- **Native APIClient**: Anvander mobile JWT (Bearer token) -- oberoende av session-cookie
-- **WebView-sidor**: Anvander session-cookie via NextAuth `useSession()` -- oberoende av JWT
+- **Native APIClient**: Använder mobile JWT (Bearer token) -- oberoende av session-cookie
+- **WebView-sidor**: Använder session-cookie via NextAuth `useSession()` -- oberoende av JWT
 - En kan fungera medan den andra failar. Debug genom att testa BADA.
 
 ## 5 Whys (Root-Cause Analysis)
 
-### Problem: WebView-flikar (Oversikt, Bokningar) visar bara skeleton, ingen data
+### Problem: WebView-flikar (Översikt, Bokningar) visar bara skeleton, ingen data
 1. **Varfor visas skeleton?** `useAuth()` returnerar `isProvider: false`, sidan gar aldrig forbi loading-guarden.
 2. **Varfor ar isProvider false?** `useSession()` returnerar `userType: "customer"` fran session-cookien.
 3. **Varfor ar userType customer?** Anvandaren loggade in med kundkontot "Test Kund" istallet for ett provider-konto.
-4. **Varfor fungerade kalendern anda?** Kalendern ar native och anvander `APIClient` med mobile JWT -- helt separat auth-flode som inte kontrollerar `userType` fran session.
+4. **Varfor fungerade kalendern anda?** Kalendern ar native och använder `APIClient` med mobile JWT -- helt separat auth-flode som inte kontrollerar `userType` fran session.
 5. **Varfor tillater appen att en customer loggar in i provider-UI?** Det finns ingen userType-validering vid inloggning. Appen visar alltid provider-TabView oavsett vem som loggar in.
 
-**Atgard:** Lagg till userType-check efter inloggning -- visa CustomerWebView for customers, AuthenticatedView (provider-TabView) for providers. Alternativt: visa felmeddelande om en customer forsoker logga in i provider-appen.
+**Åtgärd:** Lagg till userType-check efter inloggning -- visa CustomerWebView for customers, AuthenticatedView (provider-TabView) for providers. Alternativt: visa felmeddelande om en customer forsoker logga in i provider-appen.
 **Status:** Att gora
 
 ### Problem: Splash-skarm blockerade More-fliken
@@ -98,7 +98,7 @@ Detta undviker behovet av Safari Web Inspector och fungerar pa fysiska enheter.
 4. **Varfor ar splash kopplad till WebView-laddning?** Designen utgick fran att WebView var default-fliken, men efter native-first rebuild ar Kalender (native) default.
 5. **Varfor uppdaterades inte splash-logiken?** Forandringen av default-flik (fran WebView till native) gjordes utan att uppdatera splash-beroendena.
 
-**Atgard:** Splash ar nu en 0.5s branded overgang vid inloggning, oberoende av WebView-status.
+**Åtgärd:** Splash ar nu en 0.5s branded overgang vid inloggning, oberoende av WebView-status.
 **Status:** Implementerad
 
 ## Larandeeffekt

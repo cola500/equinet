@@ -44,5 +44,5 @@ sections:
 ## Lärdomar
 
 - **Content-Type guard**: Viktig for multipart endpoints -- forhindrar att angripare skickar JSON-body som parsas som formdata
-- **Extension fran MIME, inte filename**: `file.name.split(".").pop()` ar en path traversal-risk om filnamnet innehaller `../`. Anvand MIME-typ till extension-mapping istallet.
+- **Extension fran MIME, inte filename**: `file.name.split(".").pop()` ar en path traversal-risk om filnamnet innehaller `../`. Använd MIME-typ till extension-mapping istallet.
 - **Multipart i Swift URLSession**: Standard-monster med boundary-string och Data.append. Inget externt beroende behövs.

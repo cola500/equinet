@@ -41,7 +41,7 @@ sections:
 
 ## Reviews
 
-Kordes: ingen subagent (mekanisk hook-andring, docs/config undantag)
+Kordes: ingen subagent (mekanisk hook-ändring, docs/config undantag)
 
 ## Laerdomar
 

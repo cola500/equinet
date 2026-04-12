@@ -28,7 +28,7 @@ sections:
 | Kortbetalning (Stripe test-mode) | Kod klar, flagga av |
 | Push-notiser (iOS) | Kod klar, APNs saknas |
 | Demo-lage | Live |
-| iOS native (dashboard, bokningar, kunder, tjanster, profil, kalender, mer-flik) | Live |
+| iOS native (dashboard, bokningar, kunder, tjänster, profil, kalender, mer-flik) | Live |
 | Due-for-service native | Live |
 | Aterkommande bokningar | Live (default on) |
 | Rostloggning med AI-tolkning | Live (default on) |
@@ -38,7 +38,7 @@ sections:
 | Ruttplanering + annonsering | Kod klar, kraver Mapbox-token |
 | Offline PWA (mutation queue, sync) | Live (default on) |
 | Stallprofiler | Kod klar, flagga av |
-| Onboarding-wizard for nya leverantorer | Live (S22) |
+| Onboarding-wizard for nya leverantörer | Live (S22) |
 | Supabase Auth (managed, Custom Access Token Hook) | Live |
 | RLS: 28 policies pa 7 karndomaner, 24 bevistester | Live |
 | Stripe webhook idempotens (event-ID dedup) | Live (S21) |
@@ -79,7 +79,7 @@ NFR Production Readiness Score: **79%** (50/63 klara). Enda P0-blocker ar Stripe
 |-----|--------|--------|
 | E-postverifiering Resend i prod (S22-3) | 0.5 dag | Blockerad -- kraver manuell test |
 | GDPR data retention policy + cron | 1 dag | Lagkrav, behover definierade lagringsperioder |
-| MFA for admin | 1 dag | Supabase TOTP, kritiskt vid leverantor #2 |
+| MFA for admin | 1 dag | Supabase TOTP, kritiskt vid leverantör #2 |
 | Mapbox-token + ruttplanering live | 1-2 dagar | Hor efterfragan, men kraver konto + token |
 | Lasttestning + prestandabaseline | 1-3 dagar | Vet inte om performance forsamras |
 | Preview deploy-skydd | 15 min | Aktivera Vercel Password Protection |
@@ -89,7 +89,7 @@ NFR Production Readiness Score: **79%** (50/63 klara). Enda P0-blocker ar Stripe
 | Vad | Effort | Varfor |
 |-----|--------|--------|
 | Kundupplevelsen (native iOS eller polerad WebView) | 2-4 veckor | Idag ar alla kundskammar WebView |
-| Fortnox-integration (fakturering) | 2-3 veckor | Sparar leverantorer ~1h/vecka |
+| Fortnox-integration (fakturering) | 2-3 veckor | Sparar leverantörer ~1h/vecka |
 | Provider subscription (monetarisering) | 1-2 veckor | Kraver prissbeslut |
 | Fler native iOS-skarmar (6 kvar) | Lopande | Rostloggning, ruttplanering, gruppbokningar, annonsering, insikter, hjalpcentral |
 | A11y-testning (axe-core + Playwright) | 1 dag | WCAG 2.1 AA |
@@ -159,6 +159,6 @@ NFR Production Readiness Score: **79%** (50/63 klara). Enda P0-blocker ar Stripe
 | Nar | Beslut |
 |-----|--------|
 | Fore lansering | Vilka feature flags ska vara pa for forsta anvandarna? |
-| Vid leverantor #2 | MFA for admin obligatoriskt |
-| Vid 10+ leverantorer | Behovs Supabase Pro ($25/man)? |
+| Vid leverantör #2 | MFA for admin obligatoriskt |
+| Vid 10+ leverantörer | Behovs Supabase Pro ($25/man)? |
 | Vid internationalisering | i18n-ramverk behovs |

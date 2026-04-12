@@ -49,7 +49,7 @@ Cookie-consent-bannern har troligen orsakat dolda failures anda sedan den introd
 **Prioritet:** LAG -- fixat nu, ingen framtida paverkan.
 
 ### 2. E2E-test strict mode patterns saknas i riktlinjer
-Flera failures berodde pa att `getByText('X')` matchade dolda element (filter-options, mobil-cards). Det finns ingen E2E-riktlinje om att anvanda `{ exact: true }` eller scopa till container.
+Flera failures berodde pa att `getByText('X')` matchade dolda element (filter-options, mobil-cards). Det finns ingen E2E-riktlinje om att använde `{ exact: true }` eller scopa till container.
 
 **Prioritet:** MEDEL -- bor laggas till i `.claude/rules/` for E2E.
 
@@ -65,7 +65,7 @@ page: async ({ page }, use) => {
   await use(page)
 }
 ```
-Anvand `addInitScript` for att satta localStorage INNAN sidan laddas. Fungerar for alla cookie/consent/onboarding-banners.
+Använd `addInitScript` for att satta localStorage INNAN sidan laddas. Fungerar for alla cookie/consent/onboarding-banners.
 
 ### Strict mode-safe selektorer i E2E
 - `getByText('Bokningar', { exact: true })` -- undviker att "Inga bokningar" matchar
@@ -92,17 +92,17 @@ await adminNav.getByRole('button', { name: /mer/i }).click()
 4. Varfor saknade test-setup cookie-dismissal? CookieNotice lades till utan E2E-havsyn
 5. Varfor testades inte mobil-viewporten? E2E mobile-tester kordes inte regelbundet
 
-**Atgard:** Global cookie dismissal via `addInitScript` i fixtures.ts
+**Åtgärd:** Global cookie dismissal via `addInitScript` i fixtures.ts
 **Status:** Implementerad
 
 ### Problem: `getByText()` matchade dolda element (strict mode violations)
 1. Varfor failade `getByText('Avbokad')`? Matchade dold option i statusfilter-dropdown
 2. Varfor matchade den dolda element? Playwright resolvar ALLA DOM-element, inte bara synliga
-3. Varfor anvandes inte `{ exact: true }` eller scoping? Inga E2E-riktlinjer for detta
+3. Varfor användes inte `{ exact: true }` eller scoping? Inga E2E-riktlinjer for detta
 4. Varfor saknas riktlinjer? Problemet uppstar gradvis nar UI:t vaxer (fler element med liknande text)
 5. Varfor fangades det inte tidigare? Testerna skrevs nar UI:t var enklare, innan t.ex. "Ombokningsinstallningar" lades till
 
-**Atgard:** Dokumenterat patterns i retro. Bor laggas till i `.claude/rules/e2e.md`.
+**Åtgärd:** Dokumenterat patterns i retro. Bor laggas till i `.claude/rules/e2e.md`.
 **Status:** Delvis implementerad (patterns dokumenterade, regler ej uppdaterade)
 
 ## Larandeeffekt

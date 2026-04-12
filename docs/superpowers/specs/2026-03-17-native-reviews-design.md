@@ -25,7 +25,7 @@ related:
 
 ## Context
 
-Recensioner ar en av de sista Tier 1-skarmarna (alltid synliga) som fortfarande laddas via WebView. Den ar beskriven som "quick win" i inventeringen -- read-mostly med lag-medel komplexitet. Leverantorer (hovslagare, ridlarare) anvander den for att se kundrecensioner och svara pa dem. Ofta i falt med smutsiga hander, sa faltanpassning ar viktigt.
+Recensioner ar en av de sista Tier 1-skarmarna (alltid synliga) som fortfarande laddas via WebView. Den ar beskriven som "quick win" i inventeringen -- read-mostly med lag-medel komplexitet. Leverantörer (hovslagare, ridlarare) använder den for att se kundrecensioner och svara pa dem. Ofta i falt med smutsiga hander, sa faltanpassning ar viktigt.
 
 ### Mal
 
@@ -109,13 +109,13 @@ NativeReviewsView
 }
 ```
 
-**Lean select:** Bara falt som iOS-vyn anvander. `customerName` sammanslagen server-side (firstName + " " + lastName). Inga ID:n for kund/bokning/leverantor exponeras (inte nodvandigt for native-vyn).
+**Lean select:** Bara falt som iOS-vyn anvander. `customerName` sammanslagen server-side (firstName + " " + lastName). Inga ID:n for kund/bokning/leverantor exponeras (inte nödvändigt for native-vyn).
 
-### POST/DELETE `/api/reviews/[id]/reply` (befintliga endpoints -- KRAVER ANDRING)
+### POST/DELETE `/api/reviews/[id]/reply` (befintliga endpoints -- KRAVER Ändring)
 
-**Status:** Anvander `await auth()` (NextAuth session) -- saknar `authFromMobileToken`-stod. Saknar ocksa `RateLimitServiceError`-hantering (inner try/catch). Maste andras.
+**Status:** Använder `await auth()` (NextAuth session) -- saknar `authFromMobileToken`-stod. Saknar ocksa `RateLimitServiceError`-hantering (inner try/catch). Maste andras.
 
-**Andringar:**
+**Ändringar:**
 1. Lagg till `authFromMobileToken`-fallback (dual-auth): prova Bearer JWT forst, fallback till session
 2. Lagg till inner try/catch for `RateLimitServiceError` -> 503 (api-routes.md-kravet)
 3. Uppdatera befintliga tester + lagg till Bearer JWT-testfall
@@ -268,11 +268,11 @@ VStack(spacing: 0)
 - `hasReply == false && rating <= 3`: Orange badge "Obesvarad"
 - `hasReply == false && rating > 3`: Ingen badge (positivt utan svar ar ok)
 
-**Tillganglighet:**
+**Tillgänglighet:**
 - Stats-header: kombinerat label "Genomsnitt X av 5, baserat pa Y recensioner"
 - Svarsbox: kombinerat label "Ditt svar, [datum]: [text]"
 - Swipe-action: "Ta bort ditt svar" med hint
-- Offline-disabled knapp: hint "Inte tillgangligt offline"
+- Offline-disabled knapp: hint "Inte tillgängligt offline"
 - Alla interaktiva element >= 44pt touch targets
 
 ---
@@ -322,21 +322,21 @@ func deleteReply(reviewId: String) async throws
 ### Backend -- `/api/native/reviews/route.test.ts`
 
 **Yttre loop (integrationstest):**
-- GET returnerar paginerade recensioner for inloggad leverantor
+- GET returnerar paginerade recensioner for inloggad leverantör
 
 **Inre loop (unit-tester):**
 - 401 nar ej autentiserad
 - 429 vid rate limiting
 - 503 vid rate limiter-fel (fail-closed)
 - 400 vid ogiltiga query params
-- 404 nar leverantor inte hittas
+- 404 nar leverantör inte hittas
 - 200 med korrekt paginering (page, limit, totalCount, averageRating)
 - 200 tom state: reviews=[], totalCount=0, averageRating=null
 - Paginering utanfor range: tom array
 - limit clamping: >50 klampas till 50, <1 klampas till 1
 - Lean select: inga kansliga falt i response (inget customerId, providerId, bookingId)
 
-**Reply-endpoints (KRAVER andring for dual-auth):**
+**Reply-endpoints (KRAVER ändring for dual-auth):**
 - Testa Bearer JWT-auth for POST och DELETE
 - Testa RateLimitServiceError -> 503 (ny hantering)
 - Befintliga session-tester ska fortsatta fungera
@@ -354,7 +354,7 @@ func deleteReply(reviewId: String) async throws
 - refresh nollstaller page + hamtar pa nytt
 - submitReply uppdaterar review med server-svar
 - submitReply visar actionInProgress under anrop
-- submitReply atergar vid error (ingen andring i reviews)
+- submitReply atergar vid error (ingen ändring i reviews)
 - deleteReply tar bort reply optimistiskt
 - deleteReply reverterar vid error
 - hasMorePages computed property
@@ -379,7 +379,7 @@ func deleteReply(reviewId: String) async throws
 3. Verifiera: stats-header, recensionslista, stjarnbetyg, svarsbox, statusbadge
 4. Svara pa en recension (sheet med kontext-box)
 5. Ta bort svar (swipe + bekraftelse)
-6. Tom state (leverantor utan recensioner)
+6. Tom state (leverantör utan recensioner)
 7. Paginering (om >10 recensioner)
 8. Pull-to-refresh
 

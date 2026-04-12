@@ -21,15 +21,15 @@ sections:
 ### Webb (Playwright MCP)
 
 - [x] Login med Supabase Auth fungerar (erik@hovslagare-uppsala.se, redirect till dashboard)
-- [x] Dashboard laddar med data (3 aktiva tjanster, snabblankar, statistik)
+- [x] Dashboard laddar med data (3 aktiva tjänster, snabblankar, statistik)
 - [x] Bokningar: lista (8 st, flikfiltrering, bokningsdetaljer med kundinfo)
 - [x] Kunder: lista (Test Kund, 9 bokningar, 1 hast)
-- [x] Tjanster: lista (Akutbesok, Verkning, Skoning -- priser och varaktighet)
+- [x] Tjänster: lista (Akutbesok, Verkning, Skoning -- priser och varaktighet)
 - [x] Kalender: veckovy (vecka 14, tillganglighetsschema, stangda dagar)
 - [x] Profil: redigera (90% komplett, profilbild, flikar Profil/Installningar/Tillganglighet)
 - [x] Recensioner: tom-state ("Inga recensioner annu") -- korrekt for testdata
 - [x] Registreringssida: Supabase Auth (kontotypval, losenordskrav)
-- [x] Glomt losenord: fungerar (Supabase password reset)
+- [x] Glomt lösenord: fungerar (Supabase password reset)
 - [x] Onboarding-checklista: inbyggd i dashboard, visas inte for Erik (har tjänster) -- korrekt
 - [x] Demo-lage: feature-flagg-styrt, ingen separat URL -- korrekt
 
@@ -66,12 +66,12 @@ Kordes: Ingen code-reviewer (inga kodandringar). Ren verifieringsstory.
 | 03 | Bokningar | OK -- 8 bokningar, flikar, detaljer |
 | 04 | Kalender | OK -- veckovy, tillganglighetsschema |
 | 05 | Kunder | OK -- lista med bokningsstatistik |
-| 06 | Tjanster | OK -- 3 aktiva, priser, knappar |
+| 06 | Tjänster | OK -- 3 aktiva, priser, knappar |
 | 07 | Recensioner | OK -- tom-state korrekt |
 | 08 | Profil | OK -- 90% komplett, flikar |
 | 09 | Demo | 404 -- korrekt (feature-flagg, inte URL) |
 | 10 | Registrering | OK -- Supabase Auth, kontotypval |
-| 11 | Glomt losenord | OK -- Supabase password reset |
+| 11 | Glomt lösenord | OK -- Supabase password reset |
 | 12 | Onboarding | 404 -- korrekt (inbyggd i dashboard) |
 
 ## iOS-verifiering
@@ -88,4 +88,4 @@ Skjuten till manuell verifiering. Se Motivering ovan.
 - Lokal DB + Supabase Auth (remote) fungerar bra for utveckling. Auth mot
   Supabase-projektet, data mot lokal PostgreSQL.
 - Testlosenord `test123` fungerar fortfarande efter bcrypt-hash-migrering till Supabase.
-- Alla seed-anvandare ar tillgangliga via Supabase Auth.
+- Alla seed-anvandare ar tillgängliga via Supabase Auth.

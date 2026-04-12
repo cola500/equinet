@@ -50,7 +50,7 @@ Mapping mellan exploratorisk testplan (11 faser) och automatiserade E2E-tester.
 | 1.3.1 | Flag-beroende nav-items INTE synliga | `feature-flag-toggle.spec.ts` | Automatiserat |
 | 1.3.2 | Alltid-synliga nav-items visas | `feature-flag-toggle.spec.ts` | Automatiserat |
 | 1.4.1-1.4.6 | Tjänstehantering (CRUD) | `provider.spec.ts` | Automatiserat |
-| 1.5.1-1.5.6 | Bokningshantering (filter, accept, avboj, genomford, ej infunnen) | `provider.spec.ts` | Automatiserat |
+| 1.5.1-1.5.6 | Bokningshantering (filter, accept, avboj, genomförd, ej infunnen) | `provider.spec.ts` | Automatiserat |
 | 1.6.1-1.6.3 | Kalender (veckovy, navigation) | `calendar.spec.ts` | Automatiserat |
 | 1.6.4 | Klicka bokning -> detaljdialog | - | Manuellt |
 | 1.6.5 | Klicka veckodag -> redigera oppettider | `calendar.spec.ts` | Automatiserat |
@@ -67,7 +67,7 @@ Mapping mellan exploratorisk testplan (11 faser) och automatiserade E2E-tester.
 | 1.10.9 | Serie-alternativ INTE synligt | `feature-flag-toggle.spec.ts` (9.9) | Automatiserat |
 | 1.11.1-1.11.4 | Mina bokningar (filter, avboka) | `booking.spec.ts` | Automatiserat |
 | 1.11.5 | Lamna recension | `customer-reviews.spec.ts` | Automatiserat |
-| 1.12.1-1.12.5 | Hastar (CRUD, historik) | `horses.spec.ts` | Automatiserat |
+| 1.12.1-1.12.5 | Hästar (CRUD, historik) | `horses.spec.ts` | Automatiserat |
 | 1.13.1 | Gruppbokningar INTE synligt i kundnav | `feature-flag-toggle.spec.ts` | Automatiserat |
 | 1.13.2 | Alltid-synliga kundnav-items | `feature-flag-toggle.spec.ts` | Automatiserat |
 | 1.14.1 | Admin dashboard KPI | `admin.spec.ts` | Automatiserat |

@@ -13,19 +13,19 @@ sections:
   - Effort-uppskattning
 ---
 
-# Onboarding-spike -- registreringsflode for ny leverantor
+# Onboarding-spike -- registreringsflode for ny leverantör
 
 ## Sammanfattning
 
-**Fragestellning:** Hur registrerar sig leverantor #2 utan seed-data?
+**Fragestellning:** Hur registrerar sig leverantör #2 utan seed-data?
 Vad saknas i self-service-flodet?
 
-**Svar:** Registreringen fungerar tekniskt, men en ny leverantor far
+**Svar:** Registreringen fungerar tekniskt, men en ny leverantör far
 INGEN vagledning efter inloggning. Det saknas en onboarding-wizard
 eller checklista som guidar genom setup-stegen.
 
 **Kritisk blockerare:** E-postverifiering kraver fungerande Resend-integration.
-Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
+Om mailet inte nar fram (spam, felaktig adress) kan leverantören inte logga in.
 
 ## Steg-for-steg-test
 
@@ -33,15 +33,15 @@ Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
 
 - **Status:** Fungerar bra
 - Professionell design med tydliga CTA:er
-- "Registrera dig gratis" och "Registrera som leverantor" langst ner
+- "Registrera dig gratis" och "Registrera som leverantör" langst ner
 - "Sa funkar det" -- 3-stegsguide (Skapa konto, Hitta och boka, Hall koll)
-- Separata sektioner for hastagare och leverantorer
+- Separata sektioner for hastagare och leverantörer
 
 ### 2. Registreringssida (/register)
 
 - **Status:** Fungerar
 - Kontotyp-valjare: Hastagare / Tjanstelaeverantor
-- Leverantor-val visar extra falt: Foretagsnamn (obligatoriskt), Beskrivning, Stad
+- Leverantör-val visar extra falt: Foretagsnamn (obligatoriskt), Beskrivning, Stad
 - Losenordskrav tydligt visat med realtidsvalidering (8 tecken, stor/liten, siffra, specialtecken)
 - Telefon ar valfritt
 - **Problem:** Inget serviceomrade-falt vid registrering (laggs till i profilen)
@@ -53,20 +53,20 @@ Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
 - Redirectar till "Kontrollera din e-post" efter registrering
 - Visar instruktioner om att klicka pa verifieringslanken
 - "Skicka nytt verifieringsmail" och "Tillbaka till inloggning" knappar
-- **Kan inte logga in utan verifiering** -- returnerar "Ogiltig email eller losenord"
+- **Kan inte logga in utan verifiering** -- returnerar "Ogiltig email eller lösenord"
 - Felmeddelandet ar missvisande -- borde saga "E-posten ar inte verifierad"
 
 ### 4. Inloggning (/login)
 
 - **Status:** Fungerar (testat med seed-konto)
-- Tydlig login-sida med "Glomt losenord?" och "Registrera dig har"
+- Tydlig login-sida med "Glomt lösenord?" och "Registrera dig har"
 - Redirectar till /provider/dashboard efter lyckad inloggning
 
 ### 5. Dashboard (/provider/dashboard)
 
 - **Status:** Fungerar -- MEN saknar onboarding-vagledning
-- Visar: Aktiva tjanster (0), Kommande bokningar (0), Nya forfragningar (0)
-- Statistik-grafer (tomma for ny leverantor)
+- Visar: Aktiva tjänster (0), Kommande bokningar (0), Nya förfrågningar (0)
+- Statistik-grafer (tomma for ny leverantör)
 - Snabblankar: Se bokningar, Kalender, Kundregister
 - **SAKNAS:** Ingen "Kom igang"-guide, checklista eller wizard
 - **SAKNAS:** Inget som forklarar "vad ska jag gora nu?"
@@ -74,26 +74,26 @@ Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
 ### 6. Min profil (/provider/profile)
 
 - **Status:** Fungerar bra
-- Tre flikar: Profil, Installningar, Tillganglighet
+- Tre flikar: Profil, Installningar, Tillgänglighet
 - Profil-tab: Profilbild, personlig info, foretagsinfo, verifiering, GDPR-export
-- Tillganglighet-tab: Oppettider per veckodag, redigerbara
+- Tillgänglighet-tab: Oppettider per veckodag, redigerbara
 - Installningar-tab: (ej testad i detalj)
 - **Bra:** Alla falt som behovs finns (adress, stad, postnummer, serviceomrade, hem-position)
 - **Problem:** Hem-position kraver manuell inmatning -- ingen geocoding-guide
 
-### 7. Mina tjanster (/provider/services)
+### 7. Mina tjänster (/provider/services)
 
 - **Status:** Fungerar
-- "Lagg till tjanst" knapp tydligt synlig
+- "Lagg till tjänst" knapp tydligt synlig
 - Tjanstkort med namn, beskrivning, pris, varaktighet
-- Redigera och Ta bort per tjanst
+- Redigera och Ta bort per tjänst
 - **Bra:** Intuitivt for den som hittar dit
-- **Problem:** Ny leverantor ser tom lista utan forklaring
+- **Problem:** Ny leverantör ser tom lista utan forklaring
 
 ### 8. Publik profil
 
-- **Ej testad:** Kraver att leverantoren har stad satt for att synas i sok
-- Landningssidan har ingen synlig "sok leverantor"-funktion for besokare
+- **Ej testad:** Kraver att leverantören har stad satt for att synas i sok
+- Landningssidan har ingen synlig "sok leverantör"-funktion for besokare
 
 ## Vad som fungerar
 
@@ -101,7 +101,7 @@ Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
 2. **Kontotyp-valjare** -- sjalvforklarande
 3. **Profilhantering** -- komplett med alla falt
 4. **Tjansthantering** -- enkelt att lagga till/redigera
-5. **Tillganglighet** -- oppettider per dag
+5. **Tillgänglighet** -- oppettider per dag
 6. **Landningssida** -- professionell, bra messaging
 7. **Losenordsaterstellning** -- finns (/forgot-password)
 
@@ -111,7 +111,7 @@ Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
 
 | # | Problem | Effekt | Effort |
 |---|---------|--------|--------|
-| 1 | **Ingen onboarding-guide** | Ny leverantor vet inte vad de ska gora | 1-2 dagar |
+| 1 | **Ingen onboarding-guide** | Ny leverantör vet inte vad de ska gora | 1-2 dagar |
 | 2 | **E-postverifiering felmeddelande** | "Ogiltig email" istallet for "Ej verifierad" | 1h |
 | 3 | **Ingen tom-tillstand vagledning** | Tomma listor utan "kom igang" | 0.5 dag |
 
@@ -119,28 +119,28 @@ Om mailet inte nar fram (spam, felaktig adress) kan leverantoren inte logga in.
 
 | # | Problem | Effekt | Effort |
 |---|---------|--------|--------|
-| 4 | Inget serviceomrade vid registrering | Leverantor syns inte i sok | 2h |
+| 4 | Inget serviceomrade vid registrering | Leverantör syns inte i sok | 2h |
 | 5 | Ingen "din profil ar X% komplett" | Ingen motivation att fylla i allt | 0.5 dag |
-| 6 | Ingen publik sok pa landningssidan | Besokare hittar inte leverantorer | 1 dag |
+| 6 | Ingen publik sok pa landningssidan | Besokare hittar inte leverantörer | 1 dag |
 | 7 | Hem-position kraver manuell forstaelse | Lat/long ar inte intuitivt | 2h (geocoding) |
 
 ### Trevligt att ha
 
 | # | Problem | Effekt | Effort |
 |---|---------|--------|--------|
-| 8 | Ingen valkomst-email efter registrering | Missad engagement-mojlighet | 2h |
-| 9 | Ingen "bjud in dina kunder"-prompt | Leverantor far inga bokningar | 2h |
-| 10 | Ingen exempeldata/demo-data for ny leverantor | Svart att forsta systemet | 1 dag |
+| 8 | Ingen valkomst-email efter registrering | Missad engagement-möjlighet | 2h |
+| 9 | Ingen "bjud in dina kunder"-prompt | Leverantör far inga bokningar | 2h |
+| 10 | Ingen exempeldata/demo-data for ny leverantör | Svart att forsta systemet | 1 dag |
 
 ## Minimum Viable Onboarding
 
-For att leverantor #2 ska kunna gora self-service-registrering behovs:
+For att leverantör #2 ska kunna gora self-service-registrering behovs:
 
 ### Fas 1: Blockerare (1-2 dagar)
 
 1. **Onboarding-checklista pa dashboard** -- visa steg:
    - [ ] Fyll i foretagsinformation
-   - [ ] Lagg till minst en tjanst
+   - [ ] Lagg till minst en tjänst
    - [ ] Satt oppettider
    - [ ] Lagg till serviceomrade
    - Checklistan doljs nar alla steg ar klara
@@ -149,8 +149,8 @@ For att leverantor #2 ska kunna gora self-service-registrering behovs:
    lank till "Skicka nytt verifieringsmail"
 
 3. **Tom-tillstand vagledning** -- For varje tom lista, visa:
-   - Tjanster: "Du har inga tjanster annu. Lagg till din forsta tjanst for att borja ta emot bokningar."
-   - Bokningar: "Inga bokningar annu. Nar kunder bokar dina tjanster visas de har."
+   - Tjänster: "Du har inga tjänster annu. Lagg till din forsta tjänst for att borja ta emot bokningar."
+   - Bokningar: "Inga bokningar annu. Nar kunder bokar dina tjänster visas de har."
 
 ### Fas 2: Forbattringar (2-3 dagar)
 
@@ -163,9 +163,9 @@ For att leverantor #2 ska kunna gora self-service-registrering behovs:
 
 | Fas | Scope | Effort | Prioritet |
 |-----|-------|--------|-----------|
-| Fas 1 | Blockerare | 1-2 dagar | Hog -- kravs for leverantor #2 |
+| Fas 1 | Blockerare | 1-2 dagar | Hog -- kravs for leverantör #2 |
 | Fas 2 | Forbattringar | 2-3 dagar | Medel -- forbattrar konvertering |
 | Totalt | | 3-5 dagar | |
 
 **Rekommendation:** Fas 1 bor in i nasta sprint. Utan onboarding-checklistan
-ar det osannolikt att en ny leverantor fullfolder setup utan manuell hjalp.
+ar det osannolikt att en ny leverantör fullfolder setup utan manuell hjalp.

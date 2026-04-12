@@ -37,7 +37,7 @@ Forskningen kombinerar två metoder:
 | Dokument | Innehåll |
 |----------|----------|
 | [marknadsanalys.md](marknadsanalys.md) | Svensk hästtjänstmarknad: storlek, aktörer, konkurrenter, luckor |
-| [intervju-leverantor-erik-skog.md](intervju-leverantor-erik-skog.md) | Djupintervju med hovslagare (hypotetisk persona) |
+| [intervju-leverantör-erik-skog.md](intervju-leverantör-erik-skog.md) | Djupintervju med hovslagare (hypotetisk persona) |
 | [intervju-kund-anna-lindqvist.md](intervju-kund-anna-lindqvist.md) | Djupintervju med hästägare (hypotetisk persona) |
 | [insikter-och-koppling.md](insikter-och-koppling.md) | Syntesanalys: insikter, koppling till features/backlog, prioritering |
 

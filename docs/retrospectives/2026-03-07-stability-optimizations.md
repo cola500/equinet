@@ -88,7 +88,7 @@ Rate limiter fail-closed i tva lager:
 4. Varfor? Jag antog att console-migration inte paverkade tester
 5. Varfor? Tester som spionerar pa `console.*` ar implicit kopplade till loggningsformat
 
-**Atgard:** Vid mekaniska migrationer (console->logger, import-byten): sok alltid efter tester som spionerar pa den andrade funktionen (`vi.spyOn(console, ...)`) och inkludera dem i migrerings-scopet.
+**Åtgärd:** Vid mekaniska migrationer (console->logger, import-byten): sok alltid efter tester som spionerar pa den andrade funktionen (`vi.spyOn(console, ...)`) och inkludera dem i migrerings-scopet.
 **Status:** Dokumenterat i retro
 
 ## Larandeeffekt

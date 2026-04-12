@@ -62,7 +62,7 @@ Skapa en Stripe Checkout-session for att starta prenumeration.
 
 ## POST /api/provider/subscription/portal
 
-Oppna Stripe Customer Portal for att hantera befintlig prenumeration (uppgradering, avbokning, betalningsmetod).
+Öppna Stripe Customer Portal for att hantera befintlig prenumeration (uppgradering, avbokning, betalningsmetod).
 
 **Auth:** Required (provider)
 **Rate limiter:** `subscription` (5/h produktion)
@@ -109,7 +109,7 @@ Hamta aktuell prenumerationsstatus.
 
 Om ingen prenumeration finns returneras `null`.
 
-**Mojliga statusvarden:** `active`, `past_due`, `canceled`, `trialing`
+**Möjliga statusvarden:** `active`, `past_due`, `canceled`, `trialing`
 
 **Felkoder:**
 - `403` -- Inte provider

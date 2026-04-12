@@ -76,7 +76,7 @@ sections:
 
 | Dokument | Beskrivning |
 |----------|-------------|
-| [gotchas.md](guides/gotchas.md) | Vanliga gotchas och losningar |
+| [gotchas.md](guides/gotchas.md) | Vanliga gotchas och lösningar |
 | [agents.md](guides/agents.md) | Agent-team guide for Claude Code |
 | [voice-logging.md](guides/voice-logging.md) | Rostloggning -- arkitektur och anvandning |
 | [feature-docs.md](guides/feature-docs.md) | Anvandardokumentation for funktioner |
@@ -100,7 +100,7 @@ sections:
 | Dokument | Beskrivning |
 |----------|-------------|
 | [demo-mode.md](demo-mode.md) | Demo-lage -- vad som visas/doljs, hur man startar |
-| [demo-seed.md](demo-seed.md) | Demo-data: tjanster, kunder, hastar, bokningar |
+| [demo-seed.md](demo-seed.md) | Demo-data: tjänster, kunder, hästar, bokningar |
 | [demo-go-no-go.md](demo-go-no-go.md) | Go/no-go genomgang av demo-flodet |
 | [product-audit/UX-GENOMLYSNING.md](product-audit/UX-GENOMLYSNING.md) | UX-genomlysning |
 | [product-audit/feature-inventory.md](product-audit/feature-inventory.md) | Fullständig inventering av alla 47 features |

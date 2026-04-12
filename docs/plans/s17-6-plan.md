@@ -505,7 +505,7 @@ git commit -m "feat: integrate Edge Config read/write in feature-flags (S17-6)"
 
 ### Task 4: Verifiera alla quality gates
 
-**Files:** Inga andringar
+**Files:** Inga ändringar
 
 - [ ] **Step 1: Kor typecheck**
 

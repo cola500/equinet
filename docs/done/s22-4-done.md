@@ -31,6 +31,6 @@ sections:
 
 ## Avvikelser
 
-- `enforce_admins: false` -- Johan kan fortfarande merga direkt om nodvandigt (hotfix-scenario)
+- `enforce_admins: false` -- Johan kan fortfarande merga direkt om nödvändigt (hotfix-scenario)
 - `required_approving_review_count: 0` -- PR kravs men ingen review (1-personsteam)
 - `required_status_checks: ["quality-gate"]` -- kravs for merge. Om CI inte matchar exakt detta context-namn, blockas merges. Kan behova justeras.

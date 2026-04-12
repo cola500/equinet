@@ -13,7 +13,7 @@ sections:
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Migrera besoksplaneringsskarmen fran WebView till native SwiftUI sa att leverantorer ser vilka hastar som snart behover besok -- direkt i native-appen.
+**Goal:** Migrera besoksplaneringsskarmen fran WebView till native SwiftUI sa att leverantörer ser vilka hästar som snart behover besok -- direkt i native-appen.
 
 **Architecture:** Ny `/api/native/due-for-service` route med Bearer JWT-auth ateranvander samma Prisma-queries och domankalkylator som befintlig provider-route. Swift ViewModel med DI-protokoll hamtar data via APIClient. SwiftUI-vy med filterknappar, sammanfattningskort och lista. Kopplas in i NativeMoreView via `navigationDestination`.
 
@@ -40,7 +40,7 @@ sections:
 | Empty state | Ja | Ja | Native |
 | Feature flag gating | Ja | Ja | Native (redan i NativeMoreView menyitem) |
 
-**Auth-verifiering:** Befintlig `/api/provider/due-for-service` anvander session-auth via `withApiHandler`. Native-appen har bara Bearer JWT. Darfor behovs ny `/api/native/due-for-service` med `authFromMobileToken`.
+**Auth-verifiering:** Befintlig `/api/provider/due-for-service` använder session-auth via `withApiHandler`. Native-appen har bara Bearer JWT. Darfor behovs ny `/api/native/due-for-service` med `authFromMobileToken`.
 
 ---
 
@@ -1304,9 +1304,9 @@ Expected: PASS (alla 8 tester)
 Starta dev-servern (`npm run dev`), bygg iOS-appen i simulatorn, navigera till Mer -> Besoksplanering, ta screenshot, verifiera:
 - Sammanfattningskort visas (antal forsenade + upcoming)
 - Filterknappar fungerar
-- Lista visar hastnamn, agarnamn, tjanst, status-badge, datum
+- Lista visar hastnamn, agarnamn, tjänst, status-badge, datum
 - Pull-to-refresh fungerar
-- Empty state visas korrekt (om inga hastar)
+- Empty state visas korrekt (om inga hästar)
 
 - [ ] **Step 4: Skriv done-dokument**
 

@@ -15,7 +15,7 @@ sections:
 
 # APNs Setup Guide
 
-Push-notiser i Equinet anvander Apple Push Notification service (APNs) for att skicka notiser till iOS-enheter. Denna guide beskriver hur du konfigurerar APNs-credentials.
+Push-notiser i Equinet använder Apple Push Notification service (APNs) for att skicka notiser till iOS-enheter. Denna guide beskriver hur du konfigurerar APNs-credentials.
 
 ## Forutsattningar
 
@@ -48,7 +48,7 @@ Push-notiser i Equinet anvander Apple Push Notification service (APNs) for att s
 
 ### Base64-encoda nyckeln
 
-Oppna terminal och kor:
+Öppna terminal och kor:
 
 ```bash
 base64 -i ~/Downloads/AuthKey_XXXXXXXXXX.p8
@@ -94,7 +94,7 @@ APNS_PRODUCTION=false
 2. Logga in -- push-permission-dialog ska visas automatiskt
 3. Godkann push-notiser
 4. Skapa en bokning fran en annan enhet/anvandare
-5. Verifiera att leverantoren far en push-notis
+5. Verifiera att leverantören far en push-notis
 
 ### Kontrollera loggar
 
@@ -105,7 +105,7 @@ I Vercel-loggar, sok efter:
 
 ## Felsökning
 
-| Problem | Orsak | Losning |
+| Problem | Orsak | Lösning |
 |---------|-------|---------|
 | Ingen permission-dialog | Appen fragade inte om push | Verifiera att ContentView.onChange triggar PushManager.requestPermission() |
 | Dialog visas men ingen push | Token registrerades inte | Kontrollera AppLogger.push-loggar i Xcode, verifiera att /api/device-tokens returnerar 200 |

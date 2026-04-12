@@ -28,4 +28,4 @@ sections:
 
 ## Reviews
 
-- Kordes: code-reviewer (inline, mekaniska andringar)
+- Kordes: code-reviewer (inline, mekaniska ändringar)

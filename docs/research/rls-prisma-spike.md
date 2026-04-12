@@ -18,7 +18,7 @@ sections:
 
 ## Sammanfattning
 
-**Fragestellning:** Kan Prisma anvanda `set_config('app.provider_id', ...)` i
+**Fragestellning:** Kan Prisma använde `set_config('app.provider_id', ...)` i
 transaktioner for att RLS-filtrera Booking-tabellen per provider?
 
 **Svar: JA -- fungerar lokalt. Supabase kraver anpassad rollhantering.**
@@ -71,7 +71,7 @@ glomd policy = ingen data, INTE all data. Detta ar kritiskt for sakerheten.
 | Baseline (superuser, ingen RLS) | 24ms | **0.2ms** |
 | **Overhead** | 106ms | **1.1ms** |
 
-**Bedomning:** 1.1ms overhead ar acceptabelt. I produktion (Supabase, nätverkslatens ~50ms)
+**Bedömning:** 1.1ms overhead ar acceptabelt. I produktion (Supabase, nätverkslatens ~50ms)
 gor detta minimal skillnad. Transaktionskostnaden domineras av natverksroundtrip,
 inte av `set_config` + `SET ROLE`.
 
@@ -85,7 +85,7 @@ Supabase-projektets `postgres`-roll har `rolbypassrls = true`. Det betyder att
 RLS-policies ALDRIG appliceras for `postgres`. `FORCE ROW LEVEL SECURITY` paverkar
 bara table owner, inte roller med `BYPASSRLS`.
 
-**Konsekvens:** Vi kan INTE anvanda `postgres`-rollen for RLS-skyddade queries.
+**Konsekvens:** Vi kan INTE använde `postgres`-rollen for RLS-skyddade queries.
 
 ### 2. SET ROLE blockeras av Supabase-poolern
 
@@ -109,12 +109,12 @@ Supavisor tillater bara fordefinierade roller (`postgres`, `authenticated`, `ano
 | `SET ROLE` i transaktion | Nej | Blockeras av Supavisor |
 | Direkt-anslutning som custom roll | Nej | Port 5432 pa `db.xxx.supabase.co` var ej nabar |
 | `set_config` utan `SET ROLE` (som postgres) | Nej | `BYPASSRLS` kringgår alla policies |
-| Anvanda `authenticated`-rollen | Mojlig | Behovs Supabase client-SDK, inte Prisma |
-| Byta till `supabase-js` for RLS-queries | Mojlig | Supabase client kor som `authenticated` |
+| Använde `authenticated`-rollen | Möjlig | Behovs Supabase client-SDK, inte Prisma |
+| Byta till `supabase-js` for RLS-queries | Möjlig | Supabase client kor som `authenticated` |
 | Ta bort `BYPASSRLS` fran `postgres` | Nej | Kraver superuser, `postgres` ar inte superuser i Supabase |
 
 **Mest lovande alternativ:** Hybrid -- behall Prisma for mutationer och admin-queries,
-anvand `supabase-js` (som kor som `authenticated`) for RLS-skyddade reads.
+använd `supabase-js` (som kor som `authenticated`) for RLS-skyddade reads.
 Alternativt: kontakta Supabase support om att aktivera `SET ROLE` for `postgres`.
 
 ## Produktionsskiss: Prisma Client Extension
@@ -170,7 +170,7 @@ Deploy-ordning:
 3. **Policy sist** -- `CREATE POLICY booking_provider_read ...`
 
 Om steg 2 kors utan steg 1: **alla Prisma-queries returnerar 0 rader** =
-total applikationskrasch. Inga bokningar, inga tjanster, ingenting.
+total applikationskrasch. Inga bokningar, inga tjänster, ingenting.
 
 ## Rekommendation
 
@@ -184,9 +184,9 @@ filtrering, ingen lackage, acceptabel prestanda (1.1ms overhead).
 Supabase-poolern blockerar `SET ROLE` och custom roller. Innan RLS kan deployeas
 i produktion maste en av dessa losas:
 
-| Losning | Effort | Risk |
+| Lösning | Effort | Risk |
 |---------|--------|------|
-| Kontakta Supabase support om SET ROLE | Lagt | Kan ta tid, kanske inte mojligt |
+| Kontakta Supabase support om SET ROLE | Lagt | Kan ta tid, kanske inte möjligt |
 | Hybrid: supabase-js for reads, Prisma for writes | Medel | Tva connection-managers |
 | Migrera bort fran Supabase pooler (direkt-anslutning) | Medel | Begransat antal connections |
 | Bygga eget connection-proxy-lager | Hogt | Overkill for vart behov |

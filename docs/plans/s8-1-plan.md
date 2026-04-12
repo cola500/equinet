@@ -24,7 +24,7 @@ Webb-sidan `/provider/announcements` har foljande features:
 | Visa status per annons (open/in_route/completed/cancelled) | Badge + fargkodning | Native badge | **Native** -- enkel View-logik |
 | Visa bokningsantal per annons | `_count.bookings` -> flattad till `bookingCount` | Native text | **Native** -- data fran API |
 | Visa tjanstetyp, datum, kommun, specialinstruktioner | Text i varje card | Native VStack | **Native** -- ren data-rendering |
-| Skapa ny annons (tjanstevals, kommun, datum, instruktioner) | POST `/api/route-orders`, form med multi-select | WebView offload | **Offload** -- komplex form med MunicipalitySelect + multi-select tjanster + datepicker + validering. Stor implementation for liten vinst. |
+| Skapa ny annons (tjanstevals, kommun, datum, instruktioner) | POST `/api/route-orders`, form med multi-select | WebView offload | **Offload** -- komplex form med MunicipalitySelect + multi-select tjänster + datepicker + validering. Stor implementation for liten vinst. |
 | Avbryt annons (confirm-dialog) | PATCH `/api/route-orders/[id]` status: cancelled | Native dialog | **Native** -- enkel bekraftelse + PATCH |
 | Visa annonsdetaljer + bokningar | GET `/api/route-orders/[id]/bookings` | WebView offload | **Offload** -- komplex tabell med kundinfo, statusandringar, bekrafta/avbryt-knappar per bokning. Migreras i framtida sprint. |
 | Navigera till "Skapa ny" | Link till `/provider/announcements/new` | WebView push | **Offload** -- samma som ovan |
@@ -32,12 +32,12 @@ Webb-sidan `/provider/announcements` har foljande features:
 
 ### Auth-verifiering
 
-- GET `/api/route-orders` -- anvander `auth()` (session-cookie). **Behover native endpoint med Bearer JWT.**
-- PATCH `/api/route-orders/[id]` -- anvander `auth()`. **Behover native endpoint eller offloada till WebView.**
+- GET `/api/route-orders` -- använder `auth()` (session-cookie). **Behover native endpoint med Bearer JWT.**
+- PATCH `/api/route-orders/[id]` -- använder `auth()`. **Behover native endpoint eller offloada till WebView.**
 
 ### Feature flags (tva flaggor, olika lager)
 
-- **`route_planning`** -- server-side gate pa ALLA `/api/route-orders/*` endpoints. Native endpoint ska anvanda denna.
+- **`route_planning`** -- server-side gate pa ALLA `/api/route-orders/*` endpoints. Native endpoint ska använde denna.
 - **`route_announcements`** -- klient-side gate pa UI-navigering (ProviderNav, kundsida, iOS NativeMoreView meny-synlighet).
 - Native endpoint gatar pa `route_planning` (server-konvention). NativeMoreView filtrerar menyposten pa `route_announcements` (UI-konvention).
 
@@ -96,4 +96,4 @@ Webb-sidan `/provider/announcements` har foljande features:
 1. **Feature flag `route_planning`** -- maste verifieras att den ar pa i dev (.env). Om inte, gate returnerar 404.
 2. **MunicipalitySelect i skapa-form** -- offloadad till WebView, men navigeringen tillbaka till native efter skapa behover testas.
 3. **RouteOrder-modellen ar delad** (customer_initiated + provider_announced) -- native endpoint maste filtrera pa `announcementType`.
-4. **Cache-staleness efter WebView-interaktion** -- Om anvandaren skapar annons i WebView och gar tillbaka till native-listan, kan cachen visa gammal data. Losning: invalidera cache vid `onAppear` om WebView var aktiv.
+4. **Cache-staleness efter WebView-interaktion** -- Om anvandaren skapar annons i WebView och gar tillbaka till native-listan, kan cachen visa gammal data. Lösning: invalidera cache vid `onAppear` om WebView var aktiv.

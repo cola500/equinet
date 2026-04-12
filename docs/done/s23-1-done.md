@@ -16,7 +16,7 @@ sections:
 
 - [x] Rapport: varje fil med "behal / gor selektiv / komprimera / ta bort" (se s23-1-token-spike-rapport.md)
 - [x] Beraknat: 538 rader sparas konservativt, 718 med konsolidering (1913 -> 1375 eller 1195)
-- [x] Plan for S23-2 baserad pa fynden: 5 atgarder i prioritetsordning
+- [x] Plan for S23-2 baserad pa fynden: 5 åtgärder i prioritetsordning
 
 ## Definition of Done
 

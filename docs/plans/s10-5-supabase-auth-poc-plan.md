@@ -37,7 +37,7 @@ Ingenting av befintlig funktionalitet roras.
 - Migrering av befintliga routes
 - Migrering av befintliga anvandare
 - Anpassning av middleware (NextAuth behalls intakt)
-- UI-andringar (login-formularet roras inte)
+- UI-ändringar (login-formularet roras inte)
 
 ## Approach
 
@@ -49,7 +49,7 @@ Ingenting av befintlig funktionalitet roras.
 ### Steg 2: Supabase-klient utilities
 - `src/lib/supabase/browser.ts` -- `createBrowserClient()`
 - `src/lib/supabase/server.ts` -- `createServerClient()` med cookie-hantering
-- Dessa ar isolerade -- inga andringar i befintlig kod
+- Dessa ar isolerade -- inga ändringar i befintlig kod
 
 ### Steg 3: Custom Access Token Hook (Prisma-migration)
 - SQL-funktion `custom_access_token_hook` som laser fran `public.User` + `public.Provider`
@@ -66,7 +66,7 @@ Ingenting av befintlig funktionalitet roras.
 - Notera UUID:t som Supabase Auth genererar
 - Skapa/uppdatera matchande rad i `public.User` med SAMMA UUID som `id`
   - Satt `userType: "provider"`, koppla till en `Provider`-rad
-- Detta simulerar den sync-trigger som Fas 1 av full migrering anvander
+- Detta simulerar den sync-trigger som Fas 1 av full migrering använder
 - **Alternativ:** Om det redan finns en testanvandare i Supabase Auth (fran RLS-spike),
   ateranvand den och skapa matchande `public.User`-rad
 - Testanvandarens credentials dokumenteras i research-doc (INTE i kod)
@@ -91,7 +91,7 @@ Ingenting av befintlig funktionalitet roras.
 
 ### Steg 6: iOS-test (om tid finns)
 - Installera `supabase-swift` i iOS-projektet
-- Enkel login-test med email+losenord i simulator
+- Enkel login-test med email+lösenord i simulator
 - Verifiera att JWT innehaller custom claims
 - **Tidbox:** Max 2h, kan skippas om webb-PoC bevisar konceptet
 
@@ -111,7 +111,7 @@ Ingenting av befintlig funktionalitet roras.
 
 ## Filer som andras
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `.env.local` | Lagg till `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
 | `.env.example` | Lagg till `NEXT_PUBLIC_SUPABASE_ANON_KEY` |

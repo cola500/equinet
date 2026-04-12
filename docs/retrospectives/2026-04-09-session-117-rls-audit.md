@@ -51,7 +51,7 @@ Felsökning av lokal login avslöjade tre separata problem: CSP blockerade Supab
 - **Snabb felsökning:** CSP-problemet identifierades via webbläsarens konsol-output
 - **Seed-skriptet fungerade perfekt** -- skapar auth-användare + Prisma-data i ett steg
 - **Genomlysningen var effektiv** -- explore-agent hittade alla berörda routes snabbt
-- **Testerna fangade mock-andringar** -- tvingade oss att uppdatera alla 3 testfiler
+- **Testerna fangade mock-ändringar** -- tvingade oss att uppdatera alla 3 testfiler
 - **Gotcha #33 fanns redan** -- bara behövde utökas med `127.0.0.1`
 
 ## Vad gick fel
@@ -61,9 +61,9 @@ Felsökning av lokal login avslöjade tre separata problem: CSP blockerade Supab
 - **`.env.local` trumfar `.env`** bet oss igen -- dev-servern använde gamla nycklar tills omstart
 - **Lokal dev-setup var inte dokumenterat steg-for-steg** -- seed + auth + CSP var tre separata problem
 
-## Atgarder
+## Åtgärder
 
-| Atgard | Fil | Status |
+| Åtgärd | Fil | Status |
 |--------|-----|--------|
 | CSP: lagg till `127.0.0.1:54321` | `next.config.ts` | Klar |
 | Explicit `.eq()` i GET `/api/services` | `src/app/api/services/route.ts` | Klar |
@@ -84,6 +84,6 @@ Felsökning av lokal login avslöjade tre separata problem: CSP blockerade Supab
 
 3. **Migrering fran Prisma till Supabase-klient kraver extra granskning.** Prisma-routes hade explicit WHERE-klausuler. Supabase-klient queries utan `.eq()` litar enbart pa RLS -- vilket kan vara otillrackligt om publika policies finns.
 
-4. **`NEXT_PUBLIC_*` kraver omstart av dev-servern.** Turbopack bakar in dessa vid start. Andring i `.env.local` slaar inte igenom utan omstart.
+4. **`NEXT_PUBLIC_*` kraver omstart av dev-servern.** Turbopack bakar in dessa vid start. Ändring i `.env.local` slaar inte igenom utan omstart.
 
 5. **Checklistor maste uppdateras efter nya patterns.** S14-migreringen introducerade Supabase-klient queries men checklistorna hade inga punkter for detta. Nu fixat.

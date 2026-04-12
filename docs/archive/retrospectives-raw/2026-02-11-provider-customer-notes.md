@@ -1,7 +1,7 @@
 # Retrospektiv: Leverantorens kundanteckningar + E2E-fixar
 
 **Datum:** 2026-02-11
-**Scope:** Privat journal/logg for leverantorer att skriva anteckningar om kunder, plus fixar av 2 flaky E2E-tester.
+**Scope:** Privat journal/logg for leverantörer att skriva anteckningar om kunder, plus fixar av 2 flaky E2E-tester.
 
 ---
 
@@ -62,13 +62,13 @@ Feature:n saknar E2E-tester. Unit-testerna tacker API:et men inte det fulla flö
 ## Patterns att spara
 
 ### sanitizeMultilineString for textareas
-`sanitizeMultilineString(stripXss(input))` -- anvand for alla flerradiga textfalt. Bevarar `\n`, kollapsar horisontell whitespace, maxar 2 radbrytningar i rad, tar bort kontrollkaraktarer.
+`sanitizeMultilineString(stripXss(input))` -- använd for alla flerradiga textfalt. Bevarar `\n`, kollapsar horisontell whitespace, maxar 2 radbrytningar i rad, tar bort kontrollkaraktarer.
 
 ### Lazy-load med Map-cache i expanderbara kort
 `customerNotes: Map<string, Note[]>` -- hämta data vid expand, cacha i Map. Skippa fetch om nyckeln redan finns. Ger snabb repeat-expand utan onodiga API-anrop.
 
 ### waitForResponse i E2E for mutationer
-Nar en knapp triggar en API-mutation (DELETE, POST), anvand `page.waitForResponse()` INNAN assert pa UI-forandringar. Forhindrar race conditions dar UI:t kontrolleras innan servern svarat.
+Nar en knapp triggar en API-mutation (DELETE, POST), använd `page.waitForResponse()` INNAN assert pa UI-forandringar. Forhindrar race conditions dar UI:t kontrolleras innan servern svarat.
 
 ## Larandeeffekt
 

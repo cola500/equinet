@@ -33,17 +33,17 @@ En RLS-bugg hittades och fixades pa <10 minuter.
 | Fore dag 5 | Efter dag 5 |
 |-----------|-------------|
 | Auth testat mot PoC-projekt | Auth live pa prod-projekt (`xybyzflfxnqqyxnvjklv`) |
-| Anvandare bara i public.User | 17 anvandare i auth.users (14 med losenord) |
+| Anvandare bara i public.User | 17 anvandare i auth.users (14 med lösenord) |
 | Vercel env pekade pa PoC | Vercel Production -> prod, Preview -> staging |
 | RLS otestat i prod | 30 policies, smoke-testat, pentestat |
 | Ingen staging-miljo | PoC-projektet = staging (Vercel Preview) |
 
 ### Migrerade anvandare
 
-| Typ | Antal | Losenord |
+| Typ | Antal | Lösenord |
 |-----|-------|----------|
 | Providers | 6 | Alla med hash fran PoC |
-| Customers | 8 | 5 med hash, 3 utan (behover "Glomt losenord") |
+| Customers | 8 | 5 med hash, 3 utan (behover "Glomt lösenord") |
 | Admins | 3 | Alla med hash |
 | **Totalt** | **17** | **14 med, 3 utan** |
 
@@ -104,7 +104,7 @@ direkt pa prod via SQL -- ingen redeploy behovdes.
 | Smoke-test via Playwright MCP | Visuell verifiering av alla sidor i prod |
 | OWASP ZAP i Docker | Snabb baseline scan utan installation |
 | Security reviewer + manuella API-tester | Kompletterande: kodanalys + runtime-tester |
-| Direkt SQL-fix pa prod (RLS-policy) | Ingen redeploy for database-niva andringar |
+| Direkt SQL-fix pa prod (RLS-policy) | Ingen redeploy for database-niva ändringar |
 | Backlogg i status.md | Pre-existerande fynd sparas utan att blockera sprint |
 
 ---

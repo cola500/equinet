@@ -16,14 +16,14 @@ sections:
 
 ## Bakgrund
 
-Vi anvander Prisma med direkt PostgreSQL-anslutning till Supabase. All
+Vi använder Prisma med direkt PostgreSQL-anslutning till Supabase. All
 auktorisering sker i applikationslagret (session-check + ownership-check i
 API routes). RLS kan ge defense-in-depth -- om en route missar en ownership-check
 skyddar databasen anda.
 
 ## Fragor att besvara
 
-1. Kan vi anvanda RLS med Prisma direkt-anslutning? (SET LOCAL per request?)
+1. Kan vi använde RLS med Prisma direkt-anslutning? (SET LOCAL per request?)
 2. Eller kraver det Supabase-klient istallet for Prisma?
 3. Kan vi ha RLS pa EN tabell (Booking) som proof-of-concept utan att migrera allt?
 4. Vad ar prestanda-paverkan?

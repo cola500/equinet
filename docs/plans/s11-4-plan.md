@@ -17,13 +17,13 @@ sections:
 
 Migrera `/api/provider/onboarding-status` fran `auth()` (NextAuth) till `getAuthUser()` (dual-auth helper fran S11-1). Bevisar att dual-auth fungerar i praktiken.
 
-Routen ar en enkel GET utan writes -- lagsta mojliga risk.
+Routen ar en enkel GET utan writes -- lagsta möjliga risk.
 
 ## Filer som andras
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
-| `src/app/api/provider/onboarding-status/route.ts` | Byt `auth()` -> `getAuthUser(request)`, anvand `authUser.id` istallet for `session.user.id` |
+| `src/app/api/provider/onboarding-status/route.ts` | Byt `auth()` -> `getAuthUser(request)`, använd `authUser.id` istallet for `session.user.id` |
 | `src/app/api/provider/onboarding-status/route.test.ts` | Uppdatera mock fran `@/lib/auth` till `@/lib/auth-dual`, testa bade NextAuth och Supabase auth |
 
 ## Approach
@@ -47,4 +47,4 @@ Routen ar en enkel GET utan writes -- lagsta mojliga risk.
 
 - **Lag risk**: Enkel GET, ingen write, ingen sidoeffekt
 - **Fallback**: `getAuthUser()` provar NextAuth som andra alternativ, sa befintliga session-cookies fungerar som forut
-- **Ingen feature flag**: Sprint-dokumentet namner `supabase_auth_poc` men `getAuthUser()` har fast prioritetsordning (Bearer > NextAuth > Supabase) utan feature flag -- det ar sa S11-1 implementerades. Inga andringar behovs.
+- **Ingen feature flag**: Sprint-dokumentet namner `supabase_auth_poc` men `getAuthUser()` har fast prioritetsordning (Bearer > NextAuth > Supabase) utan feature flag -- det ar sa S11-1 implementerades. Inga ändringar behovs.

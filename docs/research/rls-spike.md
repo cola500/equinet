@@ -26,7 +26,7 @@ sections:
 
 **Rekommendation: Avvakta med RLS. Investera i applikationslagrets skydd istallet.**
 
-RLS med Prisma + Supabase ar tekniskt mojligt men medfor betydande komplexitet.
+RLS med Prisma + Supabase ar tekniskt möjligt men medfor betydande komplexitet.
 Den storsta risken ar inte att det inte fungerar, utan att det skapar en falsk
 trygghet -- policies som inte testas kontinuerligt kan bli inaktuella och skapa
 subtila buggar. Var befintliga defense-in-depth (ownership-checks i routes,
@@ -36,7 +36,7 @@ atomic WHERE i repository, code review-checklist) ar mer underhallbar.
 
 ## Bakgrund
 
-Equinet anvander Prisma med direkt PostgreSQL-anslutning till Supabase. All
+Equinet använder Prisma med direkt PostgreSQL-anslutning till Supabase. All
 auktorisering sker i applikationslagret:
 
 1. **Auth-check**: `auth()` i varje API route (NextAuth session)
@@ -78,7 +78,7 @@ den aktuella transaktionen. Detta ar sakert aven med connection pooling.
 ### Begransningar
 
 1. **Varje query wrappas i en transaction** -- extra overhead
-2. **Nested transactions fungerar inte** -- om du redan anvander `$transaction`
+2. **Nested transactions fungerar inte** -- om du redan använder `$transaction`
    i din kod blir det problematiskt
 3. **Raw queries (`$queryRaw`)** maste hanteras separat
 4. **Prismas officiella exempel varnar**: "not intended for production environments"
@@ -100,7 +100,7 @@ Tva vagar:
 | Komplexitet | Hog (extension + policies) | Medel (byta ORM) |
 
 Att byta till Supabase-klient for bokningsdata ar en **enorm omskrivning** --
-vi har 83+ filer som anvander `prisma.booking`. Det ar inte realistiskt.
+vi har 83+ filer som använder `prisma.booking`. Det ar inte realistiskt.
 
 ---
 
@@ -137,9 +137,9 @@ CREATE POLICY admin_booking_access ON "Booking"
 1. **Alla 83+ access-punkter** maste wrappas i en RLS-aware extension
 2. **Admin-routes** (`/api/admin/bookings`) behover satta `app.is_admin`
 3. **Cron-jobb och bakgrundsprocesser** har ingen session -- hur satts context?
-4. **Prisma migrate** anvander `DIRECT_DATABASE_URL` (postgres superuser) --
+4. **Prisma migrate** använder `DIRECT_DATABASE_URL` (postgres superuser) --
    RLS galler inte for table owner om inte `FORCE ROW LEVEL SECURITY` anvands
-5. **Testmiljon**: Alla 3755 tester anvander Prisma direkt -- maste koras
+5. **Testmiljon**: Alla 3755 tester använder Prisma direkt -- maste koras
    utan RLS eller med en test-context
 
 ---
@@ -152,7 +152,7 @@ CREATE POLICY admin_booking_access ON "Booking"
 |--------|---------|---------|
 | Enkel query | 1 query | 1 transaction (BEGIN + SET + query + COMMIT) |
 | Overhead | 0 | ~2-5ms per query (extra roundtrips) |
-| Index-anvandning | Normal | RLS-villkor kan anvanda befintliga index |
+| Index-anvandning | Normal | RLS-villkor kan använde befintliga index |
 | Komplex join | Normal | Varje tabell med RLS utvardera policy per rad |
 
 For Equinet (lat-traffic, fa concurrent users) ar prestanda-paverkan
@@ -167,7 +167,7 @@ och `[customerId, bookingDate]`, sa RLS-villkoren ar snabba.
 
 **Fungerar med transaction mode, INTE med statement mode.**
 
-Supabase anvander PgBouncer i **transaction mode** som default. Det innebar:
+Supabase använder PgBouncer i **transaction mode** som default. Det innebar:
 
 - Varje `BEGIN...COMMIT`-block garanteras samma fysiska anslutning
 - `SET LOCAL` / `set_config(..., TRUE)` ar sakert inom en transaction
@@ -183,7 +183,7 @@ DATABASE_URL="...?pgbouncer=true&connection_limit=1"   # Via PgBouncer
 DIRECT_DATABASE_URL="..."                                # Direkt (migrations)
 ```
 
-Prisma-extensionen maste anvanda `set_config(..., TRUE)` (local) --
+Prisma-extensionen maste använde `set_config(..., TRUE)` (local) --
 aldrig `SET role` eller `SET app.provider_id`.
 
 ---
@@ -241,7 +241,7 @@ prisma.$extends({
 });
 ```
 
-**Fordelar**: Enklare, ingen databas-andring, fungerar med befintliga tester
+**Fordelar**: Enklare, ingen databas-ändring, fungerar med befintliga tester
 **Nackdelar**: Inte riktigt defense-in-depth (fortfarande app-niva), admin-undantag kravs
 
 ### Alt 3: Starka applikationslagret (0-1 dags arbete)
@@ -263,8 +263,8 @@ Forbattra det vi har:
 
 ### Motivering
 
-1. **Equinet ar single-tenant per deployment idag**. En leverantor = en instans.
-   RLS ger mest varde i multi-tenant-miljoer dar flera leverantorer delar databas.
+1. **Equinet ar single-tenant per deployment idag**. En leverantör = en instans.
+   RLS ger mest varde i multi-tenant-miljoer dar flera leverantörer delar databas.
 
 2. **Komplexiteten ar for hog relativt risken.** 83+ access-punkter, nested
    transactions, admin/cron-undantag, testmiljo-konfiguration -- allt detta
@@ -279,7 +279,7 @@ Forbattra det vi har:
 
 ### Nar RLS blir vart det
 
-- Om vi gar till **multi-tenant** (flera leverantorer i samma databas)
+- Om vi gar till **multi-tenant** (flera leverantörer i samma databas)
 - Om vi far en **sakerhetincident** relaterad till missad ownership-check
 - Om **Prisma far forstaklassig RLS-support** (inte bara community-extensions)
 - Om vi byter till **Supabase JS-klient** for delar av datalagret

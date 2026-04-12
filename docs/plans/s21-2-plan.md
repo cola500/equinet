@@ -22,12 +22,12 @@ sections:
 ### 2. Blockera /api/test/* i produktion
 - Nuvarande guard: `NODE_ENV === 'production'` -- problem: Vercel satter `production` aven pa preview-deploys
 - Ny guard: kontrollera `ALLOW_TEST_ENDPOINTS` env-variabel (bara satt i `.env` + CI)
-- E2E-tester som anvander reset-rate-limit fortsatter fungera lokalt
+- E2E-tester som använder reset-rate-limit fortsatter fungera lokalt
 - Lagg till test for blocked/allowed scenarios
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/app/api/routing/route.ts` | Lagg till getAuthUser + 401 |
 | `src/app/api/routing/route.test.ts` | Test for 401 |

@@ -41,7 +41,7 @@ Att `/api/health` var den enda API-routen utan bade rate limiting OCH tester vis
 ## Patterns att spara
 
 ### Rate limiting pa publika GET-endpoints
-Oautentiserade GET-endpoints som gor databasanrop MASTE rate-limitas aven om de verkar ofarliga. `/api/health` gor `SELECT 1` -- 100 req/min fran en angripare = 100 DB-roundtrips/min. Anvand `rateLimiters.api` + `getClientIP` som standard for alla publika endpoints.
+Oautentiserade GET-endpoints som gor databasanrop MASTE rate-limitas aven om de verkar ofarliga. `/api/health` gor `SELECT 1` -- 100 req/min fran en angripare = 100 DB-roundtrips/min. Använd `rateLimiters.api` + `getClientIP` som standard for alla publika endpoints.
 
 ### Separera HEAD fran GET for connectivity-probes
 HEAD-handlers som returnerar `new Response(null, { status: 200 })` behover INTE rate limiting -- noll berakning, noll DB. Att lagga till Redis-lookup pa HEAD gor connectivity-proben langsammare utan sakerhetsvinst.

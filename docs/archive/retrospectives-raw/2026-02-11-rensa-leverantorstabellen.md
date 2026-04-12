@@ -18,24 +18,24 @@
 
 | Lager | Filer | Beskrivning |
 |-------|-------|-------------|
-| API | `api/admin/users/route.ts` | Utokad med provider-specifik data (betyg, bokningar, tjanster, Fortnox, ort), filter (verified/active), sok pa foretagsnamn |
+| API | `api/admin/users/route.ts` | Utokad med provider-specifik data (betyg, bokningar, tjänster, Fortnox, ort), filter (verified/active), sok pa foretagsnamn |
 | API (borttagen) | `api/admin/providers/route.ts` | Separat providers-API togs bort -- funktionaliteten finns nu i users-routen |
 | Test | `api/admin/users/route.test.ts` | 5 nya tester: provider data, null-rating, verified-filter, active-filter, businessName-sok |
 | Test (borttagen) | `api/admin/providers/route.test.ts` | Separat providers-testfil togs bort |
 | UI | `admin/users/page.tsx` | ProviderTable komprimerad 10->6 kolumner med flerradsceller |
 | UI (borttagen) | `admin/providers/page.tsx` | Separat leverantorssida togs bort |
-| Navigation | `AdminNav.tsx` | "Leverantorer"-lanken borttagen (6 nav-items kvar) |
+| Navigation | `AdminNav.tsx` | "Leverantörer"-lanken borttagen (6 nav-items kvar) |
 
 ## Vad gick bra
 
 ### 1. Konsolidering minskar yta
-Att sla ihop leverantors- och anvandarvyn halverade antalet admin-routes och sidor utan att tappa funktionalitet. En sida med filter (`?type=provider`) ar enklare att underhalla an tva separata sidor.
+Att sla ihop leverantörs- och anvandarvyn halverade antalet admin-routes och sidor utan att tappa funktionalitet. En sida med filter (`?type=provider`) ar enklare att underhalla an tva separata sidor.
 
 ### 2. TDD fangade edge cases direkt
 Testerna for null-rating och tomma provider-data skrevs forst, vilket tvingade fram korrekt hantering av `reviews: []` och `fortnoxConnection: null` i API-mappningen.
 
 ### 3. Tabellkomprimering bevarade all information
-Flerradsceller (foretag + namn + e-post i en kolumn, bokningar + tjanster + Fortnox i en annan) reducerade kolumner fran 10 till 6 utan att nagon data forsvann.
+Flerradsceller (företag + namn + e-post i en kolumn, bokningar + tjänster + Fortnox i en annan) reducerade kolumner fran 10 till 6 utan att nagon data forsvann.
 
 ## Vad kan forbattras
 
@@ -47,7 +47,7 @@ ProviderTable har inga unit-tester -- den testades bara visuellt. For en admin-v
 ## Patterns att spara
 
 ### Konsolidera admin-vyer med query-params
-Istallet for separata sidor per entitetstyp, anvand en gemensam sida med typ-filter (`?type=provider`). API-routen anpassar `select` och `where` baserat pa typ-param. Minskar underhall och haller navigationen renare.
+Istallet for separata sidor per entitetstyp, använd en gemensam sida med typ-filter (`?type=provider`). API-routen anpassar `select` och `where` baserat pa typ-param. Minskar underhall och haller navigationen renare.
 
 ### Flerradsceller for kompakta tabeller
 Nar en tabell har for manga kolumner, gruppera relaterad information i flerradsceller:
@@ -58,7 +58,7 @@ Nar en tabell har for manga kolumner, gruppera relaterad information i flerradsc
   <div className="text-xs text-gray-400">e-post</div>
 </td>
 ```
-Reducerar kolumner utan att tappa data. Anvand bold for primar info, gratt for sekundar.
+Reducerar kolumner utan att tappa data. Använd bold for primar info, gratt for sekundar.
 
 ## Larandeeffekt
 

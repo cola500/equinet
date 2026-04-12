@@ -13,9 +13,9 @@ sections:
 
 # S22-1: Onboarding Welcome-vy
 
-## Oversikt
+## Översikt
 
-Ny leverantor som loggar in forsta gangen (allComplete === false) ska motas av en tydlig welcome-vy istallet for tom dashboard med stats-kort som visar "0". Vyn guidar genom de 4 stegen i OnboardingChecklist.
+Ny leverantör som loggar in forsta gangen (allComplete === false) ska motas av en tydlig welcome-vy istallet for tom dashboard med stats-kort som visar "0". Vyn guidar genom de 4 stegen i OnboardingChecklist.
 
 ## Approach
 
@@ -36,7 +36,7 @@ Ny leverantor som loggar in forsta gangen (allComplete === false) ska motas av e
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/components/provider/OnboardingWelcome.tsx` | NY -- welcome-komponent |
 | `src/components/provider/OnboardingWelcome.test.tsx` | NY -- tester |

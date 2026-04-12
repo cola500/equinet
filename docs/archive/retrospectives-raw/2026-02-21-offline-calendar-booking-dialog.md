@@ -34,7 +34,7 @@ De tva offline-testerna failade korrekt i RED (router.replace anropades trots of
 ## Vad kan forbattras
 
 ### 1. Full-page rendering i tester ar fragilt
-Att rendera hela `ProviderCalendarPage` med 15+ mockade dependencies var problemfyllt -- React state-uppdateringar flushades inte korrekt i testmiljon. Losningen blev att fokusera pa `mockReplace`-anrop istallet for dialog-state. Framtida page-tester bor anvanda samma approach: testa side-effects (API-anrop, router-anrop) istallet for intern state.
+Att rendera hela `ProviderCalendarPage` med 15+ mockade dependencies var problemfyllt -- React state-uppdateringar flushades inte korrekt i testmiljon. Losningen blev att fokusera pa `mockReplace`-anrop istallet for dialog-state. Framtida page-tester bor använde samma approach: testa side-effects (API-anrop, router-anrop) istallet for intern state.
 
 **Prioritet:** MEDEL -- pattern ar dokumenterat, men att extrahera handler-logik till custom hooks skulle gora tester enklare.
 
@@ -55,9 +55,9 @@ Nar en page-komponent har manga mockade dependencies, testa `router.replace`/`ro
 4. Varfor? Testmiljon (jsdom + vitest) hanterar inte alla React 18 batching-scenarion identiskt med en riktig browser
 5. Varfor? React Testing Library ar designat for enklare komponenttester; komplexa page-komponenter med manga dependencies ar i gransomradet
 
-**Atgard:** Fokusera page-tester pa side-effects (router-anrop, fetch-anrop) istallet for intern state. Dokumenterat som pattern.
+**Åtgärd:** Fokusera page-tester pa side-effects (router-anrop, fetch-anrop) istallet for intern state. Dokumenterat som pattern.
 **Status:** Implementerad
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** `router.replace()` i Next.js App Router ar INTE en lokal URL-uppdatering -- den triggar en RSC-request. I offline-scenarion maste alla `router.replace()`/`router.push()` som bara ar for URL-sync (inte for att ladda nytt innehall) skyddas med en online-check.
+**Nyckelinsikt:** `router.replace()` i Next.js App Router ar INTE en lokal URL-uppdatering -- den triggar en RSC-request. I offline-scenarion maste alla `router.replace()`/`router.push()` som bara ar for URL-sync (inte for att ladda nytt innehåll) skyddas med en online-check.

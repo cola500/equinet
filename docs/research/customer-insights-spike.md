@@ -36,12 +36,12 @@ Fungerar mot Anthropic API.
 | `claude-sonnet-4-6-20250514` (i voice logging S8-3) | 404 -- TRASIGT |
 | `claude-sonnet-4-6` (alias utan datum) | Fungerar |
 
-**Atgard:** Bada tjanster uppdaterade till `claude-sonnet-4-6` (alias).
+**Åtgärd:** Bada tjänster uppdaterade till `claude-sonnet-4-6` (alias).
 Aliases ar stabila och pekar automatiskt pa senaste version.
 
 ### 3. End-to-end-test (lokal)
 
-Testat med realistisk kunddata (8 bokningar, 2 hastar, anteckningar):
+Testat med realistisk kunddata (8 bokningar, 2 hästar, anteckningar):
 
 - **Svarstid:** ~11.7s (forvantad for LLM-anrop)
 - **Token-forbrukning:** 707 input + 394 output = ~1100 tokens
@@ -73,7 +73,7 @@ Testat med realistisk kunddata (8 bokningar, 2 hastar, anteckningar):
 | Cache-TTL | 6 timmar |
 | On-demand (inte automatisk) | Ja, klick-baserad |
 
-Med 100 leverantorer, 10 kunder var, 1 insikt per vecka:
+Med 100 leverantörer, 10 kunder var, 1 insikt per vecka:
 ~1000 anrop/vecka = ~$5/vecka. Mycket rimligt.
 
 ## Kritiskt fynd -- trasigt modell-ID
@@ -82,11 +82,11 @@ Voice logging (S8-3) anvande `claude-sonnet-4-6-20250514` som ger 404 fran
 Anthropic API. Detta betyder att voice logging har varit trasig i produktion
 sedan S8-3 mergades.
 
-**Fixat i denna branch:** Bada tjanster uppdaterade till `claude-sonnet-4-6`.
+**Fixat i denna branch:** Bada tjänster uppdaterade till `claude-sonnet-4-6`.
 
 ## Rekommendation
 
 1. **Flagga PA** -- customer_insights ar redo for produktion
 2. **Modell-ID fix kritisk** -- voice logging ar trasig, samma fix behovs
-3. **Anvand alias (`claude-sonnet-4-6`)** -- inte daterade ID:n som kan bli ogiltiga
+3. **Använd alias (`claude-sonnet-4-6`)** -- inte daterade ID:n som kan bli ogiltiga
 4. **Overvakning** -- lagg till Vercel-alarm pa 500-svar fran insights-routen

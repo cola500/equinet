@@ -68,7 +68,7 @@ Istallet for att hamta alla bokningar (`take: 10000`) och aggregera i JS:
 1. `groupBy` for counts + max-datum
 2. Separat `groupBy` for no-show-counts
 3. `user.findMany` for kunddetaljer (batched)
-4. `booking.findMany` med `distinct` for unika hastar
+4. `booking.findMany` med `distinct` for unika hästar
 
 Minskar datamangden drastiskt (4 smala queries vs 1 bred med 10000 rader).
 
@@ -77,4 +77,4 @@ Nar ett falt tas bort fran en list-query men fortfarande finns i single-entity-q
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** `include` i Prisma ar en genvagsfall -- det returnerar ALLA falt pa relaterade modeller. Att byta till explicit `select` ar en enkel andring med stor payloadeffekt (49 -> 7 falt per stop i routes-fallet). Gor detta proaktivt vid nya queries.
+**Nyckelinsikt:** `include` i Prisma ar en genvagsfall -- det returnerar ALLA falt pa relaterade modeller. Att byta till explicit `select` ar en enkel ändring med stor payloadeffekt (49 -> 7 falt per stop i routes-fallet). Gor detta proaktivt vid nya queries.

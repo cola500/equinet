@@ -19,7 +19,7 @@ sections:
 
 ## Sammanfattning
 
-Equinet anvander **tva lager av dataatkomstskydd** som arbetar tillsammans:
+Equinet använder **tva lager av dataatkomstskydd** som arbetar tillsammans:
 
 1. **Prisma + repository-monster** (primart): Alla API routes gar via repositories med
    `WHERE providerId = ...` / `WHERE customerId = ...`. Detta ar det aktiva skyddet
@@ -38,8 +38,8 @@ Prisma + repository forblir primar dataatkomst. RLS ar sakerhetsnatet.
 
 ### Problemet vi ville losa
 
-Nar flera leverantorer delar samma databas maste varje leverantor bara se sin egen data.
-Utan skydd kan en bugg i en API route lata leverantor A se leverantor B:s bokningar.
+Nar flera leverantörer delar samma databas maste varje leverantör bara se sin egen data.
+Utan skydd kan en bugg i en API route lata leverantör A se leverantör B:s bokningar.
 
 ### Tva vagar utvarderades
 

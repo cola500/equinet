@@ -22,11 +22,11 @@ Slutgiltig visuell genomgang med demo mode + demo-seed + alla fixar (2026-03-26)
 
 ## Step 1: Login
 
-**Vad anvandaren ser:** Rent inloggningsformular. "Logga in pa Equinet", email, losenord, gron knapp.
+**Vad anvandaren ser:** Rent inloggningsformular. "Logga in pa Equinet", email, lösenord, gron knapp.
 
 **Kansla: 4/5**
 
-Dev-banner ar BORTA. Sidan kanns professionell. "Glomt losenord?" och "Registrera dig har" syns men sticker inte ut -- anvandaren spenderar 5 sekunder har.
+Dev-banner ar BORTA. Sidan kanns professionell. "Glomt lösenord?" och "Registrera dig har" syns men sticker inte ut -- anvandaren spenderar 5 sekunder har.
 
 **Bryter illusionen?** Nej. Footer visar "v0.2.0" men ingen tittar dit.
 
@@ -36,9 +36,9 @@ Dev-banner ar BORTA. Sidan kanns professionell. "Glomt losenord?" och "Registrer
 
 **Vad anvandaren ser:**
 - "Maria Lindgren" i ovre hogra hornet
-- 5 rena nav-tabs (Oversikt, Kalender, Bokningar, Mina tjanster, Kunder)
-- "Du har 1 ny forfragan" -- gul banner med lank
-- Statskort: Aktiva tjanster (4), Kommande bokningar (3), Nya forfragningar (1)
+- 5 rena nav-tabs (Översikt, Kalender, Bokningar, Mina tjänster, Kunder)
+- "Du har 1 ny förfrågan" -- gul banner med lank
+- Statskort: Aktiva tjänster (4), Kommande bokningar (3), Nya förfrågningar (1)
 - "Visa statistik" expanderbar
 - Snabbllankar med badge "1" pa Se bokningar
 
@@ -75,7 +75,7 @@ Realistiska namn. Hasttaggen ("1 hast") ger en professionell touch. 3 kunder ar 
 
 **Kansla: 4/5**
 
-Kalendern kanns levande -- bokningar syns, vaentande forfragan markeras tydligt. Helger ar markerade som stangda. Tips-bannern ("Tryck direkt i kalendern...") ar hjalpsam.
+Kalendern kanns levande -- bokningar syns, vaentande förfrågan markeras tydligt. Helger ar markerade som stangda. Tips-bannern ("Tryck direkt i kalendern...") ar hjalpsam.
 
 **Bryter illusionen?** Nej. Bokningsblocken har ratt tjanstenamn och tider.
 
@@ -84,10 +84,10 @@ Kalendern kanns levande -- bokningar syns, vaentande forfragan markeras tydligt.
 ## Step 5: Bookings
 
 **Vad anvandaren ser:**
-- Tabs: Alla (6), Vantar (1), Bekraftade (2), Genomforda (3), Ej infunna (0), Avbokade (1)
+- Tabs: Alla (6), Vantar (1), Bekraftade (2), Genomförda (3), Ej infunna (0), Avbokade (1)
 - Forsta bokningen: Ridlektion for Sofia Berg, "Vantar pa svar", Acceptera/Avboj-knappar
 - Bekraftade: Hovvard utan beslag (Erik, Saga), Hovslagning (Anna, Storm)
-- Genomforda: 3 st med realistiska detaljer
+- Genomförda: 3 st med realistiska detaljer
 - Kundkommentarer: "Vanligen lite kickig pa vanster bak", "Forsta lektionen, nyborjare", "Haltar lite pa vanger fram"
 
 **Kansla: 5/5**
@@ -101,15 +101,15 @@ Kalendern kanns levande -- bokningar syns, vaentande forfragan markeras tydligt.
 ## Step 6: Services
 
 **Vad anvandaren ser:**
-- 4 tjanster i grid: Halsokontroll (900 kr, 30 min), Hovvard utan beslag (700 kr, 45 min), Hovslagning (1200 kr, 60 min), Ridlektion (500 kr, 45 min)
+- 4 tjänster i grid: Halsokontroll (900 kr, 30 min), Hovvard utan beslag (700 kr, 45 min), Hovslagning (1200 kr, 60 min), Ridlektion (500 kr, 45 min)
 - Aterbesoksintervall pa hovtjanster (6/8 veckor)
-- "Lagg till tjanst"-knapp
+- "Lagg till tjänst"-knapp
 
 **Kansla: 4/5**
 
-Realistiska tjanster med varierade priser. Aterbesoksintervallet visar en avancerad funktion utan att vara overvaldigande.
+Realistiska tjänster med varierade priser. Aterbesoksintervallet visar en avancerad funktion utan att vara overvaldigande.
 
-**Bryter illusionen?** Roda "Ta bort"-knappar ar framtradande men inte en deal-breaker -- leverantoren forstår att de kan hantera sina tjanster.
+**Bryter illusionen?** Roda "Ta bort"-knappar ar framtradande men inte en deal-breaker -- leverantören forstår att de kan hantera sina tjanster.
 
 ---
 
@@ -120,7 +120,7 @@ Realistiska tjanster med varierade priser. Aterbesoksintervallet visar en avance
 | DEMO-SEED | NEJ -- borta fran alla bokningskort |
 | Test Testsson | NEJ -- borta fran kundlista och bokningar |
 | test@example.com | NEJ -- borta fran alla synliga sidor |
-| E2E | NEJ -- inga E2E-tjanster eller hastar |
+| E2E | NEJ -- inga E2E-tjänster eller hästar |
 | example.com | NEJ -- alla emails ar @demo.equinet.se |
 | Hovslagning Standard (Inaktiv) | NEJ -- filtreras bort i demo mode |
 | Dev-banner | NEJ -- dold i demo mode |
@@ -133,17 +133,17 @@ Realistiska tjanster med varierade priser. Aterbesoksintervallet visar en avance
 
 **JA.**
 
-Demon ar redo att visas for en kund. Flodet fran inloggning till genomford bokning kanns professionellt och trovardigt. Data ar realistisk, navigeringen ar ren, och inga testord eller dev-artefakter lacker igenom.
+Demon ar redo att visas for en kund. Flodet fran inloggning till genomförd bokning kanns professionellt och trovardigt. Data ar realistisk, navigeringen ar ren, och inga testord eller dev-artefakter lacker igenom.
 
 ### De 3 sista forbattringarna som hade gjort demon annu battre (nice to have)
 
-1. **Dolj "Glomt losenord?" och "Registrera dig har" pa login-sidan i demo** -- smattpolar men gor login renare
+1. **Dolj "Glomt lösenord?" och "Registrera dig har" pa login-sidan i demo** -- smattpolar men gor login renare
 2. **Dolj versionnummer "v0.2.0" i footer i demo** -- subtil men markbar for detaljfokuserade anvandare
 3. **Dolj roda "Ta bort"-knappar pa tjanstekort i demo** -- minskar risken att demo-data forstors
 
 ### Vad ar det starkaste i demon just nu?
 
-**Bokningssidan.** Blandningen av statusar (vantar, bekraftad, genomford, avbokad), kundkommentarer ("Vanligen lite kickig pa vanster bak"), hastdetaljer (Storm, Saga, Bella), och Acceptera/Avboj-flodet ger en kansla av en levande verksamhet. Det ar har produktens varde blir tydligt.
+**Bokningssidan.** Blandningen av statusar (vantar, bekraftad, genomförd, avbokad), kundkommentarer ("Vanligen lite kickig pa vanster bak"), hastdetaljer (Storm, Saga, Bella), och Acceptera/Avboj-flodet ger en kansla av en levande verksamhet. Det ar har produktens varde blir tydligt.
 
 ### Vad ar det svagaste som fortfarande kanns?
 

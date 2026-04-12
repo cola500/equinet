@@ -32,7 +32,7 @@ All data statisk -- ingen API behövs. Perfekt för native och fungerar offline.
 | Artikelvy: tips | Blå ruta med tip-text | Blå bakgrund `RoundedRectangle` | Native |
 | Artikelvy: heading per block | `<h3>` i content-block | `Text().font(.headline)` | Native |
 | Feature flag gate | `help_center` flag i webb | Feature flag via AppCoordinator | Native |
-| 11 sektioner | Kom igang, Profil, Tjanster, Kalender, Bokningar, Dagligt arbete, Ruttplanering, Omdomen, Kunder, Planering, Hastar, Integrationer, Konto | Samma | Native |
+| 11 sektioner | Kom igang, Profil, Tjänster, Kalender, Bokningar, Dagligt arbete, Ruttplanering, Omdomen, Kunder, Planering, Hästar, Integrationer, Konto | Samma | Native |
 | Platt lista vid aktiv sokning | Webb visar platt | Platt lista vid sok, sektioner vid tom sok | Native |
 
 **Auth:** Ingen -- statisk data, inget API-anrop.
@@ -72,5 +72,5 @@ ViewModel-tester (XCTest):
 ## Risker
 
 - **Lag**: Inga -- all data ar statisk, inga API-beroenden
-- **Textmangd**: 22 artiklar ar mycket Swift-kod. Losning: strukturerad data i array, inte handskriven per artikel
+- **Textmangd**: 22 artiklar ar mycket Swift-kod. Lösning: strukturerad data i array, inte handskriven per artikel
 - **Uppdatering**: Artiklar maste uppdateras pa tva stallen (TS + Swift). Acceptabel tradeoff for native UX + offline

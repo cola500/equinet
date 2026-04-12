@@ -35,7 +35,7 @@
 ## Vad gick bra
 
 ### 1. Systematiskt monster over 15 filer utan regressioner
-Alla andringar var rent CSS-klasser och Dialog->ResponsiveDialog-swap. Ingen logik andrades, vilket innebar noll risk for funktionella regressioner. 1336 tester gick igenom forsta forsoket.
+Alla ändringar var rent CSS-klasser och Dialog->ResponsiveDialog-swap. Ingen logik andrades, vilket innebar noll risk for funktionella regressioner. 1336 tester gick igenom forsta forsoket.
 
 ### 2. ResponsiveAlertDialog-monstret skalade perfekt
 Att bygga `ResponsiveAlertDialog` som en spegelbild av `ResponsiveDialog` tog ~5 minuter och gav direkt nytta i 4 sidor (bookings, horses, group-bookings x2). Monstret ar nu komplett for bade vanliga dialoger och bekraftelse-dialoger.
@@ -44,7 +44,7 @@ Att bygga `ResponsiveAlertDialog` som en spegelbild av `ResponsiveDialog` tog ~5
 Tre sidor hade `AlertDialog` med `AlertDialogTrigger` inuti `.map()` -- detta ar ett anti-pattern som skapar N dialoger i DOM. Omskrivningen till kontrollerad state (`horseToDelete`, `participantToRemove`, etc.) ger en enda dialog-instans oavsett listlangd.
 
 ### 4. Konsekvent `min-h-[44px] sm:min-h-0` monster
-Genom att anvanda `min-h-[44px] sm:min-h-0` pa alla interaktiva element far vi 44px touch targets pa mobil utan att paverka desktop-utseendet. Monstret ar enkelt att tillamppa retroaktivt.
+Genom att använde `min-h-[44px] sm:min-h-0` pa alla interaktiva element far vi 44px touch targets pa mobil utan att paverka desktop-utseendet. Monstret ar enkelt att tillamppa retroaktivt.
 
 ## Vad kan forbattras
 

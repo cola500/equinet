@@ -57,7 +57,7 @@ Referensfiler: api.md, views.md, data.md, navigation.md, design.md, accessibilit
 | 17 | `NativeTabBar.swift` | 47 | `UIImpactFeedbackGenerator` -- byt till `.sensoryFeedback()` |
 | 18 | `NativeLoginView.swift` | 60, 77, 112 | `clipShape(RoundedRectangle(...))` -- byt till `.rect(cornerRadius:)` |
 | 19 | `ServiceFormSheet.swift` | 135 | UIKit `UIApplication.sendAction` -- byt till `@FocusState` |
-| 20 | `NativeLoginView.swift` | 22 + `SplashView.swift` 15 | Duplicerad brand-farg -- anvand `Color.equinetGreen` |
+| 20 | `NativeLoginView.swift` | 22 + `SplashView.swift` 15 | Duplicerad brand-farg -- använd `Color.equinetGreen` |
 | 21 | `CustomerWebView.swift` | 134, 143 | "forsok" -- saknar a/o i UI-text |
 
 ---
@@ -86,7 +86,7 @@ Referensfiler: api.md, views.md, data.md, navigation.md, design.md, accessibilit
 
 ---
 
-## Genomford
+## Genomförd
 
 - [ ] #1 CalendarViewModel `#if os(iOS)` guard
 - [ ] #2 NativeCalendarView force-unwrap

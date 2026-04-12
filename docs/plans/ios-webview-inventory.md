@@ -27,7 +27,7 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 ---
 
-## Komplett oversikt: Alla skarmar
+## Komplett översikt: Alla skarmar
 
 ### Redan native (klart)
 
@@ -42,9 +42,9 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 | Skarm | Webb-URL | Komplexitet |
 |-------|----------|-------------|
-| **Oversikt / Dashboard (Tab 1)** | `/provider/dashboard` | Medel |
+| **Översikt / Dashboard (Tab 1)** | `/provider/dashboard` | Medel |
 | **Bokningar (Tab 3)** | `/provider/bookings` | Hog |
-| **Mina tjanster (Mer)** | `/provider/services` | Medel |
+| **Mina tjänster (Mer)** | `/provider/services` | Medel |
 | **Kunder (Mer)** | `/provider/customers` | Hog |
 | **Recensioner (Mer)** | `/provider/reviews` | Lag-Medel |
 | **Min profil (Mer)** | `/provider/profile` | Hog |
@@ -70,7 +70,7 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 | **Gruppbokningar** | `group_bookings` | `/customer/group-bookings/*` | ON | Medel-Hog |
 | **Stallprofiler** | `stable_profiles` | `/stables/*`, `/stable/*` | OFF | Hog |
 | **Sjalvombokning** | `self_reschedule` | (inline i bokningar) | ON | Lag |
-| **Folj leverantor** | `follow_provider` | (inline) | ON | Lag |
+| **Folj leverantör** | `follow_provider` | (inline) | ON | Lag |
 | **Bevaka kommun** | `municipality_watch` | (inline) | ON | Lag |
 
 ### Infrastruktur (inte skarmar)
@@ -84,7 +84,7 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 ## Tier 1: Alltid synliga -- hogst prio
 
-### 1. Oversikt / Dashboard (Tab 1)
+### 1. Översikt / Dashboard (Tab 1)
 
 **Vad:** KPI-kort (vantande bokningar, dagens schema, nasta bokning), snabbatgarder, checklista for nya leverantorer.
 
@@ -117,7 +117,7 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 ---
 
-### 4. Mina tjanster (Mer)
+### 4. Mina tjänster (Mer)
 
 **Vad:** Tjanstelista med namn, pris, tidsatgang, aterbesoksintervall. Redigering inline.
 
@@ -130,7 +130,7 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 ### 5. Kunder (Mer)
 
-**Vad:** Kundregister med filter, sok, kunddetalj (hastar, anteckningar, bokningshistorik, insikter, inbjudan).
+**Vad:** Kundregister med filter, sok, kunddetalj (hästar, anteckningar, bokningshistorik, insikter, inbjudan).
 
 **Varfor native:** Offline-relevant -- kundinfo ute i falt. Manga sub-vyer.
 
@@ -141,9 +141,9 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 ### 6. Min profil (Mer)
 
-**Vad:** 3 flikar (Profil, Tillganglighet, Bokningsinstallningar). Profilbild, adress, veckoschema, undantag.
+**Vad:** 3 flikar (Profil, Tillgänglighet, Bokningsinstallningar). Profilbild, adress, veckoschema, undantag.
 
-**Varfor native:** Lagst ROI -- komplex + sallan anvand efter setup.
+**Varfor native:** Lagst ROI -- komplex + sallan använd efter setup.
 
 **API:** Multipla nya endpoints.
 **Komplexitet:** Mycket hog (~800+ rader).
@@ -154,7 +154,7 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 ### 7. Besoksplanering (due_for_service)
 
-**Vad:** Hastar som behover aterbesok, sorterat pa urgency. Overdue + upcoming (2 veckor).
+**Vad:** Hästar som behover aterbesok, sorterat pa urgency. Overdue + upcoming (2 veckor).
 
 **Varfor native:** Offline-relevant for faltarbete. Relativt enkel listevy.
 
@@ -227,10 +227,10 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 
 | Prio | Skarm | Tier | Motivering |
 |------|-------|------|-----------|
-| 1 | **Oversikt / Dashboard** | 1 | Forsta skarmen, snabb laddning, medel komplexitet |
-| 2 | **Bokningar (lista)** | 1 | Nast mest anvanda, offline, hog men hanterbar |
+| 1 | **Översikt / Dashboard** | 1 | Forsta skarmen, snabb laddning, medel komplexitet |
+| 2 | **Bokningar (lista)** | 1 | Nast mest använde, offline, hog men hanterbar |
 | 3 | **Recensioner** | 1 | Quick win, enkel vy, stort native-intryck |
-| 4 | **Mina tjanster** | 1 | Enkel CRUD, etablerar list+edit-monster |
+| 4 | **Mina tjänster** | 1 | Enkel CRUD, etablerar list+edit-monster |
 | 5 | **Besoksplanering** | 2 | Offline-relevant, enkel lista, bra for falt |
 | 6 | **Affarinsikter** | 2 | Swift Charts, native diagram > webbdiagram |
 | 7 | **Rostloggning** | 2 | SpeechRecognizer redan native -- naturlig utvidgning |
@@ -238,10 +238,10 @@ iOS-appen ar hybrid -- vissa skarmar ar native SwiftUI, andra laddar webbsidor i
 | 9 | **Rutt-annonser** | 2 | Medel, CRUD + status |
 | 10 | **Ruttplanering** | 2 | MapKit-fordel, men hog komplexitet |
 | 11 | **Gruppbokningar** | 2 | Moderatkomplext, avvakta tills feature mognar |
-| 12 | **Min profil** | 1 | Lagst ROI -- komplex + sallan anvand |
+| 12 | **Min profil** | 1 | Lagst ROI -- komplex + sallan använd |
 | -- | Tier 3 | 3 | Avvakta |
 
-**Alternativ ordning (quick wins forst):** Recensioner -> Mina tjanster -> Dashboard -> Bokningar -> Besoksplanering -> Kunder -> Profil
+**Alternativ ordning (quick wins forst):** Recensioner -> Mina tjänster -> Dashboard -> Bokningar -> Besoksplanering -> Kunder -> Profil
 
 ---
 

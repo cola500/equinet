@@ -16,7 +16,7 @@ sections:
 
 ## Bakgrund
 
-Supabase Auth hanterar alla losenord i `auth.users` sedan sprint 13.
+Supabase Auth hanterar alla lösenord i `auth.users` sedan sprint 13.
 `passwordHash`-kolumnen i `public.User` ar redan overfloding -- nya
 anvandare far `''` via sync-triggern. Kolumnen maste bort for att:
 
@@ -40,7 +40,7 @@ returnerar alltid false -> kontoborttagning blockerad. Fixas i fas 3.
 
 **Utanfor scope:**
 - Ta bort legacy auth routes helt (reset-password, verify-email etc.) -- separat story
-- RLS-andringar
+- RLS-ändringar
 
 ## Fasordning (ANDRAD efter tech-architect review)
 
@@ -96,7 +96,7 @@ Fas 7: Cleanup (ta bort bcrypt, uppdatera docs)
 - `upgradeGhostUser()` -- ta bort passwordHash. Skapa Supabase auth user
   via `supabaseAdmin.createUser()` for ghost-usern. Repo-anropet uppdaterar
   bara profilfalt (firstName, lastName, etc.).
-- `resetPassword()` -- anvand `supabaseAdmin.updateUser()` for losenord,
+- `resetPassword()` -- använd `supabaseAdmin.updateUser()` for lösenord,
   sedan `repo.markResetTokenUsed()` for token-markering.
 - Uppdatera `createAuthService()` factory: ta bort bcrypt-deps.
 
@@ -112,13 +112,13 @@ Fas 7: Cleanup (ta bort bcrypt, uppdatera docs)
 **accept-invite (`src/app/api/auth/accept-invite/route.ts`):**
 - Ta bort `import bcrypt`
 - Istallet for `bcrypt.hash()` + `prisma.user.update({passwordHash})`:
-  Anvand `supabase.auth.admin.updateUserById(userId, { password })` for
-  att satta losenord i Supabase Auth, sedan uppdatera User-raden
+  Använd `supabase.auth.admin.updateUserById(userId, { password })` for
+  att satta lösenord i Supabase Auth, sedan uppdatera User-raden
   (isManualCustomer=false, emailVerified=true) utan passwordHash.
 
 **ghost-user (`src/lib/ghost-user.ts`):**
 - Ta bort `bcrypt`-import och `passwordHash`-sattning
-- Ghost users skapas utan losenord (Prisma-kolumnen finns inte langre)
+- Ghost users skapas utan lösenord (Prisma-kolumnen finns inte langre)
 
 ### Fas 4: Seeds och E2E
 
@@ -174,7 +174,7 @@ Kors EFTER all kod ar uppdaterad sa att ingen refererar kolumnen.
 
 | Risk | Mitigation |
 |------|-----------|
-| Seeds fungerar inte utan passwordHash | Verifiera seed lokalt efter andring |
+| Seeds fungerar inte utan passwordHash | Verifiera seed lokalt efter ändring |
 | E2E kraschar om lokal DB inte migratats | Kor migration lokalt forst |
 | accept-invite bryter utan Supabase admin | Krav: SUPABASE_SERVICE_ROLE_KEY i env |
 | resetPassword bryter | Migrera till Supabase admin updateUser |

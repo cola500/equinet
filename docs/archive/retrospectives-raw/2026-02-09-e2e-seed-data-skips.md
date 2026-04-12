@@ -44,12 +44,12 @@ Att kora specs isolerat (`npx playwright test e2e/announcements.spec.ts`) var ov
 Ny helper som skapar Route + RouteStops direkt i DB, med egna taggade route orders for cleanup. Oberoende av UI-skapade rutter, vilket gor testerna stabila.
 
 ### 4. Iterate-pattern for multi-match
-Istallet for att anta att forsta elementet ar ratt (`.first()`), iterera genom alla alternativ for att hitta det med ratt state. Anvant i bade customer-reviews (hitta orecenserad bokning) och announcements (hitta annons med pending bokning).
+Istallet for att anta att forsta elementet ar ratt (`.first()`), iterera genom alla alternativ for att hitta det med ratt state. Använt i bade customer-reviews (hitta orecenserad bokning) och announcements (hitta annons med pending bokning).
 
 ## Vad kan forbattras
 
 ### 1. shadcn CSS-selektorer ar brakliga
-`.border.rounded-lg` slutade fungera nar shadcn uppgraderades till `data-slot`-attribut och `rounded-xl`. Alla E2E-tester som anvander CSS-klass-selektorer for shadcn-komponenter bor migreras till `data-slot` eller `getByRole/getByText`.
+`.border.rounded-lg` slutade fungera nar shadcn uppgraderades till `data-slot`-attribut och `rounded-xl`. Alla E2E-tester som använder CSS-klass-selektorer for shadcn-komponenter bor migreras till `data-slot` eller `getByRole/getByText`.
 
 **Prioritet:** MEDEL -- kvarvarande specs (booking, provider, calendar) har sannolikt samma problem.
 
@@ -66,7 +66,7 @@ Booking (2), calendar (1), flexible-booking (2) och provider (2) skippar fortfar
 ## Patterns att spara
 
 ### futureWeekday() for helgrobusthet
-`futureWeekday(days)` adderar N dagar och skiftar lordag/sondag till mandag. Ateranvandbar for alla seed-funktioner som skapar framtida datum for leverantorer med man-fre tillganglighet.
+`futureWeekday(days)` adderar N dagar och skiftar lordag/sondag till mandag. Ateranvandbar for alla seed-funktioner som skapar framtida datum for leverantörer med man-fre tillganglighet.
 
 ### seedRoute() for pre-existerande rutter
 Skapar Route + RouteStops direkt i DB med taggade route orders (`specTag-route`). Cleanup kraver att BADA tags rensas (`cleanupSpecData(tag)` + `cleanupSpecData(tag + '-route')`).

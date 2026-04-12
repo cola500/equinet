@@ -15,14 +15,14 @@ sections:
 
 ## Sammanfattning
 
-Skapa en alternativ login-sida pa `/supabase-login` som anvander Supabase Auth
+Skapa en alternativ login-sida pa `/supabase-login` som använder Supabase Auth
 `signInWithPassword` istallet for NextAuth `signIn("credentials")`.
 Bakom feature flag `supabase_auth_poc` -- flagga av = redirect till `/login`.
 Befintlig NextAuth login pa `/login` ar helt oforandrad.
 
 ## Filer som andras eller skapas
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/app/(auth)/supabase-login/page.tsx` | **NY** -- Supabase Auth login-sida |
 | `src/app/(auth)/supabase-login/page.test.tsx` | **NY** -- Tester |
@@ -41,7 +41,7 @@ Kopiera strukturen fran befintliga `/login` (Card, form, error states) men enkla
 
 ### Auth-flode
 
-1. Anvandare fyller i email + losenord
+1. Anvandare fyller i email + lösenord
 2. `supabase.auth.signInWithPassword({ email, password })` via browser client
 3. Success -> `router.push("/dashboard")` + `router.refresh()`
 4. Fel -> visa felmeddelandepa svenska
@@ -56,7 +56,7 @@ Server Component wrapper kollar `supabase_auth_poc` flaggan:
 
 | Supabase error | Meddelande |
 |----------------|-----------|
-| `invalid_credentials` | "Ogiltig email eller losenord" |
+| `invalid_credentials` | "Ogiltig email eller lösenord" |
 | `email_not_confirmed` | "Din e-post ar inte verifierad" + lank |
 | Ovrigt | "Nagot gick fel. Forsok igen." |
 

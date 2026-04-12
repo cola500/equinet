@@ -23,7 +23,7 @@ sections:
 
 **Feature flag:** `municipality_watch` maste vara aktiverad.
 
-Kunder kan bevaka kommuner for specifika tjanstetyper. Nar en leverantor skapar en ruttannonsering i en bevakad kommun (med matchande tjanstetyp) skickas en notis.
+Kunder kan bevaka kommuner for specifika tjanstetyper. Nar en leverantör skapar en ruttannonsering i en bevakad kommun (med matchande tjanstetyp) skickas en notis.
 
 ---
 
@@ -117,10 +117,10 @@ Ta bort en kommunbevakning.
 
 ## Koppling till ruttannonseringar
 
-Nar en leverantor skapar en ruttannonsering:
+Nar en leverantör skapar en ruttannonsering:
 1. Systemet kontrollerar om det finns bevakare i den kommun annonseringen galler
 2. Bevakare med matchande `serviceTypeName` far en `MUNICIPALITY_WATCH_MATCH`-notis
-3. Om bevakaren aven foljer leverantoren far de foljarnotisen (som har prioritet), inte bevakningsnotisen
+3. Om bevakaren aven foljer leverantören far de foljarnotisen (som har prioritet), inte bevakningsnotisen
 
 > Se [notifications.md](notifications.md) for dedup-logik och [follows.md](follows.md) for foljar-prioritet.
 

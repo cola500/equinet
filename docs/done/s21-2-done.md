@@ -18,7 +18,7 @@ sections:
 - [x] /api/routing kraver inloggning (getAuthUser + 401)
 - [x] /api/test/* routes blockerade pa Vercel (preview + prod) via ALLOW_TEST_ENDPOINTS
 - [x] Tester: oautentiserad request -> 401
-- [x] E2E-tester som anvander reset-rate-limit fortsatter fungera lokalt (playwright.config.ts)
+- [x] E2E-tester som använder reset-rate-limit fortsatter fungera lokalt (playwright.config.ts)
 
 ## Definition of Done
 
@@ -30,9 +30,9 @@ sections:
 ## Reviews
 
 - Kordes: code-reviewer (inline, enkel story)
-- Skippad: security-reviewer (plan-review tillracklig, enkla andringar)
+- Skippad: security-reviewer (plan-review tillracklig, enkla ändringar)
 
 ## Laerdomar
 
 - **`vi.hoisted()`** kravs for alla mock-variabler som refereras i vi.mock factories (TDZ-problem)
-- **NODE_ENV ar opålitlig**: Vercel satter `production` pa ALLA deploys inkl preview. Anvand explicita feature-env-variabler istallet.
+- **NODE_ENV ar opålitlig**: Vercel satter `production` pa ALLA deploys inkl preview. Använd explicita feature-env-variabler istallet.

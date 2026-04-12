@@ -38,7 +38,7 @@ sections:
 | iOS UI | Color+Brand.swift (ny), NativeLoginView, BiometricPromptView, SplashView | Color.equinetGreen extension, borttagen duplicering |
 | iOS Arkitektur | ContentView.swift, NetworkMonitor.swift | .onChange(of:) istallet for callback-pattern, borttagen onStatusChanged |
 | iOS Felhantering | NativeCalendarView, CalendarSyncManager, CalendarViewModel | Force unwraps -> safe unwrap, datumvalidering med Bool-retur |
-| iOS Tillganglighet | NativeCalendarView | VoiceOver-labels pa bokningsblock och now-line |
+| iOS Tillgänglighet | NativeCalendarView | VoiceOver-labels pa bokningsblock och now-line |
 | Xcode projekt | project.pbxproj | AppLogger.swift tillagd i widget extension target |
 
 ## Vad gick bra
@@ -47,7 +47,7 @@ sections:
 Planen hade redan strukits ned fran 88 issues till ~20 relevanta efter tech-arkitektgranskning. Det betydde att vi inte slasade tid pa falska problem (APIClient "race condition" som inte existerade, Constants.swift som var overflod).
 
 ### 2. Parallell filredigering
-Fas 1 (loggning) kravde andringar i 9 filer. Genom att lasa alla filer parallellt och gora alla editeringar i block gick det snabbt. Samma monster i fas 2 (3 filer + 1 ny).
+Fas 1 (loggning) kravde ändringar i 9 filer. Genom att lasa alla filer parallellt och gora alla editeringar i block gick det snabbt. Samma monster i fas 2 (3 filer + 1 ny).
 
 ### 3. Saker loggning fran start
 Planen specificerade exakt vilka vardon som INTE far loggas (tokens, cookies). Resultatet ar att alla AppLogger-anrop bara loggar metadata (success/failure, identifiers), aldrig kansliga vardon.
@@ -73,7 +73,7 @@ os.Logger-strangintepolering kraver `import OSLog` pa anropssidan, inte bara dar
 `Color+Brand.swift` med `static let equinetGreen` istallet for duplicerade Color-literaler. Extrahera vid 3+ forekomster.
 
 ### .onChange(of:) over callback-closures
-I SwiftUI med @Observable: anvand `.onChange(of: observable.property)` istallet for callback-closures som riskerar stale captures av struct-vardon.
+I SwiftUI med @Observable: använd `.onChange(of: observable.property)` istallet for callback-closures som riskerar stale captures av struct-vardon.
 
 ### updateEvent Bool-retur for datumvalidering
 CalendarSyncManager.updateEvent returnerar Bool. Anroparen skippar mapping vid false. Forhindrar events utan datum.
@@ -87,17 +87,17 @@ CalendarSyncManager.updateEvent returnerar Bool. Anroparen skippar mapping vid f
 4. Varfor? Vi la till AppLogger.swift som ny fil utan att kontrollera om den behover delas med widget extension.
 5. Varfor? Det finns ingen checklista for "ny Swift-fil i delat iOS-projekt" som paminnar om target-membership.
 
-**Atgard:** Dokumenterat i CLAUDE.md som gotcha. Vid ny Swift-fil som anvands av delade filer (KeychainHelper, SharedDataManager, etc): lagg till i membershipExceptions.
+**Åtgärd:** Dokumenterat i CLAUDE.md som gotcha. Vid ny Swift-fil som anvands av delade filer (KeychainHelper, SharedDataManager, etc): lagg till i membershipExceptions.
 **Status:** Implementerad
 
 ### Problem: Xcode build failade -- "import of defining module 'os' missing"
 1. Varfor? AppLogger.keychain.error("...\\(var)") failade i KeychainHelper.swift.
-2. Varfor? Logger-strangintepolering anvander OSLogMessage som kraver import OSLog.
+2. Varfor? Logger-strangintepolering använder OSLogMessage som kraver import OSLog.
 3. Varfor? Swift resolvar strangintepolering pa anropssidan, inte dar Logger definieras.
-4. Varfor? os.Logger har en specialiserad StringInterpolation som inte ar tillganglig utan explicit import.
+4. Varfor? os.Logger har en specialiserad StringInterpolation som inte ar tillgänglig utan explicit import.
 5. Varfor? Swift-kompilatorn kan inte transitivt exponera specialiserade typer fran importerade moduler.
 
-**Atgard:** Alla filer som anropar AppLogger maste ha `import OSLog`. Dokumenterat som pattern.
+**Åtgärd:** Alla filer som anropar AppLogger maste ha `import OSLog`. Dokumenterat som pattern.
 **Status:** Implementerad
 
 ## Larandeeffekt

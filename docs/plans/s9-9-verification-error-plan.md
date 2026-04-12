@@ -16,7 +16,7 @@ sections:
 
 ## Analys
 
-**Bugg:** Overifierad email ger "Ogiltig email eller losenord" istallet for
+**Bugg:** Overifierad email ger "Ogiltig email eller lösenord" istallet for
 "Din e-post ar inte verifierad" vid inloggning.
 
 **Rotorsak:** NextAuth v5 beta.30 returnerar `result.error = "CredentialsSignin"`
@@ -34,7 +34,7 @@ oavsett vad authorize-funktionen kastar. Det faktiska felmeddelandet
 returnerar strukturerade fel (typ + HTTP-status). Login-sidans UI for
 EMAIL_NOT_VERIFIED (rad 123-132) ar redan implementerat -- det nar bara aldrig dit.
 
-## Losning
+## Lösning
 
 Skapa `/api/auth/web-login` route som anropar AuthService direkt (samma monster
 som native-login) och returnerar strukturerade feltyper. Login-sidan byter fran
@@ -69,7 +69,7 @@ Body: { email, password }
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/app/api/auth/web-login/route.ts` | NY -- web login med strukturerade fel |
 | `src/app/api/auth/web-login/route.test.ts` | NY -- BDD tester |

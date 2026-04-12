@@ -27,7 +27,7 @@ Push-systemet ar nastan helt byggt:
 
 1. Push-permission begars aldrig -- PushManager vantar pa `requestPush` bridge-meddelande som ingen skickar
 2. Device tokens rensas aldrig vid logout -- orphaned tokens kvar i databasen
-3. PushManager anvander `print()` istallet for `AppLogger`
+3. PushManager använder `print()` istallet for `AppLogger`
 
 ## Nuvarande tillstand
 
@@ -108,7 +108,7 @@ AuthManager.logout() -> keychain.delete() -> state = .loggedOut
 
 **3a. APNs setup-guide**
 - Ny fil: `docs/operations/apns-setup.md`
-- Innehall:
+- Innehåll:
   1. Skapa Apple Developer-konto (99 USD/ar)
   2. Certificates, Identifiers & Profiles -> Keys -> skapa APNs-nyckel
   3. Ladda ner .p8-filen
@@ -123,7 +123,7 @@ AuthManager.logout() -> keychain.delete() -> state = .loggedOut
 
 ## Filer som andras
 
-| Fil | Andring | Ny/Befintlig |
+| Fil | Ändring | Ny/Befintlig |
 |-----|---------|--------------|
 | `ios/.../ContentView.swift` | `.onChange` for push-permission vid auth | Befintlig |
 | `ios/.../AuthManager.swift` | Token unregister i logout() | Befintlig |

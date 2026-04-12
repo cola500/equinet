@@ -16,7 +16,7 @@ sections:
 # Project Structure Review
 
 Inventering 2026-03-26. Projektstruktur ar overlag UTMARKT (9/10).
-Detta dokument listar mojliga forbattringar.
+Detta dokument listar möjliga forbattringar.
 
 ---
 
@@ -93,7 +93,7 @@ Inga filer behover flyttas just nu. Alla kodfiler ligger pa ratt plats.
 
 Vi har 4 demo-rapporter fran samma session:
 
-| Fil | Innehall |
+| Fil | Innehåll |
 |-----|----------|
 | `docs/demo-flow-issues.md` | Round 0 -- utan demo mode |
 | `docs/demo-flow-issues-demo-mode.md` | Round 1 -- demo mode utan seed |

@@ -58,7 +58,7 @@ Foersta foersoeket anvande dynamisk UDID-lookup via python3-parsning av simctl J
 ## Patterns att spara
 
 ### simctl vs xcodebuild destination-mismatch
-`xcrun simctl list devices` och `xcodebuild -showdestinations -scheme X` returnerar OLIKA enhets-UDID:er. Anvand ALDRIG simctl-UDID:er som xcodebuild-destination. Anvand antingen:
+`xcrun simctl list devices` och `xcodebuild -showdestinations -scheme X` returnerar OLIKA enhets-UDID:er. Använd ALDRIG simctl-UDID:er som xcodebuild-destination. Använd antingen:
 1. Namnbaserad destination: `platform=iOS Simulator,name=iPhone 16 Pro`
 2. UDID fran `xcodebuild -showdestinations` (inte simctl)
 
@@ -86,7 +86,7 @@ Dessa kostar ~1s och sparar minuter vid felsoekning.
 4. Varfor antog vi att de var samma? Vi antog att "available device" i simctl = "valid destination" i xcodebuild utan att verifiera.
 5. Varfor verifierade vi inte? Vi hade ingen diagnostik-output fran foersta koerningen och testade inte lokalt.
 
-**Atgard:** Diagnostik-steg tillagda i CI. Dokumenterat att simctl och xcodebuild har separata enhetsregister.
+**Åtgärd:** Diagnostik-steg tillagda i CI. Dokumenterat att simctl och xcodebuild har separata enhetsregister.
 **Status:** Implementerad
 
 ### Problem: Hardkodad Xcode_16 matchade inte deployment target 26.2
@@ -96,9 +96,9 @@ Dessa kostar ~1s och sparar minuter vid felsoekning.
 4. Varfor hade vi ingen dynamisk selektion? Workflowen foljde ett statiskt CI-recept utan framtidssaekring.
 5. Varfor? Forsta versionen av iOS CI-workflowen -- ingen erfarenhet av runner-uppdateringar annu.
 
-**Atgard:** Dynamiskt Xcode-val med `sort -V | tail -1`. Valjer alltid senaste.
+**Åtgärd:** Dynamiskt Xcode-val med `sort -V | tail -1`. Valjer alltid senaste.
 **Status:** Implementerad
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** `simctl` och `xcodebuild` har separata enhetsregister. Anvand ALDRIG simctl-UDID:er som xcodebuild-destination. For CI: namnbaserade destinationer ar enklast och mest robusta. Lagg alltid till diagnostik-steg i iOS workflows -- de kostar nastan inget men sparar hela CI-rundor vid fel.
+**Nyckelinsikt:** `simctl` och `xcodebuild` har separata enhetsregister. Använd ALDRIG simctl-UDID:er som xcodebuild-destination. For CI: namnbaserade destinationer ar enklast och mest robusta. Lagg alltid till diagnostik-steg i iOS workflows -- de kostar nastan inget men sparar hela CI-rundor vid fel.

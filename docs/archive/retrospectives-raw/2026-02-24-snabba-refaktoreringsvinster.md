@@ -19,9 +19,9 @@
 | Lager | Filer | Beskrivning |
 |-------|-------|-------------|
 | Domain | `review/mapReviewErrorToStatus.ts`, `customer-review/mapCustomerReviewErrorToStatus.ts` | Extraherade error mappers fran 3 API routes |
-| Domain | `shared/Location.ts` | Import-andring: `lib/distance` -> `lib/geo/distance` |
+| Domain | `shared/Location.ts` | Import-ändring: `lib/distance` -> `lib/geo/distance` |
 | API | `providers/route.ts`, `route-orders/announcements/route.ts` | Tog bort inline Haversine-duplikation (~50 rader) |
-| API | `routes/route.ts`, `route-orders/available/route.ts` | Import-andring till kanonisk distance-modul |
+| API | `routes/route.ts`, `route-orders/available/route.ts` | Import-ändring till kanonisk distance-modul |
 | API | `reviews/route.ts`, `reviews/[id]/reply/route.ts`, `customer-reviews/route.ts` | Ersatte inline error mappers med delade domain-filer |
 | API | `service-types/route.ts` | Ersatte `prisma.service.findMany()` med `ServiceRepository.findAll()` |
 | Lib | `distance.ts` (BORTTAGEN) | Tog bort duplikat -- `lib/geo/distance.ts` ar kanonisk kalla |

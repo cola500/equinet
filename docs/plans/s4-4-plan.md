@@ -23,7 +23,7 @@ Lagg till `.sensoryFeedback()` pa 5 vyer (1-2 rader per vy).
 Inga nya filer, inga tester paverkade (visuell/haptic feedback ar inte testbart i XCTest).
 Verifiering: bygg + visuell kontroll i simulator.
 
-## Andringar
+## Ändringar
 
 | Vy | Feedback | Trigger |
 |----|----------|---------|

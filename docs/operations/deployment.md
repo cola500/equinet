@@ -593,7 +593,7 @@ Efter lyckad deployment:
 - API: `PATCH /v1/security/firewall/config?projectId=<ID>&teamId=<ID>` (se Vercel API docs)
 - Loggar: Vercel Dashboard -> Firewall -> Logs visar blockerade/utmanade requests
 
-**OBS:** Regel 3 anvander Challenge istallet for Deny -- besokare utanfor EU kan fortfarande na sajten efter CAPTCHA-verifiering.
+**OBS:** Regel 3 använder Challenge istallet for Deny -- besokare utanfor EU kan fortfarande na sajten efter CAPTCHA-verifiering.
 
 ---
 
@@ -634,7 +634,7 @@ SELECT cron.unschedule('cleanup-expired-tokens');
 - **VACUUM ANALYZE** kors INTE manuellt -- Supabase hanterar autovacuum.
 - Jobben kors som `postgres`-rollen (superuser).
 - pg_cron-loggar finns i `cron.job_run_details`-tabellen.
-- Rate limiting anvander Upstash Redis (ephemeral) -- ingen DB-rensning behovs.
+- Rate limiting använder Upstash Redis (ephemeral) -- ingen DB-rensning behovs.
 
 ---
 

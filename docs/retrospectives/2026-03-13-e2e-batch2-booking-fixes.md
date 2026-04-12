@@ -73,7 +73,7 @@ Bokningsflodets evolution (textfalt -> combobox, direkt submit -> granska-steg) 
 ### type="button" i alla Button-element inuti forms
 Alla `<Button>` fran shadcn/ui som ar inuti `<form>` och INTE ska submita maste ha `type="button"`. Utan det defaultar de till `type="submit"` (HTML-spec). Kontrollera detta vid code review.
 
-### Dev-server restart vid env-var-andringar i Playwright
+### Dev-server restart vid env-var-ändringar i Playwright
 Nar `reuseExistingServer: true` ar aktivt (icke-CI) maste dev-servern doodas och startas om for att plocka upp nya env-variabler i `playwright.config.ts`. Annars kor testerna mot en server med gamla env-vars.
 
 ### .first() pa getByText for card-element
@@ -88,7 +88,7 @@ Kort-layouts dar samma text forrekommer i bade titel och beskrivning kraver `.fi
 4. Varfor? Button-komponenten foljer HTML-spec dar default ar `type="submit"` i forms
 5. Varfor? CalendarHeader designades ursprungligen utanfor forms och problemet uppstod nar den baddades i DesktopBookingDialog
 
-**Atgard:** Lade till `type="button"` pa alla 7 knappar i CalendarHeader. Overovag att audita alla Button-instanser i forms.
+**Åtgärd:** Lade till `type="button"` pa alla 7 knappar i CalendarHeader. Overovag att audita alla Button-instanser i forms.
 **Status:** Implementerad (CalendarHeader). Audit av ovriga forms: Att gora.
 
 ### Problem: Group-bookings visade tom lista trots seedade data
@@ -98,7 +98,7 @@ Kort-layouts dar samma text forrekommer i bade titel och beskrivning kraver `.fi
 4. Varfor? Flaggan har `defaultEnabled: true` men env-variabeln trumfar default, och serverns env laddades vid start
 5. Varfor? `reuseExistingServer: true` ateranvander en server startad utan den nya env-variabeln
 
-**Atgard:** Lade till `FEATURE_GROUP_BOOKINGS=true` i playwright.config.ts. Gotcha dokumenterad.
+**Åtgärd:** Lade till `FEATURE_GROUP_BOOKINGS=true` i playwright.config.ts. Gotcha dokumenterad.
 **Status:** Implementerad
 
 ## Larandeeffekt

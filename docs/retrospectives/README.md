@@ -26,7 +26,7 @@ sections:
 | [2026-02-w3-admin-mobile.md](2026-02-w3-admin-mobile.md) | Feb 10-12 | 10 | Hastidentifiering, admin dashboard, mobil UI |
 | [2026-02-w3-voice-insights.md](2026-02-w3-voice-insights.md) | Feb 13-16 | 8 | Rostloggning, kundinsikter, Redis-flaggor |
 | [2026-02-w4-booking-offline.md](2026-02-w4-booking-offline.md) | Feb 17-21 | 14 | Bokning, offline PWA, ruttannonser, sync |
-| [2026-02-w4-ux-follow.md](2026-02-w4-ux-follow.md) | Feb 22-25 | 7 | UX, folj leverantor, per-service intervall |
+| [2026-02-w4-ux-follow.md](2026-02-w4-ux-follow.md) | Feb 22-25 | 7 | UX, folj leverantör, per-service intervall |
 | [2026-02-w5-hardening.md](2026-02-w5-hardening.md) | Feb 26-28 | 3 | Lint cleanup, pentest, migrationsspårning |
 | [2026-02-28-graphical-profile.md](2026-02-28-graphical-profile.md) | Feb 28 | 1 | Grafisk profil, landningssida, Suspense-fix |
 | [2026-03-03-offline-hardening.md](2026-03-03-offline-hardening.md) | Mar 3 | 1 | Offline-härdning: jitter, circuit breaker, kvothantering, konflikt-UI |

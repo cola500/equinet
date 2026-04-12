@@ -132,10 +132,10 @@ Hamta antal olasta notiser (for badge-visning).
 |-----|-------------|-----------|
 | `BOOKING_CONFIRMED` | Bokning bekraftad | Kund |
 | `BOOKING_CANCELLED` | Bokning avbokad | Kund/Leverantor |
-| `BOOKING_COMPLETED` | Bokning genomford | Kund |
+| `BOOKING_COMPLETED` | Bokning genomförd | Kund |
 | `BOOKING_REMINDER` | Paminnelse om kommande bokning | Kund/Leverantor |
-| `NEW_REVIEW` | Ny recension | Leverantor |
-| `ROUTE_ANNOUNCEMENT_NEW` | Ny ruttannonsering fran foljd leverantor | Kund (foljare) |
+| `NEW_REVIEW` | Ny recension | Leverantör |
+| `ROUTE_ANNOUNCEMENT_NEW` | Ny ruttannonsering fran foljd leverantör | Kund (foljare) |
 | `ROUTE_ANNOUNCEMENT_DUE_HORSE` | Ruttannonsering + overdue hast | Kund (foljare) |
 | `MUNICIPALITY_WATCH_MATCH` | Ruttannonsering matchar kommunbevakning | Kund (bevakare) |
 
@@ -143,14 +143,14 @@ Hamta antal olasta notiser (for badge-visning).
 
 ## Ruttannonseringsnotiser
 
-Nar en leverantor skapar en ruttannonsering notifieras tva malgrupper:
+Nar en leverantör skapar en ruttannonsering notifieras tva malgrupper:
 
 1. **Foljare** i kommunen -- far `ROUTE_ANNOUNCEMENT_NEW` eller `ROUTE_ANNOUNCEMENT_DUE_HORSE`
 2. **Kommunbevakare** med matchande tjanstetyp -- far `MUNICIPALITY_WATCH_MATCH`
 
 ### Dedup-logik (NotificationDelivery)
 
-En kund kan bade folja en leverantor OCH ha en kommunbevakning. For att undvika dubbelnotiser:
+En kund kan bade folja en leverantör OCH ha en kommunbevakning. For att undvika dubbelnotiser:
 
 - Unique constraint: `[routeOrderId, customerId, channel]`
 - Foljarnotis har **prioritet** over bevakningsnotis

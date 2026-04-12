@@ -65,7 +65,7 @@ Repository (`findAll`, `findPublicById`), service (`getPublicById`), factory-mö
 ## Vad kan förbättras
 
 ### 1. Svenska tecken i fas 1-3 kod
-Flera filer från fas 1-3 hade ASCII-substitut ("Ej tillganglig", "Oversikt", "Leverantor"). Borde ha fångats av `check:swedish` vid commit.
+Flera filer från fas 1-3 hade ASCII-substitut ("Ej tillgänglig", "Översikt", "Leverantör"). Borde ha fångats av `check:swedish` vid commit.
 
 **Prioritet:** LÅG -- fixat nu, men indikerar att `check:swedish` inte kördes efter fas 1-3.
 

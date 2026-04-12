@@ -55,7 +55,7 @@ npm install
 
 ## 2. Starta lokal databas
 
-Projektet anvander Docker for en lokal PostgreSQL-databas.
+Projektet använder Docker for en lokal PostgreSQL-databas.
 
 ```bash
 npm run db:up
@@ -102,7 +102,7 @@ Detta skapar alla tabeller och kor migrationer. Forsta gangen kan det ta nagra s
 npm run db:seed
 ```
 
-Skapar testdata (leverantorer, tjanster, hastar, bokningar) for att komma igang snabbare.
+Skapar testdata (leverantörer, tjänster, hästar, bokningar) for att komma igang snabbare.
 
 ```bash
 npm run db:seed:force  # Tvinga om-seedning (rensar befintlig data)
@@ -197,7 +197,7 @@ npx prisma migrate dev
 | `npm run db:up` | Starta databas |
 | `npm run db:down` | Stoppa databas |
 | `npm run db:nuke` | Radera all data och borja om |
-| `npm run db:studio` | Oppna Prisma Studio |
+| `npm run db:studio` | Öppna Prisma Studio |
 | `npm run env:status` | Visa aktiv databas |
 | `npm run migrate:check` | Visa migrationsstatus |
 | `npm run check:swedish` | Kontrollera svenska tecken |
@@ -208,7 +208,7 @@ npx prisma migrate dev
 
 - Las [CLAUDE.md](../../CLAUDE.md) for projektkonventioner och arbetsflode
 - Las [docs/guides/gotchas.md](gotchas.md) for vanliga fallgropar
-- Las [docs/INDEX.md](../INDEX.md) for en oversikt av all dokumentation
+- Las [docs/INDEX.md](../INDEX.md) for en översikt av all dokumentation
 
 ---
 

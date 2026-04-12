@@ -26,12 +26,12 @@
 | Security | `[...nextauth]/route.ts`, `receipt/route.ts`, `provider/profile/route.ts`, `route-orders/[id]/route.ts` | IP-baserad login rate limiting, XSS-escaping i kvitton, select istallet for include |
 | Rate limiting | `rate-limit.ts`, `reset-rate-limit/route.ts` | Ny `loginIp` limiter (30/15min), E2E reset utokad |
 | Tester | 6 nya testfiler + 2 utokade | Full coverage for feature flags, admin settings, auth, receipt, provider profile, route orders |
-| Docs | `pentest-report-2026-02-15.md` | Penetrationstestrapport med fixade och oppna fynd |
+| Docs | `pentest-report-2026-02-15.md` | Penetrationstestrapport med fixade och öppna fynd |
 
 ## Vad gick bra
 
 ### 1. Snabb root-cause-analys av Vercel-buggen
-Anvandaren rapporterade "kan inte satta tillbaka flaggorna" -- inom minuter identifierades grundorsaken: admin GET laste in-memory (tomt pa ny serverless-instans) istallet for Redis. Fixades med en enda andring: returnera `featureFlagStates` fran `getFeatureFlags()`.
+Anvandaren rapporterade "kan inte satta tillbaka flaggorna" -- inom minuter identifierades grundorsaken: admin GET laste in-memory (tomt pa ny serverless-instans) istallet for Redis. Fixades med en enda ändring: returnera `featureFlagStates` fran `getFeatureFlags()`.
 
 ### 2. Befintlig Upstash-infrastruktur ateranvands
 Redis var redan konfigurerat for rate limiting. Inga nya beroenden, inga nya env-variabler, ingen ny infrastruktur. Bara en ny anvandning av befintlig `@upstash/redis`.
@@ -66,7 +66,7 @@ Admin-togglen testades bara lokalt (en process), aldrig pa Vercel. En enkel smok
 Lokalt:  getRedis() -> null -> in-memory fallback
 Vercel:  getRedis() -> Upstash Redis -> persistent across instances
 ```
-Anvand for all shared state som maste overleva mellan requests (feature flags, runtime config). In-memory ar ALDRIG persistent pa Vercel.
+Använd for all shared state som maste overleva mellan requests (feature flags, runtime config). In-memory ar ALDRIG persistent pa Vercel.
 
 ### Admin GET ska returnera actual state, inte raw storage
 Admin-UI maste visa det *faktiska* tillstandet, inte ra storage-varden. `getFeatureFlags()` (som gor hela prioritetskedjan) ar source of truth -- inte `getAllRuntimeSettings()` (som bara ar ett lager).
@@ -82,7 +82,7 @@ vi.mock("@upstash/redis", () => ({
   },
 }))
 ```
-Anvand `class` (inte arrow function) -- `vi.fn().mockImplementation(() => ...)` fungerar INTE som konstruktor med `new`.
+Använd `class` (inte arrow function) -- `vi.fn().mockImplementation(() => ...)` fungerar INTE som konstruktor med `new`.
 
 ## 5 Whys (Root-Cause Analysis)
 
@@ -93,19 +93,19 @@ Anvand `class` (inte arrow function) -- `vi.fn().mockImplementation(() => ...)` 
 4. Varfor? Runtime settings designades for single-process (lokal dev) och anpassades aldrig for serverless
 5. Varfor? Det saknades en arkitekturell granskning av hur in-memory state beter sig i serverless-miljo
 
-**Atgard:** Dokumentera i MEMORY.md och GOTCHAS.md: "In-memory state overlever INTE mellan requests pa Vercel. Anvand Redis for shared state." Lagt till som gotcha.
+**Åtgärd:** Dokumentera i MEMORY.md och GOTCHAS.md: "In-memory state overlever INTE mellan requests pa Vercel. Använd Redis for shared state." Lagt till som gotcha.
 **Status:** Implementerad
 
 ### Problem: Redis-mock med `vi.fn().mockImplementation()` kraschade med "is not a constructor"
 1. Varfor? `new Redis(...)` kraver att mocken stodjer `new`-operatorn
-2. Varfor? Arrow functions (`() => ...`) kan inte anvandas med `new` i JavaScript
-3. Varfor? Vitest `vi.fn().mockImplementation()` anvander arrow function internt
+2. Varfor? Arrow functions (`() => ...`) kan inte används med `new` i JavaScript
+3. Varfor? Vitest `vi.fn().mockImplementation()` använder arrow function internt
 4. Varfor? Vitest-dokumentationen belyser inte detta tydligt for constructor-mocking
 5. Varfor? Constructor-mocking ar en edge case som inte testas lika ofta
 
-**Atgard:** Dokumentera pattern: anvand `class MockRedis` istallet for `vi.fn().mockImplementation()` vid constructor-mocking.
+**Åtgärd:** Dokumentera pattern: använd `class MockRedis` istallet for `vi.fn().mockImplementation()` vid constructor-mocking.
 **Status:** Implementerad (pattern dokumenterat ovan)
 
 ## Larandeeffekt
 
-**Nyckelinsikt:** In-memory state ar en illusion i serverless. Allt som maste delas mellan requests MASTE anvanda extern persistent storage (Redis, databas). Testa serverless-specifik funktionalitet pa staging, inte bara lokalt.
+**Nyckelinsikt:** In-memory state ar en illusion i serverless. Allt som maste delas mellan requests MASTE använde extern persistent storage (Redis, databas). Testa serverless-specifik funktionalitet pa staging, inte bara lokalt.

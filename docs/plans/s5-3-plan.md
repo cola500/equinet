@@ -16,7 +16,7 @@ sections:
 ## Bakgrund
 
 Webhook-route (`/api/webhooks/stripe`) finns redan och hanterar subscription-events.
-Den anvander `SubscriptionGateway.verifyWebhookSignature()` for signaturverifiering.
+Den använder `SubscriptionGateway.verifyWebhookSignature()` for signaturverifiering.
 Vi behover utoka routen att ocksa hantera `payment_intent.succeeded` och
 `payment_intent.payment_failed` genom att delegera till en ny `PaymentWebhookService`.
 
@@ -52,7 +52,7 @@ Vi behover utoka routen att ocksa hantera `payment_intent.succeeded` och
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/domain/payment/PaymentWebhookService.ts` | NY -- webhook event handler |
 | `src/domain/payment/PaymentWebhookService.test.ts` | NY -- tester |
@@ -63,6 +63,6 @@ Vi behover utoka routen att ocksa hantera `payment_intent.succeeded` och
 ## Risker
 
 - **Delad signaturverifiering**: Subscription-gateway ager signaturverifieringen.
-  Payment-events anvander samma webhook-secret. Ingen ny verifiering behovs.
+  Payment-events använder samma webhook-secret. Ingen ny verifiering behovs.
 - **Race condition**: PaymentIntent kan confirma innan Payment-raden skapats.
   Hantera: om Payment inte hittas, logga warning och returnera 200 (Stripe retryar).

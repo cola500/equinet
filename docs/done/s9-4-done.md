@@ -45,12 +45,12 @@ AI-svaret validerades manuellt mot Zod-schemat -- korrekt format.
 ## Lardomar
 
 1. **Daterade modell-ID:n kan bli ogiltiga.** Anthropic publicerar alias som
-   `claude-sonnet-4-6` -- anvand dessa istallet for `claude-sonnet-4-6-20250514`.
+   `claude-sonnet-4-6` -- använd dessa istallet for `claude-sonnet-4-6-20250514`.
    Alias pekar alltid pa senaste version.
 
 2. **Verifiera AI-anrop med riktiga API-anrop.** Unit-tester mockar LLM:en --
    de fanger inte ogiltiga modell-ID:n. Spike med riktig nyckel behovs.
 
-3. **Tva AI-tjanster med olika modell-ID:n = risk.** Nar vi uppgraderade voice
+3. **Tva AI-tjänster med olika modell-ID:n = risk.** Nar vi uppgraderade voice
    logging i S8-3 borde customer insights ha uppgraderats samtidigt.
    Framtida approach: sok efter alla `model:` i codebasen vid modellbyte.

@@ -91,7 +91,7 @@ Ersatter `(session.user as any).providerId` i alla API routes dar NextAuth-typen
 4. Varfor? Vi antog att lint-fixar inte paverkar typsystemet
 5. Varfor? `any` doljde typfel -- att ta bort `any` avslojar underliggande typinkompatibiliter
 
-**Atgard:** Inkludera alltid "kor `npm run typecheck` efter varje fil" i agent-prompter for typandringar. Alternativt: kor en typecheck-verifieringsagent efter varje batch.
+**Åtgärd:** Inkludera alltid "kor `npm run typecheck` efter varje fil" i agent-prompter for typandringar. Alternativt: kor en typecheck-verifieringsagent efter varje batch.
 **Status:** Att gora (dokumenterat som pattern ovan)
 
 ### Problem: Batch 3-agent fick slut pa kontext (78 filer, 197 tool-anvandningar)
@@ -101,7 +101,7 @@ Ersatter `(session.user as any).providerId` i alla API routes dar NextAuth-typen
 4. Varfor? Vi delade test-filerna i 3 batchar istallet for 4-5
 5. Varfor? Vi optimerade for "farre agenter" istallet for "alla agenter klarar sitt jobb"
 
-**Atgard:** Max 40 filer per agent. Battre att ha 5 sma batchar an 3 stora dar en misslyckas. Sparar tid totalt.
+**Åtgärd:** Max 40 filer per agent. Battre att ha 5 sma batchar an 3 stora dar en misslyckas. Sparar tid totalt.
 **Status:** Dokumenterat som pattern ovan
 
 ## Larandeeffekt

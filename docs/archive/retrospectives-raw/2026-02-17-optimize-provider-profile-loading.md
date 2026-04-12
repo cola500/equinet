@@ -21,9 +21,9 @@
 | Hooks | `useAuth.ts` | Exponerar `providerId` direkt fran session (undviker extra fetch) |
 | Hooks | `useNotifications.ts` | Omskriven fran useState/setInterval till SWR (deduplication, caching, stale-while-revalidate) |
 | API | `notifications/route.ts` | Returnerar `{ notifications, unreadCount }` i ett svar (paralleliserat med Promise.all) |
-| UI | `provider/profile/page.tsx` | Anvander `providerId` fran useAuth istallet for profile.id |
+| UI | `provider/profile/page.tsx` | Använder `providerId` fran useAuth istallet for profile.id |
 | UI | `notifications/page.tsx` | Anpassad till nytt API-response format |
-| Lib | `feature-flags.ts` | Server-side cache (30s TTL) for getFeatureFlags, med invalidering vid override-andringar |
+| Lib | `feature-flags.ts` | Server-side cache (30s TTL) for getFeatureFlags, med invalidering vid override-ändringar |
 | Tester | `feature-flags.test.ts`, `useAuth.test.ts`, `route.test.ts` (x2) | Tester for caching, invalidering, nytt response-format |
 
 ## Vad gick bra

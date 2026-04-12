@@ -1313,7 +1313,7 @@ function RegisterForm() {
  */
 ```
 
-**Galler for:** Alla testfiler som anvander `jose`, `crypto`, eller annan Node.js-specifik kryptografi.
+**Galler for:** Alla testfiler som använder `jose`, `crypto`, eller annan Node.js-specifik kryptografi.
 
 ---
 
@@ -1389,17 +1389,17 @@ header.border-b { display: none !important; }
 body { padding-bottom: 0 !important; }
 ```
 
-**Regel:** Vid hybridappar med native navigation, dolj ALLTID webbens chrome via CSS-injektion. Anvand specifika class-selektorer (inte generella tag-selektorer) for att undvika oonskat dolja.
+**Regel:** Vid hybridappar med native navigation, dolj ALLTID webbens chrome via CSS-injektion. Använd specifika class-selektorer (inte generella tag-selektorer) for att undvika oonskat dolja.
 
 ---
 
 ## 36. iOS Native Anrop till Web-Routes med Fel Auth-Mekanism
 
-**Problem:** Native iOS-appen anvander Bearer JWT (via `authFromMobileToken`) for autentisering. Befintliga web-routes (t.ex. `/api/account`) anvander NextAuth session-cookies (`auth()`). Att anropa en session-baserad route fran native ger alltid 401.
+**Problem:** Native iOS-appen använder Bearer JWT (via `authFromMobileToken`) for autentisering. Befintliga web-routes (t.ex. `/api/account`) använder NextAuth session-cookies (`auth()`). Att anropa en session-baserad route fran native ger alltid 401.
 
-**Losning:** Kontrollera alltid om en befintlig route anvander `auth()` eller `authFromMobileToken()` innan du lagger till native-anrop. For session-only routes: skapa `/api/native/*`-route med Bearer auth, eller offloada till WebView.
+**Lösning:** Kontrollera alltid om en befintlig route använder `auth()` eller `authFromMobileToken()` innan du lagger till native-anrop. For session-only routes: skapa `/api/native/*`-route med Bearer auth, eller offloada till WebView.
 
-**Upptackt:** Session 107 -- `DeleteAccountSheet` skapades for att anropa `/api/account` men routen anvander session auth. Fixat genom att offloada "Radera konto" till WebView.
+**Upptackt:** Session 107 -- `DeleteAccountSheet` skapades for att anropa `/api/account` men routen använder session auth. Fixat genom att offloada "Radera konto" till WebView.
 
 **Regel:** I Feature Inventory (steg 0 i Native Screen Pattern): verifiera auth-mekanism per endpoint. Skriv "Session" eller "Bearer" i beslutstabellen.
 

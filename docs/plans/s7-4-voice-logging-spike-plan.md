@@ -15,7 +15,7 @@ sections:
 
 ## Bakgrund
 
-Voice logging (rostloggning) ar en feature som lat leverantorer diktera arbetsnoteringar
+Voice logging (rostloggning) ar en feature som lat leverantörer diktera arbetsnoteringar
 via tal istallet for att skriva. Systemet bestar av:
 
 - **iOS SpeechRecognizer** (on-device, sv-SE) + Web Speech API (browser)

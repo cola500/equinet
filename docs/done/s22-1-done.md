@@ -16,7 +16,7 @@ sections:
 
 ## Acceptanskriterier
 
-- [x] Ny leverantor ser welcome-vy vid forsta inloggning
+- [x] Ny leverantör ser welcome-vy vid forsta inloggning
 - [x] Varje steg-knapp navigerar till ratt sida
 - [x] Klara steg visas som grona bockar
 - [x] "Visa dashboard anda" visar vanlig dashboard

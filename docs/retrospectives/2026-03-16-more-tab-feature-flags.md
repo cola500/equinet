@@ -71,7 +71,7 @@ Forsta testkorningen failade: forvantade 5 icke-flaggade items men det var 4 (Hj
 5. **handlePendingPath**: Soker ALLTID i `allMenuSections` (inte filtrerade) -- navigering till flagg-gated sidor ska fungera via deep links aven om flaggan ar av.
 
 ### URL(string:relativeTo:) for iOS API-anrop
-Anvand ALDRIG `appendingPathComponent()` for URL-stranggar med `/` -- det URL-encodar snedstreck. Anvand `URL(string: path, relativeTo: baseURL)` som i `refreshToken()` och `fetchFeatureFlags()`.
+Använd ALDRIG `appendingPathComponent()` for URL-stranggar med `/` -- det URL-encodar snedstreck. Använd `URL(string: path, relativeTo: baseURL)` som i `refreshToken()` och `fetchFeatureFlags()`.
 
 ## Larandeeffekt
 

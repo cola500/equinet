@@ -17,7 +17,7 @@ sections:
 ## Acceptanskriterier
 
 - [x] Alla 3 sidor har tydlig tom-state med relevant CTA
-- [x] "Tillbaka till kom igang"-lank under onboarding (tjanster + bokningar)
+- [x] "Tillbaka till kom igang"-lank under onboarding (tjänster + bokningar)
 - [x] Konsekvent design (samma EmptyState-monster)
 - [x] Guide-text for tillganglighets-sektionen pa profil
 
@@ -34,7 +34,7 @@ sections:
 ## Avvikelser
 
 - Ingen test for de nya linkarna -- de ar rena UI-tillagg (Link-komponenter) utan logik. Befintliga tester tacker empty state-rendering.
-- "Tillbaka till kom igang"-lanken visas alltid i empty state, inte bara nar onboarding ar ofullstandig. Enklare implementation, och lanken ar harmlos for klara leverantorer (de ser vanlig dashboard).
+- "Tillbaka till kom igang"-lanken visas alltid i empty state, inte bara nar onboarding ar ofullstandig. Enklare implementation, och lanken ar harmlos for klara leverantörer (de ser vanlig dashboard).
 
 ## Lardomar
 

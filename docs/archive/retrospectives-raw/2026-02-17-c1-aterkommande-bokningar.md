@@ -1,7 +1,7 @@
 # Retrospektiv: C1 Aterkommande bokningar (ateruppbyggnad)
 
 **Datum:** 2026-02-17
-**Scope:** Aterskapa alla andringar i befintliga filer for C1 Recurring Bookings-featuren efter att working tree overskrevs av annan session.
+**Scope:** Aterskapa alla ändringar i befintliga filer for C1 Recurring Bookings-featuren efter att working tree overskrevs av annan session.
 
 ---
 
@@ -23,7 +23,7 @@
 | API (Provider) | provider/profile/route.ts + test | recurringEnabled + maxSeriesOccurrences i Zod + select |
 | UI (Provider profile) | provider/profile/page.tsx | Ny Card "Aterkommande bokningar" med Switch + Select |
 | UI (Kund-bokning) | useBookingFlow.ts, DesktopBookingDialog, MobileBookingFlow | SeriesResult, recurring state, recurring submit-gren, UI-sektion |
-| UI (Leverantor-bokning) | ManualBookingDialog.tsx | Recurring state, submit-gren, UI-sektion |
+| UI (Leverantör-bokning) | ManualBookingDialog.tsx | Recurring state, submit-gren, UI-sektion |
 | UI (Indikatorer) | BookingBlock.tsx, customer/bookings/page.tsx | Repeat-ikon, "Aterkommande" Badge |
 | Types | types/index.ts | bookingSeriesId i CalendarBooking |
 | Wiretjring | providers/[id]/page.tsx | SeriesResultDialog import + render + props |
@@ -64,7 +64,7 @@ DesktopBookingDialog och MobileBookingFlow har nu 6 nya props for recurring stat
 **Prioritet:** MEDEL -- fungerar nu, men skalar daligt.
 
 ### 3. ManualBookingDialog recurring submit ar forenklad
-Recurring submit i ManualBookingDialog anvander `providerId: "self"` som en signal, vilket ar hacky. Bor anvanda samma auth-logik som API:et (providerId fran session).
+Recurring submit i ManualBookingDialog använder `providerId: "self"` som en signal, vilket ar hacky. Bor använde samma auth-logik som API:et (providerId fran session).
 
 **Prioritet:** MEDEL -- fungerar men ar inte robust.
 
@@ -78,15 +78,15 @@ For nya falt pa Booking-modellen: dedikera en hel fas at att soka alla `select:`
 
 ## 5 Whys (Root-Cause Analysis)
 
-### Problem: C1-andringar i befintliga filer forlorades tva ganger (session 36 + 37)
+### Problem: C1-ändringar i befintliga filer forlorades tva ganger (session 36 + 37)
 
 1. Varfor forlorades andringarna? For att de inte committades.
 2. Varfor committades de inte? For att sessionen avslutades innan commit, och nasta session overskrev working tree.
 3. Varfor overskrev nasta session? For att den laste filer som modifierats och skrev nya versioner utan att kontrollera lokala andringar.
-4. Varfor kontrolleras inte lokala andringar? For att det inte finns nagon automatisk mekanism som varnar nar uncommitted changes finns i working tree.
+4. Varfor kontrolleras inte lokala ändringar? For att det inte finns nagon automatisk mekanism som varnar nar uncommitted changes finns i working tree.
 5. Varfor finns ingen sadan mekanism? For att vi inte hade ratt disciplin kring commits.
 
-**Atgard:** MEMORY.md-regeln "COMMITTA ALLTID efter varje fas!" ar redan pa plats. Overvaag en git hook eller session-startup check som varnar om dirty working tree.
+**Åtgärd:** MEMORY.md-regeln "COMMITTA ALLTID efter varje fas!" ar redan pa plats. Overvaag en git hook eller session-startup check som varnar om dirty working tree.
 **Status:** Delvis implementerad (regel finns, hook saknas)
 
 ## Larandeeffekt

@@ -68,7 +68,7 @@ Oanvand import, icon-only button utan text label, saknad accessibilityAddTraits,
 **Prioritet:** MEDEL -- fungerar men okar underhallskostnad vid andringar.
 
 ### 2. Parallella sessioner overskrev filer
-En annan session (S9-1 architect) bytte branch och modifierade filer under S8-1-implementationen. Alla iOS-andringar (APIClient, NativeMoreView, SharedDataManager, pbxproj) reverterades och behode tillampas pa nytt.
+En annan session (S9-1 architect) bytte branch och modifierade filer under S8-1-implementationen. Alla iOS-ändringar (APIClient, NativeMoreView, SharedDataManager, pbxproj) reverterades och behode tillampas pa nytt.
 
 **Prioritet:** HOG -- delad working directory ar fragilt. Dokumenterat i CLAUDE.md men hander anda.
 
@@ -94,17 +94,17 @@ S8-1 och S8-2 foljde monster: Feature inventory -> API (BDD) -> Modeller + ViewM
 4. Varfor? Vercel CLI skapade `.env.local` med produktions-credentials (`vercel env pull`)
 5. Varfor? Ingen guard eller dokumentation som varnar for att `.env.local` trumfar `.env`
 
-**Atgard:** Dokumentera tydligare i README/CLAUDE.md att `vercel env pull` overskriver lokal config. Overdag `npm run env:status`-skriptet att varna om `.env.local` pekar pa produktion medan Docker kor.
+**Åtgärd:** Dokumentera tydligare i README/CLAUDE.md att `vercel env pull` overskriver lokal config. Overdag `npm run env:status`-skriptet att varna om `.env.local` pekar pa produktion medan Docker kor.
 **Status:** Parkerad (manuell fix gjord, systemic fix later)
 
 ### Problem: Parallella sessioner krockar pa delade filer
 1. Varfor? S9-1 architect-session modifierade NativeMoreView/APIClient/SharedDataManager
 2. Varfor? Bada sessionerna delade working directory
-3. Varfor? Git worktrees anvandes inte for isolering
+3. Varfor? Git worktrees användes inte for isolering
 4. Varfor? Architect-sessionen var "bara docs" men status.md-uppdateringen triggade branch-byte
-5. Varfor? Ingen hard guard som hindrar branch-byte nar ocommittade andringar finns
+5. Varfor? Ingen hard guard som hindrar branch-byte nar ocommittade ändringar finns
 
-**Atgard:** Redan dokumenterat i CLAUDE.md ("EN SESSION AT GANGEN"). Enforcement via pre-checkout hook overdriven for nu.
+**Åtgärd:** Redan dokumenterat i CLAUDE.md ("EN SESSION AT GANGEN"). Enforcement via pre-checkout hook overdriven for nu.
 **Status:** Parkerad
 
 ## Larandeeffekt

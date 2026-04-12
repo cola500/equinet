@@ -30,12 +30,12 @@ GroupBookingRequest + GroupBookingParticipant som ett aggregat. Deltagare har in
 1 fil (28 rader) istallet for duplicerade switch-satser i 8 routes. Lardomen fran Review-piloten (duplicerad `mapErrorToStatus`) applicerad direkt.
 
 ### 4. Atomic authorization i WHERE-clauses genomgaende
-Alla 9 repository-query-metoder anvander `userId`/`creatorId`/`userType` i WHERE. IDOR-sakerhet omojlig att kringga.
+Alla 9 repository-query-metoder använder `userId`/`creatorId`/`userType` i WHERE. IDOR-sakerhet omojlig att kringga.
 
 ### 5. $transaction stannar i repository
 `matchAndCreateBookings()` hanterar transaktionslogiken. Service-lagret ser en enda metodanrop -- vet inget om Prisma.
 
-### 6. Support-domaner (Provider, Service) kan anvanda Prisma direkt
+### 6. Support-domaner (Provider, Service) kan använde Prisma direkt
 `match/route.ts` behaller Prisma-import for provider/service-lookup. Pragmatiskt val -- bara 2 falt behovs, inget repository-overhead motiverat.
 
 ---
@@ -62,7 +62,7 @@ Route-tester assertar HTTP-status + response shape, inte Prisma-anrop. Bara mock
 `seedRequests()`, `seedParticipants()`, `seedUserNames()` for komplexa scenarion. `getAll()`, `getAllParticipants()`, `getCreatedBookingIds()` for verifikation.
 
 ### 4. Konsekvent service-mock-monster i alla route-tester
-Alla 8 route-test-filer anvander samma monster:
+Alla 8 route-test-filer använder samma monster:
 ```typescript
 const mockService = { methodName: vi.fn() }
 vi.mock('@/domain/group-booking/GroupBookingService', () => ({

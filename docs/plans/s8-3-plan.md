@@ -15,11 +15,11 @@ sections:
 
 ## Uppgifter
 
-| # | Uppgift | Fil | Andring |
+| # | Uppgift | Fil | Ändring |
 |---|---------|-----|---------|
 | 1 | Sonnet 4.5 -> 4.6 | `VoiceInterpretationService.ts` rad 188 | Byt modell-ID |
 | 2 | Confirm-route till withApiHandler | `api/voice-log/confirm/route.ts` | Migrera till withApiHandler-pattern |
-| 3 | UTC-datumlogik | `api/voice-log/route.ts` rad 34-35, confirm/route.ts | Anvand leverantorens tidszon |
+| 3 | UTC-datumlogik | `api/voice-log/route.ts` rad 34-35, confirm/route.ts | Använd leverantorens tidszon |
 | 4 | Vercel Preview API-nyckel | -- | **Johan gor detta** (Vercel dashboard, ej kod) |
 | 5 | Verifiera SDK-timeout | `VoiceInterpretationService.ts` | Lagg till timeout pa Anthropic-klienten |
 
@@ -39,7 +39,7 @@ Enkel TDD. Punkt 1 och 5 ar 1-rads-andringar. Punkt 2 ar withApiHandler-migratio
 
 ### Fas 3: UTC-datumlogik (punkt 3)
 - RED: Skriv test som visar att sen kvall (23:00 svensk tid) filtrerar ratt dag
-- GREEN: Anvand leverantorens tidszon (eller explicit `Europe/Stockholm`) for datumfiltrering
+- GREEN: Använd leverantorens tidszon (eller explicit `Europe/Stockholm`) for datumfiltrering
 
 ### Fas 4: Verifiering
 - `npm run check:all`
@@ -56,4 +56,4 @@ Enkel TDD. Punkt 1 och 5 ar 1-rads-andringar. Punkt 2 ar withApiHandler-migratio
 
 1. **Modell-ID**: Maste verifiera att `claude-sonnet-4-6-20250514` ar korrekt via Anthropic docs.
 2. **withApiHandler**: Confirm-routen har komplex logik (3 Prisma-operationer). Migrationen far inte andra beteende.
-3. **Tidszon**: `Europe/Stockholm` ar hardkodat. Framtida leverantorer i andra tidszoner behovs hanteras, men det ar inte i scope nu.
+3. **Tidszon**: `Europe/Stockholm` ar hardkodat. Framtida leverantörer i andra tidszoner behovs hanteras, men det ar inte i scope nu.

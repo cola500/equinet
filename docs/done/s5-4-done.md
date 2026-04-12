@@ -49,11 +49,11 @@ sections:
 
 ## Avvikelser
 
-- Swish inte tillganglig annu -- `payment_method_types: ['card']` tills Stripe-kontot har Swish
-- Visuell verifiering inte genomford -- kraver Stripe publishable key i dev-miljo
+- Swish inte tillgänglig annu -- `payment_method_types: ['card']` tills Stripe-kontot har Swish
+- Visuell verifiering inte genomförd -- kraver Stripe publishable key i dev-miljo
 
 ## Lardomar
 
 - **clientSecret-propagation genom 3 lager**: PaymentResult -> PaymentService -> API route -> klient. Viktigt att varje lager stodjer optional field.
-- **Conditional event dispatch**: Med asynkron betalning (Stripe) skickas email/notis forst vid webhook-bekraftelse, inte vid initiering. Forhindrar "Betalning genomford"-mail innan kunden betalat.
+- **Conditional event dispatch**: Med asynkron betalning (Stripe) skickas email/notis forst vid webhook-bekraftelse, inte vid initiering. Forhindrar "Betalning genomförd"-mail innan kunden betalat.
 - **Feature flag dual gate**: Server (404) + klient (gom knapp) ger bade sakerhet och bra UX.

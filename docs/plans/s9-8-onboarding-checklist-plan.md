@@ -24,7 +24,7 @@ API-routen `/api/provider/onboarding-status` finns och fungerar.
 | Sprint vill | Nuvarande | Status |
 |-------------|-----------|--------|
 | Fyll i foretagsinformation | `profileComplete` (buntar ihop profil + plats) | Behover splittas |
-| Lagg till minst en tjanst | `hasServices` | OK |
+| Lagg till minst en tjänst | `hasServices` | OK |
 | Satt oppettider | `hasAvailability` | OK |
 | Lagg till serviceomrade | Ingat separat steg -- inbakat i `profileComplete` | Behover brytas ut |
 
@@ -46,7 +46,7 @@ API-routen `/api/provider/onboarding-status` finns och fungerar.
 
 Nya steg (matchar sprint, justerad ordning):
 1. "Fyll i foretagsinformation" -> `/provider/profile`
-2. "Lagg till minst en tjanst" -> `/provider/services`
+2. "Lagg till minst en tjänst" -> `/provider/services`
 3. "Satt oppettider" -> `/provider/profile?section=availability`
 4. "Lagg till serviceomrade" -> `/provider/profile?section=location`
 
@@ -66,11 +66,11 @@ interface OnboardingStatus {
 
 ### 4. Uppdatera PriorityActionCard
 
-`onboardingComplete` drivs redan av `allComplete` -- ingen andring behovs.
+`onboardingComplete` drivs redan av `allComplete` -- ingen ändring behovs.
 
 ## Filer
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/app/api/provider/onboarding-status/route.ts` | Splitta profileComplete, lagg till hasServiceArea, ta bort isActive |
 | `src/app/api/provider/onboarding-status/route.test.ts` | NY -- BDD dual-loop (integration) |
@@ -91,7 +91,7 @@ Integration-tester for `onboarding-status`:
 
 ### Fas 2: GREEN -- Justera API route
 
-Implementera andringar i route.ts sa att testerna passerar.
+Implementera ändringar i route.ts sa att testerna passerar.
 
 ### Fas 3: RED -- Komponent-tester
 
@@ -114,6 +114,6 @@ Justera steg-array och interface.
 
 ## Risker
 
-- **Bakatkompabilitet**: iOS native dashboard anropar samma API. Kollar iOS-koden anvander `isActive`?
+- **Bakatkompabilitet**: iOS native dashboard anropar samma API. Kollar iOS-koden använder `isActive`?
   - Kontrollera `NativeDashboardView` fore implementation.
 - **localStorage-key**: Samma `STORAGE_KEY` som tidigare -- dismissade checklistor forblir dismissade. Kan behova resetta om stegen andras vasentligt.

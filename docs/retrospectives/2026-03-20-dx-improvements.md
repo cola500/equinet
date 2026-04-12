@@ -75,7 +75,7 @@ PostToolUse-hooks far samma JSON-input som PreToolUse (tool_input med file_path)
 Parsa flaggnamn fran definitions-fil -> grep efter `isFeatureEnabled("flag")` i API-routes -> grep efter `useFeatureFlag("flag")` i komponenter -> rapportera saknade gates. Generaliserbart till andra konventionsvalidatorer.
 
 ### ANSI-stripping for script-output
-`sed 's/\x1b\[[0-9;]*m//g'` tar bort fargkoder fran CLI-output. Nodvandigt nar man parser Vitest/Jest output i scripts.
+`sed 's/\x1b\[[0-9;]*m//g'` tar bort fargkoder fran CLI-output. Nödvändigt nar man parser Vitest/Jest output i scripts.
 
 ## Larandeeffekt
 

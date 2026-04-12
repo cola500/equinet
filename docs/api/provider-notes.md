@@ -17,7 +17,7 @@ sections:
 
 > Se [API.md](../API.md) for gemensamma monster (autentisering, felkoder, sakerhetsprinciper).
 
-Leverantorer kan skapa privata anteckningar om sina kunder. Anteckningarna ar **inte synliga for kunden**.
+Leverantörer kan skapa privata anteckningar om sina kunder. Anteckningarna ar **inte synliga for kunden**.
 
 ---
 
@@ -93,12 +93,12 @@ Skapa en ny anteckning.
 
 ## Kundrelation
 
-Atkomst kraver att leverantoren har en **kundrelation** med kunden. En relation skapas genom:
+Atkomst kraver att leverantören har en **kundrelation** med kunden. En relation skapas genom:
 
-1. **Bokning** -- leverantoren har minst en genomford bokning med kunden
-2. **Manuellt tillagd** -- leverantoren har lagt till kunden via `POST /api/provider/customers`
+1. **Bokning** -- leverantören har minst en genomförd bokning med kunden
+2. **Manuellt tillagd** -- leverantören har lagt till kunden via `POST /api/provider/customers`
 
-Relationskontrollen anvander `hasCustomerRelationship()` som kontrollerar bade boknings- och manuella relationer.
+Relationskontrollen använder `hasCustomerRelationship()` som kontrollerar bade boknings- och manuella relationer.
 
 ---
 

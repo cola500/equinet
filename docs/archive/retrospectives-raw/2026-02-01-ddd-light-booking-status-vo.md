@@ -31,7 +31,7 @@ BookingStatus foljer exakt samma API som TimeSlot/Location: `static create()` ->
 `createBookingService()` ersatter inline DI-wiring i POST-routen och ateranvands i PUT-routen. Exakt samma monster som `createGroupBookingService()` -- konsistens over domaner.
 
 ### 4. Route-test-uppdateringen var minimal
-PUT-testerna bytte fran repository-mock till service-mock (samma monster som GroupBooking: `createBookingService: () => mockService`). Assertionerna (HTTP-status + response shape) var oforandrade. DELETE-testerna behvode NOLL andringar -- de anvander repo direkt och berordes inte.
+PUT-testerna bytte fran repository-mock till service-mock (samma monster som GroupBooking: `createBookingService: () => mockService`). Assertionerna (HTTP-status + response shape) var oforandrade. DELETE-testerna behvode NOLL ändringar -- de använder repo direkt och berordes inte.
 
 ### 5. Inkrementell migrering utan risk
 Varje steg verifierades separat: VO-tester, service-tester, alla 122 booking-tester, sedan hela sviten (1007). Inget steg brot nagot som redan fungerade.
@@ -61,7 +61,7 @@ Till skillnad fran GroupBooking-migreringen (dar error-mappings "emergerade") va
 - [x] updateStatus() i BookingService
 - [x] createBookingService() factory
 - [x] PUT-route delegerar till service
-- [x] POST-route anvander factory
+- [x] POST-route använder factory
 - [x] Alla tester grona (1007/1007)
 
 ### Gor snart (medium)

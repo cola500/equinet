@@ -51,7 +51,7 @@ Forutsattning: ANTHROPIC_API_KEY ar korrekt konfigurerad (verifierat i Vercel Pr
 - Confidence clampas till 0-1
 - Markdown code block-stripping (LLM:er wrapppar ibland JSON i ``` ```)
 
-**Bedomning:** Valimplementerat. Foljer projektets DI-monster (factory + constructor injection).
+**Bedömning:** Valimplementerat. Foljer projektets DI-monster (factory + constructor injection).
 
 ---
 
@@ -64,7 +64,7 @@ Forutsattning: ANTHROPIC_API_KEY ar korrekt konfigurerad (verifierat i Vercel Pr
 | Vercel Preview | **Saknas** | Ja (`vercel env ls` visar bara Production) |
 | Vercel Development | **Saknas** | Ja (`vercel env ls` visar bara Production) |
 
-**Konsekvens:** Preview-deploys (PR-branches) kan INTE anvanda rostloggning -- returnerar 503.
+**Konsekvens:** Preview-deploys (PR-branches) kan INTE använde rostloggning -- returnerar 503.
 Detta ar acceptabelt for en AI-feature (kostnadsskydd), men bor dokumenteras.
 
 **Rekommendation:** Lagg till nyckeln i Preview-miljon om man vill testa i PR:ar.
@@ -163,7 +163,7 @@ Sonnet 4.5 fungerar och ar inte deprecated.
 
 1. **Confirm-route inte migrerad till `withApiHandler`**
    - Har manuella checkar for auth, rate limit, feature flag, Zod
-   - Fungerar, men inkonsekvent med interpret-routen som anvander `withApiHandler`
+   - Fungerar, men inkonsekvent med interpret-routen som använder `withApiHandler`
    - Prioritet: Lag (fungerar korrekt)
 
 2. **Ingen explicit timeout pa LLM-anrop**
@@ -183,7 +183,7 @@ Sonnet 4.5 fungerar och ar inte deprecated.
    - Prioritet: Lag (kostnadsskydd ar rimligt for preview)
 
 5. **UTC-datumlogik kan missa bokningar**
-   - `date.setHours(0, 0, 0, 0)` anvander serverns tidszon
+   - `date.setHours(0, 0, 0, 0)` använder serverns tidszon
    - Pa Vercel (UTC) kan svenska bokningar kl 23:00 hamna pa fel dag
    - Dokumenterat i voice-logging.md som kand begransning
    - Prioritet: Medium (kan paverka anvandare sent pa kvallen)
@@ -200,7 +200,7 @@ Sonnet 4.5 fungerar och ar inte deprecated.
 | 2 | Uppgradera till `claude-sonnet-4-6` | Lag | 1 rad |
 | 3 | Migrera confirm-route till `withApiHandler` | Lag | ~30 min |
 | 4 | Satt API-nyckel i Preview-miljo | Lag | 1 min |
-| 5 | Fixa UTC-datumlogik (anvand leverantorens tidszon) | Medium | ~1h |
+| 5 | Fixa UTC-datumlogik (använd leverantorens tidszon) | Medium | ~1h |
 
 Ingen av dessa ar blockerande. Systemet fungerar i produktion som det ar.
 

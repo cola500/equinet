@@ -47,7 +47,7 @@ sections:
 Planen specificerade exakt vilka hooks, vilka triggers, och vilka meddelanden. Implementationen blev ren kopiering fran spec till shell-scripts -- inga designbeslut under kodning.
 
 ### 2. Tydlig JSON-input-parsing med python3
-Alla hooks anvander `python3 -c "import sys,json; ..."` for att parsa `$TOOL_INPUT` JSON. Robust, tillganglig pa macOS utan extra beroenden.
+Alla hooks använder `python3 -c "import sys,json; ..."` for att parsa `$TOOL_INPUT` JSON. Robust, tillgänglig pa macOS utan extra beroenden.
 
 ### 3. Smart exkludering i TDD-hooken
 TDD-hooken exkluderar UI-filer (page.tsx, layout.tsx, components/*.tsx) och typ-filer -- bara logik-filer som bor ha tester triggar paminnelsen. Minskar brus.
@@ -63,7 +63,7 @@ Varje hook testades med `echo '{"tool_input":{...}}' | bash .claude/hooks/X.sh` 
 **Prioritet:** LAG -- Ensam utvecklare, men vart att tanka pa om teamet vaxer.
 
 ### 2. Inga automatiska tester for hooks
-Shell-scripts har inget testramverk. Verifiering skedde manuellt med simulerad JSON-input. Vid andring maste man komma ihag att testa manuellt.
+Shell-scripts har inget testramverk. Verifiering skedde manuellt med simulerad JSON-input. Vid ändring maste man komma ihag att testa manuellt.
 
 **Prioritet:** LAG -- Hookarna ar enkla och andras sallan. Manuell testning racker.
 

@@ -32,7 +32,7 @@ sections:
 
 ## Autentisering
 
-Equinet anvander **NextAuth v5** med session cookies. De flesta endpoints kraver inloggning.
+Equinet använder **NextAuth v5** med session cookies. De flesta endpoints kraver inloggning.
 
 ```
 Cookie: authjs.session-token=<session-token>
@@ -123,7 +123,7 @@ Alla felmeddelanden ar pa **svenska**.
 
 ## Rate Limiting
 
-Rate limiting anvander **Upstash Redis** i produktion och in-memory fallback i utveckling. Alla rate limits kontrolleras **fore** request-parsing.
+Rate limiting använder **Upstash Redis** i produktion och in-memory fallback i utveckling. Alla rate limits kontrolleras **fore** request-parsing.
 
 | Limiter | Produktion | Utveckling | Anvandning |
 |---------|-----------|------------|------------|

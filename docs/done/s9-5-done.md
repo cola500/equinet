@@ -30,16 +30,16 @@ sections:
    kontotyp-valjaren sjalvforklarande. Tekniken ar inte problemet.
 
 2. **Onboarding-vagledning saknas helt** -- efter inloggning finns ingen guide,
-   checklista eller wizard. En ny leverantor ser en tom dashboard utan aning
+   checklista eller wizard. En ny leverantör ser en tom dashboard utan aning
    om vad nasta steg ar. Detta ar den storsta blockeraren.
 
 3. **Felmeddelande vid overifierad email ar missvisande** -- "Ogiltig email
-   eller losenord" istallet for "Din e-post ar inte verifierad". Skapar
+   eller lösenord" istallet for "Din e-post ar inte verifierad". Skapar
    forvirring och onodiga supportarenden.
 
 4. **Tom-tillstand ar tyst** -- tomma tjanstlistor, bokningslistor etc visar
    bara tom yta utan forklaring eller CTA. Laga effort att fixa, stor effekt.
 
 5. **Profil-sidan ar overraskande komplett** -- alla falt finns (adress,
-   serviceomrade, oppettider, profilbild). Problemet ar att ny leverantor
+   serviceomrade, oppettider, profilbild). Problemet ar att ny leverantör
    inte vet att de behover fylla i dessa.

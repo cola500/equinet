@@ -32,7 +32,7 @@ sections:
 
 ## Reviews
 
-- Kordes: code-reviewer (enda relevanta -- config-andring, ingen ny kod)
+- Kordes: code-reviewer (enda relevanta -- config-ändring, ingen ny kod)
 
 ## Avvikelser
 

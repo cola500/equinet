@@ -23,7 +23,7 @@ Swish nar kunden via Stripe som lokal betalmetod (inget direkt Swish API).
 
 ## Filer som andras
 
-| Fil | Andring |
+| Fil | Ändring |
 |-----|---------|
 | `src/domain/payment/PaymentGateway.ts` | Ny `StripePaymentGateway` class + uppdatera factory |
 | `src/domain/payment/PaymentService.ts` | Rad 143: `provider: "mock"` -> dynamiskt fran gateway |
@@ -33,7 +33,7 @@ Swish nar kunden via Stripe som lokal betalmetod (inget direkt Swish API).
 
 ### Nya filer
 
-| Fil | Innehall |
+| Fil | Innehåll |
 |-----|---------|
 | `src/domain/payment/StripePaymentGateway.ts` | Stripe-implementation av IPaymentGateway |
 | `src/domain/payment/__tests__/StripePaymentGateway.test.ts` | Unit-tester |
