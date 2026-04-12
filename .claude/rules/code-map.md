@@ -1,3 +1,8 @@
+---
+paths:
+  - "src/**"
+---
+
 # Kodkarta -- Domän till filer
 
 > Genererad 2026-04-12. Använd denna för att snabbt hitta rätt filer vid implementation, review eller felsökning.
