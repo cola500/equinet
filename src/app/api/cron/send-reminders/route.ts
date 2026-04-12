@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ReminderService } from "@/domain/reminder/ReminderService"
 import { logger } from "@/lib/logger"
+import { verifyCronAuth } from "@/lib/cron-auth"
 
 /**
  * Cron endpoint: Process rebooking reminders
  *
  * Called daily by Vercel Cron (vercel.json).
- * Protected by CRON_SECRET to prevent unauthorized access.
- *
- * Vercel sends Authorization: Bearer <CRON_SECRET> automatically.
+ * Protected by CRON_SECRET (Bearer + HMAC signature).
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get("authorization")
-  const expectedSecret = process.env.CRON_SECRET
+  const auth = verifyCronAuth(
+    request.headers.get("authorization"),
+    process.env.CRON_SECRET,
+    request.headers.get("x-vercel-signature")
+  )
 
-  if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+  if (!auth.ok) {
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 

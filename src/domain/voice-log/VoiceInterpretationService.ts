@@ -268,7 +268,7 @@ Transkribering:
       })
 
       const response = await client.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-4-5",
         max_tokens: 512,
         system: [{ type: "text" as const, text: QUICK_NOTE_SYSTEM_PROMPT, cache_control: { type: "ephemeral" as const } }],
         messages: [{ role: "user", content: userMessage }],

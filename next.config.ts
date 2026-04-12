@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
   async headers() {
     const isDev = process.env.NODE_ENV === 'development'
 
+    // Parse Sentry DSN for CSP report-uri
+    // DSN format: https://<key>@o<org>.ingest.sentry.io/<project>
+    const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN ?? ''
+    const dsnMatch = sentryDsn.match(/^https:\/\/([^@]+)@([^/]+)\/(.+)$/)
+    const cspReportUri = dsnMatch
+      ? `https://${dsnMatch[2]}/api/${dsnMatch[3]}/security/?sentry_key=${dsnMatch[1]}`
+      : ''
+
     return [
       // Relaxed headers for map tiles and routing (route-planning page)
       {
@@ -57,8 +65,14 @@ const nextConfig: NextConfig = {
               "form-action 'self'",
               "object-src 'none'",
               isDev ? "" : "upgrade-insecure-requests",
+              cspReportUri ? `report-uri ${cspReportUri}` : "",
+              cspReportUri ? "report-to csp-endpoint" : "",
             ].filter(Boolean).join('; '),
           },
+          ...(cspReportUri ? [{
+            key: 'Report-To',
+            value: JSON.stringify({ group: "csp-endpoint", max_age: 10886400, endpoints: [{ url: cspReportUri }] }),
+          }] : []),
           {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'unsafe-none', // Disable COEP for map tiles
@@ -106,8 +120,15 @@ const nextConfig: NextConfig = {
               "form-action 'self'",
               "object-src 'none'", // Block Flash, Java, etc.
               isDev ? "" : "upgrade-insecure-requests", // Force HTTPS in production
+              cspReportUri ? `report-uri ${cspReportUri}` : "",
+              cspReportUri ? "report-to csp-endpoint" : "",
             ].filter(Boolean).join('; '),
           },
+          // Reporting API endpoint for CSP violations (used by report-to directive)
+          ...(cspReportUri ? [{
+            key: 'Report-To',
+            value: JSON.stringify({ group: "csp-endpoint", max_age: 10886400, endpoints: [{ url: cspReportUri }] }),
+          }] : []),
           // Prevent clickjacking
           {
             key: 'X-Frame-Options',

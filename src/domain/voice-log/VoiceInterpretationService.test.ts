@@ -548,7 +548,7 @@ describe("VoiceInterpretationService", () => {
       })
 
       const callArgs = mockCreate.mock.calls[0][0]
-      expect(callArgs.model).toBe("claude-haiku-4-5-20251001")
+      expect(callArgs.model).toBe("claude-haiku-4-5")
     })
 
     it("includes booking context in prompt", async () => {
