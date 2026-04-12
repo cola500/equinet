@@ -22,18 +22,18 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S25-1 CustomerCard.tsx extrahera tabs | webb | pending |
-| S25-2 PrismaBookingRepository selects | webb | pending |
-| S25-3 Dokumentera worktree-agent-mönster | docs | pending |
-| S25-4 Backlog + roadmap cleanup | docs | pending |
+| S25-1 CustomerCard.tsx extrahera tabs | webb | done |
+| S25-2 PrismaBookingRepository selects | webb | done |
+| S25-3 Dokumentera worktree-agent-mönster | docs | done |
+| S25-4 Backlog + roadmap cleanup | docs | done |
 
-> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
-> Denna tabell uppdateras BARA av tech lead vid merge/avslut.
+> Sprint 25 avslutad 2026-04-12. PR #162 mergad.
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S25 | Worktree-agent test | 4/4 done (worktree-agent blockerad, stories kördes direkt) |
 | S24 | Parallell refactoring | 8/8 done (första parallella sprinten) |
 | S23 | Token-effektivitet | 8/8 done |
 | S22 | Lanseringsklar | 5/6 done (S22-3 blocked) |
@@ -58,7 +58,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Sprint 24 Session 1 | fullstack (webb) | S24-2 next | feature/s24-2-manual-booking-dialog | 2026-04-12 |
+| (inga aktiva) | | | | |
 
 ## Beslut
 
