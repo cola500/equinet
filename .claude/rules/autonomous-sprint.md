@@ -192,6 +192,107 @@ Skriv `docs/retrospectives/<datum>-sprint-<N>.md` med:
 
 ---
 
-## Parallella sessioner
+## Worktree-agent-mönster (parallellt arbete)
 
-Se `.claude/rules/parallel-sessions.md` för fullständig guide med worktree-setup, domängränser, merge-protokoll och felsökning.
+En session kan spawna en worktree-agent för stories i en annan domän. Agenten kör i bakgrunden medan huvudsessionen arbetar.
+
+### Hur det funkar
+
+```
+Huvudsession (Opus):
+  1. Läser sprint-dokumentet
+  2. Spawnar Agent(isolation: "worktree", model: "sonnet", run_in_background: true)
+     med de stories som tillhör en annan domän
+  3. Kör sina egna stories (stationsflödet som vanligt)
+  4. Får notifiering när worktree-agenten är klar
+  5. Mergar agentens branch
+```
+
+### KRITISKT: Kvalitetsprocessen gäller ALLA stories
+
+Worktree-agenten MÅSTE följa exakt samma stationsflöde som huvudsessionen:
+
+1. **PLAN** -- skriv plan, committa
+2. **RED** -- tester först (TDD/BDD)
+3. **GREEN** -- minimum implementation
+4. **REVIEW** -- kör code-reviewer subagent + relevanta specialistsubagenter (se Review-matris)
+5. **VERIFY** -- `npm run check:all` (4/4 gröna)
+6. **Committa** done-fil + sessionsfil
+
+**Att köra i en worktree ändrar INGENTING i kvalitetskraven.** Samma TDD, samma reviews, samma quality gates. Skalning utan kvalitet är inte skalning -- det är kaos.
+
+### Worktree-agent prompt-mall
+
+```
+Agent(
+  description: "S<X>-<Y> + S<X>-<Z> <domän>",
+  isolation: "worktree",
+  model: "sonnet",
+  run_in_background: true,
+  prompt: "Du kör i en isolerad worktree i Equinet-projektet.
+
+    Kör dessa stories sekventiellt, VARJE story med full stationsflöde:
+    - Plan -> Self-review -> RED -> GREEN -> Code review -> check:all -> done-fil
+
+    **S<X>-<Y>: Beskrivning**
+    [story-detaljer]
+
+    **S<X>-<Z>: Beskrivning**
+    [story-detaljer]
+
+    REGLER:
+    - Följ .claude/rules/team-workflow.md stationsflöde per story
+    - Kör code-reviewer subagent efter implementation (station 4)
+    - Kör npm run check:all före varje done-fil (station 5)
+    - Skriv sessionsfil: docs/sprints/session-<sprint>-<domän>.md
+    - Committa allt. Pusha INTE.
+    - Rör ALDRIG filer utanför din domän."
+)
+```
+
+### Sessionsfil (istället för status.md)
+
+Varje session/agent skriver till sin EGEN fil: `docs/sprints/session-<sprint>-<domän>.md`
+
+```markdown
+---
+sprint: 25
+domain: docs
+model: sonnet
+started: 2026-04-12
+---
+| Story | Status | Branch | Commit |
+|-------|--------|--------|--------|
+| S25-3 | done | - | abc123 |
+| S25-4 | done | - | def456 |
+```
+
+**Skriv ALDRIG till status.md** -- tech lead konsoliderar vid merge/avslut.
+
+### Merge-protokoll
+
+Huvudsessionen mergar agentens branch efter notifiering:
+
+```bash
+git merge <agentens-branch> --no-ff -m "Merge worktree-agent: S<X>-<Y> + S<X>-<Z>"
+git worktree remove <worktree-path>
+git branch -d <agentens-branch>
+```
+
+### Domängränser
+
+Se `.claude/rules/parallel-sessions.md` för fullständig guide om vilka domäner som kan parallelliseras och vilka som inte kan.
+
+### Modellval
+
+| Story-typ | Modell | Motivering |
+|-----------|--------|------------|
+| Arkitektur, säkerhet, komplexa beroenden | Opus | Kräver djup förståelse |
+| Mekanisk refactoring, docs, config | Sonnet | Snabbare, billigare, tillräckligt |
+| Triviala ändringar | Haiku | Minsta möjliga kostnad |
+
+### Gotchas (S25 erfarenhet)
+
+- **Worktree-agenter kan blockeras av rättigheter.** Write/Edit/Bash kan nekas i worktree-kontext. Om agenten rapporterar rättighetsproblem: gör arbetet själv i huvudsessionen istället.
+- **Docs-stories i worktree är tveksamt värde.** Overhead (spawn + merge + cleanup) överstiger ofta tidsvinsten för 30-min docs-stories. Överväg att köra docs-stories direkt i huvudsessionen.
+- **Rensa alltid worktree efter avslutat arbete:** `git worktree remove <path>`, `git branch -d <branch>`, `git worktree prune`.

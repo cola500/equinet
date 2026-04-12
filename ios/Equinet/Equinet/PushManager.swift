@@ -60,7 +60,7 @@ final class PushManager {
         bridge?.sendPushToken(token)
 
         // Register token with backend directly (fire-and-forget)
-        Task.detached {
+        Task {
             do {
                 try await APIClient.shared.registerDeviceToken(token)
                 AppLogger.push.info("Token registered with backend")

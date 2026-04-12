@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Alla kända stories och uppgifter, speglar roadmap.md. Plockas in i sprintar vid behov."
 category: sprint
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-04-12
 tags: [backlog, roadmap, planning]
 sections:
   - Blockerare
@@ -40,12 +40,8 @@ sections:
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
-| Cron-endpoints x-vercel-signature | 30 min | CRON_SECRET bra, men x-vercel-signature som komplement = defense in depth. |
-| Haiku daterat modell-ID | 5 min | `claude-haiku-4-5-20251001` i VoiceInterpretationService.ts rad 264. Byt till alias `claude-haiku-4-5`. |
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA för admin | 1 dag | Supabase TOTP-enrollment + verifiering |
-| CSP report-to | 15 min | Vi har CSP men vet inte när den blockerar i prod. Skicka till Sentry. |
-| Dependabot auto-merge för patch | 15 min | PRs skapas men ingen mergar dem. Patch kan auto-mergas. |
 | Migrationstest på ren DB i CI | 30 min | CI kör migrate deploy, inte reset. Fångar inte trasiga migrationer från scratch. |
 | Legacy docs svenska tecken (325 rader) | 0.5 dag | ASCII-substitut i ~10 filer (onboarding-spike, voice-logging-spike, m.fl.) |
 | E2E: fixa 77 skippade tester | 1-2 veckor | Låg prioritet |
@@ -70,12 +66,9 @@ sections:
 
 | Fil | Rader | Åtgärd | Effort |
 |-----|-------|--------|--------|
-| `BookingService.ts` | 986 | Dela: skapa `BookingCancellationService`, `BookingRescheduleService` | 0.5 dag |
-| `PrismaBookingRepository.ts` | 834 | 6 select-block. Extrahera gemensamma selects till konstanter. | 1h |
-| `ManualBookingDialog.tsx` | 752 | Extrahera steg-komponenter (StepSelectCustomer, StepSelectTime, etc.) | 0.5 dag |
-| `CustomerCard.tsx` | 660 | Extrahera tabs till egna komponenter | 1h |
 | `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
-| 13 filer runt 520-620 | - | Gränsfall, åtgärda vid nästa ändring | Löpande |
+| `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
+| 10+ filer runt 520-620 | - | Gränsfall, åtgärda vid nästa ändring | Löpande |
 
 ## Agent-navigering (kodkarta)
 
@@ -171,6 +164,12 @@ sections:
 | Incident response-plan | S22-4 | `docs/operations/incident-runbook.md` |
 | Smoke-test registreringsflödet | S22-5 | 25/25 gröna, hela flödet verifierat |
 | Preview deploy-skydd | Privat repo | Vercel Authentication aktiverades automatiskt vid privat GitHub-repo |
+| BookingService refactoring (986 -> ~600 rader) | S24-1 | BookingValidation + BookingDependencyFactory extraherade |
+| ManualBookingDialog steg-split (752 -> ~300 rader) | S24-2 | Steg-komponenter (StepSelectCustomer, StepSelectTime, etc.) |
+| Haiku alias + Cron HMAC + CSP report-to | S24-3 | Snabba säkerhetsfixar |
+| Dependabot auto-merge for patch | S24-4 | GitHub Actions workflow |
+| CustomerCard.tsx tabs-extraktion (660 -> 202 rader) | S25-1 | HorsesSection, NotesSection, MergeDialog, Actions |
+| PrismaBookingRepository gemensamma selects | S25-2 | Inlinade selects ersatta med namngivna konstanter |
 
 ## Research
 

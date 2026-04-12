@@ -33,7 +33,7 @@ Om ingen roll anges: default till fullstack.
 
 1. **Pusha ALDRIG till main.** Alltid feature branch + PR.
 2. **Implementera ALDRIG innan planen är godkänd.** Committa planen, kör self-review med relevanta subagenter (se `.claude/rules/autonomous-sprint.md` review-matris). Om inga blockerare: planen är godkänd, kör vidare. Om blockerare: fixa och kör review igen. Fråga Johan BARA vid produktbeslut eller scope-oklarheter.
-3. **Uppdatera ALLTID status.md vid varje commit.**
+3. **Uppdatera ALLTID din sessionsfil vid varje commit** (se Sessionsfil nedan).
 
 ---
 
@@ -63,7 +63,29 @@ Finns det en ANNAN aktiv session (in_progress)?
   cd ../equinet-<sprint>-<domän>
   npm install
   ```
-- Registrera dig i status.md (från HUVUDREPOT, inte worktree)
+- Skapa din sessionsfil (se Sessionsfil ovan)
+
+### Sessionsfil (ersätter status.md-uppdateringar)
+
+Varje session skapar och uppdaterar sin EGEN fil: `docs/sprints/session-<sprint>-<domän>.md`
+
+```markdown
+---
+sprint: 24
+domain: webb
+model: opus
+started: 2026-04-12
+---
+| Story | Status | Branch | Commit |
+|-------|--------|--------|--------|
+| S24-1 | done | feature/s24-1-booking-validation | abc123 |
+| S24-2 | in_progress | feature/s24-2-manual-booking | - |
+```
+
+**Regler:**
+- Skriv BARA till din sessionsfil -- aldrig till `status.md` eller den andra sessionens fil
+- Uppdatera vid varje story-byte (pending -> in_progress -> done)
+- Tech lead konsoliderar till `status.md` vid merge/avslut
 
 ### KRITISKT: Startordning
 
@@ -100,7 +122,7 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
 4. Välj nästa matchande story:
    - **Ensam session:** ta nästa pending story (oavsett domän)
    - **Parallell session:** ta nästa pending story som matchar DIN domän. Hoppa över alla stories med annan domän.
-5. Registrera dig i status.md Sessioner-tabell (roll, domän, branch, story)
+5. Skapa/uppdatera din sessionsfil (roll, domän, branch, story)
 6. Skapa feature branch: `feature/<story-id>-<kort-beskrivning>`
 7. Skriv en kort plan i `docs/plans/<story-id>-plan.md` och committa den
    - Vilka filer ändras/skapas
@@ -119,7 +141,7 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
      - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: code-reviewer (enda relevante)"
    - Avvikelser eller kända begränsningar
    - **Lärdomar**: Vad var oväntat? Vad skulle du göra annorlunda? Gotchas för framtida sessioner?
-   - **SAMTIDIGT:** Uppdatera status.md: story -> `done` + commit-hash
+   - **SAMTIDIGT:** Uppdatera din sessionsfil: story -> `done` + commit-hash
    - Committa BÅDA filerna i samma commit
 10. Merge via PR:
     ```bash

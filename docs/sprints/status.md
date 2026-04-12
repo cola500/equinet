@@ -18,23 +18,23 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 24** ([sprint-24-parallel-refactor.md](sprint-24-parallel-refactor.md)):
+**Sprint 25** ([sprint-25-parallel-test.md](sprint-25-parallel-test.md)):
 
-| Story | Roll | Ansvarig | Status | Branch | Senaste commit |
-|-------|------|----------|--------|--------|----------------|
-| S24-1 Extrahera BookingValidation | fullstack (webb) | Session 1 | done | feature/s24-1-booking-validation | - |
-| S24-2 ManualBookingDialog steg-split | fullstack (webb) | Session 1 | done | feature/s24-2-manual-booking-dialog | - |
-| S24-3 Snabba säkerhetsfixar | fullstack (webb) | Session 1 | done | feature/s24-3-security-fixes | - |
-| S24-4 Dependabot auto-merge | fullstack (infra) | Session 1 | done | feature/s24-4-dependabot-auto-merge | - |
-| S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |
-| S24-6 Hjälpartiklar till markdown | fullstack (docs) | - | pending | - | - |
-| S24-7 Legacy docs svenska tecken | fullstack (docs) | - | pending | - | - |
-| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | pending | - | - |
+| Story | Domän | Status |
+|-------|-------|--------|
+| S25-1 CustomerCard.tsx extrahera tabs | webb | pending |
+| S25-2 PrismaBookingRepository selects | webb | pending |
+| S25-3 Dokumentera worktree-agent-mönster | docs | pending |
+| S25-4 Backlog + roadmap cleanup | docs | pending |
+
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
+> Denna tabell uppdateras BARA av tech lead vid merge/avslut.
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S24 | Parallell refactoring | 8/8 done (första parallella sprinten) |
 | S23 | Token-effektivitet | 8/8 done |
 | S22 | Lanseringsklar | 5/6 done (S22-3 blocked) |
 | S21 | Härdning inför lansering | 6/6 done |
