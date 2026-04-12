@@ -192,25 +192,6 @@ Skriv `docs/retrospectives/<datum>-sprint-<N>.md` med:
 
 ---
 
-## Parallella sessioner med worktrees
+## Parallella sessioner
 
-Stories som rör **helt separata filer** kan köras parallellt med git worktrees:
-
-```bash
-git worktree add ../equinet-s16-2 -b feature/s16-2-seed-scripts main
-```
-
-**Regler:**
-- Varje session MÅSTE ange story-ID (`kör S16-2`)
-- Skriv ALDRIG bara `kör` vid parallella sessioner
-- Mergea sekventiellt (en i taget, pull innan merge)
-- Radera worktree efter merge: `git worktree remove ../equinet-s16-2`
-
-**Bra kandidater för parallellisering:**
-- Cleanup + seed-scripts (olika filer)
-- iOS + webb (olika kataloger)
-- Docs + implementation (ingen överlapp)
-
-**ALDRIG parallellt:**
-- Två stories som rör samma API routes
-- Schema-ändring + route-ändring (migreringen måste vara klar först)
+Se `.claude/rules/parallel-sessions.md` för fullständig guide med worktree-setup, domängränser, merge-protokoll och felsökning.
