@@ -1,4 +1,11 @@
 /**
+ * @domain auth
+ * @routes POST /api/auth/register, /api/auth/verify-email, /api/auth/resend-verification, /api/auth/forgot-password, /api/auth/reset-password
+ * @repository IAuthRepository
+ * @consumers (auth)/register, login, verify-email, forgot-password, reset-password
+ */
+
+/**
  * AuthService - Domain service for Auth
  *
  * Contains business rules for registration, email verification,

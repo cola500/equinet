@@ -1,4 +1,12 @@
 /**
+ * @domain municipality-watch
+ * @routes POST /api/municipality-watches, GET /api/municipality-watches, DELETE /api/municipality-watches/[id]
+ * @repository IMunicipalityWatchRepository
+ * @featureFlag municipality_watch
+ * @consumers announcements/page.tsx
+ */
+
+/**
  * MunicipalityWatchService - Domain service for municipality + service type watches
  *
  * Handles creation/deletion with validation:

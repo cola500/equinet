@@ -1,4 +1,11 @@
 /**
+ * @domain follow
+ * @routes POST /api/follows, DELETE /api/follows/[providerId]
+ * @repository IFollowRepository
+ * @consumers providers/[id]/page.tsx
+ */
+
+/**
  * FollowService - Domain service for customer->provider follows
  *
  * Handles follow/unfollow logic with provider validation.

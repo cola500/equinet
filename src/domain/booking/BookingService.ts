@@ -1,4 +1,11 @@
 /**
+ * @domain booking
+ * @routes POST /api/bookings, GET /api/bookings, PUT /api/bookings/[id], DELETE /api/bookings/[id], POST /api/bookings/manual, POST /api/bookings/[id]/reschedule
+ * @repository IBookingRepository
+ * @consumers provider/bookings/page.tsx, provider/calendar/page.tsx, customer/bookings/page.tsx
+ */
+
+/**
  * BookingService - Domain service for booking operations
  *
  * Encapsulates booking business logic:

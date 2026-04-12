@@ -27,7 +27,7 @@ sections:
 | S23-3 Auto-generera kodkartan | fullstack | autonom | done | feature/s23-3-codemap-gen | - |
 | S23-4 Feature flag -> fil-mapping | fullstack | autonom | done | feature/s23-4-flag-mapping | - |
 | S23-5 Komprimera CLAUDE.md | fullstack | autonom | done | feature/s23-5-compress-claude | - |
-| S23-6 JSDoc domän-metadata | fullstack | autonom | in_progress | feature/s23-6-jsdoc-metadata | - |
+| S23-6 JSDoc domän-metadata | fullstack | autonom | done | feature/s23-6-jsdoc-metadata | - |
 | S23-8 CLAUDE.md under 200 + CC-optimeringar | fullstack | - | pending | - | - |
 | S23-7 Dokumentera och mät | fullstack | - | pending | - | - |
 

@@ -1,4 +1,11 @@
 /**
+ * @domain horse
+ * @routes GET /api/horses, POST /api/horses, GET/PUT/DELETE /api/horses/[id], /api/horses/[id]/notes, /api/horses/[id]/timeline
+ * @repository IHorseRepository
+ * @consumers customer/horses/[id]/page.tsx, provider/horse-timeline/[horseId]/page.tsx
+ */
+
+/**
  * HorseService - Domain service for Horse aggregate
  *
  * Contains business rules for horse management, notes, timeline access control,

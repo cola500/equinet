@@ -1,4 +1,9 @@
 /**
+ * @domain voice-log
+ * @routes (internal utility for VoiceInterpretationService)
+ */
+
+/**
  * VocabularyService - Manages provider-specific vocabulary for voice interpretation
  *
  * Stores word corrections learned from provider edits, and formats them

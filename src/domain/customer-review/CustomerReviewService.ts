@@ -1,4 +1,11 @@
 /**
+ * @domain customer-review
+ * @routes POST /api/customer-reviews
+ * @repository ICustomerReviewRepository
+ * @consumers provider/bookings/page.tsx
+ */
+
+/**
  * CustomerReviewService - Domain service for CustomerReview aggregate
  *
  * Contains business rules for providers reviewing customers after completed bookings.

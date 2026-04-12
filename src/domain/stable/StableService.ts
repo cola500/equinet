@@ -1,4 +1,11 @@
 /**
+ * @domain stable
+ * @routes GET /api/stables, GET /api/stables/[stableId], GET /api/stable/profile
+ * @repository IStableRepository
+ * @featureFlag stable_profiles
+ */
+
+/**
  * StableService - Domain service for Stable aggregate
  *
  * Handles stable profile CRUD with business rules.

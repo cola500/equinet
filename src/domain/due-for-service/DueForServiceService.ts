@@ -1,3 +1,10 @@
+/**
+ * @domain due-for-service
+ * @routes GET /api/provider/due-for-service, GET /api/customer/due-for-service
+ * @featureFlag due_for_service
+ * @consumers provider/due-for-service/page.tsx, customer/horses/[id]/page.tsx
+ */
+
 import { prisma } from "@/lib/prisma"
 import {
   calculateDueStatus,

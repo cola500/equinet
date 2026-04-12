@@ -1,4 +1,10 @@
 /**
+ * @domain provider-customer-note
+ * @routes POST/GET/PUT/DELETE /api/provider/customers/[customerId]/notes
+ * @consumers provider/customers/page.tsx
+ */
+
+/**
  * ProviderCustomerNoteService - Domain service for provider customer notes
  *
  * Business rules:

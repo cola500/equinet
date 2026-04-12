@@ -1,4 +1,11 @@
 /**
+ * @domain subscription
+ * @routes POST /api/provider/subscription/checkout, GET /api/provider/subscription/status, GET /api/provider/subscription/portal
+ * @repository ISubscriptionRepository, SubscriptionGateway (Stripe)
+ * @featureFlag provider_subscription
+ */
+
+/**
  * SubscriptionService - Domain service for provider subscription management
  *
  * Handles checkout initiation, status queries, portal access, and webhook processing.
