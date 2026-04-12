@@ -23,7 +23,7 @@ sections:
 | Story | Roll | Ansvarig | Status | Branch | Senaste commit |
 |-------|------|----------|--------|--------|----------------|
 | S24-1 Extrahera BookingValidation | fullstack (webb) | Session 1 | done | feature/s24-1-booking-validation | - |
-| S24-2 ManualBookingDialog steg-split | fullstack (webb) | - | pending | - | - |
+| S24-2 ManualBookingDialog steg-split | fullstack (webb) | Session 1 | done | feature/s24-2-manual-booking-dialog | - |
 | S24-3 Snabba säkerhetsfixar | fullstack (webb) | - | pending | - | - |
 | S24-4 Dependabot auto-merge | fullstack (infra) | - | pending | - | - |
 | S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |

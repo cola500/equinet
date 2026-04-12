@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -11,9 +11,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { ServiceTimeStep } from "./ServiceTimeStep"
+import { CustomerStep } from "./CustomerStep"
+import { RecurringStep } from "./RecurringStep"
 import type { CalendarBooking } from "@/types"
 
 interface Service {
@@ -198,23 +200,6 @@ export function ManualBookingDialog({
       setTotalOccurrences(4)
     }
   }, [open, prefillDate, prefillTime])
-
-  // Bookings for the selected day (excluding cancelled)
-  const dayBookings = useMemo(() => {
-    if (!bookingDate || !bookings) return []
-    return bookings
-      .filter(b => b.bookingDate.startsWith(bookingDate))
-      .filter(b => b.status !== "cancelled")
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-  }, [bookingDate, bookings])
-
-  // Overlap warning
-  const hasOverlap = useMemo(() => {
-    if (!startTime || !endTime || !dayBookings.length) return false
-    return dayBookings.some(b =>
-      startTime < b.endTime && endTime > b.startTime
-    )
-  }, [startTime, endTime, dayBookings])
 
   const handleSelectCustomer = (customer: CustomerResult) => {
     setSelectedCustomer(customer)
@@ -426,197 +411,54 @@ export function ManualBookingDialog({
 
         <div className="space-y-4">
           {/* -- Tjänst & Tid -- */}
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="service">Tjänst</Label>
-              <select
-                id="service"
-                value={serviceId}
-                onChange={(e) => setServiceId(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="">Välj tjänst...</option>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.durationMinutes} min, {s.price} kr)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="date">Datum</Label>
-                <input
-                  id="date"
-                  type="date"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  onBlur={(e) => setBookingDate(e.target.value)}
-                  className="mt-1 flex h-10 w-full max-w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor="start">Starttid</Label>
-                <select
-                  id="start"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Välj tid...</option>
-                  {Array.from({ length: (21 - 6) * 4 }, (_, i) => {
-                    const h = Math.floor(i / 4) + 6
-                    const m = (i % 4) * 15
-                    const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-                    return <option key={val} value={val}>{val}</option>
-                  })}
-                </select>
-                {endTime && (
-                  <p className="text-xs text-gray-500 mt-1">Sluttid: {endTime}</p>
-                )}
-                {hasOverlap && (
-                  <p className="text-xs text-red-600 mt-1">
-                    Tiden krockar med en befintlig bokning
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {bookingDate && dayBookings.length > 0 && (
-              <div className="rounded-md border bg-gray-50 p-2">
-                <p className="text-xs font-medium text-gray-500 mb-1">
-                  Bokningar denna dag
-                </p>
-                <div className="space-y-1">
-                  {dayBookings.map(b => (
-                    <div key={b.id} className="flex items-center gap-2 text-xs">
-                      <span className="font-mono text-gray-700">
-                        {b.startTime}&#8209;{b.endTime}
-                      </span>
-                      <span className="text-gray-500 truncate">
-                        {b.service.name} - {b.customer.firstName} {b.customer.lastName}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <ServiceTimeStep
+            services={services}
+            serviceId={serviceId}
+            onServiceChange={setServiceId}
+            bookingDate={bookingDate}
+            onBookingDateChange={setBookingDate}
+            startTime={startTime}
+            onStartTimeChange={setStartTime}
+            endTime={endTime}
+            bookings={bookings}
+          />
 
           {/* -- Kund -- */}
-          <div className="space-y-3 border-t pt-3">
-            <div className="flex items-center justify-between">
-              <Label>Kund</Label>
-              <div className="flex gap-1">
-                <Button
-                  variant={customerMode === "search" ? "default" : "ghost"}
-                  size="sm"
-                  disabled={!isOnline}
-                  onClick={() => {
-                    setCustomerMode("search")
-                    setCustomerName("")
-                    setCustomerPhone("")
-                    setCustomerEmail("")
-                    setHorses([])
-                    setSelectedHorseId("")
-                    setHorseName("")
-                  }}
-                  className="h-7 text-xs"
-                >
-                  Befintlig
-                </Button>
-                <Button
-                  variant={customerMode === "manual" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setCustomerMode("manual")
-                    setSelectedCustomer(null)
-                    setSearchQuery("")
-                    setHorses([])
-                    setSelectedHorseId("")
-                    setHorseName("")
-                  }}
-                  className="h-7 text-xs"
-                >
-                  Ny kund
-                </Button>
-              </div>
-            </div>
-
-            {customerMode === "search" ? (
-              <div>
-                {selectedCustomer ? (
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
-                    <span className="text-sm font-medium">
-                      {selectedCustomer.firstName} {selectedCustomer.lastName}
-                      <span className="text-gray-500 ml-2">
-                        {selectedCustomer.email}
-                      </span>
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedCustomer(null)}
-                      className="h-6 text-xs"
-                    >
-                      Byt
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <Input
-                      placeholder="Sök kund (namn eller email)..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {isSearching && (
-                      <div className="absolute right-3 top-3 text-xs text-gray-400">
-                        Söker...
-                      </div>
-                    )}
-                    {searchResults.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                        {searchResults.map((c) => (
-                          <button
-                            key={c.id}
-                            onClick={() => handleSelectCustomer(c)}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm border-b last:border-b-0"
-                          >
-                            <span className="font-medium">
-                              {c.firstName} {c.lastName}
-                            </span>
-                            <span className="text-gray-500 ml-2">{c.email}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  placeholder="Namn *"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Telefon"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                  />
-                  <Input
-                    placeholder="Email"
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          <CustomerStep
+            customerMode={customerMode}
+            onCustomerModeChange={setCustomerMode}
+            isOnline={isOnline}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchResults={searchResults}
+            isSearching={isSearching}
+            selectedCustomer={selectedCustomer}
+            onSelectCustomer={handleSelectCustomer}
+            onClearCustomer={() => setSelectedCustomer(null)}
+            customerName={customerName}
+            onCustomerNameChange={setCustomerName}
+            customerPhone={customerPhone}
+            onCustomerPhoneChange={setCustomerPhone}
+            customerEmail={customerEmail}
+            onCustomerEmailChange={setCustomerEmail}
+            onSwitchToSearch={() => {
+              setCustomerMode("search")
+              setCustomerName("")
+              setCustomerPhone("")
+              setCustomerEmail("")
+              setHorses([])
+              setSelectedHorseId("")
+              setHorseName("")
+            }}
+            onSwitchToManual={() => {
+              setCustomerMode("manual")
+              setSelectedCustomer(null)
+              setSearchQuery("")
+              setHorses([])
+              setSelectedHorseId("")
+              setHorseName("")
+            }}
+          />
 
           {/* -- Häst -- */}
           <div className="space-y-2 border-t pt-3">
@@ -670,62 +512,15 @@ export function ManualBookingDialog({
 
           {/* -- Recurring -- */}
           {recurringEnabled && (
-            <div className="space-y-3 border-t pt-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="manual-recurring" className="text-sm font-medium">
-                    Gör detta återkommande
-                  </Label>
-                  <p className="text-xs text-gray-500">
-                    Skapa flera bokningar med regelbundna intervall
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-0.5">
-                  <Switch
-                    id="manual-recurring"
-                    checked={isRecurring}
-                    onCheckedChange={setIsRecurring}
-                    disabled={!isOnline}
-                  />
-                  {!isOnline && (
-                    <span className="text-xs text-gray-500">Kräver internetanslutning</span>
-                  )}
-                </div>
-              </div>
-
-              {isRecurring && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs">Intervall</Label>
-                    <select
-                      value={intervalWeeks}
-                      onChange={(e) => setIntervalWeeks(parseInt(e.target.value))}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm mt-1"
-                    >
-                      <option value={1}>Varje vecka</option>
-                      <option value={2}>Varannan vecka</option>
-                      <option value={4}>Var 4:e vecka</option>
-                      <option value={6}>Var 6:e vecka</option>
-                      <option value={8}>Var 8:e vecka</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Antal tillfällen</Label>
-                    <select
-                      value={totalOccurrences}
-                      onChange={(e) => setTotalOccurrences(parseInt(e.target.value))}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm mt-1"
-                    >
-                      <option value={2}>2</option>
-                      <option value={4}>4</option>
-                      <option value={6}>6</option>
-                      <option value={8}>8</option>
-                      <option value={12}>12</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
+            <RecurringStep
+              isOnline={isOnline}
+              isRecurring={isRecurring}
+              onIsRecurringChange={setIsRecurring}
+              intervalWeeks={intervalWeeks}
+              onIntervalWeeksChange={setIntervalWeeks}
+              totalOccurrences={totalOccurrences}
+              onTotalOccurrencesChange={setTotalOccurrences}
+            />
           )}
 
           {/* -- Submit -- */}
