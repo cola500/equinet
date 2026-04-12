@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # npm dependencies -- security only until we have a dependency update workflow
+  # npm dependencies -- patch auto-merged, major/minor manual
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -9,13 +9,11 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "security"
-    # Only open PRs for security advisories, not version bumps
     allow:
       - dependency-type: "direct"
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   # GitHub Actions -- security only
   - package-ecosystem: "github-actions"
