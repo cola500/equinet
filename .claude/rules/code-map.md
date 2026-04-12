@@ -4,149 +4,149 @@
 
 ## Domäner
 
+### account
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/account/AccountDeletionService.ts` |
+| Routes | `src/app/api/account/route.ts` |
+
+### accounting
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/accounting/AccountingGateway.ts`, `src/domain/accounting/FortnoxGateway.ts` |
+
+### auth (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/auth/AuthService.ts`, `src/domain/auth/GhostMergeService.ts`, `src/domain/auth/mapAuthErrorToStatus.ts` |
+| Repository | `src/infrastructure/persistence/auth/IAuthRepository.ts`, `src/infrastructure/persistence/auth/MockAuthRepository.ts`, `src/infrastructure/persistence/auth/PrismaAuthRepository.ts` |
+| Routes | `src/app/api/auth/accept-invite/route.ts`, `src/app/api/auth/forgot-password/route.ts`, `src/app/api/auth/native-session-exchange/route.ts`, `src/app/api/auth/register/route.ts`, `src/app/api/auth/resend-verification/route.ts`, `src/app/api/auth/reset-password/route.ts`, `src/app/api/auth/session/route.ts`, `src/app/api/auth/verify-email/route.ts` |
+
 ### booking (kärndomän, repository obligatoriskt)
 
 | Lager | Filer |
 |-------|-------|
-| Service | `src/domain/booking/BookingService.ts`, `BookingSeriesService.ts`, `TravelTimeService.ts` |
-| Repository | `src/infrastructure/persistence/booking/PrismaBookingRepository.ts` (impl), `IBookingRepository.ts` (interface), `MockBookingRepository.ts` (test), `BookingMapper.ts` |
-| Routes | `src/app/api/bookings/route.ts` (GET/POST), `[id]/route.ts` (GET/PUT/DELETE), `[id]/reschedule/route.ts`, `[id]/payment/route.ts`, `[id]/receipt/route.ts`, `manual/route.ts` |
-| Routes (serier) | `src/app/api/booking-series/route.ts`, `[id]/route.ts`, `[id]/cancel/route.ts` |
-| Routes (native) | `src/app/api/native/bookings/route.ts`, `[id]/quick-note/route.ts`, `[id]/review/route.ts` |
-| Routes (provider) | `src/app/api/provider/bookings/[id]/notes/route.ts`, `[id]/quick-note/route.ts` |
-| UI (provider) | `src/app/provider/bookings/page.tsx`, `calendar/page.tsx`, `dashboard/page.tsx` |
-| UI (kund) | `src/app/customer/bookings/page.tsx` |
-| Komponenter | `src/components/calendar/ManualBookingDialog.tsx`, `src/components/provider/OnboardingChecklist.tsx` |
-| Cron | `src/app/api/cron/booking-reminders/route.ts` |
-
-### auth
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/auth/AuthService.ts`, `GhostMergeService.ts` |
-| Repository | `src/infrastructure/persistence/auth/PrismaAuthRepository.ts`, `IAuthRepository.ts`, `MockAuthRepository.ts` |
-| Routes | `src/app/api/auth/register/route.ts`, `login` (Supabase-hanterat), `forgot-password/route.ts`, `reset-password/route.ts`, `verify-email/route.ts`, `resend-verification/route.ts`, `session/route.ts`, `accept-invite/route.ts`, `native-session-exchange/route.ts` |
-| Lib | `src/lib/auth-dual.ts` (getAuthUser), `src/lib/auth-server.ts`, `src/lib/admin-auth.ts` |
-| UI | `src/app/(auth)/login/page.tsx`, `register/page.tsx`, `forgot-password/page.tsx`, `reset-password/page.tsx`, `verify-email/page.tsx`, `check-email/page.tsx`, `accept-invite/page.tsx` |
-
-### payment
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/payment/PaymentService.ts`, `PaymentWebhookService.ts`, `createPaymentService.ts`, `createPaymentWebhookService.ts` |
-| Gateway | `src/domain/payment/PaymentGateway.ts` (interface), `StripePaymentGateway.ts` (impl) |
-| Webhook | `src/app/api/webhooks/stripe/route.ts` |
-| Idempotens | `src/infrastructure/persistence/stripe/stripeWebhookEventRepository.ts` |
-| Routes | `src/app/api/bookings/[id]/payment/route.ts` |
-
-### subscription
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/subscription/SubscriptionService.ts` |
-| Gateway | `src/domain/subscription/SubscriptionGateway.ts` (interface), `StripeSubscriptionGateway.ts` (impl) |
-| Repository | `src/infrastructure/persistence/subscription/SubscriptionRepository.ts`, `ISubscriptionRepository.ts`, `MockSubscriptionRepository.ts` |
-| Routes | `src/app/api/provider/subscription/checkout/route.ts`, `portal/route.ts`, `status/route.ts` |
-
-### horse (kärndomän, repository obligatoriskt)
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/horse/HorseService.ts` |
-| Repository | `src/infrastructure/persistence/horse/HorseRepository.ts`, `IHorseRepository.ts`, `MockHorseRepository.ts` |
-| Routes | `src/app/api/horses/route.ts` (GET/POST), `[id]/route.ts`, `[id]/notes/route.ts`, `[id]/timeline/route.ts`, `[id]/profile/route.ts`, `[id]/export/route.ts`, `[id]/stable/route.ts` |
-| Routes (provider) | `src/app/api/provider/customers/[customerId]/horses/route.ts`, `[horseId]/route.ts`, `provider/horses/[horseId]/interval/route.ts` |
-| Routes (native) | `src/app/api/native/customers/[customerId]/horses/route.ts`, `[horseId]/route.ts` |
-| UI | `src/app/provider/horse-timeline/[horseId]/page.tsx`, `src/app/customer/horses/[id]/page.tsx` |
-
-### review + customer-review (kärndomäner)
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/review/ReviewService.ts`, `src/domain/customer-review/CustomerReviewService.ts` |
-| Repository | `src/infrastructure/persistence/review/ReviewRepository.ts`, `IReviewRepository.ts`, `MockReviewRepository.ts` |
-| Repository (kundrecension) | `src/infrastructure/persistence/customer-review/CustomerReviewRepository.ts`, `ICustomerReviewRepository.ts`, `MockCustomerReviewRepository.ts` |
-| Routes | `src/app/api/reviews/route.ts`, `[id]/route.ts`, `[id]/reply/route.ts`, `src/app/api/customer-reviews/route.ts`, `src/app/api/providers/[id]/reviews/route.ts` |
-| UI | `src/app/provider/reviews/page.tsx` |
-
-### follow (kärndomän)
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/follow/FollowService.ts` |
-| Repository | `src/infrastructure/persistence/follow/FollowRepository.ts`, `IFollowRepository.ts`, `MockFollowRepository.ts` |
-| Routes | `src/app/api/follows/route.ts`, `[providerId]/route.ts` |
-
-### group-booking
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/group-booking/GroupBookingService.ts` |
-| Repository | `src/infrastructure/persistence/group-booking/GroupBookingRepository.ts`, `IGroupBookingRepository.ts`, `MockGroupBookingRepository.ts` |
-| Routes | `src/app/api/group-bookings/route.ts`, `[id]/route.ts`, `[id]/match/route.ts`, `[id]/participants/[pid]/route.ts`, `available/route.ts`, `join/route.ts`, `preview/route.ts` |
-| Routes (native) | `src/app/api/native/group-bookings/[id]/route.ts`, `[id]/match/route.ts`, `available/route.ts` |
-| UI | `src/app/provider/group-bookings/page.tsx`, `[id]/page.tsx`, `src/app/customer/group-bookings/page.tsx`, `[id]/page.tsx`, `join/page.tsx`, `new/page.tsx` |
-
-### stable
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/stable/StableService.ts`, `StableSpotService.ts`, `StableInviteService.ts` |
-| Repository | `src/infrastructure/persistence/stable/PrismaStableRepository.ts`, `IStableRepository.ts`, `MockStableRepository.ts` |
-| Repository (invites) | `src/infrastructure/persistence/stable-invite/PrismaStableInviteRepository.ts`, `IStableInviteRepository.ts`, `MockStableInviteRepository.ts` |
-| Routes (auth) | `src/app/api/stable/profile/route.ts`, `invites/route.ts`, `invites/[id]/route.ts`, `spots/route.ts`, `spots/[spotId]/route.ts` |
-| Routes (publik) | `src/app/api/stables/route.ts`, `[stableId]/route.ts`, `invites/[token]/route.ts`, `invites/[token]/accept/route.ts` |
-
-### notification
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/notification/NotificationService.ts`, `PushDeliveryService.ts` |
-| Routes | `src/app/api/notifications/route.ts`, `[id]/route.ts`, `unread-count/route.ts`, `src/app/api/admin/notifications/route.ts` |
-
-### due-for-service
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/due-for-service/DueForServiceService.ts` |
-| Routes | `src/app/api/provider/due-for-service/route.ts`, `src/app/api/customer/due-for-service/route.ts`, `src/app/api/native/due-for-service/route.ts` |
-| UI | `src/app/provider/due-for-service/page.tsx` |
-
-### voice-log
-
-| Lager | Filer |
-|-------|-------|
-| Service | `src/domain/voice-log/VoiceInterpretationService.ts`, `VocabularyService.ts` |
-| Routes | `src/app/api/voice-log/route.ts`, `confirm/route.ts` |
+| Service | `src/domain/booking/BookingEventHandlers.ts`, `src/domain/booking/BookingEvents.ts`, `src/domain/booking/BookingSeriesService.ts`, `src/domain/booking/BookingService.ts`, `src/domain/booking/BookingStatus.ts`, `src/domain/booking/mapBookingErrorToStatus.ts`, `src/domain/booking/TravelTimeService.ts` |
+| Repository | `src/infrastructure/persistence/booking/BookingMapper.ts`, `src/infrastructure/persistence/booking/IBookingRepository.ts`, `src/infrastructure/persistence/booking/MockBookingRepository.ts`, `src/infrastructure/persistence/booking/PrismaBookingRepository.ts` |
+| Routes | `src/app/api/bookings/[id]/payment/route.ts`, `src/app/api/bookings/[id]/receipt/route.ts`, `src/app/api/bookings/[id]/reschedule/route.ts`, `src/app/api/bookings/[id]/route.ts`, `src/app/api/bookings/manual/route.ts`, `src/app/api/bookings/route.ts`, `src/app/api/native/bookings/[id]/quick-note/route.ts`, `src/app/api/native/bookings/[id]/review/route.ts`, `src/app/api/native/bookings/route.ts`, `src/app/api/provider/bookings/[id]/notes/route.ts`, `src/app/api/provider/bookings/[id]/quick-note/route.ts` |
 
 ### customer-insight
 
 | Lager | Filer |
 |-------|-------|
 | Service | `src/domain/customer-insight/CustomerInsightService.ts` |
-| Routes | `src/app/api/provider/customers/[id]/insight/route.ts` (troligen) |
 
-### municipality-watch
+### customer-review (kärndomän, repository obligatoriskt)
 
 | Lager | Filer |
 |-------|-------|
-| Service | `src/domain/municipality-watch/MunicipalityWatchService.ts` |
-| Repository | `src/infrastructure/persistence/municipality-watch/MunicipalityWatchRepository.ts`, `IMunicipalityWatchRepository.ts`, `MockMunicipalityWatchRepository.ts` |
-| Routes | `src/app/api/municipality-watches/route.ts`, `[id]/route.ts` |
+| Service | `src/domain/customer-review/CustomerReviewService.ts`, `src/domain/customer-review/mapCustomerReviewErrorToStatus.ts` |
+| Repository | `src/infrastructure/persistence/customer-review/CustomerReviewRepository.ts`, `src/infrastructure/persistence/customer-review/ICustomerReviewRepository.ts`, `src/infrastructure/persistence/customer-review/MockCustomerReviewRepository.ts` |
+| Routes | `src/app/api/customer-reviews/route.ts` |
+
+### due-for-service
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/due-for-service/DueForServiceCalculator.ts`, `src/domain/due-for-service/DueForServiceLookup.ts`, `src/domain/due-for-service/DueForServiceService.ts` |
+| Routes | `src/app/api/native/due-for-service/route.ts`, `src/app/api/provider/due-for-service/route.ts` |
+
+### follow (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/follow/FollowService.ts`, `src/domain/follow/FollowServiceFactory.ts` |
+| Repository | `src/infrastructure/persistence/follow/FollowRepository.ts`, `src/infrastructure/persistence/follow/IFollowRepository.ts`, `src/infrastructure/persistence/follow/MockFollowRepository.ts` |
+| Routes | `src/app/api/follows/[providerId]/route.ts`, `src/app/api/follows/route.ts` |
+
+### group-booking (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/group-booking/GroupBookingService.ts`, `src/domain/group-booking/mapGroupBookingErrorToStatus.ts` |
+| Repository | `src/infrastructure/persistence/group-booking/GroupBookingRepository.ts`, `src/infrastructure/persistence/group-booking/IGroupBookingRepository.ts`, `src/infrastructure/persistence/group-booking/MockGroupBookingRepository.ts` |
+| Routes | `src/app/api/group-bookings/[id]/match/route.ts`, `src/app/api/group-bookings/[id]/participants/[pid]/route.ts`, `src/app/api/group-bookings/[id]/route.ts`, `src/app/api/group-bookings/available/route.ts`, `src/app/api/group-bookings/join/route.ts`, `src/app/api/group-bookings/preview/route.ts`, `src/app/api/group-bookings/route.ts`, `src/app/api/native/group-bookings/[id]/match/route.ts`, `src/app/api/native/group-bookings/[id]/route.ts`, `src/app/api/native/group-bookings/available/route.ts` |
+
+### horse (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/horse/HorseService.ts`, `src/domain/horse/mapHorseErrorToStatus.ts` |
+| Repository | `src/infrastructure/persistence/horse/HorseRepository.ts`, `src/infrastructure/persistence/horse/IHorseRepository.ts`, `src/infrastructure/persistence/horse/MockHorseRepository.ts` |
+| Routes | `src/app/api/horses/[id]/export/route.ts`, `src/app/api/horses/[id]/notes/[noteId]/route.ts`, `src/app/api/horses/[id]/notes/route.ts`, `src/app/api/horses/[id]/profile/route.ts`, `src/app/api/horses/[id]/route.ts`, `src/app/api/horses/[id]/stable/route.ts`, `src/app/api/horses/[id]/timeline/route.ts`, `src/app/api/horses/route.ts`, `src/app/api/provider/horses/[horseId]/interval/route.ts` |
+
+### municipality-watch (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/municipality-watch/MunicipalityWatchService.ts`, `src/domain/municipality-watch/MunicipalityWatchServiceFactory.ts` |
+| Repository | `src/infrastructure/persistence/municipality-watch/IMunicipalityWatchRepository.ts`, `src/infrastructure/persistence/municipality-watch/MockMunicipalityWatchRepository.ts`, `src/infrastructure/persistence/municipality-watch/MunicipalityWatchRepository.ts` |
+
+### notification
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/notification/NotificationService.ts`, `src/domain/notification/PushDeliveryService.ts`, `src/domain/notification/RouteAnnouncementNotifier.ts`, `src/domain/notification/RouteAnnouncementNotifierFactory.ts` |
+| Routes | `src/app/api/notifications/[id]/route.ts`, `src/app/api/notifications/route.ts`, `src/app/api/notifications/unread-count/route.ts` |
+
+### payment
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/payment/mapPaymentErrorToStatus.ts`, `src/domain/payment/PaymentGateway.ts`, `src/domain/payment/PaymentService.ts`, `src/domain/payment/PaymentWebhookService.ts`, `src/domain/payment/StripePaymentGateway.ts` |
+
+### provider-customer-note (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/provider-customer-note/ProviderCustomerNoteService.ts` |
+| Repository | `src/infrastructure/persistence/provider-customer-note/IProviderCustomerNoteRepository.ts`, `src/infrastructure/persistence/provider-customer-note/MockProviderCustomerNoteRepository.ts`, `src/infrastructure/persistence/provider-customer-note/PrismaProviderCustomerNoteRepository.ts` |
 
 ### reminder
 
 | Lager | Filer |
 |-------|-------|
-| Service | `src/domain/reminder/ReminderService.ts`, `BookingReminderService.ts` |
-| Cron | `src/app/api/cron/booking-reminders/route.ts`, `send-reminders/route.ts` |
+| Service | `src/domain/reminder/BookingReminderService.ts`, `src/domain/reminder/ReminderService.ts` |
 
-### account
+### review (kärndomän, repository obligatoriskt)
 
 | Lager | Filer |
 |-------|-------|
-| Service | `src/domain/account/AccountDeletionService.ts` |
-| Routes | `src/app/api/account/route.ts` (DELETE) |
+| Service | `src/domain/review/mapReviewErrorToStatus.ts`, `src/domain/review/ReviewService.ts` |
+| Repository | `src/infrastructure/persistence/review/IReviewRepository.ts`, `src/infrastructure/persistence/review/MockReviewRepository.ts`, `src/infrastructure/persistence/review/ReviewRepository.ts` |
+| Routes | `src/app/api/native/reviews/route.ts`, `src/app/api/reviews/[id]/reply/route.ts`, `src/app/api/reviews/[id]/route.ts`, `src/app/api/reviews/route.ts` |
+
+### shared
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/shared/Location.ts`, `src/domain/shared/TimeSlot.ts` |
+
+### stable (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/stable/StableInviteService.ts`, `src/domain/stable/StableInviteServiceFactory.ts`, `src/domain/stable/StableService.ts`, `src/domain/stable/StableServiceFactory.ts`, `src/domain/stable/StableSpotService.ts`, `src/domain/stable/StableSpotServiceFactory.ts` |
+| Repository | `src/infrastructure/persistence/stable/IStableRepository.ts`, `src/infrastructure/persistence/stable/MockStableRepository.ts`, `src/infrastructure/persistence/stable/PrismaStableRepository.ts` |
+| Routes | `src/app/api/stable/invites/[id]/route.ts`, `src/app/api/stable/invites/route.ts`, `src/app/api/stable/profile/route.ts`, `src/app/api/stable/spots/[spotId]/route.ts`, `src/app/api/stable/spots/route.ts`, `src/app/api/stables/[stableId]/route.ts`, `src/app/api/stables/invites/[token]/accept/route.ts`, `src/app/api/stables/invites/[token]/route.ts`, `src/app/api/stables/route.ts` |
+
+### subscription (kärndomän, repository obligatoriskt)
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/subscription/StripeSubscriptionGateway.ts`, `src/domain/subscription/SubscriptionGateway.ts`, `src/domain/subscription/SubscriptionService.ts`, `src/domain/subscription/SubscriptionServiceFactory.ts` |
+| Repository | `src/infrastructure/persistence/subscription/ISubscriptionRepository.ts`, `src/infrastructure/persistence/subscription/MockSubscriptionRepository.ts`, `src/infrastructure/persistence/subscription/SubscriptionRepository.ts` |
+| Routes | `src/app/api/provider/subscription/checkout/route.ts`, `src/app/api/provider/subscription/portal/route.ts`, `src/app/api/provider/subscription/status/route.ts` |
+
+### voice-log
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/voice-log/VocabularyService.ts`, `src/domain/voice-log/VoiceInterpretationService.ts` |
+| Routes | `src/app/api/voice-log/confirm/route.ts`, `src/app/api/voice-log/route.ts` |
 
 ---
 
@@ -154,21 +154,19 @@
 
 | Vad | Fil |
 |-----|-----|
-| Auth helper | `src/lib/auth-dual.ts` (getAuthUser -- stödjer både cookie och Bearer JWT) |
+| Auth helper | `src/lib/auth-dual.ts` |
 | Auth server | `src/lib/auth-server.ts` |
-| Admin auth | `src/lib/admin-auth.ts` (requireAdmin) |
-| API handler wrapper | `src/lib/api-handler.ts` (withApiHandler -- auth + rate limit + error handling) |
-| Rate limiting | `src/lib/rate-limit.ts` (Upstash Redis) |
+| API handler wrapper | `src/lib/api-handler.ts` |
+| Rate limiting | `src/lib/rate-limit.ts` |
 | Prisma client | `src/lib/prisma.ts` |
 | Supabase server | `src/lib/supabase/server.ts` |
 | Supabase browser | `src/lib/supabase/browser.ts` |
 | Logger (server) | `src/lib/logger.ts` |
 | Logger (klient) | `src/lib/client-logger.ts` |
 | Feature flags (server) | `src/lib/feature-flags.ts` |
-| Feature flags (metadata) | `src/lib/feature-flag-definitions.ts` (klient-safe) |
+| Feature flags (metadata) | `src/lib/feature-flag-definitions.ts` |
 | Feature flags (klient) | `src/components/providers/FeatureFlagProvider.tsx` |
-| Email | `src/lib/email/index.ts`, `templates.ts` |
-| Validering | Zod-scheman i respektive route-filer |
+| Email | `src/lib/email/index.ts` |
 
 ## UI-sidor
 
@@ -176,43 +174,65 @@
 
 | Sida | Fil |
 |------|-----|
-| Dashboard | `src/app/provider/dashboard/page.tsx` |
-| Bokningar | `src/app/provider/bookings/page.tsx` |
-| Kalender | `src/app/provider/calendar/page.tsx` |
-| Kunder | `src/app/provider/customers/page.tsx` |
-| Tjänster | `src/app/provider/services/page.tsx` |
-| Profil | `src/app/provider/profile/page.tsx` |
-| Recensioner | `src/app/provider/reviews/page.tsx` |
-| Ruttplanering | `src/app/provider/route-planning/page.tsx` |
-| Annonsering | `src/app/provider/announcements/page.tsx` |
-| Dags för besök | `src/app/provider/due-for-service/page.tsx` |
-| Insikter | `src/app/provider/insights/page.tsx` |
-| Gruppbokningar | `src/app/provider/group-bookings/page.tsx` |
-| Hjälpcentral | `src/app/provider/help/page.tsx` |
-| Hästtidslinje | `src/app/provider/horse-timeline/[horseId]/page.tsx` |
-| Export | `src/app/provider/export/page.tsx` |
+| announcements/[id] | `src/app/provider/announcements/[id]/page.tsx` |
+| announcements/new | `src/app/provider/announcements/new/page.tsx` |
+| announcements | `src/app/provider/announcements/page.tsx` |
+| bookings | `src/app/provider/bookings/page.tsx` |
+| calendar | `src/app/provider/calendar/page.tsx` |
+| customers | `src/app/provider/customers/page.tsx` |
+| dashboard | `src/app/provider/dashboard/page.tsx` |
+| debug | `src/app/provider/debug/page.tsx` |
+| due-for-service | `src/app/provider/due-for-service/page.tsx` |
+| export | `src/app/provider/export/page.tsx` |
+| group-bookings/[id] | `src/app/provider/group-bookings/[id]/page.tsx` |
+| group-bookings | `src/app/provider/group-bookings/page.tsx` |
+| help/[slug] | `src/app/provider/help/[slug]/page.tsx` |
+| help | `src/app/provider/help/page.tsx` |
+| horse-timeline/[horseId] | `src/app/provider/horse-timeline/[horseId]/page.tsx` |
+| insights | `src/app/provider/insights/page.tsx` |
+| profile | `src/app/provider/profile/page.tsx` |
+| reviews | `src/app/provider/reviews/page.tsx` |
+| route-planning | `src/app/provider/route-planning/page.tsx` |
+| routes/[id] | `src/app/provider/routes/[id]/page.tsx` |
+| routes | `src/app/provider/routes/page.tsx` |
+| services | `src/app/provider/services/page.tsx` |
+| settings/integrations | `src/app/provider/settings/integrations/page.tsx` |
+| verification | `src/app/provider/verification/page.tsx` |
+| voice-log | `src/app/provider/voice-log/page.tsx` |
 
 ### Kund
 
 | Sida | Fil |
 |------|-----|
-| Bokningar | `src/app/customer/bookings/page.tsx` |
-| Hästar | `src/app/customer/horses/[id]/page.tsx` |
-| Gruppbokningar | `src/app/customer/group-bookings/page.tsx` |
-| Hjälpcentral | `src/app/customer/help/page.tsx` |
-| FAQ | `src/app/customer/faq/page.tsx` |
-| Export | `src/app/customer/export/page.tsx` |
+| bookings | `src/app/customer/bookings/page.tsx` |
+| export | `src/app/customer/export/page.tsx` |
+| faq | `src/app/customer/faq/page.tsx` |
+| group-bookings/[id] | `src/app/customer/group-bookings/[id]/page.tsx` |
+| group-bookings/join | `src/app/customer/group-bookings/join/page.tsx` |
+| group-bookings/new | `src/app/customer/group-bookings/new/page.tsx` |
+| group-bookings | `src/app/customer/group-bookings/page.tsx` |
+| help/[slug] | `src/app/customer/help/[slug]/page.tsx` |
+| help | `src/app/customer/help/page.tsx` |
+| horses/[id] | `src/app/customer/horses/[id]/page.tsx` |
+| horses | `src/app/customer/horses/page.tsx` |
+| profile | `src/app/customer/profile/page.tsx` |
 
 ### Admin
 
 | Sida | Fil |
 |------|-----|
-| Användare | `src/app/admin/users/page.tsx` |
-| Bokningar | `src/app/admin/bookings/page.tsx` |
-| Recensioner | `src/app/admin/reviews/page.tsx` |
-| Verifieringar | `src/app/admin/verifications/page.tsx` |
-| Notifikationer | `src/app/admin/notifications/page.tsx` |
-| System | `src/app/admin/system/page.tsx` |
-| Audit log | `src/app/admin/audit-log/page.tsx` |
-| Buggrapporter | `src/app/admin/bug-reports/page.tsx` |
-| Integrationer | `src/app/admin/integrations/page.tsx` |
+| audit-log | `src/app/admin/audit-log/page.tsx` |
+| bookings | `src/app/admin/bookings/page.tsx` |
+| bug-reports/[id] | `src/app/admin/bug-reports/[id]/page.tsx` |
+| bug-reports | `src/app/admin/bug-reports/page.tsx` |
+| help/[slug] | `src/app/admin/help/[slug]/page.tsx` |
+| help | `src/app/admin/help/page.tsx` |
+| integrations | `src/app/admin/integrations/page.tsx` |
+| notifications | `src/app/admin/notifications/page.tsx` |
+| page.tsx | `src/app/admin/page.tsx` |
+| reviews | `src/app/admin/reviews/page.tsx` |
+| system | `src/app/admin/system/page.tsx` |
+| testing-guide | `src/app/admin/testing-guide/page.tsx` |
+| users | `src/app/admin/users/page.tsx` |
+| verifications | `src/app/admin/verifications/page.tsx` |
+

@@ -64,6 +64,7 @@
     "analyze": "ANALYZE=true next build --webpack",
     "check:all": "bash scripts/check-all.sh",
     "flags:validate": "bash scripts/validate-feature-flags.sh",
+    "codemap": "bash scripts/generate-code-map.sh",
     "cache:clear": "rm -rf .next .tsbuildinfo"
   },
   "dependencies": {
