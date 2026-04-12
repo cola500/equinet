@@ -118,13 +118,55 @@ Basera på den testade mekaniken från sprint 24/25.
 
 ## Exekveringsplan
 
+### Steg 1: Spawna worktree-agent för docs-stories
+
+INNAN du börjar med S25-1, spawna en bakgrundsagent för S25-3 + S25-4:
+
 ```
-Huvudsession (Opus):
-  1. Spawna worktree-agent för S25-3 + S25-4 (bakgrund)
-  2. Kör S25-1 (CustomerCard)
-  3. Kör S25-2 (PrismaBookingRepository)
-  4. Merga worktree-agentens branch
-  5. check:all
+Agent(
+  description: "S25-3 + S25-4 docs cleanup",
+  isolation: "worktree",
+  model: "sonnet",
+  run_in_background: true,
+  prompt: "Du kör i en isolerad worktree i Equinet-projektet.
+
+    Kör dessa stories sekventiellt:
+
+    **S25-3: Dokumentera worktree-agent-mönster**
+    Uppdatera .claude/rules/autonomous-sprint.md med en ny sektion om worktree-agent-mönstret:
+    - Hur huvudsessionen spawnar Agent(isolation: worktree, model: sonnet, run_in_background: true)
+    - Sessionsfil per agent (docs/sprints/session-<sprint>-<domän>.md) istället för status.md
+    - Merge-protokoll: huvudsession mergar agentens branch efter notifiering
+    - Modellval: Opus för huvudsession, Sonnet för worktree-agent
+    - Basera på exekveringsplanen i sprint-25-parallel-test.md
+
+    **S25-4: Backlog + roadmap cleanup**
+    - Flytta S24-items till Genomfört i docs/sprints/backlog.md
+    - Ta bort docs/sprints/session-test-docs.md (testfil)
+
+    Skapa sessionsfil: docs/sprints/session-25-docs.md
+    Committa allt. Pusha INTE."
+)
 ```
 
-**Total effort:** ~2-3h (1h webb + 1h docs, parallellt)
+### Steg 2: Kör webb-stories
+
+Medan worktree-agenten kör i bakgrunden:
+1. Kör S25-1 (CustomerCard)
+2. Kör S25-2 (PrismaBookingRepository)
+
+### Steg 3: Merga worktree-agenten
+
+När du får notifiering att agenten är klar:
+```bash
+git merge <agentens-branch> --no-ff -m "Merge worktree-agent: S25-3 + S25-4 docs"
+git worktree remove <worktree-path>
+git branch -d <agentens-branch>
+```
+
+### Steg 4: Verifiera
+```bash
+npm run check:all
+```
+
+**Total effort:** ~2h (1h webb + 1h docs, parallellt)
