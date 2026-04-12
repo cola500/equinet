@@ -116,22 +116,33 @@ Utöka kodkartan med en sektion som mappar varje feature flag till de filer som 
 
 ---
 
-### S23-5: Komprimera CLAUDE.md Key Learnings
+### S23-5: Komprimera CLAUDE.md + rensa MEMORY.md
 
 **Prioritet:** 5
 **Effort:** 1h
 **Roll:** fullstack
 
-CLAUDE.md har 179 bullet points under Key Learnings. Många är iOS-specifika (laddas alltid, behövs sällan). Dela upp:
+Tre åtgärder från spiken (S23-1), totalt ~200 rader besparing:
 
-- **CLAUDE.md** behåller: Serverless, Domain Patterns, Utvecklingsmönster (webb)
-- **Ny `.claude/rules/ios-learnings.md`** med `paths: ["ios/**"]`: alla iOS-learnings
-- **Rensa** learnings som redan finns i rules-filer (duplicering)
+**1. Flytta iOS-learnings (120 rader)**
+- Ny `.claude/rules/ios-learnings.md` med `paths: ["ios/**"]`
+- Flytta alla 33 iOS-bullet points + iOS-testflödet från CLAUDE.md
+- CLAUDE.md behåller: Serverless, Domain Patterns, Utvecklingsmönster (webb), RLS
+
+**2. Rensa MEMORY.md sessionshistorik (50 rader)**
+- Ta bort "Senaste sessioner" (session 112-116) -- tillgänglig via `git log`
+- Komprimera Feature Flags och iOS-arkitektur-sektionerna
+
+**3. Ta bort duplicerad Testing-sektion (30 rader)**
+- BDD dual-loop beskrivs både i CLAUDE.md och `.claude/rules/testing.md`
+- CLAUDE.md refererar testing.md istället för att duplicera
 
 **Acceptanskriterier:**
-- [ ] CLAUDE.md Key Learnings krympt med >50 rader
-- [ ] iOS-learnings i separat selektiv fil
+- [ ] CLAUDE.md krympt med >150 rader
+- [ ] iOS-learnings i separat selektiv fil med paths: ["ios/**"]
+- [ ] MEMORY.md sessionshistorik borttagen
 - [ ] Inga learnings förlorade (flyttade, inte raderade)
+- [ ] Testing-referens istället för duplicering
 
 ---
 
