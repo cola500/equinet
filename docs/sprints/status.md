@@ -58,7 +58,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Sprint 24 Session 1 | fullstack (webb) | S24-1 done, S24-2 next | feature/s24-1-booking-validation | 2026-04-12 |
+| Sprint 24 Session 1 | fullstack (webb) | S24-2 next | feature/s24-2-manual-booking-dialog | 2026-04-12 |
 
 ## Beslut
 
