@@ -83,7 +83,7 @@ final class AuthManager {
     func logout() {
         // Unregister device token from backend (fire-and-forget)
         if let token = PushManager.shared.deviceToken {
-            Task.detached {
+            Task {
                 do {
                     try await APIClient.shared.unregisterDeviceToken(token)
                 } catch {
@@ -125,7 +125,10 @@ final class AuthManager {
             return
         }
 
-        let url = URL(string: AppConfig.sessionExchangePath, relativeTo: AppConfig.baseURL)!
+        guard let url = URL(string: AppConfig.sessionExchangePath, relativeTo: AppConfig.baseURL) else {
+            AppLogger.auth.error("Invalid session exchange URL")
+            return
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
