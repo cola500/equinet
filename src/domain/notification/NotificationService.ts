@@ -1,3 +1,9 @@
+/**
+ * @domain notification
+ * @routes GET /api/notifications, GET /api/notifications/unread-count, DELETE /api/notifications/[id]
+ * @consumers (used internally by booking/review services)
+ */
+
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 

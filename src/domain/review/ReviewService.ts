@@ -1,4 +1,11 @@
 /**
+ * @domain review
+ * @routes POST /api/reviews, PUT /api/reviews/[id]/reply, GET /api/providers/[id]/reviews
+ * @repository IReviewRepository
+ * @consumers provider/reviews/page.tsx, customer/bookings/page.tsx
+ */
+
+/**
  * ReviewService - Domain service for Review aggregate
  *
  * Contains business rules for creating reviews and managing replies.

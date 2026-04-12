@@ -1,4 +1,12 @@
 /**
+ * @domain booking
+ * @routes POST /api/booking-series, DELETE /api/booking-series/[id]/cancel
+ * @repository IBookingRepository
+ * @featureFlag recurring_bookings
+ * @consumers provider/bookings/page.tsx, customer/bookings/page.tsx
+ */
+
+/**
  * BookingSeriesService - Domain service for recurring booking series
  *
  * Creates N bookings at regular intervals. Skips dates that conflict (overlap/closed).

@@ -1,3 +1,9 @@
+/**
+ * @domain notification
+ * @routes (internal -- called by other services)
+ * @featureFlag push_notifications
+ */
+
 import { prisma } from "@/lib/prisma"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"

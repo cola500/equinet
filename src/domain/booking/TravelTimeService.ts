@@ -1,4 +1,9 @@
 /**
+ * @domain booking
+ * @routes (used internally by BookingService)
+ */
+
+/**
  * TravelTimeService - Domain service for travel time validation
  *
  * Validates that there's enough travel time between bookings based on

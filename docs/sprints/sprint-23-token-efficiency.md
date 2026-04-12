@@ -173,6 +173,39 @@ Agenter som läser en Service-fil ser direkt vilka routes och UI-sidor som berö
 
 ---
 
+### S23-8: CLAUDE.md under 200 rader + Claude Code-optimeringar
+
+**Prioritet:** 8
+**Effort:** 2h
+**Roll:** fullstack
+
+CLAUDE.md är 571 rader -- rekommendationen är under 200. Dessutom finns Claude Code-features vi inte utnyttjar.
+
+**1. Bryt ut Key Learnings till scoped rules (~200 rader bort)**
+- Offline & Sync-learnings -> `.claude/rules/offline-learnings.md` med `paths: ["src/lib/offline/*", "src/sw.ts"]`
+- RLS & Supabase-learnings -> `.claude/rules/rls-learnings.md` med `paths: ["src/__tests__/rls/*", "src/lib/supabase/*"]`
+- E2E patterns -> `.claude/rules/e2e-learnings.md` med `paths: ["e2e/*"]`
+- Webb-testflöde duplicerar testing.md -> referera istället
+
+**2. Sätt upp `CLAUDE.local.md`**
+- Personlig gitignore'd fil för Johans preferenser
+- Lägg till i `.gitignore`
+
+**3. `claudeMdExcludes` i settings**
+- `~/Development/CLAUDE.md` laddas varje session (parent-dir). Exkludera om den inte behövs i equinet-kontexten, eller scopa den till rätt projekt.
+
+**4. Verifiera med `@import`-syntax**
+- Testa om CLAUDE.md kan referera rules-filer med `@.claude/rules/testing.md` istället för att duplicera
+
+**Acceptanskriterier:**
+- [ ] CLAUDE.md under 250 rader (från 571)
+- [ ] Alla utbrutna learnings i scoped rules med paths
+- [ ] `CLAUDE.local.md` i `.gitignore`
+- [ ] Inga learnings förlorade
+- [ ] `npm run check:all` grön
+
+---
+
 ### S23-7: Dokumentera och mät
 
 **Prioritet:** 7 (sist)
@@ -194,10 +227,10 @@ Agenter som läser en Service-fil ser direkt vilka routes och UI-sidor som berö
 ## Exekveringsplan
 
 ```
-S23-1 (2h, spike) -> S23-2 (1h, selektiva rules) -> S23-3 (2h, auto-codemap) -> S23-4 (1h, flag-mapping) -> S23-5 (1h, komprimera) -> S23-6 (2h, JSDoc) -> S23-7 (30m, mät)
+S23-1 (2h) -> S23-2 (1h) -> S23-3 (2h) -> S23-4 (1h) -> S23-5 (1h) -> S23-6 (2h) -> S23-8 (2h) -> S23-7 (30m, sist)
 ```
 
-**Total effort:** ~1.5 dag
+**Total effort:** ~2 dagar
 
 S23-1 (spike) styr resten -- om vi hittar andra optimeringar justerar vi.
 
@@ -208,5 +241,6 @@ S23-1 (spike) styr resten -- om vi hittar andra optimeringar justerar vi.
 - [ ] Kodkarta auto-genererad och uppdateringsbar
 - [ ] Feature flag-mapping i kodkartan
 - [ ] JSDoc-metadata på alla domain services
+- [ ] CLAUDE.md under 250 rader
 - [ ] Före/efter-mätning dokumenterad
 - [ ] `npm run check:all` grön

@@ -1,4 +1,10 @@
 /**
+ * @domain account
+ * @routes DELETE /api/account
+ * @consumers provider/profile/page.tsx
+ */
+
+/**
  * AccountDeletionService - Domain service for GDPR Art. 17 account deletion
  *
  * Anonymizes user data instead of hard-deleting (FK constraints).

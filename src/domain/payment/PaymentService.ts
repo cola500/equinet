@@ -1,4 +1,12 @@
 /**
+ * @domain payment
+ * @routes POST /api/bookings/[id]/payment
+ * @repository PaymentGateway (Stripe)
+ * @featureFlag stripe_payments
+ * @consumers customer/bookings/page.tsx
+ */
+
+/**
  * PaymentService - Domain service for payment processing
  *
  * Encapsulates payment business logic:

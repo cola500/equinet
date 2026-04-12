@@ -1,4 +1,11 @@
 /**
+ * @domain voice-log
+ * @routes POST /api/voice-log, POST /api/voice-log/confirm
+ * @featureFlag voice_logging
+ * @consumers provider/voice-log/page.tsx, provider/bookings/page.tsx
+ */
+
+/**
  * VoiceInterpretationService - Interprets transcribed speech from field workers
  *
  * Takes a voice transcript + the provider's current bookings as context,

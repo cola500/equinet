@@ -1,4 +1,11 @@
 /**
+ * @domain stable
+ * @routes POST /api/stable/spots, PUT /api/stable/spots/[spotId], DELETE /api/stable/spots/[spotId]
+ * @repository IStableRepository
+ * @featureFlag stable_profiles
+ */
+
+/**
  * StableSpotService - Domain service for StableSpot CRUD
  *
  * Handles spot management with ownership validation via stableId.

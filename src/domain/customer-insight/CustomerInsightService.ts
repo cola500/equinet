@@ -1,4 +1,11 @@
 /**
+ * @domain customer-insight
+ * @routes GET /api/provider/customers/[customerId]/insights
+ * @featureFlag customer_insights
+ * @consumers provider/customers/page.tsx
+ */
+
+/**
  * CustomerInsightService - Generates AI-powered insights for a provider's customer
  *
  * Takes customer booking history, notes, reviews, and horses as context,

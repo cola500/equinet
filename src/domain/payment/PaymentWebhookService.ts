@@ -1,4 +1,10 @@
 /**
+ * @domain payment
+ * @routes POST /api/webhooks/stripe
+ * @consumers (webhook -- no UI)
+ */
+
+/**
  * PaymentWebhookService - Handles Stripe webhook events for payments
  *
  * Called by the webhook route when payment_intent.succeeded or

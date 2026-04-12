@@ -1,3 +1,9 @@
+/**
+ * @domain reminder
+ * @routes GET /api/cron/booking-reminders
+ * @consumers (cron job -- no UI)
+ */
+
 import { prisma } from "@/lib/prisma"
 import {
   notificationService,

@@ -1,4 +1,11 @@
 /**
+ * @domain stable
+ * @routes POST /api/stable/invites, GET /api/stables/invites/[token], POST /api/stables/invites/[token]/accept
+ * @repository IStableInviteRepository
+ * @featureFlag stable_profiles
+ */
+
+/**
  * StableInviteService - Domain service for stable invitations
  *
  * Handles creating, validating, and accepting stable invite tokens.

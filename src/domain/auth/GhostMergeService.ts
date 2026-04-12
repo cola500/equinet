@@ -1,4 +1,10 @@
 /**
+ * @domain auth
+ * @routes POST /api/auth/register (ghost merge path)
+ * @consumers admin/users/page.tsx
+ */
+
+/**
  * GhostMergeService - Merges a ghost user's data into a real user account.
  *
  * This is an irreversible operation. All bookings, reviews, horses etc.
