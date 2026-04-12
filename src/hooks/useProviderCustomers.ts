@@ -5,7 +5,9 @@ import { useDialogState } from "@/hooks/useDialogState"
 import { toast } from "sonner"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { clientLogger } from "@/lib/client-logger"
-import type { Customer, CustomerHorse, CustomerNote, HorseFormData } from "@/components/provider/customers/types"
+import { useCustomerNotes } from "@/hooks/useCustomerNotes"
+import { useCustomerHorses } from "@/hooks/useCustomerHorses"
+import type { Customer } from "@/components/provider/customers/types"
 
 export type StatusFilter = "all" | "active" | "inactive"
 
@@ -18,12 +20,6 @@ export function useProviderCustomers(isProvider: boolean) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null)
 
-  // Notes state
-  const [customerNotes, setCustomerNotes] = useState<Map<string, CustomerNote[]>>(new Map())
-  const [notesLoading, setNotesLoading] = useState<string | null>(null)
-  const [noteToDelete, setNoteToDelete] = useState<CustomerNote | null>(null)
-  const [isDeletingNote, setIsDeletingNote] = useState(false)
-
   // Customer form dialog (add + edit)
   const addCustomerDialog = useDialogState()
   const [isAddingCustomer, setIsAddingCustomer] = useState(false)
@@ -33,14 +29,9 @@ export function useProviderCustomers(isProvider: boolean) {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const [isDeletingCustomer, setIsDeletingCustomer] = useState(false)
 
-  // Horse state
-  const [customerHorses, setCustomerHorses] = useState<Map<string, CustomerHorse[]>>(new Map())
-  const [horsesLoading, setHorsesLoading] = useState<string | null>(null)
-  const [showHorseDialog, setShowHorseDialog] = useState<string | null>(null)
-  const [horseToEdit, setHorseToEdit] = useState<CustomerHorse | null>(null)
-  const [horseToDelete, setHorseToDelete] = useState<{ horse: CustomerHorse; customerId: string } | null>(null)
-  const [isDeletingHorse, setIsDeletingHorse] = useState(false)
-  const [isSavingHorse, setIsSavingHorse] = useState(false)
+  // Composed hooks
+  const notes = useCustomerNotes(guardMutation)
+  const horses = useCustomerHorses(guardMutation)
 
   const fetchCustomers = useCallback(async () => {
     setIsLoading(true)
@@ -73,206 +64,14 @@ export function useProviderCustomers(isProvider: boolean) {
   }, [isProvider, statusFilter, searchQuery])
   /* eslint-enable react-hooks/exhaustive-deps */
 
-  const fetchNotes = useCallback(async (customerId: string) => {
-    if (customerNotes.has(customerId)) return
-
-    setNotesLoading(customerId)
-    try {
-      const response = await fetch(`/api/provider/customers/${customerId}/notes`)
-      if (response.ok) {
-        const data = await response.json()
-        setCustomerNotes((prev) => new Map(prev).set(customerId, data.notes))
-      }
-    } catch (error) {
-      clientLogger.error("Failed to fetch notes", error)
-    } finally {
-      setNotesLoading(null)
-    }
-  }, [customerNotes])
-
-  const fetchHorses = useCallback(async (customerId: string) => {
-    if (customerHorses.has(customerId)) return
-
-    setHorsesLoading(customerId)
-    try {
-      const response = await fetch(`/api/provider/customers/${customerId}/horses`)
-      if (response.ok) {
-        const data = await response.json()
-        setCustomerHorses((prev) => new Map(prev).set(customerId, data.horses))
-      }
-    } catch (error) {
-      clientLogger.error("Failed to fetch horses", error)
-    } finally {
-      setHorsesLoading(null)
-    }
-  }, [customerHorses])
-
   const toggleExpand = (customerId: string) => {
     const newExpanded = expandedCustomer === customerId ? null : customerId
     setExpandedCustomer(newExpanded)
 
     if (newExpanded) {
-      fetchNotes(newExpanded)
-      fetchHorses(newExpanded)
+      notes.fetchNotes(newExpanded)
+      horses.fetchHorses(newExpanded)
     }
-  }
-
-  const handleAddNote = async (customerId: string, content: string): Promise<boolean> => {
-    const noteId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
-    const body = JSON.stringify({ content })
-
-    const result = await guardMutation(
-      async () => {
-        try {
-          const response = await fetch(`/api/provider/customers/${customerId}/notes`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-          })
-
-          if (response.ok) {
-            const note = await response.json()
-            setCustomerNotes((prev) => {
-              const updated = new Map(prev)
-              const existing = updated.get(customerId) || []
-              updated.set(customerId, [note, ...existing])
-              return updated
-            })
-            return true
-          }
-          return false
-        } catch (error) {
-          clientLogger.error("Failed to create note", error)
-          return false
-        }
-      },
-      {
-        method: "POST",
-        url: `/api/provider/customers/${customerId}/notes`,
-        body,
-        entityType: "customer-note",
-        entityId: noteId,
-        optimisticUpdate: () => {
-          setCustomerNotes((prev) => {
-            const updated = new Map(prev)
-            const existing = updated.get(customerId) || []
-            updated.set(customerId, [
-              { id: noteId, providerId: "", customerId, content, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-              ...existing,
-            ])
-            return updated
-          })
-        },
-      }
-    )
-    return result ?? false
-  }
-
-  const handleEditNote = async (note: CustomerNote, content: string): Promise<boolean> => {
-    const body = JSON.stringify({ content })
-
-    const result = await guardMutation(
-      async () => {
-        try {
-          const response = await fetch(
-            `/api/provider/customers/${note.customerId}/notes/${note.id}`,
-            {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body,
-            }
-          )
-
-          if (response.ok) {
-            const updatedNote = await response.json()
-            setCustomerNotes((prev) => {
-              const updated = new Map(prev)
-              const existing = updated.get(note.customerId) || []
-              updated.set(
-                note.customerId,
-                existing.map((n) => (n.id === note.id ? updatedNote : n))
-              )
-              return updated
-            })
-            return true
-          }
-          return false
-        } catch (error) {
-          clientLogger.error("Failed to update note", error)
-          return false
-        }
-      },
-      {
-        method: "PUT",
-        url: `/api/provider/customers/${note.customerId}/notes/${note.id}`,
-        body,
-        entityType: "customer-note",
-        entityId: note.id,
-        optimisticUpdate: () => {
-          setCustomerNotes((prev) => {
-            const updated = new Map(prev)
-            const existing = updated.get(note.customerId) || []
-            updated.set(
-              note.customerId,
-              existing.map((n) => (n.id === note.id ? { ...n, content, updatedAt: new Date().toISOString() } : n))
-            )
-            return updated
-          })
-        },
-      }
-    )
-    return result ?? false
-  }
-
-  const handleDeleteNote = async (note: CustomerNote) => {
-    await guardMutation(
-      async () => {
-        setIsDeletingNote(true)
-        try {
-          const response = await fetch(
-            `/api/provider/customers/${note.customerId}/notes/${note.id}`,
-            { method: "DELETE" }
-          )
-
-          if (response.ok || response.status === 204) {
-            setCustomerNotes((prev) => {
-              const updated = new Map(prev)
-              const existing = updated.get(note.customerId) || []
-              updated.set(
-                note.customerId,
-                existing.filter((n) => n.id !== note.id)
-              )
-              return updated
-            })
-          }
-        } catch (error) {
-          clientLogger.error("Failed to delete note", error)
-        } finally {
-          setIsDeletingNote(false)
-          setNoteToDelete(null)
-        }
-      },
-      {
-        method: "DELETE",
-        url: `/api/provider/customers/${note.customerId}/notes/${note.id}`,
-        body: "",
-        entityType: "customer-note",
-        entityId: note.id,
-        optimisticUpdate: () => {
-          setCustomerNotes((prev) => {
-            const updated = new Map(prev)
-            const existing = updated.get(note.customerId) || []
-            updated.set(
-              note.customerId,
-              existing.filter((n) => n.id !== note.id)
-            )
-            return updated
-          })
-          setIsDeletingNote(false)
-          setNoteToDelete(null)
-        },
-      }
-    )
   }
 
   const handleAddCustomer = async (form: { firstName: string; lastName: string; phone: string; email: string }) => {
@@ -301,11 +100,11 @@ export function useProviderCustomers(isProvider: boolean) {
             fetchCustomers()
           } else {
             const data = await response.json()
-            toast.error(data.error || "Kunde inte lägga till kund")
+            toast.error(data.error || "Kunde inte lagga till kund")
           }
         } catch (error) {
           clientLogger.error("Failed to add customer", error)
-          toast.error("Kunde inte lägga till kund")
+          toast.error("Kunde inte lagga till kund")
         } finally {
           setIsAddingCustomer(false)
         }
@@ -395,11 +194,8 @@ export function useProviderCustomers(isProvider: boolean) {
             if (expandedCustomer === customer.id) {
               setExpandedCustomer(null)
             }
-            setCustomerNotes((prev) => {
-              const updated = new Map(prev)
-              updated.delete(customer.id)
-              return updated
-            })
+            notes.clearNotesForCustomer(customer.id)
+            horses.clearHorsesForCustomer(customer.id)
             fetchCustomers()
           } else {
             const data = await response.json()
@@ -424,143 +220,10 @@ export function useProviderCustomers(isProvider: boolean) {
           if (expandedCustomer === customer.id) {
             setExpandedCustomer(null)
           }
-          setCustomerNotes((prev) => {
-            const updated = new Map(prev)
-            updated.delete(customer.id)
-            return updated
-          })
+          notes.clearNotesForCustomer(customer.id)
+          horses.clearHorsesForCustomer(customer.id)
           setIsDeletingCustomer(false)
           setCustomerToDelete(null)
-        },
-      }
-    )
-  }
-
-  const handleSaveHorse = async (customerId: string, form: HorseFormData, isEdit: boolean, horseId?: string) => {
-    if (!form.name.trim() || isSavingHorse) return
-
-    const entityId = isEdit ? horseId! : globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
-    const bodyObj: Record<string, unknown> = { name: form.name.trim() }
-    if (form.breed.trim()) bodyObj.breed = form.breed.trim()
-    if (form.birthYear.trim()) bodyObj.birthYear = parseInt(form.birthYear, 10)
-    if (form.color.trim()) bodyObj.color = form.color.trim()
-    if (form.gender) bodyObj.gender = form.gender
-    if (form.specialNeeds.trim()) bodyObj.specialNeeds = form.specialNeeds.trim()
-    if (form.registrationNumber.trim()) bodyObj.registrationNumber = form.registrationNumber.trim()
-    if (form.microchipNumber.trim()) bodyObj.microchipNumber = form.microchipNumber.trim()
-
-    const url = isEdit
-      ? `/api/provider/customers/${customerId}/horses/${horseId}`
-      : `/api/provider/customers/${customerId}/horses`
-    const method = isEdit ? "PUT" : "POST"
-    const body = JSON.stringify(bodyObj)
-
-    await guardMutation(
-      async () => {
-        setIsSavingHorse(true)
-        try {
-          const response = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body,
-          })
-
-          if (response.ok) {
-            const savedHorse = await response.json()
-            setCustomerHorses((prev) => {
-              const updated = new Map(prev)
-              const existing = updated.get(customerId) || []
-              if (isEdit) {
-                updated.set(customerId, existing.map((h) => (h.id === savedHorse.id ? savedHorse : h)))
-              } else {
-                updated.set(customerId, [...existing, savedHorse])
-              }
-              return updated
-            })
-            setShowHorseDialog(null)
-            setHorseToEdit(null)
-            toast.success(isEdit ? "Hästen har uppdaterats" : "Hästen har lagts till")
-          } else {
-            const data = await response.json()
-            toast.error(data.error || "Kunde inte spara häst")
-          }
-        } catch (error) {
-          clientLogger.error("Failed to save horse", error)
-          toast.error("Kunde inte spara häst")
-        } finally {
-          setIsSavingHorse(false)
-        }
-      },
-      {
-        method,
-        url,
-        body,
-        entityType: "customer-horse",
-        entityId,
-        optimisticUpdate: () => {
-          setShowHorseDialog(null)
-          setHorseToEdit(null)
-          setIsSavingHorse(false)
-        },
-      }
-    )
-  }
-
-  const handleDeleteHorse = async () => {
-    if (!horseToDelete || isDeletingHorse) return
-
-    const { horse, customerId } = horseToDelete
-
-    await guardMutation(
-      async () => {
-        setIsDeletingHorse(true)
-        try {
-          const response = await fetch(
-            `/api/provider/customers/${customerId}/horses/${horse.id}`,
-            { method: "DELETE" }
-          )
-
-          if (response.ok) {
-            setCustomerHorses((prev) => {
-              const updated = new Map(prev)
-              const existing = updated.get(customerId) || []
-              updated.set(
-                customerId,
-                existing.filter((h) => h.id !== horse.id)
-              )
-              return updated
-            })
-            toast.success("Hästen har tagits bort")
-          } else {
-            const data = await response.json()
-            toast.error(data.error || "Kunde inte ta bort häst")
-          }
-        } catch (error) {
-          clientLogger.error("Failed to delete horse", error)
-          toast.error("Kunde inte ta bort häst")
-        } finally {
-          setIsDeletingHorse(false)
-          setHorseToDelete(null)
-        }
-      },
-      {
-        method: "DELETE",
-        url: `/api/provider/customers/${customerId}/horses/${horse.id}`,
-        body: "",
-        entityType: "customer-horse",
-        entityId: horse.id,
-        optimisticUpdate: () => {
-          setCustomerHorses((prev) => {
-            const updated = new Map(prev)
-            const existing = updated.get(customerId) || []
-            updated.set(
-              customerId,
-              existing.filter((h) => h.id !== horse.id)
-            )
-            return updated
-          })
-          setIsDeletingHorse(false)
-          setHorseToDelete(null)
         },
       }
     )
@@ -583,15 +246,15 @@ export function useProviderCustomers(isProvider: boolean) {
     expandedCustomer,
     toggleExpand,
 
-    // Notes
-    customerNotes,
-    notesLoading,
-    noteToDelete,
-    setNoteToDelete,
-    isDeletingNote,
-    handleAddNote,
-    handleEditNote,
-    handleDeleteNote,
+    // Notes (from useCustomerNotes)
+    customerNotes: notes.customerNotes,
+    notesLoading: notes.notesLoading,
+    noteToDelete: notes.noteToDelete,
+    setNoteToDelete: notes.setNoteToDelete,
+    isDeletingNote: notes.isDeletingNote,
+    handleAddNote: notes.handleAddNote,
+    handleEditNote: notes.handleEditNote,
+    handleDeleteNote: notes.handleDeleteNote,
 
     // Add/edit customer
     addCustomerDialog,
@@ -607,18 +270,18 @@ export function useProviderCustomers(isProvider: boolean) {
     isDeletingCustomer,
     handleDeleteCustomer,
 
-    // Horses
-    customerHorses,
-    horsesLoading,
-    showHorseDialog,
-    setShowHorseDialog,
-    horseToEdit,
-    setHorseToEdit,
-    horseToDelete,
-    setHorseToDelete,
-    isDeletingHorse,
-    isSavingHorse,
-    handleSaveHorse,
-    handleDeleteHorse,
+    // Horses (from useCustomerHorses)
+    customerHorses: horses.customerHorses,
+    horsesLoading: horses.horsesLoading,
+    showHorseDialog: horses.showHorseDialog,
+    setShowHorseDialog: horses.setShowHorseDialog,
+    horseToEdit: horses.horseToEdit,
+    setHorseToEdit: horses.setHorseToEdit,
+    horseToDelete: horses.horseToDelete,
+    setHorseToDelete: horses.setHorseToDelete,
+    isDeletingHorse: horses.isDeletingHorse,
+    isSavingHorse: horses.isSavingHorse,
+    handleSaveHorse: horses.handleSaveHorse,
+    handleDeleteHorse: horses.handleDeleteHorse,
   }
 }
