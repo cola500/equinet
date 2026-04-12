@@ -3,8 +3,11 @@ title: "Tech Lead -- arbetssätt"
 description: "Hur tech lead-sessionen arbetar: plan-review, code review, merge, kommunikation"
 category: rule
 status: active
-last_updated: 2026-04-02
+last_updated: 2026-04-12
 tags: [workflow, team, tech-lead, review]
+paths:
+  - "docs/sprints/*"
+  - "docs/done/*"
 sections:
   - Kommandon
   - Plan-review

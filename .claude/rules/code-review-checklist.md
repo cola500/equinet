@@ -3,8 +3,10 @@ title: "Code Review Checklist"
 description: "Strukturerad checklista for code-reviewer-agenten vid station 4 (Review)"
 category: rule
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-04-12
 tags: [review, quality, security, team]
+paths:
+  - "src/**"
 sections:
   - Hur man kor review
   - Korrekthet
