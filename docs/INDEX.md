@@ -51,8 +51,13 @@ sections:
 |----------|-------------|
 | [ci-decisions.md](ci-decisions.md) | CI-beslut och lärdomar |
 | [deployment.md](operations/deployment.md) | Komplett deploy-guide (Vercel + Supabase) |
+| [environments.md](operations/environments.md) | Konfiguration och skillnader mellan lokal utveckling och produktion |
+| [monitoring.md](operations/monitoring.md) | Övervakningsverktyg, loggning, viktiga metrics och begränsningar |
+| [incident-runbook.md](operations/incident-runbook.md) | Vanliga driftstörningar och steg-för-steg-lösningar |
+| [backup-policy.md](operations/backup-policy.md) | RPO/RTO, backup-strategi och restore-steg |
+| [apns-setup.md](operations/apns-setup.md) | Steg-för-steg guide för APNs-konfiguration (iOS push) |
 | [load-testing.md](operations/load-testing.md) | Lasttest-baseline och resultat |
-| [parallel-sessions.md](operations/parallel-sessions.md) | Guide for parallella utvecklingssessioner |
+| [parallel-sessions.md](operations/parallel-sessions.md) | Guide för parallella utvecklingssessioner |
 
 ## Sakerhet
 
@@ -151,4 +156,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-03-29*
+*Senast uppdaterad: 2026-04-12*
