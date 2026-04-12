@@ -29,7 +29,7 @@ sections:
 | S23-5 Komprimera CLAUDE.md | fullstack | autonom | done | feature/s23-5-compress-claude | - |
 | S23-6 JSDoc domän-metadata | fullstack | autonom | done | feature/s23-6-jsdoc-metadata | - |
 | S23-8 CLAUDE.md under 200 + CC-optimeringar | fullstack | autonom | done | feature/s23-8-claude-compress | - |
-| S23-7 Dokumentera och mät | fullstack | - | pending | - | - |
+| S23-7 Dokumentera och mät | fullstack | autonom | done | feature/s23-7-measure | - |
 
 ## Tidigare sprintar (alla klara)
 

@@ -7,6 +7,11 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/.claude/rules/code-map.md"
 
 cat > "$OUT" << HEADER
+---
+paths:
+  - "src/**"
+---
+
 # Kodkarta -- Domän till filer
 
 > Genererad $(date +%Y-%m-%d). Använd denna för att snabbt hitta rätt filer vid implementation, review eller felsökning.
