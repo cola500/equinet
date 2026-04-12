@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-04-12
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -24,7 +24,7 @@ sections:
 |-------|------|----------|--------|--------|----------------|
 | S24-1 Extrahera BookingValidation | fullstack (webb) | Session 1 | done | feature/s24-1-booking-validation | - |
 | S24-2 ManualBookingDialog steg-split | fullstack (webb) | Session 1 | done | feature/s24-2-manual-booking-dialog | - |
-| S24-3 Snabba säkerhetsfixar | fullstack (webb) | - | pending | - | - |
+| S24-3 Snabba säkerhetsfixar | fullstack (webb) | Session 1 | done | feature/s24-3-security-fixes | - |
 | S24-4 Dependabot auto-merge | fullstack (infra) | - | pending | - | - |
 | S24-5 iOS cleanup | fullstack (ios) | - | pending | - | - |
 | S24-6 Hjälpartiklar till markdown | fullstack (docs) | - | pending | - | - |
