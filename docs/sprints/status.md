@@ -29,7 +29,7 @@ sections:
 | S24-5 iOS cleanup | fullstack (ios) | Session 2 | done | feature/s24-5-ios-cleanup | ee19c0fe |
 | S24-6 Hjälpartiklar till markdown | fullstack (docs) | Session 2 | done | feature/s24-6-help-articles-markdown | pending-commit |
 | S24-7 Legacy docs svenska tecken | fullstack (docs) | Session 2 | done | feature/s24-6-help-articles-markdown | pending-commit |
-| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | - | pending | - | - |
+| S24-8 Applicera parallel-sprint-regler | fullstack (docs) | Session 2 | done | - | (pre-done, applicerad på auto-assign.md) |
 
 ## Tidigare sprintar (alla klara)
 
