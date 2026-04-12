@@ -2,7 +2,7 @@
 title: "Sprint 24: Parallell refactoring"
 description: "Första parallella sprinten -- webb tech debt + iOS/docs i separata sessioner"
 category: sprint
-status: draft
+status: active
 last_updated: 2026-04-12
 tags: [sprint, parallel, refactoring, tech-debt, ios]
 sections:
@@ -226,12 +226,31 @@ Applicera utkastet i `docs/plans/parallel-sprint-draft.md` på auto-assign.md oc
 ```
 Startordning: Session 1 FÖRST, vänta, SEDAN session 2.
 
-Session 1 (huvudrepo, webb):
+Session 1 (Opus, huvudrepo, webb):
+  claude --model opus
+  > kör sprint 24
   S24-1 (2-3h, BookingValidation) -> S24-2 (2-3h, ManualBookingDialog) -> S24-3 (30m, säkerhet) -> S24-4 (15m, Dependabot)
 
-Session 2 (worktree, ios+docs):
+Session 2 (Sonnet, worktree, ios+docs):
+  claude --model sonnet
+  > kör sprint 24
   S24-5 (15m, iOS cleanup) -> S24-6 (0.5d, hjälpartiklar) -> S24-7 (0.5d, svenska tecken) -> S24-8 (30m, parallel-regler)
 ```
+
+### Modellval
+
+| Story | Modell | Motivering |
+|-------|--------|------------|
+| S24-1 BookingValidation | Opus | Arkitekturförståelse, komplexa beroenden, 17 konsumerande routes |
+| S24-2 ManualBookingDialog | Opus | Komponentextrahering med state-hantering |
+| S24-3 Säkerhetsfixar | Opus | Säkerhetskritiskt (cron-signatur, CSP) |
+| S24-4 Dependabot | Opus | Trivial men redan i session |
+| S24-5 iOS cleanup | Sonnet | Två raders ändring |
+| S24-6 Hjälpartiklar | Sonnet | Flytta content, strukturellt enkelt |
+| S24-7 Svenska tecken | Sonnet | Rent mekaniskt search-replace |
+| S24-8 Parallel-regler | Sonnet | Docs-uppdatering, tydligt scope |
+
+**Tumregel:** Opus för arkitektur, säkerhet, komplexa beroenden. Sonnet för mekaniska ändringar, docs, tydligt scope.
 
 **Total effort:** ~1.5 dag per session, ~1.5 dag elapsed (parallellt).
 
