@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { createAuthService } from "@/domain/auth/AuthService"
+import { mapAuthErrorToStatus } from "@/domain/auth/mapAuthErrorToStatus"
 
 const acceptInviteSchema = z.object({
   token: z.string().min(1),
@@ -50,97 +50,17 @@ export async function POST(request: NextRequest) {
 
     const { token, password } = parsed.data
 
-    // Find token with user info
-    const inviteToken = await prisma.customerInviteToken.findUnique({
-      where: { token },
-      select: {
-        id: true,
-        token: true,
-        userId: true,
-        expiresAt: true,
-        usedAt: true,
-        user: {
-          select: {
-            email: true,
-            firstName: true,
-            isManualCustomer: true,
-          },
-        },
-      },
-    })
+    const authService = createAuthService()
+    const result = await authService.acceptInvite(token, password)
 
-    if (!inviteToken) {
+    if (result.isFailure) {
       return NextResponse.json(
-        { error: "Ogiltig eller utgången inbjudningslänk" },
-        { status: 400 }
+        { error: result.error.message },
+        { status: mapAuthErrorToStatus(result.error) }
       )
     }
 
-    if (inviteToken.usedAt) {
-      return NextResponse.json(
-        { error: "Denna inbjudningslänk har redan använts" },
-        { status: 400 }
-      )
-    }
-
-    if (new Date() > inviteToken.expiresAt) {
-      return NextResponse.json(
-        { error: "Inbjudningslänken har gått ut. Be leverantören skicka en ny." },
-        { status: 400 }
-      )
-    }
-
-    // Create or update Supabase Auth user with the password
-    const supabase = createSupabaseAdminClient()
-    const { error: supabaseError } = await supabase.auth.admin.updateUserById(
-      inviteToken.userId,
-      { password, email_confirm: true }
-    )
-
-    if (supabaseError) {
-      // User might not exist in auth.users yet -- try creating
-      const { error: createError } = await supabase.auth.admin.createUser({
-        id: inviteToken.userId,
-        email: inviteToken.user.email,
-        password,
-        email_confirm: true,
-        user_metadata: { firstName: inviteToken.user.firstName },
-      })
-
-      if (createError) {
-        logger.error("Failed to create Supabase Auth user for invite", {
-          userId: inviteToken.userId,
-          error: createError.message,
-        })
-        return NextResponse.json(
-          { error: "Kunde inte aktivera kontot" },
-          { status: 500 }
-        )
-      }
-    }
-
-    // Atomic: upgrade user + mark token as used
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: inviteToken.userId },
-        data: {
-          isManualCustomer: false,
-          emailVerified: true,
-          emailVerifiedAt: new Date(),
-        },
-      }),
-      prisma.customerInviteToken.update({
-        where: { id: inviteToken.id },
-        data: { usedAt: new Date() },
-      }),
-    ])
-
-    logger.info("Ghost user upgraded via invite", {
-      userId: inviteToken.userId,
-      email: inviteToken.user.email,
-    })
-
-    return NextResponse.json({ message: "Ditt konto har aktiverats" })
+    return NextResponse.json({ message: result.value.message })
   } catch (error) {
     logger.error(
       "Failed to accept invite",

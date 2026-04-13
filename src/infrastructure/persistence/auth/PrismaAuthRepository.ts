@@ -13,6 +13,7 @@ import type {
   UserForResend,
   VerificationTokenWithUser,
   PasswordResetTokenWithUser,
+  CustomerInviteTokenWithUser,
   CreateUserData,
   CreateProviderData,
   CreateVerificationTokenData,
@@ -205,5 +206,54 @@ export class PrismaAuthRepository implements IAuthRepository {
       where: { id: userId },
       data: { userType },
     })
+  }
+
+  // -----------------------------------------------------------
+  // Customer invite
+  // -----------------------------------------------------------
+
+  async findCustomerInviteToken(token: string): Promise<CustomerInviteTokenWithUser | null> {
+    const result = await prisma.customerInviteToken.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        token: true,
+        userId: true,
+        expiresAt: true,
+        usedAt: true,
+        user: {
+          select: { email: true, firstName: true },
+        },
+      },
+    })
+
+    if (!result) return null
+
+    return {
+      id: result.id,
+      token: result.token,
+      userId: result.userId,
+      expiresAt: result.expiresAt,
+      usedAt: result.usedAt,
+      userEmail: result.user.email,
+      userFirstName: result.user.firstName,
+    }
+  }
+
+  async acceptInvite(userId: string, tokenId: string): Promise<void> {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          isManualCustomer: false,
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+      }),
+      prisma.customerInviteToken.update({
+        where: { id: tokenId },
+        data: { usedAt: new Date() },
+      }),
+    ])
   }
 }

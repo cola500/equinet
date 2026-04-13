@@ -10,6 +10,7 @@ import type {
   UserForResend,
   VerificationTokenWithUser,
   PasswordResetTokenWithUser,
+  CustomerInviteTokenWithUser,
   CreateUserData,
   CreateProviderData,
   CreateVerificationTokenData,
@@ -54,11 +55,20 @@ interface StoredPasswordResetToken {
   usedAt: Date | null
 }
 
+interface StoredCustomerInviteToken {
+  id: string
+  token: string
+  userId: string
+  expiresAt: Date
+  usedAt: Date | null
+}
+
 export class MockAuthRepository implements IAuthRepository {
   private users: Map<string, StoredUser> = new Map()
   private providers: Map<string, StoredProvider> = new Map()
   private tokens: Map<string, StoredToken> = new Map()
   private passwordResetTokens: Map<string, StoredPasswordResetToken> = new Map()
+  private customerInviteTokens: Map<string, StoredCustomerInviteToken> = new Map()
   private idCounter = 0
 
   // -----------------------------------------------------------
@@ -233,6 +243,42 @@ export class MockAuthRepository implements IAuthRepository {
   }
 
   // -----------------------------------------------------------
+  // Customer invite
+  // -----------------------------------------------------------
+
+  async findCustomerInviteToken(token: string): Promise<CustomerInviteTokenWithUser | null> {
+    for (const stored of this.customerInviteTokens.values()) {
+      if (stored.token === token) {
+        const user = this.findUserById(stored.userId)
+        if (!user) return null
+        return {
+          id: stored.id,
+          token: stored.token,
+          userId: stored.userId,
+          expiresAt: stored.expiresAt,
+          usedAt: stored.usedAt,
+          userEmail: user.email,
+          userFirstName: user.firstName,
+        }
+      }
+    }
+    return null
+  }
+
+  async acceptInvite(userId: string, tokenId: string): Promise<void> {
+    const user = this.users.get(userId)
+    if (user) {
+      user.isManualCustomer = false
+      user.emailVerified = true
+    }
+    for (const stored of this.customerInviteTokens.values()) {
+      if (stored.id === tokenId) {
+        stored.usedAt = new Date()
+      }
+    }
+  }
+
+  // -----------------------------------------------------------
   // Test helpers
   // -----------------------------------------------------------
 
@@ -264,11 +310,19 @@ export class MockAuthRepository implements IAuthRepository {
     this.passwordResetTokens.set(token.id, token)
   }
 
+  /**
+   * Seed a customer invite token for testing
+   */
+  seedCustomerInviteToken(token: StoredCustomerInviteToken): void {
+    this.customerInviteTokens.set(token.id, token)
+  }
+
   clear(): void {
     this.users.clear()
     this.providers.clear()
     this.tokens.clear()
     this.passwordResetTokens.clear()
+    this.customerInviteTokens.clear()
     this.idCounter = 0
   }
 
@@ -286,6 +340,10 @@ export class MockAuthRepository implements IAuthRepository {
 
   getPasswordResetTokens(): StoredPasswordResetToken[] {
     return Array.from(this.passwordResetTokens.values())
+  }
+
+  getCustomerInviteTokens(): StoredCustomerInviteToken[] {
+    return Array.from(this.customerInviteTokens.values())
   }
 
   // -----------------------------------------------------------
