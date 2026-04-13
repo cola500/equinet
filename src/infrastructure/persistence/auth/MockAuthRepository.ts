@@ -28,6 +28,7 @@ interface StoredUser {
   isBlocked?: boolean
   isManualCustomer?: boolean
   emailVerified: boolean
+  emailVerifiedAt?: Date
   phone?: string
 }
 
@@ -270,6 +271,7 @@ export class MockAuthRepository implements IAuthRepository {
     if (user) {
       user.isManualCustomer = false
       user.emailVerified = true
+      user.emailVerifiedAt = new Date()
     }
     for (const stored of this.customerInviteTokens.values()) {
       if (stored.id === tokenId) {

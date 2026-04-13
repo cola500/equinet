@@ -31,8 +31,10 @@ sections:
 
 ## Reviews
 
-- [x] code-reviewer + security-reviewer (kombinerad, auth-andring). Resultat: invanter.
+- [x] code-reviewer + security-reviewer (kombinerad, auth-andring): 0 blockers, 0 majors, 3 minors fixade (emailVerifiedAt i mock, JSDoc header, BDD-avvikelse noterad), 1 minor pre-existing (resetPassword error type). 1 suggestion (updateResult condition -- behalld, korrekt for optional updateUserById).
 - Ingen cx-ux-reviewer (ingen UI-andring)
+
+**BDD-avvikelse:** Inga nya integrationstester (route.integration.test.ts) -- detta ar en ren refactoring dar beteendet ar oforandrat. Befintliga route.test.ts bevaras.
 
 ## Experiment-matning
 
