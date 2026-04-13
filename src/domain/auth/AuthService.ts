@@ -467,7 +467,7 @@ export class AuthService {
     if (!inviteToken) {
       return Result.fail({
         type: 'TOKEN_NOT_FOUND',
-        message: 'Ogiltig eller utgangen inbjudningslank',
+        message: 'Ogiltig eller utgången inbjudningslänk',
       })
     }
 
@@ -475,7 +475,7 @@ export class AuthService {
     if (inviteToken.usedAt) {
       return Result.fail({
         type: 'TOKEN_ALREADY_USED',
-        message: 'Denna inbjudningslank har redan anvants',
+        message: 'Denna inbjudningslänk har redan använts',
       })
     }
 
@@ -483,7 +483,7 @@ export class AuthService {
     if (new Date() > inviteToken.expiresAt) {
       return Result.fail({
         type: 'TOKEN_EXPIRED',
-        message: 'Inbjudningslanken har gatt ut. Be leverantoren skicka en ny.',
+        message: 'Inbjudningslänken har gått ut. Be leverantören skicka en ny.',
       })
     }
 
