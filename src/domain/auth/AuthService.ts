@@ -1,6 +1,6 @@
 /**
  * @domain auth
- * @routes POST /api/auth/register, /api/auth/verify-email, /api/auth/resend-verification, /api/auth/forgot-password, /api/auth/reset-password
+ * @routes POST /api/auth/register, /api/auth/verify-email, /api/auth/resend-verification, /api/auth/forgot-password, /api/auth/reset-password, /api/auth/accept-invite
  * @repository IAuthRepository
  * @consumers (auth)/register, login, verify-email, forgot-password, reset-password
  */
@@ -35,7 +35,7 @@ export interface SupabaseAdminAuth {
     error: { message: string; status?: number } | null
   }>
   deleteUser?: (userId: string) => Promise<unknown>
-  updateUserById?: (userId: string, attributes: { password: string }) => Promise<{
+  updateUserById?: (userId: string, attributes: { password: string; email_confirm?: boolean }) => Promise<{
     data: { user: { id: string } | null }
     error: { message: string } | null
   }>
@@ -83,6 +83,10 @@ export interface ResetPasswordResult {
   email: string
 }
 
+export interface AcceptInviteResult {
+  message: string
+}
+
 // Error types
 export type AuthErrorType =
   | 'EMAIL_ALREADY_EXISTS'
@@ -93,6 +97,7 @@ export type AuthErrorType =
   | 'EMAIL_NOT_VERIFIED'
   | 'ACCOUNT_BLOCKED'
   | 'REGISTRATION_FAILED'
+  | 'ACCOUNT_ACTIVATION_FAILED'
 
 export interface AuthError {
   type: AuthErrorType
@@ -451,6 +456,75 @@ export class AuthService {
     await this.repo.markResetTokenUsed(resetToken.id)
 
     return Result.ok({ email: resetToken.userEmail })
+  }
+  // -----------------------------------------------------------
+  // acceptInvite
+  // -----------------------------------------------------------
+
+  async acceptInvite(token: string, password: string): Promise<Result<AcceptInviteResult, AuthError>> {
+    // 1. Find token
+    const inviteToken = await this.repo.findCustomerInviteToken(token)
+    if (!inviteToken) {
+      return Result.fail({
+        type: 'TOKEN_NOT_FOUND',
+        message: 'Ogiltig eller utgangen inbjudningslank',
+      })
+    }
+
+    // 2. Check if already used
+    if (inviteToken.usedAt) {
+      return Result.fail({
+        type: 'TOKEN_ALREADY_USED',
+        message: 'Denna inbjudningslank har redan anvants',
+      })
+    }
+
+    // 3. Check if expired
+    if (new Date() > inviteToken.expiresAt) {
+      return Result.fail({
+        type: 'TOKEN_EXPIRED',
+        message: 'Inbjudningslanken har gatt ut. Be leverantoren skicka en ny.',
+      })
+    }
+
+    // 4. Create or update Supabase Auth user with password
+    if (this.supabaseAdmin) {
+      const updateResult = await this.supabaseAdmin.updateUserById?.(
+        inviteToken.userId,
+        { password, email_confirm: true }
+      )
+
+      if (!updateResult || updateResult.error) {
+        // User might not exist in auth.users yet -- try creating
+        const { error: createError } = await this.supabaseAdmin.createUser({
+          email: inviteToken.userEmail,
+          password,
+          email_confirm: true,
+          user_metadata: { firstName: inviteToken.userFirstName },
+        })
+
+        if (createError) {
+          logger.error('Failed to create Supabase Auth user for invite', {
+            userId: inviteToken.userId,
+            error: createError.message,
+          })
+          return Result.fail({
+            type: 'ACCOUNT_ACTIVATION_FAILED',
+            message: 'Kunde inte aktivera kontot',
+          })
+        }
+      }
+    }
+
+    // 5. Atomic: upgrade user + mark token as used
+    await this.repo.acceptInvite(inviteToken.userId, inviteToken.id)
+
+    logger.info('Ghost user upgraded via invite', {
+      userId: inviteToken.userId,
+      email: inviteToken.userEmail,
+    })
+
+    return Result.ok({ message: 'Ditt konto har aktiverats' })
   }
 }
 

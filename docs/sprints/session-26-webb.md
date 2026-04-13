@@ -7,4 +7,5 @@ started: 2026-04-12
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S26-1 | done | feature/s26-1-useprovider-customers-refactoring | - |
+| S26-1 | done | feature/s26-1-useprovider-customers-refactoring | 0da6ba3f |
+| S26-2 | done | feature/s26-2-accept-invite-authservice | - |

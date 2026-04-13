@@ -602,4 +602,207 @@ describe('AuthService', () => {
       expect(result.error.type).toBe('TOKEN_EXPIRED')
     })
   })
+
+  // -----------------------------------------------------------
+  // acceptInvite
+  // -----------------------------------------------------------
+
+  describe('acceptInvite', () => {
+    const validPassword = 'StrongPass1!'
+
+    it('should activate account with valid token and password', async () => {
+      authRepo.seedUser({
+        id: 'ghost-1',
+        email: 'ghost@example.com',
+        firstName: 'Anna',
+        lastName: 'Svensson',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-1',
+        token: 'valid-invite-token',
+        userId: 'ghost-1',
+        expiresAt: new Date(Date.now() + 3600_000),
+        usedAt: null,
+      })
+
+      const result = await service.acceptInvite('valid-invite-token', validPassword)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.message).toBe('Ditt konto har aktiverats')
+
+      // Verify Supabase was called with email_confirm: true
+      expect(mockSupabaseAdmin.updateCalls).toHaveLength(1)
+      expect(mockSupabaseAdmin.updateCalls[0].userId).toBe('ghost-1')
+    })
+
+    it('should fail with TOKEN_NOT_FOUND for unknown token', async () => {
+      const result = await service.acceptInvite('nonexistent-token', validPassword)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('TOKEN_NOT_FOUND')
+    })
+
+    it('should fail with TOKEN_ALREADY_USED for used token', async () => {
+      authRepo.seedUser({
+        id: 'ghost-2',
+        email: 'ghost2@example.com',
+        firstName: 'Erik',
+        lastName: 'Johansson',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-2',
+        token: 'used-invite-token',
+        userId: 'ghost-2',
+        expiresAt: new Date(Date.now() + 3600_000),
+        usedAt: new Date(),
+      })
+
+      const result = await service.acceptInvite('used-invite-token', validPassword)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('TOKEN_ALREADY_USED')
+    })
+
+    it('should fail with TOKEN_EXPIRED for expired token', async () => {
+      authRepo.seedUser({
+        id: 'ghost-3',
+        email: 'ghost3@example.com',
+        firstName: 'Karin',
+        lastName: 'Nilsson',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-3',
+        token: 'expired-invite-token',
+        userId: 'ghost-3',
+        expiresAt: new Date(Date.now() - 1000),
+        usedAt: null,
+      })
+
+      const result = await service.acceptInvite('expired-invite-token', validPassword)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('TOKEN_EXPIRED')
+    })
+
+    it('should fallback to createUser when updateUserById fails', async () => {
+      authRepo.seedUser({
+        id: 'ghost-4',
+        email: 'ghost4@example.com',
+        firstName: 'Lisa',
+        lastName: 'Berg',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-4',
+        token: 'fallback-invite-token',
+        userId: 'ghost-4',
+        expiresAt: new Date(Date.now() + 3600_000),
+        usedAt: null,
+      })
+
+      // Make updateUserById fail
+      const failingSupabase = createMockSupabaseAdmin()
+      failingSupabase.updateUserById = async () => ({
+        data: { user: null },
+        error: { message: 'User not found' },
+      })
+
+      const failService = new AuthService({
+        authRepository: authRepo,
+        supabaseAdmin: {
+          createUser: failingSupabase.createUser,
+          updateUserById: failingSupabase.updateUserById,
+        },
+      })
+
+      const result = await failService.acceptInvite('fallback-invite-token', validPassword)
+
+      expect(result.isSuccess).toBe(true)
+      // createUser should have been called as fallback
+      expect(failingSupabase.calls).toHaveLength(1)
+      expect(failingSupabase.calls[0].email).toBe('ghost4@example.com')
+    })
+
+    it('should fail with ACCOUNT_ACTIVATION_FAILED when both Supabase calls fail', async () => {
+      authRepo.seedUser({
+        id: 'ghost-5',
+        email: 'ghost5@example.com',
+        firstName: 'Maja',
+        lastName: 'Ek',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-5',
+        token: 'doublefail-invite-token',
+        userId: 'ghost-5',
+        expiresAt: new Date(Date.now() + 3600_000),
+        usedAt: null,
+      })
+
+      const bothFailSupabase = {
+        createUser: async () => ({
+          data: { user: null },
+          error: { message: 'Service unavailable' },
+        }),
+        updateUserById: async () => ({
+          data: { user: null },
+          error: { message: 'User not found' },
+        }),
+      }
+
+      const failService = new AuthService({
+        authRepository: authRepo,
+        supabaseAdmin: bothFailSupabase,
+      })
+
+      const result = await failService.acceptInvite('doublefail-invite-token', validPassword)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('ACCOUNT_ACTIVATION_FAILED')
+    })
+
+    it('should mark token as used and upgrade user after success', async () => {
+      authRepo.seedUser({
+        id: 'ghost-6',
+        email: 'ghost6@example.com',
+        firstName: 'Nils',
+        lastName: 'Gren',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-6',
+        token: 'check-state-token',
+        userId: 'ghost-6',
+        expiresAt: new Date(Date.now() + 3600_000),
+        usedAt: null,
+      })
+
+      await service.acceptInvite('check-state-token', validPassword)
+
+      // Token should be marked as used
+      const tokens = authRepo.getCustomerInviteTokens()
+      expect(tokens[0].usedAt).not.toBeNull()
+
+      // User should be upgraded
+      const users = authRepo.getUsers()
+      const user = users.find(u => u.id === 'ghost-6')
+      expect(user?.isManualCustomer).toBe(false)
+      expect(user?.emailVerified).toBe(true)
+    })
+  })
 })

@@ -92,6 +92,17 @@ export interface UpgradeGhostUserData {
   phone?: string
 }
 
+/** Customer invite token with user info (for accept-invite flow) */
+export interface CustomerInviteTokenWithUser {
+  id: string
+  token: string
+  userId: string
+  expiresAt: Date
+  usedAt: Date | null
+  userEmail: string
+  userFirstName: string
+}
+
 export interface IAuthRepository {
   /**
    * Find user by email (returns id + ghost status for duplicate/upgrade check)
@@ -164,4 +175,19 @@ export interface IAuthRepository {
    * Update userType for a user (e.g., after Supabase signup + provider creation).
    */
   updateUserType(userId: string, userType: 'customer' | 'provider'): Promise<void>
+
+  // -----------------------------------------------------------
+  // Customer invite
+  // -----------------------------------------------------------
+
+  /**
+   * Find customer invite token by token string (with user info)
+   */
+  findCustomerInviteToken(token: string): Promise<CustomerInviteTokenWithUser | null>
+
+  /**
+   * Accept invite: atomically upgrade user (isManualCustomer=false, emailVerified=true)
+   * and mark token as used. Analogous to verifyEmail.
+   */
+  acceptInvite(userId: string, tokenId: string): Promise<void>
 }

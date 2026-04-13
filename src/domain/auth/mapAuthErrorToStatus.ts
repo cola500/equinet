@@ -20,6 +20,7 @@ export function mapAuthErrorToStatus(error: AuthError): number {
     case 'ACCOUNT_BLOCKED':
       return 403
     case 'REGISTRATION_FAILED':
+    case 'ACCOUNT_ACTIVATION_FAILED':
       return 500
     default:
       return 500
