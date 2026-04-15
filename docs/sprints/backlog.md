@@ -40,6 +40,7 @@ sections:
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
+| Leaflet CSS lazy-load (licensrisk) | 15 min | `leaflet.css` importeras i layout.tsx (alltid). Flytta till RouteMapVisualization.tsx (lazy). Eliminerar Hippocratic-licenserad kod från alla sidor som inte använder ruttplanering. Se `docs/security/license-audit-2026-04-15.md`. |
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA för admin | 1 dag | Supabase TOTP-enrollment + verifiering |
 | Migrationstest på ren DB i CI | 30 min | CI kör migrate deploy, inte reset. Fångar inte trasiga migrationer från scratch. |
