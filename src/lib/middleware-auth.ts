@@ -10,6 +10,10 @@ import type { NextURL } from "next/dist/server/web/next-url"
 export interface MiddlewareUser {
   userType: string
   isAdmin: boolean
+  aal?: {
+    currentLevel: string
+    nextLevel: string
+  }
 }
 
 /**
@@ -36,6 +40,25 @@ export function handleAuthorization(
       }
       return NextResponse.redirect(new URL("/", nextUrl))
     }
+
+    // MFA enforcement: if admin has MFA enrolled (nextLevel=aal2)
+    // but hasn't verified this session (currentLevel=aal1), block access.
+    // Exception: /admin/mfa/* paths are always accessible for the verify flow.
+    if (
+      user.aal &&
+      user.aal.nextLevel === "aal2" &&
+      user.aal.currentLevel !== "aal2" &&
+      !path.startsWith("/admin/mfa")
+    ) {
+      if (path.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "MFA-verifiering krävs" },
+          { status: 403 }
+        )
+      }
+      return NextResponse.redirect(new URL("/admin/mfa/verify", nextUrl))
+    }
+
     return null
   }
 
