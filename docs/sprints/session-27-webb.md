@@ -6,4 +6,5 @@ started: 2026-04-16
 ---
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S27-1 | done | feature/s27-1-leaflet-css-lazy-load | - |
+| S27-1 | done | feature/s27-1-leaflet-css-lazy-load | 3944ad42 |
+| S27-2 | done | feature/s27-2-migration-test-ci | - |
