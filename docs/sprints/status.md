@@ -18,19 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 26** ([sprint-26-subagent-test.md](sprint-26-subagent-test.md)):
-
-| Story | Domän | Approach | Status |
-|-------|-------|----------|--------|
-| S26-1 useProviderCustomers refactoring | webb | Baseline | pending |
-| S26-2 accept-invite till AuthService | webb (auth) | Research-agent | pending |
-| S26-3 Parallella reviews | webb | Review-agenter | pending |
-| S26-4 Sprint-retro med mätdata | docs | Direkt | pending |
+**(ingen aktiv sprint)**
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S26 | Subagent A/B-test | 4/4 done (parallella reviews +40%, research-agent villkorlig) |
 | S25 | Worktree-agent test | 4/4 done (worktree-agent blockerad, stories kördes direkt) |
 | S24 | Parallell refactoring | 8/8 done (första parallella sprinten) |
 | S23 | Token-effektivitet | 8/8 done |

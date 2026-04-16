@@ -49,7 +49,6 @@ sections:
 | recurring_bookings E2E-verifiering | 1 dag | Medel |
 | group_bookings E2E + UX-review | 2-3 dagar | Medel |
 | withApiHandler resterande routes (131 st) | Löpande | Opportunistiskt |
-| accept-invite affärslogik till AuthService | 1h | Komplex logik (token-validering, Supabase user creation, atomisk upgrade) direkt i route. Bör ligga i domain service. |
 | console.* i legacy docs | 0.5 dag | Låg prioritet |
 
 ## Kodeffektivitet (tech debt)
@@ -67,7 +66,6 @@ sections:
 
 | Fil | Rader | Åtgärd | Effort |
 |-----|-------|--------|--------|
-| `useProviderCustomers.ts` | 624 | Dela: hook + utility-funktioner | 1h |
 | 10+ filer runt 520-620 | - | Gränsfall, åtgärda vid nästa ändring | Löpande |
 
 ## Agent-navigering (kodkarta)
