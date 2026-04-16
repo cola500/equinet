@@ -128,6 +128,57 @@ export class AccountDeletionService {
 
     return Result.ok({ deleted: true })
   }
+
+  /**
+   * System-initiated account deletion (GDPR data retention cron).
+   * Skips password verification and confirmation text.
+   * Same anonymization flow as user-initiated deletion.
+   */
+  async deleteAccountBySystem(
+    userId: string
+  ): Promise<Result<AccountDeletionResult, AccountDeletionError>> {
+    // 1. Find user
+    const user = await this.deps.findUserById(userId)
+    if (!user) {
+      return Result.fail({ type: 'USER_NOT_FOUND', message: 'Användaren hittades inte' })
+    }
+
+    // 2. Block admin accounts
+    if (user.isAdmin) {
+      return Result.fail({ type: 'ADMIN_ACCOUNT', message: 'Administratörskonton kan inte raderas' })
+    }
+
+    // 3. Send confirmation email BEFORE anonymization (needs real email/name)
+    await this.deps.sendDeletionEmail(user.email, user.firstName)
+
+    // 4. Delete storage files
+    const uploadPaths = await this.deps.findUploadPaths(userId)
+    await this.deps.deleteStorageFiles(uploadPaths)
+
+    // 5. Delete upload records
+    await this.deps.deleteUploads(userId)
+
+    // 6. Delete personal records
+    await this.deps.deletePersonalRecords(userId)
+
+    // 7. Anonymize bookings and reviews
+    await this.deps.anonymizeBookings(userId)
+    await this.deps.anonymizeReviews(userId)
+
+    // 8. Anonymize provider if applicable
+    const provider = await this.deps.findProviderByUserId(userId)
+    if (provider) {
+      await this.deps.anonymizeProvider(provider.id)
+    }
+
+    // 9. Anonymize user (point of no return)
+    await this.deps.anonymizeUser(userId)
+
+    // 10. Log security event
+    logger.security('Account deleted by system (GDPR data retention)', 'high', { userId })
+
+    return Result.ok({ deleted: true })
+  }
 }
 
 // -----------------------------------------------------------

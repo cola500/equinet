@@ -103,6 +103,7 @@ describe("feature-flags", () => {
         stripe_payments: false,
         demo_mode: false,
         supabase_auth_poc: false,
+        data_retention: false,
       })
     })
 

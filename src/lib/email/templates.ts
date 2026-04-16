@@ -14,5 +14,6 @@ export { bookingSeriesCreatedEmail } from "./templates/booking-series-created"
 export { accountDeletionConfirmationEmail } from "./templates/account-deletion"
 export { customerInviteEmail } from "./templates/customer-invite"
 export { stableInviteEmail } from "./templates/stable-invite"
+export { dataRetentionWarningEmail } from "./templates/data-retention-warning"
 
 export type { BookingSeriesCreatedData } from "./templates/booking-series-created"
