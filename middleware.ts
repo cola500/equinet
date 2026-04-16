@@ -36,10 +36,25 @@ export async function middleware(req: NextRequest) {
 
   if (!error && user) {
     const appMetadata = user.app_metadata ?? {}
+    const isAdmin = (appMetadata.isAdmin as boolean) ?? false
+
+    // For admin users, check MFA assurance level
+    let aal: { currentLevel: string; nextLevel: string } | undefined
+    if (isAdmin) {
+      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (aalData) {
+        aal = {
+          currentLevel: aalData.currentLevel ?? "aal1",
+          nextLevel: aalData.nextLevel ?? "aal1",
+        }
+      }
+    }
+
     const result = handleAuthorization(
       {
         userType: (appMetadata.userType as string) ?? "customer",
-        isAdmin: (appMetadata.isAdmin as boolean) ?? false,
+        isAdmin,
+        aal,
       },
       req.nextUrl
     )
