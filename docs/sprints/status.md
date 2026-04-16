@@ -18,7 +18,18 @@ sections:
 
 ## Aktiv sprint
 
-**(ingen aktiv sprint)**
+**Sprint 27** ([sprint-27-pre-launch.md](sprint-27-pre-launch.md)):
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S27-1 Leaflet CSS lazy-load | webb | pending |
+| S27-2 Migrationstest ren DB i CI | infra | pending |
+| S27-3 Email templates refactoring | webb | pending |
+| S27-4 MFA för admin | webb (auth) | pending |
+| S27-5 GDPR data retention | webb + docs | pending |
+| S27-6 iOS cleanup | ios | pending |
+| S27-7 Hjälpcentral native | ios | pending |
+| S27-8 Testing-guide till markdown | docs | pending |
 
 ## Tidigare sprintar (alla klara)
 
