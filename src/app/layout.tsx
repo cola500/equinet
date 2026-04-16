@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
-import "leaflet/dist/leaflet.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { SWRProvider } from "@/components/providers/SWRProvider";
 import { FeatureFlagProvider } from "@/components/providers/FeatureFlagProvider";
