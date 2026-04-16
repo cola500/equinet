@@ -99,7 +99,7 @@ class EmailService {
 export const emailService = new EmailService()
 
 // --- Email Notifications ---
-import { emailVerificationEmail, passwordResetEmail, accountDeletionConfirmationEmail, customerInviteEmail, stableInviteEmail } from "./templates"
+import { emailVerificationEmail, passwordResetEmail, accountDeletionConfirmationEmail, customerInviteEmail, stableInviteEmail, dataRetentionWarningEmail } from "./templates"
 
 /**
  * Send email verification notification
@@ -224,6 +224,24 @@ export async function sendStableInviteNotification(
   return await emailService.send({
     to: email,
     subject: `Du har blivit inbjuden till ${stableName} på Equinet`,
+    html,
+    text,
+  })
+}
+
+/**
+ * Send data retention warning notification (GDPR)
+ *
+ * Warns inactive users that their account will be deleted in 30 days.
+ */
+export async function sendDataRetentionWarning(
+  email: string
+) {
+  const { html, text } = dataRetentionWarningEmail()
+
+  return await emailService.send({
+    to: email,
+    subject: "Ditt konto kommer att raderas - Equinet",
     html,
     text,
   })

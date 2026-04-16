@@ -174,4 +174,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: false,
     category: "shared",
   },
+  data_retention: {
+    key: "data_retention",
+    label: "GDPR datalagring",
+    description: "Automatisk radering av inaktiva konton efter 2 år + 30 dagars varning",
+    defaultEnabled: false,
+    clientVisible: false,
+    category: "shared",
+  },
 }
