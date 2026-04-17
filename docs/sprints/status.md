@@ -26,7 +26,7 @@ sections:
 | S28-2 Offline E2E i standard CI-smoke | webb + infra | done |
 | S28-3 Fix flaky-rotorsaker | webb | done |
 | S28-5 iOS offline-verifiering + förbättringar | ios | done |
-| S28-6 Uppdatera offline-pwa.md dokumentation | docs | pending |
+| S28-6 Uppdatera offline-pwa.md dokumentation | docs | done |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 > Denna tabell uppdateras BARA av tech lead vid merge/avslut.
