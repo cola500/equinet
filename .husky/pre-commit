@@ -16,3 +16,9 @@ if [ -n "$STAGED" ]; then
     exit 1
   }
 fi
+
+# 3. Docs-uppdateringscheck BARA om en done-fil är staged
+bash scripts/check-docs-updated.sh || {
+  echo "Done-fil saknar docs-uppdateringssektion."
+  exit 1
+}
