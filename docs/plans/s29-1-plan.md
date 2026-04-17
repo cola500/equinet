@@ -2,7 +2,7 @@
 title: "S29-1 Plan: Mobile-mcp offline-verifiering"
 description: "Plan för automatiserad iOS offline-verifiering i simulator via mobile-mcp"
 category: plan
-status: wip
+status: active
 last_updated: 2026-04-17
 sections:
   - Problemanalys
