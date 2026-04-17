@@ -106,6 +106,10 @@ struct AuthenticatedView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 coordinator.loadFeatureFlags()
+                // Retry pending offline actions when app resumes with network
+                if coordinator.networkMonitor.isConnected {
+                    PendingActionStore.retryAll()
+                }
             }
         }
         .onDisappear {
