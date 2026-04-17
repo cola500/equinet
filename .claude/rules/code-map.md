@@ -5,7 +5,7 @@ paths:
 
 # Kodkarta -- Domän till filer
 
-> Genererad 2026-04-12. Använd denna för att snabbt hitta rätt filer vid implementation, review eller felsökning.
+> Genererad 2026-04-17. Använd denna för att snabbt hitta rätt filer vid implementation, review eller felsökning.
 
 ## Domäner
 
@@ -34,7 +34,7 @@ paths:
 
 | Lager | Filer |
 |-------|-------|
-| Service | `src/domain/booking/BookingEventHandlers.ts`, `src/domain/booking/BookingEvents.ts`, `src/domain/booking/BookingSeriesService.ts`, `src/domain/booking/BookingService.ts`, `src/domain/booking/BookingStatus.ts`, `src/domain/booking/mapBookingErrorToStatus.ts`, `src/domain/booking/TravelTimeService.ts` |
+| Service | `src/domain/booking/BookingEventHandlers.ts`, `src/domain/booking/BookingEvents.ts`, `src/domain/booking/BookingSeriesService.ts`, `src/domain/booking/BookingService.ts`, `src/domain/booking/BookingStatus.ts`, `src/domain/booking/BookingValidation.ts`, `src/domain/booking/mapBookingErrorToStatus.ts`, `src/domain/booking/TravelTimeService.ts` |
 | Repository | `src/infrastructure/persistence/booking/BookingMapper.ts`, `src/infrastructure/persistence/booking/IBookingRepository.ts`, `src/infrastructure/persistence/booking/MockBookingRepository.ts`, `src/infrastructure/persistence/booking/PrismaBookingRepository.ts` |
 | Routes | `src/app/api/bookings/[id]/payment/route.ts`, `src/app/api/bookings/[id]/receipt/route.ts`, `src/app/api/bookings/[id]/reschedule/route.ts`, `src/app/api/bookings/[id]/route.ts`, `src/app/api/bookings/manual/route.ts`, `src/app/api/bookings/route.ts`, `src/app/api/native/bookings/[id]/quick-note/route.ts`, `src/app/api/native/bookings/[id]/review/route.ts`, `src/app/api/native/bookings/route.ts`, `src/app/api/provider/bookings/[id]/notes/route.ts`, `src/app/api/provider/bookings/[id]/quick-note/route.ts` |
 
@@ -51,6 +51,12 @@ paths:
 | Service | `src/domain/customer-review/CustomerReviewService.ts`, `src/domain/customer-review/mapCustomerReviewErrorToStatus.ts` |
 | Repository | `src/infrastructure/persistence/customer-review/CustomerReviewRepository.ts`, `src/infrastructure/persistence/customer-review/ICustomerReviewRepository.ts`, `src/infrastructure/persistence/customer-review/MockCustomerReviewRepository.ts` |
 | Routes | `src/app/api/customer-reviews/route.ts` |
+
+### data-retention
+
+| Lager | Filer |
+|-------|-------|
+| Service | `src/domain/data-retention/DataRetentionService.ts` |
 
 ### due-for-service
 
@@ -233,6 +239,8 @@ paths:
 | help/[slug] | `src/app/admin/help/[slug]/page.tsx` |
 | help | `src/app/admin/help/page.tsx` |
 | integrations | `src/app/admin/integrations/page.tsx` |
+| mfa/setup | `src/app/admin/mfa/setup/page.tsx` |
+| mfa/verify | `src/app/admin/mfa/verify/page.tsx` |
 | notifications | `src/app/admin/notifications/page.tsx` |
 | page.tsx | `src/app/admin/page.tsx` |
 | reviews | `src/app/admin/reviews/page.tsx` |
@@ -378,6 +386,8 @@ paths:
 
 ### `help_center`
 
+- `src/app/api/native/help/[slug]/route.ts`
+- `src/app/api/native/help/route.ts`
 - `src/app/customer/help/[slug]/page.tsx`
 - `src/app/customer/help/page.tsx`
 - `src/app/provider/help/[slug]/page.tsx`
@@ -429,4 +439,8 @@ paths:
 ### `supabase_auth_poc`
 
 - `src/app/api/v2/test-auth/route.ts`
+
+### `data_retention`
+
+- `src/app/api/cron/data-retention/route.ts`
 

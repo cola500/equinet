@@ -12,7 +12,7 @@ PATTERN='\b(hastar|tjanst|oppna|oppet|anvand|losenord|genomford|sammanstall|inne
 
 # Source code (blocking)
 # Exclude lines with slug: or href containing URL slugs (ASCII by design)
-SRC_RESULTS=$(grep -rn --include="*.ts" --include="*.tsx" -iE "$PATTERN" src/ 2>/dev/null | grep -vE 'slug:|\.slug ===|href.*help/|getArticle\(' )
+SRC_RESULTS=$(grep -rn --include="*.ts" --include="*.tsx" -iE "$PATTERN" src/ 2>/dev/null | grep -vE 'slug:|"slug":|\.slug ===|href.*help/|getArticle\(' )
 
 # Markdown: blocking for active files, warning for legacy docs
 # Active files: rules, sprints, root-level md
