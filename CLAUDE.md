@@ -49,6 +49,7 @@ sections:
 | Setup & Kommandon | [README.md](README.md) |
 | Gotchas | [docs/guides/gotchas.md](docs/guides/gotchas.md) |
 | Kodkarta (domän -> filer) | [.claude/rules/code-map.md](.claude/rules/code-map.md) |
+| Commit-strategi (PR vs direkt) | [.claude/rules/commit-strategy.md](.claude/rules/commit-strategy.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
