@@ -46,7 +46,10 @@ Tre regler:
 |---------|-----|-----|
 | **Webhook idempotency** | Externa system med at-least-once delivery (Stripe, Fortnox, ...) | [webhook-idempotency-pattern.md](webhook-idempotency-pattern.md) |
 | **Fire-and-forget notifier med DI** | Skicka notis utan att blockera API-svar | `src/domain/notification/RouteAnnouncementNotifier.ts` |
-| **Gateway abstraction** | Extern tjänst med möjliga utbyten (Stripe -> annan PSP, Resend -> annan email) | `src/domain/payment/PaymentGateway.ts` |
+
+> **Fire-and-forget -- varfor DI och `.catch`?**
+> Notifier-klassen tar ett `NotifierDeps`-interface i konstruktorn (DI for testbarhet). I API-routen anropas den utan `await` -- med `.catch(logger.error)` sa att leveransfel aldrig blockerar API-svaret. Enskilda email-fel loggas men paverkar inte varken loopen eller responsen. Monstret ar latt att porta: injicera dependencies, anropa asynkront, `.catch` for att fanga fel utan att svaret forseneras.
+| **Gateway abstraction** | Interface + mock + factory for externa tjanster med mojliga utbyten | [gateway-abstraction-pattern.md](gateway-abstraction-pattern.md) |
 
 ---
 
@@ -56,6 +59,7 @@ Tre regler:
 |---------|-----|-----|
 | **Repository pattern** | Kärndomän (Booking, Horse, Provider, ...) | `src/infrastructure/persistence/<domain>/` |
 | **DDD-Light** | Affärslogik -> domain service, validering -> value object, CRUD -> Prisma direkt | [booking-flow.md](booking-flow.md) |
+| **AI Service-mönster** | AI-tjänst med Zod-validering, prompt injection-skydd, DI och Result-typ | [ai-service-pattern.md](ai-service-pattern.md) |
 | **Error mapper per domän** | Mappa domänfel till HTTP-statuskoder | `src/domain/<domain>/map<Domain>ErrorToStatus.ts` |
 | **Factory pattern vid DI** | 3+ dependencies i en route | `src/domain/follow/FollowServiceFactory.ts` |
 | **withApiHandler** | Ny API route -- auth + rate limit + error handling ur lådan | `src/lib/api-handler.ts` |
@@ -68,6 +72,7 @@ Tre regler:
 | Mönster | När | Fil |
 |---------|-----|-----|
 | **Webhook idempotency** | Se "Integration & externa system" ovan | -- |
+| **Dubbelt skyddslager (Auth + RLS)** | Defense-in-depth: applikationslager (ownership guards) + databaslager (RLS) skyddar mot IDOR | [auth-rls-defense-in-depth-pattern.md](auth-rls-defense-in-depth-pattern.md) |
 | **Row Level Security (RLS)** | Databas-lagerskydd utöver applikationslogik | [database.md](database.md) |
 | **Ownership guards i repository** | Kärndomän-queries med `findByIdForProvider` | `src/infrastructure/persistence/booking/PrismaBookingRepository.ts` |
 | **Rate limiter fail-closed** | Redis-fel -> 503, inte 500 eller tyst öppning | `src/lib/rate-limit.ts` |
@@ -82,6 +87,10 @@ Tre regler:
 
 | Mönster | När | Fil |
 |---------|-----|-----|
+| **Circuit breaker (generaliserat)** | Skydda mot kaskadfel vid upprepade 5xx-svar | `src/lib/offline/sync-engine.ts` |
+
+> **Nar:** En klient-loop gor upprepade anrop mot en server som ar nere. Utan circuit breaker tornar forsoktrafiken upp sig. **Hur:** Rakna `consecutiveServerErrors`. Vid >= 3 konsekutiva 5xx: satt `circuitBroken = true`, bryt loopen. Aterstall raknaren vid framgang eller conflict (409). Kombineras med exponentiell backoff + jitter (±50%) och max 10 totala retries. Generell nog for att ateranvandas i alla klient-synk-loopar.
+
 | **Offline mutation queue** | Skrivning när offline -> synk senare | [offline-pwa.md](offline-pwa.md) |
 | **Offline read-through cache** | Läsning offline via IndexedDB | `src/lib/offline/offline-fetcher.ts` |
 | **Atomic UPSERT via createMany skipDuplicates** | Dedup på UNIQUE constraint utan race condition | `src/domain/payment/PaymentWebhookService.ts` |
@@ -96,9 +105,13 @@ Tre regler:
 | Mönster | När | Fil |
 |---------|-----|-----|
 | **Mobil-först med ResponsiveDialog** | Modal -- drawer på mobil, dialog på desktop | `src/components/ui/responsive-dialog.tsx` |
-| **Optimistic UI (iOS)** | Uppdatera UI direkt, revert vid fel | iOS learnings i `.claude/rules/ios-learnings.md` |
+| **Optimistic UI med revert (iOS)** | Uppdatera UI direkt, revert vid fel | `ios/Equinet/Equinet/BookingsViewModel.swift` |
+
+> **Monstret:** (1) Spara `oldState` fore andring. (2) Applicera optimistisk uppdatering pa `@Published`-array. (3) Anropa API. (4) Vid fel: aterstall `oldState` till ratt index + visa felmeddelande + haptic `.error`. (5) Vid ok: haptic `.success`. `actionInProgress`-flagga forhindrar dubbla knapptryck. Porterbart till webb (SWR mutate + rollback), men byggt for iOS med SwiftUI:s `@Published`.
 | **SWR + offline-fetcher** | Villkorlig global fetcher via feature flag | `src/components/providers/SWRProvider.tsx` |
 | **Feature flag prioritet** | env > databas-override > kod-default | `src/lib/feature-flags.ts` |
+
+> **Varfor tre lager?** (1) **Env-variabel** (`FEATURE_X=true`) -- hogst prioritet, for E2E-tester och lokal override utan DB-access. (2) **Databas-override** -- admin-toggle i UI:t, persistent. (3) **Kod-default** -- definierat i `feature-flag-definitions.ts`, fallback om varken env eller DB satter flaggan. Kaskaden i `getFeatureFlag()` (rad 73-94) checkar varje niva i tur och ordning med early return. Klient-side: `useFeatureFlag()` hook pollar var 60s med shallow-compare.
 | **useOfflineGuard** | Blockera mutation eller köa när offline | `src/hooks/useOfflineGuard.ts` |
 | **Native Screen Pattern (iOS)** | WebView → SwiftUI-migrering | CLAUDE.md iOS-sektion |
 | **CustomerLayout-wrapper** | Alla kundsidor får Header + BottomTabBar | `src/components/layout/CustomerLayout.tsx` |
@@ -112,6 +125,8 @@ Tre regler:
 | **BDD dual-loop** | API routes + domain services -- yttre integration driver inre unit | `.claude/rules/testing.md` |
 | **Enkel TDD** | iOS SwiftUI, utilities, simpel CRUD | `.claude/rules/testing.md` |
 | **E2E seed + cleanup med tagged data** | Isolera test-data per spec | `e2e/setup/cleanup-utils.ts` |
+
+> **E2E-spec-taggning for cleanup:** Varje E2E-spec taggar sin data med `E2E-spec:<specTag>` i ett fritextfalt (t.ex. `customerNotes`, `specialInstructions`). `cleanupSpecData(tag)` i `beforeAll` raderar allt som matchar prefixet (`WHERE customerNotes STARTS WITH 'E2E-spec:'`), medan seed-data (KEEP_EMAILS) bevaras. Lat specs kora parallellt utan datakollision. Se [e2e.md](../../docs/testing/e2e.md) for fullstandig guide.
 | **Mock-repository via interface** | Byt PrismaX för MockX i tester | `src/infrastructure/persistence/<domain>/Mock*Repository.ts` |
 | **Visual verification med Playwright MCP** | UI-ändringar -- verifiera i worktree före merge | `docs/retrospectives/` (lärdom) |
 | **iOS offline-testning (3 nivåer)** | Offline-kedjan: XCTest (logik) -> shell-skript (visuell) -> mobile-mcp (interaktiv) | `.claude/rules/ios-learnings.md` |

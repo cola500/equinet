@@ -1,24 +1,21 @@
 import type { HelpArticle, HelpRole } from "./types"
-import { customerArticles } from "./articles.customer"
-import { providerArticles } from "./articles.provider"
-import { adminArticles } from "./articles.admin"
+import { loadAllArticles } from "./loader"
 
-const allArticles: HelpArticle[] = [
-  ...customerArticles,
-  ...providerArticles,
-  ...adminArticles,
-]
+function getAllArticlesInternal(): HelpArticle[] {
+  return loadAllArticles()
+}
 
 export function getAllArticles(role?: HelpRole): HelpArticle[] {
-  if (!role) return allArticles
-  return allArticles.filter((a) => a.role === role)
+  const articles = getAllArticlesInternal()
+  if (!role) return articles
+  return articles.filter((a) => a.role === role)
 }
 
 export function getArticle(
   slug: string,
   role: HelpRole
 ): HelpArticle | undefined {
-  return allArticles.find((a) => a.slug === slug && a.role === role)
+  return getAllArticlesInternal().find((a) => a.slug === slug && a.role === role)
 }
 
 export function getArticleSections(role: HelpRole): string[] {
