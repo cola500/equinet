@@ -119,6 +119,17 @@ Identifierade mönster (2026-04-17) som är smartare än vanligt men bara finns 
 | `Task.detached` -> `Task` i AuthManager + PushManager | 5 min | Lag (SwiftUI Pro review S13-4) |
 | Force unwrap -> guard let i AuthManager.exchangeSessionForWebCookies() | 5 min | Lag (SwiftUI Pro review S13-4) |
 
+### iOS Offline-verifiering med mobile-mcp
+
+Två kvarvarande luckor från S28-5 (iOS offline-verifiering). Båda adresseras av mobile-mcp som vi redan har registrerad i projektet (XCUITest/WebDriverAgent).
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| Manuell offline-verifiering i simulator via mobile-mcp | 2-3h | S28-5 krävde "verifierad manuellt i simulator" men hoppades över -- offline-nätverksavstängning kräver manuell interaktion. Med mobile-mcp kan vi: (1) starta appen i simulator, (2) stänga av nätet via `simctl`, (3) navigera UI och verifiera banner + stale cache, (4) återaktivera nät, (5) verifiera retry-kedjan. Ersätter "nice-to-have manuell verifiering" med automatisk. |
+| E2E för iOS offline-flödet | 0.5 dag | Ingen end-to-end-verifiering att kedjan NWPathMonitor -> offline-banner -> stale cache -> retry fungerar i simulator. Idag bara XCTest på ViewModel-nivå. Bygg E2E med mobile-mcp som täcker hela kedjan. Kan köras i CI om simulator-setup fungerar där (annars lokalt som pre-release-gate). |
+
+**Bakgrund:** Identifierade i S28-5 done-file. Notera -- dessa var medvetna avgränsningar, inte buggar. Mobile-mcp gör dem möjliga att adressera utan manuellt arbete.
+
 ### iOS-migrering (6 kvarvarande provider WebView-skarmar)
 
 | Skarm | Bakom flagga | Komplexitet | Beroende |
