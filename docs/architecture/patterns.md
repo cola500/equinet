@@ -56,6 +56,7 @@ Tre regler:
 |---------|-----|-----|
 | **Repository pattern** | Kärndomän (Booking, Horse, Provider, ...) | `src/infrastructure/persistence/<domain>/` |
 | **DDD-Light** | Affärslogik -> domain service, validering -> value object, CRUD -> Prisma direkt | [booking-flow.md](booking-flow.md) |
+| **AI Service-mönster** | AI-tjänst med Zod-validering, prompt injection-skydd, DI och Result-typ | [ai-service-pattern.md](ai-service-pattern.md) |
 | **Error mapper per domän** | Mappa domänfel till HTTP-statuskoder | `src/domain/<domain>/map<Domain>ErrorToStatus.ts` |
 | **Factory pattern vid DI** | 3+ dependencies i en route | `src/domain/follow/FollowServiceFactory.ts` |
 | **withApiHandler** | Ny API route -- auth + rate limit + error handling ur lådan | `src/lib/api-handler.ts` |
