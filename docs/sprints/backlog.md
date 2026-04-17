@@ -80,6 +80,32 @@ sections:
 | Feature flag -> fil-mapping | 1h | Utöka kodkartan: vilka filer berörs av varje feature flag. Grep-baserat. Hjälper vid "slå på/av feature X". |
 | Domän-metadata i koden | 2h | JSDoc överst i varje Service: vilka routes konsumerar den, vilka repos den använder, vilken feature flag. Agenter läser vid `Read` utan att behöva kartan. |
 
+## Pattern-katalog (djupdokumentera guldkorn)
+
+Identifierade mönster (2026-04-17) som är smartare än vanligt men bara finns som kod eller korta noteringar. Lyfta som return-och-ta-igen-stories.
+
+### Hög prioritet (djupdok)
+
+| Story | Effort | Varför det ger värde |
+|-------|--------|----------------------|
+| Dubbelt skyddslager (auth + RLS) som pattern | 1h | Defense in depth konkret. Kärna i er säkerhetsmodell. Fortnox/framtida integrationer ska följa samma tänk. |
+| AI Service-mönster (generic) | 1h | Ni har 2 AI-features (voice logging + customer insights) med samma struktur -- Zod på output, prompt injection-skydd, rate limiting på kostnad. Nästa AI-feature (t.ex. "förslå bokningstid") ska följa mallen. |
+| Gateway abstraction (Payment/Accounting/...) | 1h | Interface + impl-mönster för utbytbara tredjeparter. Konkret behov vid Fortnox-bygget. |
+
+### Medel prioritet (kortare rad-entry räcker)
+
+| Story | Effort | Varför det ger värde |
+|-------|--------|----------------------|
+| Circuit breaker (generaliserat) | 30 min | Finns i sync-engine, kan generaliseras för retry-logik. Ny rad i patterns.md. |
+| Feature flag prioritet (env > DB > code) | 30 min | Missförstås ofta. Kort djupdok hjälper. |
+| Optimistic UI med revert (iOS + webb-port) | 30 min | Pattern från iOS som kan porteras till webb när vi gör snabbare UX. |
+| Fire-and-forget notifier (utöka existerande rad) | 15 min | Kort förklaring av varför pattern existerar. |
+| E2E-spec-taggning för cleanup | 15 min | Rad i patterns.md som länkar till e2e.md. |
+
+**Bakgrund:** Identifierade under Stripe webhook-idempotens-lektionen (2026-04-17). Lista med fullständig motivering finns i chat-retro från den sessionen.
+
+**Total effort:** ~5h djup + 2h rader = ~1 dags docs-arbete. Värdet: nästa integration/AI-feature/retry-implementation hittar mönstret och uppfinner inte hjulet.
+
 ## Offline PWA-stabilitet (flaky-hantering)
 
 | Story | Effort | Beskrivning |
