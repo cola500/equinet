@@ -211,6 +211,26 @@ Prisma stodjer inte automatisk rollback. Vid problematisk migration:
 | **Upstash (Redis)** | Dashboard + support@upstash.com | Status: status.upstash.com |
 | **Sentry** | Dashboard (sentry.io) | - |
 
+### Vid admin-MFA-lockout (admin tappat telefon)
+
+Supabase TOTP stödjer INTE backup-koder. Återställning kräver manuell åtgärd.
+
+**Rekommendation:** Admin bör enrolla TOTP på flera enheter (telefon + iPad/1Password).
+
+**Om admin tappat ALLA factors:**
+
+1. **Annan admin loggar in** i Supabase Dashboard (eller Johan som ägare)
+2. Gå till Authentication -> Users -> hitta den låsta användaren
+3. Radera MFA-factorn manuellt (Admin API: `admin.mfa.deleteFactor`)
+4. Användaren kan nu logga in med lösenord och redirectas till `/admin/mfa/setup`
+5. **Logga händelsen** i admin audit log
+
+**Om INGEN admin har access:** Kontakta Supabase Support via console. Kräver verifiering av ägarskap.
+
+Se `docs/security/mfa-admin.md` för fullständig guide.
+
+---
+
 ### Vid dataintrang
 
 1. Stang av paverkade API-nycklar omedelbart

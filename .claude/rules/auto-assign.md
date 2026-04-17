@@ -114,6 +114,25 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
 
 ---
 
+## Docs-matris (vilka docs måste uppdateras)
+
+| Story-typ | Docs som MÅSTE uppdateras |
+|-----------|----------------------------|
+| Ny säkerhetsfunktion (MFA, auth, härdning) | README.md (Säkerhet), NFR.md (relevant NFR-rad), `docs/security/<feature>.md`, `docs/operations/incident-runbook.md` (om operativa implikationer) |
+| Ny feature med användarvänd UI | README.md (Implementerade Funktioner), `docs/guides/feature-docs.md` |
+| Schema-ändring | `docs/architecture/database.md`, `prisma/schema.prisma` |
+| Ny ops-procedur (CI, deploy, monitoring) | `docs/operations/<procedur>.md` |
+| Ny arkitekturkomponent | `docs/architecture/<komponent>.md`, CLAUDE.md snabbreferens |
+| Ny gotcha eller mönster | CLAUDE.md Key Learnings eller `.claude/rules/<domän>-learnings.md` |
+| Beteendeändring i befintlig feature | README.md + relevant feature-doc |
+| Testantal över 50+ ändrat | README.md (Testning-sektion), NFR.md (Testning) |
+
+**Regel:** Vid done-fil måste sessionen lista vilka docs som uppdaterats. Om ingen -- motivera varför ("ren intern refactoring, ingen användarvänd ändring").
+
+**Varning-hook:** Pre-commit och pre-push kör `scripts/check-docs-updated.sh` som varnar om `docs/done/<story>-done.md` inte listar docs-uppdateringar för säkerhets-/feature-stories.
+
+---
+
 ## Steg
 
 1. Läs `docs/sprints/status.md` -- vilka stories är pending?
@@ -139,6 +158,14 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
      - [ ] cx-ux-reviewer (om UI ändrats)
      - [ ] tech-architect (om arkitektur/plan granskats)
      - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: code-reviewer (enda relevante)"
+   - **Docs uppdaterade** (OBLIGATORISKT enligt storyns typ -- se Docs-matris nedan):
+     - [ ] README.md om ny feature syns för användare
+     - [ ] NFR.md om säkerhet/prestanda/reliability-krav påverkas
+     - [ ] CLAUDE.md om nya key learnings eller mönster
+     - [ ] docs/security/* om auth/säkerhetsfunktion
+     - [ ] docs/operations/* om ops-procedur påverkas (inkl. incident-runbook)
+     - [ ] docs/architecture/* om arkitekturbeslut
+     - Skriv: "Uppdaterade: NFR-14, README, docs/security/mfa-admin.md" eller "Ingen docs-uppdatering (intern refactoring)"
    - Avvikelser eller kända begränsningar
    - **Lärdomar**: Vad var oväntat? Vad skulle du göra annorlunda? Gotchas för framtida sessioner?
    - **SAMTIDIGT:** Uppdatera din sessionsfil: story -> `done` + commit-hash

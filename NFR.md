@@ -119,7 +119,7 @@ sections:
 
 ### Kvarstår
 
-- 2FA för leverantörskonton (se NFR-14)
+- MFA för leverantörskonton (se NFR-14; admin-MFA klart)
 - Automatiserad säkerhetsskanning (se NFR-05)
 - Data retention policy (se NFR-16)
 
@@ -386,16 +386,24 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 - [ ] Coverage-badge i README
 - [x] CI failar om coverage < 70%
 
-#### NFR-14: 2FA för leverantörskonton
-**Prioritet:** P2
+#### NFR-14: MFA (Multi-Factor Authentication)
+**Prioritet:** P1 (admin) / P2 (leverantör)
 **Kategori:** Säkerhet
 **Effort:** L (1-3d)
-**Varför:** Leverantörskonton hanterar bokningar och kunddata -- högre säkerhetskrav.
-**Acceptance Criteria:**
-- [ ] TOTP-baserad 2FA (Google Authenticator, Authy)
+**Varför:** Admin- och leverantörskonton hanterar bokningar, kunddata och systemkonfiguration -- högre säkerhetskrav.
+
+**Admin-MFA (klart S27-4):**
+- [x] TOTP-enrollment via Supabase Auth (QR-kod + Google Authenticator/Authy)
+- [x] Admin-sidor kräver aal2 via middleware
+- [x] Redirect till /admin/mfa/verify vid aal1
+- [x] Non-admin blockeras från MFA-sidor
+- [x] Dokumenterad i `docs/security/mfa-admin.md`
+
+**Leverantör-MFA (kvarstår):**
+- [ ] TOTP för leverantörskonton (samma mönster som admin)
 - [ ] Frivilligt vid launch, obligatoriskt efter X månader
-- [ ] Backup-koder för återhämtning
-- [ ] 2FA krävs vid känsliga operationer (t.ex. ändring av bankuppgifter)
+- [ ] Flera faktorer rekommenderas för återhämtning (Supabase stödjer inte backup-koder för TOTP)
+- [ ] MFA krävs vid känsliga operationer (t.ex. ändring av bankuppgifter)
 
 #### NFR-15: Cross-browser-testning
 **Prioritet:** P2

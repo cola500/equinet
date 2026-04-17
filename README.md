@@ -167,7 +167,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
 - **Arkitektur**: DDD-Light med Repository Pattern
-- **Säkerhet**: Supabase Auth, RLS (Row Level Security), Upstash Redis rate limiting, Stripe webhook idempotens, input sanitization, admin audit log, Sentry monitoring
+- **Säkerhet**: Supabase Auth, MFA för admin (TOTP), RLS (Row Level Security), Upstash Redis rate limiting, Stripe webhook idempotens, input sanitization, admin audit log, Sentry monitoring
 
 ## Projektstruktur
 
