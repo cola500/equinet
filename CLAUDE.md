@@ -199,6 +199,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Nivå 1** (under arbete): `npx vitest run src/domain/<namn>` (~1s) + `npm run typecheck` (~10s)
 - **Nivå 2** (inför PR): `npm run check:all` (~50s, 4 gates)
 - **E2E**: Separat spår. `test:e2e:smoke` efter breda UI-ändringar, `test:e2e:critical` efter boknings-/betalningsändringar. Se `e2e-playbook.md`.
+- **Offline E2E**: `npm run test:e2e:offline` efter Service Worker/offline-ändringar. Kräver prod-build (webpack + Serwist). Körs i CI som `offline-smoke`.
 - **Dubbelkörning**: Pre-push-hooken kör samma som check:all. Kör inte båda.
 
 ---
@@ -221,7 +222,7 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 - **Pre-commit:** `check:swedish` + `typecheck` (om .ts/.tsx staged)
 - **Pre-push:** `check:swedish` + `test:run` + `typecheck` + `lint`
 - **Allt-i-ett:** `npm run check:all` (alla 4 gates)
-- **CI:** Unit tests + coverage, E2E, TypeScript, Build
+- **CI:** Unit tests + coverage, E2E, Offline E2E smoke, TypeScript, Build
 - **Hooks:** 10 Claude Code hooks i `.claude/hooks/` (API-check, TDD-reminder, DoD, etc)
 
 ---

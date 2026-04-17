@@ -148,6 +148,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 **CI Gate (GitHub Actions):**
 - Unit Tests & Coverage
 - E2E Tests
+- Offline E2E Smoke (prod-build + Serwist SW)
 - TypeScript Check
 - Build Check
 
@@ -307,7 +308,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**4390+ tester** (373 E2E desktop + mobil + 4018 unit/integration) med **70% coverage**.
+**4740+ tester** (373 E2E desktop + mobil + 10 offline E2E + 4080 unit/integration + 283 iOS XCTest) med **70% coverage**.
 
 ### Kör Tester
 
