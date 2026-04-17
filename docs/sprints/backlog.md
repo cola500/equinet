@@ -71,7 +71,6 @@ sections:
 
 | Story | Effort | Beskrivning |
 |-------|--------|-------------|
-| Auto-generera kodkartan | 2h | Script som läser `src/domain/`, `src/app/api/`, `src/app/` och genererar `code-map.md`. Körs vid behov eller som hook. Förhindrar att kartan blir inaktuell. |
 | Feature flag -> fil-mapping | 1h | Utöka kodkartan: vilka filer berörs av varje feature flag. Grep-baserat. Hjälper vid "slå på/av feature X". |
 | Domän-metadata i koden | 2h | JSDoc överst i varje Service: vilka routes konsumerar den, vilka repos den använder, vilken feature flag. Agenter läser vid `Read` utan att behöva kartan. |
 
