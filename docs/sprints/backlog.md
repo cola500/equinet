@@ -80,6 +80,12 @@ sections:
 | Feature flag -> fil-mapping | 1h | Utöka kodkartan: vilka filer berörs av varje feature flag. Grep-baserat. Hjälper vid "slå på/av feature X". |
 | Domän-metadata i koden | 2h | JSDoc överst i varje Service: vilka routes konsumerar den, vilka repos den använder, vilken feature flag. Agenter läser vid `Read` utan att behöva kartan. |
 
+## Offline PWA-stabilitet (flaky-hantering)
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| Offline PWA deep-dive: fånga flakiness systematiskt | 1-2 veckor | Historiskt rött och flaky. Serwist-uppgraderingar kräver manuell verifiering varje gång. **Mål:** (1) E2E-tester för kritiska offline-flöden (booking-create offline -> sync online, mutation queue med circuit breaker, reconnect-race), (2) Kartlägg exakt vilka flaky-scenarier som finns historiskt (läs retros), (3) Fix rotorsaker, inte symptom (5 Whys per flaky-test), (4) Lägg till offline-smoke i test:e2e:smoke så Serwist-uppgraderingar inte kräver manuell verifiering. |
+
 ## iOS
 
 | Story | Effort | Prioritet |
