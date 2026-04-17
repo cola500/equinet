@@ -18,15 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 28** ([sprint-28-offline-pwa.md](sprint-28-offline-pwa.md)):
+**Sprint 29** ([sprint-29-ios-polish.md](sprint-29-ios-polish.md)):
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S28-1 Spike -- kartlägg flaky-scenarier | webb | done |
-| S28-2 Offline E2E i standard CI-smoke | webb + infra | done |
-| S28-3 Fix flaky-rotorsaker | webb | done |
-| S28-5 iOS offline-verifiering + förbättringar | ios | done |
-| S28-6 Uppdatera offline-pwa.md dokumentation | docs | done |
+| S29-1 Mobile-mcp offline-verifiering (simulator) | ios | pending |
+| S29-2 E2E för iOS offline-flödet via mobile-mcp | ios | pending |
+| S29-3 Task.detached → Task | ios | pending |
+| S29-4 Force unwrap → guard let | ios | pending |
+| S29-5 Uppdatera iOS-learnings med mobile-mcp-mönster | docs | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 > Denna tabell uppdateras BARA av tech lead vid merge/avslut.
@@ -35,6 +35,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S28 | Offline PWA-stabilisering | 5/5 done (spike, CI-smoke, fix rotorsaker, iOS-verifiering, docs) |
 | S27 | Pre-launch sweep | 8/8 done (Leaflet lazy-load, migration CI, email refactor, MFA admin, GDPR retention, iOS, docs) |
 | S26 | Subagent A/B-test | 4/4 done (parallella reviews +40%, research-agent villkorlig) |
 | S25 | Worktree-agent test | 4/4 done (worktree-agent blockerad, stories kördes direkt) |
