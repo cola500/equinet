@@ -8,3 +8,6 @@ started: 2026-04-17
 |-------|--------|--------|--------|
 | S29-1 | done | feature/s29-1-mobile-mcp-offline-verification | 4512e273 |
 | S29-2 | done | feature/s29-2-e2e-ios-offline | - |
+| S29-3 | done | - | 2f2128f2 |
+| S29-4 | done | - | 2f2128f2 |
+| S29-5 | done | - | (denna commit) |
