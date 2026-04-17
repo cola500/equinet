@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
   // Security headers
   async headers() {
     const isDev = process.env.NODE_ENV === 'development'
+    // Allow local Supabase in CSP even in prod builds (needed for E2E with build:pwa)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    const isLocalSupabase = supabaseUrl.includes('127.0.0.1') || supabaseUrl.includes('localhost')
+    const localSupabaseCsp = (isDev || isLocalSupabase) ? ' http://localhost:54321 http://127.0.0.1:54321' : ''
 
     // Parse Sentry DSN for CSP report-uri
     // DSN format: https://<key>@o<org>.ingest.sentry.io/<project>
@@ -59,12 +63,12 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              `connect-src 'self' https://router.project-osrm.org https://zzdamokfeenencuggjjp.supabase.co https://*.sentry.io${isDev ? ' http://localhost:54321 http://127.0.0.1:54321' : ''}`, // Allow OSRM API + Supabase + Sentry (+ local Supabase in dev)
+              `connect-src 'self' https://router.project-osrm.org https://zzdamokfeenencuggjjp.supabase.co https://*.sentry.io${localSupabaseCsp}`, // Allow OSRM API + Supabase + Sentry (+ local Supabase in dev/E2E)
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
               "object-src 'none'",
-              isDev ? "" : "upgrade-insecure-requests",
+              (isDev || isLocalSupabase) ? "" : "upgrade-insecure-requests",
               cspReportUri ? `report-uri ${cspReportUri}` : "",
               cspReportUri ? "report-to csp-endpoint" : "",
             ].filter(Boolean).join('; '),
@@ -112,14 +116,14 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
-              `connect-src 'self' https://zzdamokfeenencuggjjp.supabase.co https://*.sentry.io https://api.stripe.com${isDev ? ' http://localhost:54321 http://127.0.0.1:54321' : ''}`, // API calls + Supabase + Sentry + Stripe (+ local Supabase in dev)
+              `connect-src 'self' https://zzdamokfeenencuggjjp.supabase.co https://*.sentry.io https://api.stripe.com${localSupabaseCsp}`, // API calls + Supabase + Sentry + Stripe (+ local Supabase in dev/E2E)
               "frame-src https://js.stripe.com", // Stripe Payment Element renders in iframe
               "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection
               "base-uri 'self'",
               "form-action 'self'",
               "object-src 'none'", // Block Flash, Java, etc.
-              isDev ? "" : "upgrade-insecure-requests", // Force HTTPS in production
+              (isDev || isLocalSupabase) ? "" : "upgrade-insecure-requests", // Force HTTPS in production
               cspReportUri ? `report-uri ${cspReportUri}` : "",
               cspReportUri ? "report-to csp-endpoint" : "",
             ].filter(Boolean).join('; '),
@@ -191,6 +195,7 @@ const sentryWebpackPluginOptions = {
 // Standard `dev` (Turbopack) should use DISABLE_SW=true; `dev:offline` runs webpack with SW enabled.
 const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
+  reloadOnOnline: false, // We handle reconnection via sync engine + SWR revalidation
   swSrc: "src/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.DISABLE_SW === "true",
