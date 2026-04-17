@@ -41,10 +41,7 @@ sections:
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
 | Leaflet CSS lazy-load (licensrisk) | 15 min | `leaflet.css` importeras i layout.tsx (alltid). Flytta till RouteMapVisualization.tsx (lazy). Eliminerar Hippocratic-licenserad kod från alla sidor som inte använder ruttplanering. Se `docs/security/license-audit-2026-04-15.md`. |
-| E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
-| MFA för admin | 1 dag | Supabase TOTP-enrollment + verifiering |
-| Migrationstest på ren DB i CI | 30 min | CI kör migrate deploy, inte reset. Fångar inte trasiga migrationer från scratch. |
-| Legacy docs svenska tecken (325 rader) | 0.5 dag | ASCII-substitut i ~10 filer (onboarding-spike, voice-logging-spike, m.fl.) |
+| E-postverifiering Resend (S17-5) | 0.5 dag | **Blockerad** -- kräver domänverifiering eller Resend Pro. Gratis-konto tillåter bara eget e-post. |
 | E2E: fixa 77 skippade tester | 1-2 veckor | Låg prioritet |
 | recurring_bookings E2E-verifiering | 1 dag | Medel |
 | group_bookings E2E + UX-review | 2-3 dagar | Medel |
@@ -59,8 +56,6 @@ sections:
 |-----|-------|---------|---------|--------|
 | `src/lib/help/articles.provider.ts` | 1335 | Hjälpartiklar hårdkodade i TypeScript | Flytta till markdown-filer, läs vid build | 0.5 dag |
 | `src/lib/help/articles.customer.ts` | 788 | Samma | Samma | Ingår ovan |
-| `src/lib/email/templates.ts` | 1012 | HTML-templates som strängar, svårt att underhålla | React Email eller separata .html-filer | 1 dag |
-| `src/app/admin/testing-guide/page.tsx` | 901 | Admin-intern, inte kundvänd, onödigt stor | Flytta till markdown, rendera med MDX | 0.5 dag |
 
 ### Stora filer (>500 rader, gräns i CLAUDE.md)
 
