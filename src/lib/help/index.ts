@@ -1,21 +1,16 @@
 import type { HelpArticle, HelpRole } from "./types"
-import { loadAllArticles } from "./loader"
-
-function getAllArticlesInternal(): HelpArticle[] {
-  return loadAllArticles()
-}
+import { allArticles } from "./articles-data"
 
 export function getAllArticles(role?: HelpRole): HelpArticle[] {
-  const articles = getAllArticlesInternal()
-  if (!role) return articles
-  return articles.filter((a) => a.role === role)
+  if (!role) return allArticles
+  return allArticles.filter((a) => a.role === role)
 }
 
 export function getArticle(
   slug: string,
   role: HelpRole
 ): HelpArticle | undefined {
-  return getAllArticlesInternal().find((a) => a.slug === slug && a.role === role)
+  return allArticles.find((a) => a.slug === slug && a.role === role)
 }
 
 export function getArticleSections(role: HelpRole): string[] {
