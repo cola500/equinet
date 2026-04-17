@@ -11,11 +11,17 @@ import Foundation
 import OSLog
 import Observation
 
-// MARK: - DI Protocol
+// MARK: - DI Protocols
 
 @MainActor
 protocol DashboardDataFetching: Sendable {
     func fetchDashboard() async throws -> DashboardResponse
+}
+
+/// Abstraction for network connectivity status (testable DI)
+@MainActor
+protocol NetworkStatusProviding: AnyObject {
+    var isConnected: Bool { get }
 }
 
 // MARK: - Production Adapter
@@ -42,6 +48,7 @@ final class DashboardViewModel {
     // MARK: - Dependencies
 
     private let fetcher: DashboardDataFetching
+    private weak var networkStatus: NetworkStatusProviding?
 
     // MARK: - Onboarding Keys
 
@@ -50,8 +57,9 @@ final class DashboardViewModel {
 
     // MARK: - Init
 
-    init(fetcher: DashboardDataFetching? = nil) {
+    init(fetcher: DashboardDataFetching? = nil, networkStatus: NetworkStatusProviding? = nil) {
         self.fetcher = fetcher ?? APIDashboardFetcher()
+        self.networkStatus = networkStatus
     }
 
     // MARK: - Loading
