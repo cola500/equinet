@@ -12,7 +12,7 @@ import Observation
 
 @MainActor
 @Observable
-final class NetworkMonitor {
+final class NetworkMonitor: NetworkStatusProviding {
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.equinet.networkmonitor")

@@ -62,18 +62,20 @@ enum SharedDataManager {
         }
     }
 
-    /// Load cached calendar data (max 4 hours old)
-    static func loadCalendarCache() -> CalendarCache? {
+    /// Load cached calendar data (max 4 hours old, or any age if ignoreTTL)
+    static func loadCalendarCache(ignoreTTL: Bool = false) -> CalendarCache? {
         guard let defaults = userDefaults,
               let data = defaults.data(forKey: calendarCacheKey),
               let cache = try? JSONDecoder().decode(CalendarCache.self, from: data) else {
             return nil
         }
-        // Expire after 4 hours
-        let maxAge: TimeInterval = 4 * 60 * 60
-        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
-            defaults.removeObject(forKey: calendarCacheKey)
-            return nil
+        if !ignoreTTL {
+            // Expire after 4 hours
+            let maxAge: TimeInterval = 4 * 60 * 60
+            guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
+                defaults.removeObject(forKey: calendarCacheKey)
+                return nil
+            }
         }
         return cache
     }
@@ -102,17 +104,19 @@ enum SharedDataManager {
         }
     }
 
-    /// Load cached dashboard data (max 5 min old)
-    static func loadDashboardCache() -> DashboardCache? {
+    /// Load cached dashboard data (max 5 min old, or any age if ignoreTTL)
+    static func loadDashboardCache(ignoreTTL: Bool = false) -> DashboardCache? {
         guard let defaults = userDefaults,
               let data = defaults.data(forKey: dashboardCacheKey),
               let cache = try? JSONDecoder().decode(DashboardCache.self, from: data) else {
             return nil
         }
-        let maxAge: TimeInterval = 5 * 60
-        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
-            defaults.removeObject(forKey: dashboardCacheKey)
-            return nil
+        if !ignoreTTL {
+            let maxAge: TimeInterval = 5 * 60
+            guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
+                defaults.removeObject(forKey: dashboardCacheKey)
+                return nil
+            }
         }
         return cache
     }
@@ -140,17 +144,19 @@ enum SharedDataManager {
         }
     }
 
-    /// Load cached bookings data (max 5 minutes old)
-    static func loadBookingsCache() -> BookingsCache? {
+    /// Load cached bookings data (max 5 minutes old, or any age if ignoreTTL)
+    static func loadBookingsCache(ignoreTTL: Bool = false) -> BookingsCache? {
         guard let defaults = userDefaults,
               let data = defaults.data(forKey: bookingsCacheKey),
               let cache = try? JSONDecoder().decode(BookingsCache.self, from: data) else {
             return nil
         }
-        let maxAge: TimeInterval = 5 * 60
-        guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
-            defaults.removeObject(forKey: bookingsCacheKey)
-            return nil
+        if !ignoreTTL {
+            let maxAge: TimeInterval = 5 * 60
+            guard Date.now.timeIntervalSince(cache.cachedAt) < maxAge else {
+                defaults.removeObject(forKey: bookingsCacheKey)
+                return nil
+            }
         }
         return cache
     }

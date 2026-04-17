@@ -8,7 +8,7 @@
 @testable import Equinet
 import XCTest
 
-// MARK: - Mock
+// MARK: - Mocks
 
 final class MockDashboardFetcher: DashboardDataFetching, @unchecked Sendable {
     var fetchResult: Result<DashboardResponse, Error> = .success(makeDashboardResponse())
@@ -18,6 +18,10 @@ final class MockDashboardFetcher: DashboardDataFetching, @unchecked Sendable {
         fetchCallCount += 1
         return try fetchResult.get()
     }
+}
+
+final class MockNetworkStatus: NetworkStatusProviding {
+    var isConnected = true
 }
 
 // MARK: - Test Helpers
@@ -252,5 +256,76 @@ final class DashboardViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isLoading)
         XCTAssertNil(sut.error)
         XCTAssertFalse(sut.onboardingDismissed)
+    }
+
+    // MARK: - Offline Cache Behavior
+
+    func testOfflineColdStartShowsStaleDashboardCache() async {
+        // Populate cache, then expire it by waiting (simulated via old cachedAt)
+        let oldResponse = makeDashboardResponse(upcomingBookingCount: 42)
+        SharedDataManager.saveDashboardCache(oldResponse)
+        // Manually write stale cache (10 min old, beyond 5 min TTL)
+        writeStaleCache(response: oldResponse, ageSeconds: 600)
+
+        // Network is offline, fetch will fail
+        let networkStatus = MockNetworkStatus()
+        networkStatus.isConnected = false
+        fetcher.fetchResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
+        sut = DashboardViewModel(fetcher: fetcher, networkStatus: networkStatus)
+
+        await sut.loadDashboard()
+
+        // Should show stale cached data instead of error
+        XCTAssertNotNil(sut.dashboard, "Stale cache should be shown when offline")
+        XCTAssertEqual(sut.dashboard?.upcomingBookingCount, 42)
+        XCTAssertNil(sut.error, "No error should be shown when stale cache is available offline")
+    }
+
+    func testOfflineNetworkErrorShowsOfflineMessage() async {
+        // No cache available, network offline
+        let networkStatus = MockNetworkStatus()
+        networkStatus.isConnected = false
+        fetcher.fetchResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
+        sut = DashboardViewModel(fetcher: fetcher, networkStatus: networkStatus)
+
+        await sut.loadDashboard()
+
+        // Should show offline-specific error (not generic network error)
+        XCTAssertNotNil(sut.error)
+        XCTAssertTrue(sut.error?.contains("offline") == true || sut.error?.contains("Offline") == true,
+                       "Error message should mention offline status: got '\(sut.error ?? "")'")
+    }
+
+    func testOnlineWithStaleCacheStillFetchesFresh() async {
+        // Stale cache exists but we're online
+        let oldResponse = makeDashboardResponse(upcomingBookingCount: 42)
+        writeStaleCache(response: oldResponse, ageSeconds: 600)
+
+        let networkStatus = MockNetworkStatus()
+        networkStatus.isConnected = true
+        let freshResponse = makeDashboardResponse(upcomingBookingCount: 99)
+        fetcher.fetchResult = .success(freshResponse)
+        sut = DashboardViewModel(fetcher: fetcher, networkStatus: networkStatus)
+
+        await sut.loadDashboard()
+
+        // Online: should fetch fresh data, not rely on stale cache
+        XCTAssertEqual(sut.dashboard?.upcomingBookingCount, 99)
+        XCTAssertEqual(fetcher.fetchCallCount, 1)
+    }
+
+    // MARK: - Test Helpers (Offline)
+
+    /// Write a cache entry with a custom age (simulates stale cache)
+    private func writeStaleCache(response: DashboardResponse, ageSeconds: TimeInterval) {
+        // Access App Group UserDefaults directly to write stale cache
+        guard let defaults = UserDefaults(suiteName: "group.com.equinet.shared") else { return }
+        let staleCache = SharedDataManager.DashboardCache(
+            response: response,
+            cachedAt: Date.now.addingTimeInterval(-ageSeconds)
+        )
+        if let encoded = try? JSONEncoder().encode(staleCache) {
+            defaults.set(encoded, forKey: "dashboard_cache_data")
+        }
     }
 }

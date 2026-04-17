@@ -47,6 +47,7 @@ sections:
 |--------------|---------|
 | Docs-index | [docs/INDEX.md](docs/INDEX.md) |
 | Setup & Kommandon | [README.md](README.md) |
+| **Återanvändbara mönster** | [docs/architecture/patterns.md](docs/architecture/patterns.md) (kolla FÖRST vid nytt) |
 | Gotchas | [docs/guides/gotchas.md](docs/guides/gotchas.md) |
 | Kodkarta (domän -> filer) | [.claude/rules/code-map.md](.claude/rules/code-map.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |

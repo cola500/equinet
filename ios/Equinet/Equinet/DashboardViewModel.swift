@@ -11,11 +11,17 @@ import Foundation
 import OSLog
 import Observation
 
-// MARK: - DI Protocol
+// MARK: - DI Protocols
 
 @MainActor
 protocol DashboardDataFetching: Sendable {
     func fetchDashboard() async throws -> DashboardResponse
+}
+
+/// Abstraction for network connectivity status (testable DI)
+@MainActor
+protocol NetworkStatusProviding: AnyObject {
+    var isConnected: Bool { get }
 }
 
 // MARK: - Production Adapter
@@ -42,6 +48,7 @@ final class DashboardViewModel {
     // MARK: - Dependencies
 
     private let fetcher: DashboardDataFetching
+    private weak var networkStatus: NetworkStatusProviding?
 
     // MARK: - Onboarding Keys
 
@@ -50,20 +57,29 @@ final class DashboardViewModel {
 
     // MARK: - Init
 
-    init(fetcher: DashboardDataFetching? = nil) {
+    init(fetcher: DashboardDataFetching? = nil, networkStatus: NetworkStatusProviding? = nil) {
         self.fetcher = fetcher ?? APIDashboardFetcher()
+        self.networkStatus = networkStatus
     }
 
     // MARK: - Loading
 
-    /// Load dashboard with cache-first strategy
+    /// Whether device is currently offline (convenience for cache decisions)
+    private var isOffline: Bool {
+        networkStatus?.isConnected == false
+    }
+
+    /// Load dashboard with cache-first strategy.
+    /// When offline, accepts stale cache (ignores TTL) to avoid showing errors.
     func loadDashboard() async {
-        // Show cached data immediately
-        if let cached = SharedDataManager.loadDashboardCache() {
+        // Show cached data immediately (ignore TTL when offline)
+        if let cached = SharedDataManager.loadDashboardCache(ignoreTTL: isOffline) {
             dashboard = cached.response
             isLoading = false
-            // Refresh in background if cache exists
-            await fetchDashboard()
+            // Only refresh in background if online
+            if !isOffline {
+                await fetchDashboard()
+            }
             return
         }
         // No cache -- show loading state
@@ -120,7 +136,11 @@ final class DashboardViewModel {
             if dashboard == nil {
                 switch apiError {
                 case .networkError, .timeout:
-                    error = "Kontrollera din internetanslutning och försök igen."
+                    if isOffline {
+                        error = "Du är offline. Anslut till internet för att se din dashboard."
+                    } else {
+                        error = "Kontrollera din internetanslutning och försök igen."
+                    }
                 case .unauthorized:
                     error = "Du behöver logga in igen."
                 case .rateLimited:
