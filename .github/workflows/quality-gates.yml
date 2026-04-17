@@ -319,6 +319,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create Supabase roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          # Migrations refererar till Supabase-roller som inte finns i ren PostgreSQL.
+          # Skapa dem innan migrate reset körs.
+          psql -h localhost -U postgres -d equinet_migration_test -c "CREATE ROLE supabase_auth_admin;"
+          psql -h localhost -U postgres -d equinet_migration_test -c "CREATE ROLE anon;"
+          psql -h localhost -U postgres -d equinet_migration_test -c "CREATE ROLE authenticated;"
+
       - name: Run all migrations from scratch
         run: npx prisma migrate reset --force --skip-seed
 
