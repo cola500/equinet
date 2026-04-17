@@ -68,6 +68,7 @@ Tre regler:
 | Mönster | När | Fil |
 |---------|-----|-----|
 | **Webhook idempotency** | Se "Integration & externa system" ovan | -- |
+| **Dubbelt skyddslager (Auth + RLS)** | Defense-in-depth: applikationslager (ownership guards) + databaslager (RLS) skyddar mot IDOR | [auth-rls-defense-in-depth-pattern.md](auth-rls-defense-in-depth-pattern.md) |
 | **Row Level Security (RLS)** | Databas-lagerskydd utöver applikationslogik | [database.md](database.md) |
 | **Ownership guards i repository** | Kärndomän-queries med `findByIdForProvider` | `src/infrastructure/persistence/booking/PrismaBookingRepository.ts` |
 | **Rate limiter fail-closed** | Redis-fel -> 503, inte 500 eller tyst öppning | `src/lib/rate-limit.ts` |
