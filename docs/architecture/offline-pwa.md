@@ -4,7 +4,7 @@ description: "Teknisk guide for Equinets offline PWA-stod med service worker, In
 category: architecture
 tags: [offline, pwa, service-worker, indexeddb, sync, swr]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-04-17
 related:
   - docs/guides/gotchas.md
 sections:
@@ -13,7 +13,9 @@ sections:
   - Komponenter
   - Dataflöde
   - "Stödda operationer (offline-mutations)"
+  - iOS offline-stöd
   - Testning
+  - CI-integration
   - Kända begränsningar
   - Roadmap
   - Relaterade dokument
@@ -223,6 +225,65 @@ Dessa sidor visar en informativ placeholder istället för sitt innehåll offlin
 
 ---
 
+## iOS offline-stöd
+
+iOS-appen (hybrid WKWebView + native SwiftUI) har ett eget offline-lager som samverkar med webbens Service Worker.
+
+### Nätverksdetektion
+
+**`NetworkMonitor.swift`** -- NWPathMonitor på bakgrundskö:
+- Publicerar `isConnected` + `connectionType` (wifi/cellular/wired)
+- Callback `onStatusChanged` notifierar bridge + UI vid ändring
+- Konformerar till `NetworkStatusProviding`-protokoll (testbar DI)
+
+### Offline-banner
+
+**`NetworkBannerView.swift`** -- SwiftUI overlay i `AuthenticatedView`:
+- Orange "Ingen internetanslutning" (wifi.slash) vid offline
+- Grön "Ansluten igen" (wifi) i 3 sekunder vid reconnect
+- Smooth transitions med `.move(edge: .top).combined(with: .opacity)`
+
+### Pending Actions (native mutation queue)
+
+**`PendingActionStore.swift`** -- Köar bokningsåtgärder (confirm/cancel) vid offline:
+- Max 3 retries per action, 24h expiry
+- Diskarderar permanenta fel (4xx), retryar transient (5xx/network)
+- `retryAll()` triggas vid: nätverksåterställning OCH app resume (scenePhase .active)
+
+### Cache-strategi
+
+**`SharedDataManager.swift`** -- App Group UserDefaults (delas med widget):
+
+| Data | TTL (online) | TTL (offline) | Användning |
+|------|-------------|---------------|------------|
+| Widget (nästa bokning) | Persistent | Persistent | Widget timeline |
+| Kalender | 4h | Obegränsad | Offline calendar browsing |
+| Dashboard | 5 min | Obegränsad | Instant dashboard load |
+| Bokningar | 5 min | Obegränsad | Offline bookings list |
+| Insikter | 5 min | Obegränsad | Per-period caching |
+| Notiser | 5 min | Obegränsad | Offline announcements |
+
+**Stale cache vid offline:** Alla cache-load-metoder tar `ignoreTTL: Bool` parameter.
+ViewModels (t.ex. DashboardViewModel) skickar `ignoreTTL: true` när `NetworkMonitor.isConnected == false`.
+Bättre att visa gammal data än felmeddelande vid offline cold start.
+
+### iOS vs Webb -- separata köer
+
+iOS och webb har **separata** offline-köer:
+- Webb: IndexedDB mutation queue (Dexie.js) -- synkas via sync engine
+- iOS: PendingActionStore (UserDefaults) -- synkas via APIClient
+- Ingen korssynkronisering mellan plattformarna
+- Samma server-endpoint, server hanterar idempotens
+
+### Widget offline
+
+EquinetWidget läser från SharedDataManager (App Group UserDefaults):
+- Persistent data utan TTL -- fungerar offline
+- Uppdateras av huvudappen via `BridgeHandler.fetchAndStoreWidgetData()`
+- Timeline refresh: 30 min (med bokning), 1h (utan), 15 min (auth needed)
+
+---
+
 ## Testning
 
 ### Lokalt
@@ -264,13 +325,56 @@ npm run build:pwa && npm run start:pwa
 | useProviderCustomers | `src/hooks/useProviderCustomers.test.ts` |
 | Offline-gated sidor (5 st) | `src/app/provider/*/page.test.tsx` |
 
+### iOS-tester
+
+| Typ | Fil | Täcker |
+|-----|-----|--------|
+| DashboardViewModel offline | `DashboardViewModelTests.swift` | Stale cache vid offline, offline-felmeddelande |
+| PendingActionStore | `PendingActionStoreTests.swift` | Save/load, 24h expiry, clear |
+| APIClient network error | `APIClientTests.swift` | Nätverksfel-propagering |
+
+---
+
+## CI-integration
+
+Offline E2E-tester körs automatiskt i CI vid varje PR (sedan sprint 28).
+
+### quality-gates.yml: `offline-smoke` jobb
+
+```yaml
+# Kör parallellt med unit-tests och e2e-tests
+offline-smoke:
+  steps:
+    - Starta Supabase lokal dev
+    - Prisma generate + migrate deploy + auth triggers
+    - npm run build:pwa (production build med Serwist SW)
+    - OFFLINE_E2E=true npx playwright test --project=setup --project=offline-chromium
+```
+
+**Branch protection:** `offline-smoke` ingår i `quality-gate-passed` -- failure blockerar merge.
+
+### Lokalt
+
+```bash
+npm run test:e2e:offline     # Bygger PWA + kör offline E2E (10 tester)
+npm run build:pwa            # Production build med Serwist SW
+npm run start:pwa            # Starta prod-build på port 3001
+```
+
+### Gotchas vid offline E2E
+
+- **networkidle fungerar INTE** med SWR-polling -- använd `domcontentloaded` + explicit element-wait
+- **CSP blockerar lokal Supabase i prod-build** -- `next.config.ts` detekterar localhost i `NEXT_PUBLIC_SUPABASE_URL`
+- **Serwist reloadOnOnline: false** -- default `true` stör sync engine:n
+- **Playwright offline-chromium** måste ha `dependencies: ['setup']` för test-seedning
+
 ---
 
 ## Kända begränsningar
 
 - **Bara leverantörer**: Kunder har inget offline-stöd ännu (se roadmap fas 4)
 - **Inga betalningar/meddelanden offline**: Betalningar och meddelanden fungerar inte offline
-- **4h cache-staleness**: Data äldre än 4 timmar visas inte (stale data returneras med `_isStale`-flag som fallback)
+- **Cache-staleness (webb)**: Data äldre än 4h visas inte online (stale data returneras med `_isStale`-flag som fallback). iOS ignorerar TTL vid offline (visar gammal data hellre än fel).
 - **Last-write-wins**: Ingen automatisk konfliktlösning -- 409-konflikter sparas med servermeddelande och visas i MutationQueueViewer
 - **Safari Background Sync**: Stöds inte -- sync sker vid app-focus/manuell refresh
 - **Kartdata**: Leaflet-tiles cachas inte offline (se roadmap fas 6)
@@ -295,4 +399,4 @@ Se [docs/plans/offline-pwa-roadmap.md](plans/offline-pwa-roadmap.md) för framti
 
 ---
 
-**Senast uppdaterad**: 2026-03-06
+**Senast uppdaterad**: 2026-04-17
