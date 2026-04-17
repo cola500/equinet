@@ -2,7 +2,7 @@
 title: "Sprint 30: Kunskap & Polish"
 description: "Djupdokumentera guldkorn i patterns-katalogen, fixa licensrisken, rensa content-as-code"
 category: sprint
-status: active
+status: archived
 last_updated: 2026-04-17
 tags: [sprint, docs, patterns, tech-debt]
 sections:
