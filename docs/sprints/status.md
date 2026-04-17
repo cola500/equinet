@@ -18,23 +18,25 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 27** ([sprint-27-pre-launch.md](sprint-27-pre-launch.md)):
+**Sprint 28** ([sprint-28-offline-pwa.md](sprint-28-offline-pwa.md)):
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S27-1 Leaflet CSS lazy-load | webb | pending |
-| S27-2 Migrationstest ren DB i CI | infra | pending |
-| S27-3 Email templates refactoring | webb | pending |
-| S27-4 MFA för admin | webb (auth) | pending |
-| S27-5 GDPR data retention | webb + docs | pending |
-| S27-6 iOS cleanup | ios | pending |
-| S27-7 Hjälpcentral native | ios | pending |
-| S27-8 Testing-guide till markdown | docs | pending |
+| S28-1 Spike -- kartlägg flaky-scenarier | webb | pending |
+| S28-2 Offline E2E i standard CI-smoke | webb + infra | pending |
+| S28-3 Fix flaky-rotorsaker | webb | pending |
+| S28-4 Kund-offline (fas 4) -- om tid finns | webb | pending |
+| S28-5 iOS offline-verifiering + förbättringar | ios | pending |
+| S28-6 Uppdatera offline-pwa.md dokumentation | docs | pending |
+
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
+> Denna tabell uppdateras BARA av tech lead vid merge/avslut.
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S27 | Pre-launch sweep | 8/8 done (Leaflet lazy-load, migration CI, email refactor, MFA admin, GDPR retention, iOS, docs) |
 | S26 | Subagent A/B-test | 4/4 done (parallella reviews +40%, research-agent villkorlig) |
 | S25 | Worktree-agent test | 4/4 done (worktree-agent blockerad, stories kördes direkt) |
 | S24 | Parallell refactoring | 8/8 done (första parallella sprinten) |
