@@ -18,13 +18,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto-approve patch updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
-        run: gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      # Enable auto-merge for patch updates.
+      # GITHUB_TOKEN kan inte approva sina egna PRs (security-inställning).
+      # Branch protection kräver att CI passerar -- det räcker.
+      # --auto väntar tills alla checks är gröna och mergar då automatiskt.
       - name: Enable auto-merge for patch updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
         run: gh pr merge --squash --auto "$PR_URL"
