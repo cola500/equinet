@@ -163,7 +163,10 @@ export default defineConfig({
     ...(process.env.OFFLINE_E2E === 'true'
       ? [
           {
-            command: 'npm run build:pwa && npm run start:pwa',
+            // In CI the PWA is pre-built; locally we build + start in one step
+            command: process.env.CI
+              ? 'npm run start:pwa'
+              : 'npm run build:pwa && npm run start:pwa',
             url: 'http://localhost:3001',
             reuseExistingServer: true,
             timeout: 300000,
