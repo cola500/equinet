@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-17
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -22,18 +22,21 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S28-1 Spike: kartlägg flaky-scenarier | webb | in_progress |
+| S28-1 Spike -- kartlägg flaky-scenarier | webb | done |
 | S28-2 Offline E2E i standard CI-smoke | webb + infra | pending |
-| S28-3 Fix flaky-rotorsaker | webb | pending |
-| S28-4 Kund-offline (fas 4) | webb | pending |
-| S28-5 iOS offline-verifiering | ios | pending |
-| S28-6 Uppdatera offline-pwa.md | docs | pending |
+| S28-3 Fix flaky-rotorsaker | webb | done |
+| S28-4 Kund-offline (fas 4) -- om tid finns | webb | pending |
+| S28-5 iOS offline-verifiering + förbättringar | ios | pending |
+| S28-6 Uppdatera offline-pwa.md dokumentation | docs | pending |
+
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
+> Denna tabell uppdateras BARA av tech lead vid merge/avslut.
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
-| S27 | Pre-launch sweep | 8/8 done |
+| S27 | Pre-launch sweep | 8/8 done (Leaflet lazy-load, migration CI, email refactor, MFA admin, GDPR retention, iOS, docs) |
 | S26 | Subagent A/B-test | 4/4 done (parallella reviews +40%, research-agent villkorlig) |
 | S25 | Worktree-agent test | 4/4 done (worktree-agent blockerad, stories kördes direkt) |
 | S24 | Parallell refactoring | 8/8 done (första parallella sprinten) |
@@ -60,7 +63,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session 1 | fullstack (webb) | S28-1 | feature/s28-1-flaky-spike | 2026-04-17 |
+| Session 1 | fullstack (webb) | S28-2 | feature/s28-2-offline-ci | 2026-04-17 |
 
 ## Beslut
 
