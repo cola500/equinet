@@ -38,7 +38,19 @@ PLAN --> RED --> GREEN --> REVIEW --> VERIFY --> MERGE
 **Vem**: Tech lead (eller utvecklare med tech lead-granskning)
 **Syfte**: Sakerstall att vi bygger ratt sak pa ratt satt
 
-### Checklista
+### Först: verifiera aktualitet (OBLIGATORISKT för backlog-stories)
+
+Om storyn plockats från backloggen (inte nyskriven i sprint-planeringen), **verifiera att problemet fortfarande finns INNAN detaljplanering**:
+
+- [ ] Grep/find efter det som ska åtgärdas (t.ex. `grep -r "Task.detached" ios/`)
+- [ ] Läs relaterad kod -- har någon annan sprint redan fixat det?
+- [ ] Kör relevant test -- beter sig koden som storyn beskriver?
+
+**Om problemet är löst:** Skriv `docs/done/<story-id>-done.md` med "Redan åtgärdat i S<X>-<Y> (commit <hash>). Ingen kodändring behövs." Committa done-filen + uppdatera sessionsfil. Gå till nästa story.
+
+**Varför:** S27 och S29 hade båda 2 stories var där problemet redan var löst. ~30 min slösad planering per incident. En 2-minuters verifiering undviker det.
+
+### Checklista (när problemet är verifierat)
 
 - [ ] User story definierad: "Som [roll] vill jag [handling] sa att [nytta]"
 - [ ] Paverkan identifierad: vilka filer/domaner beros?
