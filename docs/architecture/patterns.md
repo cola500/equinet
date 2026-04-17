@@ -122,6 +122,7 @@ Tre regler:
 | Mönster | När | Fil |
 |---------|-----|-----|
 | **Stationsflöde (6 steg)** | Varje story: PLAN -> RED -> GREEN -> REVIEW -> VERIFY -> MERGE | `.claude/rules/team-workflow.md` |
+| **Review-gating (trivial vs icke-trivial)** | Triviala stories (<15 min, mekaniska, utan logikändring) skippar subagent-review; check:all räcker | `.claude/rules/team-workflow.md` Station 4 |
 | **Parallella sessioner med worktrees** | 2 sessioner på olika domäner samtidigt | `.claude/rules/parallel-sessions.md` |
 | **Worktree-agent-mönster** | Huvudsession spawnar isolated agent för docs-arbete | `.claude/rules/autonomous-sprint.md` |
 | **Trunk-based hybrid** | Kod = PR, lifecycle-docs = direkt till main | `.claude/rules/commit-strategy.md` |

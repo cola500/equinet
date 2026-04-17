@@ -36,6 +36,37 @@ Det finns ingen webb-domän att parallellisera med i denna sprint. Om det finns 
 
 ## Stories
 
+### S29-0: Review-gating -- tydliggör när subagent-review kan skippas
+
+**Prioritet:** 0 (FÖRST -- påverkar hur S29-3 och S29-4 körs)
+**Effort:** 30 min
+**Domän:** docs
+
+Idag är det otydligt när en story kräver subagent-review (code-reviewer, security, cx-ux) och när det är overkill. S29-3 och S29-4 är 5-minuters-fixar där full review kostar mer än den ger.
+
+**Implementation:**
+- Lägg till sektion "Review-gating" i `.claude/rules/team-workflow.md` station 4
+- Definiera "trivial story" med tydliga kriterier
+- Uppdatera auto-assign.md Done-fil-checklistan så "Reviews körda: ingen (trivial, motivering)" blir acceptabelt
+- Dokumentera att check:all fortfarande är obligatorisk oavsett
+
+**Kriterier för "trivial" (alla måste stämma):**
+- <15 min effort
+- Mekanisk ändring (inte ny logik)
+- Ingen API-yta ändras
+- Ingen säkerhetspåverkan
+- Inget UI ändras
+
+**Regel:** Om story är trivial → skippa subagent-review, `npm run check:all` räcker. Om osäker → kör review.
+
+**Acceptanskriterier:**
+- [ ] Review-gating-sektion i team-workflow.md
+- [ ] auto-assign.md done-fil-checklista uppdaterad
+- [ ] Dokumenterat i patterns.md (under Processer)
+- [ ] Tydliga kriterier så sessioner inte behöver gissa
+
+---
+
 ### S29-1: Mobile-mcp offline-verifiering (simulator)
 
 **Prioritet:** 1
@@ -138,10 +169,12 @@ Baserat på S29-1/S29-2: lägg till ett mönster i `.claude/rules/ios-learnings.
 
 ```
 Session 1 (Sonnet, ios):
-  S29-1 (2-3h) -> S29-2 (0.5 dag) -> S29-3 (5 min) -> S29-4 (5 min) -> S29-5 (30 min)
+  S29-0 (30 min, docs) -> S29-1 (2-3h) -> S29-2 (0.5 dag) -> S29-3 (5 min, trivial) -> S29-4 (5 min, trivial) -> S29-5 (30 min)
 ```
 
-**Total effort:** ~1 dag.
+**Total effort:** ~1 dag + 30 min.
+
+S29-0 körs FÖRST så S29-3 och S29-4 kan skippa review enligt den nya gatingen.
 
 ## Definition of Done (sprintnivå)
 

@@ -153,11 +153,12 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
    - Acceptanskriterier från sprint-dokumentet -- bocka av varje
    - Definition of Done (från CLAUDE.md) -- bocka av varje
    - **Reviews körda** (OBLIGATORISKT -- lista varje):
-     - [ ] code-reviewer (station 4, alltid)
+     - [ ] code-reviewer (station 4, för icke-triviala stories)
      - [ ] security-reviewer (om API/auth ändrats)
      - [ ] cx-ux-reviewer (om UI ändrats)
      - [ ] tech-architect (om arkitektur/plan granskats)
-     - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: code-reviewer (enda relevante)"
+     - **Trivial story?** Skippa review -- se `.claude/rules/team-workflow.md` Station 4 Review-gating för kriterier.
+     - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: ingen (trivial -- motivering)"
    - **Docs uppdaterade** (OBLIGATORISKT enligt storyns typ -- se Docs-matris nedan):
      - [ ] README.md om ny feature syns för användare
      - [ ] NFR.md om säkerhet/prestanda/reliability-krav påverkas

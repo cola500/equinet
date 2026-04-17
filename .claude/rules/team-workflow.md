@@ -122,7 +122,39 @@ Alla tester MASTE faila. Om nagot test passerar utan implementation -- testet te
 **Vem**: code-reviewer agent (automatiskt) + tech lead vid storre andringar
 **Syfte**: Fanga problem innan de nar main
 
-### Automatisk review
+### Review-gating: när skippa subagent-review
+
+**Triviala stories** får skippa subagent-review och gå direkt till Station 5 (VERIFY).
+
+Alla kriterier MÅSTE stämma för att en story ska klassas som trivial:
+
+- [ ] Effort <15 min
+- [ ] Mekanisk ändring (inte ny logik)
+- [ ] Ingen API-yta ändras (inga nya routes, inga ändrade signaturer)
+- [ ] Ingen säkerhetspåverkan (ingen auth, ingen input-validering, inga behörigheter)
+- [ ] Inget UI ändras (inga komponenter, inga sidor)
+- [ ] Tester finns OCH passerar (eller tillkommer utan att ändra beteende)
+
+**Exempel på triviala stories:**
+- `Task.detached` → `Task`
+- Force unwrap → `guard let`
+- Byt paketversion (patch)
+- Flytta en import
+- Rätta stavfel i UI-sträng (om det inte påverkar tester)
+
+**Exempel på INTE triviala (kräver review):**
+- Ny route/endpoint
+- Ändrad Zod-schema
+- Ny domain service-metod
+- Ändrad UI-komponent
+- Schema-ändring
+- Säkerhets- eller auth-relaterat
+
+**Regel vid osäkerhet:** Kör review. Bättre att spendera 5 min extra än att missa en bugg.
+
+**Oavsett trivial eller inte:** Station 5 (`npm run check:all`) är ALLTID obligatorisk.
+
+### Automatisk review (för icke-triviala stories)
 
 Kor `code-reviewer` subagent med:
 - Jämfor mot planen fran station 1
@@ -148,6 +180,12 @@ Kor `code-reviewer` subagent med:
 ### Gate
 
 Inga blocker eller major-problem kvar.
+
+### Dokumentation i done-fil
+
+**För triviala stories:** Skriv "Reviews körda: ingen (trivial story -- mekanisk ändring, <15 min, check:all grön)"
+
+**För icke-triviala:** Lista varje körd subagent enligt ordinarie mönster.
 
 ---
 
