@@ -285,26 +285,15 @@ jobs:
         run: NODE_OPTIONS="--max-old-space-size=8192" npm run build
 
   # Migration from scratch -- catches broken migrations that fail on a clean DB
+  # Använder Supabase CLI istället för ren postgres eftersom migrationerna kräver
+  # auth-schema, pg_cron, pgvector och andra Supabase-specifika extensions/roller.
+  # Matchar prod-miljön fullt ut.
   migration-from-scratch:
     name: Migration From Scratch
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: equinet_migration_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_migration_test
-      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_migration_test
+      # Dummy URL för prisma generate under npm ci (överskrivs efter supabase start)
+      DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
 
     steps:
       - name: Checkout code
@@ -319,50 +308,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Supabase-kompatibel miljö
-        env:
-          PGPASSWORD: postgres
+      - name: Start Supabase local dev (matchar prod-miljön)
+        run: npx supabase start
+
+      - name: Export Supabase DATABASE_URL
         run: |
-          # Migrations refererar till Supabase-roller OCH auth-schema som inte finns i ren PostgreSQL.
-          # Skapa mock-versioner -- matchar vad Supabase skapar automatiskt.
+          DB_URL=$(npx supabase status -o json | jq -r '.DB_URL' | sed 's/127.0.0.1/localhost/')
+          echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
+          echo "DIRECT_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
 
-          # 1. Roller
-          psql -h localhost -U postgres -d equinet_migration_test -c "CREATE ROLE supabase_auth_admin;"
-          psql -h localhost -U postgres -d equinet_migration_test -c "CREATE ROLE anon;"
-          psql -h localhost -U postgres -d equinet_migration_test -c "CREATE ROLE authenticated;"
-
-          # 2. auth-schema med mock-funktioner (auth.uid(), auth.jwt(), auth.users)
-          # Används av RLS-policies. Supabase skapar dessa automatiskt.
-          psql -h localhost -U postgres -d equinet_migration_test <<'SQL'
-          CREATE SCHEMA IF NOT EXISTS auth;
-
-          CREATE TABLE IF NOT EXISTS auth.users (
-            id uuid PRIMARY KEY,
-            email text,
-            raw_user_meta_data jsonb,
-            raw_app_meta_data jsonb,
-            created_at timestamptz DEFAULT now()
-          );
-
-          CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS $$
-            SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid;
-          $$ LANGUAGE sql STABLE;
-
-          CREATE OR REPLACE FUNCTION auth.jwt() RETURNS jsonb AS $$
-            SELECT COALESCE(
-              NULLIF(current_setting('request.jwt.claims', true), '')::jsonb,
-              '{}'::jsonb
-            );
-          $$ LANGUAGE sql STABLE;
-
-          GRANT USAGE ON SCHEMA auth TO supabase_auth_admin, anon, authenticated;
-          GRANT SELECT ON auth.users TO supabase_auth_admin, anon, authenticated;
-          GRANT EXECUTE ON FUNCTION auth.uid() TO supabase_auth_admin, anon, authenticated;
-          GRANT EXECUTE ON FUNCTION auth.jwt() TO supabase_auth_admin, anon, authenticated;
-          SQL
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
       - name: Run all migrations from scratch
+        # migrate reset körs mot ren Supabase-instans (supabase start gav oss tomma tabeller)
+        # men supabase auth-schema + extensions finns redan. Fångar trasiga Prisma-migrationer.
         run: npx prisma migrate reset --force --skip-seed
+
+      - name: Stop Supabase
+        if: always()
+        run: npx supabase stop
 
   # Final status check
   quality-gate-passed:
