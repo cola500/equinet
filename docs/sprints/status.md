@@ -25,7 +25,7 @@ sections:
 | S28-1 Spike -- kartlägg flaky-scenarier | webb | done |
 | S28-2 Offline E2E i standard CI-smoke | webb + infra | done |
 | S28-3 Fix flaky-rotorsaker | webb | done |
-| S28-5 iOS offline-verifiering + förbättringar | ios | pending |
+| S28-5 iOS offline-verifiering + förbättringar | ios | done |
 | S28-6 Uppdatera offline-pwa.md dokumentation | docs | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
@@ -63,6 +63,7 @@ sections:
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
 | Session 1 | fullstack (webb) | S28-2 | feature/s28-2-offline-ci | 2026-04-17 |
+| Session 2 | fullstack (ios) | S28-5 | feature/s28-5-ios-offline-verification (merged) | 2026-04-17 |
 
 ## Beslut
 
