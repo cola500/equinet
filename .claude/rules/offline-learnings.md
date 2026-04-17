@@ -3,7 +3,7 @@ title: "Offline & Sync Learnings"
 description: "Lärdomar från offline PWA-implementationen: SWR, sync-kö, circuit breaker, probe backoff"
 category: rule
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-17
 tags: [offline, pwa, sync, swr]
 paths:
   - "src/lib/offline/*"
@@ -30,3 +30,8 @@ paths:
 - **withQuotaRecovery**: Wrappa IndexedDB-skrivningar -- vid `QuotaExceededError`: evict stale cache, försök igen, ge upp tyst.
 - **Tab-koordinering max duration**: Sync-lås som hållits > 5 min släpps automatiskt (hängande tab).
 - **guardMutation nätverksfel-fallback**: Online-path fångar TypeError/AbortError, anropar `reportConnectivityLoss()`, faller tillbaka till offline-köning.
+- **networkidle + SWR-polling = timeout**: `waitForLoadState('networkidle')` resolverar ALDRIG i sidor med SWR-polling. Använd `domcontentloaded` + explicit element-wait i E2E.
+- **CSP blockerar lokal Supabase i prod-build**: `isDev`-flaggan i next.config.ts baseras på NODE_ENV vid BUILD-tid. Detektera `NEXT_PUBLIC_SUPABASE_URL` localhost istället.
+- **Serwist reloadOnOnline: false**: Default `true` laddar om sidan vid online-event, avbryter sync engine:n. Inaktivera om appen har egen reconnection-logik.
+- **iOS ignoreTTL-parameter > global isOffline**: Passera `ignoreTTL: Bool` till SharedDataManager cache-metoder istället för global mutable state. Undviker thread-safety.
+- **iOS PendingActionStore retryAll() vid app resume**: scenePhase .active + isConnected triggar retry. Dubbelanrop (resume + nätverksbyte) är safe pga retryCount-guard.
