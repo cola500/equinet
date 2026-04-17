@@ -3,14 +3,16 @@ title: "iOS Key Learnings"
 description: "Samlade iOS/Swift/Xcode-lärdomar från native-utvecklingen"
 category: rule
 status: active
-last_updated: 2026-04-12
-tags: [ios, swift, xcode, native]
+last_updated: 2026-04-17
+tags: [ios, swift, xcode, native, mobile-mcp, offline]
 paths:
   - "ios/**"
   - "src/app/api/native/**"
 sections:
   - Utvecklingsmönster
   - iOS-testflöde
+  - Mobile-mcp och simulator-verifiering
+  - iOS offline-testning
 ---
 
 # iOS Key Learnings
@@ -87,3 +89,94 @@ xcodebuild test ... -only-testing:EquinetTests
 **Observability:**
 - Kör testsviten EN gång. Kör ALDRIG om bara för att räkna resultat.
 - xcodebuild visar `Executed` tre gånger (suite, bundle, selected) -- det är samma körning, inte tre.
+
+## Mobile-mcp och simulator-verifiering
+
+### När använda vad
+
+| Verktyg | När | Styrka | Svaghet |
+|---------|-----|--------|---------|
+| **XCTest (ViewModel-nivå)** | Logik, state-maskiner, cache-beteende | Snabbt (<1s), deterministiskt, inga beroenden | Testar inte rendering |
+| **mobile-mcp** | Visuell verifiering, accessibility tree, screenshots | Ser vad användaren ser, bra för UI-regressioner | Kräver bootad simulator, WebDriverAgent-timeout vid kallstart |
+| **ios-offline-verification.sh** | Snabb pre-release-check av offline-kedjan | Helt headless, skriptas i CI | Verifierar bara screenshots, inte element-state |
+| **XCUITest** | Komplex UI-interaktion med assertions | Kan assertera på element-properties | SecureField osynligt i accessibility tree, instabilt med WebView |
+
+**Tumregel:** Skriv logik-tester som XCTest. Verifiera UI visuellt med mobile-mcp. Kör shell-skript som pre-release gate.
+
+### Mobile-mcp grundflöde
+
+```
+1. mobile_take_screenshot      -- se aktuellt state
+2. mobile_list_elements_on_screen -- hitta element + koordinater
+3. mobile_click_on_screen_at_coordinates -- interagera
+4. mobile_take_screenshot      -- verifiera resultat
+```
+
+### Mobile-mcp gotchas
+
+- **WebDriverAgent timeout vid kallstart**: Efter simulator-boot/omstart kan första `mobile_take_screenshot` timeouta. Fix: boota simulator med `simctl boot`, vänta ~10s, försök igen.
+- **SecureField osynligt**: iOS `SecureField` listas INTE i accessibility tree via WebDriverAgent. Går inte att tappa på eller skriva i. Fix: använd `--debug-autologin` launch argument istället.
+- **`type_keys` med `\n`**: Skickar literal `\n` som text, inte Enter/Return. Använd `submit: true` parameter eller `mobile_press_button` med "Return" istället.
+- **Koordinater ändras**: Element-positioner beror på simulator-storlek och dynamisk content. Använd ALLTID `mobile_list_elements_on_screen` för att hitta aktuella koordinater innan klick.
+- **Kör ALDRIG parallella mobile-mcp-agenter**: iOS Simulator delar state -- parallella sessioner krockar. Kör alltid sekventiellt.
+
+### Debug-autologin (kringgå SecureField)
+
+Appen stöder `--debug-autologin` launch argument (skyddat med `#if DEBUG`):
+
+```bash
+xcrun simctl launch <UDID> com.equinet.Equinet --debug-autologin
+# Loggar in som anna@hastvard-goteborg.se automatiskt
+# Anpassningsbart: --debug-email <email> --debug-password <pw>
+```
+
+Testanvändare finns i `prisma/seed.ts`. Default: Anna (leverantör).
+
+## iOS offline-testning
+
+### Arkitektur
+
+iOS Simulator delar värdmaskinens nätverksstack -- det går inte att stänga av nätverket per simulator. Istället använder vi en debug override-mekanism:
+
+```
+simctl spawn defaults write → UserDefaults "debugOffline" → NetworkMonitor pollar varje 1s
+→ debugOverrideConnected sätts → isConnected returnerar override → onStatusChanged fires
+→ OfflineBanner visas/döljs → DashboardViewModel hoppar över fetch vid offline + cache
+```
+
+Alla debug-mekanismer är skyddade med `#if DEBUG` -- noll påverkan i release-builds.
+
+### Tre testnivåer
+
+**Nivå 1 -- XCTest (ViewModel-nivå, <1s):**
+```swift
+// NetworkMonitorTests: 4 tester (override, callbacks)
+// OfflineVerificationUITests: 3 tester (polling, DashboardViewModel-integration)
+// OfflineE2ETests: 4 tester (fullständigt offline->reconnect scenario med mock fetcher)
+```
+
+Kör: `xcodebuild test ... -only-testing:EquinetTests/NetworkMonitorTests`
+
+**Nivå 2 -- Shell-skript (visuell, ~20s):**
+```bash
+./scripts/ios-offline-verification.sh "iPhone 17 Pro"
+# Tar 4 screenshots: baseline, offline (orange banner), reconnected (grön banner), normal
+```
+
+**Nivå 3 -- Mobile-mcp (interaktiv verifiering):**
+```
+mobile_launch_app (com.equinet.Equinet, --debug-autologin)
+mobile_take_screenshot → verifiera dashboard
+# Trigga offline via simctl:
+simctl spawn <UDID> defaults write com.equinet.Equinet debugOffline -bool true
+mobile_take_screenshot → verifiera orange "Ingen internetanslutning" banner
+simctl spawn <UDID> defaults delete com.equinet.Equinet debugOffline
+mobile_take_screenshot → verifiera grön "Ansluten igen" banner
+```
+
+### Fallgropar
+
+- **DashboardViewModel fetchar ÄVEN offline om ingen cache finns.** Korrekt beteende -- utan cache måste den försöka. Testa alltid med pre-populerad cache.
+- **SharedDataManager.clearDashboardCache()** behövs i setUp/tearDown för att undvika test-cross-contamination.
+- **3s overhead per UserDefaults-polling-test** -- acceptabelt men bör inte multipliceras med för många tester.
+- **CI-begränsning**: Offline-testerna kräver iOS Simulator, som inte finns i GitHub Actions utan self-hosted macOS runner. Beslut (S29-2): körs lokalt pre-release.

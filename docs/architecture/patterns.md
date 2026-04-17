@@ -114,6 +114,8 @@ Tre regler:
 | **E2E seed + cleanup med tagged data** | Isolera test-data per spec | `e2e/setup/cleanup-utils.ts` |
 | **Mock-repository via interface** | Byt PrismaX för MockX i tester | `src/infrastructure/persistence/<domain>/Mock*Repository.ts` |
 | **Visual verification med Playwright MCP** | UI-ändringar -- verifiera i worktree före merge | `docs/retrospectives/` (lärdom) |
+| **iOS offline-testning (3 nivåer)** | Offline-kedjan: XCTest (logik) -> shell-skript (visuell) -> mobile-mcp (interaktiv) | `.claude/rules/ios-learnings.md` |
+| **iOS debug override via UserDefaults** | Simulera offline/reconnect i simulator utan nätverksändring | `scripts/ios-offline-verification.sh` |
 
 ---
 
