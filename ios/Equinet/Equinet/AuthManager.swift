@@ -43,6 +43,15 @@ final class AuthManager {
 
     /// Called on app launch. Checks Supabase SDK for a valid session.
     func checkExistingAuth() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--debug-autologin") {
+            Task {
+                await debugAutoLogin()
+            }
+            return
+        }
+        #endif
+
         if SupabaseManager.client.auth.currentSession != nil {
             userType = keychain.load(key: KeychainHelper.userTypeKey)
             state = .authenticated
@@ -77,6 +86,20 @@ final class AuthManager {
             AppLogger.auth.error("Login failed with unexpected error: \(error)")
         }
     }
+
+    #if DEBUG
+    /// Auto-login with test credentials for automated testing.
+    /// Triggered by launch argument: --debug-autologin
+    /// Email/password read from launch args: --debug-email <email> --debug-password <pwd>
+    /// Defaults to anna@hastvard-goteborg.se / test123
+    private func debugAutoLogin() async {
+        let args = ProcessInfo.processInfo.arguments
+        let email = args.elementAfter("--debug-email") ?? "anna@hastvard-goteborg.se"
+        let password = args.elementAfter("--debug-password") ?? "test123"
+        AppLogger.auth.info("Debug auto-login: \(email)")
+        await login(email: email, password: password)
+    }
+    #endif
 
     // MARK: - Logout
 
@@ -201,3 +224,13 @@ final class AuthManager {
         }
     }
 }
+
+#if DEBUG
+extension Array where Element == String {
+    /// Returns the element after the given flag, e.g. ["--email", "a@b.se"].elementAfter("--email") -> "a@b.se"
+    func elementAfter(_ flag: String) -> String? {
+        guard let idx = firstIndex(of: flag), idx + 1 < count else { return nil }
+        return self[idx + 1]
+    }
+}
+#endif

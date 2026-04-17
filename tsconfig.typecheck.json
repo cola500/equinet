@@ -12,6 +12,7 @@
     "coverage",
     "dist",
     "build",
+    "ios/**",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
