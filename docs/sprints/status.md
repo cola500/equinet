@@ -18,24 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 30** ([sprint-30-knowledge-polish.md](sprint-30-knowledge-polish.md)):
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S30-1 Leaflet CSS lazy-load | webb | pending |
-| S30-2 Pattern-djupdok: Auth+RLS | docs | pending |
-| S30-3 Pattern-djupdok: AI Service-mönster | docs | pending |
-| S30-4 Pattern-djupdok: Gateway abstraction | docs | pending |
-| S30-5 Hjälpartiklar till markdown | webb | pending |
-| S30-6 Pattern-katalog: 5 rad-entries | docs | pending |
-| S30-7 Feature flag → fil-mapping | infra | pending |
-
-> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
+Ingen aktiv sprint. Senast avslutad: Sprint 30.
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S30 | Kunskap & Polish | 5/5 done, 2 skipped (redan implementerade) |
 | S29 | iOS Polish + mobile-mcp | 6/6 done (review-gating, mobile-mcp, E2E, iOS cleanup no-ops, docs) |
 | S28 | Offline PWA-stabilisering | 5/5 done (spike, CI-smoke, fix rotorsaker, iOS-verifiering, docs) |
 | S27 | Pre-launch sweep | 8/8 done (Leaflet lazy-load, migration CI, email refactor, MFA admin, GDPR retention, iOS, docs) |
@@ -65,8 +54,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session 1 | fullstack (webb) | S28-2 | feature/s28-2-offline-ci | 2026-04-17 |
-| Session 2 | fullstack (ios) | S28-5 | feature/s28-5-ios-offline-verification (merged) | 2026-04-17 |
+| (ingen aktiv session) | - | - | - | - |
 
 ## Beslut
 
