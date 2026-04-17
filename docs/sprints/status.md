@@ -18,7 +18,19 @@ sections:
 
 ## Aktiv sprint
 
-**(ingen aktiv sprint)**
+**Sprint 30** ([sprint-30-knowledge-polish.md](sprint-30-knowledge-polish.md)):
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S30-1 Leaflet CSS lazy-load | webb | pending |
+| S30-2 Pattern-djupdok: Auth+RLS | docs | pending |
+| S30-3 Pattern-djupdok: AI Service-mönster | docs | pending |
+| S30-4 Pattern-djupdok: Gateway abstraction | docs | pending |
+| S30-5 Hjälpartiklar till markdown | webb | pending |
+| S30-6 Pattern-katalog: 5 rad-entries | docs | pending |
+| S30-7 Feature flag → fil-mapping | infra | pending |
+
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
 ## Tidigare sprintar (alla klara)
 
