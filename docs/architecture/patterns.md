@@ -46,7 +46,7 @@ Tre regler:
 |---------|-----|-----|
 | **Webhook idempotency** | Externa system med at-least-once delivery (Stripe, Fortnox, ...) | [webhook-idempotency-pattern.md](webhook-idempotency-pattern.md) |
 | **Fire-and-forget notifier med DI** | Skicka notis utan att blockera API-svar | `src/domain/notification/RouteAnnouncementNotifier.ts` |
-| **Gateway abstraction** | Extern tjänst med möjliga utbyten (Stripe -> annan PSP, Resend -> annan email) | `src/domain/payment/PaymentGateway.ts` |
+| **Gateway abstraction** | Interface + mock + factory for externa tjanster med mojliga utbyten | [gateway-abstraction-pattern.md](gateway-abstraction-pattern.md) |
 
 ---
 
