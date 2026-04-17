@@ -84,7 +84,7 @@ sections:
 
 | Story | Effort | Beskrivning |
 |-------|--------|-------------|
-| Offline PWA deep-dive: fånga flakiness systematiskt | 1-2 veckor | Historiskt rött och flaky. Serwist-uppgraderingar kräver manuell verifiering varje gång. **Mål:** (1) E2E-tester för kritiska offline-flöden (booking-create offline -> sync online, mutation queue med circuit breaker, reconnect-race), (2) Kartlägg exakt vilka flaky-scenarier som finns historiskt (läs retros), (3) Fix rotorsaker, inte symptom (5 Whys per flaky-test), (4) Lägg till offline-smoke i test:e2e:smoke så Serwist-uppgraderingar inte kräver manuell verifiering. |
+| Kund-offline (fas 4) | 1-2 dagar | **Parkerad** (2026-04-17) -- fokus på leverantörens upplevelse. Kunder har oftast nät, leverantörer är mobila. Återaktivera om/när kunder rapporterar offline-problem eller vid marknadsexpansion till sämre täckning. Tidigare scope: cachad bokningslista, offline-avbokning, offline-ny-bokning, 8 kundmutationer som idag bara varnar. |
 
 ## iOS
 

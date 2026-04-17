@@ -25,7 +25,6 @@ sections:
 | S28-1 Spike -- kartlägg flaky-scenarier | webb | done |
 | S28-2 Offline E2E i standard CI-smoke | webb + infra | done |
 | S28-3 Fix flaky-rotorsaker | webb | done |
-| S28-4 Kund-offline (fas 4) -- om tid finns | webb | pending |
 | S28-5 iOS offline-verifiering + förbättringar | ios | pending |
 | S28-6 Uppdatera offline-pwa.md dokumentation | docs | pending |
 
