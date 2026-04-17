@@ -68,11 +68,13 @@ test.describe('Offline PWA', () => {
     test('previously visited page loads from cache when offline', async ({ context, page }) => {
       // 1. Visit dashboard while online (populates SW runtime cache)
       await page.goto('/provider/dashboard')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
+      await expect(page.locator('body')).toBeVisible()
 
       // 2. Visit bookings while online (populates SW runtime cache)
       await page.goto('/provider/bookings')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
+      await expect(page.locator('body')).toBeVisible()
 
       // 3. Go offline
       await context.setOffline(true)
@@ -88,7 +90,8 @@ test.describe('Offline PWA', () => {
     test('unvisited page shows offline fallback when offline', async ({ context, page }) => {
       // 1. Visit dashboard to establish service worker
       await page.goto('/provider/dashboard')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
+      await expect(page.locator('body')).toBeVisible()
 
       // 2. Go offline
       await context.setOffline(true)

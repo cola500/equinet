@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-17
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -22,9 +22,9 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S28-1 Spike -- kartlägg flaky-scenarier | webb | pending |
+| S28-1 Spike -- kartlägg flaky-scenarier | webb | done |
 | S28-2 Offline E2E i standard CI-smoke | webb + infra | pending |
-| S28-3 Fix flaky-rotorsaker | webb | pending |
+| S28-3 Fix flaky-rotorsaker | webb | done |
 | S28-4 Kund-offline (fas 4) -- om tid finns | webb | pending |
 | S28-5 iOS offline-verifiering + förbättringar | ios | pending |
 | S28-6 Uppdatera offline-pwa.md dokumentation | docs | pending |
@@ -63,7 +63,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (inga aktiva) | | | | |
+| Session 1 | fullstack (webb) | S28-2 | feature/s28-2-offline-ci | 2026-04-17 |
 
 ## Beslut
 

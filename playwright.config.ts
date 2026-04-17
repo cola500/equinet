@@ -105,6 +105,7 @@ export default defineConfig({
             name: 'offline-chromium',
             testMatch: /offline-.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3001' },
+            dependencies: ['setup'],
           },
         ]
       : []),
