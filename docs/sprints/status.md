@@ -26,7 +26,7 @@ sections:
 | S35-1 Kund kan skicka meddelande till leverantör | webb | done (cfb2e663) |
 | **S35-1.5 Messaging RLS + service-flag (HOTFIX)** | infra | done (08aec743) |
 | S35-2 Leverantör kan läsa och svara i inkorg | webb | done (ce73d2c5) |
-| S35-3 Push-notifiering vid nytt meddelande | webb | planned |
+| S35-3 Push-notifiering vid nytt meddelande | webb | done (055b6fc8) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
