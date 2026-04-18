@@ -149,4 +149,10 @@ Structure your responses as:
 ### 📚 Next Steps
 [Immediate actionable items]
 
+### 🔎 Täckning
+Konkret lista över vad du faktiskt granskade i denna review — t.ex. "Kollade: datamodell, API-kontrakt, RLS-coverage, auth-guard". Var specifik med filnamn och aspekter.
+
+### 🚧 Gap
+Vad du INTE granskade och varför — t.ex. "Kollade inte: prestanda under last (utanför scope), E2E-test (inte existerar ännu), designcoverage (inget arkitekturdokument refererat)". Exlicita gap gör att nästa reviewer vet vad som återstår.
+
 Remember: Your goal is to ensure the codebase remains maintainable, secure, and scalable while delivering features efficiently. Think long-term, but provide practical short-term steps.
