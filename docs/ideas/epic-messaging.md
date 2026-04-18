@@ -2,7 +2,7 @@
 title: "Epic: Bokningskommunikation i Equinet"
 description: "Meddelandefunktion mellan leverantör och kund, slicad enligt Seven Dimensions"
 category: idea
-status: draft
+status: active
 last_updated: 2026-04-18
 tags: [messaging, epic, seven-dimensions, post-launch]
 sections:
@@ -90,6 +90,10 @@ Leverantör står i stallet, diktar svar. Återanvänder `SpeechRecognizer` frå
 
 ## Nästa steg
 
-1. När Slice 1 är närmare i tid: skriv detaljerad story med TDD-plan, API-kontrakt, schema-ändringar
+1. ~~När Slice 1 är närmare i tid: skriv detaljerad story med TDD-plan, API-kontrakt, schema-ändringar~~ **Klart 2026-04-18**: Sprint 35 planerad, arkitekturbeslut dokumenterat i [messaging-domain.md](../architecture/messaging-domain.md) (S35-0), tech-architect + security-reviewer har godkänt.
 2. Mät Slice 1-värdet innan Slice 2-5 prioriteras
 3. Observera hur tidiga användare faktiskt kommunicerar -- kan påverka slice-ordningen
+
+## Arkitekturbeslut
+
+- **[messaging-domain.md](../architecture/messaging-domain.md)** (2026-04-18) — Schema, API-kontrakt, RLS-policies, rate limiting, notifier-integration för Slice 1.
