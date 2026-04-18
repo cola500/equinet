@@ -18,12 +18,38 @@ enum AuthState: Equatable {
     case authenticated   // Valid session -> show main app
 }
 
+enum LoginError: Equatable {
+    case invalidCredentials
+    case networkUnavailable
+    case serverError
+    case unknown
+
+    var message: String {
+        switch self {
+        case .invalidCredentials: return "E-post eller lösenord stämmer inte"
+        case .networkUnavailable: return "Ingen internetanslutning. Kontrollera nätverket och försök igen."
+        case .serverError: return "Något gick fel hos oss. Försök igen om en stund."
+        case .unknown: return "Oväntat fel. Försök igen eller kontakta support."
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .invalidCredentials: return "person.badge.key"
+        case .networkUnavailable: return "wifi.slash"
+        case .serverError: return "exclamationmark.triangle"
+        case .unknown: return "questionmark.circle"
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class AuthManager {
 
     private(set) var state: AuthState = .checking
     private(set) var loginError: String?
+    private(set) var loginErrorType: LoginError?
     private(set) var isLoggingIn = false
     private(set) var userType: String?  // "provider" or "customer"
 
@@ -64,6 +90,7 @@ final class AuthManager {
 
     func login(email: String, password: String) async {
         loginError = nil
+        loginErrorType = nil
         isLoggingIn = true
         defer { isLoggingIn = false }
 
@@ -79,11 +106,27 @@ final class AuthManager {
             _ = keychain.save(key: KeychainHelper.userTypeKey, value: resolvedUserType)
 
             state = .authenticated
+        } catch let urlError as URLError {
+            let type = mapURLError(urlError)
+            loginErrorType = type
+            loginError = type.message
         } catch let error as AuthError {
-            loginError = mapAuthError(error)
+            let type = mapSupabaseAuthError(error)
+            loginErrorType = type
+            loginError = type.message
         } catch {
-            loginError = "Något gick fel. Försök igen."
+            loginErrorType = .unknown
+            loginError = LoginError.unknown.message
             AppLogger.auth.error("Login failed with unexpected error: \(error)")
+        }
+    }
+
+    func mapURLError(_ error: URLError) -> LoginError {
+        switch error.code {
+        case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cancelled:
+            return .networkUnavailable
+        default:
+            return .unknown
         }
     }
 
@@ -201,26 +244,30 @@ final class AuthManager {
         return "provider"
     }
 
-    private func mapAuthError(_ error: AuthError) -> String {
+    private func mapSupabaseAuthError(_ error: AuthError) -> LoginError {
         switch error {
         case .sessionMissing:
-            return "Sessionen har gått ut. Logga in igen."
+            // SDK-internal: signIn succeeded but no session returned -- server-side issue
+            return .serverError
         case let .api(message, errorCode, _, _):
             switch errorCode {
             case .invalidCredentials, .userNotFound:
-                return "Ogiltig email eller lösenord"
+                return .invalidCredentials
             case .emailNotConfirmed:
-                return "Verifiera din email innan du loggar in"
+                // Correct credentials but account not confirmed -- closest to invalidCredentials
+                return .invalidCredentials
             case .userBanned:
-                return "Kontot är inte tillgängligt"
+                // Server/admin decision, not wrong credentials
+                return .serverError
             case .overRequestRateLimit:
-                return "För många inloggningsförsök. Försök igen om en stund."
+                AppLogger.auth.warning("Rate limit hit during login")
+                return .serverError
             default:
                 AppLogger.auth.error("Auth API error [\(errorCode.rawValue)]: \(message)")
-                return "Inloggningen misslyckades. Försök igen."
+                return .serverError
             }
         default:
-            return "Något gick fel. Försök igen."
+            return .unknown
         }
     }
 }

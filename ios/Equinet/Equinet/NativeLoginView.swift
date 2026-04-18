@@ -80,8 +80,8 @@ struct NativeLoginView: View {
                 }
 
                 // Error message
-                if let error = authManager.loginError {
-                    Text(error)
+                if let errorType = authManager.loginErrorType, let error = authManager.loginError {
+                    Label(error, systemImage: errorType.icon)
                         .font(.subheadline)
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
