@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-04-17
+last_updated: 2026-04-18
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -215,6 +215,15 @@ sections:
 - [ ] Massnotifikation fungerar
 - [ ] Integrationssidan (Fortnox) laddas
 
+### MFA (tvastegsverifiering)
+
+- [ ] Konto utan MFA: inloggning gar direkt till admin-panel
+- [ ] MFA-enrollering: QR-kod visas och kan skannas med autentiseringsapp
+- [ ] Kod fran autentiseringsapp verifieras korrekt
+- [ ] Konto med MFA: inloggning kraver verifieringskod efter losenord
+- [ ] Felaktig kod ger felmeddelande, inte inloggning
+- [ ] Giltig 6-siffrig TOTP-kod loggar in korrekt
+
 ---
 
 ## Feature-flaggor
@@ -336,6 +345,22 @@ sections:
 - [ ] Appen kan installeras
 - [ ] Oppnas i helskarm utan adressfalt
 - [ ] App-ikon visas korrekt
+
+### Native iOS-app
+
+- [ ] Appen startar med splash-skarm (Equinet-logga) och overgange till inloggning
+- [ ] Inloggning fungerar och JWT-token lagras i Keychain
+- [ ] Native dashboard visar KPI-kort och bokningsoversikt
+- [ ] Native bokningslista visar kommande och tidigare bokningar
+- [ ] Kalender i native-vy (scroll-paging veckovis)
+- [ ] Native kundlista med sok
+- [ ] Mer-flik: alla menyalternativ laddas korrekt (baserat pa feature flags)
+- [ ] Profil: 2-fliktaborell (Profil / Installningar) fungerar
+- [ ] Native offline-detektion: amber banner visas utan nat, gron banner vid ateranslutning
+- [ ] HTTP 5xx-fel visar native felvy med "Forsok igen"
+- [ ] Push-notiser: notis vid ny bokning (kraver godkand push-behorighet)
+- [ ] iOS Kalender-synk: bekraftad bokning dyker upp i Equinet-kalender i iOS Kalender
+- [ ] Widget pa hemskarm visar nasta bokning
 
 ---
 
