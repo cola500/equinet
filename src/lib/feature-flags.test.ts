@@ -104,7 +104,7 @@ describe("feature-flags", () => {
         demo_mode: false,
         supabase_auth_poc: false,
         data_retention: false,
-        messaging: false,
+        messaging: true,
       })
     })
 

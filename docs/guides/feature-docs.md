@@ -252,6 +252,19 @@ Under **Mina bokningar** ser du alla dina bokningar med status:
 - Avboka en bokning (om den inte redan är betald)
 - Betala för bekräftade bokningar
 - Lämna omdöme efter genomförd bokning
+- Skicka meddelanden till leverantören direkt från bokningen
+
+---
+
+### Meddelanden
+
+Du kan skicka textmeddelanden till leverantören kopplade till en specifik bokning.
+
+1. Gå till **Mina bokningar**
+2. Klicka på en bokning
+3. Välj **Skicka meddelande** (visas när bokningen är aktiv)
+
+Meddelanden visas i en tråd-vy med konversationshistorik. Leverantören får en push-notis när du skickar ett meddelande.
 
 ---
 
