@@ -34,8 +34,8 @@ sections:
 | Story | Domän | Status |
 |-------|-------|--------|
 | S32-1 Metrics-rapport-script (baseline) | infra | done (d90e7ed0) |
-| S32-2 Native bokningsdetalj-vy | ios | planned |
-| S32-3 iOS polish-sweep | ios | planned |
+| S32-2 Native bokningsdetalj-vy | ios | done (b45e9f92) |
+| S32-3 iOS polish-sweep | ios | in_progress |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
