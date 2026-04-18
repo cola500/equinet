@@ -19,11 +19,13 @@ import {
   BarChart3,
   ChevronDown,
   HelpCircle,
+  MessageSquare,
 } from "lucide-react"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useBookings } from "@/hooks/useBookings"
+import useSWR from "swr"
 import { isDemoModeWithFlags, DEMO_ALLOWED_PATHS } from "@/lib/demo-mode"
 import { toast } from "sonner"
 
@@ -44,6 +46,7 @@ const providerTabs: TabItem[] = [
   { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard, offlineSafe: true },
   { href: "/provider/calendar", label: "Kalender", icon: CalendarDays, offlineSafe: true },
   { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList, offlineSafe: true },
+  { href: "/provider/messages", label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
 ]
 
 const providerMoreItems: MoreItem[] = [
@@ -65,6 +68,7 @@ const primaryNavItems: NavItem[] = [
   { href: "/provider/dashboard", label: "Översikt", offlineSafe: true },
   { href: "/provider/calendar", label: "Kalender", offlineSafe: true },
   { href: "/provider/bookings", label: "Bokningar", offlineSafe: true },
+  { href: "/provider/messages", label: "Meddelanden", matchPrefix: "/provider/messages", featureFlag: "messaging" },
   { href: "/provider/services", label: "Mina tjänster" },
   { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
   { href: "/provider/reviews", label: "Recensioner" },
@@ -125,6 +129,12 @@ export function ProviderNav() {
   const pendingCount = (bookings as Array<{ status: string }>).filter((b) => b.status === "pending").length
   const demo = isDemoModeWithFlags(flags)
 
+  const { data: unreadData } = useSWR<{ count: number }>(
+    flags.messaging && !demo ? "/api/provider/conversations/unread-count" : null,
+    { refreshInterval: 30000 }
+  )
+  const unreadCount = unreadData?.count ?? 0
+
   const demoTabs: TabItem[] = [
     { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
     { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
@@ -136,11 +146,15 @@ export function ProviderNav() {
   const baseTabs = demo ? demoTabs : providerTabs
 
   const tabsWithBadge = useMemo(() =>
-    baseTabs.map((tab) =>
-      tab.href === "/provider/bookings" ? { ...tab, badge: pendingCount } : tab
-    ),
+    baseTabs
+      .filter((tab) => !tab.matchPrefix?.startsWith("/provider/messages") || flags.messaging)
+      .map((tab) => {
+        if (tab.href === "/provider/bookings") return { ...tab, badge: pendingCount }
+        if (tab.href === "/provider/messages") return { ...tab, badge: unreadCount }
+        return tab
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pendingCount, demo]
+    [pendingCount, unreadCount, demo, flags.messaging]
   )
 
   // Close dropdown when clicking outside
