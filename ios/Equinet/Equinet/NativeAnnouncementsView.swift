@@ -17,6 +17,7 @@ struct NativeAnnouncementsView: View {
     var onNavigateToWebPath: ((String) -> Void)?
 
     @State private var showCreateSheet = false
+    @State private var hapticRefreshed = false
 
     var body: some View {
         content
@@ -28,6 +29,7 @@ struct NativeAnnouncementsView: View {
                     }
                 }
             }
+            .sensoryFeedback(.success, trigger: hapticRefreshed)
             .sheet(isPresented: $showCreateSheet) {
                 AnnouncementFormSheet(
                     viewModel: viewModel,
@@ -39,6 +41,7 @@ struct NativeAnnouncementsView: View {
             }
             .refreshable {
                 await viewModel.refresh()
+                hapticRefreshed.toggle()
             }
             .confirmationDialog(
                 "Avbryt annons?",

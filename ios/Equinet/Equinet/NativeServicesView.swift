@@ -13,6 +13,8 @@ import OSLog
 struct NativeServicesView: View {
     @Bindable var viewModel: ServicesViewModel
 
+    @State private var hapticRefreshed = false
+
     var body: some View {
         content
             .navigationTitle("Mina tjänster")
@@ -31,8 +33,9 @@ struct NativeServicesView: View {
             }
             .refreshable {
                 await viewModel.refresh()
+                hapticRefreshed.toggle()
             }
-            .sensoryFeedback(.success, trigger: viewModel.services.count)
+            .sensoryFeedback(.success, trigger: hapticRefreshed)
             .sheet(item: $viewModel.activeSheet) { sheet in
                 sheetContent(for: sheet)
             }

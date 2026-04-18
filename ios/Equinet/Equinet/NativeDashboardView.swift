@@ -15,6 +15,8 @@ struct NativeDashboardView: View {
     var onNavigateToTab: ((AppTab) -> Void)?
     var onNavigateToWebPath: ((String) -> Void)?
 
+    @State private var hapticRefreshed = false
+
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "sv_SE")
@@ -77,8 +79,9 @@ struct NativeDashboardView: View {
         }
         .refreshable {
             await viewModel.refresh()
+            hapticRefreshed.toggle()
         }
-        .sensoryFeedback(.success, trigger: viewModel.dashboard?.todayBookings.count ?? 0)
+        .sensoryFeedback(.success, trigger: hapticRefreshed)
     }
 
     // MARK: - Priority Action

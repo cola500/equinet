@@ -16,6 +16,7 @@ struct NativeReviewsView: View {
 
     @State private var activeSheet: ReviewSheetType?
     @State private var reviewToDeleteReply: ReviewItem?
+    @State private var hapticRefreshed = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,6 +26,7 @@ struct NativeReviewsView: View {
             content
         }
         .navigationTitle("Recensioner")
+        .sensoryFeedback(.success, trigger: hapticRefreshed)
         .task {
             if viewModel.reviews.isEmpty {
                 await viewModel.loadReviews()
@@ -32,8 +34,8 @@ struct NativeReviewsView: View {
         }
         .refreshable {
             await viewModel.refresh()
+            hapticRefreshed.toggle()
         }
-        .sensoryFeedback(.success, trigger: viewModel.reviews.count)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .reply(let review):
