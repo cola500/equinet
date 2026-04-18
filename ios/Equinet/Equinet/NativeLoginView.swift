@@ -43,7 +43,7 @@ struct NativeLoginView: View {
                 VStack(spacing: 16) {
                     // Email
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Email")
+                        Text("E-post")
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundStyle(.secondary)
@@ -111,6 +111,11 @@ struct NativeLoginView: View {
                 .clipShape(.rect(cornerRadius: 12))
                 .disabled(email.isEmpty || password.isEmpty || authManager.isLoggingIn)
                 .accessibilityLabel("Logga in")
+                .accessibilityHint(
+                    email.isEmpty || password.isEmpty
+                        ? "Fyll i e-post och lösenord för att logga in"
+                        : ""
+                )
 
                 // Forgot password link
                 Button {
@@ -119,8 +124,11 @@ struct NativeLoginView: View {
                     Text("Glömt lösenord?")
                         .font(.subheadline)
                         .foregroundStyle(brandGreen)
+                        .frame(minHeight: 44)
+                        .padding(.horizontal, 8)
                 }
-                .accessibilityLabel("Glömt lösenord")
+                .contentShape(Rectangle())
+                .accessibilityLabel("Glömt lösenord, öppna återställningssida")
 
                 Spacer()
             }

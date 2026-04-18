@@ -434,6 +434,7 @@ struct NativeBookingDetailView: View {
                     .padding(.vertical, 4)
                     .background(Color(.systemGray5))
                     .clipShape(Capsule())
+                    .accessibilityLabel("Bokningstyp: \(badge)")
             }
         }
     }
@@ -601,6 +602,7 @@ struct NativeBookingDetailView: View {
         }
         .buttonStyle(.bordered)
         .tint(Color.equinetGreen)
+        .controlSize(.large)
         .disabled(isLoading)
         .accessibilityLabel("Lägg till anteckning")
     }
