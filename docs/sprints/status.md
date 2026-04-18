@@ -115,8 +115,13 @@ sections:
 | Live Activity för pågående bokning (iOS 16+) | 1-1.5 dag | Lock Screen + Dynamic Island när bokning pågår. Wow-feature, medel-effort. |
 | Siri Shortcut "Nästa bokning" | 0.5 dag | NSUserActivity + App Intent. Demoteknikvärde högt, komplexitet låg. |
 | Mät modellval per story (Opus/Sonnet/Haiku) | 0.5 dag | Utöka generate-metrics.sh med modell-dimension i M3/M4/M5. Lägg "Modell:"-fält i done-fil-mall. Efter 10+ stories per modell: beslut om standard per story-typ. |
-| Meddelanden kund ↔ leverantör (per bokning) | ~1 sprint MVP | In-app chat kopplad till specifik bokning. Ersätter SMS/samtal. Supabase Realtime + push-infra finns redan. Post-launch-kandidat. |
-| Meddelanden leverantör ↔ leverantör (community) | 2-3 sprintar | Nätverkseffekt (remisser, vikarier). Kräver moderering, rapportering, blockera-funktion. Produktbeslut om community-karaktär krävs. Utforska efter Variant A. |
+| **Epic: Bokningskommunikation** ([epic-messaging.md](../ideas/epic-messaging.md)) | -- | Slicad enligt Seven Dimensions 2026-04-18. MVP = Slice 1 nedan. Separat från leverantör↔leverantör-epic. |
+| Messaging Slice 1 (MVP): per bokning, text, polling | 4-5 dagar | Ny Conversation/Message-domän. Inkorg + tråd-vy. Push. 80% av värdet. Post-launch. |
+| Messaging Slice 2: bilagor (bild) | 1-2 dagar | Supabase Storage. Värde för vet/hovslagare. Efter Slice 1 mätt. |
+| Messaging Slice 3: realtid | 1-2 dagar | Ersätt polling med Supabase Realtime. Nice-to-have, inte blockerande. |
+| Messaging Slice 4: röstmeddelanden | 2-3 dagar | Återanvänd SpeechRecognizer (S8). Unik konkurrensfördel för fysiskt arbetande leverantörer. |
+| Messaging Slice 5: förfrågningar före bokning | 2-3 dagar | Okvalificerade förfrågningar. Kräver triage/spam-skydd-beslut. |
+| Leverantör ↔ leverantör community (separat epic) | 2-3 sprintar | Nätverkseffekt (remisser, vikarier). Annan persona, annat värde, annan moderering-komplexitet. Utforska efter messaging-epic validerats. |
 
 ## Blockerare
 
