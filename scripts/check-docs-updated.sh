@@ -25,6 +25,32 @@ if [ -n "$STAGED_PLAN_FILES" ]; then
   done
 fi
 
+# Tech lead-på-feature-branch-varning
+# Mönstret: tech lead (Johan) committar på feature/s\d+-branch OCH committen rör
+# BARA lifecycle-docs som tech lead normalt hanterar → Varna (ej blockera).
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+AUTHOR_EMAIL=$(git config user.email)
+
+LIFECYCLE_PATTERN="^docs/sprints/(status\.md|sprint-.*\.md)|^docs/ideas/|^docs/retrospectives/|^docs/architecture/patterns\.md"
+
+if [[ "$BRANCH" =~ ^feature/s[0-9] ]] && [[ "$AUTHOR_EMAIL" == "johan@jaernfoten.se" ]]; then
+  STAGED_FILES=$(git diff --cached --name-only)
+  TECH_LEAD_PATHS=$(echo "$STAGED_FILES" | grep -E "$LIFECYCLE_PATTERN" || true)
+  NON_TECH_LEAD=$(echo "$STAGED_FILES" | grep -v -E "$LIFECYCLE_PATTERN" || true)
+
+  if [ -n "$TECH_LEAD_PATHS" ] && [ -z "$NON_TECH_LEAD" ]; then
+    echo "⚠️  Tech lead-varning: du committar på feature branch '$BRANCH' men"
+    echo "   ändringarna rör bara lifecycle-docs (sprint/status/ideas/retros)."
+    echo "   Det här är dev:s branch -- använd worktree från main istället:"
+    echo ""
+    echo "     git worktree add ../equinet-techlead main"
+    echo "     cd ../equinet-techlead"
+    echo ""
+    echo "   Om detta är avsiktligt: fortsätt (varningen blockerar inte)."
+    echo ""
+  fi
+fi
+
 # Bara kör om en done-fil är staged
 STAGED_DONE_FILES=$(git diff --cached --name-only --diff-filter=A | grep "^docs/done/s[0-9]" || true)
 
