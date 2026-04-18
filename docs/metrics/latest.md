@@ -15,7 +15,7 @@ sections:
 
 # Metrics-rapport 2026-04-18
 
-> Genererad av `npm run metrics:report` — 2026-04-18 09:46:21
+> Genererad av `npm run metrics:report` — 2026-04-18 10:41:24
 
 ---
 
@@ -26,7 +26,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 - 2026-W13: 29 commits
 - 2026-W14: 442 commits
 - 2026-W15: 154 commits
-- 2026-W16: 139 commits
+- 2026-W16: 152 commits
 
 ---
 
@@ -34,7 +34,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 
 _Tid från första commit på feature-branch till merge-commit. Median + p90. Senaste 8 veckor._
 
-- Antal merges analyserade: 200
+- Antal merges analyserade: 203
 - Median lead time: 0h
 - p90 lead time: 3h
 
@@ -44,9 +44,9 @@ _Tid från första commit på feature-branch till merge-commit. Median + p90. Se
 
 _Andel stories där verifiering visade att problemet redan var löst._
 
-- Totalt done-filer: 127
+- Totalt done-filer: 130
 - "Redan fixat"-filer: 6
-- Rate: 4,7% (mål: <5%)
+- Rate: 4,6% (mål: <5%)
 
 ---
 
@@ -54,12 +54,12 @@ _Andel stories där verifiering visade att problemet redan var löst._
 
 _Hur ofta hittar review-agenter faktiska problem (blockers/majors)?_
 
-- Stories med agent-review: 54
-- Stories med minst ett fynd (blocker/major): 42
-- Hit-rate: 77,8% (hur ofta agenter hittar reella problem)
-- Stories med blocker: 26
-- Stories med major: 21
-- Stories med minor: 18
+- Stories med agent-review: 57
+- Stories med minst ett fynd (blocker/major): 45
+- Hit-rate: 78,9% (hur ofta agenter hittar reella problem)
+- Stories med blocker: 28
+- Stories med major: 23
+- Stories med minor: 21
 
 ---
 
@@ -67,7 +67,7 @@ _Hur ofta hittar review-agenter faktiska problem (blockers/majors)?_
 
 _Tid från plan-commit till done-commit. Proxy för "hur lång tar en story?"_
 
-- Antal stories analyserade: 6 av 127 (kräver matchande plan-fil i docs/plans/)
+- Antal stories analyserade: 9 av 130 (kräver matchande plan-fil i docs/plans/)
 - Median cykeltid: 0h (från plan-commit till done-commit)
 - _Notering: 0h = plan och done committade i samma session (korrekt beteende)_
 
@@ -78,8 +78,8 @@ _Tid från plan-commit till done-commit. Proxy för "hur lång tar en story?"_
 _Antal unit-tester idag._
 
 - Vitest (src/): 4098 tester
-- XCTest (ios/): 294 tester
-- Totalt: 4392 tester
+- XCTest (ios/): 308 tester
+- Totalt: 4406 tester
 
 ---
 
