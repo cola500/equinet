@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-17
+last_updated: 2026-04-18
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -25,6 +25,9 @@ sections:
 | S31-1 Hjälpartiklar-audit och uppdatering | webb | done |
 | S31-2 Admin testing-guide uppdatering | docs | done |
 | S31-3 Release-checklista | docs | done |
+| S31-4 Tvinga grep-verifiering i plan-mall | docs | pending |
+| S31-5 Arkivera gamla planer | docs | pending |
+| S31-6 Mät agent-användning av docs | docs | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
