@@ -26,9 +26,18 @@ struct NativeBookingsView: View {
     @State private var highlightedBookingId: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            filterBar
-            content
+        NavigationStack {
+            VStack(spacing: 0) {
+                filterBar
+                content
+            }
+            .navigationDestination(for: String.self) { bookingId in
+                NativeBookingDetailView(
+                    bookingId: bookingId,
+                    viewModel: viewModel,
+                    onNavigateToWeb: onNavigateToWeb
+                )
+            }
         }
         .task {
             await viewModel.loadBookings()
@@ -319,7 +328,7 @@ private struct BookingCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Header row: status + service + price
+            // Header row: status + service + price + detail link
             HStack {
                 statusIndicator
                 Text(booking.serviceName)
@@ -328,6 +337,13 @@ private struct BookingCard: View {
                 Text("\(Int(booking.servicePrice)) kr")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                NavigationLink(value: booking.id) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Visa detaljer för \(booking.serviceName)")
             }
 
             // Customer name
