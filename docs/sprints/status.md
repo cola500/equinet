@@ -25,7 +25,7 @@ sections:
 | S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | done (c712c767) |
 | S36-1 "Vad jag INTE kollade"-rapportering i review-subagenter | docs | done (34acbf2a) |
 | S36-2 Visuell verifiering av S35 messaging-flöde | webb | done (6a11c7a7) |
-| S36-3 Tech lead-på-feature-branch-varning (hook) | infra | pending |
+| S36-3 Tech lead-på-feature-branch-varning (hook) | infra | done (63ebdfa6) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -68,7 +68,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv session -- S34 klar) | - | - | - | - |
+| (ingen aktiv session) | - | - | - | - |
 
 ## Beslut
 
