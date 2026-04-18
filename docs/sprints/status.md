@@ -29,11 +29,13 @@ sections:
 | S31-5 Arkivera gamla planer | docs | done |
 | S31-6 Mät agent-användning av docs | docs | done |
 
-**Nästa: Sprint 32** ([sprint-32-metrics.md](sprint-32-metrics.md)) -- Data & Metrics (planerad)
+**Nästa: Sprint 32** ([sprint-32-metrics.md](sprint-32-metrics.md)) -- Metrics + iOS Polish (planerad)
 
 | Story | Domän | Status |
 |-------|-------|--------|
 | S32-1 Metrics-rapport-script (baseline) | infra | planned |
+| S32-2 Native bokningsdetalj-vy | ios | planned |
+| S32-3 iOS polish-sweep | ios | planned |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -100,6 +102,8 @@ sections:
 | Item | Effort | Motivering |
 |------|--------|------------|
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
+| Native schema-redigering (iOS) | 1 dag | AvailabilitySchedule + AvailabilityException redigeras idag i WebView. Provider använder detta dagligen. |
+| iOS Snapshot-tester | 0.5-1 dag | Swift Snapshot Testing över 15 native-vyer. Fångar visuella regressioner automatiskt. |
 
 ### Vid lansering
 
@@ -110,6 +114,7 @@ sections:
 | Skew protection / rolling releases | 15 min | Kraver Vercel Pro. Forhindrar att gamla klienter traffar ny server vid deploy. |
 | CORS headers | 15 min | Inga externa klienter annu (iOS ar same-origin via WKWebView). |
 | A11y-testning (axe-core) | 1 dag | Bra praxis. Kan laggas som E2E-steg med Playwright axe-integration. |
+| iOS accessibility audit (VoiceOver + Dynamic Type) | 0.5-1 dag | NFR-relevant för lansering. mobile-mcp + VoiceOver-simulering över alla native-vyer. |
 
 ### Lag prioritet
 
@@ -117,6 +122,8 @@ sections:
 |------|--------|-------------|
 | Supabase Realtime | 1-2 dagar | Live-uppdatering via WebSocket, ersatter SWR-polling |
 | Zod .strict() pa mobile-token | 30 min | Saknas pa request body |
+| Live Activity för pågående bokning (iOS 16+) | 1-1.5 dag | Lock Screen + Dynamic Island när bokning pågår. Wow-feature, medel-effort. |
+| Siri Shortcut "Nästa bokning" | 0.5 dag | NSUserActivity + App Intent. Demoteknikvärde högt, komplexitet låg. |
 
 ## Blockerare
 
