@@ -15,6 +15,8 @@ struct NativeBookingsView: View {
     @Binding var pendingBookingId: String?
     var onNavigateToWeb: ((_ path: String) -> Void)?
 
+    @State private var hapticRefreshed = false
+
     // Sheet state
     @State private var cancelBookingId: String?
     @State private var cancelMessage = ""
@@ -237,8 +239,10 @@ struct NativeBookingsView: View {
             .listStyle(.plain)
             .refreshable {
                 await viewModel.refresh()
+                hapticRefreshed.toggle()
             }
             .sensoryFeedback(.selection, trigger: viewModel.selectedFilter)
+            .sensoryFeedback(.success, trigger: hapticRefreshed)
             .onChange(of: highlightedBookingId) { _, newId in
                 guard let id = newId else { return }
                 Task {

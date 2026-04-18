@@ -14,6 +14,8 @@ struct NativeCustomersView: View {
     @Bindable var viewModel: CustomersViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
 
+    @State private var hapticRefreshed = false
+
     var body: some View {
         VStack(spacing: 0) {
             filterBar
@@ -36,8 +38,10 @@ struct NativeCustomersView: View {
         }
         .refreshable {
             await viewModel.refresh()
+            hapticRefreshed.toggle()
         }
         .sensoryFeedback(.selection, trigger: viewModel.selectedFilter)
+        .sensoryFeedback(.success, trigger: hapticRefreshed)
         .sheet(item: $viewModel.activeSheet) { sheet in
             sheetContent(for: sheet)
         }

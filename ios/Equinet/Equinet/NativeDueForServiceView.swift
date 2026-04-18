@@ -12,16 +12,19 @@ import OSLog
 struct NativeDueForServiceView: View {
     @Bindable var viewModel: DueForServiceViewModel
 
+    @State private var hapticRefreshed = false
+
     var body: some View {
         content
             .navigationTitle("Besöksplanering")
+            .sensoryFeedback(.success, trigger: hapticRefreshed)
             .task {
                 await viewModel.loadItems()
             }
             .refreshable {
                 await viewModel.refresh()
+                hapticRefreshed.toggle()
             }
-            .sensoryFeedback(.success, trigger: viewModel.items.count)
     }
 
     @ViewBuilder

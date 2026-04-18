@@ -20,6 +20,7 @@ struct NativeProfileView: View {
     @State private var selectedTab = 0
     @State private var showEditSheet = false
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var hapticRefreshed = false
     // Delete account offloaded to WebView (session auth required)
 
     var body: some View {
@@ -40,11 +41,13 @@ struct NativeProfileView: View {
             }
         }
         .navigationTitle("Min profil")
+        .sensoryFeedback(.success, trigger: hapticRefreshed)
         .task {
             await viewModel.loadProfile()
         }
         .refreshable {
             await viewModel.loadProfile()
+            hapticRefreshed.toggle()
         }
         .sheet(isPresented: $showEditSheet) {
             if let profile = viewModel.profile {

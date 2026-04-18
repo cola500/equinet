@@ -13,14 +13,18 @@ struct NativeGroupBookingsView: View {
     @State private var viewModel = GroupBookingsViewModel()
     @Bindable var servicesViewModel: ServicesViewModel
 
+    @State private var hapticRefreshed = false
+
     var body: some View {
         content
             .navigationTitle("Gruppbokningar")
+            .sensoryFeedback(.success, trigger: hapticRefreshed)
             .task {
                 await viewModel.loadAvailable()
             }
             .refreshable {
                 await viewModel.refresh()
+                hapticRefreshed.toggle()
             }
     }
 

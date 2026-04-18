@@ -34,6 +34,7 @@ struct NativeInsightsView: View {
                     .frame(width: 180)
                 }
             }
+            .sensoryFeedback(.selection, trigger: viewModel.selectedPeriod)
             .task {
                 await viewModel.loadInsights()
             }
