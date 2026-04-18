@@ -66,6 +66,7 @@
     "check:all": "bash scripts/check-all.sh",
     "flags:validate": "bash scripts/validate-feature-flags.sh",
     "codemap": "bash scripts/generate-code-map.sh",
+    "metrics:report": "bash scripts/generate-metrics.sh",
     "cache:clear": "rm -rf .next .tsbuildinfo"
   },
   "dependencies": {
