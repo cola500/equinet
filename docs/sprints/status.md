@@ -18,13 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 34** ([sprint-34.md](sprint-34.md)) -- iOS UX Major-fixar
+**Sprint 34** ([sprint-34.md](sprint-34.md)) -- iOS UX Major-fixar -- **KLAR**
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S34-1 Profilvy -- tap-targets och bekräftelsedialog | ios | pending |
-| S34-2 Bokningsdetalj -- kontakter och knappar | ios | pending |
-| S34-3 Felmeddelanden -- nätverks- vs autentiseringsfel | ios | pending |
+| S34-1 Profilvy -- tap-targets och bekräftelsedialog | ios | done (PR #192, 964f20db) |
+| S34-2 Bokningsdetalj -- kontakter och knappar | ios | done (PR #193, 82f3892e) |
+| S34-3 Felmeddelanden -- nätverks- vs autentiseringsfel | ios | done (PR #194, 411dfac0) |
 
 **Nästa: Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP (planerad, efter S34)
 
@@ -41,6 +41,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S34 | iOS UX Major-fixar | 3/3 done (tap-targets, kontakter, felmeddelanden) |
 | S33 | Process tweaks + iOS UX-audit | 2/2 done + Seven Dimensions formalized + messaging-epic slicad |
 | S32 | Metrics + iOS Polish | 3/3 done (metrics-baseline, native bokningsdetalj, iOS polish-sweep) |
 | S31 | Content Freshness + Agent Efficiency | 6/6 done (hjälpartiklar, testing-guide, release-checklist, plan-mall, arkivera planer, mät docs) |
@@ -74,7 +75,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv session) | - | - | - | - |
+| (ingen aktiv session -- S34 klar) | - | - | - | - |
 
 ## Beslut
 
