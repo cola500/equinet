@@ -3,7 +3,7 @@ title: "Auto-assign vid sessionsstart"
 description: "Automatisk tilldelning av stories, med stöd för parallella sessioner och domänfiltrering"
 category: rule
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-18
 tags: [workflow, team, automation, parallel]
 sections:
   - Roller och kommandon
@@ -170,6 +170,11 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
      - [ ] docs/operations/* om ops-procedur påverkas (inkl. incident-runbook)
      - [ ] docs/architecture/* om arkitekturbeslut
      - Skriv: "Uppdaterade: NFR-14, README, docs/security/mfa-admin.md" eller "Ingen docs-uppdatering (intern refactoring)"
+   - **Verktyg använda** (OBLIGATORISKT -- vi mäter effektivitet av docs-katalogen):
+     - Läste patterns.md vid planering: ja / nej / N/A (trivial)
+     - Kollade code-map.md för att hitta filer: ja / nej / N/A (visste redan)
+     - Hittade matchande pattern? Vilket? (t.ex. "Webhook idempotency") eller "nej"
+     - Varför: efter 10 stories utvärderar vi om katalogen faktiskt ger värde.
    - Avvikelser eller kända begränsningar
    - **Lärdomar**: Vad var oväntat? Vad skulle du göra annorlunda? Gotchas för framtida sessioner?
    - **SAMTIDIGT:** Uppdatera din sessionsfil: story -> `done` + commit-hash
