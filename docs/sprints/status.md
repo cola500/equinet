@@ -95,6 +95,7 @@ sections:
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
+| **ProviderNav ↔ NativeMoreView sync-gate** | 30-45 min | S38-0-incident: messaging-nav lades till i `ProviderNav.tsx` (S35-2) men inte i `NativeMoreView.swift` → iOS-leverantörer kunde inte hitta messaging mellan S37-rollout och S38-fix. Pre-commit hook eller post-merge-check (M9 i metrics:report) som varnar om `ProviderNav.tsx` ändras utan motsvarande `NativeMoreView.swift`-ändring. Följer mönstret från S36-3/4/5/6 self-testing-gates. |
 
 ### Vart att fixa (vid tillfalle)
 
