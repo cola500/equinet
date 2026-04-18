@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
@@ -36,7 +36,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
 
-  const { data, mutate } = useSWR<MessagesResponse>(
+  const { data, mutate, isLoading } = useSWR<MessagesResponse>(
     `/api/bookings/${bookingId}/messages`,
     { refreshInterval: 10000 }
   )
@@ -80,13 +80,6 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
   const messages = data?.messages ?? []
 
   return (
@@ -114,7 +107,10 @@ function ThreadView({ bookingId }: { bookingId: string }) {
         aria-live="polite"
         aria-label="Meddelandetråd"
       >
-        {messages.length === 0 && (
+        {isLoading && (
+          <p className="text-sm text-gray-400 text-center py-8">Laddar meddelanden...</p>
+        )}
+        {!isLoading && messages.length === 0 && (
           <p className="text-sm text-gray-500 text-center py-8">
             Inga meddelanden ännu.
           </p>
@@ -153,16 +149,14 @@ function ThreadView({ bookingId }: { bookingId: string }) {
 
       {/* Compose area */}
       <div className="border-t pt-3 space-y-2">
-        <Textarea
+        <VoiceTextarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(value) => setContent(value)}
           placeholder="Skriv ett meddelande..."
           className="resize-none"
           rows={2}
           maxLength={2000}
           disabled={isSending}
-          aria-label="Meddelande"
         />
         <div className="flex justify-between items-center">
           {content.length > 1800 ? (

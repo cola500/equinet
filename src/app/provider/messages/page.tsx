@@ -77,7 +77,7 @@ export default function ProviderMessagesPage() {
                         {item.customerName}
                       </span>
                       {item.unreadCount > 0 && (
-                        <Badge variant="destructive" className="shrink-0 text-xs">
+                        <Badge className="shrink-0 text-xs bg-green-600 text-white">
                           {item.unreadCount}
                         </Badge>
                       )}

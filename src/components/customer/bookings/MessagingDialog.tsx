@@ -46,14 +46,22 @@ export function MessagingDialog({
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const readCalledRef = useRef(false)
 
-  const { data, mutate } = useSWR<MessagesResponse>(
+  const { data, mutate, isLoading } = useSWR<MessagesResponse>(
     open ? `/api/bookings/${bookingId}/messages` : null,
     { refreshInterval: 10000 }
   )
 
   useEffect(() => {
-    if (open && data) {
+    if (!open) {
+      readCalledRef.current = false
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (open && data && !readCalledRef.current) {
+      readCalledRef.current = true
       fetch(`/api/bookings/${bookingId}/messages/read`, { method: "PATCH" }).catch(() => {})
     }
   }, [open, bookingId, data])
@@ -109,8 +117,15 @@ export function MessagingDialog({
         </ResponsiveDialogHeader>
 
         {/* Message list */}
-        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3 min-h-0">
-          {messages.length === 0 && (
+        <div
+          className="flex-1 overflow-y-auto px-4 py-2 space-y-3 min-h-0"
+          aria-live="polite"
+          aria-label="Meddelandetråd"
+        >
+          {isLoading && (
+            <p className="text-sm text-gray-400 text-center py-8">Laddar meddelanden...</p>
+          )}
+          {!isLoading && messages.length === 0 && (
             <p className="text-sm text-gray-500 text-center py-8">
               Inga meddelanden ännu. Skriv ett meddelande till leverantören.
             </p>
@@ -161,11 +176,14 @@ export function MessagingDialog({
             maxLength={2000}
             disabled={isSending}
             aria-label="Meddelande"
+            autoFocus
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">
-              {content.length}/2000
-            </span>
+            {content.length > 1800 ? (
+              <span className="text-xs text-amber-600">{content.length}/2000</span>
+            ) : (
+              <span />
+            )}
             <Button
               type="button"
               onClick={handleSend}

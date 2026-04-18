@@ -24,7 +24,7 @@ sections:
 |-------|-------|--------|
 | S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | done (c712c767) |
 | S36-1 "Vad jag INTE kollade"-rapportering i review-subagenter | docs | done (34acbf2a) |
-| S36-2 Visuell verifiering av S35 messaging-flöde | webb | pending |
+| S36-2 Visuell verifiering av S35 messaging-flöde | webb | done |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
