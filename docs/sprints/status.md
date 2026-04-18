@@ -92,11 +92,24 @@ sections:
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
 
+### Messaging-rollout-blockerare (fixas före flag default: true)
+
+| Item | Effort | Motivering |
+|------|--------|------------|
+| MAJOR-1: Suspense skeleton i ThreadView | 30 min | `<Suspense fallback={null}>` ger blank flash i provider/messages/[bookingId]. Enkel skeleton-komponent. |
+| MAJOR-2: Hämta kundnamn/tjänst från API (ej query-params) | 1-1.5h | Query-param injection-risk i provider thread. `useSearchParams()` renderar osaniterad data. Flytta till `/api/bookings/{id}`-hämtning. |
+
 ### Vart att fixa (vid tillfalle)
 
 | Item | Effort | Motivering |
 |------|--------|------------|
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
+| Messaging: aria-label på ProviderNav messaging-badge (MINOR-2) | 15 min | Skärmläsare förstår inte "3"-siffran. |
+| Messaging: Optimistisk uppdatering vid sändning (MINOR-3) | 30 min | 200ms fördröjning känns sluggish. Mutate före nätverksrop. |
+| Messaging: Pending-state på MessagingSection-knapp (MINOR-4) | 15 min | Ingen visuell feedback vid klick. |
+| Messaging: Pagination för långa trådar (SUGGESTION-1) | 1-2h | Lazy-loading när tråd >50 meddelanden. |
+| Messaging: Leverantörs-läskvitto (SUGGESTION-2) | 1h | "Läst kl. 14:23" ger förtroende. |
+| Messaging: Typing indicator (SUGGESTION-3) | 2-3h | Real-time via polling/SSE. Post-MVP. |
 | Native schema-redigering (iOS) | 1 dag | AvailabilitySchedule + AvailabilityException redigeras idag i WebView. Provider använder detta dagligen. |
 | iOS Snapshot-tester | 0.5-1 dag | Swift Snapshot Testing över 15 native-vyer. Fångar visuella regressioner automatiskt. |
 | LoginError `emailNotConfirmed` eget fall | 30 min | S34-3 begränsning: ger "fel e-post/lösenord" istället för "verifiera din e-post". Nytt enum-fall + nytt meddelande. |
