@@ -244,6 +244,9 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Mobil-först UI med responsiva dialoger, 44px touch targets och stegvist bokningsflöde
 - Stallprofiler och stallplatser (skapa stall, publicera lediga platser, publik sökning med kommun-autocomplete)
 
+### Kommunikation
+- Meddelanden mellan kund och leverantör per bokning (tråd-vy, polling var 10s, push-notiser vid nytt meddelande)
+
 ### Leverantörsverktyg
 - Ruttplanering med kartvy, optimering, Google Maps-navigation och geolokalisering
 - Ruttannonsering med kundvy (tjänstefilter, datumavgränsning, HorseSelect, "Via rutt"-badge)
