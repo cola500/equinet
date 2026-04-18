@@ -25,14 +25,22 @@ sections:
 | S33-0 Process tweaks (4 justeringar) | docs | done (8651223a) |
 | S33-1 UX + visuell review av iOS-appen | ios | pending |
 
-**Nästa: Sprint 34** ([sprint-34.md](sprint-34.md)) -- Messaging Slice 1 MVP (planerad, startar efter S33)
+**Nästa: Sprint 34** ([sprint-34.md](sprint-34.md)) -- iOS UX Major-fixar (planerad, startar efter S33)
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S34-0 Plan-review av Conversation-domän | docs | planned |
-| S34-1 Kund kan skicka meddelande till leverantör | webb | planned |
-| S34-2 Leverantör kan läsa och svara i inkorg | webb | planned |
-| S34-3 Push-notifiering vid nytt meddelande | webb | planned |
+| S34-1 Profilvy -- tap-targets och bekräftelsedialog | ios | planned |
+| S34-2 Bokningsdetalj -- kontakter och knappar | ios | planned |
+| S34-3 Felmeddelanden -- nätverks- vs autentiseringsfel | ios | planned |
+
+**Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP (planerad, efter S34)
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S35-0 Plan-review av Conversation-domän | docs | planned |
+| S35-1 Kund kan skicka meddelande till leverantör | webb | planned |
+| S35-2 Leverantör kan läsa och svara i inkorg | webb | planned |
+| S35-3 Push-notifiering vid nytt meddelande | webb | planned |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 

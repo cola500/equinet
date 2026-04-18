@@ -1,269 +1,193 @@
 ---
-title: "Sprint 34: Messaging Slice 1 (MVP)"
-description: "Per bokning: tvåvägs text-chat mellan kund och leverantör, polling, push"
+title: "Sprint 34: iOS UX Major-fixar"
+description: "Åtgärda 6 Major-fynd från iOS UX-audit (S33-1) över Profil, Bokningsdetalj, Felmeddelanden"
 category: sprint
 status: planned
 last_updated: 2026-04-18
-tags: [sprint, messaging, conversation, mvp, post-launch]
+tags: [sprint, ios, ux, accessibility, polish]
 sections:
   - Sprint Overview
   - Sessionstilldelning
   - Stories
   - Exekveringsplan
-  - Risker och oklarheter
+  - Risker
 ---
 
-# Sprint 34: Messaging Slice 1 (MVP)
+# Sprint 34: iOS UX Major-fixar
 
 ## Sprint Overview
 
-**Mål:** Leverera Slice 1 av messaging-epic -- tvåvägs text-kommunikation mellan kund och leverantör, kopplad till specifik bokning. Polling, push, ingen realtid, inga bilagor.
+**Mål:** Åtgärda 6 Major-fynd från iOS UX-audit (S33-1) grupperade i 3 värde-drivna stories. Alla fynd har konkreta mätvärden (pt-storlek, specifika beteenden) från mobile-mcp accessibility tree.
 
-**Bakgrund:** Epic formulerad och slicad 2026-04-18 enligt Seven Dimensions (se [epic-messaging.md](../ideas/epic-messaging.md)). Slice 1 bedömd till 4-5 dagar och bryts här ner i 4 värde-drivna user stories enligt rekursiv tillämpning av processen.
+**Bakgrund:** S33-1-audit körde cx-ux-reviewer + mobile-mcp på alla 15 native-vyer. Blockers + enklaste Minors fixades direkt. 6 Majors backloggades som dessa stories. Se [2026-04-18-ios-ux-audit.md](../retrospectives/2026-04-18-ios-ux-audit.md) för fullständig rapport.
 
-**Primär persona:** Leverantör (hög smärta av context-switching mellan SMS/samtal/Messenger).
+**Prioriterat före messaging (S35):** Bokningsdetaljfixarna (S34-2) är särskilt viktiga att ha på plats innan messaging byggs i samma vy -- vi vill inte fixa UX på gammal vy som sedan förändras.
 
-**Success-mått:** Upplevd professionalism, ekosystem-retention, minskad kognitiv belastning.
-
-**Avgränsning (ej i scope):**
-- Realtid (Supabase Realtime) -- Slice 3
-- Bilagor (bilder) -- Slice 2
-- Röstmeddelanden -- Slice 4
-- Förfrågningar FÖRE bokning -- Slice 5
-- Leverantör ↔ leverantör -- separat epic
-- Native iOS-vy -- WebView räcker initialt, native i senare sprint
+**Avgränsning:**
+- Bara Major-fynd från audit -- Minor-fynd stannar i backlog
+- Ingen native-konvertering av nya vyer
+- Ingen arkitekturändring
 
 ---
 
 ## Sessionstilldelning
 
-Stories är sekventiella pga beroende: S34-0 (schema) → S34-1 (kund-flöde) → S34-2 (leverantör-flöde) → S34-3 (push).
-
-En session räcker. Om parallellt önskas: S34-3 (push) kan köras av iOS-session efter S34-2 är mergad.
+Alla tre stories är ios-domän och rör olika Swift-filer -- kan köras sekventiellt av en session eller parallelliseras om två iOS-sessioner önskas (sällsynt).
 
 ---
 
 ## Stories
 
-### S34-0: Plan-review av Conversation-domän
-
-**Prioritet:** 0 (förarbete, kör först)
-**Effort:** 2-3h (plan + review, ingen kod)
-**Domän:** docs (`docs/architecture/` + schema-skiss)
-
-Innan någon kod skrivs: tech-architect + security-reviewer granskar hela designen för Conversation-domänen. Detta är en NY kärndomän -- repository obligatoriskt, RLS-policies, ownership guards.
-
-**Implementation:**
-
-**Steg 1: Skissa domänmodell**
-- `Conversation` (per bokning, en per relation kund-leverantör-bokning)
-- `Message` (innehåll, sender, createdAt, read-markör)
-- Relation: `Booking` 1-1 `Conversation`, `Conversation` 1-N `Message`
-- Sender: enum (`CUSTOMER` | `PROVIDER`) med `senderId` (User-ID)
-
-**Steg 2: Skissa API**
-- `GET /api/bookings/[id]/messages` (båda parter kan läsa)
-- `POST /api/bookings/[id]/messages` (skicka meddelande)
-- `GET /api/provider/conversations` (leverantörens inkorg, aggregerad)
-- Rate limiting: vilken limiter? (message-specific, lägre än booking)
-- Zod .strict(): `content` (max 2000 tecken), `type` ("text")
-
-**Steg 3: Skissa RLS-policies**
-- Kund kan läsa/skriva meddelanden där de är `customerId` på bokningen
-- Leverantör kan läsa/skriva meddelanden där de är `providerId` på bokningen
-- Ingen annan kan läsa
-- Pentest-reminder: verifiera att `conversationId` ensamt inte ger access -- alltid gå via booking ownership
-
-**Steg 4: Plan-review**
-- **tech-architect:** arkitektur-bedömning (ny kärndomän, integration med Booking, query-patterns)
-- **security-reviewer:** RLS-design, ownership guards, IDOR-risker
-
-**Steg 5: Dokumentera i `docs/architecture/messaging-domain.md`**
-
-**Acceptanskriterier:**
-- [ ] `docs/architecture/messaging-domain.md` finns med schema + API + RLS-skiss
-- [ ] tech-architect har godkänt (inga blockers)
-- [ ] security-reviewer har godkänt (inga blockers)
-- [ ] Prisma schema-utkast inkluderat (faktisk migration i S34-1)
-- [ ] Epic-dokumentet uppdaterat med länk till arkitekturbeslut
-
----
-
-### S34-1: Kund kan skicka meddelande till leverantör om bokning
+### S34-1: Profilvy -- tap-targets och bekräftelsedialog
 
 **Prioritet:** 1
-**Effort:** 1-1.5 dag
-**Domän:** webb (nytt Prisma schema, ny domän, ny API, kund-UI)
+**Effort:** 0.5 dag
+**Domän:** ios (`ios/Equinet/Equinet/NativeProfileView.swift`)
 
-Första halvan av MVP-värdet: kunden kan initiera och skicka text-meddelanden kopplade till en bokning. Meddelandet sparas och blir läsbart av leverantören (i S34-2).
+Fixa 5 fynd i NativeProfileView: tap-targets under 44pt, saknad bekräftelse för destruktiv action, accessibility-labels.
 
 **Aktualitet verifierad:**
-- Backlog-story, inte tidigare implementerad. Grep-verifiera att inga `Conversation`/`Message`-modeller redan finns i `prisma/schema.prisma`.
+- Backlog-story baserad på audit 2026-04-18. Grep-verifiera att fynden fortfarande finns innan fix.
 
 **Implementation:**
 
-**Steg 1: Prisma schema + migration**
-- Lägg till `Conversation` + `Message`-modeller enligt S34-0 design
-- Skapa migration, kör lokalt, verifiera
+**Fynd att åtgärda (från audit):**
 
-**Steg 2: Repository + Service (TDD)**
-- `IConversationRepository`, `MockConversationRepository`, `PrismaConversationRepository`
-- `ConversationService.sendMessage()`, `ConversationService.findOrCreateForBooking()`
-- BDD dual-loop: yttre integrationstest → inre unit-tester
+| ID | Problem | Fix |
+|----|---------|-----|
+| M-01 | "Byt bild"-knapp 44×15pt | `frame(minHeight: 44)` + ikon |
+| M-02 | "Redigera"-knappar i sektionsrubriker 18-19pt | `frame(minHeight: 44)` + `contentShape(Rectangle())` |
+| M-03 | "Radera konto" saknar confirmationDialog | Native `.confirmationDialog` med destruktiv roll |
+| m-06 | Settings-fliken saknar error-state | ErrorBanner eller motsvarande |
+| m-07 | linkRow saknar accessibilityLabel | Beskrivande label som inkluderar destination |
 
-**Steg 3: API**
-- `POST /api/bookings/[id]/messages` med auth (session), ownership-check, rate limit, Zod .strict()
-- Svenska felmeddelanden
-- Tester enligt api-routes.md checklista
-
-**Steg 4: Kund-UI**
-- På kundens bokningsdetaljsida: ny sektion "Meddelanden"
-- Skriv-fält + skicka-knapp
-- Lista: kundens egna skickade meddelanden (provider har inte svarat än i denna slice)
-- Responsiv (mobile-first med ResponsiveDialog-pattern om modal)
-
-**Steg 5: Tester**
-- API-tester (integration + unit)
-- E2E: kund skapar bokning → navigerar till detalj → skickar meddelande → bekräftelse visas
-- Svenska strängar verifierade
+**Tester:**
+- ProfileViewModelTests: inga förändringar (UI-only)
+- Manuell verifiering via mobile-mcp EFTER fixar: screenshot + accessibility tree
 
 **Acceptanskriterier:**
-- [ ] Kund kan skicka text-meddelande från bokningsdetalj-vy
-- [ ] Meddelandet sparas i DB med korrekt sender, createdAt, bookingId
-- [ ] RLS förhindrar kund från att skicka till annan kunds bokning
-- [ ] Rate limit på endpoint (max X meddelanden/minut)
-- [ ] E2E grön, `check:all` grön
+- [ ] Alla 3 Major-fynd (M-01, M-02, M-03) åtgärdade
+- [ ] 2 Minor-fynd (m-06, m-07) åtgärdade
+- [ ] mobile-mcp-verifiering: tap-targets ≥ 44pt bekräftat
+- [ ] Radera konto triggar confirmationDialog före kall till API
+- [ ] `xcodebuild test -only-testing:EquinetTests/ProfileViewModelTests` grön
+- [ ] cx-ux-reviewer godkänner
 
-**Docs-matris:**
-- `docs/architecture/messaging-domain.md` (uppdatera om schema-ändring)
-- Hjälpartikel `src/lib/help/articles/customer/meddelanden.md` (ny, MVP-beskrivning)
-- Testing-guide scenario
-
-**Reviews:** tech-architect (plan om S34-0 ändrades), security-reviewer (kod), code-reviewer
+**Reviews:** cx-ux-reviewer (primär), ios-expert om confirmationDialog-mönstret är nytt, code-reviewer
 
 ---
 
-### S34-2: Leverantör kan läsa och svara i inkorg
+### S34-2: Bokningsdetalj -- kontakter och knappar
 
 **Prioritet:** 2
-**Effort:** 1.5-2 dagar
-**Domän:** webb (leverantör-UI, inkorg-aggregering, svarsflöde)
+**Effort:** 0.5 dag
+**Domän:** ios (`ios/Equinet/Equinet/NativeBookingDetailView.swift`)
 
-Andra halvan av MVP-värdet: leverantören ser alla sina inkommande meddelanden samlat och kan svara.
+Fixa 3 fynd i NativeBookingDetailView: kontaktinformation för liten + inte klickbar, sekundärknappar saknar rätt storlek.
 
-**Aktualitet verifierad:** S34-1 levererar grunden. Denna story adderar leverantör-sidan.
+**Aktualitet verifierad:**
+- Backlog-story. Verifiera med grep att fynden fortfarande finns.
 
 **Implementation:**
 
-**Steg 1: API för inkorg-aggregering**
-- `GET /api/provider/conversations?unread=true|false` returnerar lista av bokningar med senaste meddelande, olästa-count, motpart
-- `PATCH /api/bookings/[id]/messages/[messageId]/read` (markera läst)
-- Select-block optimerat (inga include, bara fält UI:t visar)
-- groupBy i DB, inte JS-loop
+**Fynd att åtgärda (från audit):**
 
-**Steg 2: Inkorg-vy (`/provider/messages`)**
-- Lista aktiva bokningar som har meddelanden
-- Sortering: olästa först, sedan senast aktivitet
-- Tom-state: "Inga meddelanden just nu"
-- SWR-polling var 30s
+| ID | Problem | Fix |
+|----|---------|-----|
+| M-04 | Telefon + e-post ~19pt, e-post inte klickbar | `minHeight: 44` + `mailto:`-länk |
+| M-05 | "Uteblev"/"Avboka" 34pt (< 44) | `.controlSize(.large)` + `role: .destructive` på Avboka |
+| m-05 | Hästnamn-knapp ingen visuell affordance | `Label` med ikon + `frame(minHeight: 44)` |
 
-**Steg 3: Tråd-vy (`/provider/bookings/[id]/messages`)**
-- Meddelande-historik (kund + leverantör)
-- Skriv-fält + skicka-knapp (reuses API från S34-1, men tillåter sender=PROVIDER)
-- Auto-markera olästa som lästa vid öppning
-- Ankara nedåt (chat-look)
+**Kod-skiss:**
+```swift
+// mailto-länk
+Link(destination: URL(string: "mailto:\(email)")!) {
+  Text(email)
+    .frame(minHeight: 44)
+}
 
-**Steg 4: Bottom-tab / navigation**
-- Lägg till "Meddelanden"-ikon i provider-BottomTabBar med unread-badge
-- Badge-count via SWR
-
-**Steg 5: Tester**
-- API-tester (inkorg, read-markering)
-- E2E: leverantör loggar in → ser inkorg-badge → öppnar tråd → svarar → kund ser svaret (återanvänd S34-1 kund-flöde)
+// role: .destructive
+Button("Avboka", role: .destructive) { ... }
+  .controlSize(.large)
+```
 
 **Acceptanskriterier:**
-- [ ] Leverantör ser inkorg med alla aktiva bokningar som har meddelanden
-- [ ] Unread-badge visar korrekt antal
-- [ ] Tråd-vy visar full historik, båda parters meddelanden
-- [ ] Leverantör kan svara, meddelandet når kund
-- [ ] Read-markering fungerar (badge minskar)
-- [ ] E2E tvåvägs-flöde grön, `check:all` grön
+- [ ] Alla 3 Major-fynd åtgärdade
+- [ ] 1 Minor-fynd (m-05) åtgärdat
+- [ ] E-post triggar native mail-app vid tap
+- [ ] Telefon triggar tel-link (om inte redan implementerat)
+- [ ] mobile-mcp-verifiering bekräftar tap-targets
+- [ ] cx-ux-reviewer godkänner
+- [ ] BookingDetailViewModelTests grön
 
-**Docs-matris:**
-- Hjälpartikel `src/lib/help/articles/provider/meddelanden.md` (ny)
-- Admin testing-guide scenario
-- README.md om ny feature
-
-**Reviews:** cx-ux-reviewer (inkorg + tråd är nya UI-flöden), security-reviewer, code-reviewer
+**Reviews:** cx-ux-reviewer (primär), code-reviewer
 
 ---
 
-### S34-3: Push-notifiering vid nytt meddelande
+### S34-3: Felmeddelanden -- nätverksfel vs autentiseringsfel
 
 **Prioritet:** 3
 **Effort:** 0.5 dag
-**Domän:** webb (notifier-integration, event-trigger)
+**Domän:** ios (`ios/Equinet/Equinet/AuthManager.swift` + `NativeLoginView.swift`)
 
-När nytt meddelande skickas: notifier skickar push till mottagaren (leverantör eller kund, beroende på sender).
+Differentiera felmeddelanden så användaren ser skillnad på "fel lösenord" och "ingen internetanslutning".
 
 **Aktualitet verifierad:**
-- Push-infra finns (APNs för iOS, Web Push). Grep för existerande `PushNotifier`/`NotificationService` för återanvändning.
+- Backlog-story (M-06 från audit). Verifiera AuthManager error-hantering innan fix.
 
 **Implementation:**
 
-**Steg 1: MessageNotifier**
-- Följ fire-and-forget-mönstret från `RouteAnnouncementNotifier` (DI + `.catch(logger.error)`)
-- Trigger i `ConversationService.sendMessage()` efter DB-commit
-- Svensk text: "Nytt meddelande från {{namn}} om bokning {{datum}}"
+**Steg 1: AuthManager error-typer**
+- Definiera `AuthError` enum: `.invalidCredentials`, `.networkUnavailable`, `.serverError`, `.unknown`
+- Mappa från URLError (cancelled, notConnectedToInternet, timedOut) → .networkUnavailable
+- Mappa från HTTP 401/403 → .invalidCredentials
+- Mappa från HTTP 5xx → .serverError
 
-**Steg 2: Push-payload**
-- Deep-link till tråd (`/provider/bookings/[id]/messages` eller `/customer/bookings/[id]`)
-- Quiet hours? Skip om mottagaren redan är aktiv i appen? (skjut -- senare slice)
+**Steg 2: NativeLoginView felvisning**
+- Switch på AuthError → svensk, actionable text:
+  - `.invalidCredentials`: "E-post eller lösenord stämmer inte"
+  - `.networkUnavailable`: "Ingen internetanslutning. Kontrollera nätverket och försök igen."
+  - `.serverError`: "Något gick fel hos oss. Försök igen om en stund."
+  - `.unknown`: "Oväntat fel. Försök igen eller kontakta support."
+- Ikon per feltyp (wifi.slash, exclamationmark.triangle, etc)
 
 **Steg 3: Tester**
-- Unit: MessageNotifier skickas vid send
-- Integration: mock push-gateway, verifiera payload
+- AuthManagerTests: 4 nya tester (en per feltyp, mock URLError/HTTPResponse)
+- Visuell verifiering med mobile-mcp: inducera fel + screenshot
 
 **Acceptanskriterier:**
-- [ ] Push skickas till mottagare vid nytt meddelande
-- [ ] Push-payload har deep-link till tråd
-- [ ] Fire-and-forget: notifier-fel stör inte meddelande-leverans
-- [ ] `check:all` grön
+- [ ] AuthError-enum definierad med 4 kategorier
+- [ ] URLError + HTTP-status mappat till rätt kategori
+- [ ] NativeLoginView visar differentierat meddelande + ikon
+- [ ] 4 nya AuthManagerTests gröna
+- [ ] cx-ux-reviewer godkänner textformulering (svenska)
 
-**Docs-matris:**
-- `docs/architecture/messaging-domain.md` (uppdatera med notifier-flöde)
-
-**Reviews:** code-reviewer (trivial om S34-1/2 etablerat mönstret)
+**Reviews:** cx-ux-reviewer (text), code-reviewer (error-mapping-logik), ios-expert om error-enum-mönstret är nytt
 
 ---
 
 ## Exekveringsplan
 
 ```
-S34-0 (2-3h, plan-review) -> S34-1 (1-1.5 dag, kund) -> S34-2 (1.5-2 dag, leverantör) -> S34-3 (0.5 dag, push)
+S34-1 (0.5 dag, Profil) -> S34-2 (0.5 dag, Bokningsdetalj) -> S34-3 (0.5 dag, Felmeddelanden)
 ```
 
-**Total effort:** ~4-5 dagar (matchar epic-skattningen).
+**Total effort:** ~1.5 dag.
 
-**Parallelliseringsmöjlighet:** S34-3 kan köras parallellt av iOS-session EFTER S34-2 är mergad.
+**Parallellisering möjlig:** S34-2 och S34-3 rör helt olika filer (NativeBookingDetailView vs AuthManager+NativeLoginView). Om två iOS-sessioner önskas kan de köras parallellt via worktree.
 
-## Risker och oklarheter
+## Risker
 
-1. **Domän-scope:** Hör `Conversation` till Booking-domänen eller är det egen kärndomän? S34-0:s tech-architect-review avgör. Om underordnad Booking: enklare, men kopplad för nära. Om egen: mer kod, men följer Slice 5-förändringar bättre.
+1. **`.confirmationDialog` i S34-1 är nytt mönster** -- första användningen i native koden. ios-expert bör review:a strukturen så det blir återanvändbart.
 
-2. **Rate limit-nivå:** Vi har inte tidigare rate-limitat på meddelande-nivå. Välja konservativt (t.ex. 10/min) och justera efter verklig användning.
+2. **URLError-mappning i S34-3 kan ha edge cases** -- iOS har många URLError-koder. Välj de vanligaste (notConnectedToInternet, timedOut, cancelled) och default till .unknown för resten.
 
-3. **Moderation:** Ingen i MVP. Om spam/missbruk upptäcks: reaktiv flagga-knapp i senare slice.
-
-4. **iOS-konvertering:** WebView räcker för MVP. Om native önskas som del av S34: +1-2 dagar per sida (följer Native Screen Pattern + Feature Inventory).
+3. **mobile-mcp-verifiering kräver simulator.** Om CI inte har iOS Simulator: verifiera manuellt på lokal maskin eller iPhone före merge.
 
 ## Definition of Done (sprintnivå)
 
-- [ ] S34-0: domänarkitektur godkänd av tech-architect + security-reviewer
-- [ ] S34-1: kund kan skicka meddelande, E2E grön
-- [ ] S34-2: leverantör kan läsa + svara, inkorg fungerar, E2E grön
-- [ ] S34-3: push skickas vid nytt meddelande
-- [ ] `npm run check:all` grön, `npm run test:e2e:smoke` grön
-- [ ] Hjälpartiklar + admin testing-guide uppdaterade (per docs-matris)
-- [ ] `docs/architecture/messaging-domain.md` reflekterar slutlig implementation
-- [ ] Metrics-rapport genererad vid sprint-avslut
+- [ ] 6 Major-fynd från S33-1-audit åtgärdade
+- [ ] 3 Minor-fynd inkluderade i fixarna
+- [ ] mobile-mcp before/after-screenshots i relevant done-fil
+- [ ] `xcodebuild test -only-testing:EquinetTests` grön
+- [ ] cx-ux-reviewer körd på alla 3 stories
