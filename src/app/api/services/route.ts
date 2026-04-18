@@ -20,6 +20,13 @@ const serviceSchema = z.object({
 export const GET = withApiHandler(
   { auth: "provider" },
   async ({ user }) => {
+    // Defense-in-depth: utan providerId skulle .eq("providerId", undefined) inte filtrera,
+    // och RLS-policyn service_public_read (isActive=true) skulle läcka alla aktiva tjänster.
+    if (!user.providerId) {
+      logger.warn("Provider user missing providerId in GET /api/services", { userId: user.userId })
+      return NextResponse.json({ error: "Leverantörsprofil saknas" }, { status: 403 })
+    }
+
     const supabase = await createSupabaseServerClient()
     const { data, error } = await supabase
       .from("Service")

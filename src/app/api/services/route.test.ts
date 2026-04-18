@@ -131,6 +131,23 @@ describe('GET /api/services', () => {
     expect(data.error).toBe('Åtkomst nekad')
   })
 
+  it('should return 403 when provider has no providerId (defense-in-depth)', async () => {
+    // Utan providerId skulle .eq("providerId", undefined) inte filtrera,
+    // och RLS-policyn service_public_read skulle läcka alla aktiva tjänster.
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', email: '', userType: 'provider', isAdmin: false,
+      providerId: null, stableId: null, authMethod: 'supabase' as const,
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/services')
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Leverantörsprofil saknas')
+  })
+
   it('should return empty list when provider has no services (RLS filters)', async () => {
     // With Supabase RLS, a provider without services gets an empty array
     vi.mocked(getAuthUser).mockResolvedValue({
