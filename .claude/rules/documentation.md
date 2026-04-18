@@ -64,6 +64,8 @@ related:
 
 Kor `npm run docs:validate` for att validera alla filer.
 
+`npm run metrics:report` identifierar docs-matris-gap retroaktivt via M7-sektionen (se `scripts/check-docs-compliance.sh`).
+
 ## Checklista: Ny .md-fil
 
 - [ ] Frontmatter med alla obligatoriska falt
