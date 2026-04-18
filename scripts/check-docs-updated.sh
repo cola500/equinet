@@ -4,6 +4,27 @@
 
 set -euo pipefail
 
+# Kontrollera plan-filer: måste ha ## Aktualitet verifierad
+STAGED_PLAN_FILES=$(git diff --cached --name-only --diff-filter=A | grep "^docs/plans/s[0-9]" | grep -v "TEMPLATE.md" || true)
+
+if [ -n "$STAGED_PLAN_FILES" ]; then
+  for PLAN_FILE in $STAGED_PLAN_FILES; do
+    if ! grep -q "## Aktualitet verifierad" "$PLAN_FILE"; then
+      echo "❌  Fel: $PLAN_FILE saknar '## Aktualitet verifierad'-sektion."
+      echo "   Lägg till sektionen FÖRST i planen (se docs/plans/TEMPLATE.md):"
+      echo ""
+      echo "   ## Aktualitet verifierad"
+      echo "   **Kommandon körda:** ..."
+      echo "   **Resultat:** ..."
+      echo "   **Beslut:** Fortsätt / Redan löst"
+      echo ""
+      echo "   Obligatorisk för backlog-stories. Skriv 'N/A (nyskriven sprint-story)' om ej tillämplig."
+      echo ""
+      exit 1
+    fi
+  done
+fi
+
 # Bara kör om en done-fil är staged
 STAGED_DONE_FILES=$(git diff --cached --name-only --diff-filter=A | grep "^docs/done/s[0-9]" || true)
 
