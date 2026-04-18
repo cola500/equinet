@@ -8,6 +8,7 @@ import { ConversationService } from '@/domain/conversation/ConversationService'
 import { mapConversationErrorToStatus } from '@/domain/conversation/mapConversationErrorToStatus'
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { PrismaConversationRepository } from '@/infrastructure/persistence/conversation/PrismaConversationRepository'
+import { createMessageNotifier } from '@/domain/notification/MessageNotifierFactory'
 
 const sendMessageSchema = z.object({
   content: z.string().trim().min(1).max(2000),
@@ -97,7 +98,11 @@ export async function POST(
     // 7. Send message via service
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
+    const service = new ConversationService({
+      conversationRepository: repo,
+      isFeatureEnabled,
+      messageNotifier: createMessageNotifier(),
+    })
 
     const result = await service.sendMessage({
       booking,

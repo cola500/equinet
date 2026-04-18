@@ -1,5 +1,7 @@
 import { Result } from '@/domain/shared'
+import { logger } from '@/lib/logger'
 import type { IConversationRepository, Message, ListMessagesResult, InboxItem } from '@/infrastructure/persistence/conversation/IConversationRepository'
+import type { MessageNotifier, NotifyNewMessageInput } from '@/domain/notification/MessageNotifier'
 
 // -----------------------------------------------------------
 // Types
@@ -19,6 +21,7 @@ export interface BookingForConversation {
 export interface ConversationServiceDeps {
   conversationRepository: IConversationRepository
   isFeatureEnabled: (key: string) => Promise<boolean>
+  messageNotifier?: MessageNotifier
 }
 
 export interface SendMessageInput {
@@ -70,10 +73,12 @@ function isMessagingAllowed(booking: BookingForConversation): boolean {
 export class ConversationService {
   private readonly repo: IConversationRepository
   private readonly isFeatureEnabled: (key: string) => Promise<boolean>
+  private readonly messageNotifier?: MessageNotifier
 
   constructor(deps: ConversationServiceDeps) {
     this.repo = deps.conversationRepository
     this.isFeatureEnabled = deps.isFeatureEnabled
+    this.messageNotifier = deps.messageNotifier
   }
 
   async sendMessage(input: SendMessageInput): Promise<Result<Message, ConversationError>> {
@@ -107,7 +112,36 @@ export class ConversationService {
       content: trimmed,
     })
 
+    // 4. Fire-and-forget push notification
+    this.sendMessageNotification(input, message)
+
     return Result.ok(message)
+  }
+
+  private sendMessageNotification(input: SendMessageInput, message: Message): void {
+    if (!this.messageNotifier) return
+
+    const isCustomerSender = input.senderType === 'CUSTOMER'
+    const notifyInput: NotifyNewMessageInput = {
+      bookingId: input.booking.id,
+      senderType: input.senderType,
+      senderName: isCustomerSender ? input.booking.customerName : input.booking.providerName,
+      recipientUserId: isCustomerSender ? input.booking.providerUserId : input.booking.customerId,
+      recipientRole: isCustomerSender ? 'PROVIDER' : 'CUSTOMER',
+      contentPreview: message.content,
+      deepLink: isCustomerSender
+        ? `/provider/bookings/${input.booking.id}/messages`
+        : `/customer/bookings/${input.booking.id}`,
+    }
+
+    void this.messageNotifier
+      .notifyNewMessage(notifyInput)
+      .catch((err) =>
+        logger.error('ConversationService: notification failed', {
+          bookingId: input.booking.id,
+          err: err instanceof Error ? err.message : String(err),
+        })
+      )
   }
 
   async listMessages(input: ListMessagesInput): Promise<ListMessagesResult> {
