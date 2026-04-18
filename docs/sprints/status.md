@@ -18,7 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-*(Sprint 36 klar. Sprint 37 ej planerad ännu -- väntar på prio-beslut: messaging-rollout vs Slice 2 vs annat.)*
+**Sprint 37** ([sprint-37.md](sprint-37.md)) -- Messaging-rollout
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S37-1 Suspense skeleton i ThreadView | webb | pending |
+| S37-2 Hämta kundnamn/tjänst från API (query-param injection-fix) | webb | pending |
+| S37-3 Slå på messaging-flag + rollout-observation | infra | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -85,13 +91,6 @@ sections:
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
-
-### Messaging-rollout-blockerare (fixas före flag default: true)
-
-| Item | Effort | Motivering |
-|------|--------|------------|
-| MAJOR-1: Suspense skeleton i ThreadView | 30 min | `<Suspense fallback={null}>` ger blank flash i provider/messages/[bookingId]. Enkel skeleton-komponent. |
-| MAJOR-2: Hämta kundnamn/tjänst från API (ej query-params) | 1-1.5h | Query-param injection-risk i provider thread. `useSearchParams()` renderar osaniterad data. Flytta till `/api/bookings/{id}`-hämtning. |
 
 ### Vart att fixa (vid tillfalle)
 
