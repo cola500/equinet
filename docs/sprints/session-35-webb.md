@@ -7,4 +7,4 @@ started: 2026-04-18
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S35-1 | done | feature/s35-1-customer-messaging | - |
+| S35-1 | done | feature/s35-1-kund-meddelande | cfb2e663 |
