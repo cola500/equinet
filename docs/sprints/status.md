@@ -18,15 +18,7 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 34** ([sprint-34.md](sprint-34.md)) -- iOS UX Major-fixar -- **KLAR**
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S34-1 Profilvy -- tap-targets och bekräftelsedialog | ios | done (PR #192, 964f20db) |
-| S34-2 Bokningsdetalj -- kontakter och knappar | ios | done (PR #193, 82f3892e) |
-| S34-3 Felmeddelanden -- nätverks- vs autentiseringsfel | ios | done (PR #194, 411dfac0) |
-
-**Nästa: Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP (planerad, efter S34)
+**Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP
 
 | Story | Domän | Status |
 |-------|-------|--------|
@@ -106,6 +98,10 @@ sections:
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
 | Native schema-redigering (iOS) | 1 dag | AvailabilitySchedule + AvailabilityException redigeras idag i WebView. Provider använder detta dagligen. |
 | iOS Snapshot-tester | 0.5-1 dag | Swift Snapshot Testing över 15 native-vyer. Fångar visuella regressioner automatiskt. |
+| LoginError `emailNotConfirmed` eget fall | 30 min | S34-3 begränsning: ger "fel e-post/lösenord" istället för "verifiera din e-post". Nytt enum-fall + nytt meddelande. |
+| LoginError `.cancelled` URLError | 30 min | S34-3 begränsning: mappas till `.networkUnavailable` men kan triggas av app-navigering. Överväg separat `requestCancelled`-fall eller map till `.unknown`. |
+| ios-learnings + patterns uppdatering från S34 | 30 min | `.confirmationDialog`-pattern, `LoginError`-enum-pattern, `URLError`-catch-ordning, mailto-encoding. Hör hemma i `.claude/rules/ios-learnings.md`. |
+| Granska "redan fixat"-rate grep-pattern | 15 min | 2 sprintar i rad över mål 5%. Antingen justera pattern eller acceptera som ny baseline. |
 
 ### Vid lansering
 
