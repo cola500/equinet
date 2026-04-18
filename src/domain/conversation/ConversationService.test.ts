@@ -226,4 +226,106 @@ describe('ConversationService', () => {
       ).resolves.not.toThrow()
     })
   })
+
+  // --------------------------------------------------------
+  // getInboxForProvider
+  // --------------------------------------------------------
+
+  describe('getInboxForProvider', () => {
+    const PROVIDER_USER = 'provider-user-1'
+
+    beforeEach(() => {
+      repo.seedBookingContext('booking-1', {
+        providerUserId: PROVIDER_USER,
+        serviceName: 'Hovslagning',
+        customerName: 'Anna Karlsson',
+        bookingDate: new Date('2026-04-20'),
+      })
+      repo.seedBookingContext('booking-2', {
+        providerUserId: PROVIDER_USER,
+        serviceName: 'Hälsokontroll',
+        customerName: 'Erik Svensson',
+        bookingDate: new Date('2026-04-21'),
+      })
+      repo.seedBookingContext('booking-3', {
+        providerUserId: 'other-provider',
+        serviceName: 'Annan tjänst',
+        customerName: 'Lars Ek',
+        bookingDate: new Date('2026-04-22'),
+      })
+    })
+
+    it('returns inbox items for provider, excluding other providers', async () => {
+      await repo.createMessage({ bookingId: 'booking-1', senderType: 'CUSTOMER', senderId: 'c1', content: 'Hej' })
+      await repo.createMessage({ bookingId: 'booking-2', senderType: 'CUSTOMER', senderId: 'c2', content: 'Fråga' })
+      await repo.createMessage({ bookingId: 'booking-3', senderType: 'CUSTOMER', senderId: 'c3', content: 'Annan' })
+
+      const items = await service.getInboxForProvider(PROVIDER_USER)
+      expect(items).toHaveLength(2)
+      expect(items.every((i) => ['booking-1', 'booking-2'].includes(i.bookingId))).toBe(true)
+    })
+
+    it('sorts unread first', async () => {
+      await repo.createMessage({ bookingId: 'booking-2', senderType: 'CUSTOMER', senderId: 'c2', content: 'Läst' })
+      await repo.createMessage({ bookingId: 'booking-1', senderType: 'CUSTOMER', senderId: 'c1', content: 'Oläst' })
+
+      // Mark booking-2 as read
+      const conv2 = await repo.findByBookingId('booking-2')
+      if (conv2) await repo.markMessagesAsRead(conv2.id, 'PROVIDER')
+
+      const items = await service.getInboxForProvider(PROVIDER_USER)
+      expect(items[0].bookingId).toBe('booking-1')
+      expect(items[0].unreadCount).toBe(1)
+      expect(items[1].unreadCount).toBe(0)
+    })
+
+    it('returns empty list when provider has no conversations', async () => {
+      const items = await service.getInboxForProvider('no-such-provider')
+      expect(items).toHaveLength(0)
+    })
+
+    it('includes last message content and sender', async () => {
+      await repo.createMessage({ bookingId: 'booking-1', senderType: 'CUSTOMER', senderId: 'c1', content: 'Senaste meddelandet' })
+
+      const items = await service.getInboxForProvider(PROVIDER_USER)
+      const item = items.find((i) => i.bookingId === 'booking-1')!
+      expect(item.lastMessageContent).toBe('Senaste meddelandet')
+      expect(item.lastMessageSenderType).toBe('CUSTOMER')
+      expect(item.serviceName).toBe('Hovslagning')
+      expect(item.customerName).toBe('Anna Karlsson')
+    })
+  })
+
+  // --------------------------------------------------------
+  // getTotalUnreadForProvider
+  // --------------------------------------------------------
+
+  describe('getTotalUnreadForProvider', () => {
+    it('counts all unread customer messages across conversations', async () => {
+      repo.seedBookingContext('booking-1', {
+        providerUserId: 'prov-1',
+        serviceName: 'S1',
+        customerName: 'K1',
+        bookingDate: new Date(),
+      })
+      repo.seedBookingContext('booking-2', {
+        providerUserId: 'prov-1',
+        serviceName: 'S2',
+        customerName: 'K2',
+        bookingDate: new Date(),
+      })
+
+      await repo.createMessage({ bookingId: 'booking-1', senderType: 'CUSTOMER', senderId: 'c1', content: 'A' })
+      await repo.createMessage({ bookingId: 'booking-1', senderType: 'CUSTOMER', senderId: 'c1', content: 'B' })
+      await repo.createMessage({ bookingId: 'booking-2', senderType: 'CUSTOMER', senderId: 'c2', content: 'C' })
+
+      const count = await service.getTotalUnreadForProvider('prov-1')
+      expect(count).toBe(3)
+    })
+
+    it('returns 0 when no unread messages', async () => {
+      const count = await service.getTotalUnreadForProvider('no-provider')
+      expect(count).toBe(0)
+    })
+  })
 })

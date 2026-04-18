@@ -6,6 +6,7 @@ import type {
   Message,
   CreateMessageData,
   ListMessagesResult,
+  InboxItem,
 } from './IConversationRepository'
 
 const conversationSelect = {
@@ -148,6 +149,68 @@ export class PrismaConversationRepository implements IConversationRepository {
         conversationId,
         senderType: senderToCount,
         readAt: null,
+      },
+    })
+  }
+
+  async getInboxForProvider(providerUserId: string): Promise<InboxItem[]> {
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        booking: {
+          provider: { userId: providerUserId },
+        },
+      },
+      select: {
+        bookingId: true,
+        booking: {
+          select: {
+            bookingDate: true,
+            service: { select: { name: true } },
+            customer: { select: { firstName: true, lastName: true } },
+          },
+        },
+        messages: {
+          select: { id: true, senderType: true, content: true, createdAt: true, readAt: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    })
+
+    const items: InboxItem[] = []
+    for (const conv of conversations) {
+      if (conv.messages.length === 0) continue
+      const last = conv.messages[0]
+      const unreadCount = conv.messages.filter(
+        (m) => m.senderType === 'CUSTOMER' && m.readAt === null
+      ).length
+      items.push({
+        bookingId: conv.bookingId,
+        bookingDate: conv.booking.bookingDate,
+        serviceName: conv.booking.service.name,
+        customerName: `${conv.booking.customer.firstName} ${conv.booking.customer.lastName}`,
+        lastMessageContent: last.content,
+        lastMessageSenderType: last.senderType as 'CUSTOMER' | 'PROVIDER',
+        lastMessageAt: last.createdAt,
+        unreadCount,
+      })
+    }
+
+    return items.sort((a, b) => {
+      if (b.unreadCount !== a.unreadCount) return b.unreadCount - a.unreadCount
+      return b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
+    })
+  }
+
+  async getTotalUnreadForProvider(providerUserId: string): Promise<number> {
+    return prisma.message.count({
+      where: {
+        senderType: 'CUSTOMER',
+        readAt: null,
+        conversation: {
+          booking: {
+            provider: { userId: providerUserId },
+          },
+        },
       },
     })
   }

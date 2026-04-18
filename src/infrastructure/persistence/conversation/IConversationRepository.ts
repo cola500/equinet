@@ -1,5 +1,16 @@
 import { IRepository } from '../BaseRepository'
 
+export interface InboxItem {
+  bookingId: string
+  bookingDate: Date
+  serviceName: string
+  customerName: string
+  lastMessageContent: string
+  lastMessageSenderType: 'CUSTOMER' | 'PROVIDER'
+  lastMessageAt: Date
+  unreadCount: number
+}
+
 export interface Conversation {
   id: string
   bookingId: string
@@ -65,4 +76,15 @@ export interface IConversationRepository extends IRepository<Conversation> {
     conversationId: string,
     readerRole: 'CUSTOMER' | 'PROVIDER'
   ): Promise<number>
+
+  /**
+   * Get inbox items for a provider (all conversations with unread count + last message).
+   * providerUserId: the auth user ID of the provider.
+   */
+  getInboxForProvider(providerUserId: string): Promise<InboxItem[]>
+
+  /**
+   * Total unread messages for a provider across all conversations.
+   */
+  getTotalUnreadForProvider(providerUserId: string): Promise<number>
 }

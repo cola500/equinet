@@ -4,11 +4,20 @@ import type {
   Message,
   CreateMessageData,
   ListMessagesResult,
+  InboxItem,
 } from './IConversationRepository'
+
+interface BookingContext {
+  providerUserId: string
+  serviceName: string
+  customerName: string
+  bookingDate: Date
+}
 
 export class MockConversationRepository implements IConversationRepository {
   private conversations: Map<string, Conversation> = new Map()
   private messages: Map<string, Message> = new Map()
+  private bookingContexts: Map<string, BookingContext> = new Map()
 
   async findById(id: string): Promise<Conversation | null> {
     return this.conversations.get(id) ?? null
@@ -128,10 +137,63 @@ export class MockConversationRepository implements IConversationRepository {
     return count
   }
 
+  async getInboxForProvider(providerUserId: string): Promise<InboxItem[]> {
+    const items: InboxItem[] = []
+    for (const conv of this.conversations.values()) {
+      const ctx = this.bookingContexts.get(conv.bookingId)
+      if (!ctx || ctx.providerUserId !== providerUserId) continue
+
+      const msgs = Array.from(this.messages.values())
+        .filter((m) => m.conversationId === conv.id)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
+      if (msgs.length === 0) continue
+
+      const last = msgs[0]
+      const unread = msgs.filter(
+        (m) => m.senderType === 'CUSTOMER' && m.readAt === null
+      ).length
+
+      items.push({
+        bookingId: conv.bookingId,
+        bookingDate: ctx.bookingDate,
+        serviceName: ctx.serviceName,
+        customerName: ctx.customerName,
+        lastMessageContent: last.content,
+        lastMessageSenderType: last.senderType,
+        lastMessageAt: last.createdAt,
+        unreadCount: unread,
+      })
+    }
+    return items.sort((a, b) => {
+      if (b.unreadCount !== a.unreadCount) return b.unreadCount - a.unreadCount
+      return b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
+    })
+  }
+
+  async getTotalUnreadForProvider(providerUserId: string): Promise<number> {
+    let total = 0
+    for (const conv of this.conversations.values()) {
+      const ctx = this.bookingContexts.get(conv.bookingId)
+      if (!ctx || ctx.providerUserId !== providerUserId) continue
+      for (const msg of this.messages.values()) {
+        if (msg.conversationId === conv.id && msg.senderType === 'CUSTOMER' && msg.readAt === null) {
+          total++
+        }
+      }
+    }
+    return total
+  }
+
   // Test helpers
   clear(): void {
     this.conversations.clear()
     this.messages.clear()
+    this.bookingContexts.clear()
+  }
+
+  seedBookingContext(bookingId: string, ctx: BookingContext): void {
+    this.bookingContexts.set(bookingId, ctx)
   }
 
   seedConversation(conversation: Conversation): void {
