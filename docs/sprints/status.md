@@ -18,17 +18,7 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 36** ([sprint-36.md](sprint-36.md)) -- Arkitekturcoverage + process-tweaks
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | done (c712c767) |
-| S36-1 "Vad jag INTE kollade"-rapportering i review-subagenter | docs | done (34acbf2a) |
-| S36-2 Visuell verifiering av S35 messaging-flöde | webb | done (6a11c7a7) |
-| S36-3 Tech lead-på-feature-branch-varning (hook) | infra | done (63ebdfa6) |
-| S36-4 Docs-matris compliance-check post-merge | infra | done (2262320c) |
-| S36-5 Modellval-avvikelse-larm i metrics:report | infra | done (73642339) |
-| S36-6 Seven Dimensions-tvingad slicing-trigger (hook) | infra | done (7082517e) |
+*(Sprint 36 klar. Sprint 37 ej planerad ännu -- väntar på prio-beslut: messaging-rollout vs Slice 2 vs annat.)*
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -36,6 +26,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S36 | Self-Testing Infrastructure | 7/7 done (arkitekturcoverage, metacognition, messaging-audit, tech-lead-hook, docs-compliance, modellval-larm, slicing-trigger) + hotfix PR #207 |
 | S35 | Messaging Slice 1 MVP | 5/5 done (design, kund, RLS-hotfix, leverantör, push) -- första kompletta Seven Dimensions-leverans |
 | S34 | iOS UX Major-fixar | 3/3 done (tap-targets, kontakter, felmeddelanden) |
 | S33 | Process tweaks + iOS UX-audit | 2/2 done + Seven Dimensions formalized + messaging-epic slicad |

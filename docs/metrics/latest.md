@@ -17,7 +17,7 @@ sections:
 
 # Metrics-rapport 2026-04-18
 
-> Genererad av `npm run metrics:report` — 2026-04-18 21:13:57
+> Genererad av `npm run metrics:report` — 2026-04-18 21:24:13
 
 ---
 
@@ -28,7 +28,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 - 2026-W13: 29 commits
 - 2026-W14: 442 commits
 - 2026-W15: 154 commits
-- 2026-W16: 230 commits
+- 2026-W16: 240 commits
 
 ---
 
@@ -36,7 +36,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 
 _Tid från första commit på feature-branch till merge-commit. Median + p90. Senaste 8 veckor._
 
-- Antal merges analyserade: 217
+- Antal merges analyserade: 220
 - Median lead time: 0h
 - p90 lead time: 2h
 
@@ -46,7 +46,7 @@ _Tid från första commit på feature-branch till merge-commit. Median + p90. Se
 
 _Andel stories där verifiering visade att problemet redan var löst._
 
-- Totalt done-filer: 145
+- Totalt done-filer: 147
 - "Redan fixat"-filer: 7
 - Rate: 4,8% (mål: <5%)
 
@@ -69,7 +69,7 @@ _Hur ofta hittar review-agenter faktiska problem (blockers/majors)?_
 
 _Tid från plan-commit till done-commit. Proxy för "hur lång tar en story?"_
 
-- Antal stories analyserade: 17 av 145 (kräver matchande plan-fil i docs/plans/)
+- Antal stories analyserade: 19 av 147 (kräver matchande plan-fil i docs/plans/)
 - Median cykeltid: 0h (från plan-commit till done-commit)
 - _Notering: 0h = plan och done committade i samma session (korrekt beteende)_
 
@@ -79,9 +79,9 @@ _Tid från plan-commit till done-commit. Proxy för "hur lång tar en story?"_
 
 _Antal unit-tester idag._
 
-- Vitest (src/): 4171 tester
+- Vitest (src/): 4172 tester
 - XCTest (ios/): 312 tester
-- Totalt: 4483 tester
+- Totalt: 4484 tester
 
 ---
 
@@ -89,7 +89,7 @@ _Antal unit-tester idag._
 
 _Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroaktiv check via `scripts/check-docs-compliance.sh`._
 
-- Totalt kontrollerade (med Docs-sektion): 51
+- Totalt kontrollerade (med Docs-sektion): 53
 - Äldre stories utan Docs-sektion (skippad): 94
 - Gap identifierade: 11
   - s11-1: typ=schema, förväntat=docs/architecture/database.md, faktisk='Ingen docs-uppdatering'
@@ -110,7 +110,7 @@ _Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroakti
 
 _Stories där modellval avviker från regeln: Opus för arkitekturdesign och säkerhetskritisk cross-cutting implementation, Sonnet/Haiku för övriga._
 
-- Totalt kontrollerade (stories med Modell-fält): 15
+- Totalt kontrollerade (stories med Modell-fält): 17
 - Avvikelser: 2
   - s35-1-5: typ=arkitektur/säkerhetskritisk, förväntat=opus, faktisk=sonnet
   - s35-1: typ=arkitektur/säkerhetskritisk, förväntat=opus, faktisk=sonnet
