@@ -25,6 +25,15 @@ sections:
 | S33-0 Process tweaks (4 justeringar) | docs | done (8651223a) |
 | S33-1 UX + visuell review av iOS-appen | ios | pending |
 
+**Nästa: Sprint 34** ([sprint-34.md](sprint-34.md)) -- Messaging Slice 1 MVP (planerad, startar efter S33)
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S34-0 Plan-review av Conversation-domän | docs | planned |
+| S34-1 Kund kan skicka meddelande till leverantör | webb | planned |
+| S34-2 Leverantör kan läsa och svara i inkorg | webb | planned |
+| S34-3 Push-notifiering vid nytt meddelande | webb | planned |
+
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
 ## Tidigare sprintar (alla klara)
