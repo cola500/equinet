@@ -18,15 +18,11 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP
+**Sprint 36** ([sprint-36.md](sprint-36.md)) -- Arkitekturcoverage + process-tweaks
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S35-0 Plan-review av Conversation-domän | docs | done (2ba96855) |
-| S35-1 Kund kan skicka meddelande till leverantör | webb | done (cfb2e663) |
-| **S35-1.5 Messaging RLS + service-flag (HOTFIX)** | infra | done (08aec743) |
-| S35-2 Leverantör kan läsa och svara i inkorg | webb | done (ce73d2c5) |
-| S35-3 Push-notifiering vid nytt meddelande | webb | done (055b6fc8) |
+| S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -34,6 +30,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S35 | Messaging Slice 1 MVP | 5/5 done (design, kund, RLS-hotfix, leverantör, push) -- första kompletta Seven Dimensions-leverans |
 | S34 | iOS UX Major-fixar | 3/3 done (tap-targets, kontakter, felmeddelanden) |
 | S33 | Process tweaks + iOS UX-audit | 2/2 done + Seven Dimensions formalized + messaging-epic slicad |
 | S32 | Metrics + iOS Polish | 3/3 done (metrics-baseline, native bokningsdetalj, iOS polish-sweep) |
