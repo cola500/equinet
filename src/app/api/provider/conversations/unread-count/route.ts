@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     // 5. Fetch unread count
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo })
+    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
     const count = await service.getTotalUnreadForProvider(authUser.id)
 
     return NextResponse.json({ count })
