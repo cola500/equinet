@@ -29,6 +29,12 @@ sections:
 | S31-5 Arkivera gamla planer | docs | done |
 | S31-6 Mät agent-användning av docs | docs | done |
 
+**Nästa: Sprint 32** ([sprint-32-metrics.md](sprint-32-metrics.md)) -- Data & Metrics (planerad)
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S32-1 Metrics-rapport-script (baseline) | infra | planned |
+
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
 ## Tidigare sprintar (alla klara)
