@@ -24,7 +24,8 @@ sections:
 |-------|-------|--------|
 | S35-0 Plan-review av Conversation-domän | docs | done (2ba96855) |
 | S35-1 Kund kan skicka meddelande till leverantör | webb | done (cfb2e663) |
-| S35-2 Leverantör kan läsa och svara i inkorg | webb | planned |
+| **S35-1.5 Messaging RLS + service-flag (HOTFIX)** | infra | pending (blockerar flag-rollout) |
+| S35-2 Leverantör kan läsa och svara i inkorg | webb | in_progress |
 | S35-3 Push-notifiering vid nytt meddelande | webb | planned |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`

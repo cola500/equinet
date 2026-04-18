@@ -143,6 +143,73 @@ Första halvan av MVP-värdet: kunden kan initiera och skicka text-meddelanden k
 
 ---
 
+### S35-1.5: Messaging RLS + service-flag (säkerhetsskuld från S35-1)
+
+**Prioritet:** 1.5 (HOTFIX -- blockerar att `messaging`-flaggan slås på)
+**Effort:** 1-1.5h
+**Domän:** infra/webb (Prisma migration + service-lagret)
+
+**Bakgrund:** S35-1 implementerade messaging-funktionalitet men migrationen innehåller BARA tabeller + FK + index (43 rader). RLS-policies och kolumn-nivå GRANT från S35-0-designen ([messaging-domain.md](../architecture/messaging-domain.md)) implementerades aldrig. Dessutom saknas feature flag-check i service-lagret (D9 i designen).
+
+**Varför nu:** Conversation + Message är kärndomäner med privat kommunikation. Alla andra kärndomäner har RLS. `messaging`-flaggan är `default: false` idag så inga användare exponeras, men flaggan får INTE slås på utan att säkerhetslagret är på plats. Blockerar post-launch-rollout.
+
+**Aktualitet verifierad:**
+- Grep `ALTER TABLE "Message" ENABLE ROW LEVEL SECURITY` i `prisma/migrations/` → 0 träffar (bekräftat saknas)
+- Grep `isFeatureEnabled('messaging')` i `src/domain/conversation/` → 0 träffar (bekräftat saknas)
+- Grep `GRANT UPDATE` i `prisma/migrations/20260418*` → 0 träffar
+
+**Implementation:**
+
+**Steg 1: Ny migration `prisma/migrations/<timestamp>_conversation_rls_policies/migration.sql`**
+
+Baserat på [messaging-domain.md](../architecture/messaging-domain.md) RLS-sektion:
+- `ENABLE ROW LEVEL SECURITY` på Conversation + Message
+- READ-policies (customer + provider) för Conversation och Message
+- INSERT-policies med `WITH CHECK` för båda
+- UPDATE-policies för Message.readAt (båda parter markerar motpartens meddelanden)
+- `REVOKE UPDATE ON "Message" FROM authenticated` + `GRANT UPDATE ("readAt") ON "Message" TO authenticated` (se [column-level-grant-rls-pattern.md](../architecture/column-level-grant-rls-pattern.md))
+
+**Steg 2: Service-lagret feature flag**
+
+I `src/domain/conversation/ConversationService.ts`:
+- Lägg till `FeatureDisabledError` som ny `ConversationErrorType`
+- `sendMessage()` returnerar `Result.fail({ type: 'FEATURE_DISABLED', message: 'Ej tillgänglig' })` om `!(await isFeatureEnabled('messaging'))`
+- Motsvarande i `listMessages` + `markAsRead`
+- Uppdatera `mapConversationErrorToStatus` → 404 för FEATURE_DISABLED
+
+**Steg 3: Repo-begränsning**
+
+Verifiera att `PrismaConversationRepository.markMessagesAsRead` använder explicit `data: { readAt: new Date() }` — inget bredare objekt. Om annat: fixa.
+
+**Steg 4: RLS-bevistest**
+
+Ny fil `src/__tests__/rls/conversation.test.ts`:
+- Test: `conversationId` ensamt ger 0 rader när JWT inte äger bokningen
+- Test: customer kan läsa/skriva till egen bokning, inte andra
+- Test: provider kan läsa/skriva till egen bokning, inte andra
+- Test: GRANT-block: försök att UPDATE `content` via Supabase-klient → permission denied
+- Test: UPDATE-policy: customer kan inte markera egna meddelanden som lästa (bara motpartens)
+
+**Steg 5: Verifiering**
+- `npm run check:all` grön
+- `npm run migrate:status` visar ny migration pending → applicera lokalt och på staging
+
+**Acceptanskriterier:**
+- [ ] Migration med RLS + kolumn-nivå GRANT committad
+- [ ] ConversationService feature-flaggad på service-nivå (3 metoder)
+- [ ] Repo `markMessagesAsRead` begränsad till `data: { readAt }`
+- [ ] RLS-bevistest `conversation.test.ts` grön (minst 5 scenarier)
+- [ ] `npm run check:all` 4/4 grön
+- [ ] Deploy-note: flagga `messaging` får inte slås på förrän denna migration är applicerad
+
+**Reviews:** security-reviewer (primär, kritisk), tech-architect (migration-struktur), code-reviewer
+
+**Docs-matris:**
+- Inga README/NFR-uppdateringar (intern säkerhetshärdning, ingen ny feature)
+- `messaging-domain.md` kan uppdateras med "implementerad S35-1.5" i review-historiken
+
+---
+
 ### S35-2: Leverantör kan läsa och svara i inkorg
 
 **Prioritet:** 2
