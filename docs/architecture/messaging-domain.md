@@ -84,15 +84,14 @@ enum MessageSenderType {
 }
 
 model Conversation {
-  id         String    @id @default(cuid())
-  bookingId  String    @unique
-  booking    Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  messages   Message[]
+  id              String    @id @default(cuid())
+  bookingId       String    @unique
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  lastMessageAt   DateTime  @default(now())
+  messages        Message[]
 
-  @@index([bookingId])
-  @@index([updatedAt])
+  @@index([lastMessageAt])
 }
 
 model Message {
@@ -114,9 +113,10 @@ model Message {
 
 | Val | Motivering |
 |-----|------------|
-| `Conversation.bookingId @unique` | 1-1 med Booking i MVP. Om 1-N behövs i framtiden droppas `@unique` då (se [Decisions](#decisions)). |
-| Lazy creation i `sendMessage()` | Inga tomma Conversation-rader. Första meddelandet skapar tråden via `$transaction` + upsert (skyddar mot race). |
-| `Message.senderId` som String, ej Prisma-relation till User | Identitet används bara för UI-rendering + authz-matchning mot Booking. Relation hade krävt extra JOIN utan värde. |
+| `Conversation.bookingId @unique` | 1-1 med Booking i MVP. Unique-constraint skapar automatiskt B-tree-index — separat `@@index([bookingId])` vore redundant. Om 1-N behövs i framtiden droppas `@unique` då (se [Decisions](#decisions)). |
+| `lastMessageAt` istället för `@updatedAt` | Prisma `@updatedAt` triggas av ändringar på Conversation-modellen — inte automatiskt av nya Messages. `ConversationService.sendMessage()` uppdaterar `lastMessageAt` explicit i samma transaction som Message-insert, vilket ger korrekt inkorg-sortering utan att touchea andra fält. |
+| Lazy creation i `sendMessage()` | Inga tomma Conversation-rader. Första meddelandet skapar tråden via `$transaction { upsert Conversation; create Message; }`. Upsert på `@unique bookingId` är atomisk (PostgreSQL garanterar det), transaction-wrappern säkerställer att Message + Conversation skapas som ett logiskt par. |
+| `Message.senderId` som String, ej Prisma-relation till User | Identitet används bara för UI-rendering + authz-matchning mot Booking. Namn-lookup sker via Booking-relation (`booking.customer.firstName/lastName` eller `booking.provider.businessName`) — same JOIN som ownership-guard redan gör. Ingen separat `getSenderName`-repo-metod. |
 | `Message.readAt` på meddelande-nivå, inte Conversation-nivå | Tillåter per-meddelande-markering i framtiden. MVP läser bara "senderType=motpart AND readAt IS NULL" för unread-count. |
 | `onDelete: Cascade` från Booking | GDPR-alignat. Bokning raderas → tråd försvinner. Acceptabelt eftersom tråden är per-bokning. |
 | `@@index([conversationId, readAt])` | Inkorg räknar olästa per tråd. Index på `(conversationId, readAt)` tillåter partial-scan. |
@@ -193,6 +193,31 @@ interface InboxResponse {
   }[]
 }
 ```
+
+**Implementation (N+1-skydd):** Endpoint delegerar till en dedikerad repo-metod `IConversationRepository.getInboxForProvider(providerId)` som gör aggregeringen i en enda query. Två alternativa strategier — S35-1 väljer den som benchmark-testas bäst:
+
+```ts
+// Alternativ A: Prisma med nested take:1 + _count
+prisma.conversation.findMany({
+  where: { booking: { providerId } },
+  orderBy: { lastMessageAt: 'desc' },
+  select: {
+    id: true,
+    lastMessageAt: true,
+    booking: { select: { id: true, bookingDate: true, customer: { select: { firstName: true, lastName: true } } } },
+    messages: {
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+      select: { content: true, createdAt: true, senderType: true },
+    },
+    _count: { select: { messages: { where: { readAt: null, senderType: 'CUSTOMER' } } } },
+  },
+})
+
+// Alternativ B: raw SQL med LATERAL JOIN (om A blir långsam på verklig data)
+```
+
+**Skrivs uttryckligen i S35-1:** Ingen naiv loop (`for conversation { fetch last; count unread; }`). Repo-metoden är benchmark-testad mot realistisk dataset-storlek (100 konversationer, 50 meddelanden/tråd). Om query-tid > 200ms → byt till raw SQL.
 
 **PATCH `/api/bookings/[id]/messages/read`**
 
@@ -338,11 +363,33 @@ CREATE POLICY message_provider_insert ON public."Message"
 -- ============================================================================
 -- Message -- UPDATE (bara readAt, bara för mottagaren)
 -- ============================================================================
+--
+-- KRITISKT: PostgreSQL RLS har inte kolumn-nivå inom policies, så vi kombinerar
+-- två mekanismer:
+--   1. REVOKE/GRANT på kolumn-nivå: authenticated får bara UPDATE på "readAt".
+--      Försök att uppdatera content/senderType/senderId/createdAt via Supabase-
+--      klienten avvisas av GRANT-lagret före RLS ens utvärderas.
+--   2. USING + WITH CHECK: policies säkerställer att bara mottagare kan markera.
+--
+-- Prisma (service_role) bypassar både GRANT och RLS — men `Message.update` i
+-- repository-lagret begränsar explicit `data:` till `{ readAt }` som extra skydd.
+
+REVOKE UPDATE ON public."Message" FROM authenticated;
+GRANT UPDATE ("readAt") ON public."Message" TO authenticated;
 
 -- Kund markerar leverantörens meddelanden som lästa
 CREATE POLICY message_customer_read_update ON public."Message"
   FOR UPDATE TO authenticated
   USING (
+    "senderType" = 'PROVIDER'
+    AND EXISTS (
+      SELECT 1 FROM public."Conversation" c
+      JOIN public."Booking" b ON b."id" = c."bookingId"
+      WHERE c."id" = "Message"."conversationId"
+        AND b."customerId" = auth.uid()::text
+    )
+  )
+  WITH CHECK (
     "senderType" = 'PROVIDER'
     AND EXISTS (
       SELECT 1 FROM public."Conversation" c
@@ -363,6 +410,15 @@ CREATE POLICY message_provider_read_update ON public."Message"
       WHERE c."id" = "Message"."conversationId"
         AND b."providerId" = rls_provider_id()
     )
+  )
+  WITH CHECK (
+    "senderType" = 'CUSTOMER'
+    AND EXISTS (
+      SELECT 1 FROM public."Conversation" c
+      JOIN public."Booking" b ON b."id" = c."bookingId"
+      WHERE c."id" = "Message"."conversationId"
+        AND b."providerId" = rls_provider_id()
+    )
   );
 ```
 
@@ -372,41 +428,72 @@ CREATE POLICY message_provider_read_update ON public."Message"
 
 ## Rate limiting
 
+Två-lagers limiter på skriv-endpoints: per-user-limit skyddar mot enskild komprometterad session; per-conversation-limit skyddar individuell mottagare mot spam-beteende (relevant om leverantör hanterar 20+ aktiva bokningar).
+
 | Endpoint | Limiter | Quota | Motivering |
 |----------|---------|-------|------------|
-| POST `/api/bookings/[id]/messages` | `messageLimiter` (ny) | 30/min/user | Chat-beteende är burstigt; 30 räcker för snabba konversationer |
+| POST `/api/bookings/[id]/messages` | `messageLimiter:user` (ny) | 30/min/user | Global burst-gräns |
+| POST `/api/bookings/[id]/messages` | `messageLimiter:conversation` (ny) | 10/min/conversation | Skyddar mottagare; namespace per `conversationId` |
 | GET-endpoints | existerande läs-limiter | default | Inkorg polling var 30s ≈ 2 req/min per flik |
 | PATCH read | existerande läs-limiter | default | Idempotent, låg belastning |
 
-**Placering:** `src/lib/rate-limit.ts` får ny export `messageLimiter`. Namespace `messages:` i Upstash Redis. **Fail-closed:** `RateLimitServiceError` → 503.
+**Placering:** `src/lib/rate-limit.ts` får två nya exporter: `messageUserLimiter` och `messageConversationLimiter`. Båda Upstash Redis. **Fail-closed:** `RateLimitServiceError` → 503.
 
-**Observation:** 30/min är utan data. Vi loggar 429-hits och justerar baserat på verklig användning post-launch.
+**Ordning i route:** `auth()` → `messageUserLimiter.check(userId)` → `messageConversationLimiter.check(conversationId)` → Zod-parse → service-call.
+
+**Observation:** 30/min + 10/min är bedömningar utan data. Loggar 429-hits med `logger.warn('message.rate_limit_hit', { userId, conversationId, limiter })` och justerar baserat på verklig användning post-launch.
 
 ## Notifier-integration
 
-`MessageNotifier` implementeras i `src/domain/notification/MessageNotifier.ts` enligt samma mönster som `RouteAnnouncementNotifier`:
+`MessageNotifier` implementeras i `src/domain/notification/MessageNotifier.ts` enligt samma mönster som `RouteAnnouncementNotifier`. **Viktigt:** Namn-lookup (sender + recipient) sker via Booking-relationen som service-lagret redan laddar för authz-check — ingen separat `getSenderName`-metod.
 
 ```ts
 interface MessageNotifierDeps {
   notificationService: { createAsync: (input: CreateNotificationInput) => Promise<void> }
   getRecipientUserId: (bookingId: string, recipientRole: 'CUSTOMER' | 'PROVIDER') => Promise<string | null>
-  getSenderName: (senderId: string, senderType: MessageSenderType) => Promise<string>
 }
 
 class MessageNotifier {
   async notifyNewMessage(input: {
     bookingId: string
     conversationId: string
-    senderId: string
     senderType: MessageSenderType
-    contentPreview: string  // trunkat till 80 tecken
+    senderName: string        // resolverad från Booking i ConversationService innan notifier anropas
+    recipientRole: 'CUSTOMER' | 'PROVIDER'
+    contentPreview: string    // trunkat till 80 tecken
   }): Promise<void> {
-    // ... bygger title/body/deepLink och delegerar till notificationService.createAsync
+    // bygger title/body/deepLink och delegerar till notificationService.createAsync
   }
 }
 ```
 
-**Trigger**: `ConversationService.sendMessage()` efter DB-commit kör `void notifier.notifyNewMessage(...).catch(err => logger.error(...))` — **fire-and-forget**. Notifier-fel får ALDRIG bryta meddelande-leveransen (HTTP 201 skickas först, push skjutas asynkront).
+**Integrationsmönster i ConversationService** (följer `ReviewService.sendReviewNotification`):
+
+```ts
+// ConversationService.ts (skiss)
+async sendMessage(input: SendMessageInput): Promise<Result<Message, ConversationError>> {
+  const result = await this.deps.conversationRepository.createMessage(/* ... */)
+  if (result.isFailure) return result
+  // Privat metod — internhanterar fel, service returnerar success oavsett notifier-utfall
+  this.sendMessageNotification(input.booking, result.value)
+  return result
+}
+
+private sendMessageNotification(booking: Booking, message: Message): void {
+  void this.deps.messageNotifier
+    .notifyNewMessage({
+      bookingId: booking.id,
+      conversationId: message.conversationId,
+      senderType: message.senderType,
+      senderName: resolveSenderName(booking, message),  // från Booking-relationen
+      recipientRole: message.senderType === 'CUSTOMER' ? 'PROVIDER' : 'CUSTOMER',
+      contentPreview: truncate(message.content, 80),
+    })
+    .catch((err) => logger.error('message.notify_failed', { messageId: message.id, err }))
+}
+```
+
+**Fire-and-forget**: Notifier-fel får ALDRIG bryta meddelande-leveransen. HTTP 201 skickas först, push skjutas asynkront.
 
 **Push-payload**:
 - `title`: `"Nytt meddelande från {senderName}"`
@@ -417,17 +504,32 @@ class MessageNotifier {
 
 **Quiet hours, in-app-detektering, sammanslagning av notiser**: **Ej i MVP**. Beslut avvaktas till Slice 3 när vi har data om verklig användning.
 
+## Feature flag
+
+Hela domänen gatas bakom flag `messaging` (default: `false` initialt). Gating sker på två nivåer (defense-in-depth, per `.claude/rules/feature-flags.md`):
+
+1. **Route-nivå**: Varje route returnerar 404 om `!isFeatureEnabled('messaging')`. Fångas även av navigations-UI som döljer "Meddelanden"-fliken.
+2. **Service-nivå**: `ConversationService.sendMessage` returnerar `Result.fail(FeatureDisabledError)` om flag saknas — skyddar om route-gaten glöms.
+
+Metadata läggs till i `src/lib/feature-flag-definitions.ts` i S35-1. Flag slås på via admin/system när S35-1 + S35-2 är deployade och E2E är grön.
+
+**Rollout-plan**: Off → staff-only (manuell DB-override) → 10% providers (via admin-UI) → 100%.
+
 ## Status-gating
+
+Faktiska `BookingStatus`-värden (från `src/domain/booking/BookingStatus.ts`): `pending`, `confirmed`, `cancelled`, `completed`, `no_show`. **Inget `completedAt`-fält finns** på `Booking` idag — bara `bookingDate`, `createdAt`, `updatedAt`.
 
 | BookingStatus | Skicka meddelande | Läsa historik | Not |
 |---------------|-------------------|----------------|-----|
-| `PENDING` | ✅ | ✅ | Kund + leverantör kan koordinera innan bekräftelse |
-| `CONFIRMED` | ✅ | ✅ | Huvud-case |
-| `COMPLETED_PENDING_REVIEW` | ✅ | ✅ | Uppföljning efter utförd tjänst |
-| `COMPLETED` | ⚠️ 30 dagar | ✅ | Skrivs öppet i 30 dagar efter completion; sedan 409 |
-| `CANCELLED` | ❌ 409 | ✅ | Historik läsbar, ingen ny kommunikation |
+| `pending`   | ✅ | ✅ | Kund + leverantör kan koordinera innan bekräftelse |
+| `confirmed` | ✅ | ✅ | Huvud-case |
+| `completed` | ⚠️ 30 dagar efter `bookingDate` | ✅ | Tillåter uppföljning efter utförd tjänst. Efter 30 dagar: 409 |
+| `cancelled` | ❌ 409 | ✅ | Historik läsbar, ingen ny kommunikation |
+| `no_show`   | ❌ 409 | ✅ | Historik läsbar, ingen ny kommunikation |
 
-**Implementation:** `ConversationService.sendMessage()` läser Booking-status och returnerar `Result.fail(new BookingStatusClosedError())` → 409. Exakta statusar bekräftas i S35-1 mot `BookingStatus`-enum.
+**30-dagars-fönstret**: Baseras på `bookingDate + 30 days`, inte separat `completedAt`-tidsstämpel (som inte finns). Detta är tillräckligt för MVP — om vi senare vill ha exakt "30 dagar från avslutad tjänst" lägger vi till `completedAt` i separat migration.
+
+**Implementation:** `ConversationService.sendMessage()` läser Booking-status + `bookingDate` och returnerar `Result.fail(new BookingStatusClosedError())` → 409 om skrivning inte är tillåten. Läsning är alltid tillåten om ownership finns (för historik).
 
 ## Observability
 
@@ -465,19 +567,55 @@ Bedömning utan data. Loggas och justeras post-launch baserat på 429-hit-frekve
 **Datum:** 2026-04-18 · **Status:** Accepted
 Radering via Cascade från Booking räcker. Hard-delete för GDPR user-radering planeras som separat PR om behov uppstår.
 
-### D8: Status-gating: CANCELLED stängd, COMPLETED öppen 30 dagar
-**Datum:** 2026-04-18 · **Status:** Tentative (bekräftas i S35-1 mot faktisk BookingStatus-enum)
-CANCELLED blockeras helt för skrivning (historik läsbar). COMPLETED tillåts 30 dagar för uppföljningsfrågor.
+### D8: Status-gating: terminala statusar stängda (utom completed 30 dagar)
+**Datum:** 2026-04-18 · **Status:** Accepted (verifierad mot BookingStatus-enum)
+Giltiga statusar: `pending`, `confirmed`, `cancelled`, `completed`, `no_show`. `cancelled` + `no_show` blockeras helt för skrivning. `completed` tillåts i 30 dagar efter `bookingDate`. Inget `completedAt`-fält finns — 30-dagars-fönstret räknas från `bookingDate`, vilket är tillräckligt för MVP.
+
+### D9: Feature flag `messaging` (default: false)
+**Datum:** 2026-04-18 · **Status:** Accepted
+Två-lagers gating (route + service). Gradvis rollout via admin-UI post-deploy.
+
+### D10: RLS UPDATE skyddas med WITH CHECK + kolumn-nivå GRANT
+**Datum:** 2026-04-18 · **Status:** Accepted (från security-reviewer M1)
+PostgreSQL RLS har ingen kolumn-nivå-check i policies. För att förhindra content-editing via Supabase-klient: `REVOKE UPDATE ON Message FROM authenticated; GRANT UPDATE (readAt) ON Message TO authenticated;` kombinerat med `WITH CHECK` i UPDATE-policyer. Prisma (service_role) bypassar RLS — repository begränsar explicit `data: { readAt }` i `markMessageAsRead`.
+
+### D11: Två-lagers rate limit (user + conversation)
+**Datum:** 2026-04-18 · **Status:** Accepted (från security-reviewer m2)
+`messageUserLimiter` (30/min/user) + `messageConversationLimiter` (10/min/conversation). Skyddar både global session-missbruk och per-mottagare-spam.
+
+### D12: `lastMessageAt` istället för `@updatedAt`
+**Datum:** 2026-04-18 · **Status:** Accepted (från tech-architect S2)
+`@updatedAt` triggas inte av child-insert. Explicit `lastMessageAt` uppdateras i samma transaction som Message-insert för korrekt inkorg-sortering.
 
 ## Öppna frågor
 
-Följande punkter kvarstår att bekräfta i S35-1:
+Följande punkter kvarstår att verifiera i S35-1 men blockerar inte starten:
 
-1. **Exakt BookingStatus-enum**: `BookingStatus.ts` innehåller aktuella värden; status-gating-tabellen ovan ska mappas exakt mot dessa.
-2. **`getRecipientUserId`-implementation**: Provider har `providerId` i app_metadata, men mappningen provider → user (för push-token lookup) behöver verifieras mot existerande `PushDeliveryService`-flöde.
-3. **Inkorg-filter**: Ska inkorg visa BARA bokningar med minst ett meddelande, eller även "tomma" (utan konversation ännu)? **Förslag:** bara med minst ett meddelande — inkorgen ska kännas aktiv, inte som en dubblerad boknings-lista.
-4. **Customer-inkorg**: I MVP har kunden bara en leverantör per bokning, så ingen separat inkorg. De ser meddelanden direkt på bokningsdetaljsidan. Om kund har flera aktiva bokningar kan vi i senare slice lägga till kund-inkorg.
-5. **Bulk read-markering**: PATCH `/api/bookings/[id]/messages/read` gör UPDATE på många rader. Behöver vi optimistic locking? **Förslag:** nej — read-markering är idempotent och inte konfliktkänslig.
+1. **`getRecipientUserId`-implementation**: Provider har `providerId` i app_metadata, men mappningen provider → user (för push-token lookup) behöver verifieras mot existerande `PushDeliveryService`-flöde. **S35-1** granskar `PushDeliveryService` innan notifier-integration påbörjas.
+2. **`auth.uid()::text` vs `Booking.customerId`**: Existerande policy `booking_customer_read` använder samma kast — verifiera att typerna matchar i praktiken via RLS-bevistest i `src/__tests__/rls/conversation.test.ts`.
+3. **Inkorg-query-strategi (A vs B)**: S35-1 benchmark-testar båda alternativen mot realistisk dataset-storlek. Om A > 200ms → byt till raw SQL med LATERAL JOIN.
+4. **Customer-inkorg**: I MVP har kund ingen separat inkorg — meddelanden visas på bokningsdetaljsidan. Om kund har flera aktiva bokningar är detta suboptimalt. Lägg till kund-inkorg i Slice 2 om användardata visar behov.
+5. **Bulk read-markering optimistic locking**: Inte nödvändigt i MVP. `readAt`-uppdatering är idempotent; race mellan tab-A och tab-B på samma user skapar bara en oskadlig dubbel-skrivning.
+
+Följande minor-punkter från review skjuts till S35-1 som konkreta test-uppgifter snarare än design-beslut:
+
+- **Test: kund kan INTE markera egna meddelanden som lästa** (säkerhets-reviewer m1). Test läggs i `conversation.test.ts`.
+- **Test: en kund med flera bokningar kan INTE posta till fel tråd** (säkerhets-reviewer under "Status-gating"). E2E-test.
+- **Privacy-note om push-preview** (säkerhets-reviewer m4). Hjälpartikel uppdateras i S35-3.
+- **Deep-link-validering i iOS** (säkerhets-reviewer m5). S35-3 säkerställer att native klient inte blint följer deep-link utan ownership-check.
+
+### Bortom MVP (dokumenterat för spårbarhet)
+
+- **Hard-delete för GDPR user-radering** (D7 + säkerhets-reviewer s3): nuvarande Cascade från Booking räcker för MVP. Om Dataskyddsombudet kräver partiell anonymisering (user raderas men bokningar sparas av redovisningsskäl) → separat PR som anonymiserar `senderId` → `"deleted-user"`.
+- **Anomali-detektion** (säkerhets-reviewer s2): incident-runbook kompletteras i Slice 3 med manuell disable-procedur för `messageUserLimiter` per user.
+
+## Review-historik
+
+**2026-04-18** — Plan-review i S35-0:
+- **tech-architect**: 0 blockers, 3 majors (status-enum, inkorg N+1, RLS UPDATE utan WITH CHECK), 4 minors (redundant index, getSenderName via Booking, feature flag saknad, notifier privat metod), 2 suggestions. Alla majors + relevanta minors åtgärdade i detta dokument.
+- **security-reviewer**: 0 blockers, 2 majors (UPDATE content-editing, typkast-verifiering), 5 minors, 3 suggestions. M1 åtgärdad med GRANT + WITH CHECK. M2 blir test-verifiering i S35-1.
+
+Kvarvarande (medvetna uppskjutningar): deep-link-verifiering i iOS (→ S35-3), anomali-detektion (→ post-launch), GDPR partial-radering (→ separat PR vid behov).
 
 ## Referenser
 
