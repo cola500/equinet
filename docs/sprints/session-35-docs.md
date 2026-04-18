@@ -14,4 +14,4 @@ sections:
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S35-0 | done | feature/s35-0-conversation-domain-design | (pending) |
+| S35-0 | done | feature/s35-0-conversation-domain-design | 2ba96855 |
