@@ -18,13 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 37** ([sprint-37.md](sprint-37.md)) -- Messaging-rollout
+**Ingen aktiv sprint** — Sprint 37 klar 2026-04-18.
+
+**Sprint 37** ([sprint-37.md](sprint-37.md)) -- Messaging-rollout -- KLAR
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S37-1 Suspense skeleton i ThreadView | webb | pending |
-| S37-2 Hämta kundnamn/tjänst från API (query-param injection-fix) | webb | pending |
-| S37-3 Slå på messaging-flag + rollout-observation | infra | pending |
+| S37-1 Suspense skeleton i ThreadView | webb | done (PR #209) |
+| S37-2 Hämta kundnamn/tjänst från API (query-param injection-fix) | webb | done (PR #210) |
+| S37-3 Slå på messaging-flag + rollout-observation | infra | done (PR #211) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -32,6 +34,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S37 | Messaging-rollout | 3/3 done (skeleton, injection-fix, flag on) |
 | S36 | Self-Testing Infrastructure | 7/7 done (arkitekturcoverage, metacognition, messaging-audit, tech-lead-hook, docs-compliance, modellval-larm, slicing-trigger) + hotfix PR #207 |
 | S35 | Messaging Slice 1 MVP | 5/5 done (design, kund, RLS-hotfix, leverantör, push) -- första kompletta Seven Dimensions-leverans |
 | S34 | iOS UX Major-fixar | 3/3 done (tap-targets, kontakter, felmeddelanden) |
