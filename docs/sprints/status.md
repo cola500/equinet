@@ -18,22 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 33** ([sprint-33.md](sprint-33.md)) -- Process tweaks + iOS UX-audit
+**Sprint 34** ([sprint-34.md](sprint-34.md)) -- iOS UX Major-fixar
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S33-0 Process tweaks (4 justeringar) | docs | done (8651223a) |
-| S33-1 UX + visuell review av iOS-appen | ios | pending |
+| S34-1 Profilvy -- tap-targets och bekräftelsedialog | ios | pending |
+| S34-2 Bokningsdetalj -- kontakter och knappar | ios | pending |
+| S34-3 Felmeddelanden -- nätverks- vs autentiseringsfel | ios | pending |
 
-**Nästa: Sprint 34** ([sprint-34.md](sprint-34.md)) -- iOS UX Major-fixar (planerad, startar efter S33)
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S34-1 Profilvy -- tap-targets och bekräftelsedialog | ios | planned |
-| S34-2 Bokningsdetalj -- kontakter och knappar | ios | planned |
-| S34-3 Felmeddelanden -- nätverks- vs autentiseringsfel | ios | planned |
-
-**Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP (planerad, efter S34)
+**Nästa: Sprint 35** ([sprint-35.md](sprint-35.md)) -- Messaging Slice 1 MVP (planerad, efter S34)
 
 | Story | Domän | Status |
 |-------|-------|--------|
@@ -48,6 +41,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S33 | Process tweaks + iOS UX-audit | 2/2 done + Seven Dimensions formalized + messaging-epic slicad |
 | S32 | Metrics + iOS Polish | 3/3 done (metrics-baseline, native bokningsdetalj, iOS polish-sweep) |
 | S31 | Content Freshness + Agent Efficiency | 6/6 done (hjälpartiklar, testing-guide, release-checklist, plan-mall, arkivera planer, mät docs) |
 | S30 | Kunskap & Polish | 5/5 done, 2 skipped (redan implementerade) |
