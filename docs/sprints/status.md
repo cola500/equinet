@@ -25,7 +25,7 @@ sections:
 | S31-1 Hjälpartiklar-audit och uppdatering | webb | done |
 | S31-2 Admin testing-guide uppdatering | docs | done |
 | S31-3 Release-checklista | docs | done |
-| S31-4 Tvinga grep-verifiering i plan-mall | docs | pending |
+| S31-4 Tvinga grep-verifiering i plan-mall | docs | done |
 | S31-5 Arkivera gamla planer | docs | pending |
 | S31-6 Mät agent-användning av docs | docs | pending |
 
@@ -65,7 +65,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session 1 (Sonnet) | docs | S31-4/5/6 | feature/s31-4-plan-template | 2026-04-18 |
+| Session 1 (Sonnet) | docs | S31-5/6 | feature/s31-5-arkivera-planer | 2026-04-18 |
 
 ## Beslut
 
