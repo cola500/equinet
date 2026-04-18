@@ -29,20 +29,14 @@ sections:
 | S31-5 Arkivera gamla planer | docs | done |
 | S31-6 Mät agent-användning av docs | docs | done |
 
-**Sprint 32** ([sprint-32-metrics.md](sprint-32-metrics.md)) -- Metrics + iOS Polish
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S32-1 Metrics-rapport-script (baseline) | infra | done (d90e7ed0) |
-| S32-2 Native bokningsdetalj-vy | ios | done (b45e9f92) |
-| S32-3 iOS polish-sweep | ios | done (e011b70b) |
-
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
 ## Tidigare sprintar (alla klara)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S32 | Metrics + iOS Polish | 3/3 done (metrics-baseline, native bokningsdetalj, iOS polish-sweep) |
+| S31 | Content Freshness + Agent Efficiency | 6/6 done (hjälpartiklar, testing-guide, release-checklist, plan-mall, arkivera planer, mät docs) |
 | S30 | Kunskap & Polish | 5/5 done, 2 skipped (redan implementerade) |
 | S29 | iOS Polish + mobile-mcp | 6/6 done (review-gating, mobile-mcp, E2E, iOS cleanup no-ops, docs) |
 | S28 | Offline PWA-stabilisering | 5/5 done (spike, CI-smoke, fix rotorsaker, iOS-verifiering, docs) |
