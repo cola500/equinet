@@ -37,7 +37,7 @@ describe('MessageNotifier', () => {
         recipientUserId: 'provider-user-1',
         recipientRole: 'PROVIDER',
         contentPreview: 'Hej, stämmer det att du kommer tisdag?',
-        deepLink: '/provider/bookings/booking-1/messages',
+        deepLink: '/provider/messages/booking-1',
       })
 
       expect(mockCreateAsync).toHaveBeenCalledOnce()
@@ -45,7 +45,7 @@ describe('MessageNotifier', () => {
       expect(call.userId).toBe('provider-user-1')
       expect(call.type).toBe(NotificationType.MESSAGE_RECEIVED)
       expect(call.message).toContain('Anna Karlsson')
-      expect(call.linkUrl).toBe('/provider/bookings/booking-1/messages')
+      expect(call.linkUrl).toBe('/provider/messages/booking-1')
     })
 
     it('sends push notification to provider recipient', async () => {
@@ -58,14 +58,14 @@ describe('MessageNotifier', () => {
         recipientUserId: 'provider-user-1',
         recipientRole: 'PROVIDER',
         contentPreview: 'Hej!',
-        deepLink: '/provider/bookings/booking-1/messages',
+        deepLink: '/provider/messages/booking-1',
       })
 
       expect(mockSendToUser).toHaveBeenCalledOnce()
       const [userId, payload] = mockSendToUser.mock.calls[0]
       expect(userId).toBe('provider-user-1')
       expect(payload.title).toContain('Anna Karlsson')
-      expect(payload.url).toBe('/provider/bookings/booking-1/messages')
+      expect(payload.url).toBe('/provider/messages/booking-1')
     })
   })
 
@@ -103,7 +103,7 @@ describe('MessageNotifier', () => {
           recipientUserId: 'provider-user-1',
           recipientRole: 'PROVIDER',
           contentPreview: 'Test',
-          deepLink: '/provider/bookings/booking-1/messages',
+          deepLink: '/provider/messages/booking-1',
         })
       ).resolves.not.toThrow()
     })
@@ -120,7 +120,7 @@ describe('MessageNotifier', () => {
           recipientUserId: 'provider-user-1',
           recipientRole: 'PROVIDER',
           contentPreview: 'Test',
-          deepLink: '/provider/bookings/booking-1/messages',
+          deepLink: '/provider/messages/booking-1',
         })
       ).resolves.not.toThrow()
     })
@@ -138,7 +138,7 @@ describe('MessageNotifier', () => {
         recipientUserId: 'provider-user-1',
         recipientRole: 'PROVIDER',
         contentPreview: longContent,
-        deepLink: '/provider/bookings/booking-1/messages',
+        deepLink: '/provider/messages/booking-1',
       })
 
       const [, payload] = mockSendToUser.mock.calls[0]

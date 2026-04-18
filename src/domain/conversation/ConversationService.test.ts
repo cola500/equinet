@@ -142,6 +142,35 @@ describe('ConversationService', () => {
       expect(notifyCall.recipientUserId).toBe('customer-user-1')
     })
 
+    it('sends correct provider deepLink URL when customer sends message', async () => {
+      const booking = makeBooking()
+      await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: 'Hej!',
+      })
+
+      const notifyCall = mockNotifier.notifyNewMessage.mock.calls[0][0]
+      expect(notifyCall.deepLink).toBe('/provider/messages/booking-1')
+    })
+
+    it('sends correct customer deepLink URL when provider sends message', async () => {
+      // Customer deep link goes to bookings list (/customer/bookings/{id}).
+      // MessagingSection is rendered in BookingCard on that page.
+      // A dedicated /customer/messages route is a follow-up (tracked in backlog).
+      const booking = makeBooking()
+      await service.sendMessage({
+        booking,
+        senderType: 'PROVIDER',
+        senderId: 'provider-user-1',
+        content: 'Jag kommer fredag.',
+      })
+
+      const notifyCall = mockNotifier.notifyNewMessage.mock.calls[0][0]
+      expect(notifyCall.deepLink).toBe('/customer/bookings/booking-1')
+    })
+
     it('does not trigger MessageNotifier when sendMessage fails', async () => {
       const booking = makeBooking({ status: 'cancelled' })
       await service.sendMessage({

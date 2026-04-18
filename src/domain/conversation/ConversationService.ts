@@ -131,7 +131,7 @@ export class ConversationService {
       recipientRole: isCustomerSender ? 'PROVIDER' : 'CUSTOMER',
       contentPreview: message.content,
       deepLink: isCustomerSender
-        ? `/provider/bookings/${input.booking.id}/messages`
+        ? `/provider/messages/${input.booking.id}`
         : `/customer/bookings/${input.booking.id}`,
     }
 
