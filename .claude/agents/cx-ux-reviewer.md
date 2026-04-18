@@ -106,6 +106,12 @@ Highlight any mobile UX issues separately if relevant.
 ### ♿ Accessibility Notes
 Call out accessibility improvements needed.
 
+### 🔎 Täckning
+Konkret lista över vad du faktiskt granskade — t.ex. "Kollade: first impression, formulärflöde, felmeddelanden, touch targets, svenska texter". Var specifik med vilka sidor/komponenter.
+
+### 🚧 Gap
+Vad du INTE granskade och varför — t.ex. "Kollade inte: VoiceOver-navigering (kräver manuell testning), empty states (existerar inte ännu), dark mode (utanför scope)". Explicita gap hjälper nästa reviewer att ta vid.
+
 ## Your Working Principles
 
 1. **Empathy First**: Always frame issues from the user's emotional experience, not just technical correctness

@@ -135,6 +135,9 @@ git push origin --delete feature/<story-id>-<namn>
 
 Kör ALLTID code-reviewer. Övriga baserat på story-typ.
 
+**Täckning + Gap (obligatoriskt för alla reviewers):** Lägg alltid till följande i prompt-texten till code-reviewer och security-reviewer (projekt-agenterna rapporterar detta automatiskt):
+> "Avsluta med: **Täckning** (vad du konkret granskade, filnamn/aspekter) och **Gap** (vad du INTE granskade och varför)."
+
 ---
 
 ## Kommunikation med Johan
