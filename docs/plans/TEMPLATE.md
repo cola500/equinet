@@ -41,6 +41,18 @@ Vad som finns idag, vad som ska byggas, varför.
 ## Approach
 Högnivå-strategi, fasindelning.
 
+## Arkitekturcoverage (OBLIGATORISK om story implementerar tidigare design)
+
+Om denna story bygger på ett arkitekturdokument (t.ex. `docs/architecture/<domain>.md`) från en tidigare designstory, lista varje numrerat beslut och markera status:
+
+| Beslut | Beskrivning | Implementeras i denna story? | Var (fil/rad)? |
+|--------|-------------|------------------------------|----------------|
+| D1 | ... | Ja / Nej (uppskjuten till S<X>) | ... |
+
+**Alla "Ja"-beslut MÅSTE ha en implementation i denna story.** "Nej"-beslut kräver explicit beslut och backlog-rad för uppföljning.
+
+**Om ingen tidigare designstory finns:** Skriv "N/A -- ingen tidigare arkitekturdesign".
+
 ## Kvalitetsdimensioner
 
 ### API-routes (om tillämpligt)
