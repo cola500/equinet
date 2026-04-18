@@ -144,3 +144,5 @@ Undvik:
 
 - Richard Lawrence, "Patterns for Splitting User Stories" -- originaltextens sju mönster
 - `docs/ideas/epic-messaging.md` -- första Equinet-tillämpningen
+
+**Automatiserad påminnelse:** Pre-commit hook (`scripts/check-docs-updated.sh`) varnar om en status.md-backlog-rad innehåller "epic" eller stor effort utan länk till `docs/ideas/epic-*.md`. Varningen blockerar inte.
