@@ -27,7 +27,7 @@ sections:
 | S36-2 Visuell verifiering av S35 messaging-flöde | webb | done (6a11c7a7) |
 | S36-3 Tech lead-på-feature-branch-varning (hook) | infra | done (63ebdfa6) |
 | S36-4 Docs-matris compliance-check post-merge | infra | done (2262320c) |
-| S36-5 Modellval-avvikelse-larm i metrics:report | infra | pending |
+| S36-5 Modellval-avvikelse-larm i metrics:report | infra | done (73642339) |
 | S36-6 Seven Dimensions-tvingad slicing-trigger (hook) | infra | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
