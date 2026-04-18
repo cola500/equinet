@@ -149,9 +149,98 @@ Första story efter S36-1 ska rapportera alla tre sektioner. Om gaps framträder
 
 ---
 
+### S36-2: Visuell verifiering av S35 messaging-flöde
+
+**Prioritet:** 2
+**Effort:** 1-2h
+**Domän:** webb (Playwright MCP + cx-ux-reviewer, ingen kodändring förväntad)
+
+S35 levererade messaging-MVP:en (kund + leverantör + push) bakom feature flag. Ingen har gjort systematisk visuell audit likt S33-1 gjorde för iOS. Flaggan får inte slås på innan vi sett flödet i ögonen -- bolagskritisk first impression.
+
+**Aktualitet verifierad:**
+- Grep `messaging`-flag-användning för att bekräfta vilka komponenter som renderas
+- Verifiera att `MessagingDialog`, `MessagingSection`, inkorg + tråd-vy finns
+- Bekräfta att `messaging`-flaggan kan slås på via FEATURE_MESSAGING env i dev
+
+**Scope:**
+- **Webb-only.** iOS är WebView i Slice 1 -- samma kod, samma rendering. Native-verifiering ger lågt värde tills native messaging-vy byggs (framtida slice).
+- **Kund + leverantör-flöde.** Båda är nya, båda är primära personer.
+- **Push verifieras som trigger + payload.** Inte end-to-end (kräver TestFlight). Kolla `MessageNotifier` i loggar.
+
+**Implementation (följer S33-1-audit-mönstret):**
+
+**Steg 1: Setup worktree dev-server**
+- Skapa worktree om inte redan finns (parallellitet mot annan dev)
+- `FEATURE_MESSAGING=true npm run dev` på port 3001
+- Seed testdata: bokning mellan kund + leverantör (eller använd befintlig)
+
+**Steg 2: Visuell audit per vy (förväntat 4-5 vyer)**
+
+Kund-sidan:
+- BookingCard med messaging-sektion
+- MessagingDialog (öppen + tomt läge + med historik)
+
+Leverantör-sidan:
+- `/provider/messages` inkorg-vy (tomt läge + med olästa + med lästa)
+- Tråd-vy (`/provider/bookings/[id]/messages` eller motsvarande)
+- BottomTabBar med unread-badge
+
+Per vy:
+- Playwright MCP screenshot
+- Accessibility tree
+- Notera: layout, kontrast, fokus-management, tom/loading/error-states, svenska strängar
+
+**Steg 3: cx-ux-reviewer subagent**
+
+Kör på nya komponenter: `MessagingDialog.tsx`, `MessagingSection.tsx` + inkorg + tråd-vy (sökvägar verifieras i aktualitet).
+
+Förväntad review-output (nu med S36-1-struktur): **Fynd + Täckning + Gap**.
+
+**Steg 4: Push-verifiering**
+- Skicka meddelande som kund → kolla `logger.info('message.notified')` + `MessageNotifier`-payload i dev-loggar
+- Verifiera deep-link-URL i payload
+- Dokumentera gap: "faktisk push-leverans testas pre-launch via TestFlight"
+
+**Steg 5: Sammanställ rapport**
+
+`docs/retrospectives/<datum>-messaging-ux-audit.md` med:
+- Per vy: screenshot + status (bra / mindre fynd / större fynd)
+- Fynd-tabell: kategori + allvar + beskrivning + fix
+- Topp-3 förbättringar
+- Push-verifiering: trigger + payload OK eller ej
+
+**Steg 6: Triage fynd**
+- **Blocker:** stoppa flag-rollout, fixa i ny story eller här
+- **Major:** backlog-rad eller ny story
+- **Minor (<15 min/fix):** fixa direkt i denna story
+- **Observation:** dokumentera i rapport
+
+**Acceptanskriterier:**
+- [ ] Alla 4-5 messaging-vyer har screenshot + accessibility tree
+- [ ] cx-ux-reviewer körd på minst 2 komponenter (rapport med Täckning + Gap)
+- [ ] Audit-rapport i `docs/retrospectives/`
+- [ ] Push-trigger + payload verifierade i dev-loggar
+- [ ] Minor-fynd (<15 min) fixade direkt eller dokumenterade som minor backlog-rader
+- [ ] Major-fynd har backlog-rader eller nya stories
+- [ ] `npm run check:all` grön
+- [ ] **Beslut om flag-rollout:** redo / blockerad (ange varför)
+
+**Reviews:** cx-ux-reviewer (primär, för komponent-nivå), code-reviewer om minor-fixar görs
+
+**Docs-matris:**
+- `docs/retrospectives/<datum>-messaging-ux-audit.md` (ny)
+- Hjälpartikel `src/lib/help/articles/customer/meddelanden.md` uppdateras om fynd påverkar användarupplevelsen
+- Eventuell ny `src/lib/help/articles/provider/inkorg.md` om leverantör-flödet saknar hjälp
+
+**Arkitekturcoverage (S36-0-testkörning):**
+
+Denna story bygger på messaging-implementationen från S35. Inget nytt arkitekturdokument, men S35-0-designen finns i `docs/architecture/messaging-domain.md`. Audit-fynd ska verifieras mot designen — "stämmer UX-beteendet med vad designen antyder?"
+
+---
+
 ## Framtida stories (skiss)
 
-- **S36-2 (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories.
+- **S36-3 (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories.
 - **S37-x:** Automatiserad coverage-check — script som jämför `docs/architecture/*.md` D-beslut mot relaterade implementations-filer.
 - **S37-x:** "Designbeslut-kod-koppling"-pattern formaliserat i patterns.md.
 
