@@ -1,5 +1,5 @@
 import { Result } from '@/domain/shared'
-import type { IConversationRepository, Message, ListMessagesResult } from '@/infrastructure/persistence/conversation/IConversationRepository'
+import type { IConversationRepository, Message, ListMessagesResult, InboxItem } from '@/infrastructure/persistence/conversation/IConversationRepository'
 
 // -----------------------------------------------------------
 // Types
@@ -116,5 +116,13 @@ export class ConversationService {
     const conversation = await this.repo.findByBookingId(input.bookingId)
     if (!conversation) return
     await this.repo.markMessagesAsRead(conversation.id, input.readerRole)
+  }
+
+  async getInboxForProvider(providerUserId: string): Promise<InboxItem[]> {
+    return this.repo.getInboxForProvider(providerUserId)
+  }
+
+  async getTotalUnreadForProvider(providerUserId: string): Promise<number> {
+    return this.repo.getTotalUnreadForProvider(providerUserId)
   }
 }
