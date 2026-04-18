@@ -40,3 +40,18 @@ Du kan installera Equinet på din hemskärm för snabbare åtkomst och offline-s
 ---
 
 Du kan stänga installationsbannern om du inte vill installera. Den visas inte igen efter att du stängt den.
+
+---
+
+## iOS-app (native)
+
+Det finns också en separat Equinet-app för iPhone byggd med native SwiftUI. Den ger:
+
+- Native dashboard, kalender, bokningslista och kundhantering
+- Push-notiser via APNs (bekräfta och avvisa bokningar direkt från notisen)
+- Synkronisering med iOS Kalender -- bekräftade bokningar hamnar automatiskt i din kalender (Apple Watch-påminnelser och Siri-förslag inkluderat)
+- Widget på hemskärmen som visar din nästa bokning
+- Native taligenkänning för röstloggning
+- Offline-detektion och amber/grön återanslutningsbanner
+
+Fråga din kontakt på Equinet om tillgänglighet och installation av native iOS-appen.
