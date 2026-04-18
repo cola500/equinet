@@ -175,6 +175,9 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
      - Kollade code-map.md för att hitta filer: ja / nej / N/A (visste redan)
      - Hittade matchande pattern? Vilket? (t.ex. "Webhook idempotency") eller "nej"
      - Varför: efter 10 stories utvärderar vi om katalogen faktiskt ger värde.
+   - **Modell** (OBLIGATORISKT -- för framtida modellval-metric):
+     - Skriv: `opus` / `sonnet` / `haiku`
+     - Varför: jämför kvalitet, cykeltid och kostnad per modell. Efter 10+ stories per modell: beslut om standard per story-typ.
    - Avvikelser eller kända begränsningar
    - **Lärdomar**: Vad var oväntat? Vad skulle du göra annorlunda? Gotchas för framtida sessioner?
    - **SAMTIDIGT:** Uppdatera din sessionsfil: story -> `done` + commit-hash
