@@ -26,7 +26,7 @@ sections:
 | S36-1 "Vad jag INTE kollade"-rapportering i review-subagenter | docs | done (34acbf2a) |
 | S36-2 Visuell verifiering av S35 messaging-flöde | webb | done (6a11c7a7) |
 | S36-3 Tech lead-på-feature-branch-varning (hook) | infra | done (63ebdfa6) |
-| S36-4 Docs-matris compliance-check post-merge | infra | pending |
+| S36-4 Docs-matris compliance-check post-merge | infra | done (2262320c) |
 | S36-5 Modellval-avvikelse-larm i metrics:report | infra | pending |
 | S36-6 Seven Dimensions-tvingad slicing-trigger (hook) | infra | pending |
 
