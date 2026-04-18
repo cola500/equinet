@@ -3,7 +3,7 @@ title: "Autonom sprint-körning"
 description: "Hur en Claude-session kör en hel sprint utan mänsklig inblandning"
 category: rule
 status: active
-last_updated: 2026-04-04
+last_updated: 2026-04-18
 tags: [workflow, autonomous, sprint]
 sections:
   - Trigger
@@ -130,6 +130,7 @@ git push origin --delete feature/<story-id>-<namn>
 | Auth/säkerhet | security-reviewer (plan + kod) + tech-architect (plan) |
 | Databas/schema | tech-architect (plan) + code-reviewer |
 | Mekanisk migrering | code-reviewer (bara) |
+| Story implementerar tidigare designstory (arkitekturdokument) | Vanliga subagenter + "arkitekturcoverage"-prompt till security-reviewer/tech-architect: "Verifiera att varje numrerat designbeslut (D1, D2...) finns implementerat i koden. Lista eventuella gap." |
 | Docs/config | Inga subagenter behövs |
 
 Kör ALLTID code-reviewer. Övriga baserat på story-typ.
