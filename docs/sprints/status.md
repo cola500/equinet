@@ -23,7 +23,7 @@ sections:
 | Story | Domän | Status |
 |-------|-------|--------|
 | S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | done (c712c767) |
-| S36-1 "Vad jag INTE kollade"-rapportering i review-subagenter | docs | pending |
+| S36-1 "Vad jag INTE kollade"-rapportering i review-subagenter | docs | done (34acbf2a) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
