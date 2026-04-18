@@ -154,6 +154,18 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:mobile-token",
       }),
+      messageUser: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(30, "1 m"),
+        analytics: true,
+        prefix: "ratelimit:message-user",
+      }),
+      messageConversation: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(10, "1 m"),
+        analytics: true,
+        prefix: "ratelimit:message-conversation",
+      }),
     }
   }
 
@@ -293,6 +305,8 @@ async function checkRateLimit(
     subscription: { max: 50, window: 60 * 60 * 1000 },
     bugReport: { max: 50, window: 60 * 60 * 1000 },
     mobileToken: { max: 50, window: 60 * 60 * 1000 },
+    messageUser: { max: 300, window: 60 * 1000 },
+    messageConversation: { max: 100, window: 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -417,4 +431,14 @@ export const rateLimiters = {
    * Mobile token generation: 5 attempts per hour per user
    */
   mobileToken: async (identifier: string) => checkRateLimit('mobileToken', identifier),
+
+  /**
+   * Message send: 30 messages per minute per user (global burst guard)
+   */
+  messageUser: async (identifier: string) => checkRateLimit('messageUser', identifier),
+
+  /**
+   * Message send: 10 messages per minute per conversation (per-recipient spam guard)
+   */
+  messageConversation: async (identifier: string) => checkRateLimit('messageConversation', identifier),
 }

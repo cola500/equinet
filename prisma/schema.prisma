@@ -247,6 +247,7 @@ model Booking {
   review        Review?
   customerReview CustomerReview?
   groupBookingParticipant GroupBookingParticipant?
+  conversation   Conversation?
 
   @@unique([providerId, bookingDate, startTime, endTime], name: "unique_booking_slot") // Förhindra exakta dubbletter vid race conditions
   @@index([providerId, bookingDate, status])
@@ -965,6 +966,38 @@ model StableInviteToken {
 
   @@index([token])
   @@index([stableId])
+}
+
+// Messaging domain: per-booking two-way chat between customer and provider (Slice 1 MVP)
+
+enum MessageSenderType {
+  CUSTOMER
+  PROVIDER
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  bookingId     String    @unique
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  lastMessageAt DateTime  @default(now())
+  messages      Message[]
+
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderType     MessageSenderType
+  senderId       String
+  content        String            @db.VarChar(2000)
+  createdAt      DateTime          @default(now())
+  readAt         DateTime?
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, readAt])
 }
 
 // Admin audit log -- tracks all admin API operations

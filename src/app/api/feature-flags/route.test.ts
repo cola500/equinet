@@ -54,6 +54,7 @@ describe("GET /api/feature-flags", () => {
       stable_profiles: false,
       stripe_payments: false,
       demo_mode: false,
+      messaging: false,
     })
   })
 
