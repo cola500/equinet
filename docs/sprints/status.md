@@ -18,16 +18,11 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 31** ([sprint-31-content-freshness.md](sprint-31-content-freshness.md)):
+**Sprint 33** ([sprint-33.md](sprint-33.md)) -- Process tweaks + TBD
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S31-1 Hjälpartiklar-audit och uppdatering | webb | done |
-| S31-2 Admin testing-guide uppdatering | docs | done |
-| S31-3 Release-checklista | docs | done |
-| S31-4 Tvinga grep-verifiering i plan-mall | docs | done |
-| S31-5 Arkivera gamla planer | docs | done |
-| S31-6 Mät agent-användning av docs | docs | done |
+| S33-0 Process tweaks (4 justeringar) | docs | in_progress |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
