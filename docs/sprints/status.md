@@ -114,6 +114,7 @@ sections:
 | LoginError `.cancelled` URLError | 30 min | S34-3 begränsning: mappas till `.networkUnavailable` men kan triggas av app-navigering. Överväg separat `requestCancelled`-fall eller map till `.unknown`. |
 | ios-learnings + patterns uppdatering från S34 | 30 min | `.confirmationDialog`-pattern, `LoginError`-enum-pattern, `URLError`-catch-ordning, mailto-encoding. Hör hemma i `.claude/rules/ios-learnings.md`. |
 | Granska "redan fixat"-rate grep-pattern | 15 min | 2 sprintar i rad över mål 5%. Antingen justera pattern eller acceptera som ny baseline. |
+| Claude-hook paths: relativ → `$CLAUDE_PROJECT_DIR` | 15 min | Hooks i `.claude/settings.json` har relativ path (`bash .claude/hooks/...`). Failar i worktrees/fel cwd med "No such file or directory" (non-blocking). Byt till absolut path via `$CLAUDE_PROJECT_DIR`. Bundla med nästa self-testing-round (S39 kandidat). |
 
 ### Vid lansering
 
