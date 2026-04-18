@@ -23,8 +23,8 @@ sections:
 | Story | Domän | Status |
 |-------|-------|--------|
 | S31-1 Hjälpartiklar-audit och uppdatering | webb | done |
-| S31-2 Admin testing-guide uppdatering | docs | in_progress |
-| S31-3 Release-checklista | docs | pending |
+| S31-2 Admin testing-guide uppdatering | docs | done |
+| S31-3 Release-checklista | docs | done |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -62,7 +62,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session 1 | fullstack | S31-1 | feature/s31-1-help-articles-audit | 2026-04-18 |
+| (ingen aktiv session) | - | - | - | - |
 
 ## Beslut
 
