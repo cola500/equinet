@@ -18,7 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-Ingen aktiv sprint. Senast avslutad: Sprint 30.
+**Sprint 31** ([sprint-31-content-freshness.md](sprint-31-content-freshness.md)):
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S31-1 Hjälpartiklar-audit och uppdatering | webb | pending |
+| S31-2 Admin testing-guide uppdatering | docs | pending |
+| S31-3 Release-checklista | docs | pending |
+
+> Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
 ## Tidigare sprintar (alla klara)
 
