@@ -18,11 +18,12 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 33** ([sprint-33.md](sprint-33.md)) -- Process tweaks + TBD
+**Sprint 33** ([sprint-33.md](sprint-33.md)) -- Process tweaks + iOS UX-audit
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S33-0 Process tweaks (4 justeringar) | docs | in_progress |
+| S33-0 Process tweaks (4 justeringar) | docs | in_progress (PR #189) |
+| S33-1 UX + visuell review av iOS-appen | ios | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
