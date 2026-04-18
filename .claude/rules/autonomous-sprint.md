@@ -114,6 +114,7 @@ git push origin --delete feature/<story-id>-<namn>
 
 - [ ] E2E smoke grön: `npm run test:e2e:smoke`
 - [ ] Migrationer applicerade på staging: `npm run migrate:status`
+- [ ] Metrics-rapport genererad: `npm run metrics:report` (jämför mot föregående för trender, referera i retro)
 - [ ] Docs uppdaterade: kör `/update-docs` (README, NFR, CLAUDE.md, gotchas)
 - [ ] Inga uncommittade ändringar: `git status` visar rent
 
@@ -170,6 +171,7 @@ När alla stories är klara, kör dessa steg I ORDNING:
 ```bash
 npm run test:e2e:smoke          # E2E smoke grön
 npm run migrate:status          # Inga pending migrationer
+npm run metrics:report          # Uppdatera baseline-rapport, referera i retro
 git status                      # Rent working tree
 ```
 

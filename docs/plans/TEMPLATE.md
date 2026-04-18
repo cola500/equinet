@@ -17,7 +17,11 @@ sections:
 
 ## Aktualitet verifierad
 
-> **OBLIGATORISK för backlog-stories.** Skriv N/A (nyskriven sprint-story) om ej tillämplig.
+> **OBLIGATORISK för backlog-stories och audit-stories.** Skriv N/A (nyskriven sprint-story utan bakgrundsantaganden) om ej tillämplig.
+
+**Två kategorier att verifiera:**
+- **"Redan fixat"-risk** (backlog-stories): verifiera att problemet fortfarande finns.
+- **"Påstått gap"-risk** (audit-stories): verifiera att det som sägs saknas faktiskt saknas. Grep för befintlig funktionalitet INNAN implementation. Exempel: om storyn säger "haptic saknas i 6 vyer", kör `grep -r "UINotificationFeedbackGenerator" ios/` -- om det redan finns, justera scope.
 
 **Kommandon körda:**
 ```bash
@@ -27,7 +31,7 @@ grep -r "det_som_ska_fixas" src/
 
 **Resultat:** [Vad hittades / inte hittades]
 
-**Beslut:** [Fortsätt med implementation / Redan löst i commit <hash> -- stäng storyn]
+**Beslut:** [Fortsätt med implementation / Redan löst i commit <hash> -- stäng storyn / Justera scope till det som faktiskt saknas]
 
 ---
 

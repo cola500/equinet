@@ -32,6 +32,8 @@ equinet/                          <- huvudrepo (Johan + tech lead)
 
 **Max 2 parallella sessioner.** Mer ökar merge-komplexiteten utan proportionell vinst.
 
+**Tech lead räknas som session när den rör working tree.** Om en dev-session är aktiv i huvudrepot får tech lead INTE göra git-operationer där samtidigt -- det skapar samma krock som två dev-sessioner. Kolla `git branch --show-current` och `git status` innan någon ändring. Vid osäkerhet: vänta tills dev mergat.
+
 ---
 
 ## Före start -- checklista
