@@ -335,6 +335,10 @@ npm run test:e2e:offline  # Offline PWA E2E-tester (bygger prod + testar offline
 
 Se `e2e/README.md` och individuella `.test.ts` filer för detaljer.
 
+### Manuell release-checklista
+
+Inför lansering: kör [docs/testing/release-checklist.md](docs/testing/release-checklist.md) -- täcker automatiska gates, kritiska flöden, feature-specifika flöden och pre-launch-blockerare.
+
 ## Testa Appen Manuellt
 
 **Snabb guide:**
