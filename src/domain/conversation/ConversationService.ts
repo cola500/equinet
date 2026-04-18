@@ -16,6 +16,7 @@ export interface BookingForConversation {
   bookingDate: Date
   customerName: string
   providerName: string
+  serviceName: string
 }
 
 export interface ConversationServiceDeps {

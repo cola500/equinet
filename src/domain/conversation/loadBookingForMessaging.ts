@@ -27,6 +27,7 @@ export async function loadBookingForMessaging(
         },
       },
       customer: { select: { firstName: true, lastName: true } },
+      service: { select: { name: true } },
     },
   })
 
@@ -41,5 +42,6 @@ export async function loadBookingForMessaging(
     bookingDate: row.bookingDate,
     customerName: `${row.customer.firstName} ${row.customer.lastName}`,
     providerName: row.provider.businessName,
+    serviceName: row.service?.name ?? 'Bokning',
   }
 }

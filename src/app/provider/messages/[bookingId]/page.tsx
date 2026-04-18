@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, use, Suspense } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
@@ -23,14 +22,13 @@ interface Message {
 }
 
 interface MessagesResponse {
+  customerName: string
+  serviceName: string
   messages: Message[]
   nextCursor: string | null
 }
 
 function ThreadView({ bookingId }: { bookingId: string }) {
-  const searchParams = useSearchParams()
-  const customerName = searchParams.get("name") ?? "Kund"
-  const serviceName = searchParams.get("service")
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -40,6 +38,9 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     `/api/bookings/${bookingId}/messages`,
     { refreshInterval: 10000 }
   )
+
+  const customerName = data?.customerName ?? "Kund"
+  const serviceName = data?.serviceName ?? null
 
   // Mark messages as read once on first load
   useEffect(() => {

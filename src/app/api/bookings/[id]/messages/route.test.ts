@@ -88,6 +88,7 @@ function makeBookingRow() {
       user: { id: PROVIDER_USER_ID },
     },
     customer: { firstName: 'Anna', lastName: 'Karlsson' },
+    service: { name: 'Hovslagning' },
   }
 }
 
@@ -218,6 +219,8 @@ describe('GET /api/bookings/[id]/messages', () => {
     const data = await res.json()
     expect(data.messages).toEqual([])
     expect(data.nextCursor).toBeNull()
+    expect(data.customerName).toBe('Anna Karlsson')
+    expect(data.serviceName).toBe('Hovslagning')
   })
 
   it('returns messages with correct shape', async () => {
@@ -241,5 +244,16 @@ describe('GET /api/bookings/[id]/messages', () => {
     expect(data.messages).toHaveLength(1)
     expect(data.messages[0].senderType).toBe('CUSTOMER')
     expect(data.messages[0].isFromSelf).toBe(true)
+    expect(data.customerName).toBe('Anna Karlsson')
+    expect(data.serviceName).toBe('Hovslagning')
+  })
+
+  it('falls back to "Bokning" when service is null', async () => {
+    mockPrismaBookingFindFirst.mockResolvedValue({ ...makeBookingRow(), service: null })
+    const req = new NextRequest(`http://localhost/api/bookings/${BOOKING_ID}/messages`, { method: 'GET' })
+    const res = await GET(req, { params })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.serviceName).toBe('Bokning')
   })
 })
