@@ -29,11 +29,11 @@ sections:
 | S31-5 Arkivera gamla planer | docs | done |
 | S31-6 Mät agent-användning av docs | docs | done |
 
-**Nästa: Sprint 32** ([sprint-32-metrics.md](sprint-32-metrics.md)) -- Metrics + iOS Polish (planerad)
+**Sprint 32** ([sprint-32-metrics.md](sprint-32-metrics.md)) -- Metrics + iOS Polish
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S32-1 Metrics-rapport-script (baseline) | infra | planned |
+| S32-1 Metrics-rapport-script (baseline) | infra | done (d90e7ed0) |
 | S32-2 Native bokningsdetalj-vy | ios | planned |
 | S32-3 iOS polish-sweep | ios | planned |
 
