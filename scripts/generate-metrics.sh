@@ -207,6 +207,82 @@ m5_cycle_time() {
   echo "- _Notering: 0h = plan och done committade i samma session (korrekt beteende)_"
 }
 
+# --- M8: Modellval-avvikelse ---
+m8_model_selection() {
+  local done_dir="docs/done"
+  local total=0
+  local mismatches=()
+
+  # Normalisera modellvärde till opus | sonnet | haiku | unknown
+  normalize_model() {
+    local raw="$1"
+    raw=$(echo "$raw" | tr '[:upper:]' '[:lower:]' | tr -d '`()' | xargs)
+    case "$raw" in
+      *opus*)   echo "opus" ;;
+      *sonnet*) echo "sonnet" ;;
+      *haiku*)  echo "haiku" ;;
+      *)        echo "unknown" ;;
+    esac
+  }
+
+  # Förväntat modell: opus om arkitekturdesign ELLER säkerhetskritisk cross-cutting
+  expected_model() {
+    local content="$1"
+    # Filtrera bort N/A- och "ingen"-rader för att undvika falska positiver
+    local filtered
+    filtered=$(echo "$content" | grep -viE "^N/A|^- N/A|ingen.*arkitekturdesign|arkitekturcoverage-gate")
+
+    # Arkitekturdesign: story skapar ny domän-design (inte dokumenterar att annan story bygger på design)
+    if echo "$filtered" | grep -qiE "\barkitekturdesign\b|design av domän|domän-design|implementerar S[0-9]+-0|bygger på S[0-9]+-0|ny domain design"; then
+      echo "opus"; return
+    fi
+    # Ny kärndomän (IRepository → MockRepo → PrismaRepo + migration + service + routes)
+    if echo "$filtered" | grep -qiE "Ny domän.*IRepository|IRepository.*MockRepo.*PrismaRepo|ny kärndomän|implementerar.*ny.*domän.*service.*migration"; then
+      echo "opus"; return
+    fi
+    # Säkerhetskritisk cross-cutting: RLS + migration + kolumn-grant
+    if echo "$filtered" | grep -qiE "kolumn.?nivå.*GRANT|RLS.*(migration|policy).*grant|ny.*RLS-policy.*service"; then
+      echo "opus"; return
+    fi
+    echo "sonnet"
+  }
+
+  while IFS= read -r file; do
+    # Kräver ## Modell-sektion
+    if ! grep -q "^## Modell" "$file" 2>/dev/null; then
+      continue
+    fi
+    total=$(( total + 1 ))
+
+    local story_id
+    story_id=$(basename "$file" .md | sed 's/-done$//')
+    local content
+    content=$(cat "$file")
+
+    # Extrahera modell-värde (raden efter ## Modell)
+    local raw_model
+    raw_model=$(awk '/^## Modell/{found=1; next} found && NF{print; exit}' "$file")
+    local actual
+    actual=$(normalize_model "$raw_model")
+
+    local expected
+    expected=$(expected_model "$content")
+
+    # Flagga om faktisk=sonnet/haiku men förväntat=opus
+    if [[ "$expected" == "opus" && "$actual" != "opus" ]]; then
+      mismatches+=("$story_id: typ=arkitektur/säkerhetskritisk, förväntat=opus, faktisk=$actual")
+    fi
+  done < <(find "$done_dir" -name "*.md" | sort -V)
+
+  echo "- Totalt kontrollerade (stories med Modell-fält): $total"
+  echo "- Avvikelser: ${#mismatches[@]}"
+  if [[ ${#mismatches[@]} -gt 0 ]]; then
+    for m in "${mismatches[@]}"; do
+      echo "  - $m"
+    done
+  fi
+}
+
 # --- M7: Docs-compliance ---
 m7_docs_compliance() {
   bash "$(dirname "${BASH_SOURCE[0]}")/check-docs-compliance.sh" 2>/dev/null
@@ -232,7 +308,7 @@ log "Genererar metrics-rapport: $OUTPUT_FILE"
 cat > "$OUTPUT_FILE" << REPORT
 ---
 title: "Metrics-rapport $TODAY"
-description: "Automatgenererad rapport med 7 baseline-metrics"
+description: "Automatgenererad rapport med 8 baseline-metrics"
 category: operations
 status: active
 last_updated: $TODAY
@@ -244,6 +320,7 @@ sections:
   - Cykeltid per Story
   - Test-count Trend
   - Docs-compliance
+  - Modellval-avvikelse
 ---
 
 # Metrics-rapport $TODAY
@@ -305,6 +382,14 @@ $(m6_test_count)
 _Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroaktiv check via \`scripts/check-docs-compliance.sh\`._
 
 $(m7_docs_compliance)
+
+---
+
+## M8: Modellval-avvikelse
+
+_Stories där modellval avviker från regeln: Opus för arkitekturdesign och säkerhetskritisk cross-cutting implementation, Sonnet/Haiku för övriga._
+
+$(m8_model_selection)
 
 ---
 
