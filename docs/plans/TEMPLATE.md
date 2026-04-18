@@ -3,8 +3,9 @@ title: "Plan Template"
 description: "Template for feature implementation plans with quality dimensions and verification"
 category: plan
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-04-18
 sections:
+  - Aktualitet verifierad
   - Kontext
   - Approach
   - Kvalitetsdimensioner
@@ -13,6 +14,22 @@ sections:
 ---
 
 # Plan: [Feature]
+
+## Aktualitet verifierad
+
+> **OBLIGATORISK för backlog-stories.** Skriv N/A (nyskriven sprint-story) om ej tillämplig.
+
+**Kommandon körda:**
+```bash
+# Exempel -- ersätt med faktiska kommandon för storyn
+grep -r "det_som_ska_fixas" src/
+```
+
+**Resultat:** [Vad hittades / inte hittades]
+
+**Beslut:** [Fortsätt med implementation / Redan löst i commit <hash> -- stäng storyn]
+
+---
 
 ## Kontext
 Vad som finns idag, vad som ska byggas, varför.

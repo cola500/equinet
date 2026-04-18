@@ -65,7 +65,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv session) | - | - | - | - |
+| Session 1 (Sonnet) | docs | S31-4/5/6 | feature/s31-4-plan-template | 2026-04-18 |
 
 ## Beslut
 
