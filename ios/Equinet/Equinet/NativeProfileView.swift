@@ -21,7 +21,7 @@ struct NativeProfileView: View {
     @State private var showEditSheet = false
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var hapticRefreshed = false
-    // Delete account offloaded to WebView (session auth required)
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,6 +48,19 @@ struct NativeProfileView: View {
         .refreshable {
             await viewModel.loadProfile()
             hapticRefreshed.toggle()
+        }
+        // Placed on root body so it works from both Profil and Inställningar tabs
+        .confirmationDialog(
+            "Radera konto",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Radera konto", role: .destructive) {
+                onNavigateToWebPath?("/provider/profile?tab=settings&section=delete-account")
+            }
+            Button("Avbryt", role: .cancel) {}
+        } message: {
+            Text("Ditt konto och all data raderas permanent. Denna åtgärd kan inte ångras.")
         }
         .sheet(isPresented: $showEditSheet) {
             if let profile = viewModel.profile {
@@ -83,7 +96,6 @@ struct NativeProfileView: View {
                 )
             }
         }
-        // Delete account offloaded to WebView (session auth, not Bearer JWT)
     }
 
     // MARK: - Profile Tab
@@ -177,8 +189,9 @@ struct NativeProfileView: View {
                     .padding(.top, 4)
             } else {
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    Text("Byt bild")
+                    Label("Byt bild", systemImage: "camera")
                         .font(.caption)
+                        .frame(minHeight: 44)
                 }
                 .onChange(of: selectedPhoto) { _, newItem in
                     guard let newItem else { return }
@@ -228,6 +241,8 @@ struct NativeProfileView: View {
                 Spacer()
                 Button("Redigera") { showEditSheet = true }
                     .font(.subheadline)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
 
             infoRow(label: "Namn", value: "\(profile.user.firstName) \(profile.user.lastName)")
@@ -249,6 +264,8 @@ struct NativeProfileView: View {
                 Spacer()
                 Button("Redigera") { showEditSheet = true }
                     .font(.subheadline)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
 
             infoRow(label: "Företag", value: profile.businessName)
@@ -296,13 +313,19 @@ struct NativeProfileView: View {
             .padding(.vertical, 12)
             .frame(minHeight: 44)
         }
+        .accessibilityLabel(title)
+        .accessibilityHint("Öppnas i webbläsare")
     }
 
     // MARK: - Settings Tab
 
     @ViewBuilder
     private var settingsTab: some View {
-        if let profile = viewModel.profile {
+        if viewModel.isLoading {
+            VStack { Spacer(); ProgressView(); Spacer() }
+        } else if let error = viewModel.error {
+            errorView(error)
+        } else if let profile = viewModel.profile {
             List {
                 bookingSettingsSection(profile)
 
@@ -318,8 +341,6 @@ struct NativeProfileView: View {
 
                 dangerZoneSection
             }
-        } else if viewModel.isLoading {
-            VStack { Spacer(); ProgressView(); Spacer() }
         }
     }
 
@@ -423,6 +444,7 @@ struct NativeProfileView: View {
                 }
             }
             .foregroundStyle(.primary)
+            .accessibilityHint("Öppnas i webbläsare")
         }
     }
 
@@ -431,8 +453,7 @@ struct NativeProfileView: View {
     private var dangerZoneSection: some View {
         Section {
             Button(role: .destructive) {
-                // Offload to WebView -- /api/account uses session auth, not Bearer JWT
-                onNavigateToWebPath?("/provider/profile?tab=settings&section=delete-account")
+                showDeleteConfirmation = true
             } label: {
                 Label("Radera konto", systemImage: "trash")
             }
