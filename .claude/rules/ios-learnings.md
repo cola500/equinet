@@ -53,6 +53,8 @@ sections:
 - **iOS CustomerSheetType enum-pattern**: `enum SheetType: Identifiable` med en enda `.sheet(item:)` modifier.
 - **iOS Feature Flag-mönster**: APIClient `fetchFeatureFlags()` utan Bearer. AppCoordinator med UserDefaults-cache.
 - **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/`.
+- **iOS haptic rollfördelning (ViewModel vs View)**: ViewModel äger action-haptics (`UINotificationFeedbackGenerator` vid CRUD-success/error). View äger refresh-haptics (pull-to-refresh). Dubbelhaptic uppstår om view lägger `.sensoryFeedback` ovanpå ViewModel-haptic för samma action. **Kolla ALLTID ViewModel för befintliga `UINotificationFeedbackGenerator`-anrop innan view-layer haptics läggs till.**
+- **iOS haptic trigger-pattern**: Använd `@State private var hapticX = false` + `.sensoryFeedback(.success, trigger: hapticX)` + `hapticX.toggle()` vid rätt event. **Fel timing:** `.sensoryFeedback(trigger: items.count)` triggar vid initial load OCH varje count-ändring, inte vid explicit user action.
 
 ## iOS-testflöde
 
