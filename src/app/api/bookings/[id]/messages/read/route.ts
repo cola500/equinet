@@ -48,7 +48,7 @@ export async function PATCH(
     // 5. Mark messages as read
     const readerRole = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo })
+    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
 
     await service.markAsRead({ bookingId, readerRole })
 

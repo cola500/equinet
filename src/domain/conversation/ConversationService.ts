@@ -18,6 +18,7 @@ export interface BookingForConversation {
 
 export interface ConversationServiceDeps {
   conversationRepository: IConversationRepository
+  isFeatureEnabled: (key: string) => Promise<boolean>
 }
 
 export interface SendMessageInput {
@@ -42,6 +43,7 @@ export type ConversationErrorType =
   | 'BOOKING_CLOSED'
   | 'CONTENT_EMPTY'
   | 'CONTENT_TOO_LONG'
+  | 'FEATURE_DISABLED'
 
 export interface ConversationError {
   type: ConversationErrorType
@@ -67,12 +69,19 @@ function isMessagingAllowed(booking: BookingForConversation): boolean {
 
 export class ConversationService {
   private readonly repo: IConversationRepository
+  private readonly isFeatureEnabled: (key: string) => Promise<boolean>
 
   constructor(deps: ConversationServiceDeps) {
     this.repo = deps.conversationRepository
+    this.isFeatureEnabled = deps.isFeatureEnabled
   }
 
   async sendMessage(input: SendMessageInput): Promise<Result<Message, ConversationError>> {
+    // 0. Feature flag gate
+    if (!(await this.isFeatureEnabled('messaging'))) {
+      return Result.fail({ type: 'FEATURE_DISABLED', message: 'Ej tillgänglig' })
+    }
+
     // 1. Status gating
     if (!isMessagingAllowed(input.booking)) {
       return Result.fail({
@@ -102,6 +111,9 @@ export class ConversationService {
   }
 
   async listMessages(input: ListMessagesInput): Promise<ListMessagesResult> {
+    if (!(await this.isFeatureEnabled('messaging'))) {
+      return { messages: [], nextCursor: null }
+    }
     const conversation = await this.repo.findByBookingId(input.bookingId)
     if (!conversation) {
       return { messages: [], nextCursor: null }
@@ -113,16 +125,19 @@ export class ConversationService {
   }
 
   async markAsRead(input: MarkAsReadInput): Promise<void> {
+    if (!(await this.isFeatureEnabled('messaging'))) return
     const conversation = await this.repo.findByBookingId(input.bookingId)
     if (!conversation) return
     await this.repo.markMessagesAsRead(conversation.id, input.readerRole)
   }
 
   async getInboxForProvider(providerUserId: string): Promise<InboxItem[]> {
+    if (!(await this.isFeatureEnabled('messaging'))) return []
     return this.repo.getInboxForProvider(providerUserId)
   }
 
   async getTotalUnreadForProvider(providerUserId: string): Promise<number> {
+    if (!(await this.isFeatureEnabled('messaging'))) return 0
     return this.repo.getTotalUnreadForProvider(providerUserId)
   }
 }

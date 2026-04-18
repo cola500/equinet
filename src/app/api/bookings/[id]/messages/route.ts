@@ -97,7 +97,7 @@ export async function POST(
     // 7. Send message via service
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo })
+    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
 
     const result = await service.sendMessage({
       booking,
@@ -178,7 +178,7 @@ export async function GET(
 
     // 6. List messages
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo })
+    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
     const result = await service.listMessages({ bookingId, cursor, limit })
 
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
