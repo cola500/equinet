@@ -238,9 +238,89 @@ Denna story bygger på messaging-implementationen från S35. Inget nytt arkitekt
 
 ---
 
+### S36-3: Tech lead-på-feature-branch-varning
+
+**Prioritet:** 3
+**Effort:** 20-30 min
+**Domän:** infra (`scripts/check-docs-updated.sh` eller ny hook)
+
+S33-0 Fas 4-regeln ("tech lead räknas som session") bröts inom 24h av regeln själv (tech lead committade på dev:s branch utan att kolla `git branch --show-current`). Regeln är deklarativ — den funkar bara om någon läser och kommer ihåg. Konverterar till körbar gate.
+
+**Princip:** mekanisk varning vid "fel tillstånd", inte blockering. Syftet är att fånga glömska, inte hindra avsiktlig användning.
+
+**Aktualitet verifierad:**
+- Kolla att `.husky/pre-commit` fortfarande kör `scripts/check-docs-updated.sh`
+- Verifiera att `git config user.email` matchar Johan för hooken att trigga
+
+**Implementation:**
+
+**Steg 1: Utöka `scripts/check-docs-updated.sh`**
+
+Ny check-sektion:
+
+```bash
+# Tech lead-på-feature-branch-varning
+# Mönstret: tech lead (Johan) committar på feature/s\d+-branch
+# OCH committen rör BARA lifecycle-docs som tech lead normalt hanterar
+# → Varna (ej blockera): använd worktree istället
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+AUTHOR_EMAIL=$(git config user.email)
+
+if [[ "$BRANCH" =~ ^feature/s[0-9] ]] && [[ "$AUTHOR_EMAIL" == "johan@jaernfoten.se" ]]; then
+  STAGED=$(git diff --cached --name-only)
+  TECH_LEAD_PATHS=$(echo "$STAGED" | grep -E "^docs/sprints/(status\.md|sprint-.*\.md)|^docs/ideas/|^docs/retrospectives/|^docs/architecture/patterns\.md" || true)
+  NON_TECH_LEAD=$(echo "$STAGED" | grep -v -E "^docs/sprints/(status\.md|sprint-.*\.md)|^docs/ideas/|^docs/retrospectives/|^docs/architecture/patterns\.md" || true)
+
+  if [ -n "$TECH_LEAD_PATHS" ] && [ -z "$NON_TECH_LEAD" ]; then
+    echo "⚠️  Tech lead-varning: du committar på feature branch '$BRANCH' men"
+    echo "   ändringarna rör bara lifecycle-docs (sprint/status/ideas/retros)."
+    echo "   Det här är dev:s branch -- använd worktree från main istället:"
+    echo ""
+    echo "     git worktree add ../equinet-techlead main"
+    echo "     cd ../equinet-techlead"
+    echo ""
+    echo "   Om detta är avsiktligt: fortsätt (varningen blockerar inte)."
+    echo ""
+  fi
+fi
+```
+
+**Steg 2: Testa lokalt (positivt + negativt fall)**
+- Skapa feature branch + committa ändring i `docs/sprints/status.md` → varning visas
+- På main: committa samma fil → ingen varning
+- På feature branch: committa kod i `src/` → ingen varning (inte ren lifecycle-doc)
+
+**Steg 3: Dokumentera**
+
+Uppdatera `.claude/rules/parallel-sessions.md` med referens till hooken:
+
+```markdown
+**Automatiserad varning:** `scripts/check-docs-updated.sh` varnar om tech lead committar lifecycle-docs på feature branch. Varningen blockerar inte -- den påminner bara att worktree är säkrare vägen.
+```
+
+**Acceptanskriterier:**
+- [ ] Hook varnar på feature branch + tech lead-email + bara lifecycle-docs
+- [ ] Hook varnar INTE på main
+- [ ] Hook varnar INTE när kod ändras (inte rent docs-commit)
+- [ ] `parallel-sessions.md` uppdaterad med hook-referens
+- [ ] Manuell test: skapa feature branch, committa status.md → se varning
+- [ ] `npm run check:all` grön
+
+**Avgränsning:** Ingen blockering — bara varning. Risk för falska positiv är acceptabel eftersom varning är mjuk.
+
+**Reviews:** code-reviewer (trivial scripting, kan skippas enligt review-gating)
+
+**Arkitekturcoverage:** N/A (ingen tidigare designstory).
+
+---
+
 ## Framtida stories (skiss)
 
-- **S36-3 (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories.
+- **S36-4: Docs-matris compliance-check post-merge.** Script som verifierar att relevanta docs faktiskt ändrats enligt Docs-matrisen i `auto-assign.md`. Gap rapporteras i metrics:report. Effort: 1-1.5h.
+- **S36-5: Modellval-avvikelse-larm i metrics:report.** Extend `generate-metrics.sh` att lista stories där modellval avviker från memory-regeln. Effort: 1h.
+- **S36-6: Seven Dimensions-tvingad slicing-trigger.** Pre-commit hook som varnar om backlog-rad nämner "epic" eller effort >3 dagar utan länk till `docs/ideas/epic-*.md`. Effort: 45 min.
+- **S37-x (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories.
 - **S37-x:** Automatiserad coverage-check — script som jämför `docs/architecture/*.md` D-beslut mot relaterade implementations-filer.
 - **S37-x:** "Designbeslut-kod-koppling"-pattern formaliserat i patterns.md.
 
