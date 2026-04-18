@@ -85,4 +85,26 @@ final class AuthManagerTests: XCTestCase {
     func testUserTypeStartsNil() {
         XCTAssertNil(authManager.userType)
     }
+
+    // MARK: - URLError mapping (S34-3)
+
+    func testNotConnectedToInternetMapsToNetworkUnavailable() {
+        let error = URLError(.notConnectedToInternet)
+        XCTAssertEqual(authManager.mapURLError(error), .networkUnavailable)
+    }
+
+    func testTimedOutMapsToNetworkUnavailable() {
+        let error = URLError(.timedOut)
+        XCTAssertEqual(authManager.mapURLError(error), .networkUnavailable)
+    }
+
+    func testCancelledMapsToNetworkUnavailable() {
+        let error = URLError(.cancelled)
+        XCTAssertEqual(authManager.mapURLError(error), .networkUnavailable)
+    }
+
+    func testUnknownURLErrorMapsToUnknown() {
+        let error = URLError(.unknown)
+        XCTAssertEqual(authManager.mapURLError(error), .unknown)
+    }
 }
