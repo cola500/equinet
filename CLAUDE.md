@@ -55,6 +55,7 @@ sections:
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
 | NFR / Prod Readiness | [NFR.md](NFR.md) |
+| Metrics | [docs/metrics/](docs/metrics/) | aktuell rapport: [latest.md](docs/metrics/latest.md) |
 
 ---
 
