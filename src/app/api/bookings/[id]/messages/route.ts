@@ -158,12 +158,19 @@ export async function GET(
     }
 
     // 3. Rate limiting per user
-    const allowed = await rateLimiters.messageUser(`${authUser.id}:get:${bookingId}`)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'För många förfrågningar. Försök igen om en stund.' },
-        { status: 429 }
-      )
+    try {
+      const allowed = await rateLimiters.messageUser(`${authUser.id}:get:${bookingId}`)
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'För många förfrågningar. Försök igen om en stund.' },
+          { status: 429 }
+        )
+      }
+    } catch (err) {
+      if (err instanceof RateLimitServiceError) {
+        return NextResponse.json({ error: 'Tjänsten är tillfälligt otillgänglig' }, { status: 503 })
+      }
+      throw err
     }
 
     // 4. Booking ownership check
@@ -189,6 +196,8 @@ export async function GET(
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
 
     return NextResponse.json({
+      customerName: booking.customerName,
+      serviceName: booking.serviceName,
       messages: result.messages.map((m) => ({
         id: m.id,
         conversationId: m.conversationId,

@@ -67,7 +67,7 @@ export default function ProviderMessagesPage() {
           {items.map((item) => (
             <li key={item.bookingId}>
               <Link
-                href={`/provider/messages/${item.bookingId}?name=${encodeURIComponent(item.customerName)}&service=${encodeURIComponent(item.serviceName)}`}
+                href={`/provider/messages/${item.bookingId}`}
                 className="block bg-white rounded-lg border p-4 hover:border-primary transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
