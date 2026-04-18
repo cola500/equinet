@@ -182,4 +182,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: false,
     category: "shared",
   },
+  messaging: {
+    key: "messaging",
+    label: "Meddelanden",
+    description: "Tvåvägs text-kommunikation mellan kund och leverantör per bokning",
+    defaultEnabled: false,
+    clientVisible: true,
+    category: "shared",
+  },
 }

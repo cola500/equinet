@@ -13,6 +13,8 @@ import { StarRating } from "@/components/review/StarRating"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import type { CombinedBooking, Booking } from "./types"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { MessagingSection } from "./MessagingSection"
 
 interface BookingCardProps {
   booking: CombinedBooking
@@ -79,6 +81,8 @@ export function BookingCard({
   onReschedule,
   onDeleteReview,
 }: BookingCardProps) {
+  const messagingEnabled = useFeatureFlag("messaging")
+
   return (
     <Card
       data-testid="booking-item"
@@ -163,6 +167,11 @@ export function BookingCard({
             onReview={onReview}
             onDeleteReview={onDeleteReview}
           />
+        )}
+
+        {/* Messaging section for fixed bookings */}
+        {booking.type === "fixed" && messagingEnabled && (
+          <MessagingSection booking={booking} />
         )}
 
         {/* Cancel button for flexible bookings */}
