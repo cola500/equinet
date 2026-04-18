@@ -18,7 +18,14 @@ sections:
 
 ## Aktiv sprint
 
-*(Sprint 37 klar 2026-04-18. **Messaging är nu LIVE** för alla användare. Observationsperiod pågår.)*
+**Sprint 38** ([sprint-38.md](sprint-38.md)) -- iOS messaging audit + docs-complement
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S38-0 iOS messaging audit via mobile-mcp | ios | pending |
+| S38-1 Messaging docs-complement (M7-gap) | docs | pending |
+
+*Beroende stories (S38-2+) bestäms efter S38-0-audit.*
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
