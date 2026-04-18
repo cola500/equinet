@@ -260,14 +260,7 @@ struct NativeBookingDetailView: View {
                 phoneLink(phone)
             }
 
-            HStack(spacing: 4) {
-                Image(systemName: "envelope")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(booking.customerEmail)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            emailLink(booking.customerEmail)
         }
     }
 
@@ -282,6 +275,7 @@ struct NativeBookingDetailView: View {
                         Text(phone)
                             .font(.subheadline)
                     }
+                    .frame(minHeight: 44)
                 }
                 .accessibilityLabel("Telefon: \(phone)")
             )
@@ -295,6 +289,35 @@ struct NativeBookingDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+            .frame(minHeight: 44)
+        )
+    }
+
+    private func emailLink(_ email: String) -> some View {
+        if let mailURL = URL(string: "mailto:\(email)") {
+            return AnyView(
+                Link(destination: mailURL) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "envelope.fill")
+                            .font(.caption)
+                        Text(email)
+                            .font(.subheadline)
+                    }
+                    .frame(minHeight: 44)
+                }
+                .accessibilityLabel("E-post: \(email)")
+            )
+        }
+        return AnyView(
+            HStack(spacing: 4) {
+                Image(systemName: "envelope")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(email)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(minHeight: 44)
         )
     }
 
@@ -338,29 +361,38 @@ struct NativeBookingDetailView: View {
     private func horseSection(_ booking: BookingsListItem) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if let horseName = booking.horseName {
-                HStack(spacing: 4) {
-                    Image(systemName: "pawprint.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if let horseId = booking.horseId, onNavigateToWeb != nil {
-                        Button {
-                            onNavigateToWeb?("/provider/horse-timeline/\(horseId)")
-                        } label: {
-                            Text(horseName)
+                if let horseId = booking.horseId, onNavigateToWeb != nil {
+                    Button {
+                        onNavigateToWeb?("/provider/horse-timeline/\(horseId)")
+                    } label: {
+                        HStack(spacing: 4) {
+                            Label(horseName, systemImage: "pawprint.fill")
                                 .font(.subheadline)
-                                .foregroundStyle(.blue)
+                            if let breed = booking.horseBreed {
+                                Text("(\(breed))")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                    } else {
+                        .frame(minHeight: 44)
+                    }
+                    .accessibilityLabel("Häst: \(horseName)\(booking.horseBreed.map { ", \($0)" } ?? "")")
+                    .accessibilityHint("Visa hästens tidslinje")
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pawprint.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         Text(horseName)
                             .font(.subheadline)
+                        if let breed = booking.horseBreed {
+                            Text("(\(breed))")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                    if let breed = booking.horseBreed {
-                        Text("(\(breed))")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
+                    .accessibilityLabel("Häst: \(horseName)\(booking.horseBreed.map { ", \($0)" } ?? "")")
                 }
-                .accessibilityLabel("Häst: \(horseName)\(booking.horseBreed.map { ", \($0)" } ?? "")")
             }
         }
     }
@@ -543,22 +575,21 @@ struct NativeBookingDetailView: View {
                     }
                 } label: {
                     Label("Uteblev", systemImage: "person.slash")
-                        .font(.subheadline)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .tint(.orange)
+                .controlSize(.large)
                 .disabled(isLoading)
 
-                Button {
+                Button(role: .destructive) {
                     showCancelSheet = true
                 } label: {
                     Label("Avboka", systemImage: "xmark.circle")
-                        .font(.subheadline)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .tint(.red)
+                .controlSize(.large)
                 .disabled(isLoading)
             }
 
