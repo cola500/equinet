@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ConversationService } from './ConversationService'
 import { MockConversationRepository } from '@/infrastructure/persistence/conversation/MockConversationRepository'
 import type { BookingForConversation } from './ConversationService'
+import type { MessageNotifier } from '@/domain/notification/MessageNotifier'
 
 // -----------------------------------------------------------
 // Test helpers
@@ -33,11 +34,17 @@ describe('ConversationService', () => {
   let repo: MockConversationRepository
   let service: ConversationService
   let isFeatureEnabled: ReturnType<typeof vi.fn>
+  let mockNotifier: { notifyNewMessage: ReturnType<typeof vi.fn> }
 
   beforeEach(() => {
     repo = new MockConversationRepository()
     isFeatureEnabled = vi.fn().mockResolvedValue(true)
-    service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
+    mockNotifier = { notifyNewMessage: vi.fn().mockResolvedValue(undefined) }
+    service = new ConversationService({
+      conversationRepository: repo,
+      isFeatureEnabled,
+      messageNotifier: mockNotifier as unknown as MessageNotifier,
+    })
   })
 
   // --------------------------------------------------------
@@ -98,6 +105,53 @@ describe('ConversationService', () => {
       })
 
       expect(await repo.findByBookingId('booking-1')).not.toBeNull()
+    })
+
+    it('triggers MessageNotifier after successful send', async () => {
+      const booking = makeBooking()
+      await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: 'Hej!',
+      })
+
+      // fire-and-forget: notifier is called but result not awaited before response
+      expect(mockNotifier.notifyNewMessage).toHaveBeenCalledOnce()
+      const notifyCall = mockNotifier.notifyNewMessage.mock.calls[0][0]
+      expect(notifyCall.senderType).toBe('CUSTOMER')
+      expect(notifyCall.senderName).toBe('Anna Karlsson')
+      expect(notifyCall.recipientRole).toBe('PROVIDER')
+      expect(notifyCall.recipientUserId).toBe('provider-user-1')
+    })
+
+    it('triggers MessageNotifier with correct recipient when provider sends', async () => {
+      const booking = makeBooking()
+      await service.sendMessage({
+        booking,
+        senderType: 'PROVIDER',
+        senderId: 'provider-user-1',
+        content: 'Jag kommer fredag.',
+      })
+
+      expect(mockNotifier.notifyNewMessage).toHaveBeenCalledOnce()
+      const notifyCall = mockNotifier.notifyNewMessage.mock.calls[0][0]
+      expect(notifyCall.senderType).toBe('PROVIDER')
+      expect(notifyCall.senderName).toBe('Hovslageri AB')
+      expect(notifyCall.recipientRole).toBe('CUSTOMER')
+      expect(notifyCall.recipientUserId).toBe('customer-user-1')
+    })
+
+    it('does not trigger MessageNotifier when sendMessage fails', async () => {
+      const booking = makeBooking({ status: 'cancelled' })
+      await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: 'Försök',
+      })
+
+      expect(mockNotifier.notifyNewMessage).not.toHaveBeenCalled()
     })
 
     // --------------------------------------------------------

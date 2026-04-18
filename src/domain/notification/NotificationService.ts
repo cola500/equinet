@@ -24,6 +24,7 @@ export const NotificationType = {
   ROUTE_ANNOUNCEMENT_NEW: "route_announcement_new",
   ROUTE_ANNOUNCEMENT_DUE_HORSE: "route_announcement_due_horse",
   MUNICIPALITY_WATCH_MATCH: "municipality_watch_match",
+  MESSAGE_RECEIVED: "message_received",
 } as const
 
 export type NotificationTypeValue =
