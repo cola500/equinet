@@ -7,4 +7,4 @@ started: 2026-04-18
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S36-0 | done | feature/s36-0-arkitekturcoverage-gate | - |
+| S36-0 | done | feature/s36-0-arkitekturcoverage-gate | c712c767 |

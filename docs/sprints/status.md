@@ -22,7 +22,7 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | pending |
+| S36-0 Arkitekturcoverage-gate mellan design och implementation | docs | done (c712c767) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
