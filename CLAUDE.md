@@ -140,6 +140,7 @@ src/app/api/ (routes) -> src/domain/ (services) -> src/infrastructure/ (repos) |
 - [ ] Säker (Zod, error handling, ingen XSS/injection)
 - [ ] Tester skrivna FÖRST, coverage >= 70%
 - [ ] Feature branch, `check:all` grön, mergad via PR
+- [ ] **Content matchar kod:** Om feature-ändringen påverkar slutanvändaren -- hjälpartikel uppdaterad (`src/lib/help/articles/<roll>/<slug>.md`) och admin testing-guide uppdaterad (`docs/testing/testing-guide.md`). Samma nivå av obligatoriskt som tester. Se `.claude/rules/auto-assign.md` Docs-matris.
 
 ---
 

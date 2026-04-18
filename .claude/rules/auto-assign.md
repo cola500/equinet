@@ -118,16 +118,19 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
 
 | Story-typ | Docs som MÅSTE uppdateras |
 |-----------|----------------------------|
-| Ny säkerhetsfunktion (MFA, auth, härdning) | README.md (Säkerhet), NFR.md (relevant NFR-rad), `docs/security/<feature>.md`, `docs/operations/incident-runbook.md` (om operativa implikationer) |
-| Ny feature med användarvänd UI | README.md (Implementerade Funktioner), `docs/guides/feature-docs.md` |
+| Ny säkerhetsfunktion (MFA, auth, härdning) | README.md (Säkerhet), NFR.md (relevant NFR-rad), `docs/security/<feature>.md`, `docs/operations/incident-runbook.md` (om operativa implikationer), **hjälpartikel** (`src/lib/help/articles/<roll>/<slug>.md`) om det påverkar slutanvändare |
+| Ny feature med användarvänd UI | README.md (Implementerade Funktioner), `docs/guides/feature-docs.md`, **hjälpartikel** för relevant roll (leverantör/kund/admin), **admin testing-guide** (`docs/testing/testing-guide.md`) med test-scenario |
 | Schema-ändring | `docs/architecture/database.md`, `prisma/schema.prisma` |
 | Ny ops-procedur (CI, deploy, monitoring) | `docs/operations/<procedur>.md` |
 | Ny arkitekturkomponent | `docs/architecture/<komponent>.md`, CLAUDE.md snabbreferens |
 | Ny gotcha eller mönster | CLAUDE.md Key Learnings eller `.claude/rules/<domän>-learnings.md` |
-| Beteendeändring i befintlig feature | README.md + relevant feature-doc |
+| Beteendeändring i befintlig feature | README.md + relevant feature-doc + **hjälpartikel** (uppdatera befintlig om beteendet ändras synligt) + **testing-guide** (uppdatera relevant scenario) |
 | Testantal över 50+ ändrat | README.md (Testning-sektion), NFR.md (Testning) |
+| Borttagen feature | README.md (ta bort rad), `docs/guides/feature-docs.md`, **hjälpartikel** (deprecate eller ta bort), **testing-guide** (ta bort scenario) |
 
 **Regel:** Vid done-fil måste sessionen lista vilka docs som uppdaterats. Om ingen -- motivera varför ("ren intern refactoring, ingen användarvänd ändring").
+
+**Content ska matcha kod:** När en feature påverkar vad användaren ser eller gör -- hjälpartiklar och testing-guide är INTE valfria att uppdatera. Det är samma principiell nivå som att skriva tester för ny logik.
 
 **Varning-hook:** Pre-commit och pre-push kör `scripts/check-docs-updated.sh` som varnar om `docs/done/<story>-done.md` inte listar docs-uppdateringar för säkerhets-/feature-stories.
 
