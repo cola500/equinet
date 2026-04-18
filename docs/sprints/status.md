@@ -22,10 +22,12 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S38-0 iOS messaging audit via mobile-mcp | ios | pending |
+| S38-0 iOS messaging audit via mobile-mcp | ios | done |
 | S38-1 Messaging docs-complement (M7-gap) | docs | pending |
+| S38-2 Fixa messaging-blockers (deep-link + NativeMoreView) | ios | pending |
+| S38-3 Messaging-knapp i native bokningsdetalj (valfri) | ios | pending |
 
-*Beroende stories (S38-2+) bestäms efter S38-0-audit.*
+*S38-2+: beslutade baserat på S38-0-audit. Scenario B (fix blockers, ingen native-port).*
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
