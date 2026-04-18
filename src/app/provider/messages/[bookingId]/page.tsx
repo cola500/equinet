@@ -179,6 +179,33 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   )
 }
 
+function ThreadSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-4 max-w-2xl flex flex-col h-[calc(100dvh-10rem)] animate-pulse">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="h-10 w-10 rounded bg-gray-200" />
+        <div className="space-y-1">
+          <div className="h-4 w-32 rounded bg-gray-200" />
+          <div className="h-3 w-20 rounded bg-gray-200" />
+        </div>
+      </div>
+      <div className="flex-1 space-y-3 pb-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}>
+            <div className="h-10 w-48 rounded-lg bg-gray-200" />
+          </div>
+        ))}
+      </div>
+      <div className="border-t pt-3 space-y-2">
+        <div className="h-16 w-full rounded bg-gray-200" />
+        <div className="flex justify-end">
+          <div className="h-9 w-20 rounded bg-gray-200" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProviderThreadPage({
   params,
 }: {
@@ -188,7 +215,7 @@ export default function ProviderThreadPage({
 
   return (
     <ProviderLayout>
-      <Suspense fallback={null}>
+      <Suspense fallback={<ThreadSkeleton />}>
         <ThreadView bookingId={bookingId} />
       </Suspense>
     </ProviderLayout>
