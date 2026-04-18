@@ -207,6 +207,11 @@ m5_cycle_time() {
   echo "- _Notering: 0h = plan och done committade i samma session (korrekt beteende)_"
 }
 
+# --- M7: Docs-compliance ---
+m7_docs_compliance() {
+  bash "$(dirname "${BASH_SOURCE[0]}")/check-docs-compliance.sh" 2>/dev/null
+}
+
 # --- M6: Test-count trend ---
 m6_test_count() {
   local count_vitest count_xc total
@@ -227,7 +232,7 @@ log "Genererar metrics-rapport: $OUTPUT_FILE"
 cat > "$OUTPUT_FILE" << REPORT
 ---
 title: "Metrics-rapport $TODAY"
-description: "Automatgenererad rapport med 6 baseline-metrics"
+description: "Automatgenererad rapport med 7 baseline-metrics"
 category: operations
 status: active
 last_updated: $TODAY
@@ -238,6 +243,7 @@ sections:
   - Subagent Hit-rate
   - Cykeltid per Story
   - Test-count Trend
+  - Docs-compliance
 ---
 
 # Metrics-rapport $TODAY
@@ -291,6 +297,14 @@ $(m5_cycle_time)
 _Antal unit-tester idag._
 
 $(m6_test_count)
+
+---
+
+## M7: Docs-compliance
+
+_Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroaktiv check via \`scripts/check-docs-compliance.sh\`._
+
+$(m7_docs_compliance)
 
 ---
 
