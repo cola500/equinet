@@ -34,6 +34,21 @@ for DONE_FILE in $STAGED_DONE_FILES; do
       # Inte blockera -- agenten kan ha medvetet skippat
     fi
   fi
+
+  # Varna om feature-nyckelord finns men ingen hjälpartikel eller testing-guide uppdaterad
+  # Hjälpartiklar/testing-guide ska följa när användarvänd funktionalitet ändras.
+  if grep -qi "\bfeature\b\|\bUI\b\|komponent\|sida\|wizard\|flöde\|user experience\|användarupplevelse\|native vy" "$DONE_FILE"; then
+    STAGED_CONTENT_DOCS=$(git diff --cached --name-only | grep -E "^(src/lib/help/articles/|docs/testing/testing-guide\.md|docs/guides/feature-docs\.md)" || true)
+    if [ -z "$STAGED_CONTENT_DOCS" ]; then
+      echo "ℹ️  Not: $DONE_FILE nämner feature/UI men ingen hjälpartikel eller testing-guide är uppdaterad."
+      echo "   Om ändringen påverkar vad användaren ser eller gör -- uppdatera:"
+      echo "   - src/lib/help/articles/<roll>/<slug>.md (hjälpcentral)"
+      echo "   - docs/testing/testing-guide.md (admin-sidans testguide)"
+      echo "   - docs/guides/feature-docs.md (projekt-docs)"
+      echo ""
+      # Inte blockera -- agenten kan ha bedömt att det var intern ändring
+    fi
+  fi
 done
 
 if [ $EXIT_CODE -ne 0 ]; then
