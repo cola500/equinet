@@ -35,6 +35,7 @@ struct MoreMenuItem: Hashable, Identifiable {
 let allMenuSections: [(name: String, items: [MoreMenuItem])] = [
     ("Dagligt arbete", [
         MoreMenuItem(label: "Mina tjänster", icon: "stethoscope", path: "/provider/services", section: "Dagligt arbete"),
+        MoreMenuItem(label: "Meddelanden", icon: "message", path: "/provider/messages", section: "Dagligt arbete", featureFlag: "messaging"),
         MoreMenuItem(label: "Logga arbete", icon: "mic", path: "/provider/voice-log", section: "Dagligt arbete", featureFlag: "voice_logging"),
         MoreMenuItem(label: "Kunder", icon: "person.2", path: "/provider/customers", section: "Dagligt arbete"),
     ]),
