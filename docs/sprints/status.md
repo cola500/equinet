@@ -23,7 +23,7 @@ sections:
 | Story | Domän | Status |
 |-------|-------|--------|
 | S38-0 iOS messaging audit via mobile-mcp | ios | done |
-| S38-1 Messaging docs-complement (M7-gap) | docs | pending |
+| S38-1 Messaging docs-complement (M7-gap) | docs | done |
 | S38-2 Fixa messaging-blockers (deep-link + NativeMoreView) | ios | done |
 | S38-3 Messaging-knapp i native bokningsdetalj (valfri) | ios | pending |
 

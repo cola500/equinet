@@ -307,6 +307,17 @@ sections:
 - [ ] AI-genererade insikter pa kunddetaljsida
 - [ ] Insikter uppdateras vid ny bokningshistorik
 
+### Meddelanden (messaging)
+
+- [ ] Kund skickar meddelande fran bokningsdetalj → leverantor ser i inkorg (/provider/messages)
+- [ ] Leverantor svarar fran inkorg → kund ser i sin BookingCard (MessagingSection)
+- [ ] Push-notifiering triggas vid nytt meddelande (verifiera i dev-loggar)
+- [ ] Rate limit: >30 meddelanden/min fran en user → 429
+- [ ] Avbokad/no-show bokning blockerar nya meddelanden (409)
+- [ ] Lasmarkering: meddelanden markeras som lasta nar trad oppnas
+- [ ] Olastaantal visas som badge i ProviderNav (Meddelanden-fliken)
+- [ ] iOS: Meddelanden-alternativ visas i Mer-meny nar messaging-flagga ar pa
+
 ---
 
 ## Notifikationer och e-post
