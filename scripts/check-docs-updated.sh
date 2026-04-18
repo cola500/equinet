@@ -51,6 +51,26 @@ if [[ "$BRANCH" =~ ^feature/s[0-9] ]] && [[ "$AUTHOR_EMAIL" == "johan@jaernfoten
   fi
 fi
 
+# Seven Dimensions-slicing-varning
+# Mönstret: status.md staged OCH ny rad tyder på stort arbete (epic/dagar/sprintar)
+# utan länk till docs/ideas/epic-*.md → Varna (ej blockera).
+if git diff --cached --name-only 2>/dev/null | grep -q "^docs/sprints/status\.md$"; then
+  NEW_LINES=$(git diff --cached docs/sprints/status.md 2>/dev/null | grep "^+" | grep -v "^+++")
+  if echo "$NEW_LINES" | grep -qiE "\bepic\b|[3-9] dagar|[0-9]+ sprintar"; then
+    if ! echo "$NEW_LINES" | grep -qE "(docs/|\.\./)ideas/epic-.*\.md|epic-[a-z].*\.md"; then
+      echo "⚠️  Seven Dimensions-varning: ny backlog-rad tyder på ett stort arbete"
+      echo "   utan länk till docs/ideas/epic-*.md."
+      echo "   Överväg slicing enligt .claude/rules/story-refinement.md:"
+      echo ""
+      echo "     cat docs/ideas/epic-messaging.md  # exempel på epic-dokument"
+      echo ""
+      echo "   Om raden redan är slicad: lägg till länk till epic-dokumentet."
+      echo "   Om detta är en liten backlog-post: fortsätt (varningen blockerar inte)."
+      echo ""
+    fi
+  fi
+fi
+
 # Bara kör om en done-fil är staged
 STAGED_DONE_FILES=$(git diff --cached --name-only --diff-filter=A | grep "^docs/done/s[0-9]" || true)
 
