@@ -102,20 +102,69 @@ Lägg till efter "Verktyg använda":
 
 ---
 
+### S36-1: "Vad jag INTE kollade"-rapportering i review-subagenter
+
+**Prioritet:** 1
+**Effort:** 30-45 min
+**Domän:** docs (`.claude/agents/` eller motsvarande subagent-konfig)
+
+S35-1 avslöjade att subagenter rapporterar bara det de kollat, inte det de missat. Security-reviewer hittade 3 lokala issues men missade hela RLS-coverage-gapet eftersom den inte fick referens till S35-0-designen. Om reviewern hade rapporterat "Jag kollade inte RLS-coverage eftersom jag inte fick referens till designdokumentet" hade gapet upptäckts direkt.
+
+**Smal scope:** bara prompt-uppdatering på 4 befintliga subagenter. Ingen ny konfiguration, inget manifest, ingen automation. Testa om metacognition-rapportering räcker innan vi bygger större struktur.
+
+**Aktualitet verifierad:**
+- Grep efter subagent-definitioner i `.claude/agents/` eller `.claude/rules/` — bekräfta att prompts existerar och kan uppdateras
+- Verifiera att inga av de 4 redan rapporterar "gap"-sektion
+
+**Implementation:**
+
+**Steg 1: Hitta subagent-definitioner**
+
+Grep efter konfiguration av: `code-reviewer`, `security-reviewer`, `tech-architect`, `cx-ux-reviewer`.
+
+**Steg 2: Uppdatera review-output-struktur**
+
+Varje subagent ska instrueras att rapportera tre sektioner istället för en:
+
+1. **Fynd** (som idag): blockers, majors, minors, suggestions
+2. **Täckning** (ny): konkret lista på vad som granskades — "Kollade: auth-guard i route, Zod-schema, select-block för alla 4 queries, RLS-policy i migration"
+3. **Gap** (ny): vad som INTE kollades + varför — "Kollade inte: RLS-bevistest (fil saknas), designcoverage (inget arkitekturdokument refererat), prestanda (utanför scope)"
+
+**Steg 3: Testa på nästa icke-trivial story**
+
+Första story efter S36-1 ska rapportera alla tre sektioner. Om gaps framträder som inte var avsedda → fånga i retro.
+
+**Acceptanskriterier:**
+- [ ] Alla 4 subagent-definitioner uppdaterade med Täckning + Gap-sektioner i output
+- [ ] Prompt-texten nämner explicit "rapportera även vad du INTE kollade och varför"
+- [ ] `npm run check:all` grön
+
+**Avgränsning (ej i scope):**
+- Review-manifest per story-typ (kan bli S36-2 villkorligt)
+- Automatiserad coverage-check (kan bli S37-x, större arbete)
+
+**Hypotes som testas:** Metacognition-rapportering i subagenter räcker för att fånga missade aspekter. Om sant → bygg inte manifest. Om falskt → S36-2 formaliserar manifestet.
+
+**Reviews:** code-reviewer (docs-only, trivial — kan skippas enligt review-gating)
+
+---
+
 ## Framtida stories (skiss)
 
-- **S36-1:** Automatiserad coverage-check — script som jämför `docs/architecture/*.md` D-beslut mot relaterade implementations-filer och flaggar gap. Pre-commit-hook. (Större arbete, kanske i S37+.)
-- **S36-2:** "Designbeslut-kod-koppling"-pattern formaliserat i patterns.md. Hur refererar man konkret från kod till D-beslut (code comment? separat manifest?).
+- **S36-2 (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories.
+- **S37-x:** Automatiserad coverage-check — script som jämför `docs/architecture/*.md` D-beslut mot relaterade implementations-filer.
+- **S37-x:** "Designbeslut-kod-koppling"-pattern formaliserat i patterns.md.
 
 ---
 
 ## Exekveringsplan
 
 ```
-S36-0 (30-45 min, process-tweaks) -> [fler stories planeras efter]
+S36-0 (30-45 min, arkitekturcoverage) -> S36-1 (30-45 min, metacognition-prompts)
 ```
 
 ## Definition of Done (sprintnivå)
 
-- [ ] S36-0 merged
+- [ ] S36-0 merged (klar)
+- [ ] S36-1 merged
 - [ ] S35-retron refererar till S36-0 som processändringen som lärdes
