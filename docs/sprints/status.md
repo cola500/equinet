@@ -125,6 +125,8 @@ sections:
 | Live Activity för pågående bokning (iOS 16+) | 1-1.5 dag | Lock Screen + Dynamic Island när bokning pågår. Wow-feature, medel-effort. |
 | Siri Shortcut "Nästa bokning" | 0.5 dag | NSUserActivity + App Intent. Demoteknikvärde högt, komplexitet låg. |
 | Mät modellval per story (Opus/Sonnet/Haiku) | 0.5 dag | Utöka generate-metrics.sh med modell-dimension i M3/M4/M5. Lägg "Modell:"-fält i done-fil-mall. Efter 10+ stories per modell: beslut om standard per story-typ. |
+| Meddelanden kund ↔ leverantör (per bokning) | ~1 sprint MVP | In-app chat kopplad till specifik bokning. Ersätter SMS/samtal. Supabase Realtime + push-infra finns redan. Post-launch-kandidat. |
+| Meddelanden leverantör ↔ leverantör (community) | 2-3 sprintar | Nätverkseffekt (remisser, vikarier). Kräver moderering, rapportering, blockera-funktion. Produktbeslut om community-karaktär krävs. Utforska efter Variant A. |
 
 ## Blockerare
 
