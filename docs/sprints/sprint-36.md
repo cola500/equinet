@@ -315,14 +315,201 @@ Uppdatera `.claude/rules/parallel-sessions.md` med referens till hooken:
 
 ---
 
+### S36-4: Docs-matris compliance-check post-merge
+
+**Prioritet:** 4
+**Effort:** 1-1.5h
+**Domän:** infra (`scripts/` + `generate-metrics.sh`)
+
+Done-fil säger t.ex. "Ingen docs-uppdatering (UI-only)" men ingen verifierar att påståendet stämmer mot docs-matrisen i `.claude/rules/auto-assign.md`. Över tid driftar dokumentation tyst. Script som kör efter merge och rapporterar gap.
+
+**Aktualitet verifierad:**
+- Läs `.claude/rules/auto-assign.md` Docs-matris för aktuella story-typ-regler
+- Verifiera att `generate-metrics.sh` finns och kan utökas
+
+**Implementation:**
+
+**Steg 1: Skapa `scripts/check-docs-compliance.sh`**
+
+Skriptet:
+1. Loopa över alla `docs/done/*.md` (eller senaste N för effektivitet)
+2. Identifiera story-typ från done-filen (t.ex. "iOS UX-fix", "ny API route", "audit")
+3. Mappa story-typ → förväntade docs enligt matrisen i `auto-assign.md`
+4. Verifiera att relevanta docs ändrats i commit-intervallet (grep `git log -p` för fil-paths)
+5. Output: lista gap i format `S34-1: typ=iOS UX, förväntat=ios-learnings.md, faktisk=inte ändrad → MISSING`
+
+Story-typ-detektering kan vara pragmatisk (keyword-matching i done-fil-titel: "UX" → "Beteendeändring", "API" → "Ny API route" etc.). Perfekt inte krävs.
+
+**Steg 2: Integrera i `generate-metrics.sh`**
+
+Lägg till ny sektion i metrics-rapporten:
+
+```markdown
+## M7: Docs-compliance
+
+_Stories där förväntade docs enligt Docs-matrisen inte uppdaterats._
+
+- Totalt kontrollerade: 42
+- Gap identifierade: 3
+  - S34-1: iOS UX-fix men ios-learnings.md ej uppdaterad
+  - S35-2: beteendeändring i provider-UI men testing-guide.md ej uppdaterad
+  - S36-2: audit-story ok (N/A)
+```
+
+**Steg 3: Dokumentera i `.claude/rules/documentation.md`**
+
+Lägg till not: "`npm run metrics:report` identifierar docs-matris-gap retroaktivt."
+
+**Acceptanskriterier:**
+- [ ] `scripts/check-docs-compliance.sh` fungerar fristående
+- [ ] `generate-metrics.sh` kör compliance-check som M7-sektion
+- [ ] Minst en historisk story flaggas som gap (annars matrisen redundant eller check buggad)
+- [ ] Falska positiv-rate är rimlig (ej >50% av flaggar är felaktiga)
+- [ ] `npm run check:all` grön
+
+**Avgränsning:**
+- Ingen pre-commit blockering. Rapport i metrics-rapport räcker — retroaktiv översikt.
+- Story-typ-detektering är pragmatisk, inte perfekt. Minors acceptabla.
+
+**Reviews:** code-reviewer (trivial script, kan skippas om <30 min)
+
+**Arkitekturcoverage:** N/A.
+
+---
+
+### S36-5: Modellval-avvikelse-larm i metrics:report
+
+**Prioritet:** 5
+**Effort:** 1h
+**Domän:** infra (`scripts/generate-metrics.sh`)
+
+`Modell:`-fält i done-fil (infört i S33-0) samlar data men ingen larmar om avvikelse från memory-regeln ("Opus för säkerhetskritisk design, Sonnet för implementation"). Script som listar mismatch hjälper oss upptäcka modellval-fel innan de ger konsekvenser som S35-1.
+
+**Aktualitet verifierad:**
+- Verifiera att `Modell:`-fältet finns i senare done-filer (S33+)
+- Läs modellval-regeln i memory (`project_model_selection_metrics.md`)
+
+**Implementation:**
+
+**Steg 1: Definiera regeln i kod**
+
+Skapa `scripts/model-selection-rules.txt` (eller inline i script):
+
+```
+# Format: story_type,expected_model
+architecture,opus
+security-implementation,opus
+cross-cutting,opus
+docs,sonnet
+ios-ux,sonnet
+trivial,haiku
+```
+
+Story-typ-detektering: keyword-matching på done-fil-titel + story-beskrivning (pragmatisk).
+
+**Steg 2: Extend `generate-metrics.sh`**
+
+Ny sektion M8:
+
+```markdown
+## M8: Modellval-avvikelse
+
+_Stories där modellval avviker från memory-regeln._
+
+- Totalt kontrollerade (stories med Modell-fält): 24
+- Avvikelser: 1
+  - S35-1: typ=security-implementation, förväntat=opus, faktisk=sonnet → MISMATCH
+    (Lärdom: gav upphov till S35-1.5 hotfix)
+```
+
+**Steg 3: Memory-uppdatering**
+
+Lägg till pekare i `project_model_selection_metrics.md`: "Avvikelser upptäcks automatiskt via `npm run metrics:report` M8-sektion."
+
+**Acceptanskriterier:**
+- [ ] M8-sektion i metrics-rapport
+- [ ] S35-1 flaggas som avvikelse (test av regeln)
+- [ ] Minst 10 stories kontrolleras retroaktivt
+- [ ] `npm run check:all` grön
+
+**Avgränsning:**
+- Rapport-only, ingen blockering. Tech lead granskar i retro.
+- Story-typ-detektering är pragmatisk.
+
+**Reviews:** code-reviewer (trivial)
+
+**Arkitekturcoverage:** N/A.
+
+---
+
+### S36-6: Seven Dimensions-tvingad slicing-trigger
+
+**Prioritet:** 6
+**Effort:** 45 min
+**Domän:** infra (`scripts/check-docs-updated.sh` — utöka)
+
+Nya featureidéer riskerar hamna som backlog-rader utan Seven Dimensions-slicing, särskilt om effort är stort. Pre-commit hook varnar (inte blockerar) när status.md-backlog-rad tyder på att slicing saknas.
+
+**Aktualitet verifierad:**
+- Verifiera att `.claude/rules/story-refinement.md` finns (infördes i S33)
+- Verifiera att `docs/ideas/epic-*.md`-mönstret används (från S33:s testkörning)
+
+**Implementation:**
+
+**Steg 1: Utöka `scripts/check-docs-updated.sh`**
+
+Ny check-sektion (efter tech lead-varningen):
+
+```bash
+# Seven Dimensions-slicing-varning
+# Mönstret: status.md-commit lägger till backlog-rad med "epic" eller effort >3 dagar
+# utan länk till docs/ideas/epic-*.md → varna om slicing saknas
+if git diff --cached --name-only | grep -q "^docs/sprints/status.md$"; then
+  NEW_LINES=$(git diff --cached docs/sprints/status.md | grep "^+" | grep -v "^+++")
+  if echo "$NEW_LINES" | grep -qiE "epic|[3-9] dagar|[0-9]+ sprintar"; then
+    if ! echo "$NEW_LINES" | grep -q "docs/ideas/epic-.*\.md"; then
+      echo "⚠️  Seven Dimensions-varning: backlog-rad tyder på stort arbete"
+      echo "   utan länk till docs/ideas/epic-*.md. Överväg slicing enligt"
+      echo "   .claude/rules/story-refinement.md innan commit."
+      echo ""
+      echo "   Om rad redan är slicad: lägg till länk till epic-dokumentet."
+      echo "   Om detta är avsiktligt (liten backlog-post): fortsätt."
+      echo ""
+    fi
+  fi
+fi
+```
+
+**Steg 2: Testa**
+- Lägg till backlog-rad "Epic: X (2 sprintar)" utan länk → varning
+- Lägg till backlog-rad "Liten fix (30 min)" → ingen varning
+- Lägg till backlog-rad "Epic: X (2 sprintar) [se epic-x.md]" → ingen varning
+
+**Steg 3: Dokumentera**
+
+Uppdatera `.claude/rules/story-refinement.md`: "Pre-commit hook varnar om backlog-rad tyder på oslicat epic."
+
+**Acceptanskriterier:**
+- [ ] Hook varnar vid "epic" eller effort >3 dagar utan länk
+- [ ] Hook varnar INTE vid små backlog-rader
+- [ ] Hook varnar INTE när länk till epic-dokumentet finns
+- [ ] `story-refinement.md` uppdaterad med referens
+- [ ] `npm run check:all` grön
+
+**Avgränsning:** Varning, inte blockering.
+
+**Reviews:** code-reviewer (trivial scripting, skippbar)
+
+**Arkitekturcoverage:** N/A.
+
+---
+
 ## Framtida stories (skiss)
 
-- **S36-4: Docs-matris compliance-check post-merge.** Script som verifierar att relevanta docs faktiskt ändrats enligt Docs-matrisen i `auto-assign.md`. Gap rapporteras i metrics:report. Effort: 1-1.5h.
-- **S36-5: Modellval-avvikelse-larm i metrics:report.** Extend `generate-metrics.sh` att lista stories där modellval avviker från memory-regeln. Effort: 1h.
-- **S36-6: Seven Dimensions-tvingad slicing-trigger.** Pre-commit hook som varnar om backlog-rad nämner "epic" eller effort >3 dagar utan länk till `docs/ideas/epic-*.md`. Effort: 45 min.
-- **S37-x (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories.
+- **S37-x (villkorlig):** Review-manifest per story-typ. Bygg BARA om S36-1:s metacognition-rapportering inte räcker under 5-10 framtida stories. **Första datapunkt från S36-2:** VoiceTextarea-regeln missades av code-reviewer i S35-2 trots projektregel — antyder att manifest kan behövas.
 - **S37-x:** Automatiserad coverage-check — script som jämför `docs/architecture/*.md` D-beslut mot relaterade implementations-filer.
 - **S37-x:** "Designbeslut-kod-koppling"-pattern formaliserat i patterns.md.
+- **S37-x (Messaging-rollout):** Fixa MAJOR-1 (Suspense skeleton) + MAJOR-2 (query-param injection) → sätt `messaging: default: true`.
 
 ---
 
