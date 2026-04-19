@@ -132,6 +132,7 @@ git push origin --delete feature/<story-id>-<namn>
 | Mekanisk migrering | code-reviewer (bara) |
 | Story implementerar tidigare designstory (arkitekturdokument) | Vanliga subagenter + "arkitekturcoverage"-prompt till security-reviewer/tech-architect: "Verifiera att varje numrerat designbeslut (D1, D2...) finns implementerat i koden. Lista eventuella gap." |
 | Docs/config | Inga subagenter behövs |
+| Story sätter feature-flag `defaultEnabled: true` | Obligatorisk rollout-checklista: [docs/operations/feature-flag-rollout-checklist.md](../../docs/operations/feature-flag-rollout-checklist.md) (webb-audit + iOS-audit + post-rollout plan) |
 
 Kör ALLTID code-reviewer. Övriga baserat på story-typ.
 

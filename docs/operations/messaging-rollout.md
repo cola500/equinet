@@ -3,7 +3,7 @@ title: "Messaging Rollout"
 description: "Rollout-plan och observationsguide för messaging-funktionen (S37)"
 category: operations
 status: active
-last_updated: 2026-04-18
+last_updated: 2026-04-19
 sections:
   - Bakgrund
   - Rollback-procedur
@@ -16,6 +16,8 @@ sections:
 ## Bakgrund
 
 Messaging-funktionen (kund↔leverantör per bokning) levererades i S35 och gömdes bakom feature flag (`messaging: defaultEnabled: false`). S36 granskade implementationen och hittade 2 MAJOR-fynd. S37 åtgärdade dem och satte flaggan till `defaultEnabled: true`.
+
+> **Mall:** Detta dokument följer [feature-flag-rollout-checklist.md](feature-flag-rollout-checklist.md) — använd den mallen för framtida feature-aktiveringar. S37-rollout saknade iOS-audit, vilket ledde till en trasig upplevelse för iOS-leverantörer i 24h (åtgärdat i S38-2).
 
 **Aktiverat:** 2026-04-18
 
