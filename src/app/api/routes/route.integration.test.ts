@@ -15,8 +15,7 @@ const { mockAuth, mockTx, mockPrisma } = vi.hoisted(() => {
     route: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn() },
     routeOrder: { findMany: vi.fn(), update: vi.fn() },
     routeStop: { update: vi.fn(), findMany: vi.fn() },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    $transaction: vi.fn().mockImplementation(async (callback: (tx: typeof tx) => any) =>
+    $transaction: vi.fn().mockImplementation(async (callback: (tx: typeof tx) => unknown) =>
       callback(tx)
     ),
   }
@@ -271,6 +270,17 @@ describe("PATCH /api/routes/[id]/stops/[stopId]", () => {
     const body = await res.json()
     expect(body).toMatchObject({ id: STOP_ID, status: "in_progress" })
     expect(mockPrisma.$transaction).toHaveBeenCalledOnce()
+  })
+
+  it("returns 403 when provider tries to update another provider's stop (IDOR)", async () => {
+    mockPrisma.route.findUnique.mockResolvedValueOnce({
+      ...mockCreatedRoute,
+      providerId: "other-provider-id",
+    })
+    const res = await PATCH(makePatchRequest({ status: "in_progress" }), {
+      params: Promise.resolve({ id: ROUTE_ID, stopId: STOP_ID }),
+    })
+    expect(res.status).toBe(403)
   })
 
   it("returns 200 and marks route completed when all stops done", async () => {

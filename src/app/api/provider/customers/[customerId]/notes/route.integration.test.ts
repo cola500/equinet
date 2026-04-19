@@ -169,6 +169,13 @@ describe("POST /api/provider/customers/[customerId]/notes", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 400 when content is whitespace only (sanitized to empty)", async () => {
+    const res = await POST(makePostRequest({ content: "   " }), {
+      params: Promise.resolve({ customerId: CUSTOMER_ID }),
+    })
+    expect(res.status).toBe(400)
+  })
+
   it("returns 400 when content exceeds 2000 characters", async () => {
     const res = await POST(makePostRequest({ content: "x".repeat(2001) }), {
       params: Promise.resolve({ customerId: CUSTOMER_ID }),
@@ -207,8 +214,9 @@ describe("DELETE /api/provider/customers/[customerId]/notes/[noteId]", () => {
   })
 
   it("returns 404 when note belongs to another provider (IDOR protection)", async () => {
+    // Prisma P2025: "Record to delete does not exist" — thrown when WHERE { id, providerId } finds no match
     mockPrisma.providerCustomerNote.delete.mockRejectedValueOnce(
-      new Error("Record not found")
+      Object.assign(new Error("Record not found"), { code: "P2025" })
     )
     const res = await DELETE(makeDeleteRequest(), {
       params: Promise.resolve({ customerId: CUSTOMER_ID, noteId: NOTE_ID }),

@@ -156,6 +156,7 @@ describe("POST /api/provider/customers/[customerId]/invite", () => {
     expect(mockPrisma.customerInviteToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ userId: CUSTOMER_ID, usedAt: null }),
+        data: expect.objectContaining({ usedAt: expect.any(Date) }),
       })
     )
   })
