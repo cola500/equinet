@@ -318,6 +318,15 @@ sections:
 - [ ] Olastaantal visas som badge i ProviderNav (Meddelanden-fliken)
 - [ ] iOS: Meddelanden-alternativ visas i Mer-meny nar messaging-flagga ar pa
 
+### Snabbsvar (feature flag `smart_replies`)
+
+- [ ] Aktivera flag i admin/system
+- [ ] Leverantör öppnar tråd → 4 chips synliga ovanför skriv-fältet
+- [ ] Klick på "Bokningen är bekräftad..." → datum+tid expanderas korrekt (inkl. veckodag)
+- [ ] Klick på "Ring mig på..." → telefon från profil expanderas
+- [ ] Textrutan uppdateras utan att skicka (leverantör kan redigera)
+- [ ] Inaktivera flag → chips försvinner
+
 ---
 
 ## Notifikationer och e-post

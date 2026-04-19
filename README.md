@@ -246,6 +246,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 
 ### Kommunikation
 - Meddelanden mellan kund och leverantör per bokning (tråd-vy, polling var 10s, push-notiser vid nytt meddelande)
+- Snabbsvar i leverantörens meddelande-tråd (feature flag `smart_replies`, default off)
 
 ### Leverantörsverktyg
 - Ruttplanering med kartvy, optimering, Google Maps-navigation och geolokalisering
