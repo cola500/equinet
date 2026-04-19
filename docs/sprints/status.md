@@ -18,14 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 40** ([sprint-40.md](sprint-40.md)) -- Smart-replies prod-ifiering
+**Sprint 41** ([sprint-41.md](sprint-41.md)) -- Messaging-ordning + review-lärdom
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S40-0 Svenska + datum-veckodag + touch-target 44pt (+ before-screenshot) | webb | done (PR #220) |
-| S40-1 Feature flag `smart_replies` + unit-tests | webb | done (PR #221, 94be35f6) |
-| S40-2 Docs (hjälpartikel + testing-guide + README) | docs | done (PR #222, bcc7d8f0) |
-| S40-3 cx-ux-reviewer visuell jämförelse före/efter | webb | done (PR #223, aed6fd58) |
+| S41-0 Fix message-ordning (blocker från S40-3-miss) | webb | pending |
+| S41-1 Retro-miss-analys + review-manifest-spike | docs | pending |
+| S41-2 Chat-convention-check hook (valfri) | infra | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -33,6 +32,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S40 | Smart-replies prod-ifiering | 4/4 done (polish, flag+tests, docs, cx-ux-review) — cx-ux-reviewer missade chat-ordning-blocker (fångades av tech lead, fix i S41) |
 | S39 | Self-Testing v3 + messaging-polish | 4/4 done (sync-gate, hook-paths, rollout-checklist, optimistisk messaging) |
 | S38 | iOS messaging audit + fixar | 4/4 done (audit, docs, blockers-fix, messaging-knapp) -- audit-first räddade iOS-upplevelsen |
 | S37 | Messaging-rollout | 3/3 done (skeleton, injection-fix, flag on) |
