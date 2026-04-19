@@ -163,7 +163,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: Supabase Auth (managed, med Custom Access Token Hook)
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (4018 unit/integration) + Playwright (373+ E2E desktop + mobil) = 70% coverage
+- **Testning**: Vitest (4240 unit/integration) + Playwright (29 E2E-specs) + 312 iOS XCTest = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -312,7 +312,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**4740+ tester** (373 E2E desktop + mobil + 10 offline E2E + 4080 unit/integration + 283 iOS XCTest) med **70% coverage**.
+**4552+ tester** (4240 Vitest unit/integration + 312 iOS XCTest + 29 E2E-specs) med **70% coverage**.
 
 ### Kör Tester
 

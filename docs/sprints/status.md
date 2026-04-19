@@ -3,7 +3,8 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-19sections:
+last_updated: 2026-04-19
+sections:
   - Aktiv sprint
   - Tidigare sprintar
   - Sessioner
