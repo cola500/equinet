@@ -12,6 +12,7 @@ keywords:
   - kommunikation
   - olästa
   - badge
+  - snabbsvar
 summary: Läs och svara på kundmeddelanden direkt i Equinet.
 ---
 
@@ -40,6 +41,16 @@ Skriv ditt svar i textfältet längst ned och klicka **Skicka**, eller tryck **C
 ## Oläst-badge i navigeringen
 
 Om du har olästa meddelanden visas ett rött märke med antal på Meddelanden-ikonen i navigeringen. Märket uppdateras automatiskt var 30:e sekund.
+
+## Snabbsvar
+
+Ovanför skriv-fältet visas 4 klickbara snabbsvar:
+- "Bokningen är bekräftad. Vi ses [datum] kl [tid]."
+- "Tack! Jag återkommer så snart jag kan."
+- "Ring mig på [ditt telefonnummer] om det brådskar."
+- "Vilken tid passar dig istället?"
+
+Klicka för att fylla i textrutan — du kan redigera innan du skickar.
 
 ## Tips
 
