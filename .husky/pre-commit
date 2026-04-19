@@ -25,3 +25,6 @@ bash scripts/check-docs-updated.sh || {
 
 # 4. Plan-commit-gate (varning, blockerar ej)
 bash scripts/check-plan-commit.sh
+
+# 5. Sprint-avslut-gate (varning, blockerar ej)
+bash scripts/check-sprint-closure.sh
