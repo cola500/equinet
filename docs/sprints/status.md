@@ -18,18 +18,18 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 42: E2E-genomkörning + visuell baseline** ([sprint-42.md](sprint-42.md))
+**Sprint 43: Testpyramid-omfördelning** ([sprint-43.md](sprint-43.md))
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S42-0: Webb E2E smoke-tier | 0 | done | 20-30 min |
-| S42-1: Webb E2E critical-tier | 1 | done | 30-45 min |
-| S42-2: Webb E2E external-tier | 2 | done | 30-45 min |
-| S42-3: Full-suite + flake-rapport | 3 | in_progress | 45-60 min |
-| S42-4: iOS native-flöde-audit (mobile-mcp) | 4 | pending | 1-1.5h |
-| S42-5: XCUITest-bootstrap-plan (docs) | 5 | pending | 30-45 min |
+| S43-0: Discovery — klassa alla 36 E2E-specs | 0 | done | 0.5 dag |
+| S43-1: Pilot — flytta 2 specs (unsubscribe + horses) | 1 | pending | 0.5-1 dag |
+| S43-2: Första batch — flytta 4-6 specs | 2 | pending | 1 dag |
 
-*(Sprint 41 klar 2026-04-19. 3/3 stories done. Retro: `docs/retrospectives/2026-04-19-review-miss-analysis.md` + S40-done-refs.)*
+**Fas 4 (rensa 18 skip-specs) + Fas 5 (hårdhärda smoke-tier)** planeras för S44.
+
+*(Sprint 42 avbruten 2026-04-19. S42-0/1/2 done. S42-3/4/5 flyttade till backlog — testpyramid-arbetet prioriterat högre.)*
+*(Sprint 41 klar 2026-04-19. 3/3 stories done.)*
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -37,6 +37,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S42 | E2E-genomkörning (avbruten) | 3/6 done (smoke/critical/external visuell verifiering) — avbruten för att prioritera testpyramid-omfördelning |
 | S41 | Messaging-ordning + review-lärdom | 3/3 done (blocker-fix, review-manifest, hook) |
 | S40 | Smart-replies prod-ifiering | 4/4 done (polish, flag+tests, docs, cx-ux-review) — cx-ux-reviewer missade chat-ordning-blocker (fångades av tech lead, fix i S41) |
 | S39 | Self-Testing v3 + messaging-polish | 4/4 done (sync-gate, hook-paths, rollout-checklist, optimistisk messaging) |
@@ -78,7 +79,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session webb (sonnet) | fullstack | S42-0 → S42-5 | main (docs-only) | 2026-04-19 |
+| (ingen aktiv -- väntar på S43-1 Pilot) | - | - | - | - |
 
 ## Beslut
 
@@ -106,6 +107,9 @@ sections:
 
 | Item | Effort | Motivering |
 |------|--------|------------|
+| S42-3: Full-suite flake-rapport | 45-60 min | Avbruten från S42. Kan köras när testpyramid-arbetet behöver baseline-data. |
+| S42-4: iOS native-flöde-audit via mobile-mcp | 1-1.5h | Avbruten från S42. 13 flöden, visuell baseline. Fortfarande värdefullt före lansering. |
+| S42-5: XCUITest-bootstrap-plan | 30-45 min | Avbruten från S42. Docs-plan för framtida iOS E2E-sprint. |
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
 | Messaging: aria-label på ProviderNav messaging-badge (MINOR-2) | 15 min | Skärmläsare förstår inte "3"-siffran. |
 | Messaging: Pending-state på MessagingSection-knapp (MINOR-4) | 15 min | Ingen visuell feedback vid klick. |
