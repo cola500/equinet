@@ -6,23 +6,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/api-route-check.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/api-route-check.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/tdd-reminder.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/tdd-reminder.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/feature-flag-check.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/feature-flag-check.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/prisma-migration-check.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/prisma-migration-check.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/e2e-check.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/e2e-check.sh"
           }
         ]
       },
@@ -31,23 +31,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/definition-of-done.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/definition-of-done.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/sprint-status-update.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/sprint-status-update.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/plan-approval-check.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/plan-approval-check.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/debug-discipline.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/debug-discipline.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/review-suggest.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/review-suggest.sh"
           }
         ]
       }
@@ -58,11 +58,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/post-api-route-verify.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/post-api-route-verify.sh"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/post-import-check.sh"
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/post-import-check.sh"
           }
         ]
       }
