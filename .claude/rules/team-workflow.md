@@ -3,7 +3,7 @@ title: "Team Workflow -- Stationsflode"
 description: "6-stationsflode med checklistor for features, fran planering till merge"
 category: rule
 status: active
-last_updated: 2026-04-19
+last_updated: 2026-04-20
 tags: [workflow, team, review, tdd, quality]
 sections:
   - Översikt
@@ -277,6 +277,14 @@ Alla checklistepunkter uppfyllda.
 
 **Vem**: Tech lead (triggas via "kor review")
 **Syfte**: Slutgranskning och merge till main
+
+> **Dev MERGAR ALDRIG egen PR — tech lead är alltid gatekeeper.**
+>
+> Flow: Dev pushar feature branch → tech lead triggas via "kör review" → tech lead granskar + skapar PR + mergar. Om Dev skapar PR själv: tech lead måste triggas explicit innan merge.
+>
+> **Undantag:** `.claude/rules/*`-ändringar kan mergas av den som gjorde dem efter self-review, eftersom de påverkar agent-beteende och inte produktionskod.
+>
+> **Varning från S44 (2026-04-19):** S44-0, S44-1 och S44-2 mergades av Dev utan tech-lead-review — tre brott mot denna regel på en sprint. Använd `bash scripts/check-own-pr-merge.sh <PR>` innan `gh pr merge` för att påminnas.
 
 ### Steg
 
