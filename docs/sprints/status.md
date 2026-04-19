@@ -22,9 +22,11 @@ sections:
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S44-0: TA BORT-batch (3 döda specs) | 0 | pending | 0.5 dag |
-| S44-1: Batch 2 — 5 integration-migrationer | 1 | pending | 1 dag |
-| S44-2: horses-CRUD + filter=upcoming coverage-fix | 2 | pending | 1.5-2h |
+| S44-0: TA BORT-batch (3 döda specs) | 0 | done | 0.5 dag |
+| S44-1: Batch 2 — 5 integration-migrationer | 1 | done | 1 dag |
+| S44-2: horses-CRUD + filter=upcoming coverage-fix | 2 | done | 1.5-2h |
+
+*(Sprint 44 klar 2026-04-19. 3/3 stories done — 44 nya Vitest-tester, 3 E2E-specs raderade, E2E-svit 29 (stabilt). Vitest: 4240→4284. Retro: `docs/retrospectives/2026-04-19-sprint-44.md`.)*
 
 *(Sprint 43 klar 2026-04-19. 3/3 stories done — 7 E2E-specs migrerade, 150 nya Vitest-tester, E2E-svit 36→29. Retro: `docs/retrospectives/2026-04-19-sprint-43.md`. Sprint-avslut slutfört av tech lead i efterhand — Dev hoppade till S44 utan att avsluta.)*
 *(Sprint 42 avbruten 2026-04-19. S42-0/1/2 done. S42-3/4/5 flyttade till backlog — testpyramid-arbetet prioriterat högre.)*

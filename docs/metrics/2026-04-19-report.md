@@ -17,7 +17,7 @@ sections:
 
 # Metrics-rapport 2026-04-19
 
-> Genererad av `npm run metrics:report` — 2026-04-19 12:07:26
+> Genererad av `npm run metrics:report` — 2026-04-19 17:33:21
 
 ---
 
@@ -28,7 +28,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 - 2026-W13: 29 commits
 - 2026-W14: 442 commits
 - 2026-W15: 154 commits
-- 2026-W16: 307 commits
+- 2026-W16: 359 commits
 
 ---
 
@@ -36,7 +36,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 
 _Tid från första commit på feature-branch till merge-commit. Median + p90. Senaste 8 veckor._
 
-- Antal merges analyserade: 237
+- Antal merges analyserade: 244
 - Median lead time: 0h
 - p90 lead time: 2h
 
@@ -46,9 +46,9 @@ _Tid från första commit på feature-branch till merge-commit. Median + p90. Se
 
 _Andel stories där verifiering visade att problemet redan var löst._
 
-- Totalt done-filer: 165
+- Totalt done-filer: 174
 - "Redan fixat"-filer: 8
-- Rate: 4,8% (mål: <5%)
+- Rate: 4,6% (mål: <5%)
 
 ---
 
@@ -56,12 +56,12 @@ _Andel stories där verifiering visade att problemet redan var löst._
 
 _Hur ofta hittar review-agenter faktiska problem (blockers/majors)?_
 
-- Stories med agent-review: 79
-- Stories med minst ett fynd (blocker/major): 66
-- Hit-rate: 83,5% (hur ofta agenter hittar reella problem)
-- Stories med blocker: 42
-- Stories med major: 38
-- Stories med minor: 32
+- Stories med agent-review: 84
+- Stories med minst ett fynd (blocker/major): 71
+- Hit-rate: 84,5% (hur ofta agenter hittar reella problem)
+- Stories med blocker: 43
+- Stories med major: 40
+- Stories med minor: 33
 
 ---
 
@@ -69,7 +69,7 @@ _Hur ofta hittar review-agenter faktiska problem (blockers/majors)?_
 
 _Tid från plan-commit till done-commit. Proxy för "hur lång tar en story?"_
 
-- Antal stories analyserade: 33 av 165 (kräver matchande plan-fil i docs/plans/)
+- Antal stories analyserade: 37 av 174 (kräver matchande plan-fil i docs/plans/)
 - Median cykeltid: 0h (från plan-commit till done-commit)
 - _Notering: 0h = plan och done committade i samma session (korrekt beteende)_
 
@@ -79,9 +79,9 @@ _Tid från plan-commit till done-commit. Proxy för "hur lång tar en story?"_
 
 _Antal unit-tester idag._
 
-- Vitest (src/): 4186 tester
+- Vitest (src/): 4284 tester
 - XCTest (ios/): 312 tester
-- Totalt: 4498 tester
+- Totalt: 4596 tester
 
 ---
 
@@ -89,9 +89,9 @@ _Antal unit-tester idag._
 
 _Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroaktiv check via `scripts/check-docs-compliance.sh`._
 
-- Totalt kontrollerade (med Docs-sektion): 71
+- Totalt kontrollerade (med Docs-sektion): 80
 - Äldre stories utan Docs-sektion (skippad): 94
-- Gap identifierade: 14
+- Gap identifierade: 15
   - s11-1: typ=schema, förväntat=docs/architecture/database.md, faktisk='Ingen docs-uppdatering'
   - s11-2: typ=schema, förväntat=docs/architecture/database.md, faktisk='Ingen docs-uppdatering'
   - s17-7: typ=schema, förväntat=docs/architecture/database.md, faktisk='Ingen docs-uppdatering'
@@ -106,6 +106,7 @@ _Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroakti
   - s37-1: typ=audit, förväntat=docs/retrospectives/, faktisk='Ingen docs-uppdatering'
   - s38-3: typ=audit, förväntat=docs/retrospectives/, faktisk='Ingen docs-uppdatering'
   - s39-3: typ=audit, förväntat=docs/retrospectives/, faktisk='Ingen docs-uppdatering'
+  - s44-1: typ=api-route, förväntat=security-reviewer körd, faktisk=security-review ej nämnd
 
 ---
 
@@ -113,7 +114,7 @@ _Stories där förväntade docs enligt Docs-matrisen inte uppdaterats. Retroakti
 
 _Stories där modellval avviker från regeln: Opus för arkitekturdesign och säkerhetskritisk cross-cutting implementation, Sonnet/Haiku för övriga._
 
-- Totalt kontrollerade (stories med Modell-fält): 35
+- Totalt kontrollerade (stories med Modell-fält): 42
 - Avvikelser: 2
   - s35-1-5: typ=arkitektur/säkerhetskritisk, förväntat=opus, faktisk=sonnet
   - s35-1: typ=arkitektur/säkerhetskritisk, förväntat=opus, faktisk=sonnet
