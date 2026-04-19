@@ -18,15 +18,17 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 44: Testpyramid — TA BORT + Batch 2 + coverage-gap-fix** ([sprint-44.md](sprint-44.md))
+**Sprint 45: Process-hardening** ([sprint-45.md](sprint-45.md))
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S44-0: TA BORT-batch (3 döda specs) | 0 | done | 0.5 dag |
-| S44-1: Batch 2 — 5 integration-migrationer | 1 | done | 1 dag |
-| S44-2: horses-CRUD + filter=upcoming coverage-fix | 2 | done | 1.5-2h |
+| S45-0: Plan-commit-gate (pre-commit hook) | 0 | done | 45-60 min |
+| S45-1: Sprint-avslut-gate (pre-commit hook) | 1 | pending | 30-45 min |
+| S45-2: Multi-commit-gate (pre-push hook) | 2 | pending | 30-45 min |
+| S45-3: Tech-lead-merge-gate (rule + hook) | 3 | pending | 45-60 min |
+| S45-4: Plan-commit-divergens-förtydligande (valfri) | 4 | pending | 15-20 min |
 
-*(Sprint 44 klar 2026-04-19. 3/3 stories done — 44 nya Vitest-tester, 3 E2E-specs raderade, E2E-svit 29 (stabilt). Vitest: 4240→4284. Retro: `docs/retrospectives/2026-04-19-sprint-44.md`.)*
+*(Sprint 44 klar 2026-04-19. 3/3 stories done — 44 nya Vitest-tester, 3 E2E-specs raderade, E2E-svit 29→22. Vitest: 4240→4284. Retro: `docs/retrospectives/2026-04-19-sprint-44.md`.)*
 
 *(Sprint 43 klar 2026-04-19. 3/3 stories done — 7 E2E-specs migrerade, 150 nya Vitest-tester, E2E-svit 36→29. Retro: `docs/retrospectives/2026-04-19-sprint-43.md`. Sprint-avslut slutfört av tech lead i efterhand — Dev hoppade till S44 utan att avsluta.)*
 *(Sprint 42 avbruten 2026-04-19. S42-0/1/2 done. S42-3/4/5 flyttade till backlog — testpyramid-arbetet prioriterat högre.)*
@@ -38,6 +40,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S44 | Testpyramid TA BORT + Batch 2 | 3/3 done — 3 E2E raderade, 4 migrerade, 7 coverage-tester. E2E 29→22. Vitest 4240→4284. Retro: process-drift-retron identifierade 8 procedurbrott S43-S44 → S45 bygger automation. |
 | S43 | Testpyramid-omfördelning | 3/3 done (Discovery + Pilot + Batch 1) — 7 specs migrerade, E2E 36→29, Vitest +150. Tre procedurbrott identifierade: plan-commit-miss (S43-1), trivial-gating-miss (Dev skippade review i båda stories), sprint-avslut-hoppat (direkt till S44). Fixar: PR #227 + tre backlog-rader. |
 | S42 | E2E-genomkörning (avbruten) | 3/6 done (smoke/critical/external visuell verifiering) — avbruten för att prioritera testpyramid-omfördelning |
 | S41 | Messaging-ordning + review-lärdom | 3/3 done (blocker-fix, review-manifest, hook) |
