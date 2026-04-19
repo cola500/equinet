@@ -22,3 +22,6 @@ bash scripts/check-docs-updated.sh || {
   echo "Done-fil saknar docs-uppdateringssektion."
   exit 1
 }
+
+# 4. Plan-commit-gate (varning, blockerar ej)
+bash scripts/check-plan-commit.sh
