@@ -198,6 +198,7 @@ export async function GET(
     return NextResponse.json({
       customerName: booking.customerName,
       serviceName: booking.serviceName,
+      bookingDate: booking.bookingDate.toISOString(),
       messages: result.messages.map((m) => ({
         id: m.id,
         conversationId: m.conversationId,

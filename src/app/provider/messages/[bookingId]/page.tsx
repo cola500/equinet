@@ -9,6 +9,7 @@ import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
+import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
 
 interface Message {
   id: string
@@ -24,8 +25,14 @@ interface Message {
 interface MessagesResponse {
   customerName: string
   serviceName: string
+  bookingDate: string
   messages: Message[]
   nextCursor: string | null
+}
+
+interface ProviderProfile {
+  phone?: string
+  address?: string
 }
 
 function ThreadView({ bookingId }: { bookingId: string }) {
@@ -38,9 +45,20 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     `/api/bookings/${bookingId}/messages`,
     { refreshInterval: 10000 }
   )
+  const { data: profile } = useSWR<ProviderProfile>("/api/provider/profile")
 
   const customerName = data?.customerName ?? "Kund"
   const serviceName = data?.serviceName ?? null
+
+  const smartReplyVars = (() => {
+    const d = data?.bookingDate ? new Date(data.bookingDate) : null
+    return {
+      datum: d ? d.toLocaleDateString("sv-SE", { day: "numeric", month: "long" }) : "",
+      tid: d ? d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "",
+      telefon: profile?.phone ?? "",
+      adress: profile?.address ?? "",
+    }
+  })()
 
   // Mark messages as read once on first load
   useEffect(() => {
@@ -168,6 +186,11 @@ function ThreadView({ bookingId }: { bookingId: string }) {
 
       {/* Compose area */}
       <div className="border-t pt-3 space-y-2">
+        <SmartReplyChips
+          vars={smartReplyVars}
+          onSelect={(text) => setContent(text)}
+          disabled={isSending}
+        />
         <VoiceTextarea
           value={content}
           onChange={(value) => setContent(value)}
