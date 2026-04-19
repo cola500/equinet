@@ -14,6 +14,7 @@ struct NativeBookingDetailView: View {
     let bookingId: String
     @Bindable var viewModel: BookingsViewModel
     var onNavigateToWeb: ((_ path: String) -> Void)?
+    var featureFlags: [String: Bool] = [:]
 
     @Environment(\.dismiss) private var dismiss
 
@@ -547,6 +548,7 @@ struct NativeBookingDetailView: View {
             .accessibilityLabel("Avvisa bokning")
 
             noteButton(isLoading: isLoading)
+            messagingButton(bookingId: booking.id)
         }
     }
 
@@ -594,6 +596,7 @@ struct NativeBookingDetailView: View {
             }
 
             noteButton(isLoading: isLoading)
+            messagingButton(bookingId: booking.id)
         }
     }
 
@@ -616,6 +619,7 @@ struct NativeBookingDetailView: View {
             }
 
             noteButton(isLoading: isLoading)
+            messagingButton(bookingId: booking.id)
         }
     }
 
@@ -636,6 +640,24 @@ struct NativeBookingDetailView: View {
         .controlSize(.large)
         .disabled(isLoading)
         .accessibilityLabel("Lägg till anteckning")
+    }
+
+    @ViewBuilder
+    private func messagingButton(bookingId: String) -> some View {
+        if featureFlags["messaging"] == true, onNavigateToWeb != nil {
+            Button {
+                onNavigateToWeb?("/provider/messages/\(bookingId)")
+            } label: {
+                Label("Meddelanden", systemImage: "message")
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(.blue)
+            .controlSize(.large)
+            .accessibilityLabel("Öppna meddelandetråd")
+            .accessibilityHint("Navigerar till konversationen för denna bokning")
+        }
     }
 
     // MARK: - Date Formatting

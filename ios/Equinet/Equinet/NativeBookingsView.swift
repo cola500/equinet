@@ -14,6 +14,7 @@ struct NativeBookingsView: View {
     @Bindable var viewModel: BookingsViewModel
     @Binding var pendingBookingId: String?
     var onNavigateToWeb: ((_ path: String) -> Void)?
+    var featureFlags: [String: Bool] = [:]
 
     @State private var hapticRefreshed = false
 
@@ -37,7 +38,8 @@ struct NativeBookingsView: View {
                 NativeBookingDetailView(
                     bookingId: bookingId,
                     viewModel: viewModel,
-                    onNavigateToWeb: onNavigateToWeb
+                    onNavigateToWeb: onNavigateToWeb,
+                    featureFlags: featureFlags
                 )
             }
         }

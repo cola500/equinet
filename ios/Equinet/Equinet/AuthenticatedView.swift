@@ -52,11 +52,13 @@ struct AuthenticatedView: View {
                 Tab(AppTab.bookings.rawValue, systemImage: AppTab.bookings.icon, value: AppTab.bookings) {
                     NativeBookingsView(
                         viewModel: coordinator.bookingsViewModel,
-                        pendingBookingId: $coordinator.pendingBookingId
-                    ) { path in
-                        coordinator.pendingMorePath = path
-                        coordinator.selectedTab = .more
-                    }
+                        pendingBookingId: $coordinator.pendingBookingId,
+                        onNavigateToWeb: { path in
+                            coordinator.pendingMorePath = path
+                            coordinator.selectedTab = .more
+                        },
+                        featureFlags: coordinator.featureFlags
+                    )
                 }
 
                 // More (Native menu with NavigationStack)
