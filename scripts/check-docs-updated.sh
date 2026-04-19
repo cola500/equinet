@@ -83,6 +83,23 @@ if git diff --cached --name-only | grep -q "^src/components/layout/ProviderNav.t
   fi
 fi
 
+# Messaging chat-konvention-check
+# Om ny/ändrad messaging-fil använder messages.map utan .reverse() → varna
+STAGED_MESSAGING=$(git diff --cached --name-only | grep -E "provider/messages|customer/bookings.*Messaging" || true)
+if [ -n "$STAGED_MESSAGING" ]; then
+  for FILE in $STAGED_MESSAGING; do
+    ADDED_LINES=$(git diff --cached "$FILE" 2>/dev/null | grep "^+" | grep -v "^+++")
+    if echo "$ADDED_LINES" | grep -q "messages\.map"; then
+      if ! echo "$ADDED_LINES" | grep -qE "displayMessages|reverse\(\)"; then
+        echo "⚠️  Messaging-konvention-varning: $FILE lägger till messages.map utan displayMessages/reverse."
+        echo "   Chat-konvention: nyast nederst. Importera displayMessages från messageUtils.ts."
+        echo "   Om avsiktligt (t.ex. unread-preview utan full tråd): fortsätt."
+        echo ""
+      fi
+    fi
+  done
+fi
+
 # Bara kör om en done-fil är staged
 STAGED_DONE_FILES=$(git diff --cached --name-only --diff-filter=A | grep "^docs/done/s[0-9]" || true)
 
