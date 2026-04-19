@@ -3,7 +3,7 @@ title: "Team Workflow -- Stationsflode"
 description: "6-stationsflode med checklistor for features, fran planering till merge"
 category: rule
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-04-19
 tags: [workflow, team, review, tdd, quality]
 sections:
   - Översikt
@@ -138,31 +138,38 @@ Alla tester MASTE faila. Om nagot test passerar utan implementation -- testet te
 
 **Triviala stories** får skippa subagent-review och gå direkt till Station 5 (VERIFY).
 
+**Grundregel:** Trivial-gating är **tid × yta × risk**, inte bara "är det ny logik?". Även ren refactoring eller test-migrering kan ha yta-risk (slarvfel skalar med antal filer).
+
 Alla kriterier MÅSTE stämma för att en story ska klassas som trivial:
 
-- [ ] Effort <15 min
-- [ ] Mekanisk ändring (inte ny logik)
+- [ ] Effort <15 min **OCH** ≤1 fil ändrad (yta-gräns)
+- [ ] Mekanisk ändring (inte ny logik, inga nya filer skapade)
 - [ ] Ingen API-yta ändras (inga nya routes, inga ändrade signaturer)
-- [ ] Ingen säkerhetspåverkan (ingen auth, ingen input-validering, inga behörigheter)
-- [ ] Inget UI ändras (inga komponenter, inga sidor)
+- [ ] Ingen säkerhetspåverkan (ingen auth, ingen input-validering, inga behörigheter, **inga nya auth-tester**)
+- [ ] Inget UI ändras (inga komponenter, inga sidor, **ingen komponentextraktion**)
 - [ ] Tester finns OCH passerar (eller tillkommer utan att ändra beteende)
 
 **Exempel på triviala stories:**
-- `Task.detached` → `Task`
-- Force unwrap → `guard let`
-- Byt paketversion (patch)
-- Flytta en import
+- `Task.detached` → `Task` (1 fil)
+- Force unwrap → `guard let` (1 fil)
+- Byt paketversion (patch) (package.json + lock)
+- Flytta en import (1 fil)
 - Rätta stavfel i UI-sträng (om det inte påverkar tester)
 
 **Exempel på INTE triviala (kräver review):**
 - Ny route/endpoint
 - Ändrad Zod-schema
 - Ny domain service-metod
-- Ändrad UI-komponent
+- Ändrad UI-komponent eller **komponent-extraktion till ny fil**
 - Schema-ändring
 - Säkerhets- eller auth-relaterat
+- **Test-migrering över flera filer** (nya integration/component-tester är ny kod — fel i mock-setup eller coverage-gap fångas av review)
+- **Ren refactoring som rör ≥2 filer** (slarvfel skalar med yta — även "bara flyttat kod" kan introducera bugg)
+- Alla stories med effort >15 min — **effort-tröskeln är absolut**
 
 **Regel vid osäkerhet:** Kör review. Bättre att spendera 5 min extra än att missa en bugg.
+
+**Varning från S43-lärdom (2026-04-19):** S43-1 (1 dag, 5 filer, HorseForm-extraktion + integration-test) och S43-2 (1 dag, 10+ filer, 5 nya integration-test-filer) klassades felaktigt som "trivial" av Dev med motivering "mekanisk test-migrering". Tech-lead-review vid merge fångade coverage-gaps som Dev's review hade hittat. **Review vid Station 4 (Dev) är inte ersättbar av review vid Station 7 (tech lead)** — de kompletterar varandra (närhet vs distans).
 
 **Oavsett trivial eller inte:** Station 5 (`npm run check:all`) är ALLTID obligatorisk.
 
