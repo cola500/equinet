@@ -194,6 +194,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Rate limiter fail-closed**: `RateLimitServiceError` -> 503. Rate limiting EFTER auth, FÖRE JSON-parsing.
 - **Payload-minimering**: `select`-block ska BARA ha fält UI:t använder. `groupBy` > hämta-alla + JS-loop.
 - **Strukturerad loggning**: Server: `logger`. Klient: `clientLogger`. ALDRIG `console.*` i produktionskod.
+- **Plan-commit-ordning**: Committa plan-fil på main → PUSHA → SEDAN skapa feature-branch. Annars: divergent branches vid PR-merge. Fix om det hänt: `git rebase main` på feature-branchen. Se `.claude/rules/commit-strategy.md`.
+- **git checkout-miss**: Verifiera alltid `git branch --show-current` INNAN commit. Om commit hamnade på fel branch: `git cherry-pick <hash>` på rätt branch + `git reset --hard HEAD~1` på fel branch.
 
 **Vilken testplaybook?** Swift-fil -> iOS-testflöde (`ios-learnings.md`). TypeScript/JS-fil -> Webb-testflöde (nedan).
 
@@ -222,8 +224,8 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ## Automated Quality Gates
 
-- **Pre-commit:** `check:swedish` + `typecheck` (om .ts/.tsx staged)
-- **Pre-push:** `check:swedish` + `test:run` + `typecheck` + `lint`
+- **Pre-commit:** `check:swedish` + `typecheck` (om .ts/.tsx staged) + plan-commit-gate (varning om story in_progress utan plan) + sprint-avslut-gate (varning om alla stories done utan retro)
+- **Pre-push:** `check:swedish` + `test:run` + `typecheck` + `lint` + multi-commit-gate (varning om <2 commits på feature branch)
 - **Allt-i-ett:** `npm run check:all` (alla 4 gates)
 - **CI:** Unit tests + coverage, E2E, Offline E2E smoke, TypeScript, Build
 - **Hooks:** 10 Claude Code hooks i `.claude/hooks/` (API-check, TDD-reminder, DoD, etc)
@@ -259,4 +261,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-04-12
+**Senast uppdaterad**: 2026-04-19

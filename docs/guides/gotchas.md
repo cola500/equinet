@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-19
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -1463,6 +1463,21 @@ body { padding-bottom: 0 !important; }
 - **Skapa nya migrationer:** Använd `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/<ts>_<name>/migration.sql` för att generera SQL utan shadow DB. Eller skriv migration-filen manuellt.
 
 **Regel:** Använd ALDRIG `prisma migrate dev` mot lokal Supabase om det finns migrationer som refererar `auth`-schemat. Använd `prisma migrate deploy` för att applicera och `prisma migrate diff` för att generera nya migrationer.
+
+---
+
+## Gotcha #37: Plan-commit på main skapar divergent feature-branch
+
+**Problem:** Om du committar `docs/plans/<story>-plan.md` direkt på main (tillåtet per commit-strategy) och sedan skapar feature-branchen UTAN att pusha main först, får du en divergent branch — lokal main och feature-branch delar inte samma bas som remote main. `gh pr merge` klagar på konflikter vid merge.
+
+**Lösning (förebyggande):** Tryck alltid main INNAN du skapar feature-branchen:
+1. `git commit -m "docs: plan"` på main
+2. `git push origin main`
+3. `git checkout -b feature/...`
+
+**Lösning (i efterhand):** `git rebase main` på feature-branchen synkar basen.
+
+**Källa:** S44-retro-fynd — divergent branches vid PR #230. Regel i `.claude/rules/commit-strategy.md`.
 
 ---
 
