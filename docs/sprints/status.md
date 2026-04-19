@@ -23,8 +23,8 @@ sections:
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
 | S45-0: Plan-commit-gate (pre-commit hook) | 0 | done | 45-60 min |
-| S45-1: Sprint-avslut-gate (pre-commit hook) | 1 | pending | 30-45 min |
-| S45-2: Multi-commit-gate (pre-push hook) | 2 | pending | 30-45 min |
+| S45-1: Sprint-avslut-gate (pre-commit hook) | 1 | done | 30-45 min |
+| S45-2: Multi-commit-gate (pre-push hook) | 2 | done | 30-45 min |
 | S45-3: Tech-lead-merge-gate (rule + hook) | 3 | pending | 45-60 min |
 | S45-4: Plan-commit-divergens-förtydligande (valfri) | 4 | pending | 15-20 min |
 
