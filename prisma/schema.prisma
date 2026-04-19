@@ -996,6 +996,11 @@ model Message {
   createdAt      DateTime          @default(now())
   readAt         DateTime?
 
+  // Attachment fields (S46 Slice 2 — image attachments)
+  attachmentUrl  String?           // Storage path: "{conversationId}/{messageId}.{ext}"
+  attachmentType String?           // MIME: "image/jpeg" | "image/png" | "image/heic" | "image/webp"
+  attachmentSize Int?              // Size in bytes
+
   @@index([conversationId, createdAt])
   @@index([conversationId, readAt])
 }
