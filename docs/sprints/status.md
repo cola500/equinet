@@ -109,7 +109,7 @@ sections:
 |------|--------|------------|
 | S42-3: Full-suite flake-rapport | 45-60 min | Avbruten från S42. Kan köras när testpyramid-arbetet behöver baseline-data. |
 | S42-4: iOS native-flöde-audit via mobile-mcp | 1-1.5h | Avbruten från S42. 13 flöden, visuell baseline. Fortfarande värdefullt före lansering. |
-| S42-5: XCUITest-bootstrap-plan | 30-45 min | Avbruten från S42. Docs-plan för framtida iOS E2E-sprint. |
+| Implementera iOS XCUITest smoke-svit | 2-3 dagar | Plan finns: [ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md). Login + 3 native-flöden. Post-launch. |
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
 | Messaging: aria-label på ProviderNav messaging-badge (MINOR-2) | 15 min | Skärmläsare förstår inte "3"-siffran. |
 | Messaging: Pending-state på MessagingSection-knapp (MINOR-4) | 15 min | Ingen visuell feedback vid klick. |
