@@ -92,6 +92,8 @@ export default [
       "public/sw.js",
       "public/swe-worker*.js",
       "public/swe-worker*.js.map",
+      "docs/metrics/**",
+      "playwright-report/**",
     ],
   },
 ];
