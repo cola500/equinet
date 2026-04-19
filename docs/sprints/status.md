@@ -18,7 +18,14 @@ sections:
 
 ## Aktiv sprint
 
-*(Sprint 38 klar 2026-04-19. 4/4 stories done. Retro: `docs/retrospectives/2026-04-19-sprint-38.md`.)*
+**Sprint 39** ([sprint-39.md](sprint-39.md)) -- Self-Testing v3 + messaging-polish
+
+| Story | Domän | Status |
+|-------|-------|--------|
+| S39-0 ProviderNav ↔ NativeMoreView sync-gate | infra | pending |
+| S39-1 Claude-hook paths → `$CLAUDE_PROJECT_DIR` | infra | pending |
+| S39-2 Rollout-checklista med iOS-audit-krav | docs | pending |
+| S39-3 Messaging optimistisk uppdatering vid sändning | webb | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -87,7 +94,6 @@ sections:
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
-| **ProviderNav ↔ NativeMoreView sync-gate** | 30-45 min | S38-0-incident: messaging-nav lades till i `ProviderNav.tsx` (S35-2) men inte i `NativeMoreView.swift` → iOS-leverantörer kunde inte hitta messaging mellan S37-rollout och S38-fix. Pre-commit hook eller post-merge-check (M9 i metrics:report) som varnar om `ProviderNav.tsx` ändras utan motsvarande `NativeMoreView.swift`-ändring. Följer mönstret från S36-3/4/5/6 self-testing-gates. |
 
 ### Vart att fixa (vid tillfalle)
 
@@ -95,7 +101,6 @@ sections:
 |------|--------|------------|
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
 | Messaging: aria-label på ProviderNav messaging-badge (MINOR-2) | 15 min | Skärmläsare förstår inte "3"-siffran. |
-| Messaging: Optimistisk uppdatering vid sändning (MINOR-3) | 30 min | 200ms fördröjning känns sluggish. Mutate före nätverksrop. |
 | Messaging: Pending-state på MessagingSection-knapp (MINOR-4) | 15 min | Ingen visuell feedback vid klick. |
 | Messaging: Pagination för långa trådar (SUGGESTION-1) | 1-2h | Lazy-loading när tråd >50 meddelanden. |
 | Messaging: Leverantörs-läskvitto (SUGGESTION-2) | 1h | "Läst kl. 14:23" ger förtroende. |
@@ -106,7 +111,6 @@ sections:
 | LoginError `.cancelled` URLError | 30 min | S34-3 begränsning: mappas till `.networkUnavailable` men kan triggas av app-navigering. Överväg separat `requestCancelled`-fall eller map till `.unknown`. |
 | ios-learnings + patterns uppdatering från S34 | 30 min | `.confirmationDialog`-pattern, `LoginError`-enum-pattern, `URLError`-catch-ordning, mailto-encoding. Hör hemma i `.claude/rules/ios-learnings.md`. |
 | Granska "redan fixat"-rate grep-pattern | 15 min | 2 sprintar i rad över mål 5%. Antingen justera pattern eller acceptera som ny baseline. |
-| Claude-hook paths: relativ → `$CLAUDE_PROJECT_DIR` | 15 min | Hooks i `.claude/settings.json` har relativ path (`bash .claude/hooks/...`). Failar i worktrees/fel cwd med "No such file or directory" (non-blocking). Byt till absolut path via `$CLAUDE_PROJECT_DIR`. Bundla med nästa self-testing-round (S39 kandidat). |
 
 ### Vid lansering
 
