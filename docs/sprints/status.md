@@ -18,14 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 40** -- (ej planerad ännu)
+**Sprint 40** ([sprint-40.md](sprint-40.md)) -- Smart-replies prod-ifiering
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S39-0 ProviderNav ↔ NativeMoreView sync-gate | infra | done (PR #216) |
-| S39-1 Claude-hook paths → `$CLAUDE_PROJECT_DIR` | infra | done (PR #217) |
-| S39-2 Rollout-checklista med iOS-audit-krav | docs | done (PR #218) |
-| S39-3 Messaging optimistisk uppdatering vid sändning | webb | done (PR #219) |
+| S40-0 Svenska + datum-veckodag + touch-target 44pt | webb | pending |
+| S40-1 Feature flag `smart_replies` + unit-tests | webb | pending |
+| S40-2 Docs (hjälpartikel + testing-guide + README) | docs | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 

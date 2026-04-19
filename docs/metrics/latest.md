@@ -17,7 +17,7 @@ sections:
 
 # Metrics-rapport 2026-04-19
 
-> Genererad av `npm run metrics:report` — 2026-04-19 09:25:11
+> Genererad av `npm run metrics:report` — 2026-04-19 09:28:53
 
 ---
 
@@ -28,7 +28,7 @@ _Commits till `main` per vecka, senaste 4 veckor. Proxy för deploy-frekvens -- 
 - 2026-W13: 29 commits
 - 2026-W14: 442 commits
 - 2026-W15: 154 commits
-- 2026-W16: 283 commits
+- 2026-W16: 284 commits
 
 ---
 
