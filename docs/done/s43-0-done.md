@@ -43,11 +43,17 @@ sections:
 
 ## Reviews körda
 
-Kördes: tech-architect (plan-granskning rekommenderas per sprint-dokumentet)
+Kördes: tech-architect via tech lead (2026-04-19) — bekräftade 3 invändningar + 3 nya fynd. Planen uppdaterad.
 
 Trivialt? Nej -- discovery-analys av 36 specs med klassning som påverkar hela teststrategin.
 
-**Obligatorisk review per sprint-dokumentet:** tech-architect ska granska klassningen (är den rimlig? missar vi något?). Genomförs av Johan innan S43-1 startar.
+**Review-fynd och åtgärder:**
+- security-headers utgick som pilot (Next.js headers i next.config.ts, ej route-handler → spike istället)
+- 4 specs fick SPLIT-notering: feature-flag-toggle, follow-provider, recurring-bookings, admin
+- announcements TA BORT fick förutsättningsnotering om route-announcement-notification
+- Pilot reducerad till 2 specs (unsubscribe + horses)
+- Pre-pilot verifiering av component-test-setup tillagd för horses-piloten
+- security-headers → 30-min spike-backlog (verifiera supertest/Vitest-mönster)
 
 ---
 

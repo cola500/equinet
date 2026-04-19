@@ -4,6 +4,7 @@ description: "Klassning av alla 36 E2E-specs för omfördelning nedåt i testpyr
 category: plan
 status: active
 last_updated: 2026-04-19
+reviewed_by: tech-architect (via tech lead) 2026-04-19
 sections:
   - Sammanfattning
   - Klassningskriterier
@@ -66,9 +67,10 @@ Förväntad vinst efter full omfördelning:
 ### 2. admin.spec.ts
 - **Rader:** 359 | **Tester:** ~46 | **Status:** Pass med mobile-skips
 - **Beskrivning:** Admin CRUD: användarlista, leverantörlista, bokningslista, systeminställningar, feature flag-administrering. Tabellinteraktion med dropdown/dialog.
-- **Förslag:** **FLYTTA → integration**
-- **Motivering:** Dominant concern är API-beteende (list, ban/unban, view bookings). Mobile-skips beror på "Table layout not available on mobile" -- det är layout-problem, inte affärslogik. Admin CRUD kan testas direkt mot route-handlers utan browser. De enstaka UI-flödena är relativt enkla.
-- **Till:** `src/app/api/admin/**/*.integration.test.ts`
+- **Förslag:** **FLYTTA → integration** ⚠️ SPLIT under batch-arbete
+- **Motivering:** Dominant concern är API-beteende (list, ban/unban, view bookings). Mobile-skips beror på "Table layout not available on mobile" -- det är layout-problem, inte affärslogik. Admin CRUD kan testas direkt mot route-handlers utan browser.
+- **SPLIT-notering (verifiera under S43-2):** Dropdown-tabell-navigation (ban/unban-dialog-interaktion) kan visa sig behöva STANNA som E2E eller bli component-test. Verifiera under batch-arbetet -- klassningen kan justeras per sub-test.
+- **Till:** `src/app/api/admin/**/*.integration.test.ts` (API-CRUD) + potentiellt `src/components/admin/AdminTable.test.tsx` (dialog-interaktion)
 
 ---
 
@@ -77,6 +79,7 @@ Förväntad vinst efter full omfördelning:
 - **Beskrivning:** Rutt-annonseringsflöde (kund söker, väljer provider, ser annonser, bokar).
 - **Förslag:** **TA BORT**
 - **Motivering:** 8 av ~38 tester har `test.skip(true, ...)` -- varav 5 av dessa är "No announcements available" eller "No pending bookings to confirm". Resten av logiken täcks av `route-planning.spec.ts` (rutt-API), `route-announcement-notification.spec.ts` (notification-flödet), och `booking.spec.ts` (bokningsflödet). Ingen unik täckning kvar efter dessa migrerar.
+- **Förutsättning:** Denna klassning förutsätter att `route-announcement-notification.spec.ts` förblir E2E (STANNA). Om den senare omklassas måste announcements-täckningen omvärderas -- det kan finnas scenario-täckning här som inte finns där.
 - **Täcks redan av:** route-planning, route-announcement-notification, booking
 
 ---
@@ -189,8 +192,9 @@ Förväntad vinst efter full omfördelning:
 ### 16. feature-flag-toggle.spec.ts
 - **Rader:** 730 | **Tester:** ~94 | **Status:** Pass med mobile-skips + env-override-skips
 - **Beskrivning:** Admin togglar feature flags via UI → verifierar nav-synlighet för provider/kund, API returnerar 404 när flagga är OFF. 730 rader, 94 tester -- störst spec i sviten.
-- **Förslag:** **FLYTTA → integration**
-- **Motivering:** Dominant concern är att API-routes returnerar 404 när feature flag är OFF (API enforcement). Nav-synligheten är enkel React-logik som kan testas med component-tester för ProviderNav/CustomerNav. De 10 miljö-override-skippade testerna (`test.skip(true, '...has env override')`) är permanent döda kod. Denna spec är svitens tyngsta -- migration ger störst vinst.
+- **Förslag:** **FLYTTA → integration** ⚠️ SPLIT krävs — inte ren 1-till-1
+- **Motivering:** Dominant concern är att API-routes returnerar 404 när feature flag är OFF (API enforcement). Nav-synligheten är React-logik som kan testas med component-tester. De 10 miljö-override-skippade testerna (`test.skip(true, '...has env override')`) är permanent döda kod och tas bort.
+- **SPLIT-notering (måste ske under S43-2+):** Spec-filen måste splitas i två delar före borttagning: (1) API enforcement-tester → integration, (2) nav-synlighet vid flag-toggle → `src/components/layout/ProviderNav.test.tsx` + `CustomerNav.test.tsx`. Permanent-skippade env-override-tester tas bort direkt. Kan inte göras som ren "ta bort E2E-spec" utan att skriva båda ersättarna först.
 - **Till:** `src/app/api/**/*.integration.test.ts` (feature-flag-gating per route) + `src/components/layout/ProviderNav.test.tsx` (nav-synlighet)
 
 ---
@@ -198,9 +202,10 @@ Förväntad vinst efter full omfördelning:
 ### 17. follow-provider.spec.ts
 - **Rader:** 351 | **Tester:** ~47 | **Status:** Pass
 - **Beskrivning:** Kund följer/avföljer leverantör med optimistisk UI-uppdatering. Följ-status persisterar vid navigering. Municipality-inställning i profil. Leverantör ser inte FollowButton.
-- **Förslag:** **FLYTTA → integration**
-- **Motivering:** Kärnan är follow/unfollow API-beteende + persist i DB. Optimistisk UI (knappstatus ändras direkt) är isolerad React-komponent som kan component-testas. Municipality-inställning är CRUD -- integration-testbar. Ingen cross-domain journey (bara kund-vy).
-- **Till:** `src/app/api/provider/follow/route.integration.test.ts` + `src/components/providers/FollowButton.test.tsx`
+- **Förslag:** **FLYTTA → integration** ⚠️ SPLIT krävs — inte ren 1-till-1
+- **Motivering:** Kärnan är follow/unfollow API-beteende + persist i DB. Municipality-inställning är CRUD -- integration-testbar. Ingen cross-domain journey (bara kund-vy).
+- **SPLIT-notering:** Optimistisk UI (knappstatus ändras direkt utan sidomladdning) är browser-specifikt beteende som inte kan replikeras med enbart route-handler-anrop. FollowButton-komponenten behöver en component-test för att täcka det optimistiska state-flödet (klick → pending state → success/error). Migreringen är: API-beteende → integration, optimistisk UI → `src/components/providers/FollowButton.test.tsx`.
+- **Till:** `src/app/api/provider/follow/route.integration.test.ts` (API) + `src/components/providers/FollowButton.test.tsx` (optimistisk UI)
 
 ---
 
@@ -310,9 +315,10 @@ Förväntad vinst efter full omfördelning:
 ### 30. recurring-bookings.spec.ts
 - **Rader:** 464 | **Tester:** ~53 | **Status:** Flaky -- konditionella skips + mobile-skips
 - **Beskrivning:** Återkommande bokningsserie: skapa (desktop dialog), se serie, omboka enskild i serien, avboka serie.
-- **Förslag:** **FLYTTA → integration**
-- **Motivering:** Många mobile-skips ("Desktop booking dialog test"). Konditionella skips ("No providers available"). BookingSeries-domänlogiken (skapa, omboka, avboka) är API-beteende. UI-flödet liknar vanlig bokning (som STANNAR). Integration-tester med explicit seed eliminerar de konditionella skip-problemen.
-- **Till:** `src/app/api/booking-series/route.integration.test.ts`
+- **Förslag:** **FLYTTA → integration** ⚠️ SPLIT-risk — verifiera under batch
+- **Motivering:** BookingSeries-domänlogiken (skapa, omboka, avboka serie) är API-beteende. Integration-tester med explicit seed eliminerar de konditionella skip-problemen.
+- **SPLIT-notering (verifiera under S43-2):** Desktop-boknings-dialogen (skapa återkommande bokning via kalender-dialog) är integrerad med kalender-vyn på samma sätt som manual-booking.spec.ts -- som klassas STANNA. Om dialog-interaktionen är tätt kopplad till kalender-renderingen kan den delen behöva STANNA som E2E. Verifiera under batch-arbetet. Ren API-logik (skapa/avboka/omboka BookingSeries) kan alltid till integration.
+- **Till:** `src/app/api/booking-series/route.integration.test.ts` (API-logik; dialog-delen utreds under batch)
 
 ---
 
@@ -344,9 +350,10 @@ Förväntad vinst efter full omfördelning:
 ### 34. security-headers.spec.ts
 - **Rader:** 100 | **Tester:** ~10 | **Status:** Pass
 - **Beskrivning:** HTTP response headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, XSS-Protection, Cross-Origin Policies.
-- **Förslag:** **FLYTTA → integration**
-- **Motivering:** **Klarast möjliga integration-test-kandidat.** Testar HTTP-response-headers -- inget login krävs, ingen rendering, ingen UI-interaktion. En enkel `fetch('/')` + `response.headers` assertion ger identisk täckning. Playwright-overhead (~30s start + browser) är 100% onödig för header-assertions.
-- **Till:** `src/__tests__/security-headers.integration.test.ts`
+- **Förslag:** **FLYTTA → integration** ⚠️ SPIKE krävs först
+- **Motivering:** Logiken bör vara integration-testbar -- HTTP-headers kräver inte browser. Men Next.js security headers sätts i `next.config.ts` (headers-konfiguration), inte i en route-handler. Det är oklart om Vitest kan anropa Next.js-appen och få med dessa headers utan en test-server.
+- **SPIKE (30 min, backlog):** Innan migration -- verifiera om supertest/testserver-mönster fungerar i Vitest-kontext. Om ja: FLYTTA → integration, ny fil `src/__tests__/security-headers.integration.test.ts`. Om nej: förblir E2E (STANNA) tills vi har Next.js test-server-setup. Spike ska inte blockera pilot eller Fas 3-batch.
+- **Till (om spike lyckas):** `src/__tests__/security-headers.integration.test.ts`
 
 ---
 
@@ -422,51 +429,33 @@ Förväntad vinst efter full omfördelning:
 
 ## Pilot-kandidater (S43-1)
 
-Välj 2-3 specs som representerar olika FLYTTA-kategorier, är enkla och välförstådd domän.
+2 specs som representerar de två primära FLYTTA-kategorierna. security-headers utgick som pilot (se spike-notering under spec 34 -- Next.js headers sätts i next.config.ts, inte route-handler, oklart om Vitest kan anropa dem utan test-server).
 
-### Pilot 1 (FLYTTA → integration): security-headers.spec.ts
-
-**Motivering:**
-- Klarast möjliga fall: HTTP headers kräver INTE browser
-- Inget login, ingen seed-data, ingen Prisma
-- 10 tester, 100 rader -- minsta kandidaten
-- Ny integration-test-fil (`src/__tests__/security-headers.integration.test.ts`) visar mönstret utanför `/api/`-trädet
-- Förväntad tidsvinst: ~30s E2E → <100ms integration
-
-**Ny testfil:** `src/__tests__/security-headers.integration.test.ts`
-```ts
-import { NextRequest } from 'next/server'
-import { GET } from '@/app/(public)/page' // eller middleware
-// Eller enklare: anropa via supertest-liknande pattern
-```
-
-**Alternativt mönster** (om route-handler inte exponerar headers direkt): anropa middleware-logiken direkt och assertera `NextResponse.headers`.
-
----
-
-### Pilot 2 (FLYTTA → integration): unsubscribe.spec.ts
+### Pilot 1 (FLYTTA → integration): unsubscribe.spec.ts
 
 **Motivering:**
 - Liten (77 rader, 10 tester)
 - Väldefinierad API-endpoint (`/api/email/unsubscribe`)
-- HMAC-token-logik är redan exporterad från `e2e/setup/e2e-utils.ts` -- kan importeras direkt
+- HMAC-token-logik exporterad från `e2e/setup/e2e-utils.ts` -- kan importeras direkt i Vitest
 - Testar HTML-response (inte JSON) -- visar att integration-tester kan assertera text/html-responses
-- Enkel seed: bara `prisma.user.findUnique` (finns redan i test-fixtures)
+- Enkel seed: bara `prisma.user.findUnique`
 - Förväntad tidsvinst: ~30s E2E → <200ms integration
 
 **Ny testfil:** `src/app/api/email/unsubscribe/route.integration.test.ts`
 
 ---
 
-### Pilot 3 (FLYTTA → component): horses.spec.ts
+### Pilot 2 (FLYTTA → component): horses.spec.ts
+
+**Pre-pilot verifiering (INNAN implementation):** Kontrollera att projektet har etablerat component-test-mönster med form-rendering + mock av services/Prisma. Sök i `src/**/*.test.tsx` efter existerande form-component-tester. Dokumentera fyndet i pilot-rapporten (S43-1):
+- Om mönster finns: använd det direkt
+- Om inget mönster finns: budgetera setup-kostnad i S43-1 (RTL-konfiguration, mock-strategi)
 
 **Motivering:**
 - Liten (172 rader, 9 tester)
 - Form-CRUD i en dialog -- väldefinierad komponent
 - Representerar FLYTTA → component-kategorin (5 specs totalt)
 - HorseForm är självständig komponent utan external routing
-- Visar hur vi testar dialog + form-state med RTL utan browser
-- Förväntad tidsvinst: ~30s E2E → <500ms component-test
 
 **Ny testfil:** `src/components/horses/HorseForm.test.tsx`
 
@@ -476,27 +465,17 @@ import { GET } from '@/app/(public)/page' // eller middleware
 
 Förutsatt **go** från pilot-rapporten. Första batch: 4-5 specs inom temat "data-display och CRUD-API".
 
-**Tematisk samling: Provider-data-display**
+**Tematisk samling: Data-display och CRUD-API (exkl. security-headers som kräver spike)**
 
 | Spec | Kategori | Ny testfil | Rader | Motivering |
 |------|----------|-----------|-------|------------|
-| security-headers | Integration | `src/__tests__/security-headers.integration.test.ts` | 100 | Piloten -- inkl i batch om pilot görs separat |
-| unsubscribe | Integration | `src/app/api/email/unsubscribe/route.integration.test.ts` | 77 | Piloten -- inkl i batch |
+| unsubscribe | Integration | `src/app/api/email/unsubscribe/route.integration.test.ts` | 77 | Piloten -- inkl i batch (alt. skip om pilot är batch) |
 | due-for-service | Integration | `src/app/api/provider/due-for-service/route.integration.test.ts` | 115 | Liten, väldefinierad overdue-logik |
 | customer-due-for-service | Integration | `src/app/api/customer/due-for-service/route.integration.test.ts` | 280 | Samma domän, kundvy -- naturlig pair |
 | customer-insights | Integration | `src/app/api/customer/insights/route.integration.test.ts` | 120 | Liten, data-aggregering |
+| customer-registry | Integration | `src/app/api/provider/customers/route.integration.test.ts` | 129 | Enkel list + search API |
 
-**Total batch-storlek:** 5 specs, ~692 rader E2E → bort. Förväntad vinst: 5 × ~30s = ~2.5 min snabbare E2E.
-
-**Alternativ batch (om pilot inte inkluderas i batch):**
-
-| Spec | Kategori | Ny testfil |
-|------|----------|-----------|
-| due-for-service | Integration | `src/app/api/provider/due-for-service/route.integration.test.ts` |
-| customer-due-for-service | Integration | `src/app/api/customer/due-for-service/route.integration.test.ts` |
-| customer-insights | Integration | `src/app/api/customer/insights/route.integration.test.ts` |
-| customer-registry | Integration | `src/app/api/provider/customers/route.integration.test.ts` |
-| business-insights | Integration | `src/app/api/provider/insights/route.integration.test.ts` |
+**Total batch-storlek:** 5 specs, ~721 rader E2E → bort. Förväntad vinst: 5 × ~30s = ~2.5 min snabbare E2E.
 
 **Skäl till denna batch:**
 1. Alla fem är "data-display" specs -- hämtar data och visar den. Samma mönster.
@@ -509,10 +488,12 @@ Förutsatt **go** från pilot-rapporten. Första batch: 4-5 specs inom temat "da
 
 ## Kända risker inför S43-1 och S43-2
 
-1. **security-headers via route-handler:** Next.js security headers sätts i `next.config.ts` (headers-konfiguration), inte i en route-handler. Integration-testet behöver anropa faktiska HTTP-svar -- kan kräva en lättviktig test-server (supertest) eller Next.js fetch-mocking. **Lösning:** Testa mot `next/server` headers-API direkt, eller verifiera via befintlig test-server-setup om det finns.
+1. **security-headers → spike (inte pilot):** Next.js security headers sätts i `next.config.ts`, inte route-handler. Oklart om Vitest kan nå dessa headers utan en Next.js test-server (supertest/msw). Hanteras som separat 30-min spike i backlog, blockerar inte pilot eller Fas 3-batch.
 
-2. **Unsubscribe HMAC-import:** `generateUnsubscribeTokenForTest` från `e2e/setup/e2e-utils.ts` -- kontrollera att den kan importeras i Vitest-kontext utan E2E-dependencies.
+2. **Unsubscribe HMAC-import:** `generateUnsubscribeTokenForTest` från `e2e/setup/e2e-utils.ts` -- kontrollera att den kan importeras i Vitest-kontext utan E2E-dependencies (Playwright-imports kan finnas transitivt).
 
-3. **Horse form-component path:** Kontrollera exakt komponentnamn och sökväg innan component-test skapas.
+3. **Horse component-test-mönster:** Kontrollera om projektet har etablerat component-test-mönster med form-rendering + mock av services. Om saknas: budgetera RTL-setup-tid i S43-1 (se pre-pilot-verifiering i Pilot 2).
 
 4. **due-for-service tidsberäkning:** Intervall-logiken (90 dagar > 8 veckors intervall = förfallen) måste seedas med exakt timing -- integration-test-seed kan kontrollera detta bättre än E2E med verklig nuläges-timestamp.
+
+5. **SPLIT-specs kräver mer tid per spec:** admin, feature-flag-toggle, follow-provider och recurring-bookings kräver att två ersättarfiler skrivs (integration + component) innan E2E-spec kan tas bort. Planera ~1.5x tid jämfört med ren migration.
