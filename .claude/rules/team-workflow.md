@@ -278,6 +278,16 @@ Alla checklistepunkter uppfyllda.
 **Vem**: Tech lead (triggas via "kor review")
 **Syfte**: Slutgranskning och merge till main
 
+> **Dev MERGAR ALDRIG egen PR — tech lead är alltid gatekeeper.**
+>
+> Flow: Dev pushar feature branch → tech lead triggas via "kör review" → tech lead granskar + skapar PR + mergar. Om Dev skapar PR själv: tech lead måste triggas explicit innan merge.
+>
+> **Undantag 1 — rule-docs:** `.claude/rules/*`-ändringar kan mergas av den som gjorde dem efter self-review, förutsatt att *alla* ändrade filer är under `.claude/rules/`.
+>
+> **Undantag 2 — autonom sprint:** I autonomt läge (`kör sprint X`) mergar Dev själv per `.claude/rules/autonomous-sprint.md` Steg 8 — det är det definierade autonoma flödet och inte ett brott mot denna regel.
+>
+> **Varning från S44 (2026-04-19):** S44-0, S44-1 och S44-2 mergades av Dev utan tech-lead-review i *manuellt* läge — tre brott mot denna regel. Använd `bash scripts/check-own-pr-merge.sh <PR>` innan `gh pr merge` för att påminnas.
+
 ### Steg
 
 1. `git fetch origin` + las `status.md` -- vilka stories ar "review_requested"?
