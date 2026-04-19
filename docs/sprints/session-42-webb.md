@@ -21,7 +21,7 @@ started: 2026-04-19
 |-------|--------|--------|--------|
 | S42-0 | done | main (docs-only) | f1a94c49 |
 | S42-1 | done | main (docs-only) | - |
-| S42-2 | in_progress | main (docs-only) | - |
-| S42-3 | pending | - | - |
+| S42-2 | done | main (docs-only) | - |
+| S42-3 | in_progress | main (docs-only) | - |
 | S42-4 | pending | - | - |
 | S42-5 | pending | - | - |
