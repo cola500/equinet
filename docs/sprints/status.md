@@ -122,6 +122,7 @@ sections:
 | LoginError `.cancelled` URLError | 30 min | S34-3 begränsning: mappas till `.networkUnavailable` men kan triggas av app-navigering. Överväg separat `requestCancelled`-fall eller map till `.unknown`. |
 | ios-learnings + patterns uppdatering från S34 | 30 min | `.confirmationDialog`-pattern, `LoginError`-enum-pattern, `URLError`-catch-ordning, mailto-encoding. Hör hemma i `.claude/rules/ios-learnings.md`. |
 | Granska "redan fixat"-rate grep-pattern | 15 min | 2 sprintar i rad över mål 5%. Antingen justera pattern eller acceptera som ny baseline. |
+| Plan-commit-gate: hook + rule-förtydligande | 45-60 min | **Lärdom S43-1 2026-04-19**: Dev hoppade Station 1 (plan-commit FÖRE implementation) och gjorde 0 commits under hela körningen. Lyckat men riskabelt (ingen backup, ingen mellanreview). Fix: (1) pre-commit hook som varnar när story är `in_progress` i status.md utan motsvarande `docs/plans/<story-id>-plan.md` committad; (2) förtydliga i `autonomous-sprint.md` att pilot/batch-stories kräver egen plan-fil även om Discovery finns — planen ska beskriva commit-strategi + per-spec täckning, inte bara vad som migreras. |
 
 ### Vid lansering
 
