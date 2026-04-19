@@ -10,6 +10,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
 import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 interface Message {
   id: string
@@ -37,6 +38,7 @@ interface ProviderProfile {
 function ThreadView({ bookingId }: { bookingId: string }) {
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const smartRepliesEnabled = useFeatureFlag("smart_replies")
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
 
@@ -184,11 +186,13 @@ function ThreadView({ bookingId }: { bookingId: string }) {
 
       {/* Compose area */}
       <div className="border-t pt-3 space-y-2">
-        <SmartReplyChips
-          vars={smartReplyVars}
-          onSelect={(text) => setContent(text)}
-          disabled={isSending}
-        />
+        {smartRepliesEnabled && (
+          <SmartReplyChips
+            vars={smartReplyVars}
+            onSelect={(text) => setContent(text)}
+            disabled={isSending}
+          />
+        )}
         <VoiceTextarea
           value={content}
           onChange={(value) => setContent(value)}

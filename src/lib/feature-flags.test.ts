@@ -105,6 +105,7 @@ describe("feature-flags", () => {
         supabase_auth_poc: false,
         data_retention: false,
         messaging: true,
+        smart_replies: false,
       })
     })
 
