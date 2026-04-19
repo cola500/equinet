@@ -98,6 +98,7 @@ import { auth } from '@/lib/auth-server'
 import { rateLimiters } from '@/lib/rate-limit'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 import { POST, GET } from './route'
+import { GET as GET_AVAILABLE } from './available/route'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -290,5 +291,67 @@ describe('GET /api/group-bookings', () => {
     expect(data.error).toBe('Ej tillgänglig')
     expect(isFeatureEnabled).toHaveBeenCalledWith('group_bookings')
     expect(mockGroupBookingRepo.findByUserId).not.toHaveBeenCalled()
+  })
+})
+
+describe('GET /api/group-bookings/available', () => {
+  function makeAvailableRequest(): NextRequest {
+    return new NextRequest('http://localhost:3000/api/group-bookings/available', {
+      method: 'GET',
+    })
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'provider-user-1', userType: 'provider' },
+    } as never)
+    vi.mocked(rateLimiters.api).mockResolvedValue(true)
+    mockGroupBookingRepo.findAvailableForProvider.mockResolvedValue({
+      provider: { id: 'provider-1' },
+      requests: [mockCreatedGroupBooking],
+    })
+  })
+
+  it('returns 200 with open requests for authenticated provider', async () => {
+    const res = await GET_AVAILABLE(makeAvailableRequest())
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(Array.isArray(data)).toBe(true)
+    expect(data).toHaveLength(1)
+    expect(data[0]).toMatchObject({ id: 'gb-1', serviceType: 'Hovslagning' })
+    expect(mockGroupBookingRepo.findAvailableForProvider).toHaveBeenCalledWith('provider-user-1')
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(null)
+
+    const res = await GET_AVAILABLE(makeAvailableRequest())
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 when customer tries to access', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: 'customer-1', userType: 'customer' },
+    } as never)
+
+    const res = await GET_AVAILABLE(makeAvailableRequest())
+    const data = await res.json()
+
+    expect(res.status).toBe(403)
+    expect(data.error).toMatch(/leverantörer/i)
+  })
+
+  it('returns 404 when feature flag is disabled', async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
+
+    const res = await GET_AVAILABLE(makeAvailableRequest())
+    const data = await res.json()
+
+    expect(res.status).toBe(404)
+    expect(data.error).toBe('Ej tillgänglig')
+    expect(mockGroupBookingRepo.findAvailableForProvider).not.toHaveBeenCalled()
   })
 })
