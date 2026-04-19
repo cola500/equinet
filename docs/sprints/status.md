@@ -22,8 +22,8 @@ sections:
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S42-0: Webb E2E smoke-tier | 0 | in_progress | 20-30 min |
-| S42-1: Webb E2E critical-tier | 1 | pending | 30-45 min |
+| S42-0: Webb E2E smoke-tier | 0 | done | 20-30 min |
+| S42-1: Webb E2E critical-tier | 1 | in_progress | 30-45 min |
 | S42-2: Webb E2E external-tier | 2 | pending | 30-45 min |
 | S42-3: Full-suite + flake-rapport | 3 | pending | 45-60 min |
 | S42-4: iOS native-flöde-audit (mobile-mcp) | 4 | pending | 1-1.5h |
