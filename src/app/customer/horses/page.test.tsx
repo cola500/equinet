@@ -53,6 +53,10 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }))
 
+vi.mock("@/lib/client-logger", () => ({
+  clientLogger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+}))
+
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
@@ -114,7 +118,8 @@ describe("CustomerHorsesPage", () => {
     const user = userEvent.setup()
     renderWithHorses()
 
-    await user.click(screen.getByRole("button", { name: /ta bort/i }))
+    // Use getAllByRole + [0] to avoid ambiguity if dialog is already in DOM
+    await user.click(screen.getAllByRole("button", { name: /ta bort/i })[0])
 
     expect(screen.getByText(/ta bort blansen/i)).toBeInTheDocument()
     expect(screen.getByText(/befintliga bokningar/i)).toBeInTheDocument()
@@ -124,7 +129,8 @@ describe("CustomerHorsesPage", () => {
     const user = userEvent.setup()
     renderWithHorses()
 
-    await user.click(screen.getByRole("button", { name: /ta bort/i }))
+    await user.click(screen.getAllByRole("button", { name: /ta bort/i })[0])
+    // Confirm button has exact text "Ta bort" (AlertDialogAction)
     await user.click(screen.getByRole("button", { name: /^ta bort$/i }))
 
     await waitFor(() => {
@@ -138,7 +144,7 @@ describe("CustomerHorsesPage", () => {
     const user = userEvent.setup()
     renderWithHorses()
 
-    await user.click(screen.getByRole("button", { name: /ta bort/i }))
+    await user.click(screen.getAllByRole("button", { name: /ta bort/i })[0])
     await user.click(screen.getByRole("button", { name: /avbryt/i }))
 
     expect(mockFetch).not.toHaveBeenCalled()
@@ -150,7 +156,7 @@ describe("CustomerHorsesPage", () => {
     const user = userEvent.setup()
     renderWithHorses()
 
-    await user.click(screen.getByRole("button", { name: /ta bort/i }))
+    await user.click(screen.getAllByRole("button", { name: /ta bort/i })[0])
     await user.click(screen.getByRole("button", { name: /^ta bort$/i }))
 
     await waitFor(() => {
