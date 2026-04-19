@@ -18,16 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 43: Testpyramid-omfördelning** ([sprint-43.md](sprint-43.md))
+**Sprint 44: Testpyramid — TA BORT + Batch 2 + coverage-gap-fix** ([sprint-44.md](sprint-44.md))
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S43-0: Discovery — klassa alla 36 E2E-specs | 0 | done | 0.5 dag |
-| S43-1: Pilot — flytta 2 specs (unsubscribe + horses) | 1 | done | 0.5-1 dag |
-| S43-2: Första batch — flytta 4-6 specs | 2 | done | 1 dag |
+| S44-0: TA BORT-batch (3 döda specs) | 0 | pending | 0.5 dag |
+| S44-1: Batch 2 — 5 integration-migrationer | 1 | pending | 1 dag |
+| S44-2: horses-CRUD + filter=upcoming coverage-fix | 2 | pending | 1.5-2h |
 
-**Fas 4 (rensa 18 skip-specs) + Fas 5 (hårdhärda smoke-tier)** planeras för S44.
-
+*(Sprint 43 klar 2026-04-19. 3/3 stories done — 7 E2E-specs migrerade, 150 nya Vitest-tester, E2E-svit 36→29. Retro: `docs/retrospectives/2026-04-19-sprint-43.md`. Sprint-avslut slutfört av tech lead i efterhand — Dev hoppade till S44 utan att avsluta.)*
 *(Sprint 42 avbruten 2026-04-19. S42-0/1/2 done. S42-3/4/5 flyttade till backlog — testpyramid-arbetet prioriterat högre.)*
 *(Sprint 41 klar 2026-04-19. 3/3 stories done.)*
 
@@ -37,6 +36,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S43 | Testpyramid-omfördelning | 3/3 done (Discovery + Pilot + Batch 1) — 7 specs migrerade, E2E 36→29, Vitest +150. Tre procedurbrott identifierade: plan-commit-miss (S43-1), trivial-gating-miss (Dev skippade review i båda stories), sprint-avslut-hoppat (direkt till S44). Fixar: PR #227 + tre backlog-rader. |
 | S42 | E2E-genomkörning (avbruten) | 3/6 done (smoke/critical/external visuell verifiering) — avbruten för att prioritera testpyramid-omfördelning |
 | S41 | Messaging-ordning + review-lärdom | 3/3 done (blocker-fix, review-manifest, hook) |
 | S40 | Smart-replies prod-ifiering | 4/4 done (polish, flag+tests, docs, cx-ux-review) — cx-ux-reviewer missade chat-ordning-blocker (fångades av tech lead, fix i S41) |
@@ -123,6 +123,7 @@ sections:
 | ios-learnings + patterns uppdatering från S34 | 30 min | `.confirmationDialog`-pattern, `LoginError`-enum-pattern, `URLError`-catch-ordning, mailto-encoding. Hör hemma i `.claude/rules/ios-learnings.md`. |
 | Granska "redan fixat"-rate grep-pattern | 15 min | 2 sprintar i rad över mål 5%. Antingen justera pattern eller acceptera som ny baseline. |
 | Plan-commit-gate: hook + rule-förtydligande | 45-60 min | **Lärdom S43-1 2026-04-19**: Dev hoppade Station 1 (plan-commit FÖRE implementation) och gjorde 0 commits under hela körningen. Lyckat men riskabelt (ingen backup, ingen mellanreview). Fix: (1) pre-commit hook som varnar när story är `in_progress` i status.md utan motsvarande `docs/plans/<story-id>-plan.md` committad; (2) förtydliga i `autonomous-sprint.md` att pilot/batch-stories kräver egen plan-fil även om Discovery finns — planen ska beskriva commit-strategi + per-spec täckning, inte bara vad som migreras. |
+| Sprint-avslut-gate: hook eller script | 30-45 min | **Lärdom S43→S44 2026-04-19**: Dev hoppade till S44 utan att slutföra sprint-avslut (NFR/CLAUDE.md ej uppdaterade, status.md ej flyttad, gates ej körda, retro ofullständig). Tredje procedurbrottet i S43. Fix: hook som varnar när ny story markeras `in_progress` om föregående sprints stories alla är `done` men status.md "Aktiv sprint"-sektion inte flyttats till "Tidigare sprintar" + retro-fil saknas. |
 | horses-CRUD coverage-gap (efter S43-1) | 1-2h | **Lärdom S43-1 2026-04-19**: E2E-specen täckte add/edit/delete + detail-navigering. Component-test täcker bara form-nivå. Delete-bekräftelsedialog, edit-flöde och `handleDelete`/`handleAddHorse` fetch-logik i `page.tsx` är nu otestade. Fix: `page.test.tsx` med MSW-mockade fetch-anrop ELLER behåll tunn E2E-smoke för horses-CRUD. |
 | Coverage-gap-krav för S43-2 batch-rapport | 0 min (process) | Varje spec-migration i S43-2 ska explicit notera vilka scenarios från E2E som INTE är täckta av nya tester. Lärdom från S43-1: reviewer hittade gap, pilot-rapport gjorde inte. **UPPFYLLT i S43-2** — behålls som process-krav för framtida batchar. |
 | due-for-service: `filter=upcoming`-test saknas (efter S43-2) | 15 min | Reviewer-fynd S43-2 2026-04-19: integration-test täcker `filter=overdue` + `filter=all` men inte `filter=upcoming`. E2E-specen testade det heller inte (ingen regression), men route-URL:en dokumenterar parametern. |
