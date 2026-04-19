@@ -10,6 +10,7 @@ import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
 import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
+import { displayMessages } from "@/components/provider/messages/messageUtils"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 interface Message {
@@ -70,7 +71,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [data?.messages.length])
+  }, [data?.messages.at(-1)?.id])
 
   async function handleSend() {
     const trimmed = content.trim()
@@ -152,7 +153,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
             Inga meddelanden ännu.
           </p>
         )}
-        {messages.map((msg) => (
+        {displayMessages(messages).map((msg) => (
           <div
             key={msg.id}
             className={`flex ${msg.isFromSelf ? "justify-end" : "justify-start"}`}

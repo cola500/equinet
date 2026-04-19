@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/responsive-dialog"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
+import { displayMessages } from "@/components/provider/messages/messageUtils"
 
 interface Message {
   id: string
@@ -68,7 +69,7 @@ export function MessagingDialog({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [data?.messages.length])
+  }, [data?.messages.at(-1)?.id])
 
   async function handleSend() {
     const trimmed = content.trim()
@@ -148,7 +149,7 @@ export function MessagingDialog({
               Inga meddelanden ännu. Skriv ett meddelande till leverantören.
             </p>
           )}
-          {messages.map((msg) => (
+          {displayMessages(messages).map((msg) => (
             <div
               key={msg.id}
               className={`flex ${msg.isFromSelf ? "justify-end" : "justify-start"}`}
