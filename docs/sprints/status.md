@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-18
+last_updated: 2026-04-19
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,14 +18,14 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 39** ([sprint-39.md](sprint-39.md)) -- Self-Testing v3 + messaging-polish
+**Sprint 40** -- (ej planerad ännu)
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S39-0 ProviderNav ↔ NativeMoreView sync-gate | infra | pending |
-| S39-1 Claude-hook paths → `$CLAUDE_PROJECT_DIR` | infra | pending |
-| S39-2 Rollout-checklista med iOS-audit-krav | docs | pending |
-| S39-3 Messaging optimistisk uppdatering vid sändning | webb | pending |
+| S39-0 ProviderNav ↔ NativeMoreView sync-gate | infra | done (PR #216) |
+| S39-1 Claude-hook paths → `$CLAUDE_PROJECT_DIR` | infra | done (PR #217) |
+| S39-2 Rollout-checklista med iOS-audit-krav | docs | done (PR #218) |
+| S39-3 Messaging optimistisk uppdatering vid sändning | webb | done (PR #219) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -33,6 +33,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S39 | Self-Testing v3 + messaging-polish | 4/4 done (sync-gate, hook-paths, rollout-checklist, optimistisk messaging) |
 | S38 | iOS messaging audit + fixar | 4/4 done (audit, docs, blockers-fix, messaging-knapp) -- audit-first räddade iOS-upplevelsen |
 | S37 | Messaging-rollout | 3/3 done (skeleton, injection-fix, flag on) |
 | S36 | Self-Testing Infrastructure | 7/7 done (arkitekturcoverage, metacognition, messaging-audit, tech-lead-hook, docs-compliance, modellval-larm, slicing-trigger) + hotfix PR #207 |
