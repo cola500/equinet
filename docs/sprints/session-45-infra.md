@@ -17,7 +17,7 @@ sections:
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
 | S45-0 | done | feature/s45-0-plan-commit-gate | e8cc300c |
-| S45-1 | pending | - | - |
+| S45-1 | done | feature/s45-1-sprint-closure-gate | c8d82239 |
 | S45-2 | done | feature/s45-2-multi-commit-gate | c8afba2e |
 | S45-3 | pending | - | - |
 | S45-4 | pending | - | - |
