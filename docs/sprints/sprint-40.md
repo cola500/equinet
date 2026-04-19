@@ -38,6 +38,14 @@ sections:
 
 **Implementation:**
 
+**Steg 0: BEFORE-screenshot (INNAN kod-ändringar)**
+
+Spara visuellt referenstillstånd av hackathon-versionen innan polering. Ta screenshot av:
+- Desktop-vy (Playwright MCP, 1280×800)
+- Mobil-vy (375×667)
+
+Spara i `docs/metrics/smart-replies-ux/<datum>/before-desktop.png` och `before-mobile.png`. Används i S40-3 för cx-ux-reviewer-jämförelse.
+
 **Steg 1: Uppdatera templates**
 
 Ta bort mall 4 ("Min adress: {adress}") helt — domän-fel eftersom leverantören åker till kunden. Även `adress`-fältet i `SmartReplyVars`-interfacet kan tas bort om inget använder det.
@@ -77,6 +85,7 @@ Möjligen behöver padding ökas (`py-2` istället för `py-1.5`) för att få b
 Playwright MCP eller manuell test i dev-server — chips ska vara lättklickbara på mobil.
 
 **Acceptanskriterier:**
+- [ ] **Före-screenshot sparad** (`docs/metrics/smart-replies-ux/<datum>/before-desktop.png` + `before-mobile.png`)
 - [ ] 4 templates (inte 5), "Min adress"-borttagen
 - [ ] Svenska omformulerade enligt S40-spec
 - [ ] Datum-format inkluderar veckodag ("onsdag 22 april")
@@ -221,18 +230,79 @@ Eftersom `defaultEnabled: false`: lägg till i `docs/operations/feature-flag-rol
 
 ---
 
+### S40-3: cx-ux-reviewer visuell jämförelse före/efter
+
+**Prioritet:** 3 (kör SIST — kräver att S40-0/1/2 är mergade)
+**Effort:** 15-30 min
+**Domän:** ios/webb (Playwright MCP + cx-ux-reviewer)
+
+Prod-ifieringen (S40-0/1) ändrar UI synligt (templates, datum-format, touch-target). Denna story dokumenterar konkret before/after och låter cx-ux-reviewer bedöma om poleringen faktiskt förbättrade upplevelsen.
+
+**Aktualitet verifierad:**
+- Bekräfta att `docs/metrics/smart-replies-ux/<datum>/before-*.png` finns (från S40-0 Steg 0)
+- Verifiera att S40-0/1/2 är mergade till main
+
+**Implementation:**
+
+**Steg 1: Ta efter-screenshot**
+
+Efter S40-0/1/2-merges + `messaging` + `smart_replies` enabled via admin-toggle i dev:
+- Playwright MCP: desktop 1280×800 + mobil 375×667
+- Spara i `docs/metrics/smart-replies-ux/<datum>/after-desktop.png` och `after-mobile.png`
+
+**Steg 2: cx-ux-reviewer jämförelse**
+
+Kör cx-ux-reviewer-subagent med fyra skärmdumpar (before/after × desktop/mobile) + prompt:
+> "Jämför före- och efter-screenshots av smart-replies-chips. Bedöm:
+> 1. Läsbarhet (text + spacing)
+> 2. Touch-targets (visuellt uppmätbara)
+> 3. Svenska språk-känsla (naturlighet för hästägare-kommunikation)
+> 4. Visuell hierarki (chips vs skrivfält)
+> 5. Mobil vs desktop konsistens
+>
+> Rapportera: Vad blev bättre? Vad blev sämre (om något)? Vad kan förbättras i nästa iteration?
+>
+> Täckning + Gap-sektion som vanligt."
+
+**Steg 3: Dokumentera i retro**
+
+Skapa `docs/retrospectives/<datum>-smart-replies-ux-review.md` med:
+- Before/after-bilder inbäddade
+- cx-ux-reviewer-utlåtande
+- Beslut: godkänt för rollout? → backlog-rad "sätt `smart_replies: defaultEnabled: true`" om ja
+
+**Steg 4: Triage fynd**
+- Minor → backlog-rader
+- Major/Blocker → stoppa flag-rollout, skapa hotfix-story
+
+**Acceptanskriterier:**
+- [ ] Efter-screenshots sparade (desktop + mobile)
+- [ ] cx-ux-reviewer körd med before/after-jämförelse
+- [ ] Retro-fil skriven med bilder + utlåtande
+- [ ] Beslut om rollout-readiness dokumenterat (ja / nej + uppföljningsfix)
+- [ ] Inga fynd försvinner utan backlog-rad
+
+**Reviews:** cx-ux-reviewer ÄR storyn.
+
+**Arkitekturcoverage:** N/A (audit-story).
+
+---
+
 ## Exekveringsplan
 
 ```
-S40-0 (30 min, polish) -> S40-1 (45 min, flag + tester) -> S40-2 (30 min, docs)
+S40-0 (30 min, polish + before-screenshot) -> S40-1 (45 min, flag + tester) -> S40-2 (30 min, docs) -> S40-3 (15-30 min, before/after-review)
 ```
 
-**Total effort:** ~1.5-2h.
+**Total effort:** ~2-2.5h.
+
+**VIKTIGT:** S40-0 Steg 0 (before-screenshot) MÅSTE göras INNAN kod-ändringar. Om dev glömmer det — pausa, gå tillbaka till hackathon-commit-hash, ta screenshot, fortsätt.
 
 ## Definition of Done (sprintnivå)
 
-- [ ] S40-0/1/2 merged
+- [ ] S40-0/1/2/3 merged
 - [ ] `npm run check:all` grön
-- [ ] Visuell verifiering i dev-server + mobile-width
+- [ ] Before/after-screenshots dokumenterade
+- [ ] cx-ux-reviewer godkänt (eller fynd backloggade)
 - [ ] Rollout-checklistan från S39-2 följd för `smart_replies` när vi senare sätter default: true
 - [ ] Metrics-rapport post-sprint

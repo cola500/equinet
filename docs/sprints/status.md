@@ -22,9 +22,10 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S40-0 Svenska + datum-veckodag + touch-target 44pt | webb | pending |
+| S40-0 Svenska + datum-veckodag + touch-target 44pt (+ before-screenshot) | webb | pending |
 | S40-1 Feature flag `smart_replies` + unit-tests | webb | pending |
 | S40-2 Docs (hjälpartikel + testing-guide + README) | docs | pending |
+| S40-3 cx-ux-reviewer visuell jämförelse före/efter | ios | pending |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
