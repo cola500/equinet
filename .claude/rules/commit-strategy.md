@@ -3,7 +3,7 @@ title: "Commit-strategi -- Trunk-based hybrid"
 description: "När kod kräver feature branch + PR, och när lifecycle-docs får committas direkt till main"
 category: rule
 status: active
-last_updated: 2026-04-17
+last_updated: 2026-04-19
 tags: [workflow, git, commit, pr, trunk-based]
 paths:
   - "docs/sprints/*"
@@ -94,6 +94,20 @@ Det är OK -- det är fortfarande en lifecycle-doc. Men det bör göras i samma 
 ### Sprint-dokument (`sprint-<N>-*.md`)
 
 Vid SKAPANDE av ny sprint: direkt OK (docs/sprints/). Vid BETEENDE-påverkande ändringar (ny regel, ny session-tilldelning): använd PR för tydlighet.
+
+### Plan-commit-ordning (förhindrar divergent branches)
+
+`docs/plans/<story-id>-plan.md` tillhör listan "direkt OK" ovan. Om du committar plan-filen direkt till main **måste** main vara pushad INNAN du skapar feature-branchen — annars skapar du en divergent branch-situation när PR:en ska mergas.
+
+Säker ordning:
+1. `git pull origin main` — säkerställ att local main är uppdaterad
+2. Skriv plan-filen, committa direkt på main
+3. `git push origin main` — pusha plan-commiten
+4. `git checkout -b feature/<story-id>-<namn>` — skapa feature-branchen EFTER push
+
+Om du glömde och skapade feature-branchen innan push: `git rebase main` på feature-branchen löser divergensen.
+
+**Källa:** S44-retro-fynd (2026-04-19) — Dev committade plan på main och skapade feature-branch innan push, vilket skapade divergent branches vid PR #230.
 
 ---
 
