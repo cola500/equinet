@@ -3,8 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-19
-sections:
+last_updated: 2026-04-19sections:
   - Aktiv sprint
   - Tidigare sprintar
   - Sessioner
@@ -24,7 +23,7 @@ sections:
 |-------|------|--------|--------|
 | S43-0: Discovery — klassa alla 36 E2E-specs | 0 | done | 0.5 dag |
 | S43-1: Pilot — flytta 2 specs (unsubscribe + horses) | 1 | done | 0.5-1 dag |
-| S43-2: Första batch — flytta 4-6 specs | 2 | pending | 1 dag |
+| S43-2: Första batch — flytta 4-6 specs | 2 | done | 1 dag |
 
 **Fas 4 (rensa 18 skip-specs) + Fas 5 (hårdhärda smoke-tier)** planeras för S44.
 
