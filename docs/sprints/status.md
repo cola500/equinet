@@ -22,10 +22,10 @@ sections:
 
 | Story | Domän | Status |
 |-------|-------|--------|
-| S40-0 Svenska + datum-veckodag + touch-target 44pt (+ before-screenshot) | webb | pending |
-| S40-1 Feature flag `smart_replies` + unit-tests | webb | pending |
-| S40-2 Docs (hjälpartikel + testing-guide + README) | docs | pending |
-| S40-3 cx-ux-reviewer visuell jämförelse före/efter | ios | pending |
+| S40-0 Svenska + datum-veckodag + touch-target 44pt (+ before-screenshot) | webb | done (PR #220) |
+| S40-1 Feature flag `smart_replies` + unit-tests | webb | done (PR #221, 94be35f6) |
+| S40-2 Docs (hjälpartikel + testing-guide + README) | docs | done (PR #222, bcc7d8f0) |
+| S40-3 cx-ux-reviewer visuell jämförelse före/efter | webb | done (PR #223, aed6fd58) |
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -72,7 +72,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session webb | fullstack | S40-0 | feature/s40-0-svenska-datum-touch-target | 2026-04-19 |
+| Session webb | fullstack | Sprint 40 klar | - | 2026-04-19 |
 
 ## Beslut
 
