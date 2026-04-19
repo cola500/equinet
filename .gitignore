@@ -115,3 +115,7 @@ supabase/.linked/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Playwright HTML reports + traces (regenererbara, stora, lint-trigger)
+docs/metrics/e2e-visual/**/report/
+docs/metrics/e2e-visual/**/traces/
