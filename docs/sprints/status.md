@@ -22,7 +22,7 @@ sections:
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S46-0: Plan + schema + storage-setup | review_requested | feature/s46-0-plan-schema-storage | df802aef |
+| S46-0: Plan + schema + storage-setup | done | — (mergad PR #236) | c19d55ee |
 | S46-1: API + upload-endpoint (TDD) | pending | — | — |
 | S46-2: UI — skicka bild + visa i tråd | pending | — | — |
 | S46-3: iOS WebView-verifiering | pending | — | — |
