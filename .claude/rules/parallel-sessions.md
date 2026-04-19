@@ -109,6 +109,8 @@ claude
 | `src/domain/<sin-domän>/*` | NEJ | JA | Domänexklusivitet |
 | `src/lib/*` (utilities) | FÖRSIKTIGT | FÖRSIKTIGT | Delade filer -- bara om nödvändigt, aldrig samma fil |
 
+> **Nav-sync-koppling:** `src/components/layout/ProviderNav.tsx` och `ios/Equinet/Equinet/NativeMoreView.swift` är logiskt kopplade — ny nav-post i webb måste synkas till iOS-Mer-flik. Pre-commit hook (`scripts/check-docs-updated.sh`) varnar om ProviderNav ändras utan NativeMoreView. Gäller ej interna ändringar (badge, styling).
+
 ### Om en session behöver ändra en delad fil:
 1. STOPPA
 2. Dokumentera behovet i done-filen
