@@ -18,15 +18,9 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 45: Process-hardening** ([sprint-45.md](sprint-45.md))
+*(ingen aktiv sprint — S45 klar, väntar på nästa)*
 
-| Story | Prio | Status | Effort |
-|-------|------|--------|--------|
-| S45-0: Plan-commit-gate (pre-commit hook) | 0 | done | 45-60 min |
-| S45-1: Sprint-avslut-gate (pre-commit hook) | 1 | done | 30-45 min |
-| S45-2: Multi-commit-gate (pre-push hook) | 2 | done | 30-45 min |
-| S45-3: Tech-lead-merge-gate (rule + hook) | 3 | done | 45-60 min |
-| S45-4: Plan-commit-divergens-förtydligande (valfri) | 4 | pending | 15-20 min |
+*(Sprint 45 klar 2026-04-19. 5/5 stories done — 3 nya process-scripts, 2 rule-förtydliganden, 2 hooks utökade. 0 nya Vitest-tester. Procedurbrott: 2 (vs 8 i S43-S44). Retro: `docs/retrospectives/2026-04-19-sprint-45.md`. PRar ej mergade: #232 #233 #234 #235.)*
 
 *(Sprint 44 klar 2026-04-19. 3/3 stories done — 44 nya Vitest-tester, 3 E2E-specs raderade, E2E-svit 29→22. Vitest: 4240→4284. Retro: `docs/retrospectives/2026-04-19-sprint-44.md`.)*
 
