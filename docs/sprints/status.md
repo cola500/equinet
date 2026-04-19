@@ -72,7 +72,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv session) | - | - | - | - |
+| Session webb | fullstack | S40-0 | feature/s40-0-svenska-datum-touch-target | 2026-04-19 |
 
 ## Beslut
 
