@@ -18,16 +18,7 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 38** ([sprint-38.md](sprint-38.md)) -- iOS messaging audit + docs-complement
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S38-0 iOS messaging audit via mobile-mcp | ios | done |
-| S38-1 Messaging docs-complement (M7-gap) | docs | done |
-| S38-2 Fixa messaging-blockers (deep-link + NativeMoreView) | ios | done |
-| S38-3 Messaging-knapp i native bokningsdetalj (valfri) | ios | pending |
-
-*S38-2+: beslutade baserat på S38-0-audit. Scenario B (fix blockers, ingen native-port).*
+*(Sprint 38 klar 2026-04-19. 4/4 stories done. Retro: `docs/retrospectives/2026-04-19-sprint-38.md`.)*
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -35,6 +26,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S38 | iOS messaging audit + fixar | 4/4 done (audit, docs, blockers-fix, messaging-knapp) -- audit-first räddade iOS-upplevelsen |
 | S37 | Messaging-rollout | 3/3 done (skeleton, injection-fix, flag on) |
 | S36 | Self-Testing Infrastructure | 7/7 done (arkitekturcoverage, metacognition, messaging-audit, tech-lead-hook, docs-compliance, modellval-larm, slicing-trigger) + hotfix PR #207 |
 | S35 | Messaging Slice 1 MVP | 5/5 done (design, kund, RLS-hotfix, leverantör, push) -- första kompletta Seven Dimensions-leverans |
