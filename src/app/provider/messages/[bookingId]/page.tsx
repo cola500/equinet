@@ -32,7 +32,6 @@ interface MessagesResponse {
 
 interface ProviderProfile {
   phone?: string
-  address?: string
 }
 
 function ThreadView({ bookingId }: { bookingId: string }) {
@@ -53,10 +52,9 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   const smartReplyVars = (() => {
     const d = data?.bookingDate ? new Date(data.bookingDate) : null
     return {
-      datum: d ? d.toLocaleDateString("sv-SE", { day: "numeric", month: "long" }) : "",
+      datum: d ? d.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" }) : "",
       tid: d ? d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "",
       telefon: profile?.phone ?? "",
-      adress: profile?.address ?? "",
     }
   })()
 

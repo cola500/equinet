@@ -16,7 +16,7 @@ sections:
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S40-0 | in_progress | feature/s40-0-svenska-datum-touch-target | - |
+| S40-0 | done | feature/s40-0-svenska-datum-touch-target | - |
 | S40-1 | pending | - | - |
 | S40-2 | pending | - | - |
 | S40-3 | pending | - | - |

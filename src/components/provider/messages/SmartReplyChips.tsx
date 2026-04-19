@@ -2,15 +2,13 @@ interface SmartReplyVars {
   datum: string
   tid: string
   telefon: string
-  adress: string
 }
 
 const TEMPLATES = [
-  "Bekräftat, vi ses {datum} kl {tid}!",
-  "Tack för ditt meddelande. Jag återkommer inom en timme.",
-  "Ring mig på {telefon} om något är akut.",
-  "Min adress: {adress}",
-  "Kan vi flytta till en annan tid? Vilken passar dig?",
+  "Bokningen är bekräftad. Vi ses {datum} kl {tid}.",
+  "Tack! Jag återkommer så snart jag kan.",
+  "Ring mig på {telefon} om det brådskar.",
+  "Vilken tid passar dig istället?",
 ]
 
 export function expandTemplate(template: string, vars: Partial<SmartReplyVars>): string {
@@ -39,7 +37,7 @@ export function SmartReplyChips({ vars, onSelect, disabled }: SmartReplyChipsPro
             onClick={() => onSelect(text)}
             disabled={disabled}
             aria-label={`Snabbsvar: ${text}`}
-            className="text-xs px-3 py-1.5 rounded-full border border-green-600 text-green-700 bg-white hover:bg-green-50 active:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[36px] leading-tight text-left"
+            className="text-xs px-3 py-2 rounded-full border border-green-600 text-green-700 bg-white hover:bg-green-50 active:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] sm:min-h-0 leading-tight text-left"
           >
             {text}
           </button>
