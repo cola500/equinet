@@ -89,6 +89,21 @@ function makeOverdueBooking() {
   }
 }
 
+/** Completed booking 50 days ago (upcoming for 8-week interval: 56-50=6 days left, within 14-day threshold) */
+function makeUpcomingBooking() {
+  const fiftyDaysAgo = new Date()
+  fiftyDaysAgo.setDate(fiftyDaysAgo.getDate() - 50)
+
+  return {
+    horseId: 'a0000000-0000-4000-a000-000000000011',
+    serviceId: SERVICE_ID,
+    bookingDate: fiftyDaysAgo,
+    horse: { id: 'a0000000-0000-4000-a000-000000000011', name: 'Snöboll' },
+    customer: { firstName: 'Test', lastName: 'Testsson' },
+    service: { id: SERVICE_ID, name: 'Hovslagning Standard', recommendedIntervalWeeks: 8 },
+  }
+}
+
 /** Completed booking 3 days ago (ok for 8-week interval) */
 function makeRecentBooking() {
   const threeDaysAgo = new Date()
@@ -202,6 +217,24 @@ describe('GET /api/provider/due-for-service (integration)', () => {
     expect(data.items).toHaveLength(1)
     expect(data.items[0].horseName).toBe('Blansen')
     expect(data.items[0].status).toBe('overdue')
+  })
+
+  it('filter=upcoming returns only horses due within 14 days', async () => {
+    mockPrisma.booking.findMany.mockResolvedValue([
+      makeOverdueBooking(),
+      makeUpcomingBooking(),
+      makeRecentBooking(),
+    ])
+
+    const res = await GET(makeRequest('upcoming'))
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.items).toHaveLength(1)
+    expect(data.items[0].horseName).toBe('Snöboll')
+    expect(data.items[0].status).toBe('upcoming')
+    expect(data.items[0].daysUntilDue).toBeGreaterThanOrEqual(0)
+    expect(data.items[0].daysUntilDue).toBeLessThanOrEqual(14)
   })
 
   it('filter=all returns all horses regardless of status', async () => {
