@@ -6,7 +6,7 @@ interface SmartReplyVars {
 
 const TEMPLATES = [
   "Bokningen är bekräftad. Vi ses {datum} kl {tid}.",
-  "Tack! Jag återkommer så snart jag kan.",
+  "Tack, jag återkommer så snart jag kan.",
   "Ring mig på {telefon} om det brådskar.",
   "Vilken tid passar dig istället?",
 ]

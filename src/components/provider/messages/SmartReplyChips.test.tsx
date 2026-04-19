@@ -27,7 +27,7 @@ describe("expandTemplate", () => {
   it("expands all four production templates without runtime errors", () => {
     const vars = { datum: "måndag 5 maj", tid: "09:00", telefon: "0701234567" }
     expect(() => expandTemplate("Bokningen är bekräftad. Vi ses {datum} kl {tid}.", vars)).not.toThrow()
-    expect(() => expandTemplate("Tack! Jag återkommer så snart jag kan.", vars)).not.toThrow()
+    expect(() => expandTemplate("Tack, jag återkommer så snart jag kan.", vars)).not.toThrow()
     expect(() => expandTemplate("Ring mig på {telefon} om det brådskar.", vars)).not.toThrow()
     expect(() => expandTemplate("Vilken tid passar dig istället?", vars)).not.toThrow()
   })
