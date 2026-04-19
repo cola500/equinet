@@ -71,6 +71,18 @@ if git diff --cached --name-only 2>/dev/null | grep -q "^docs/sprints/status\.md
   fi
 fi
 
+# ProviderNav ↔ NativeMoreView sync-varning
+# Mönstret: ProviderNav.tsx ändras men NativeMoreView.swift inte → varna
+if git diff --cached --name-only | grep -q "^src/components/layout/ProviderNav.tsx$"; then
+  NATIVE_CHANGED=$(git diff --cached --name-only | grep -c "^ios/Equinet/Equinet/NativeMoreView.swift$" || true)
+  if [ "$NATIVE_CHANGED" = "0" ]; then
+    echo "⚠️  Nav-sync-varning: ProviderNav.tsx ändras men NativeMoreView.swift inte."
+    echo "   Om du lagt till/tagit bort nav-post i webb, synka till iOS-Mer-flik."
+    echo "   Om detta är en intern ändring (badge, styling) som inte påverkar nav-poster: fortsätt."
+    echo ""
+  fi
+fi
+
 # Bara kör om en done-fil är staged
 STAGED_DONE_FILES=$(git diff --cached --name-only --diff-filter=A | grep "^docs/done/s[0-9]" || true)
 
