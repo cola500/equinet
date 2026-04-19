@@ -63,4 +63,16 @@ else
   echo ""
 fi
 
+# Multi-commit-gate (varning, blockerar ej)
+CURRENT_BRANCH=$(git branch --show-current)
+if [[ "$CURRENT_BRANCH" =~ ^feature/ ]]; then
+  COMMITS_AHEAD=$(git rev-list --count main..HEAD 2>/dev/null || echo "0")
+  if [[ "$COMMITS_AHEAD" -lt 2 ]]; then
+    echo "[VARNING] Multi-commit: $CURRENT_BRANCH har bara $COMMITS_AHEAD commit(s) över main."
+    echo "   Per team-workflow.md ska varje station committas separat (PLAN -> RED -> GREEN -> ...)."
+    echo "   Om detta är avsiktligt (hotfix, docs-only): fortsätt."
+    echo ""
+  fi
+fi
+
 echo "All checks passed! Pushing to remote..."
