@@ -23,7 +23,7 @@ sections:
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
 | S43-0: Discovery — klassa alla 36 E2E-specs | 0 | done | 0.5 dag |
-| S43-1: Pilot — flytta 2 specs (unsubscribe + horses) | 1 | pending | 0.5-1 dag |
+| S43-1: Pilot — flytta 2 specs (unsubscribe + horses) | 1 | done | 0.5-1 dag |
 | S43-2: Första batch — flytta 4-6 specs | 2 | pending | 1 dag |
 
 **Fas 4 (rensa 18 skip-specs) + Fas 5 (hårdhärda smoke-tier)** planeras för S44.
@@ -123,6 +123,8 @@ sections:
 | ios-learnings + patterns uppdatering från S34 | 30 min | `.confirmationDialog`-pattern, `LoginError`-enum-pattern, `URLError`-catch-ordning, mailto-encoding. Hör hemma i `.claude/rules/ios-learnings.md`. |
 | Granska "redan fixat"-rate grep-pattern | 15 min | 2 sprintar i rad över mål 5%. Antingen justera pattern eller acceptera som ny baseline. |
 | Plan-commit-gate: hook + rule-förtydligande | 45-60 min | **Lärdom S43-1 2026-04-19**: Dev hoppade Station 1 (plan-commit FÖRE implementation) och gjorde 0 commits under hela körningen. Lyckat men riskabelt (ingen backup, ingen mellanreview). Fix: (1) pre-commit hook som varnar när story är `in_progress` i status.md utan motsvarande `docs/plans/<story-id>-plan.md` committad; (2) förtydliga i `autonomous-sprint.md` att pilot/batch-stories kräver egen plan-fil även om Discovery finns — planen ska beskriva commit-strategi + per-spec täckning, inte bara vad som migreras. |
+| horses-CRUD coverage-gap (efter S43-1) | 1-2h | **Lärdom S43-1 2026-04-19**: E2E-specen täckte add/edit/delete + detail-navigering. Component-test täcker bara form-nivå. Delete-bekräftelsedialog, edit-flöde och `handleDelete`/`handleAddHorse` fetch-logik i `page.tsx` är nu otestade. Fix: `page.test.tsx` med MSW-mockade fetch-anrop ELLER behåll tunn E2E-smoke för horses-CRUD. |
+| Coverage-gap-krav för S43-2 batch-rapport | 0 min (process) | Varje spec-migration i S43-2 ska explicit notera vilka scenarios från E2E som INTE är täckta av nya tester. Lärdom från S43-1: reviewer hittade gap, pilot-rapport gjorde inte. |
 
 ### Vid lansering
 
