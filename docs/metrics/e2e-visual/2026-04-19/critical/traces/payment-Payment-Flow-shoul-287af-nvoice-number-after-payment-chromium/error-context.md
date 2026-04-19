@@ -1,0 +1,120 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]: Utvecklingsmiljö — Supabase
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - link "Equinet" [ref=e8] [cursor=pointer]:
+            - /url: /
+            - img [ref=e9]
+            - text: Equinet
+          - generic [ref=e17]:
+            - button [ref=e18]:
+              - img
+            - button "Test Testsson" [ref=e19]
+        - navigation [ref=e20]:
+          - generic [ref=e22]:
+            - link "Hitta tjänster" [ref=e23] [cursor=pointer]:
+              - /url: /providers
+            - link "Mina bokningar" [ref=e24] [cursor=pointer]:
+              - /url: /customer/bookings
+            - link "Lediga tider" [ref=e25] [cursor=pointer]:
+              - /url: /announcements
+            - link "Gruppbokningar" [ref=e26] [cursor=pointer]:
+              - /url: /customer/group-bookings
+            - link "Mina hästar" [ref=e27] [cursor=pointer]:
+              - /url: /customer/horses
+            - link "Hjälp" [ref=e28] [cursor=pointer]:
+              - /url: /customer/help
+            - link "Min profil" [ref=e29] [cursor=pointer]:
+              - /url: /customer/profile
+        - main [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - heading "Mina bokningar" [level=1] [ref=e33]
+              - paragraph [ref=e34]: Hantera dina bokningar
+            - link "Boka ny tjänst" [ref=e35] [cursor=pointer]:
+              - /url: /providers
+              - button "Boka ny tjänst" [ref=e36]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: Kom igång
+                - button "Dölj checklistan" [ref=e42]:
+                  - img [ref=e43]
+              - paragraph [ref=e46]: 3 av 4 klara
+            - generic [ref=e48]:
+              - link "Fyll i din profil" [ref=e49] [cursor=pointer]:
+                - /url: /customer/profile
+                - img [ref=e50]
+                - generic [ref=e53]: Fyll i din profil
+              - link "Lägg till en häst" [ref=e54] [cursor=pointer]:
+                - /url: /customer/horses
+                - img [ref=e55]
+                - generic [ref=e58]: Lägg till en häst
+              - link "Gör din första bokning" [ref=e59] [cursor=pointer]:
+                - /url: /providers
+                - img [ref=e60]
+                - generic [ref=e63]: Gör din första bokning
+              - link "Lämna en recension" [ref=e64] [cursor=pointer]:
+                - /url: /customer/bookings
+                - img [ref=e65]
+                - generic [ref=e67]: Lämna en recension
+          - generic [ref=e68]:
+            - button "Kommande" [pressed] [ref=e69]
+            - button "Tidigare" [ref=e70]
+            - button "Alla" [ref=e71]
+          - generic [ref=e73]:
+            - generic [ref=e75]:
+              - generic [ref=e77]:
+                - generic [ref=e79]: Hovslagning Standard
+                - generic [ref=e80]: Test Stall AB
+              - generic [ref=e81]: Bekräftad
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - generic [ref=e84]:
+                  - generic [ref=e85]: "Datum: 19 maj 2026"
+                  - generic [ref=e86]:
+                    - text: "Tid:"
+                    - generic [ref=e87]: 14:00 - 15:00
+                  - generic [ref=e88]: "Häst: PaymentTestHorse"
+                - generic [ref=e89]:
+                  - generic [ref=e90]:
+                    - text: "Pris:"
+                    - generic [ref=e91]: 800 kr
+                  - generic [ref=e92]:
+                    - text: "Varaktighet:"
+                    - generic [ref=e93]: 60 min
+                  - generic [ref=e94]:
+                    - text: "Kontakt:"
+                    - generic [ref=e95]: Leverantor Testsson
+              - paragraph [ref=e97]:
+                - strong [ref=e98]: "Dina kommentarer:"
+                - text: E2E payment test booking
+              - generic [ref=e100]:
+                - button "Omboka" [ref=e101]
+                - button "Avboka" [ref=e102]
+              - button "Meddelanden" [ref=e104]
+    - contentinfo [ref=e105]:
+      - paragraph [ref=e106]: Equinet v0.2.0
+      - paragraph [ref=e107]:
+        - link "Integritetspolicy" [ref=e108] [cursor=pointer]:
+          - /url: /integritetspolicy
+        - text: ·
+        - link "Användarvillkor" [ref=e109] [cursor=pointer]:
+          - /url: /anvandarvillkor
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e115] [cursor=pointer]:
+    - img [ref=e116]
+  - alert [ref=e119]
+  - button "Rapportera fel" [ref=e120]:
+    - img [ref=e121]
+  - dialog [ref=e131]:
+    - generic [ref=e132]:
+      - paragraph [ref=e133]: Dina bokningar
+      - paragraph [ref=e134]: Här ser du alla dina bokningar. Klicka på en för mer detaljer.
+      - button "Uppfattat" [active] [ref=e135]
+```
