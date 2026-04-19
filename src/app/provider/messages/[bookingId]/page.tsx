@@ -59,6 +59,23 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     if (!trimmed || isSending) return
 
     setIsSending(true)
+
+    const prevData = data
+    if (prevData) {
+      const optimisticMsg: Message = {
+        id: `optimistic-${Date.now()}`,
+        conversationId: prevData.messages[0]?.conversationId ?? "",
+        senderType: "PROVIDER",
+        senderName: "",
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+        readAt: null,
+        isFromSelf: true,
+      }
+      mutate({ ...prevData, messages: [...prevData.messages, optimisticMsg] }, false)
+    }
+    setContent("")
+
     try {
       const res = await fetch(`/api/bookings/${bookingId}/messages`, {
         method: "POST",
@@ -71,9 +88,10 @@ function ThreadView({ bookingId }: { bookingId: string }) {
         throw new Error(body.error ?? "Okänt fel")
       }
 
-      setContent("")
       await mutate()
     } catch (err) {
+      if (prevData) mutate(prevData, false)
+      setContent(trimmed)
       clientLogger.error("ProviderThreadPage: send failed", err as Error)
       toast.error("Kunde inte skicka meddelandet. Försök igen.")
     } finally {
