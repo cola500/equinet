@@ -18,6 +18,15 @@ sections:
 
 ## Aktiv sprint
 
+**Sprint 46: Messaging Slice 2 — bilagor (bild)** ([sprint-46.md](sprint-46.md))
+
+| Story | Status | Branch | Commit |
+|-------|--------|--------|--------|
+| S46-0: Plan + schema + storage-setup | review_requested | feature/s46-0-plan-schema-storage | df802aef |
+| S46-1: API + upload-endpoint (TDD) | pending | — | — |
+| S46-2: UI — skicka bild + visa i tråd | pending | — | — |
+| S46-3: iOS WebView-verifiering | pending | — | — |
+
 *(ingen aktiv sprint — S45 klar, väntar på nästa)*
 
 *(Sprint 45 klar 2026-04-19. 5/5 stories done — 3 nya process-scripts, 2 rule-förtydliganden, 2 hooks utökade. 0 nya Vitest-tester. PRar: #231 #232 #233 #234 mergade, #235 stängd utan merge (baserad på gammal main — commit-strategy.md-ändringen applicerad direkt på main i 79def043). Procedurbrott: minst 6 (2 rapporterade + 4 upptäckta post-avslut: S45-4 divergent branch, felaktig PR-info i status.md + retro, sprint-avslut-commits på main utan feature branch). Retro: `docs/retrospectives/2026-04-19-sprint-45.md`.)*
