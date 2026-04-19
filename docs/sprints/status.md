@@ -18,13 +18,7 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 41 KLAR** ([sprint-41.md](sprint-41.md)) -- Messaging-ordning + review-lärdom
-
-| Story | Domän | Status |
-|-------|-------|--------|
-| S41-0 Fix message-ordning (blocker från S40-3-miss) | webb | done (PR #224) |
-| S41-1 Retro-miss-analys + review-manifest-spike | docs | done (direkt main) |
-| S41-2 Chat-convention-check hook (valfri) | infra | done (PR #225) |
+*(Sprint 41 klar 2026-04-19. 3/3 stories done. Retro: `docs/retrospectives/2026-04-19-review-miss-analysis.md` + S40-done-refs.)*
 
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
@@ -73,7 +67,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| Session webb | fullstack | Sprint 40 klar | - | 2026-04-19 |
+| (ingen aktiv session) | - | - | - | - |
 
 ## Beslut
 
