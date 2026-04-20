@@ -3,7 +3,7 @@ title: "Autonom sprint-körning"
 description: "Hur en Claude-session kör en hel sprint utan mänsklig inblandning"
 category: rule
 status: active
-last_updated: 2026-04-18
+last_updated: 2026-04-20
 tags: [workflow, autonomous, sprint]
 sections:
   - Trigger
@@ -122,19 +122,9 @@ git push origin --delete feature/<story-id>-<namn>
 
 ## Review-matris (vilka subagenter per story-typ)
 
-| Story berör | Subagenter att köra |
-|-------------|-------------------|
-| API route (ny/ändrad) | tech-architect (plan) + security-reviewer (kod) + code-reviewer |
-| iOS Swift-filer | ios-expert (plan) + code-reviewer |
-| UI-komponenter | cx-ux-reviewer (kod) + code-reviewer |
-| Auth/säkerhet | security-reviewer (plan + kod) + tech-architect (plan) |
-| Databas/schema | tech-architect (plan) + code-reviewer |
-| Mekanisk migrering | code-reviewer (bara) |
-| Story implementerar tidigare designstory (arkitekturdokument) | Vanliga subagenter + "arkitekturcoverage"-prompt till security-reviewer/tech-architect: "Verifiera att varje numrerat designbeslut (D1, D2...) finns implementerat i koden. Lista eventuella gap." |
-| Docs/config | Inga subagenter behövs |
-| Story sätter feature-flag `defaultEnabled: true` | Obligatorisk rollout-checklista: [docs/operations/feature-flag-rollout-checklist.md](../../docs/operations/feature-flag-rollout-checklist.md) (webb-audit + iOS-audit + post-rollout plan) |
+> Se [review-matrix.md](review-matrix.md) för fullständig glob-baserad matris (maskinläsbar av S47-1 hook).
 
-Kör ALLTID code-reviewer. Övriga baserat på story-typ.
+Kör ALLTID code-reviewer. Övriga subagents bestäms av matristabellen i `review-matrix.md`.
 
 **Täckning + Gap (obligatoriskt för alla reviewers):** Lägg alltid till följande i prompt-texten till code-reviewer och security-reviewer (projekt-agenterna rapporterar detta automatiskt):
 > "Avsluta med: **Täckning** (vad du konkret granskade, filnamn/aspekter) och **Gap** (vad du INTE granskade och varför)."

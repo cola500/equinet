@@ -155,13 +155,22 @@ Varje story i sprint-dokumentet har en domäntagg i kolumnen "Roll" eller "Domä
 9. När klar: skriv `docs/done/<story-id>-done.md` med:
    - Acceptanskriterier från sprint-dokumentet -- bocka av varje
    - Definition of Done (från CLAUDE.md) -- bocka av varje
-   - **Reviews körda** (OBLIGATORISKT -- lista varje):
-     - [ ] code-reviewer (station 4, för icke-triviala stories)
-     - [ ] security-reviewer (om API/auth ändrats)
-     - [ ] cx-ux-reviewer (om UI ändrats)
-     - [ ] tech-architect (om arkitektur/plan granskats)
-     - **Trivial story?** Skippa review -- se `.claude/rules/team-workflow.md` Station 4 Review-gating för kriterier.
-     - Skriv: "Kördes: code-reviewer, security-reviewer" eller "Kördes: ingen (trivial -- motivering)"
+   - **Reviews körda** (OBLIGATORISKT -- strukturerat format, maskinläsbart av S47-1 hook):
+
+     ```markdown
+     ## Reviews körda
+
+     <!-- Strukturerat format. Alla obligatoriska (per review-matrix.md) måste vara [x]. -->
+
+     - [x] code-reviewer — <sammanfattning>
+     - [x] security-reviewer — <sammanfattning>
+     - [ ] cx-ux-reviewer — ej tillämplig (inga UI-ändringar)
+     - [ ] ios-expert — ej tillämplig (inga iOS-ändringar)
+     - [ ] tech-architect — ej tillämplig (ingen arkitekturändring)
+     ```
+
+     **Trivial story?** Skippa review -- se `.claude/rules/team-workflow.md` Station 4 Review-gating.
+     Skriv: `- [ ] code-reviewer — ej tillämplig (trivial story: <motivering>)`
    - **Docs uppdaterade** (OBLIGATORISKT enligt storyns typ -- se Docs-matris nedan):
      - [ ] README.md om ny feature syns för användare
      - [ ] NFR.md om säkerhet/prestanda/reliability-krav påverkas
