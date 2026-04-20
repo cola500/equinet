@@ -18,13 +18,9 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 48: iOS auth-desync-fix + miljö-hardening** ([sprint-48.md](sprint-48.md))
+*(ingen aktiv sprint — väntar på S49)*
 
-| Story | Prio | Status | Effort |
-|-------|------|--------|--------|
-| S48-0: iOS auth-desync-fix (pre-launch blocker) | 0 | done | 1-2h |
-| S48-1: Miljö-hardening — staging-struktur + env-hierarki | 1 | done | 1 dag |
-| S48-2 (valfri): gh pr merge-wrapper | 2 | done | 30-45 min |
+*(Sprint 48 klar 2026-04-20. 3/3 stories done — iOS auth-desync-fix (pre-launch blocker löst) + miljö-hardening (staging-URL, env-hierarki, status-script) + gh pr merge-wrapper (stänger S47-4-lucka). Procedurbrott: 2 (båda "premature done-markering", inga strukturella). 4 real-world-saves av reviewer-subagenter. Första sprint där tech-lead-review-flödet fungerade konsekvent — S47-enforcement bevisad empiriskt. Retro: `docs/retrospectives/2026-04-20-sprint-48.md`.)*
 
 *(Sprint 47 klar 2026-04-20. 6/6 stories done — process-hardening 2 komplett. 6 aktiva hooks (5 pre-commit + 1 pre-push), 4 BLOCKERS med override-mekanism, 37/37 tester gröna, review-matris extraherad, override-mönster dokumenterat. 6 procedurbrott (4 Dev-self-merges + 2 tech-lead-branch-fel) — två räddades av hookarna själva (real-world-saves). Retro: `docs/retrospectives/2026-04-20-sprint-47.md`.)*
 
@@ -44,6 +40,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S48 | iOS auth-desync-fix + miljö-hardening | 3/3 done — iOS auth-fix (pre-launch blocker), staging/env-struktur, gh pr merge-wrapper. 2 procedurbrott (båda premature done-markering). 4 real-world-saves av reviewer-subagenter. Första konsekvent tech-lead-review-flöde. Retro: `docs/retrospectives/2026-04-20-sprint-48.md`. |
 | S47 | Process-hardening 2 — enforcement över hela linjen | 6/6 done — 6 aktiva hooks, 4 BLOCKERS med override, 37 tester, review-matris maskinläsbar, override-mönster dokumenterat. 2 real-world-saves bevisade enforcement i praktiken. Retro: `docs/retrospectives/2026-04-20-sprint-47.md`. |
 | S46 | Messaging Slice 2 — bilagor (bild) | 4/4 done — bild-upload, Supabase Storage, magic bytes, thumbnail. +18 Vitest-tester (4284→4302). 1 procedurbrott (plan-commit). iOS-audit: WKWebView OK, auth-desync funnen (pre-launch-blocker). Retro: `docs/retrospectives/2026-04-20-sprint-46.md`. |
 | S44 | Testpyramid TA BORT + Batch 2 | 3/3 done — 3 E2E raderade, 4 migrerade, 7 coverage-tester. E2E 29→22. Vitest 4240→4284. Retro: process-drift-retron identifierade 8 procedurbrott S43-S44 → S45 bygger automation. |
