@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/", "/provider/", "/stable/"],
       },
     ],
-    sitemap: "https://equinet.vercel.app/sitemap.xml",
+    sitemap: "https://equinet-app.vercel.app/sitemap.xml",
   };
 }
