@@ -18,7 +18,18 @@ sections:
 
 ## Aktiv sprint
 
-*(ingen aktiv sprint — väntar på S47)*
+**Sprint 47: Process-hardening 2 — enforcement över hela linjen** ([sprint-47.md](sprint-47.md))
+
+| Story | Prio | Status | Effort |
+|-------|------|--------|--------|
+| S47-0: Explicit review-matris + strukturerat done-fil-format | 0 | pending | 30-45 min |
+| S47-1: Review-obligatorisk-gate (pre-commit BLOCKER) | 1 | pending | 1-1.5h |
+| S47-2: Branch-check pre-commit (BLOCKER) | 2 | pending | 45 min |
+| S47-3: Hook-tester (scripts/test-hooks.sh) | 3 | pending | 1-1.5h |
+| S47-4: Uppgradera S45-varningar till BLOCKERS med override | 4 | pending | 45-60 min |
+| S47-5: Sprint-avslut-review-gate | 5 | pending | 30-45 min |
+
+*(Sprint 46 klar 2026-04-20 — bild-bilagor live. 8 procedurbrott identifierade → S47 bygger automation som gör dem omöjliga.)*
 
 *(Sprint 45 klar 2026-04-19. 5/5 stories done — 3 nya process-scripts, 2 rule-förtydliganden, 2 hooks utökade. 0 nya Vitest-tester. PRar: #231 #232 #233 #234 mergade, #235 stängd utan merge (baserad på gammal main — commit-strategy.md-ändringen applicerad direkt på main i 79def043). Procedurbrott: minst 6 (2 rapporterade + 4 upptäckta post-avslut: S45-4 divergent branch, felaktig PR-info i status.md + retro, sprint-avslut-commits på main utan feature branch). Retro: `docs/retrospectives/2026-04-19-sprint-45.md`.)*
 
