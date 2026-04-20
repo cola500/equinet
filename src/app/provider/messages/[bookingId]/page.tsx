@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, use, Suspense } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -11,7 +11,9 @@ import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
 import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
 import { displayMessages } from "@/components/provider/messages/messageUtils"
+import { AttachmentBubble, AttachmentPreview } from "@/components/provider/messages/AttachmentBubble"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { MESSAGING_ALLOWED_MIME, MESSAGING_MAX_SIZE } from "@/lib/messaging-constants"
 
 interface Message {
   id: string
@@ -22,6 +24,9 @@ interface Message {
   createdAt: string
   readAt: string | null
   isFromSelf: boolean
+  attachmentSignedUrl?: string | null
+  attachmentType?: string | null
+  attachmentSize?: number | null
 }
 
 interface MessagesResponse {
@@ -39,9 +44,13 @@ interface ProviderProfile {
 function ThreadView({ bookingId }: { bookingId: string }) {
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const smartRepliesEnabled = useFeatureFlag("smart_replies")
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data, mutate, isLoading } = useSWR<MessagesResponse>(
     `/api/bookings/${bookingId}/messages`,
@@ -61,7 +70,6 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     }
   })()
 
-  // Mark messages as read once on first load
   useEffect(() => {
     if (data && !readCalledRef.current) {
       readCalledRef.current = true
@@ -73,7 +81,72 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [data?.messages.at(-1)?.id])
 
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    }
+  }, [attachmentPreviewUrl])
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    if (!MESSAGING_ALLOWED_MIME.includes(file.type as typeof MESSAGING_ALLOWED_MIME[number])) {
+      toast.error("Filtypen stöds inte. Tillåtna: JPEG, PNG, HEIC, WebP.")
+      return
+    }
+    if (file.size > MESSAGING_MAX_SIZE) {
+      toast.error("Filen är för stor. Max 10 MB.")
+      return
+    }
+
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    setAttachedFile(file)
+    setAttachmentPreviewUrl(URL.createObjectURL(file))
+  }
+
+  function handleRemoveAttachment() {
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    setAttachedFile(null)
+    setAttachmentPreviewUrl(null)
+  }
+
+  async function handleSendAttachment() {
+    if (!attachedFile || isUploading) return
+
+    setIsUploading(true)
+    const formData = new FormData()
+    formData.append("file", attachedFile)
+
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/messages/attachments`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? "Okänt fel")
+      }
+
+      handleRemoveAttachment()
+      await mutate()
+    } catch (err) {
+      clientLogger.error("ProviderThreadPage: upload failed", err as Error)
+      toast.error("Kunde inte ladda upp bilagan. Försök igen.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   async function handleSend() {
+    if (attachedFile) {
+      await handleSendAttachment()
+      return
+    }
+
     const trimmed = content.trim()
     if (!trimmed || isSending) return
 
@@ -119,6 +192,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   }
 
   const messages = data?.messages ?? []
+  const isBusy = isSending || isUploading
 
   return (
     <div className="container mx-auto px-4 py-4 max-w-2xl flex flex-col h-[calc(100dvh-10rem)]">
@@ -168,7 +242,14 @@ function ThreadView({ bookingId }: { bookingId: string }) {
               {!msg.isFromSelf && (
                 <p className="text-xs font-medium mb-1 text-gray-600">{msg.senderName}</p>
               )}
-              <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              {msg.attachmentSignedUrl ? (
+                <AttachmentBubble
+                  signedUrl={msg.attachmentSignedUrl}
+                  isFromSelf={msg.isFromSelf}
+                />
+              ) : (
+                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              )}
               <p
                 className={`text-xs mt-1 ${
                   msg.isFromSelf ? "text-green-200" : "text-gray-400"
@@ -187,36 +268,70 @@ function ThreadView({ bookingId }: { bookingId: string }) {
 
       {/* Compose area */}
       <div className="border-t pt-3 space-y-2">
-        {smartRepliesEnabled && (
+        {/* Attachment preview */}
+        {attachedFile && attachmentPreviewUrl && (
+          <AttachmentPreview
+            previewUrl={attachmentPreviewUrl}
+            fileName={attachedFile.name}
+            onRemove={handleRemoveAttachment}
+            disabled={isUploading}
+          />
+        )}
+
+        {smartRepliesEnabled && !attachedFile && (
           <SmartReplyChips
             vars={smartReplyVars}
             onSelect={(text) => setContent(text)}
-            disabled={isSending}
+            disabled={isBusy}
           />
         )}
-        <VoiceTextarea
-          value={content}
-          onChange={(value) => setContent(value)}
-          placeholder="Skriv ett meddelande..."
-          className="resize-none"
-          rows={2}
-          maxLength={2000}
-          disabled={isSending}
-        />
-        <div className="flex justify-between items-center">
-          {content.length > 1800 ? (
-            <span className="text-xs text-amber-600">{content.length}/2000</span>
-          ) : (
-            <span />
+
+        {/* Text input — hidden when attachment selected */}
+        {!attachedFile && (
+          <VoiceTextarea
+            value={content}
+            onChange={(value) => setContent(value)}
+            placeholder="Skriv ett meddelande..."
+            className="resize-none"
+            rows={2}
+            maxLength={2000}
+            disabled={isBusy}
+          />
+        )}
+
+        <div className="flex justify-between items-center gap-2">
+          {/* Paperclip button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isBusy}
+            className="text-gray-500 hover:text-gray-900 disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Bifoga bild"
+          >
+            <Paperclip className="h-5 w-5" aria-hidden />
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={handleFileSelect}
+            aria-hidden
+          />
+
+          {!attachedFile && content.length > 1800 && (
+            <span className="text-xs text-amber-600 flex-1">{content.length}/2000</span>
           )}
+
           <Button
             type="button"
             onClick={handleSend}
-            disabled={!content.trim() || isSending}
+            disabled={(!content.trim() && !attachedFile) || isBusy}
             size="sm"
             className="min-h-[44px] sm:min-h-0"
           >
-            {isSending ? "Skickar..." : "Skicka"}
+            {isUploading ? "Laddar upp..." : isSending ? "Skickar..." : "Skicka"}
           </Button>
         </div>
       </div>
