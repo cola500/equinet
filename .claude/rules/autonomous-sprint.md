@@ -177,12 +177,24 @@ Kör `/update-docs` med sprint-numret. Kontrollera:
 - CLAUDE.md (nya key learnings, ändrade resurslänkar)
 - docs/guides/gotchas.md (nya gotchas upptäckta under sprinten)
 
-### 3. Sprint-retro
+### 3. Sprint-retro (FEATURE BRANCH — INTE direkt på main)
+
+> **Sprint-avslut är en story med egen review.** Retro + status.md-ändringar + docs-sync (README/NFR/CLAUDE.md) ska granskas av tech lead innan merge, på samma sätt som en feature-story. Dev får **inte** committa retro direkt på main.
+
+Skapa en feature branch för sprint-avslut:
+```bash
+git checkout -b feature/s<N>-avslut
+```
+
 Skriv `docs/retrospectives/<datum>-sprint-<N>.md` med:
 - Levererat (stories, tester, LOC)
 - Vad gick bra
 - Vad som inte fungerade
 - Processändring till nästa sprint
+
+Commit + push + PR → tech lead granskar och mergar.
+
+**Pre-commit hook (`check-sprint-retro.sh`) blockerar** retro-commit direkt på main. Override: `[override: <motivering>]` i commit-message om tech lead själv skriver retron.
 
 ### 4. Meddela Johan
 "Sprint X klar. Retro i docs/retrospectives/."

@@ -34,3 +34,6 @@ bash scripts/check-reviews-done.sh || exit 1
 
 # 7. Branch-check (BLOCKER om kod-commit på main under aktiv story)
 bash scripts/check-branch-for-story.sh || exit 1
+
+# 8. Sprint-retro-gate (BLOCKER om retro committas direkt på main)
+bash scripts/check-sprint-retro.sh || exit 1
