@@ -20,7 +20,9 @@ if [[ ! -f "$STATUS_FILE" ]]; then
 fi
 
 # Kolla om det finns aktiva stories in_progress
-ACTIVE_STORIES=$(grep -E "^\| S[0-9]+-[0-9]+" "$STATUS_FILE" | grep "in_progress" | awk -F'|' '{print $2}' | grep -oE "S[0-9]+-[0-9]+" | sort -u || true)
+# Kolumnfiltrering: $4 = statuskolumnen — undviker false positive om "in_progress" förekommer i story-titeln
+ACTIVE_STORIES=$(awk -F'|' '/^\| S[0-9]+-[0-9]+/ && $4 ~ /[[:space:]]in_progress[[:space:]]/ {print $2}' "$STATUS_FILE" \
+  | grep -oE "S[0-9]+-[0-9]+" | sort -u || true)
 
 if [[ -z "$ACTIVE_STORIES" ]]; then
   exit 0
@@ -43,6 +45,8 @@ if [[ -z "$NON_LIFECYCLE" ]]; then
 fi
 
 # Override via commit-message subject-rad
+# OBS: Fungerar enbart med git commit -m "... [override: ...]"
+# Interaktiv commit (utan -m) läser föregående commit-meddelande (COMMIT_EDITMSG skrivs före editorn öppnas).
 GIT_DIR_PATH=$(git rev-parse --git-dir 2>/dev/null || echo ".git")
 COMMIT_SUBJECT=""
 if [[ -f "${GIT_DIR_PATH}/COMMIT_EDITMSG" ]]; then
