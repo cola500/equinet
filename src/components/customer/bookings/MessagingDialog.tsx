@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import useSWR from "swr"
+import { Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -14,6 +15,8 @@ import {
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
 import { displayMessages } from "@/components/provider/messages/messageUtils"
+import { AttachmentBubble, AttachmentPreview } from "@/components/provider/messages/AttachmentBubble"
+import { MESSAGING_ALLOWED_MIME, MESSAGING_MAX_SIZE } from "@/lib/messaging-constants"
 
 interface Message {
   id: string
@@ -24,6 +27,9 @@ interface Message {
   createdAt: string
   readAt: string | null
   isFromSelf: boolean
+  attachmentSignedUrl?: string | null
+  attachmentType?: string | null
+  attachmentSize?: number | null
 }
 
 interface MessagesResponse {
@@ -46,8 +52,12 @@ export function MessagingDialog({
 }: MessagingDialogProps) {
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data, mutate, isLoading } = useSWR<MessagesResponse>(
     open ? `/api/bookings/${bookingId}/messages` : null,
@@ -71,7 +81,73 @@ export function MessagingDialog({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [data?.messages.at(-1)?.id])
 
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    }
+  }, [attachmentPreviewUrl])
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    // Reset input so same file can be reselected
+    e.target.value = ""
+    if (!file) return
+
+    if (!MESSAGING_ALLOWED_MIME.includes(file.type as typeof MESSAGING_ALLOWED_MIME[number])) {
+      toast.error("Filtypen stöds inte. Tillåtna: JPEG, PNG, HEIC, WebP.")
+      return
+    }
+    if (file.size > MESSAGING_MAX_SIZE) {
+      toast.error("Filen är för stor. Max 10 MB.")
+      return
+    }
+
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    setAttachedFile(file)
+    setAttachmentPreviewUrl(URL.createObjectURL(file))
+  }
+
+  function handleRemoveAttachment() {
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    setAttachedFile(null)
+    setAttachmentPreviewUrl(null)
+  }
+
+  async function handleSendAttachment() {
+    if (!attachedFile || isUploading) return
+
+    setIsUploading(true)
+    const formData = new FormData()
+    formData.append("file", attachedFile)
+
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/messages/attachments`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? "Okänt fel")
+      }
+
+      handleRemoveAttachment()
+      await mutate()
+    } catch (err) {
+      clientLogger.error("MessagingDialog: upload failed", err as Error)
+      toast.error("Kunde inte ladda upp bilagan. Försök igen.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   async function handleSend() {
+    if (attachedFile) {
+      await handleSendAttachment()
+      return
+    }
+
     const trimmed = content.trim()
     if (!trimmed || isSending) return
 
@@ -124,6 +200,7 @@ export function MessagingDialog({
   }
 
   const messages = data?.messages ?? []
+  const isBusy = isSending || isUploading
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
@@ -166,7 +243,14 @@ export function MessagingDialog({
                     {msg.senderName}
                   </p>
                 )}
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                {msg.attachmentSignedUrl ? (
+                  <AttachmentBubble
+                    signedUrl={msg.attachmentSignedUrl}
+                    isFromSelf={msg.isFromSelf}
+                  />
+                ) : (
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                )}
                 <p
                   className={`text-xs mt-1 ${
                     msg.isFromSelf ? "text-green-200" : "text-gray-400"
@@ -185,32 +269,64 @@ export function MessagingDialog({
 
         {/* Compose area */}
         <div className="border-t px-4 py-3 space-y-2">
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Skriv ett meddelande..."
-            className="resize-none"
-            rows={3}
-            maxLength={2000}
-            disabled={isSending}
-            aria-label="Meddelande"
-            autoFocus
-          />
-          <div className="flex justify-between items-center">
-            {content.length > 1800 ? (
-              <span className="text-xs text-amber-600">{content.length}/2000</span>
-            ) : (
-              <span />
+          {/* Attachment preview */}
+          {attachedFile && attachmentPreviewUrl && (
+            <AttachmentPreview
+              previewUrl={attachmentPreviewUrl}
+              fileName={attachedFile.name}
+              onRemove={handleRemoveAttachment}
+              disabled={isUploading}
+            />
+          )}
+
+          {/* Text input — hidden when attachment selected */}
+          {!attachedFile && (
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Skriv ett meddelande..."
+              className="resize-none"
+              rows={3}
+              maxLength={2000}
+              disabled={isBusy}
+              aria-label="Meddelande"
+            />
+          )}
+
+          <div className="flex justify-between items-center gap-2">
+            {/* Paperclip button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isBusy}
+              className="text-gray-500 hover:text-gray-900 disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Bifoga bild"
+            >
+              <Paperclip className="h-5 w-5" aria-hidden />
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleFileSelect}
+              aria-hidden
+            />
+
+            {!attachedFile && content.length > 1800 && (
+              <span className="text-xs text-amber-600 flex-1">{content.length}/2000</span>
             )}
+
             <Button
               type="button"
               onClick={handleSend}
-              disabled={!content.trim() || isSending}
+              disabled={(!content.trim() && !attachedFile) || isBusy}
               size="sm"
               className="min-h-[44px] sm:min-h-0"
             >
-              {isSending ? "Skickar..." : "Skicka"}
+              {isUploading ? "Laddar upp..." : isSending ? "Skickar..." : "Skicka"}
             </Button>
           </div>
         </div>
