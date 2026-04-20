@@ -9,6 +9,7 @@ import { mapConversationErrorToStatus } from '@/domain/conversation/mapConversat
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { PrismaConversationRepository } from '@/infrastructure/persistence/conversation/PrismaConversationRepository'
 import { createMessageNotifier } from '@/domain/notification/MessageNotifierFactory'
+import { createMessageSignedUrl } from '@/lib/supabase-storage'
 
 const sendMessageSchema = z.object({
   content: z.string().trim().min(1).max(2000),
@@ -195,11 +196,18 @@ export async function GET(
 
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
 
+    // Generate signed URLs for attachment messages (1h expiry)
+    const signedUrls = await Promise.all(
+      result.messages.map((m) =>
+        m.attachmentUrl ? createMessageSignedUrl(m.attachmentUrl) : Promise.resolve(null)
+      )
+    )
+
     return NextResponse.json({
       customerName: booking.customerName,
       serviceName: booking.serviceName,
       bookingDate: booking.bookingDate.toISOString(),
-      messages: result.messages.map((m) => ({
+      messages: result.messages.map((m, i) => ({
         id: m.id,
         conversationId: m.conversationId,
         senderType: m.senderType,
@@ -208,6 +216,9 @@ export async function GET(
         createdAt: m.createdAt.toISOString(),
         readAt: m.readAt?.toISOString() ?? null,
         isFromSelf: m.senderType === senderType,
+        attachmentType: m.attachmentType ?? null,
+        attachmentSize: m.attachmentSize ?? null,
+        attachmentSignedUrl: signedUrls[i],
       })),
       nextCursor: result.nextCursor,
     })

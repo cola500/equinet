@@ -26,13 +26,20 @@ export interface Message {
   content: string
   createdAt: Date
   readAt: Date | null
+  attachmentUrl: string | null
+  attachmentType: string | null
+  attachmentSize: number | null
 }
 
 export interface CreateMessageData {
+  id?: string
   bookingId: string
   senderType: 'CUSTOMER' | 'PROVIDER'
   senderId: string
   content: string
+  attachmentUrl?: string
+  attachmentType?: string
+  attachmentSize?: number
 }
 
 export interface ListMessagesResult {
@@ -87,4 +94,9 @@ export interface IConversationRepository extends IRepository<Conversation> {
    * Total unread messages for a provider across all conversations.
    */
   getTotalUnreadForProvider(providerUserId: string): Promise<number>
+
+  /**
+   * Delete a message by ID (used for rollback when attachment upload fails).
+   */
+  deleteMessage(messageId: string): Promise<void>
 }

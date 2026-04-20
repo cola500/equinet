@@ -25,11 +25,19 @@ export interface ConversationServiceDeps {
   messageNotifier?: MessageNotifier
 }
 
+export interface MessageAttachment {
+  url: string
+  type: string
+  sizeBytes: number
+}
+
 export interface SendMessageInput {
   booking: BookingForConversation
   senderType: 'CUSTOMER' | 'PROVIDER'
   senderId: string
   content: string
+  attachment?: MessageAttachment
+  messageId?: string
 }
 
 export interface ListMessagesInput {
@@ -96,9 +104,9 @@ export class ConversationService {
       })
     }
 
-    // 2. Content validation
+    // 2. Content validation (skip CONTENT_EMPTY check if attachment is provided)
     const trimmed = input.content.trim()
-    if (trimmed.length === 0) {
+    if (trimmed.length === 0 && !input.attachment) {
       return Result.fail({ type: 'CONTENT_EMPTY', message: 'Content cannot be empty' })
     }
     if (trimmed.length > 2000) {
@@ -107,10 +115,16 @@ export class ConversationService {
 
     // 3. Persist message (lazy conversation creation in repo)
     const message = await this.repo.createMessage({
+      ...(input.messageId ? { id: input.messageId } : {}),
       bookingId: input.booking.id,
       senderType: input.senderType,
       senderId: input.senderId,
       content: trimmed,
+      ...(input.attachment ? {
+        attachmentUrl: input.attachment.url,
+        attachmentType: input.attachment.type,
+        attachmentSize: input.attachment.sizeBytes,
+      } : {}),
     })
 
     // 4. Fire-and-forget push notification
@@ -135,14 +149,15 @@ export class ConversationService {
         : `/customer/bookings/${input.booking.id}`,
     }
 
-    void this.messageNotifier
-      .notifyNewMessage(notifyInput)
-      .catch((err) =>
+    const notifyResult = this.messageNotifier.notifyNewMessage(notifyInput)
+    if (notifyResult) {
+      void notifyResult.catch((err) =>
         logger.error('ConversationService: notification failed', {
           bookingId: input.booking.id,
           err: err instanceof Error ? err.message : String(err),
         })
       )
+    }
   }
 
   async listMessages(input: ListMessagesInput): Promise<ListMessagesResult> {

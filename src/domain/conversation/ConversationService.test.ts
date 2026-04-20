@@ -458,4 +458,70 @@ describe('ConversationService', () => {
       expect(count).toBe(0)
     })
   })
+
+  // --------------------------------------------------------
+  // sendMessage – attachment support (S46)
+  // --------------------------------------------------------
+
+  describe('sendMessage with attachment', () => {
+    it('creates a message with attachment when attachment is provided with empty content', async () => {
+      const booking = makeBooking()
+      const result = await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: '',
+        attachment: { url: 'booking-1/msg-abc.jpg', type: 'image/jpeg', sizeBytes: 204800 },
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.attachmentUrl).toBe('booking-1/msg-abc.jpg')
+      expect(result.value.attachmentType).toBe('image/jpeg')
+      expect(result.value.attachmentSize).toBe(204800)
+    })
+
+    it('creates a message with attachment and caption', async () => {
+      const booking = makeBooking()
+      const result = await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: 'Se bilden på skadan',
+        attachment: { url: 'booking-1/msg-xyz.png', type: 'image/png', sizeBytes: 512000 },
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.content).toBe('Se bilden på skadan')
+      expect(result.value.attachmentUrl).toBe('booking-1/msg-xyz.png')
+    })
+
+    it('returns CONTENT_EMPTY when no content and no attachment', async () => {
+      const booking = makeBooking()
+      const result = await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: '',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('CONTENT_EMPTY')
+    })
+
+    it('uses external id when provided in attachment', async () => {
+      const booking = makeBooking()
+      const externalId = 'fixed-test-id-123'
+      const result = await service.sendMessage({
+        booking,
+        senderType: 'CUSTOMER',
+        senderId: 'customer-user-1',
+        content: '',
+        attachment: { url: `booking-1/${externalId}.jpg`, type: 'image/jpeg', sizeBytes: 1024 },
+        messageId: externalId,
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.id).toBe(externalId)
+    })
+  })
 })
