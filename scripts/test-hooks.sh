@@ -484,6 +484,48 @@ test_own_pr_merge() {
 }
 
 # ─────────────────────────────────────────────────────────────
+# 8. check-sprint-retro.sh
+#    BLOCKERAR retro-commit direkt på main utan feature branch.
+#    Override: [override: <motivering>] i commit-message.
+# ─────────────────────────────────────────────────────────────
+test_sprint_retro() {
+  echo ""
+  echo "── check-sprint-retro.sh ──"
+  setup_repo
+
+  # Scenario 1: Ingen retro staged → passerar
+  bash "$SCRIPT_DIR/check-sprint-retro.sh" > /dev/null 2>&1; local e=$?
+  assert_pass "ingen retro staged → passerar" $e
+
+  # Scenario 2: Retro staged på feature branch → passerar
+  git checkout -q -b feature/s99-avslut
+  touch docs/retrospectives/2026-04-20-sprint-99.md
+  git add docs/retrospectives/2026-04-20-sprint-99.md
+  bash "$SCRIPT_DIR/check-sprint-retro.sh" > /dev/null 2>&1; e=$?
+  assert_pass "retro staged på feature branch → passerar" $e
+  git restore --staged docs/retrospectives/2026-04-20-sprint-99.md 2>/dev/null || true
+  git checkout -q main
+
+  # Scenario 3: Retro staged på main → BLOCKERAR
+  git add docs/retrospectives/2026-04-20-sprint-99.md
+  local gitdir; gitdir=$(git rev-parse --git-dir)
+  echo "" > "${gitdir}/COMMIT_EDITMSG"
+  bash "$SCRIPT_DIR/check-sprint-retro.sh" > /dev/null 2>&1; e=$?
+  assert_fail "retro staged på main → blockerar" $e
+  git restore --staged docs/retrospectives/2026-04-20-sprint-99.md 2>/dev/null || true
+
+  # Scenario 4: Retro staged på main + override → passerar
+  git add docs/retrospectives/2026-04-20-sprint-99.md
+  echo "docs: retro [override: tech lead self-review, sprint-avslut]" > "${gitdir}/COMMIT_EDITMSG"
+  bash "$SCRIPT_DIR/check-sprint-retro.sh" > /dev/null 2>&1; e=$?
+  assert_pass "retro staged på main + override → passerar" $e
+  git restore --staged docs/retrospectives/2026-04-20-sprint-99.md 2>/dev/null || true
+  echo "" > "${gitdir}/COMMIT_EDITMSG"
+
+  teardown_repo
+}
+
+# ─────────────────────────────────────────────────────────────
 # Kör alla tester
 # ─────────────────────────────────────────────────────────────
 run_all_tests() {
@@ -498,6 +540,7 @@ run_all_tests() {
   test_docs_updated
   test_multi_commit
   test_own_pr_merge
+  test_sprint_retro
 
   echo ""
   echo "══════════════════════════════════════════"
