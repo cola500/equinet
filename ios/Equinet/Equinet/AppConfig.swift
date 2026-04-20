@@ -41,7 +41,11 @@ enum AppConfig {
         switch AppEnvironment.current {
         case .local:
             return URL(string: "http://localhost:3000")!
-        case .staging, .production:
+        case .staging:
+            // Stabil Vercel branch-preview för staging-branchen.
+            // URL-mönster: equinet-git-<branch>-<github-user>.vercel.app — uppdatera vid org-flytt.
+            return URL(string: "https://equinet-git-staging-cola500.vercel.app")!
+        case .production:
             return URL(string: "https://equinet-app.vercel.app")!
         }
     }
