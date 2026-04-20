@@ -186,8 +186,10 @@ struct WebView: UIViewRepresentable {
         // Observe cookie changes for session expiry detection
         context.coordinator.startObservingCookies(for: webView)
 
-        // Exchange Supabase token for web session cookies BEFORE loading the page
-        Task {
+        // Exchange Supabase token for web session cookies BEFORE loading the page.
+        // [weak webView] prevents crash if view deallocates during 10s exchange timeout.
+        Task { [weak webView] in
+            guard let webView else { return }
             await authManager.exchangeSessionForWebCookies(into: webView.configuration.websiteDataStore.httpCookieStore)
             webView.load(URLRequest(url: url))
         }
