@@ -18,16 +18,7 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 46: Messaging Slice 2 — bilagor (bild)** ([sprint-46.md](sprint-46.md))
-
-| Story | Status | Branch | Commit |
-|-------|--------|--------|--------|
-| S46-0: Plan + schema + storage-setup | done | — (mergad PR #236) | c19d55ee |
-| S46-1: API + upload-endpoint (TDD) | done | — (mergad PR #238) | cad8b1ee |
-| S46-2: UI — skicka bild + visa i tråd | done | — (mergad PR #239) | e70f2055 |
-| S46-3: iOS WebView-verifiering | done | — (docs-only, direkt på main per commit-strategy) | dd4280fc |
-
-*(ingen aktiv sprint — S45 klar, väntar på nästa)*
+*(ingen aktiv sprint — väntar på S47)*
 
 *(Sprint 45 klar 2026-04-19. 5/5 stories done — 3 nya process-scripts, 2 rule-förtydliganden, 2 hooks utökade. 0 nya Vitest-tester. PRar: #231 #232 #233 #234 mergade, #235 stängd utan merge (baserad på gammal main — commit-strategy.md-ändringen applicerad direkt på main i 79def043). Procedurbrott: minst 6 (2 rapporterade + 4 upptäckta post-avslut: S45-4 divergent branch, felaktig PR-info i status.md + retro, sprint-avslut-commits på main utan feature branch). Retro: `docs/retrospectives/2026-04-19-sprint-45.md`.)*
 
@@ -43,6 +34,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S46 | Messaging Slice 2 — bilagor (bild) | 4/4 done — bild-upload, Supabase Storage, magic bytes, thumbnail. +18 Vitest-tester (4284→4302). 1 procedurbrott (plan-commit). iOS-audit: WKWebView OK, auth-desync funnen (pre-launch-blocker). Retro: `docs/retrospectives/2026-04-20-sprint-46.md`. |
 | S44 | Testpyramid TA BORT + Batch 2 | 3/3 done — 3 E2E raderade, 4 migrerade, 7 coverage-tester. E2E 29→22. Vitest 4240→4284. Retro: process-drift-retron identifierade 8 procedurbrott S43-S44 → S45 bygger automation. |
 | S43 | Testpyramid-omfördelning | 3/3 done (Discovery + Pilot + Batch 1) — 7 specs migrerade, E2E 36→29, Vitest +150. Tre procedurbrott identifierade: plan-commit-miss (S43-1), trivial-gating-miss (Dev skippade review i båda stories), sprint-avslut-hoppat (direkt till S44). Fixar: PR #227 + tre backlog-rader. |
 | S42 | E2E-genomkörning (avbruten) | 3/6 done (smoke/critical/external visuell verifiering) — avbruten för att prioritera testpyramid-omfördelning |
