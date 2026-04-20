@@ -23,6 +23,13 @@ PASS=0
 FAIL=0
 ERRORS=()
 
+# Säkerställ cleanup om skriptet avbryts oväntat (pipefail, SIGINT, etc.)
+cleanup_on_exit() {
+  [[ -n "$TMPTEST" ]] && rm -rf "$TMPTEST"
+  cd "$ORIG_DIR" 2>/dev/null || true
+}
+trap cleanup_on_exit EXIT
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 BOLD='\033[1m'
@@ -46,7 +53,11 @@ assert_pass() {
 
 assert_fail() {
   local desc="$1"
-  local actual_exit="${2:-0}"
+  local actual_exit="${2:-}"
+  if [[ -z "$actual_exit" ]]; then
+    echo -e "  ${RED}FAIL${NC}: $desc (inget exit-värde angivet)"
+    FAIL=$((FAIL + 1)); ERRORS+=("$desc"); return
+  fi
   if [[ "$actual_exit" -ne 0 ]]; then
     echo -e "  ${GREEN}PASS${NC}: $desc"
     PASS=$((PASS + 1))
@@ -278,7 +289,7 @@ DONEFILE
   cat > docs/done/s99-1-done.md << 'DONEFILE'
 ## Reviews körda
 - [x] code-reviewer — inga problem
-- [ ] security-reviewer — ej tillämplig (inga UI-ändringar)
+- [ ] security-reviewer — ej körd
 DONEFILE
   git add docs/done/s99-1-done.md
   bash "$SCRIPT_DIR/check-reviews-done.sh" > /dev/null 2>&1; e=$?
@@ -321,6 +332,9 @@ DONEFILE
 test_docs_updated() {
   echo ""
   echo "── check-docs-updated.sh ──"
+  # OBS: Testar bara plan-aktualitet och done-docs-sektion (de blockerande kontrollerna).
+  # Hookens varningsblock (tech lead-branch, Seven Dimensions, ProviderNav, messaging)
+  # testas inte — de kräver specifik user.email/filstruktur och är icke-blockerande.
   setup_repo
 
   # Scenario 1: Ingenting staged → passerar
