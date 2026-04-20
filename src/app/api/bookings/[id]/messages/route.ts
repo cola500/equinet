@@ -9,6 +9,7 @@ import { mapConversationErrorToStatus } from '@/domain/conversation/mapConversat
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { PrismaConversationRepository } from '@/infrastructure/persistence/conversation/PrismaConversationRepository'
 import { createMessageNotifier } from '@/domain/notification/MessageNotifierFactory'
+import { createMessageSignedUrls } from '@/lib/supabase-storage'
 
 const sendMessageSchema = z.object({
   content: z.string().trim().min(1).max(2000),
@@ -195,6 +196,16 @@ export async function GET(
 
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
 
+    // Batch-fetch signed URLs — single Supabase Storage call instead of N calls
+    const attachmentPaths = result.messages
+      .map((m) => m.attachmentUrl)
+      .filter((url): url is string => url !== null && url !== undefined)
+
+    const batchSignedUrls = await createMessageSignedUrls(attachmentPaths)
+    const pathToSignedUrl = new Map<string, string | null>(
+      attachmentPaths.map((p, i) => [p, batchSignedUrls[i]])
+    )
+
     return NextResponse.json({
       customerName: booking.customerName,
       serviceName: booking.serviceName,
@@ -208,6 +219,9 @@ export async function GET(
         createdAt: m.createdAt.toISOString(),
         readAt: m.readAt?.toISOString() ?? null,
         isFromSelf: m.senderType === senderType,
+        attachmentType: m.attachmentType ?? null,
+        attachmentSize: m.attachmentSize ?? null,
+        attachmentSignedUrl: m.attachmentUrl ? (pathToSignedUrl.get(m.attachmentUrl) ?? null) : null,
       })),
       nextCursor: result.nextCursor,
     })

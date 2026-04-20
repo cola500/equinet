@@ -159,3 +159,196 @@ export async function deleteFile(path: string): Promise<boolean> {
 
   return true
 }
+
+// -----------------------------------------------------------
+// Message attachments (S46 — private bucket, signed URLs)
+// -----------------------------------------------------------
+
+const MESSAGE_BUCKET = 'message-attachments'
+const MESSAGE_MAX_SIZE = 10 * 1024 * 1024 // 10 MB
+const MESSAGE_ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/webp']
+
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/heic': 'heic',
+  'image/webp': 'webp',
+}
+
+export interface MessageAttachmentValidationError {
+  code: 'INVALID_TYPE' | 'TOO_LARGE' | 'MAGIC_BYTES_MISMATCH' | 'NOT_CONFIGURED'
+  message: string
+}
+
+/**
+ * HEIC heuristic: check ftyp box at bytes 4-7 and major brand at bytes 8-11.
+ * file-type library does not reliably detect HEIC, so we use this as fallback.
+ */
+function isHeicBuffer(buf: Buffer): boolean {
+  if (buf.length < 12) return false
+  const ftyp = buf.subarray(4, 8).toString('ascii')
+  if (ftyp !== 'ftyp') return false
+  const brand = buf.subarray(8, 12).toString('ascii').toLowerCase()
+  return ['heic', 'heix', 'mif1', 'msf1'].includes(brand)
+}
+
+/**
+ * Validate a message attachment buffer.
+ * Fail-closed: if file type cannot be determined, reject the file.
+ * Returns null if valid, or an error object.
+ */
+export async function validateMessageAttachment(
+  buffer: Buffer,
+  contentTypeMime: string
+): Promise<MessageAttachmentValidationError | null> {
+  if (!MESSAGE_ALLOWED_MIME.includes(contentTypeMime)) {
+    return {
+      code: 'INVALID_TYPE',
+      message: `Filtypen stöds inte. Tillåtna format: JPEG, PNG, HEIC, WebP.`,
+    }
+  }
+
+  if (buffer.byteLength > MESSAGE_MAX_SIZE) {
+    return {
+      code: 'TOO_LARGE',
+      message: `Filen är för stor. Max ${MESSAGE_MAX_SIZE / 1024 / 1024} MB.`,
+    }
+  }
+
+  // Magic bytes validation — fail-closed: reject if type cannot be confirmed
+  try {
+    const { fileTypeFromBuffer } = await import('file-type')
+    const detected = await fileTypeFromBuffer(buffer)
+
+    if (detected) {
+      if (!MESSAGE_ALLOWED_MIME.includes(detected.mime)) {
+        return {
+          code: 'MAGIC_BYTES_MISMATCH',
+          message: 'Filinnehållet matchar inte det deklarerade formatet.',
+        }
+      }
+      // Detected and in allowed list — pass
+      return null
+    }
+
+    // file-type could not detect — only accept HEIC via dedicated heuristic
+    if (contentTypeMime === 'image/heic' && isHeicBuffer(buffer)) {
+      return null
+    }
+
+    return {
+      code: 'MAGIC_BYTES_MISMATCH',
+      message: 'Filinnehållet matchar inte det deklarerade formatet.',
+    }
+  } catch {
+    return {
+      code: 'MAGIC_BYTES_MISMATCH',
+      message: 'Kunde inte verifiera filformat. Försök igen.',
+    }
+  }
+}
+
+/**
+ * Upload a message attachment to private storage.
+ * Path: {bookingId}/{messageId}.{ext}
+ * Returns the storage path (not a URL).
+ */
+export async function uploadMessageAttachment(
+  bookingId: string,
+  messageId: string,
+  buffer: Buffer,
+  mimeType: string
+): Promise<string> {
+  const ext = MIME_TO_EXT[mimeType] ?? 'jpg'
+  const path = `${bookingId}/${messageId}.${ext}`
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    // Dev fallback: save to public/uploads/message-attachments/
+    const dir = nodePath.join(process.cwd(), 'public', 'uploads', MESSAGE_BUCKET)
+    await mkdir(dir, { recursive: true })
+    await writeFile(nodePath.join(dir, `${messageId}.${ext}`), buffer)
+    logger.warn('uploadMessageAttachment: Supabase not configured, saved locally')
+    return path
+  }
+
+  const { error } = await supabase.storage
+    .from(MESSAGE_BUCKET)
+    .upload(path, buffer, { contentType: mimeType, upsert: false })
+
+  if (error) {
+    logger.error('uploadMessageAttachment failed', error as Error)
+    throw new Error('Kunde inte ladda upp bilagan. Försök igen.')
+  }
+
+  return path
+}
+
+/**
+ * Delete a message attachment from private storage.
+ */
+export async function deleteMessageAttachment(path: string): Promise<void> {
+  const supabase = getSupabase()
+  if (!supabase) return
+
+  const { error } = await supabase.storage.from(MESSAGE_BUCKET).remove([path])
+  if (error) {
+    logger.error('deleteMessageAttachment failed', { path, error })
+  }
+}
+
+/**
+ * Create a signed URL for a message attachment (1 hour expiry).
+ * Returns null if generation fails.
+ */
+export async function createMessageSignedUrl(path: string): Promise<string | null> {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    // Dev fallback: return local URL
+    const filename = path.split('/').pop() ?? path
+    return `/uploads/${MESSAGE_BUCKET}/${filename}`
+  }
+
+  const { data, error } = await supabase.storage
+    .from(MESSAGE_BUCKET)
+    .createSignedUrl(path, 3600)
+
+  if (error || !data?.signedUrl) {
+    logger.error('createMessageSignedUrl failed', { path, error })
+    return null
+  }
+
+  return data.signedUrl
+}
+
+/**
+ * Batch-create signed URLs for multiple message attachments (1 hour expiry).
+ * Returns one entry per path — null if that path failed.
+ * Uses a single Supabase Storage API call instead of N calls.
+ */
+export async function createMessageSignedUrls(
+  paths: string[]
+): Promise<(string | null)[]> {
+  if (paths.length === 0) return []
+
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    return paths.map((p) => {
+      const filename = p.split('/').pop() ?? p
+      return `/uploads/${MESSAGE_BUCKET}/${filename}`
+    })
+  }
+
+  const { data, error } = await supabase.storage
+    .from(MESSAGE_BUCKET)
+    .createSignedUrls(paths, 3600)
+
+  if (error || !data) {
+    logger.error('createMessageSignedUrls failed', { paths, error })
+    return paths.map(() => null)
+  }
+
+  return data.map((item) => item.signedUrl ?? null)
+}

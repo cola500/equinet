@@ -65,16 +65,23 @@ export class MockConversationRepository implements IConversationRepository {
     }
 
     const message: Message = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: data.id ?? `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       conversationId: conversation.id,
       senderType: data.senderType,
       senderId: data.senderId,
       content: data.content,
       createdAt: now,
       readAt: null,
+      attachmentUrl: data.attachmentUrl ?? null,
+      attachmentType: data.attachmentType ?? null,
+      attachmentSize: data.attachmentSize ?? null,
     }
     this.messages.set(message.id, message)
     return message
+  }
+
+  async deleteMessage(messageId: string): Promise<void> {
+    this.messages.delete(messageId)
   }
 
   async listMessages(

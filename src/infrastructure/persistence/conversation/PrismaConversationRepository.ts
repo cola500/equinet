@@ -24,6 +24,9 @@ const messageSelect = {
   content: true,
   createdAt: true,
   readAt: true,
+  attachmentUrl: true,
+  attachmentType: true,
+  attachmentSize: true,
 } satisfies Prisma.MessageSelect
 
 export class PrismaConversationRepository implements IConversationRepository {
@@ -82,11 +85,17 @@ export class PrismaConversationRepository implements IConversationRepository {
 
       const msg = await tx.message.create({
         data: {
+          ...(data.id ? { id: data.id } : {}),
           conversationId: conversation.id,
           senderType: data.senderType,
           senderId: data.senderId,
           content: data.content,
           createdAt: now,
+          ...(data.attachmentUrl ? {
+            attachmentUrl: data.attachmentUrl,
+            attachmentType: data.attachmentType,
+            attachmentSize: data.attachmentSize,
+          } : {}),
         },
         select: messageSelect,
       })
@@ -213,6 +222,14 @@ export class PrismaConversationRepository implements IConversationRepository {
         },
       },
     })
+  }
+
+  async deleteMessage(messageId: string): Promise<void> {
+    try {
+      await prisma.message.delete({ where: { id: messageId } })
+    } catch {
+      // Silently ignore if not found
+    }
   }
 
   private async getMessageCreatedAt(messageId: string): Promise<Date> {
