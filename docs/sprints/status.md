@@ -23,7 +23,7 @@ sections:
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
 | S47-0: Explicit review-matris + strukturerat done-fil-format | 0 | done | 30-45 min |
-| S47-1: Review-obligatorisk-gate (pre-commit BLOCKER) | 1 | pending | 1-1.5h |
+| S47-1: Review-obligatorisk-gate (pre-commit BLOCKER) | 1 | done | 1-1.5h |
 | S47-2: Branch-check pre-commit (BLOCKER) | 2 | pending | 45 min |
 | S47-3: Hook-tester (scripts/test-hooks.sh) | 3 | pending | 1-1.5h |
 | S47-4: Uppgradera S45-varningar till BLOCKERS med override | 4 | pending | 45-60 min |
