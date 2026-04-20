@@ -18,7 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-*(ingen aktiv sprint — väntar på S48)*
+**Sprint 48: iOS auth-desync-fix + miljö-hardening** ([sprint-48.md](sprint-48.md))
+
+| Story | Prio | Status | Effort |
+|-------|------|--------|--------|
+| S48-0: iOS auth-desync-fix (pre-launch blocker) | 0 | pending | 1-2h |
+| S48-1: Miljö-hardening — staging-struktur + env-hierarki | 1 | pending | 1 dag |
+| S48-2 (valfri): gh pr merge-wrapper | 2 | pending | 30-45 min |
 
 *(Sprint 47 klar 2026-04-20. 6/6 stories done — process-hardening 2 komplett. 6 aktiva hooks (5 pre-commit + 1 pre-push), 4 BLOCKERS med override-mekanism, 37/37 tester gröna, review-matris extraherad, override-mönster dokumenterat. 6 procedurbrott (4 Dev-self-merges + 2 tech-lead-branch-fel) — två räddades av hookarna själva (real-world-saves). Retro: `docs/retrospectives/2026-04-20-sprint-47.md`.)*
 
