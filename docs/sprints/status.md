@@ -18,16 +18,9 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 47: Process-hardening 2 — enforcement över hela linjen** ([sprint-47.md](sprint-47.md))
+*(ingen aktiv sprint — väntar på S48)*
 
-| Story | Prio | Status | Effort |
-|-------|------|--------|--------|
-| S47-0: Explicit review-matris + strukturerat done-fil-format | 0 | done | 30-45 min |
-| S47-1: Review-obligatorisk-gate (pre-commit BLOCKER) | 1 | done | 1-1.5h |
-| S47-2: Branch-check pre-commit (BLOCKER) | 2 | done | 45 min |
-| S47-3: Hook-tester (scripts/test-hooks.sh) | 3 | done | 1-1.5h |
-| S47-4: Uppgradera S45-varningar till BLOCKERS med override | 4 | done | 45-60 min |
-| S47-5: Sprint-avslut-review-gate | 5 | done | 30-45 min |
+*(Sprint 47 klar 2026-04-20. 6/6 stories done — process-hardening 2 komplett. 6 aktiva hooks (5 pre-commit + 1 pre-push), 4 BLOCKERS med override-mekanism, 37/37 tester gröna, review-matris extraherad, override-mönster dokumenterat. 6 procedurbrott (4 Dev-self-merges + 2 tech-lead-branch-fel) — två räddades av hookarna själva (real-world-saves). Retro: `docs/retrospectives/2026-04-20-sprint-47.md`.)*
 
 *(Sprint 46 klar 2026-04-20 — bild-bilagor live. 8 procedurbrott identifierade → S47 bygger automation som gör dem omöjliga.)*
 
@@ -45,6 +38,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S47 | Process-hardening 2 — enforcement över hela linjen | 6/6 done — 6 aktiva hooks, 4 BLOCKERS med override, 37 tester, review-matris maskinläsbar, override-mönster dokumenterat. 2 real-world-saves bevisade enforcement i praktiken. Retro: `docs/retrospectives/2026-04-20-sprint-47.md`. |
 | S46 | Messaging Slice 2 — bilagor (bild) | 4/4 done — bild-upload, Supabase Storage, magic bytes, thumbnail. +18 Vitest-tester (4284→4302). 1 procedurbrott (plan-commit). iOS-audit: WKWebView OK, auth-desync funnen (pre-launch-blocker). Retro: `docs/retrospectives/2026-04-20-sprint-46.md`. |
 | S44 | Testpyramid TA BORT + Batch 2 | 3/3 done — 3 E2E raderade, 4 migrerade, 7 coverage-tester. E2E 29→22. Vitest 4240→4284. Retro: process-drift-retron identifierade 8 procedurbrott S43-S44 → S45 bygger automation. |
 | S43 | Testpyramid-omfördelning | 3/3 done (Discovery + Pilot + Batch 1) — 7 specs migrerade, E2E 36→29, Vitest +150. Tre procedurbrott identifierade: plan-commit-miss (S43-1), trivial-gating-miss (Dev skippade review i båda stories), sprint-avslut-hoppat (direkt till S44). Fixar: PR #227 + tre backlog-rader. |
