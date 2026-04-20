@@ -22,7 +22,7 @@ sections:
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S48-0: iOS auth-desync-fix (pre-launch blocker) | 0 | pending | 1-2h |
+| S48-0: iOS auth-desync-fix (pre-launch blocker) | 0 | done | 1-2h |
 | S48-1: Miljö-hardening — staging-struktur + env-hierarki | 1 | pending | 1 dag |
 | S48-2 (valfri): gh pr merge-wrapper | 2 | pending | 30-45 min |
 

@@ -56,13 +56,17 @@ final class AuthManager {
     /// Keychain abstraction (still used for userType storage).
     let keychain: KeychainStorable
 
+    /// URLSession used for session exchange network requests (injectable for testing).
+    private let urlSession: URLSession
+
     /// Production factory -- call from @MainActor context.
     static func createDefault() -> AuthManager {
         AuthManager(keychain: KeychainHelper.shared)
     }
 
-    init(keychain: KeychainStorable) {
+    init(keychain: KeychainStorable, urlSession: URLSession = .shared) {
         self.keychain = keychain
+        self.urlSession = urlSession
     }
 
     // MARK: - Check existing auth
@@ -206,19 +210,23 @@ final class AuthManager {
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (_, response) = try await urlSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else { return }
 
             if httpResponse.statusCode == 200 {
-                // Extract Set-Cookie headers and inject into WKWebView
-                if let headerFields = httpResponse.allHeaderFields as? [String: String],
-                   let responseURL = httpResponse.url {
-                    let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: responseURL)
+                // URLSession stores all Set-Cookie headers in HTTPCookieStorage automatically.
+                // allHeaderFields merges duplicate headers into one key (HTTP/2 limitation),
+                // so we read from HTTPCookieStorage.shared which parses them correctly.
+                if let responseURL = httpResponse.url {
+                    let cookies = HTTPCookieStorage.shared.cookies(for: responseURL) ?? []
                     for cookie in cookies {
                         await cookieStore.setCookie(cookie)
                     }
                     AppLogger.auth.debug("Injected \(cookies.count) cookies into WKWebView")
+                    if cookies.isEmpty {
+                        AppLogger.auth.warning("Session exchange succeeded but no cookies found in HTTPCookieStorage")
+                    }
                 }
             } else {
                 AppLogger.auth.error("Session exchange failed: HTTP \(httpResponse.statusCode)")

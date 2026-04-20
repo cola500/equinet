@@ -3,7 +3,7 @@ title: "iOS Key Learnings"
 description: "Samlade iOS/Swift/Xcode-lärdomar från native-utvecklingen"
 category: rule
 status: active
-last_updated: 2026-04-17
+last_updated: 2026-04-20
 tags: [ios, swift, xcode, native, mobile-mcp, offline]
 paths:
   - "ios/**"
@@ -18,6 +18,25 @@ sections:
 # iOS Key Learnings
 
 > Flyttade från CLAUDE.md för att minska kontextladdning vid webb-arbete.
+
+## QA Fresh-install testflöde (S48-0)
+
+För att verifiera att native login → WebView-sidor fungerar på en ny enhet:
+
+1. Ta bort appen från simulatorn: `xcrun simctl uninstall <UDID> com.equinet.Equinet`
+2. Starta appen med `-STAGING`-argument (pekar på staging/prod URL)
+3. Logga in med testanvändare via native login-skärm
+4. Öppna Mer-menyn → välj en WebView-sida (t.ex. Meddelanden)
+5. Verifiera att sidan LADDAR utan "Kunde inte ladda"-fel
+6. Om fel: kontrollera `HTTPCookieStorage.shared.cookies(for: baseURL)` i loggarna
+
+**Accepterat resultat:** WebView-sidan laddar och visar autentiserat innehåll direkt efter native login.
+
+**Känd gotcha (S48-0):** `HTTPURLResponse.allHeaderFields` mergar duplicerade `Set-Cookie`-headers i HTTP/2 (Vercel) — bara SISTA värdet bevaras i `[String: String]`-dictionary. Supabase SSR sätter 2 cookie-chunks, men `allHeaderFields` ger bara en. Fix: läs från `HTTPCookieStorage.shared.cookies(for: url)` istället (URLSession parsar alla `Set-Cookie`-headers korrekt).
+
+**URLSession DI i AuthManager:** `AuthManager(keychain:urlSession:)` accepterar en `URLSession`-parameter (default `.shared`) för testbarhet. Tester skapar `URLSessionConfiguration.ephemeral` med `MockURLProtocol` för att intercepta nätverksanrop utan riktiga requests.
+
+---
 
 ## Utvecklingsmönster
 
