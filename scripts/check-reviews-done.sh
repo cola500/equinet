@@ -22,7 +22,8 @@ COMMIT_MSG=""
 if [[ -f "${GIT_DIR_PATH}/COMMIT_EDITMSG" ]]; then
   COMMIT_MSG=$(cat "${GIT_DIR_PATH}/COMMIT_EDITMSG")
 fi
-if echo "$COMMIT_MSG" | grep -qE '\[override:[^]]+\]'; then
+# Kräver att motivering startar med bokstav/siffra (inte template-placeholder <...>)
+if echo "$COMMIT_MSG" | grep -qE '\[override:[[:space:]]*[a-zA-Z0-9åäöÅÄÖ]'; then
   OVERRIDE_TEXT=$(echo "$COMMIT_MSG" | grep -oE '\[override:[^]]+\]' | head -1)
   echo "[OVERRIDE] Review-gate kringgått: $OVERRIDE_TEXT"
   exit 0
@@ -104,10 +105,10 @@ for DONE_FILE in $STAGED_DONE_FILES; do
 
   [[ -z "$REQUIRED_SET" ]] && continue
 
-  # Parsa done-filens strukturerade "Reviews körda"-sektion
-  # Matchar rader: - [x] code-reviewer — ...
-  # Extraherar reviewer-namn (första token efter [x])
-  ACTUAL_SET=$(grep -E "^\s*-\s*\[x\]\s+[a-z][a-z-]*" "$DONE_FILE" 2>/dev/null \
+  # Parsa done-filens "Reviews körda"-sektion (enbart den sektionen, inte hela filen)
+  # Extraherar reviewer-namn (första token efter [x]) från rader i sektionen
+  ACTUAL_SET=$(awk '/^## Reviews körda/{found=1; next} found && /^## /{found=0} found' "$DONE_FILE" 2>/dev/null \
+    | grep -E "^\s*-\s*\[x\]\s+[a-z][a-z-]*" \
     | sed 's/.*\[x\][[:space:]]*//' | grep -oE "^[a-z][a-z-]*" \
     | sort -u | tr '\n' ' ' | sed 's/[[:space:]]*$//' || true)
 
