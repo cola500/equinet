@@ -51,7 +51,9 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
     messageUpload: vi.fn().mockResolvedValue(true),
   },
-  RateLimitServiceError: class RateLimitServiceError extends Error {},
+  RateLimitServiceError: class RateLimitServiceError extends Error {
+    constructor(msg: string) { super(msg); this.name = 'RateLimitServiceError' }
+  },
 }))
 
 vi.mock('@/lib/feature-flags', () => ({
@@ -81,7 +83,7 @@ import { POST } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { isFeatureEnabled } from '@/lib/feature-flags'
-import { rateLimiters } from '@/lib/rate-limit'
+import { rateLimiters, RateLimitServiceError } from '@/lib/rate-limit'
 import { validateMessageAttachment, uploadMessageAttachment, deleteMessageAttachment } from '@/lib/supabase-storage'
 
 // -----------------------------------------------------------
@@ -130,6 +132,17 @@ function makeFormDataRequest(bookingId: string, fileContent = 'fake-image-data',
   return new NextRequest(`http://localhost/api/bookings/${bookingId}/messages/attachments`, {
     method: 'POST',
     body: formData,
+  })
+}
+
+function makeRequestWithContentLength(bookingId: string, contentLength: number) {
+  const formData = new FormData()
+  const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
+  formData.append('file', file)
+  return new NextRequest(`http://localhost/api/bookings/${bookingId}/messages/attachments`, {
+    method: 'POST',
+    body: formData,
+    headers: { 'content-length': String(contentLength) },
   })
 }
 
@@ -234,5 +247,61 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     const req = makeFormDataRequest('booking-1')
     const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
     expect(res.status).toBe(201)
+  })
+
+  it('returns 413 when Content-Length header exceeds 10 MB', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
+    const overLimit = 10 * 1024 * 1024 + 1
+    const req = makeRequestWithContentLength('booking-1', overLimit)
+    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    expect(res.status).toBe(413)
+  })
+
+  it('returns 413 when validateMessageAttachment returns TOO_LARGE', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
+    vi.mocked(validateMessageAttachment).mockResolvedValue({
+      code: 'TOO_LARGE',
+      message: 'Filen är för stor. Max 10 MB.',
+    })
+    const req = makeFormDataRequest('booking-1')
+    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    expect(res.status).toBe(413)
+  })
+
+  it('returns 400 when validateMessageAttachment returns MAGIC_BYTES_MISMATCH', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
+    vi.mocked(validateMessageAttachment).mockResolvedValue({
+      code: 'MAGIC_BYTES_MISMATCH',
+      message: 'Filinnehållet matchar inte det deklarerade formatet.',
+    })
+    const req = makeFormDataRequest('booking-1')
+    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toContain('matchar inte')
+  })
+
+  it('returns 503 when rate limiter throws RateLimitServiceError', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    vi.mocked(rateLimiters.messageUpload).mockRejectedValue(
+      new RateLimitServiceError('Redis unavailable')
+    )
+    const req = makeFormDataRequest('booking-1')
+    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    expect(res.status).toBe(503)
+  })
+
+  it('logs error and returns 500 when rollback deleteMessage also fails', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
+    vi.mocked(uploadMessageAttachment).mockRejectedValue(new Error('Upload failed'))
+    mockRepo.deleteMessage.mockRejectedValue(new Error('DB gone'))
+    const req = makeFormDataRequest('booking-1')
+    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    // Should still return 500, not crash
+    expect(res.status).toBe(500)
   })
 })

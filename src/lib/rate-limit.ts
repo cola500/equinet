@@ -313,7 +313,7 @@ async function checkRateLimit(
     mobileToken: { max: 50, window: 60 * 60 * 1000 },
     messageUser: { max: 300, window: 60 * 1000 },
     messageConversation: { max: 100, window: 60 * 1000 },
-    messageUpload: { max: 100, window: 60 * 60 * 1000 },
+    messageUpload: { max: 10, window: 60 * 60 * 1000 },
   }
 
   const config = configs[limiterType]

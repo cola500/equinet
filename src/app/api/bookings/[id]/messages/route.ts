@@ -9,7 +9,7 @@ import { mapConversationErrorToStatus } from '@/domain/conversation/mapConversat
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { PrismaConversationRepository } from '@/infrastructure/persistence/conversation/PrismaConversationRepository'
 import { createMessageNotifier } from '@/domain/notification/MessageNotifierFactory'
-import { createMessageSignedUrl } from '@/lib/supabase-storage'
+import { createMessageSignedUrls } from '@/lib/supabase-storage'
 
 const sendMessageSchema = z.object({
   content: z.string().trim().min(1).max(2000),
@@ -196,18 +196,21 @@ export async function GET(
 
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
 
-    // Generate signed URLs for attachment messages (1h expiry)
-    const signedUrls = await Promise.all(
-      result.messages.map((m) =>
-        m.attachmentUrl ? createMessageSignedUrl(m.attachmentUrl) : Promise.resolve(null)
-      )
+    // Batch-fetch signed URLs — single Supabase Storage call instead of N calls
+    const attachmentPaths = result.messages
+      .map((m) => m.attachmentUrl)
+      .filter((url): url is string => url !== null && url !== undefined)
+
+    const batchSignedUrls = await createMessageSignedUrls(attachmentPaths)
+    const pathToSignedUrl = new Map<string, string | null>(
+      attachmentPaths.map((p, i) => [p, batchSignedUrls[i]])
     )
 
     return NextResponse.json({
       customerName: booking.customerName,
       serviceName: booking.serviceName,
       bookingDate: booking.bookingDate.toISOString(),
-      messages: result.messages.map((m, i) => ({
+      messages: result.messages.map((m) => ({
         id: m.id,
         conversationId: m.conversationId,
         senderType: m.senderType,
@@ -218,7 +221,7 @@ export async function GET(
         isFromSelf: m.senderType === senderType,
         attachmentType: m.attachmentType ?? null,
         attachmentSize: m.attachmentSize ?? null,
-        attachmentSignedUrl: signedUrls[i],
+        attachmentSignedUrl: m.attachmentUrl ? (pathToSignedUrl.get(m.attachmentUrl) ?? null) : null,
       })),
       nextCursor: result.nextCursor,
     })

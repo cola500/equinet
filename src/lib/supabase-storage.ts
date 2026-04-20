@@ -181,7 +181,20 @@ export interface MessageAttachmentValidationError {
 }
 
 /**
+ * HEIC heuristic: check ftyp box at bytes 4-7 and major brand at bytes 8-11.
+ * file-type library does not reliably detect HEIC, so we use this as fallback.
+ */
+function isHeicBuffer(buf: Buffer): boolean {
+  if (buf.length < 12) return false
+  const ftyp = buf.subarray(4, 8).toString('ascii')
+  if (ftyp !== 'ftyp') return false
+  const brand = buf.subarray(8, 12).toString('ascii').toLowerCase()
+  return ['heic', 'heix', 'mif1', 'msf1'].includes(brand)
+}
+
+/**
  * Validate a message attachment buffer.
+ * Fail-closed: if file type cannot be determined, reject the file.
  * Returns null if valid, or an error object.
  */
 export async function validateMessageAttachment(
@@ -202,25 +215,37 @@ export async function validateMessageAttachment(
     }
   }
 
-  // Magic bytes validation — verify actual file type matches declared MIME
+  // Magic bytes validation — fail-closed: reject if type cannot be confirmed
   try {
     const { fileTypeFromBuffer } = await import('file-type')
     const detected = await fileTypeFromBuffer(buffer)
-    if (detected && !MESSAGE_ALLOWED_MIME.includes(detected.mime)) {
-      return {
-        code: 'MAGIC_BYTES_MISMATCH',
-        message: 'Filinnehållet matchar inte det deklarerade formatet.',
+
+    if (detected) {
+      if (!MESSAGE_ALLOWED_MIME.includes(detected.mime)) {
+        return {
+          code: 'MAGIC_BYTES_MISMATCH',
+          message: 'Filinnehållet matchar inte det deklarerade formatet.',
+        }
       }
+      // Detected and in allowed list — pass
+      return null
     }
-    // HEIC may not be detected by file-type — allow if content-type says heic
+
+    // file-type could not detect — only accept HEIC via dedicated heuristic
+    if (contentTypeMime === 'image/heic' && isHeicBuffer(buffer)) {
+      return null
+    }
+
+    return {
+      code: 'MAGIC_BYTES_MISMATCH',
+      message: 'Filinnehållet matchar inte det deklarerade formatet.',
+    }
   } catch {
     return {
       code: 'MAGIC_BYTES_MISMATCH',
       message: 'Kunde inte verifiera filformat. Försök igen.',
     }
   }
-
-  return null
 }
 
 /**
@@ -295,4 +320,35 @@ export async function createMessageSignedUrl(path: string): Promise<string | nul
   }
 
   return data.signedUrl
+}
+
+/**
+ * Batch-create signed URLs for multiple message attachments (1 hour expiry).
+ * Returns one entry per path — null if that path failed.
+ * Uses a single Supabase Storage API call instead of N calls.
+ */
+export async function createMessageSignedUrls(
+  paths: string[]
+): Promise<(string | null)[]> {
+  if (paths.length === 0) return []
+
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    return paths.map((p) => {
+      const filename = p.split('/').pop() ?? p
+      return `/uploads/${MESSAGE_BUCKET}/${filename}`
+    })
+  }
+
+  const { data, error } = await supabase.storage
+    .from(MESSAGE_BUCKET)
+    .createSignedUrls(paths, 3600)
+
+  if (error || !data) {
+    logger.error('createMessageSignedUrls failed', { paths, error })
+    return paths.map(() => null)
+  }
+
+  return data.map((item) => item.signedUrl ?? null)
 }

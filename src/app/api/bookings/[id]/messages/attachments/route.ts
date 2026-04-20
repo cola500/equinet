@@ -58,21 +58,31 @@ export async function POST(
       return NextResponse.json({ error: 'Bokning hittades inte' }, { status: 404 })
     }
 
-    // 5. Parse multipart form data
+    // 5. Early Content-Length guard — avvisa innan bodyn läses in för att minska DoS-risk
+    const contentLength = request.headers.get('content-length')
+    if (contentLength) {
+      const declaredSize = parseInt(contentLength, 10)
+      if (!isNaN(declaredSize) && declaredSize > 10 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Filen är för stor. Max 10 MB.' }, { status: 413 })
+      }
+    }
+
+    // 6. Parse multipart form data
     const formData = await request.formData()
     const file = formData.get('file')
     if (!file || typeof file === 'string') {
       return NextResponse.json({ error: 'Ingen fil bifogad' }, { status: 400 })
     }
 
-    // 6. Validate file (MIME + size + magic bytes)
+    // 7. Validate file (MIME + size + magic bytes)
     const buffer = Buffer.from(await file.arrayBuffer())
     const validationError = await validateMessageAttachment(buffer, file.type)
     if (validationError) {
-      return NextResponse.json({ error: validationError.message }, { status: 400 })
+      const status = validationError.code === 'TOO_LARGE' ? 413 : 400
+      return NextResponse.json({ error: validationError.message }, { status })
     }
 
-    // 7. Pre-compute storage path so DB and storage stay in sync
+    // 8. Pre-compute storage path so DB and storage stay in sync
     const messageId = crypto.randomUUID()
     const extMap: Record<string, string> = {
       'image/jpeg': 'jpg', 'image/png': 'png', 'image/heic': 'heic', 'image/webp': 'webp',
@@ -80,7 +90,7 @@ export async function POST(
     const ext = extMap[file.type] ?? 'jpg'
     const storagePath = `${bookingId}/${messageId}.${ext}`
 
-    // 8. Persist message record first (rollback if upload fails)
+    // 9. Persist message record first (rollback if upload fails)
     const repo = new PrismaConversationRepository()
     const service = new ConversationService({
       conversationRepository: repo,
@@ -108,7 +118,7 @@ export async function POST(
 
     const msg = result.value
 
-    // 9. Upload to private storage — rollback on failure
+    // 10. Upload to private storage — rollback on failure
     try {
       await uploadMessageAttachment(bookingId, msg.id, buffer, file.type)
     } catch (uploadErr) {
@@ -116,7 +126,14 @@ export async function POST(
         messageId: msg.id,
         err: uploadErr instanceof Error ? uploadErr.message : String(uploadErr),
       })
-      await repo.deleteMessage(msg.id)
+      try {
+        await repo.deleteMessage(msg.id)
+      } catch (rollbackErr) {
+        logger.error('rollback deleteMessage failed — orphaned message row', {
+          messageId: msg.id,
+          err: rollbackErr instanceof Error ? rollbackErr.message : String(rollbackErr),
+        })
+      }
       return NextResponse.json({ error: 'Kunde inte ladda upp bilagan. Försök igen.' }, { status: 500 })
     }
 
