@@ -25,7 +25,7 @@ sections:
 | S46-0: Plan + schema + storage-setup | done | — (mergad PR #236) | c19d55ee |
 | S46-1: API + upload-endpoint (TDD) | done | — (mergad PR #238) | cad8b1ee |
 | S46-2: UI — skicka bild + visa i tråd | done | — (mergad PR #239) | e70f2055 |
-| S46-3: iOS WebView-verifiering | done | feature/s46-3-ios-webview-verification | — |
+| S46-3: iOS WebView-verifiering | done | — (docs-only, direkt på main per commit-strategy) | dd4280fc |
 
 *(ingen aktiv sprint — S45 klar, väntar på nästa)*
 
@@ -110,6 +110,7 @@ sections:
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
+| **iOS auth-desync native/WebView** (S46-3-fynd, höjd prio) | 1-2h | **Produktbugg**: Native login via Supabase Swift SDK sätter Supabase JWT i Keychain men startar inte MobileToken-exchange (`/api/auth/native-session-exchange`) och populerar inte WebView cookie-store. Konsekvens: ny enhet + native login → WebView-sidor (Meddelanden, Bokningar) visar "Kunde inte ladda"-fel. Grundläggande installations-flöde brustet. **Pre-launch blocker**. Granska `AuthManager`. Se `docs/metrics/ios-audit-2026-04-20-messaging-attachments.md`. |
 
 ### Vart att fixa (vid tillfalle)
 
@@ -119,7 +120,6 @@ sections:
 | S42-4: iOS native-flöde-audit via mobile-mcp | 1-1.5h | Avbruten från S42. 13 flöden, visuell baseline. Fortfarande värdefullt före lansering. |
 | Implementera iOS XCUITest smoke-svit | 2-3 dagar | Plan finns: [ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md). Login + 3 native-flöden. Post-launch. |
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
-| iOS auth-desync native/WebView (S46-3-fynd) | 1-2h | Native login (Supabase Swift SDK) populerar inte WebView cookie-store. WebView-sidor (Meddelanden, etc.) visas tomma trots lyckad native login. Granska AuthManager + native-session-exchange. Bör fixas före lansering. |
 | Messaging: aria-label på ProviderNav messaging-badge (MINOR-2) | 15 min | Skärmläsare förstår inte "3"-siffran. |
 | Messaging: Pending-state på MessagingSection-knapp (MINOR-4) | 15 min | Ingen visuell feedback vid klick. |
 | Messaging: Pagination för långa trådar (SUGGESTION-1) | 1-2h | Lazy-loading när tråd >50 meddelanden. |
