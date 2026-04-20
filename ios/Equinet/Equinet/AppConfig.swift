@@ -69,6 +69,8 @@ enum AppConfig {
         case .local:
             return URL(string: "http://127.0.0.1:54321")!
         case .staging, .production:
+            // Both use staging project (zzdamokfeenencuggjjp) until Apple Developer
+            // Program is purchased and separate prod bundle ID + project is created.
             return URL(string: "https://zzdamokfeenencuggjjp.supabase.co")!
         }
     }

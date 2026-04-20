@@ -46,7 +46,7 @@ uppfyller samma syfte utan extra kostnad och är dokumenterat i environments.md.
 
 ## Docs uppdaterade
 
-- [x] `docs/guides/environments.md` — skapad (ny fil)
+- [x] `docs/operations/environments.md` — uppdaterad med Supabase CLI (ersätter Docker), staging-URL, iOS-scheman, env-hierarki, deploy-trigger (duplikat `docs/guides/environments.md` borttagen)
 - [x] `docs/guides/gotchas.md` — Gotcha #23 uppdaterad med DATABASE_URL-fokus
 - [x] `.env.example` — hierarki + staging-kommentar, Docker borttaget
 - Ingen README/NFR-uppdatering (intern dev-tooling, ej synlig för slutanvändare)
