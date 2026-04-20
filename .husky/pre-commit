@@ -28,3 +28,6 @@ bash scripts/check-plan-commit.sh
 
 # 5. Sprint-avslut-gate (varning, blockerar ej)
 bash scripts/check-sprint-closure.sh
+
+# 6. Review-obligatorisk-gate (BLOCKER om done-fil saknar obligatoriska reviews)
+bash scripts/check-reviews-done.sh || exit 1
