@@ -65,6 +65,7 @@
     "docs:validate": "node scripts/validate-frontmatter.mjs",
     "analyze": "ANALYZE=true next build --webpack",
     "check:all": "bash scripts/check-all.sh",
+    "test:hooks": "bash scripts/test-hooks.sh",
     "flags:validate": "bash scripts/validate-feature-flags.sh",
     "codemap": "bash scripts/generate-code-map.sh",
     "metrics:report": "bash scripts/generate-metrics.sh",
