@@ -29,7 +29,7 @@ if [[ -z "$ACTIVE_STORIES" ]]; then
 fi
 
 # Läs commit-meddelande för override
-COMMIT_MSG_FILE="${GIT_DIR:-.git}/COMMIT_EDITMSG"
+COMMIT_MSG_FILE="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
 COMMIT_SUBJECT=""
 if [[ -f "$COMMIT_MSG_FILE" ]]; then
   COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")

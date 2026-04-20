@@ -23,11 +23,11 @@ bash scripts/check-docs-updated.sh || {
   exit 1
 }
 
-# 4. Plan-commit-gate (varning, blockerar ej)
-bash scripts/check-plan-commit.sh
+# 4. Plan-commit-gate (BLOCKER om plan saknas under aktiv story)
+bash scripts/check-plan-commit.sh || exit 1
 
-# 5. Sprint-avslut-gate (varning, blockerar ej)
-bash scripts/check-sprint-closure.sh
+# 5. Sprint-avslut-gate (BLOCKER om alla stories done utan retro)
+bash scripts/check-sprint-closure.sh || exit 1
 
 # 6. Review-obligatorisk-gate (BLOCKER om done-fil saknar obligatoriska reviews)
 bash scripts/check-reviews-done.sh || exit 1

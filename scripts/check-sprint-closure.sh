@@ -27,10 +27,9 @@ if [[ "$TOTAL" -eq 0 ]]; then
 fi
 
 if [[ "$ALL_DONE" -eq "$TOTAL" ]]; then
-  RETRO_GLOB="docs/retrospectives/*sprint-${ACTIVE_SPRINT_NUM}*.md"
-  if ! ls $RETRO_GLOB > /dev/null 2>&1; then
+  if ! ls docs/retrospectives/*sprint-${ACTIVE_SPRINT_NUM}*.md > /dev/null 2>&1; then
     # Läs commit-meddelande för override
-    COMMIT_MSG_FILE="${GIT_DIR:-.git}/COMMIT_EDITMSG"
+    COMMIT_MSG_FILE="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
     COMMIT_SUBJECT=""
     if [[ -f "$COMMIT_MSG_FILE" ]]; then
       COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
