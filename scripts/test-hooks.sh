@@ -91,8 +91,8 @@ teardown_repo() {
 
 # ─────────────────────────────────────────────────────────────
 # 1. check-sprint-closure.sh
-#    Varnar (exit 0) när alla stories done men retro saknas.
-#    Blockerar aldrig — alltid exit 0.
+#    BLOCKERAR commit när alla stories done men retro saknas.
+#    Override: [override: <motivering>] i commit-meddelandet.
 # ─────────────────────────────────────────────────────────────
 test_sprint_closure() {
   echo ""
@@ -117,18 +117,26 @@ test_sprint_closure() {
   bash "$SCRIPT_DIR/check-sprint-closure.sh" > /dev/null 2>&1; e=$?
   assert_pass "alla done + retro finns → passerar" $e
 
-  # Scenario 4: Alla done, INGEN retro → exit 0 (varning ej blocker)
+  # Scenario 4: Alla done, INGEN retro → BLOCKERAR (exit 1)
   rm -f docs/retrospectives/2026-04-20-sprint-99.md
+  local gitdir; gitdir=$(git rev-parse --git-dir)
+  echo "" > "${gitdir}/COMMIT_EDITMSG"
   bash "$SCRIPT_DIR/check-sprint-closure.sh" > /dev/null 2>&1; e=$?
-  assert_pass "alla done, ingen retro → exit 0 (varning ej blocker)" $e
+  assert_fail "alla done, ingen retro → blockerar (exit 1)" $e
+
+  # Scenario 5: Alla done, ingen retro + override → passerar
+  echo "docs: done [override: retro skrivs separat idag]" > "${gitdir}/COMMIT_EDITMSG"
+  bash "$SCRIPT_DIR/check-sprint-closure.sh" > /dev/null 2>&1; e=$?
+  assert_pass "alla done, ingen retro + override → passerar" $e
+  echo "" > "${gitdir}/COMMIT_EDITMSG"
 
   teardown_repo
 }
 
 # ─────────────────────────────────────────────────────────────
 # 2. check-plan-commit.sh
-#    Varnar (exit 0) när story in_progress men plan saknas.
-#    Blockerar aldrig — alltid exit 0.
+#    BLOCKERAR commit när story in_progress men plan saknas.
+#    Override: [override: <motivering>] i commit-meddelandet.
 # ─────────────────────────────────────────────────────────────
 test_plan_commit() {
   echo ""
@@ -151,13 +159,15 @@ test_plan_commit() {
   assert_pass "in_progress + lifecycle-only staged → passerar" $e
   git restore --staged docs/sprints/status.md 2>/dev/null || true
 
-  # Scenario 3: in_progress + kod staged + plan saknas → exit 0 (varning ej blocker)
+  # Scenario 3: in_progress + kod staged + plan saknas → BLOCKERAR (exit 1)
   printf '**Sprint 99: test**\n| S99-0: teststory | 0 | in_progress | 30 min |\n' \
     > docs/sprints/status.md
   printf '#!/bin/bash\necho test\n' > scripts/code.sh
   git add scripts/code.sh
+  local gitdir; gitdir=$(git rev-parse --git-dir)
+  echo "" > "${gitdir}/COMMIT_EDITMSG"
   bash "$SCRIPT_DIR/check-plan-commit.sh" > /dev/null 2>&1; e=$?
-  assert_pass "in_progress + plan saknas → exit 0 (varning ej blocker)" $e
+  assert_fail "in_progress + plan saknas → blockerar (exit 1)" $e
   git restore --staged scripts/code.sh 2>/dev/null || true; rm -f scripts/code.sh
 
   # Scenario 4: in_progress + plan committad → passerar
@@ -169,6 +179,15 @@ test_plan_commit() {
   bash "$SCRIPT_DIR/check-plan-commit.sh" > /dev/null 2>&1; e=$?
   assert_pass "in_progress + plan committad → passerar" $e
   git restore --staged scripts/code2.sh 2>/dev/null || true; rm -f scripts/code2.sh
+
+  # Scenario 5: in_progress + plan saknas + override → passerar
+  printf '#!/bin/bash\necho override\n' > scripts/code3.sh
+  git add scripts/code3.sh
+  echo "feat: hotfix [override: plan skrivs i efterhand, akut fix]" > "${gitdir}/COMMIT_EDITMSG"
+  bash "$SCRIPT_DIR/check-plan-commit.sh" > /dev/null 2>&1; e=$?
+  assert_pass "in_progress + plan saknas + override → passerar" $e
+  git restore --staged scripts/code3.sh 2>/dev/null || true; rm -f scripts/code3.sh
+  echo "" > "${gitdir}/COMMIT_EDITMSG"
 
   teardown_repo
 }
@@ -390,9 +409,48 @@ DONEFILE
 }
 
 # ─────────────────────────────────────────────────────────────
-# 6. check-own-pr-merge.sh
-#    Validerar argument och varnar vid self-merge.
-#    Testar argument-validering — API-anrop kräver nätverk.
+# 6. check-multi-commit.sh
+#    BLOCKERAR push från feature branch om < 2 commits.
+#    Override: [override: <motivering>] i senaste commit-msg.
+# ─────────────────────────────────────────────────────────────
+test_multi_commit() {
+  echo ""
+  echo "── check-multi-commit.sh ──"
+  setup_repo
+
+  # Scenario 1: main branch → passerar alltid
+  bash "$SCRIPT_DIR/check-multi-commit.sh" > /dev/null 2>&1; local e=$?
+  assert_pass "main branch → passerar" $e
+
+  # Scenario 2: feature branch + 2 commits → passerar
+  git checkout -q -b feature/s99-0-multi
+  echo "a" > file_a.txt; git add file_a.txt; git commit -q -m "commit 1"
+  echo "b" > file_b.txt; git add file_b.txt; git commit -q -m "commit 2"
+  bash "$SCRIPT_DIR/check-multi-commit.sh" > /dev/null 2>&1; e=$?
+  assert_pass "feature branch + 2 commits → passerar" $e
+
+  # Scenario 3: feature branch + 1 commit + ingen override → BLOCKERAR
+  git checkout -q -b feature/s99-0-single main
+  echo "a" > file_a.txt; git add file_a.txt; git commit -q -m "only commit"
+  bash "$SCRIPT_DIR/check-multi-commit.sh" > /dev/null 2>&1; e=$?
+  assert_fail "feature branch + 1 commit → blockerar" $e
+  git checkout -q main
+
+  # Scenario 4: feature branch + 1 commit + override → passerar
+  git checkout -q -b feature/s99-0-override main
+  echo "x" > file_x.txt; git add file_x.txt
+  git commit -q -m "hotfix: direktfix [override: ett commit avsiktligt]"
+  bash "$SCRIPT_DIR/check-multi-commit.sh" > /dev/null 2>&1; e=$?
+  assert_pass "feature branch + 1 commit + override → passerar" $e
+  git checkout -q main
+
+  teardown_repo
+}
+
+# ─────────────────────────────────────────────────────────────
+# 7. check-own-pr-merge.sh
+#    Validerar argument och blockerar self-merge i non-interaktivt läge.
+#    Testar argument-validering + non-interactive BLOCK + --override.
 # ─────────────────────────────────────────────────────────────
 test_own_pr_merge() {
   echo ""
@@ -414,11 +472,11 @@ test_own_pr_merge() {
     local gh_dir; gh_dir=$(dirname "$gh_path")
     local new_path
     new_path=$(echo "$PATH" | tr ':' '\n' | grep -vxF "$gh_dir" | tr '\n' ':' | sed 's/:$//')
-    PATH="$new_path" bash "$SCRIPT_DIR/check-own-pr-merge.sh" "123" > /dev/null 2>&1; e=$?
+    PATH="$new_path" bash "$SCRIPT_DIR/check-own-pr-merge.sh" "123" < /dev/null > /dev/null 2>&1; e=$?
     assert_pass "gh CLI ej synlig i PATH → exit 0 (INFO)" $e
     PATH="$original_path"
   else
-    bash "$SCRIPT_DIR/check-own-pr-merge.sh" "123" > /dev/null 2>&1; e=$?
+    bash "$SCRIPT_DIR/check-own-pr-merge.sh" "123" < /dev/null > /dev/null 2>&1; e=$?
     assert_pass "gh CLI ej installerad → exit 0 (INFO)" $e
   fi
 
@@ -438,6 +496,7 @@ run_all_tests() {
   test_branch_check
   test_reviews_done
   test_docs_updated
+  test_multi_commit
   test_own_pr_merge
 
   echo ""

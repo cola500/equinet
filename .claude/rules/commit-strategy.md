@@ -3,7 +3,7 @@ title: "Commit-strategi -- Trunk-based hybrid"
 description: "När kod kräver feature branch + PR, och när lifecycle-docs får committas direkt till main"
 category: rule
 status: active
-last_updated: 2026-04-19
+last_updated: 2026-04-20
 tags: [workflow, git, commit, pr, trunk-based]
 paths:
   - "docs/sprints/*"
@@ -14,6 +14,7 @@ sections:
   - Paths som FÅR committas direkt till main
   - Paths som KRÄVER feature branch + PR
   - Undantag och edge cases
+  - Override-mönster (kringgå process-gates)
   - Varför
 ---
 
@@ -108,6 +109,39 @@ Säker ordning:
 Om du glömde och skapade feature-branchen innan push: `git rebase main` på feature-branchen löser divergensen.
 
 **Källa:** S44-retro-fynd (2026-04-19) — Dev committade plan på main och skapade feature-branch innan push, vilket skapade divergent branches vid PR #230.
+
+---
+
+## Override-mönster (kringgå process-gates)
+
+Alla pre-commit och pre-push BLOCKERs kan kringgås med ett explicit override-meddelande. Override kräver en motivering — tom placeholder (`<motivering>`) räcker inte.
+
+### Pre-commit hooks (check-plan-commit, check-sprint-closure, check-branch-for-story, check-reviews-done)
+
+Lägg till `[override: <din motivering>]` i commit-meddelandets ämnesrad:
+
+```bash
+git commit -m "feat: akut fix [override: plan skrivs i efterhand, deploy-blocker]"
+```
+
+Motiveringen MÅSTE starta med bokstav eller siffra (`[a-zA-Z0-9åäöÅÄÖ]`). Annars tolkas det inte som override.
+
+### Pre-push hook (check-multi-commit)
+
+Lägg till `[override: <din motivering>]` i senaste commit-meddelandet:
+
+```bash
+git commit --amend -m "feat: snabbfix [override: hotfix, ett commit avsiktligt]"
+git push origin feature/s99-0-fix
+```
+
+### check-own-pr-merge.sh (non-interaktivt läge)
+
+Skicka `--override` som andra argument:
+
+```bash
+bash scripts/check-own-pr-merge.sh 123 --override
+```
 
 ---
 
