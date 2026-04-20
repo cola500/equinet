@@ -1029,19 +1029,25 @@ NEXTAUTH_URL="https://equinet-app.vercel.app"
 
 **Fix efter `vercel env pull`:**
 ```bash
-# Kontrollera och korrigera NEXTAUTH_URL i .env.local
-grep NEXTAUTH_URL .env.local
-# Ändra till: NEXTAUTH_URL="http://localhost:3000"
+# Kommentera bort remote DATABASE_URL och SUPABASE-variabler i .env.local:
+# DATABASE_URL="postgresql://postgres.xxx:..."  →  # DATABASE_URL=...
+# NEXT_PUBLIC_SUPABASE_URL="https://xxx..."     →  # NEXT_PUBLIC_SUPABASE_URL=...
 ```
+
+**Vad vercel env pull skriver över (S48-1-uppdatering):**
+- `DATABASE_URL` — pekar på remote Supabase istället för lokal (`127.0.0.1:54322`)
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — remote Supabase-nyckel
+- `NEXTAUTH_URL` (om du använder NextAuth) — remote URL
+
+Kör `npm run status` för att se vilken databas som är aktiv. Rött varningsmeddelande = remote.
 
 **Bonus-gotcha:** `.env.local` kan också innehålla Upstash-credentials, vilket gör att lokal dev delar rate-limiter med produktion (5 försök per 15 min). Misslyckade lokala inloggningar kan rate-limita dig.
 
 **Pattern - Efter `vercel env pull`:**
-- Kontrollera alltid `NEXTAUTH_URL` - måste vara `http://localhost:3000` lokalt
-- Var medveten om att Upstash rate-limiting nu är delad med produktion
+- Kommentera bort `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` i `.env.local`
 - Starta om dev-servern efter `.env.local`-ändringar
 
-**Impact:** Total login-blockering lokalt utan tydligt felmeddelande.
+**Impact:** Total login-blockering lokalt utan tydligt felmeddelande. `npm run status` visar "remote" som varningssignal.
 
 ---
 
