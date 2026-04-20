@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Varnar när alla stories i aktiv sprint är done men retro-fil saknas.
-# Triggar vid ALLA commits (inkl. done-filer) eftersom det är vid commit av
-# sista done-filen som varningen är som mest relevant.
-# Blockerar inte (exit 0 alltid).
+# Blockerar commit när alla stories i aktiv sprint är done men retro-fil saknas.
+# Override: lägg till [override: <motivering>] i commit-meddelandet.
+# Triggar vid ALLA commits (inkl. done-filer).
 
 set -euo pipefail
 
@@ -28,14 +27,25 @@ if [[ "$TOTAL" -eq 0 ]]; then
 fi
 
 if [[ "$ALL_DONE" -eq "$TOTAL" ]]; then
-  # Alla stories klara — kolla om retro finns
-  RETRO_GLOB="docs/retrospectives/*sprint-${ACTIVE_SPRINT_NUM}*.md"
-  if ! ls $RETRO_GLOB > /dev/null 2>&1; then
-    echo "[VARNING] Sprint-avslut: Sprint $ACTIVE_SPRINT_NUM har alla stories done men retro-fil saknas."
+  if ! ls docs/retrospectives/*sprint-${ACTIVE_SPRINT_NUM}*.md > /dev/null 2>&1; then
+    # Läs commit-meddelande för override
+    COMMIT_MSG_FILE="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
+    COMMIT_SUBJECT=""
+    if [[ -f "$COMMIT_MSG_FILE" ]]; then
+      COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
+    fi
+
+    if echo "$COMMIT_SUBJECT" | grep -qE '\[override:[[:space:]]*[a-zA-Z0-9åäöÅÄÖ]'; then
+      OVERRIDE_TEXT=$(echo "$COMMIT_SUBJECT" | grep -oE '\[override:[^]]+\]' | head -1)
+      echo "[OVERRIDE] Sprint-avslut-gate kringgått: $OVERRIDE_TEXT"
+      exit 0
+    fi
+
+    echo "[BLOCKER] Sprint-avslut: Sprint $ACTIVE_SPRINT_NUM har alla stories done men retro-fil saknas."
     echo "   Saknar: docs/retrospectives/<datum>-sprint-${ACTIVE_SPRINT_NUM}.md"
     echo "   Per autonomous-sprint.md: kör sprint-avslut innan ny sprint startas."
-    echo ""
-    echo "   (Varning är informativ — blockar inte commiten)"
+    echo "   Eller lägg till [override: <motivering>] i commit-meddelandet."
+    exit 1
   fi
 fi
 

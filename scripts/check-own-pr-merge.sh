@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Varnar om du försöker merga din egen PR.
-# Användning: bash scripts/check-own-pr-merge.sh <PR-nummer>
-# Anropa INNAN gh pr merge.
+# Blockerar self-merge av PR i non-interaktivt läge (CI, pipe).
+# Interaktivt: frågar användaren med y/N.
+# Användning: bash scripts/check-own-pr-merge.sh <PR-nummer> [--override]
+# Override (non-interaktivt): bash scripts/check-own-pr-merge.sh 123 --override
 
 PR_NUMBER="${1:-}"
+OVERRIDE_FLAG="${2:-}"
 
 if [[ -z "$PR_NUMBER" ]]; then
-  echo "Användning: bash scripts/check-own-pr-merge.sh <PR-nummer>"
+  echo "Användning: bash scripts/check-own-pr-merge.sh <PR-nummer> [--override]"
   exit 1
 fi
 
@@ -31,7 +33,7 @@ if [[ -z "$PR_AUTHOR" || -z "$CURRENT_USER" ]]; then
 fi
 
 if [[ "$PR_AUTHOR" == "$CURRENT_USER" ]]; then
-  # Kolla om PR rör bara .claude/rules/* (undantag — jq finns via gh)
+  # Kolla om PR rör bara .claude/rules/* (undantag)
   NON_RULES=$(gh pr view "$PR_NUMBER" --json files \
     --jq '[.files[].path | select(startswith(".claude/rules/") | not)] | length' \
     2>/dev/null || echo "1")
@@ -46,10 +48,15 @@ if [[ "$PR_AUTHOR" == "$CURRENT_USER" ]]; then
   echo "   Trigga tech lead: säg 'kör review' till en annan Claude-session."
   echo ""
 
-  # Icke-interaktivt läge (CI, pipe): avsluta utan att blocka
+  # Icke-interaktivt läge (CI, pipe): kräver --override för att fortsätta
   if [[ ! -t 0 ]]; then
-    echo "   (Icke-interaktivt läge — fortsätter automatiskt)"
-    exit 0
+    if [[ "$OVERRIDE_FLAG" == "--override" ]]; then
+      echo "[OVERRIDE] Self-merge kringgånget med --override i non-interaktivt läge."
+      exit 0
+    fi
+    echo "[BLOCKER] Icke-interaktivt läge — self-merge blockerad utan --override."
+    echo "   Användning: bash scripts/check-own-pr-merge.sh $PR_NUMBER --override"
+    exit 1
   fi
 
   read -rp "   Fortsätt ändå? (y/N) " REPLY
