@@ -3,7 +3,7 @@ title: "Commit-strategi -- Trunk-based hybrid"
 description: "När kod kräver feature branch + PR, och när lifecycle-docs får committas direkt till main"
 category: rule
 status: active
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 tags: [workflow, git, commit, pr, trunk-based]
 paths:
   - "docs/sprints/*"
@@ -15,6 +15,7 @@ sections:
   - Paths som KRÄVER feature branch + PR
   - Undantag och edge cases
   - Override-mönster (kringgå process-gates)
+  - gh pr merge-wrapper (via git alias)
   - Varför
 ---
 
@@ -142,6 +143,22 @@ Skicka `--override` som andra argument:
 ```bash
 bash scripts/check-own-pr-merge.sh 123 --override
 ```
+
+### gh pr merge-wrapper (via git alias)
+
+Använd `git merge-pr` istället för `gh pr merge` direkt. Wrappern kör `check-own-pr-merge.sh` automatiskt FÖRE merge:
+
+```bash
+git merge-pr 123 --merge --delete-branch          # Normal merge
+git merge-pr 123 --merge --delete-branch --override  # Kringgå self-merge-check
+```
+
+**Alias-setup (en gång per klon):**
+```bash
+git config --local alias.merge-pr '!bash scripts/gh-pr-merge.sh'
+```
+
+**Varför wrapper och inte bara scriptet direkt?** Utan wrapper är self-merge-blocken social norm — Dev måste komma ihåg att anropa scriptet manuellt. Med wrappern är det omöjligt att glömma. (S47: Dev mergade sig själv 3 ggr trots att scriptet fanns.)
 
 ---
 
