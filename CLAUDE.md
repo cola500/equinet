@@ -187,6 +187,8 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **CustomerLayout för alla kundsidor**: Wrappa ALLTID i `CustomerLayout` (`Header` + `BottomTabBar`).
 - **Supabase Auth**: Custom Access Token Hook (PL/pgSQL). JWT claims: `providerId`, `userType`, `isAdmin`.
 - **Publik vs skyddad URL-konvention**: `/api/stable/*` = auth-skyddad, `/api/stables/*` = publik.
+- **Transaktionellt upload-mönster**: För filuppladdning — validera → upload till Storage → skapa DB-row med URL. Om DB-create failar efter upload: rollback via `storage.delete()` i try/catch + `logger.error()`. Orphaned files är bättre än orphaned rows. Pattern i `attachments/route.ts` (S46).
+- **Magic bytes-validering, fail-closed**: Lita ALDRIG på `Content-Type` eller filsuffix vid upload. Använd `file-type`-paketet för att läsa faktiska bytes. För typer `file-type` inte detekterar (t.ex. HEIC): egen heuristik (ftyp-box-check). Om varken detection eller heuristik matchar → avvisa. Centralisera whitelist i konstant-fil. Pattern i `supabase-storage.ts` (S46).
 
 ### Utvecklingsmönster
 

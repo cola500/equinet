@@ -110,6 +110,7 @@ sections:
 | Admin session-timeout | Klart | 15 min max-ålder på admin-sessioner via JWT iat-check |
 | Row Level Security | Klart | 28 policies (13 read + 15 write) på 7 kärndomäner. 24 bevistester mot live Supabase. Se [docs/architecture/database.md](docs/architecture/database.md) |
 | Messaging-säkerhet | Klart | Conversation + Message: RLS-policies + kolumn-nivå GRANT på `Message.readAt`. Rate limiting 30/user + 10/conversation per min. Feature flag-gating på route- och service-nivå. Se [docs/security/messaging.md](docs/security/messaging.md) |
+| Messaging-bilagor säkerhet (S46) | Klart | Privat Supabase Storage-bucket + signed URLs (1h expiry). Magic bytes-validering via `file-type` (fail-closed, HEIC via ftyp-box-heuristik). Content-Length-guard FÖRE body-läsning (HTTP 413). Rate limit 10 uploads/h per user. IDOR-skydd via `loadBookingForMessaging`. Rollback vid upload-fel (transaktionellt mönster). Se [docs/architecture/messaging-attachments.md](docs/architecture/messaging-attachments.md) |
 | GDPR data export | Klart | /api/export/my-data (JSON + CSV), GDPR Art. 20 |
 | Horse data export | Klart | /api/horses/[id]/export |
 | SRI (Subresource Integrity) | Borttaget | Fungerar inte med Vercels CDN. Använder `unsafe-inline` i CSP istället. |
@@ -163,9 +164,9 @@ sections:
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 4167 tester, 336+ testfiler (2026-04-18) |
+| Unit/integration-tester | Klart | 4302 tester, 363 testfiler (2026-04-20). Inkl. 20+ integration-testfiler (expanderat från 9 i S43-S44 testpyramid-omfördelning). Magic bytes-validering för bild-upload tillagd i S46 (`file-type`-paketet). |
 | iOS XCTest | Klart | 223 tester (APIClient, DashboardViewModel, BookingsModels, CalendarModels, CalendarViewModel, BookingsViewModel, CustomersViewModel, m.fl.) |
-| E2E-tester | Klart | Playwright, kritiska flöden |
+| E2E-tester | Klart | Playwright, 22 specs efter S43-S44 (från 36 — 14 migrerade till integration/component-nivå). |
 | ESLint | Klart | Flat config (eslint.config.mjs) |
 | Husky pre-commit | Klart | npm test |
 | Husky pre-push | Klart | test:run + typecheck + check:swedish + lint |
