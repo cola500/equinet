@@ -26,7 +26,7 @@ sections:
 | S47-1: Review-obligatorisk-gate (pre-commit BLOCKER) | 1 | done | 1-1.5h |
 | S47-2: Branch-check pre-commit (BLOCKER) | 2 | done | 45 min |
 | S47-3: Hook-tester (scripts/test-hooks.sh) | 3 | done | 1-1.5h |
-| S47-4: Uppgradera S45-varningar till BLOCKERS med override | 4 | pending | 45-60 min |
+| S47-4: Uppgradera S45-varningar till BLOCKERS med override | 4 | in_progress | 45-60 min |
 | S47-5: Sprint-avslut-review-gate | 5 | pending | 30-45 min |
 
 *(Sprint 46 klar 2026-04-20 — bild-bilagor live. 8 procedurbrott identifierade → S47 bygger automation som gör dem omöjliga.)*
