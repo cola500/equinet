@@ -3,7 +3,7 @@
 # Blockerar done-fil-commit om obligatoriska reviews saknas.
 # Körs som del av pre-commit hook via .husky/pre-commit.
 #
-# Override: lägg [override: <motivering>] i commit-message.
+# Override: lägg [override: <motivering>] i commit-message subject-rad.
 # Trivial-gating: om done-filen har "- [ ] code-reviewer — ej tillämplig (trivial story:" skippas checken.
 
 set -euo pipefail
@@ -15,21 +15,25 @@ if [ -z "$STAGED_DONE_FILES" ]; then
   exit 0
 fi
 
-# Override via commit-message
+# Override via commit-message subject-raden (rad 1 i COMMIT_EDITMSG)
 # git commit -m "msg [override: anledning]" skriver COMMIT_EDITMSG före pre-commit körs
 GIT_DIR_PATH=$(git rev-parse --git-dir 2>/dev/null || echo ".git")
-COMMIT_MSG=""
+COMMIT_SUBJECT=""
 if [[ -f "${GIT_DIR_PATH}/COMMIT_EDITMSG" ]]; then
-  COMMIT_MSG=$(cat "${GIT_DIR_PATH}/COMMIT_EDITMSG")
+  COMMIT_SUBJECT=$(head -1 "${GIT_DIR_PATH}/COMMIT_EDITMSG")
 fi
 # Kräver att motivering startar med bokstav/siffra (inte template-placeholder <...>)
-if echo "$COMMIT_MSG" | grep -qE '\[override:[[:space:]]*[a-zA-Z0-9åäöÅÄÖ]'; then
-  OVERRIDE_TEXT=$(echo "$COMMIT_MSG" | grep -oE '\[override:[^]]+\]' | head -1)
+if echo "$COMMIT_SUBJECT" | grep -qE '\[override:[[:space:]]*[a-zA-Z0-9åäöÅÄÖ]'; then
+  OVERRIDE_TEXT=$(echo "$COMMIT_SUBJECT" | grep -oE '\[override:[^]]+\]' | head -1)
   echo "[OVERRIDE] Review-gate kringgått: $OVERRIDE_TEXT"
   exit 0
 fi
 
 # Hämta alla filer som ändrats på denna branch (story-kontext)
+# Varnar om main inte är tillgänglig (snarare än silent bypass)
+if ! git rev-parse --verify main >/dev/null 2>&1; then
+  echo "[WARN] check-reviews-done: 'main'-branch inte tillgänglig, använder enbart staged filer."
+fi
 BRANCH_FILES=$(git diff main..HEAD --name-only 2>/dev/null || true)
 STAGED_ALL=$(git diff --cached --name-only 2>/dev/null || true)
 # Union av branch-diff och staged
@@ -41,11 +45,18 @@ CODE_FILES=$(echo "$ALL_FILES" | grep -vE "$LIFECYCLE_PATTERN" || true)
 
 EXIT_CODE=0
 
-for DONE_FILE in $STAGED_DONE_FILES; do
-  # Extrahera story-id (t.ex. s47-1-done.md -> S47-1)
-  STORY_ID=$(basename "$DONE_FILE" | grep -oiE "s[0-9]+-[0-9]+" | head -1 | tr '[:lower:]' '[:upper:]')
+# Iterera via while-loop för korrekt hantering av filnamn (undviker word-splitting)
+while IFS= read -r DONE_FILE; do
+  [[ -z "$DONE_FILE" ]] && continue
 
-  [[ -z "$STORY_ID" ]] && continue
+  # Extrahera story-id (t.ex. s47-1-done.md -> S47-1)
+  STORY_ID=$(basename "$DONE_FILE" | grep -oiE "s[0-9]+-[0-9]+" | head -1 | tr '[:lower:]' '[:upper:]' || true)
+
+  if [[ -z "$STORY_ID" ]]; then
+    echo "[WARN] check-reviews-done: kunde inte extrahera story-ID från $(basename "$DONE_FILE"), hoppar över."
+    continue
+  fi
+
   [[ ! -f "$DONE_FILE" ]] && continue
 
   # Trivial-gating: code-reviewer explicit markerad ej tillämplig (trivial story:)
@@ -107,7 +118,7 @@ for DONE_FILE in $STAGED_DONE_FILES; do
 
   # Parsa done-filens "Reviews körda"-sektion (enbart den sektionen, inte hela filen)
   # Extraherar reviewer-namn (första token efter [x]) från rader i sektionen
-  ACTUAL_SET=$(awk '/^## Reviews körda/{found=1; next} found && /^## /{found=0} found' "$DONE_FILE" 2>/dev/null \
+  ACTUAL_SET=$(LC_ALL=C awk '/^## Reviews körda/{found=1; next} found && /^## /{found=0} found' "$DONE_FILE" 2>/dev/null \
     | grep -E "^\s*-\s*\[x\]\s+[a-z][a-z-]*" \
     | sed 's/.*\[x\][[:space:]]*//' | grep -oE "^[a-z][a-z-]*" \
     | sort -u | tr '\n' ' ' | sed 's/[[:space:]]*$//' || true)
@@ -139,10 +150,10 @@ for DONE_FILE in $STAGED_DONE_FILES; do
     echo "  Saknar:  $(echo "$MISSING" | tr ' ' ', ')"
     echo ""
     echo "Kör saknade reviews innan commit av done-fil."
-    echo "Eller: lägg [override: <motivering>] i commit-message."
+    echo "Eller: lägg [override: <motivering>] i commit-message subject-raden."
     echo ""
     EXIT_CODE=1
   fi
-done
+done <<< "$STAGED_DONE_FILES"
 
 exit $EXIT_CODE
