@@ -24,7 +24,7 @@ sections:
 |-------|--------|--------|--------|
 | S46-0: Plan + schema + storage-setup | done | — (mergad PR #236) | c19d55ee |
 | S46-1: API + upload-endpoint (TDD) | done | — (mergad PR #238) | cad8b1ee |
-| S46-2: UI — skicka bild + visa i tråd | pending | — | — |
+| S46-2: UI — skicka bild + visa i tråd | done | — (mergad PR #239) | e70f2055 |
 | S46-3: iOS WebView-verifiering | pending | — | — |
 
 *(ingen aktiv sprint — S45 klar, väntar på nästa)*
