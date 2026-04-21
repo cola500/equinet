@@ -242,6 +242,113 @@ final class AuthManagerTests: XCTestCase {
         // If we reach here without crash, the guard condition handled no-session correctly.
     }
 
+    // MARK: - exchangeSessionForWebCookies with tokenProvider + retry + webCookieExchangeFailed (S49-1)
+
+    func testExchangeSession_withInjectedTokens_makesNetworkRequest() async {
+        var requestMade = false
+        AuthManagerMockURLProtocol.requestHandler = { _ in
+            requestMade = true
+            let response = HTTPURLResponse(
+                url: URL(string: "https://equinet.vercel.app/api/auth/native-session-exchange")!,
+                statusCode: 200,
+                httpVersion: "HTTP/2",
+                headerFields: [:]
+            )!
+            return (response, Data())
+        }
+
+        let manager = AuthManager(
+            keychain: mockKeychain,
+            urlSession: mockURLSession,
+            tokenProvider: { ("fake-access", "fake-refresh") }
+        )
+
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        await manager.exchangeSessionForWebCookies(into: dataStore.httpCookieStore)
+
+        XCTAssertTrue(requestMade, "Network request should be made when tokenProvider returns tokens")
+    }
+
+    func testExchangeSession_setsWebCookieExchangeFailedAfterAllRetriesFail() async {
+        var callCount = 0
+        AuthManagerMockURLProtocol.requestHandler = { request in
+            callCount += 1
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 500,
+                httpVersion: "HTTP/2",
+                headerFields: [:]
+            )!
+            return (response, Data())
+        }
+
+        let manager = AuthManager(
+            keychain: mockKeychain,
+            urlSession: mockURLSession,
+            tokenProvider: { ("fake-access", "fake-refresh") },
+            retryDelay: 0
+        )
+
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        await manager.exchangeSessionForWebCookies(into: dataStore.httpCookieStore)
+
+        XCTAssertTrue(manager.webCookieExchangeFailed, "Flag should be set after all retries fail")
+        XCTAssertEqual(callCount, 3, "Should attempt 3 times (initial + 2 retries)")
+    }
+
+    func testExchangeSession_clearsWebCookieExchangeFailedOnSuccess() async {
+        AuthManagerMockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: "HTTP/2",
+                headerFields: [:]
+            )!
+            return (response, Data())
+        }
+
+        let manager = AuthManager(
+            keychain: mockKeychain,
+            urlSession: mockURLSession,
+            tokenProvider: { ("fake-access", "fake-refresh") },
+            retryDelay: 0
+        )
+
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        await manager.exchangeSessionForWebCookies(into: dataStore.httpCookieStore)
+
+        XCTAssertFalse(manager.webCookieExchangeFailed, "Flag should remain false on success")
+    }
+
+    func testExchangeSession_resetsWebCookieExchangeFailedFromTrueToFalse() async {
+        var shouldFail = true
+        AuthManagerMockURLProtocol.requestHandler = { request in
+            let code = shouldFail ? 500 : 200
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: code,
+                httpVersion: "HTTP/2",
+                headerFields: [:]
+            )!
+            return (response, Data())
+        }
+
+        let manager = AuthManager(
+            keychain: mockKeychain,
+            urlSession: mockURLSession,
+            tokenProvider: { ("fake-access", "fake-refresh") },
+            retryDelay: 0
+        )
+
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        await manager.exchangeSessionForWebCookies(into: dataStore.httpCookieStore)
+        XCTAssertTrue(manager.webCookieExchangeFailed, "Precondition: flag must be true after failures")
+
+        shouldFail = false
+        await manager.exchangeSessionForWebCookies(into: dataStore.httpCookieStore)
+        XCTAssertFalse(manager.webCookieExchangeFailed, "Flag should be cleared when exchange succeeds after prior failure")
+    }
+
     func testExchangeSessionForWebCookies_withSuccessResponse_doesNotCrash() async throws {
         // Given: mock URLSession returns a 200 with multiple Set-Cookie headers
         let exchangeURL = URL(string: "https://equinet-app.vercel.app/api/auth/native-session-exchange")!
