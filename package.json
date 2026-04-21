@@ -125,7 +125,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/eslintrc": "^3.3.5",
     "@next/bundle-analyzer": "^16.1.7",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
