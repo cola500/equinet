@@ -18,11 +18,9 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 50: Pre-launch visuell verifiering** ([sprint-50.md](sprint-50.md))
+*(ingen aktiv sprint — väntar på S51)*
 
-| Story | Prio | Status | Effort |
-|-------|------|--------|--------|
-| S50-0: Visuell verifiering av messaging-bilagor (Playwright MCP + mobile-mcp) | 0 | done | 45-60 min |
+*(Sprint 50 klar 2026-04-21. 1/1 story done — S50-0 bevisade backend-kedjan fungerar (magic bytes → storage → signedUrl → provider-läsning). Webb-UI och iOS-login kunde INTE E2E-testas pga test-infrastruktur-begränsningar (MessagingDialog öppnar ej i headless, SecureTextField blockerar XCUITest). 3 backlog-rader: bucket-seeding (pre-launch blocker, 15 min), dialog-headless-undersökning, iOS-login-bypass. Fynd: `supabase/config.toml` hade `storage.enabled=false` — fixat i commiten. Retro: `docs/retrospectives/2026-04-21-messaging-visual.md` + `docs/retrospectives/2026-04-21-sprint-50.md`.)*
 
 *(Sprint 49 klar 2026-04-21. 2/2 stories done — iOS auth-polish (7 minor-fynd från S48-0-reviews adresserade). Cookie-rensning vid logout, domän-filter, refresh-token-header, JWT-rotation-observer, retry-logik, mock-tester. Banner-UI deferred (AC #2 delvis uppfyllt). 6 nya minor-fynd från 3-reviews paketerade som backlog-rad. Retro: `docs/retrospectives/2026-04-21-sprint-49.md`.)*
 
@@ -46,6 +44,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S50 | Pre-launch visuell verifiering | 1/1 done — messaging-bilagor backend bevisad via API-tester. Webb-UI + iOS-login blockerade av test-infrastruktur-begränsningar (headless dialog-problem, iOS SecureTextField). Bucket-seeding-bugg hittad (pre-launch blocker). Retro: `docs/retrospectives/2026-04-21-messaging-visual.md`. |
 | S49 | iOS auth-polish | 2/2 done — 7 minor-fynd från S48-0 paketerade. Cookie-rensning, domän-filter, JWT-rotation-observer, retry-logik, mock-tester. Banner-UI deferred (backlog). 6 nya minor-fynd från 3-reviews. Retro: `docs/retrospectives/2026-04-21-sprint-49.md`. |
 | S48 | iOS auth-desync-fix + miljö-hardening | 3/3 done — iOS auth-fix (pre-launch blocker), staging/env-struktur, gh pr merge-wrapper. 2 procedurbrott (båda premature done-markering). 4 real-world-saves av reviewer-subagenter. Första konsekvent tech-lead-review-flöde. Retro: `docs/retrospectives/2026-04-20-sprint-48.md`. |
 | S47 | Process-hardening 2 — enforcement över hela linjen | 6/6 done — 6 aktiva hooks, 4 BLOCKERS med override, 37 tester, review-matris maskinläsbar, override-mönster dokumenterat. 2 real-world-saves bevisade enforcement i praktiken. Retro: `docs/retrospectives/2026-04-20-sprint-47.md`. |
@@ -117,7 +116,7 @@ sections:
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
 | MFA for admin | 1 dag | Supabase TOTP-enrollment + verifiering |
-| **iOS auth-desync native/WebView** (S46-3-fynd, höjd prio) | 1-2h | **Produktbugg**: Native login via Supabase Swift SDK sätter Supabase JWT i Keychain men startar inte MobileToken-exchange (`/api/auth/native-session-exchange`) och populerar inte WebView cookie-store. Konsekvens: ny enhet + native login → WebView-sidor (Meddelanden, Bokningar) visar "Kunde inte ladda"-fel. Grundläggande installations-flöde brustet. **Pre-launch blocker**. Granska `AuthManager`. Se `docs/metrics/ios-audit-2026-04-20-messaging-attachments.md`. |
+| `message-attachments` storage bucket saknas i seed/migration (S50-0-fynd) | 15 min | **Pre-launch blocker**: Bucket skapas inte automatiskt vid fresh DB/clone. Ny utvecklare får trasig messaging-bilagor-feature. Också: `supabase/config.toml` hade `storage.enabled=false` (fixat i S50-0-commiten). Lägg till seed.sql-rad eller migration som skapar bucket programmatiskt via Supabase Admin API vid DB-reset. Utan detta: manuell REST-anrop varje gång. |
 
 ### Vart att fixa (vid tillfalle)
 
@@ -127,6 +126,8 @@ sections:
 | S42-4: iOS native-flöde-audit via mobile-mcp | 1-1.5h | Avbruten från S42. 13 flöden, visuell baseline. Fortfarande värdefullt före lansering. |
 | Implementera iOS XCUITest smoke-svit | 2-3 dagar | Plan finns: [ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md). Login + 3 native-flöden. Post-launch. |
 | Migrationstest pa ren DB i CI | 30 min | CI kor migrate deploy, inte reset. Fangar inte trasiga migrationer fran scratch. |
+| MessagingDialog öppnar ej i headless Playwright (S50-0-fynd) | 30 min | `onClick` triggas (fiber bekräftar) men `open`-state flippar ej, dialog renderas aldrig. Kan vara React concurrent rendering-batching i headless, Portal-problem, eller äkta UI-bug. API-kedjan fungerar (bevisad via `page.evaluate(fetch)`), så inte produktionsblocker. Undersök: är det reproducerbart i `--headed`? Finns det i verkliga browsers? |
+| iOS WebView login-bypass för mobile-mcp (S50-0-fynd) | 45 min | WKWebView `<input type="password">` exponeras som `SecureTextField` i iOS accessibility-trädet. XCUITest/WebDriverAgent kan INTE skriva i SecureTextField (Apple-säkerhetsbegränsning). Utforska alternativ: (a) pre-seed Supabase-session via API + deep link till `/bookings`, (b) simulator biometri-bypass, (c) Keychain AutoFill-registrering. Utan detta kan iOS login-flöde inte E2E-testas via mobile-mcp. |
 | iOS auth-polish (S48-0 review-follow-up) | 2-3h | 7 minor-fynd från code-reviewer + ios-expert + security-reviewer på S48-0 PR #249: (1) verifiera `HTTPCookieStorage`-domän-scope manuellt i staging — risk att `cookies(for:)` returnerar 0 vid fel Domain-attribut, (2) re-exchange vid JWT-rotation (~60 min) så WebView inte får 401 mitt i session, (3) explicit cookie-rensning i `logout()` (delad-simulator-risk), (4) defensiv domän-filter vid cookie-injection (`cookie.domain.hasSuffix(baseURL.host)`), (5) refresh token i header istället för body (konventionsfråga, inte säkerhetsrisk), (6) utöka tester med mock Supabase-session så cookie-injection verifieras (inte bara "does not crash"), (7) user-facing fallback vid exchange-fel (banner/retry istället för tyst log). Alla defense-in-depth eller UX-polish — ingen är blocker. |
 | Versionera `.claude/skills/` (ta bort gitignore-rad) | 1-2h | **Lärdom 2026-04-21**: Vid update-docs-skill-refresh upptäcktes att `.claude/skills/` är i `.gitignore` (rad 100). Bara `update-docs` är tracked (legacy — committad före gitignore-raden). 13 andra skills (retro, commit, implement, migrate, security-check, m.fl.) är otracked och osynkade mellan utvecklare/sessioner. Fix: (a) granska alla 13 skills kvalitet, (b) ta bort `.claude/skills/` från `.gitignore`, (c) `git add` alla skills, (d) commit + PR. Trade-off: förlorar möjligheten för per-dev-anpassade skills (okänt om det faktiskt används). Prio: medel — påverkar teamkonsistens när multipla utvecklare/maskiner används. |
 | `seed-test-users.ts` synkar inte med Supabase Auth | 30-45 min | **Lärdom 2026-04-21**: Efter `db:nuke` + `seed-test-users.ts` + webb-registrering kunde Johan inte logga in. Rotorsak: seed-scriptet skapar **bara Prisma-User-rader**, inte Supabase-`auth.users`. Webb-registrering failade tyst (troligen pga `supabase_inbucket` avstängd — verifieringsmail kunde inte skickas, hela registreringen rullbackar). Fix: seed-scriptet ska anropa Supabase Admin API för att skapa auth-users först (med befintlig UUID), eller dokumentera tydligt att auth-skapande måste ske via webb med fungerande inbucket. Tech lead löste manuellt via admin API + matchande UUID. Se även gotcha-kandidat i `docs/guides/gotchas.md`: "seed skapar Prisma-rad men inte Auth-rad → tyst inloggnings-fail". |
