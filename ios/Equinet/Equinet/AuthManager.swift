@@ -150,7 +150,8 @@ final class AuthManager {
 
     // MARK: - Logout
 
-    func logout() {
+    func logout(cookieStore: WKHTTPCookieStore? = nil) {
+        let resolvedCookieStore = cookieStore ?? WKWebsiteDataStore.default().httpCookieStore
         // Unregister device token from backend (fire-and-forget)
         if let token = PushManager.shared.deviceToken {
             Task {
@@ -172,6 +173,16 @@ final class AuthManager {
             }
         }
 
+        // Explicitly delete all session cookies (defense-in-depth against stale WKWebView cookies).
+        // Resolved at call-time via nil default so WKWebsiteDataStore.default() is not captured early.
+        Task {
+            let cookies = await resolvedCookieStore.allCookies()
+            for cookie in cookies {
+                await resolvedCookieStore.deleteCookie(cookie)
+            }
+            AppLogger.auth.debug("Deleted \(cookies.count) cookies from WKWebView store at logout")
+        }
+
         // Clear userType from Keychain
         _ = keychain.delete(key: KeychainHelper.userTypeKey)
 
@@ -182,6 +193,9 @@ final class AuthManager {
         SharedDataManager.clearBookingsCache()
 
         userType = nil
+        // state is set synchronously before cookie-clearing Task completes — intentional.
+        // UI transitions to login screen; the brief window where old cookies exist in
+        // WKHTTPCookieStore is harmless since the app is already showing the login screen.
         state = .loggedOut
     }
 
@@ -195,19 +209,14 @@ final class AuthManager {
             return
         }
 
-        guard let url = URL(string: AppConfig.sessionExchangePath, relativeTo: AppConfig.baseURL) else {
+        guard let request = buildExchangeRequest(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            baseURL: AppConfig.baseURL
+        ) else {
             AppLogger.auth.error("Invalid session exchange URL")
             return
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 10
-
-        // Send refresh token in body so server can set proper session cookies
-        let body = ["refreshToken": session.refreshToken]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
             let (_, response) = try await urlSession.data(for: request)
@@ -219,7 +228,8 @@ final class AuthManager {
                 // allHeaderFields merges duplicate headers into one key (HTTP/2 limitation),
                 // so we read from HTTPCookieStorage.shared which parses them correctly.
                 if let responseURL = httpResponse.url {
-                    let cookies = HTTPCookieStorage.shared.cookies(for: responseURL) ?? []
+                    let allCookies = HTTPCookieStorage.shared.cookies(for: responseURL) ?? []
+                    let cookies = filterCookies(allCookies, for: AppConfig.baseURL)
                     for cookie in cookies {
                         await cookieStore.setCookie(cookie)
                     }
@@ -233,6 +243,31 @@ final class AuthManager {
             }
         } catch {
             AppLogger.auth.error("Session exchange request failed: \(error)")
+        }
+    }
+
+    /// Build the session exchange URLRequest. Exposed internal for testability.
+    func buildExchangeRequest(accessToken: String, refreshToken: String, baseURL: URL) -> URLRequest? {
+        guard let url = URL(string: AppConfig.sessionExchangePath, relativeTo: baseURL) else {
+            return nil
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Refresh token in dedicated header instead of body (S49-0: body can be logged by proxies)
+        request.setValue(refreshToken, forHTTPHeaderField: "X-Refresh-Token")
+        request.timeoutInterval = 10
+        return request
+    }
+
+    /// Filter cookies to only those belonging to the given base URL host. Exposed internal for testability.
+    func filterCookies(_ cookies: [HTTPCookie], for baseURL: URL) -> [HTTPCookie] {
+        guard let host = baseURL.host else { return cookies }
+        return cookies.filter { cookie in
+            let domain = cookie.domain
+            // Allow exact match ("equinet.vercel.app") or subdomain cookie (".equinet.vercel.app")
+            return domain == host || domain.hasSuffix(".\(host)")
         }
     }
 
