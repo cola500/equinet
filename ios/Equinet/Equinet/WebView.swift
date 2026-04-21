@@ -8,6 +8,7 @@
 
 #if os(iOS)
 import OSLog
+import Supabase
 import SwiftUI
 import WebKit
 
@@ -188,10 +189,12 @@ struct WebView: UIViewRepresentable {
 
         // Exchange Supabase token for web session cookies BEFORE loading the page.
         // [weak webView] prevents crash if view deallocates during 10s exchange timeout.
-        Task { [weak webView] in
+        Task { [weak webView, weak coordinator = context.coordinator] in
             guard let webView else { return }
             await authManager.exchangeSessionForWebCookies(into: webView.configuration.websiteDataStore.httpCookieStore)
             webView.load(URLRequest(url: url))
+            // Start JWT-rotation observer after first exchange.
+            coordinator?.startAuthStateObserver(authManager: authManager, webView: webView)
         }
 
         return webView
@@ -228,6 +231,7 @@ struct WebView: UIViewRepresentable {
         weak var webView: WKWebView?
         var lastLoadFailed = false
         private var navigationObserver: NSObjectProtocol?
+        private var authStateTask: Task<Void, Never>?
 
         init(parent: WebView) {
             self.parent = parent
@@ -250,6 +254,8 @@ struct WebView: UIViewRepresentable {
             if let observer = navigationObserver {
                 NotificationCenter.default.removeObserver(observer)
             }
+            // Cancel JWT-rotation observer
+            authStateTask?.cancel()
             // Unregister cookie observer
             webView?.configuration.websiteDataStore.httpCookieStore.remove(self)
         }
@@ -257,6 +263,24 @@ struct WebView: UIViewRepresentable {
         /// Start observing cookie changes (called after webView is set up)
         func startObservingCookies(for webView: WKWebView) {
             webView.configuration.websiteDataStore.httpCookieStore.add(self)
+        }
+
+        /// Listen for Supabase token refreshes and re-exchange cookies so WKWebView stays authenticated.
+        @MainActor
+        func startAuthStateObserver(authManager: AuthManager, webView: WKWebView) {
+            authStateTask = Task { @MainActor [weak authManager, weak webView] in
+                defer { AppLogger.auth.warning("authStateChanges stream ended — JWT rotation no longer monitored") }
+                for await (event, _) in SupabaseManager.client.auth.authStateChanges {
+                    guard !Task.isCancelled else { break }
+                    guard event == .tokenRefreshed else { continue }
+                    // Use continue (not break) so transient nil during view reconstruction doesn't kill the loop.
+                    guard let authManager, let webView else { continue }
+                    AppLogger.auth.debug("JWT rotated — re-exchanging web cookies")
+                    await authManager.exchangeSessionForWebCookies(
+                        into: webView.configuration.websiteDataStore.httpCookieStore
+                    )
+                }
+            }
         }
 
         // MARK: - WKHTTPCookieStoreObserver

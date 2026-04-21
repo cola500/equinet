@@ -52,6 +52,8 @@ final class AuthManager {
     private(set) var loginErrorType: LoginError?
     private(set) var isLoggingIn = false
     private(set) var userType: String?  // "provider" or "customer"
+    // TODO: Surface in ContentView or WebView once UX is decided (banner or silent retry).
+    private(set) var webCookieExchangeFailed = false
 
     /// Keychain abstraction (still used for userType storage).
     let keychain: KeychainStorable
@@ -59,14 +61,32 @@ final class AuthManager {
     /// URLSession used for session exchange network requests (injectable for testing).
     private let urlSession: URLSession
 
+    /// Overrides SupabaseManager.client.auth.currentSession — inject in tests to bypass real Supabase.
+    private let tokenProvider: (() -> (accessToken: String, refreshToken: String)?)?
+
+    /// Cookie storage used after exchange — injectable so tests can use ephemeral storage.
+    private let cookieStorage: HTTPCookieStorage
+
+    /// Delay in seconds between cookie-exchange retries (injectable so tests run fast).
+    private let retryDelay: TimeInterval
+
     /// Production factory -- call from @MainActor context.
     static func createDefault() -> AuthManager {
         AuthManager(keychain: KeychainHelper.shared)
     }
 
-    init(keychain: KeychainStorable, urlSession: URLSession = .shared) {
+    init(
+        keychain: KeychainStorable,
+        urlSession: URLSession = .shared,
+        tokenProvider: (() -> (accessToken: String, refreshToken: String)?)? = nil,
+        cookieStorage: HTTPCookieStorage = .shared,
+        retryDelay: TimeInterval = 1.0
+    ) {
         self.keychain = keychain
         self.urlSession = urlSession
+        self.tokenProvider = tokenProvider
+        self.cookieStorage = cookieStorage
+        self.retryDelay = retryDelay
     }
 
     // MARK: - Check existing auth
@@ -202,33 +222,59 @@ final class AuthManager {
     // MARK: - Session exchange for WKWebView
 
     /// Exchange Supabase access token for web session cookies via server endpoint.
-    /// Called before loading WKWebView pages.
+    /// Called before loading WKWebView pages. Retries up to 2 times on failure.
     func exchangeSessionForWebCookies(into cookieStore: WKHTTPCookieStore) async {
-        guard let session = SupabaseManager.client.auth.currentSession else {
+        let tokens: (accessToken: String, refreshToken: String)?
+        if let provider = tokenProvider {
+            tokens = provider()
+        } else if let session = SupabaseManager.client.auth.currentSession {
+            tokens = (session.accessToken, session.refreshToken)
+        } else {
             AppLogger.auth.warning("No Supabase session for cookie exchange")
             return
         }
 
+        guard let tokens else {
+            AppLogger.auth.warning("tokenProvider returned nil")
+            return
+        }
+
         guard let request = buildExchangeRequest(
-            accessToken: session.accessToken,
-            refreshToken: session.refreshToken,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
             baseURL: AppConfig.baseURL
         ) else {
             AppLogger.auth.error("Invalid session exchange URL")
             return
         }
 
+        let maxAttempts = 3
+        for attempt in 1...maxAttempts {
+            let succeeded = await performExchangeRequest(request, into: cookieStore)
+            if succeeded {
+                webCookieExchangeFailed = false
+                return
+            }
+            if attempt < maxAttempts && retryDelay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
+            }
+        }
+
+        AppLogger.auth.error("Session exchange failed after \(maxAttempts) attempts")
+        webCookieExchangeFailed = true
+    }
+
+    private func performExchangeRequest(_ request: URLRequest, into cookieStore: WKHTTPCookieStore) async -> Bool {
         do {
             let (_, response) = try await urlSession.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else { return }
+            guard let httpResponse = response as? HTTPURLResponse else { return false }
 
             if httpResponse.statusCode == 200 {
                 // URLSession stores all Set-Cookie headers in HTTPCookieStorage automatically.
                 // allHeaderFields merges duplicate headers into one key (HTTP/2 limitation),
-                // so we read from HTTPCookieStorage.shared which parses them correctly.
+                // so we read from cookieStorage (default: .shared) which parses them correctly.
                 if let responseURL = httpResponse.url {
-                    let allCookies = HTTPCookieStorage.shared.cookies(for: responseURL) ?? []
+                    let allCookies = cookieStorage.cookies(for: responseURL) ?? []
                     let cookies = filterCookies(allCookies, for: AppConfig.baseURL)
                     for cookie in cookies {
                         await cookieStore.setCookie(cookie)
@@ -238,11 +284,14 @@ final class AuthManager {
                         AppLogger.auth.warning("Session exchange succeeded but no cookies found in HTTPCookieStorage")
                     }
                 }
+                return true
             } else {
                 AppLogger.auth.error("Session exchange failed: HTTP \(httpResponse.statusCode)")
+                return false
             }
         } catch {
             AppLogger.auth.error("Session exchange request failed: \(error)")
+            return false
         }
     }
 
