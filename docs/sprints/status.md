@@ -18,7 +18,12 @@ sections:
 
 ## Aktiv sprint
 
-*(ingen aktiv sprint — väntar på S49)*
+**Sprint 49: iOS auth-polish** ([sprint-49.md](sprint-49.md))
+
+| Story | Prio | Status | Effort |
+|-------|------|--------|--------|
+| S49-0: Säkerhetspolish (logout-cookie-rensning, domän-filter, refresh-token-header) | 0 | pending | 1h |
+| S49-1: Robusthet + tester + QA (JWT-rotation, exchange-fel-fallback, mock-tester, staging-QA) | 1 | pending | 1.5-2h |
 
 *(Sprint 48 klar 2026-04-20. 3/3 stories done — iOS auth-desync-fix (pre-launch blocker löst) + miljö-hardening (staging-URL, env-hierarki, status-script) + gh pr merge-wrapper (stänger S47-4-lucka). Procedurbrott: 2 (båda "premature done-markering", inga strukturella). 4 real-world-saves av reviewer-subagenter. Första sprint där tech-lead-review-flödet fungerade konsekvent — S47-enforcement bevisad empiriskt. Retro: `docs/retrospectives/2026-04-20-sprint-48.md`.)*
 
