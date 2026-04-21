@@ -36,11 +36,20 @@ vi.mock("@/lib/logger", () => ({
 import { POST } from "./route"
 import { rateLimiters } from "@/lib/rate-limit"
 
-function makeRequest(token?: string, body?: Record<string, string>): NextRequest {
+function makeRequest(
+  token?: string,
+  body?: Record<string, string>,
+  extraHeaders?: Record<string, string>
+): NextRequest {
   const headers = new Headers()
   headers.set("Content-Type", "application/json")
   if (token) {
     headers.set("Authorization", `Bearer ${token}`)
+  }
+  if (extraHeaders) {
+    for (const [key, value] of Object.entries(extraHeaders)) {
+      headers.set(key, value)
+    }
   }
   return new NextRequest("http://localhost:3000/api/auth/native-session-exchange", {
     method: "POST",
@@ -109,7 +118,7 @@ describe("POST /api/auth/native-session-exchange", () => {
     expect(res.status).toBe(429)
   })
 
-  it("calls setSession when refreshToken is provided in body", async () => {
+  it("calls setSession when refreshToken is in X-Refresh-Token header", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "test@example.com" } },
       error: null,
@@ -117,7 +126,7 @@ describe("POST /api/auth/native-session-exchange", () => {
     mockSetSession.mockResolvedValue({ error: null })
 
     const res = await POST(
-      makeRequest("access-token", { refreshToken: "refresh-token" })
+      makeRequest("access-token", undefined, { "X-Refresh-Token": "refresh-token" })
     )
     expect(res.status).toBe(200)
     expect(mockSetSession).toHaveBeenCalledWith({
@@ -126,7 +135,7 @@ describe("POST /api/auth/native-session-exchange", () => {
     })
   })
 
-  it("does not call setSession when no refreshToken in body", async () => {
+  it("does not call setSession when no X-Refresh-Token header", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "test@example.com" } },
       error: null,

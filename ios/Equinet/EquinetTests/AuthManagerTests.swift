@@ -144,6 +144,95 @@ final class AuthManagerTests: XCTestCase {
 
     // MARK: - exchangeSessionForWebCookies (S48-0)
 
+    // MARK: - buildExchangeRequest (S49-0)
+
+    func testBuildExchangeRequest_putsRefreshTokenInXHeader() {
+        let request = authManager.buildExchangeRequest(
+            accessToken: "access-123",
+            refreshToken: "refresh-456",
+            baseURL: URL(string: "https://equinet.vercel.app")!
+        )
+        XCTAssertNotNil(request)
+        XCTAssertEqual(request?.value(forHTTPHeaderField: "X-Refresh-Token"), "refresh-456")
+        // Refresh token must NOT be in body
+        XCTAssertNil(request?.httpBody)
+    }
+
+    func testBuildExchangeRequest_setsAuthorizationHeader() {
+        let request = authManager.buildExchangeRequest(
+            accessToken: "my-jwt",
+            refreshToken: "my-refresh",
+            baseURL: URL(string: "https://equinet.vercel.app")!
+        )
+        XCTAssertEqual(request?.value(forHTTPHeaderField: "Authorization"), "Bearer my-jwt")
+    }
+
+    // MARK: - filterCookies (S49-0)
+
+    func testFilterCookies_keepsMatchingDomainCookies() {
+        let matching = HTTPCookie(properties: [
+            .domain: "equinet.vercel.app", .path: "/",
+            .name: "sb-token", .value: "abc"
+        ])!
+        let foreign = HTTPCookie(properties: [
+            .domain: "evil.com", .path: "/",
+            .name: "steal", .value: "data"
+        ])!
+        let result = authManager.filterCookies(
+            [matching, foreign],
+            for: URL(string: "https://equinet.vercel.app")!
+        )
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].name, "sb-token")
+    }
+
+    func testFilterCookies_keepsSubdomainCookies() {
+        let subdomain = HTTPCookie(properties: [
+            .domain: ".equinet.vercel.app", .path: "/",
+            .name: "sb-refresh", .value: "xyz"
+        ])!
+        let result = authManager.filterCookies(
+            [subdomain],
+            for: URL(string: "https://equinet.vercel.app")!
+        )
+        XCTAssertEqual(result.count, 1)
+    }
+
+    func testFilterCookies_rejectsUnrelatedDomainCookies() {
+        let foreign = HTTPCookie(properties: [
+            .domain: "malicious.com", .path: "/",
+            .name: "spy", .value: "data"
+        ])!
+        let result = authManager.filterCookies(
+            [foreign],
+            for: URL(string: "https://equinet.vercel.app")!
+        )
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    // MARK: - logout clears cookie store (S49-0)
+
+    func testLogout_clearsCookiesFromInjectedStore() async throws {
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let cookieStore = dataStore.httpCookieStore
+        let cookie = HTTPCookie(properties: [
+            .domain: "equinet.vercel.app", .path: "/",
+            .name: "sb-session", .value: "live-session-token"
+        ])!
+        await cookieStore.setCookie(cookie)
+        let before = await cookieStore.allCookies()
+        XCTAssertEqual(before.count, 1, "Precondition: cookie must be set before logout")
+
+        authManager.logout(cookieStore: cookieStore)
+        // logout is synchronous but clears cookies via fire-and-forget Task
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        let after = await cookieStore.allCookies()
+        XCTAssertTrue(after.isEmpty, "All cookies should be deleted after logout")
+    }
+
+    // MARK: - exchangeSessionForWebCookies (S48-0)
+
     func testExchangeSessionForWebCookies_withNoSession_doesNotCrash() async {
         // When there is no Supabase session, the function should return early without crashing.
         // In tests, SupabaseManager has no active session.

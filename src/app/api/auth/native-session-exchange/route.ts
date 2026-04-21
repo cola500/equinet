@@ -9,9 +9,6 @@ import {
   RateLimitServiceError,
 } from "@/lib/rate-limit"
 
-const exchangeBodySchema = z.object({
-  refreshToken: z.string().min(1, "refreshToken krävs"),
-}).strict()
 
 /**
  * POST /api/auth/native-session-exchange
@@ -53,17 +50,9 @@ export async function POST(request: NextRequest) {
   }
   const accessToken = authHeader.slice(7)
 
-  // Refresh token from body (required for cookie setting)
-  let refreshToken: string | undefined
-  try {
-    const body = await request.json()
-    const parsed = exchangeBodySchema.safeParse(body)
-    if (parsed.success) {
-      refreshToken = parsed.data.refreshToken
-    }
-  } catch {
-    // No body -- backwards compat (iOS versions without refresh token)
-  }
+  // Refresh token from X-Refresh-Token header (moved from body in S49-0 for transport-layer safety)
+  const refreshTokenHeader = request.headers.get("X-Refresh-Token")
+  const refreshToken = refreshTokenHeader?.trim() || undefined
 
   // Create a Supabase client that will set cookies on the response
   const response = NextResponse.json({ success: true })
