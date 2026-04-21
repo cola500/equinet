@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-19
+last_updated: 2026-04-21
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -22,7 +22,7 @@ sections:
 
 | Story | Prio | Status | Effort |
 |-------|------|--------|--------|
-| S50-0: Visuell verifiering av messaging-bilagor (Playwright MCP + mobile-mcp) | 0 | pending | 45-60 min |
+| S50-0: Visuell verifiering av messaging-bilagor (Playwright MCP + mobile-mcp) | 0 | done | 45-60 min |
 
 *(Sprint 49 klar 2026-04-21. 2/2 stories done — iOS auth-polish (7 minor-fynd från S48-0-reviews adresserade). Cookie-rensning vid logout, domän-filter, refresh-token-header, JWT-rotation-observer, retry-logik, mock-tester. Banner-UI deferred (AC #2 delvis uppfyllt). 6 nya minor-fynd från 3-reviews paketerade som backlog-rad. Retro: `docs/retrospectives/2026-04-21-sprint-49.md`.)*
 
