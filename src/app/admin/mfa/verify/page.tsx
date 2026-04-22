@@ -44,27 +44,24 @@ export default function MfaVerifyPage() {
     setError("")
 
     try {
-      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId,
+      const res = await fetch("/api/admin/mfa/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ factorId, code }),
       })
 
-      if (challengeError) {
-        setError(challengeError.message)
+      if (res.status === 429) {
+        setError("För många misslyckade försök. Försök igen om 15 minuter.")
         return
       }
 
-      const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId,
-        challengeId: challengeData.id,
-        code,
-      })
-
-      if (verifyError) {
-        setError("Felaktig kod. Försök igen.")
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? "Något gick fel vid verifiering")
         return
       }
 
-      // MFA verified -- redirect to admin
+      // MFA verified -- full page reload so Next.js + Supabase session reflects aal2
       window.location.href = "/admin"
     } catch (err) {
       clientLogger.error("MFA verify failed", err)

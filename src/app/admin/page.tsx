@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { AdminLayout } from "@/components/layout/AdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, CalendarDays, Store, CreditCard } from "lucide-react"
+import { Users, CalendarDays, Store, CreditCard, Shield } from "lucide-react"
 import { InfoPopover } from "@/components/ui/info-popover"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
@@ -38,6 +38,7 @@ interface AdminStats {
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mfaEnrolled, setMfaEnrolled] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -48,12 +49,30 @@ export default function AdminDashboardPage() {
       .then(setStats)
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    fetch("/api/admin/mfa/status")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (data) setMfaEnrolled(data.enrolled) })
+      .catch(() => {})
   }, [])
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Adminpanel</h1>
+
+        {/* MFA-status */}
+        {mfaEnrolled === false && (
+          <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <Shield className="h-4 w-4 shrink-0" />
+            <span>
+              Tvåfaktorsautentisering (MFA) är inte aktiverat för ditt konto.{" "}
+              <Link href="/admin/mfa/setup" className="font-medium underline">
+                Aktivera nu
+              </Link>
+            </span>
+          </div>
+        )}
 
         {loading ? (
           <p className="text-gray-500">Laddar statistik...</p>

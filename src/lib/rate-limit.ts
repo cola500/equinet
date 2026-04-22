@@ -172,6 +172,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:message-upload",
       }),
+      mfaVerify: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(3, "15 m"),
+        analytics: true,
+        prefix: "ratelimit:mfa-verify",
+      }),
     }
   }
 
@@ -314,6 +320,7 @@ async function checkRateLimit(
     messageUser: { max: 300, window: 60 * 1000 },
     messageConversation: { max: 100, window: 60 * 1000 },
     messageUpload: { max: 10, window: 60 * 60 * 1000 },
+    mfaVerify: { max: 3, window: 15 * 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -453,4 +460,9 @@ export const rateLimiters = {
    * Image attachment upload: 10 uploads per hour per user (cost + spam protection)
    */
   messageUpload: async (identifier: string) => checkRateLimit('messageUpload', identifier),
+
+  /**
+   * MFA verify attempts: 3 attempts per 15 minutes per admin user
+   */
+  mfaVerify: async (identifier: string) => checkRateLimit('mfaVerify', identifier),
 }
