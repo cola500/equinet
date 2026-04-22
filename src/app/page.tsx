@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import {
   Search,
   CalendarDays,
@@ -135,6 +136,9 @@ const faqItems = [
 // --- Page ---
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[oklch(0.96_0.02_80)] to-white">
       <Header />
@@ -325,18 +329,28 @@ export default function Home() {
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-8">
             Vanliga frågor
           </h2>
-          <Accordion type="single" collapsible className="w-full">
-            {faqItems.map((item, index) => (
-              <AccordionItem key={index} value={`faq-${index}`}>
-                <AccordionTrigger className="text-left">
+          {mounted ? (
+            <Accordion type="single" collapsible className="w-full">
+              {faqItems.map((item, index) => (
+                <AccordionItem key={index} value={`faq-${index}`}>
+                  <AccordionTrigger className="text-left">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-600">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <div className="w-full divide-y">
+              {faqItems.map((item, index) => (
+                <div key={index} className="py-4 text-sm font-medium">
                   {item.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-gray-600">
-                  {item.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* I) CTA */}
