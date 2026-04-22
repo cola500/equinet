@@ -20,7 +20,9 @@ sections:
 
 **Sprint 51: Pre-launch-härdning** — [sprint-51.md](sprint-51.md)
 
-5 stories: MFA admin (S51-0, 1 dag, pre-launch-blocker), bucket-verify staging+prod (S51-1, 10 min), seed-test-users auth-sync (S51-2, 30-45 min), iOS auth-polish continued (S51-3, 1.5-2h), FAQ-rotorsak + SEO-återställning (S51-4, 45-60 min — uppföljning på commit `908aee19`). Total ~2.5 dagar effort. Efter S51 återstår bara externa köp (Vercel Pro + Apple Developer) innan lansering.
+5 stories: MFA admin (S51-0, 1 dag, pre-launch-blocker), bucket-verify staging+prod (S51-1, 10 min), seed-test-users auth-sync (S51-2, 30-45 min), iOS auth-polish continued (S51-3, 1.5-2h), FAQ-rotorsak + SEO-återställning (S51-4, 45-60 min — uppföljning på commit `908aee19`). Total ~2.5 dagar effort.
+
+**Planerad: Sprint 52 — Upptäckt och transparens** — [sprint-52.md](sprint-52.md). 4 stories från teater-gap-analysen 2026-04-22: pre-booking messaging design-spike (S52-0, 1h), pre-booking messaging MVP (S52-1, 1.5-2 dagar), pending-transparens för kund (S52-2, 3-4h), pro-aktiv review-uppmaning (S52-3, 4-6h). Total ~3.5-4 dagar. Körs **före lansering** — bredare produkt vid launch. Efter S52: externa köp (Vercel Pro + Apple Developer) innan lansering. Teater-retro: [2026-04-22-theater-booking-flow.md](../retrospectives/2026-04-22-theater-booking-flow.md).
 
 *(Sprint 50 klar 2026-04-21. 1/1 story done — S50-0 bevisade backend-kedjan fungerar (magic bytes → storage → signedUrl → provider-läsning). Webb-UI och iOS-login kunde INTE E2E-testas pga test-infrastruktur-begränsningar (MessagingDialog öppnar ej i headless, SecureTextField blockerar XCUITest). 3 backlog-rader: bucket-seeding (pre-launch blocker, 15 min), dialog-headless-undersökning, iOS-login-bypass. Fynd: `supabase/config.toml` hade `storage.enabled=false` — fixat i commiten. Retro: `docs/retrospectives/2026-04-21-messaging-visual.md` + `docs/retrospectives/2026-04-21-sprint-50.md`.)*
 
