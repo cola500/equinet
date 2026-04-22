@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
+import { rateLimiters, resetRateLimit, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
@@ -14,8 +14,9 @@ const bodySchema = z.object({
 /**
  * POST /api/admin/mfa/verify
  * Server-side MFA challenge + verify with rate limiting.
- * Rate limited to 3 attempts per 15 minutes per admin user.
- * Called from the /admin/mfa/verify page instead of calling Supabase directly.
+ * Rate limit is consumed ONLY on verify failure (wrong code). Not on success,
+ * zod-fail, or challenge-fail. This prevents legitimate admins from being
+ * locked out due to network glitches or misconfigured factors.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -27,9 +28,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
     }
 
+    // Parse and validate body BEFORE rate limiting so validation errors don't consume attempts
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
+    }
+
+    const parsed = bodySchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Valideringsfel", details: parsed.error.issues },
+        { status: 400 }
+      )
+    }
+
+    // Rate limit after validation. On success the token is reset (net zero).
+    // On verify failure the token stays consumed — counts as a genuine failed attempt.
     const allowed = await rateLimiters.mfaVerify(user.id).catch((err: unknown) => {
       if (err instanceof RateLimitServiceError) {
-        return null // null = service error
+        return null
       }
       throw err
     })
@@ -49,30 +68,62 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
-    }
+    const { factorId, code } = parsed.data
+    const supabase = await createSupabaseServerClient()
 
-    const parsed = bodySchema.safeParse(body)
-    if (!parsed.success) {
+    // Defense-in-depth: verify factorId belongs to the session user before calling challenge.
+    // Supabase docs/GoTrue source (verified 2026-04-22) are inconclusive about whether
+    // mfa.challenge scopes to the authenticated user — explicit check eliminates IDOR risk.
+    const { data: factorsData, error: listError } = await supabase.auth.mfa.listFactors()
+    if (listError || !factorsData) {
+      // listFactors failure is infrastructure, not a user mistake — reset to avoid lockout
+      await resetRateLimit(user.id, "mfaVerify")
+      logger.error("MFA listFactors failed", { error: listError?.message, userId: user.id })
       return NextResponse.json(
-        { error: "Valideringsfel", details: parsed.error.issues },
-        { status: 400 }
+        { error: "MFA-verifiering misslyckades. Försök igen." },
+        { status: 500 }
       )
     }
 
-    const { factorId, code } = parsed.data
-    const supabase = await createSupabaseServerClient()
+    const ownsFactor = factorsData.all.some((f) => f.id === factorId)
+    if (!ownsFactor) {
+      // IDOR probe counts as a failed attempt — do NOT reset the rate limit token
+      logger.warn("MFA verify IDOR attempt", { userId: user.id, factorId, ip: getClientIP(req) })
+      prisma.adminAuditLog.create({
+        data: {
+          userId: user.id,
+          userEmail: user.email,
+          action: "mfa.verify.idor_attempt",
+          ipAddress: getClientIP(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+          statusCode: 403,
+        },
+      }).catch((err: unknown) => {
+        logger.error("Failed to write MFA audit log", err instanceof Error ? err : new Error(String(err)))
+      })
+      return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
+    }
 
     const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
       factorId,
     })
 
     if (challengeError) {
+      // Challenge failure is a server/factor issue, not a wrong-code attempt — reset token
+      await resetRateLimit(user.id, "mfaVerify")
       logger.error("MFA challenge failed", { error: challengeError.message, userId: user.id })
+      prisma.adminAuditLog.create({
+        data: {
+          userId: user.id,
+          userEmail: user.email,
+          action: "mfa.challenge.failure",
+          ipAddress: getClientIP(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+          statusCode: 401,
+        },
+      }).catch((err: unknown) => {
+        logger.error("Failed to write MFA audit log", err instanceof Error ? err : new Error(String(err)))
+      })
       return NextResponse.json(
         { error: "MFA-verifiering misslyckades. Kontrollera att din factor är aktiv." },
         { status: 401 }
@@ -86,12 +137,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (verifyError) {
+      // Wrong code — token stays consumed (genuine failed attempt)
       logger.warn("MFA verify failed (wrong code)", { userId: user.id })
       prisma.adminAuditLog.create({
         data: {
           userId: user.id,
           userEmail: user.email,
-          action: "POST /api/admin/mfa/verify",
+          action: "mfa.verify.failure",
           ipAddress: getClientIP(req),
           userAgent: req.headers.get("user-agent") ?? undefined,
           statusCode: 401,
@@ -107,12 +159,14 @@ export async function POST(req: NextRequest) {
 
     logger.info("MFA verify success", { userId: user.id })
 
-    // Fire-and-forget audit log (same pattern as withApiHandler)
+    // Reset rate limit on success so the next session starts fresh
+    await resetRateLimit(user.id, "mfaVerify")
+
     prisma.adminAuditLog.create({
       data: {
         userId: user.id,
         userEmail: user.email,
-        action: "POST /api/admin/mfa/verify",
+        action: "mfa.verify.success",
         ipAddress: getClientIP(req),
         userAgent: req.headers.get("user-agent") ?? undefined,
         statusCode: 200,

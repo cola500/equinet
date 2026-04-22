@@ -8,6 +8,7 @@ vi.mock("@/lib/auth-dual", () => ({
 
 const mockMfaChallenge = vi.fn()
 const mockMfaVerify = vi.fn()
+const mockListFactors = vi.fn()
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: vi.fn().mockResolvedValue({
@@ -15,16 +16,19 @@ vi.mock("@/lib/supabase/server", () => ({
       mfa: {
         challenge: () => mockMfaChallenge(),
         verify: () => mockMfaVerify(),
+        listFactors: () => mockListFactors(),
       },
     },
   }),
 }))
 
 const mockRateLimiter = vi.fn()
+const mockResetRateLimit = vi.fn()
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: {
     mfaVerify: (...args: unknown[]) => mockRateLimiter(...args),
   },
+  resetRateLimit: (...args: unknown[]) => mockResetRateLimit(...args),
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
   RateLimitServiceError: class RateLimitServiceError extends Error {
     constructor(message: string) {
@@ -38,9 +42,10 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), security: vi.fn() },
 }))
 
+const mockAuditCreate = vi.fn().mockResolvedValue({})
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    adminAuditLog: { create: vi.fn().mockResolvedValue({}) },
+    adminAuditLog: { create: (...args: unknown[]) => mockAuditCreate(...args) },
   },
 }))
 
@@ -57,6 +62,7 @@ const adminUser = {
 }
 
 const validFactorId = "a0000000-0000-4000-a000-000000000002"
+const otherFactorId = "a0000000-0000-4000-a000-000000000003"
 
 function makeRequest(body: object): NextRequest {
   return new NextRequest("http://localhost:3000/api/admin/mfa/verify", {
@@ -71,6 +77,14 @@ describe("POST /api/admin/mfa/verify", () => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue(adminUser)
     mockRateLimiter.mockResolvedValue(true)
+    mockResetRateLimit.mockResolvedValue(undefined)
+    mockListFactors.mockResolvedValue({
+      data: {
+        all: [{ id: validFactorId, factor_type: "totp", status: "verified" }],
+        totp: [{ id: validFactorId }],
+      },
+      error: null,
+    })
     mockMfaChallenge.mockResolvedValue({
       data: { id: "challenge-1" },
       error: null,
@@ -150,5 +164,52 @@ describe("POST /api/admin/mfa/verify", () => {
     expect(res.status).toBe(401)
     const data = await res.json()
     expect(data.error).toContain("Felaktig")
+  })
+
+  // --- S51-0.1: Rate-limit ordering (B1) ---
+
+  it("does not consume rate limit on zod-fail (rate limiter not called)", async () => {
+    const res = await POST(makeRequest({ factorId: validFactorId })) // missing code
+    expect(res.status).toBe(400)
+    expect(mockRateLimiter).not.toHaveBeenCalled()
+  })
+
+  it("resets rate limit on success (net zero consumption)", async () => {
+    const res = await POST(makeRequest({ factorId: validFactorId, code: "123456" }))
+    expect(res.status).toBe(200)
+    expect(mockRateLimiter).toHaveBeenCalledWith(adminUser.id)
+    expect(mockResetRateLimit).toHaveBeenCalledWith(adminUser.id, "mfaVerify")
+  })
+
+  it("does not reset rate limit on verify-fail (token stays consumed)", async () => {
+    mockMfaVerify.mockResolvedValue({ data: null, error: { message: "Invalid TOTP code" } })
+    const res = await POST(makeRequest({ factorId: validFactorId, code: "999999" }))
+    expect(res.status).toBe(401)
+    expect(mockRateLimiter).toHaveBeenCalledWith(adminUser.id)
+    expect(mockResetRateLimit).not.toHaveBeenCalled()
+  })
+
+  // --- S51-0.1: IDOR-check (B2) ---
+
+  it("returns 403 when factorId does not belong to session user and does not reset rate limit", async () => {
+    // listFactors returns only validFactorId, but request sends otherFactorId
+    const res = await POST(makeRequest({ factorId: otherFactorId, code: "123456" }))
+    expect(res.status).toBe(403)
+    const data = await res.json()
+    expect(data.error).toContain("Åtkomst nekad")
+    expect(mockResetRateLimit).not.toHaveBeenCalled()
+  })
+
+  // --- S51-0.1: AdminAuditLog on challenge-failure (M1) ---
+
+  it("writes AdminAuditLog on challenge failure", async () => {
+    mockMfaChallenge.mockResolvedValue({ data: null, error: { message: "factor not found" } })
+    await POST(makeRequest({ factorId: validFactorId, code: "123456" }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockAuditCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: "mfa.challenge.failure" }),
+      })
+    )
   })
 })
