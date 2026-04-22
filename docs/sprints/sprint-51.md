@@ -230,6 +230,89 @@ sections:
 
 ---
 
+### S51-4: FAQ-accordion — rotorsak + SEO-återställning
+
+**Prioritet:** 4
+**Effort:** 45-60 min
+**Domän:** `src/app/page.tsx` + ev. `src/components/ui/accordion.tsx`
+
+**Bakgrund:** Commit `908aee19` (2026-04-22) lade till en `mounted`-gate runt FAQ-accordionen på landningssidan för att kringgå React 19 + Radix UI hydration-mismatch. Fixen fungerar men har **två problem**:
+
+1. **SEO-regression (MAJOR)**: SSR-HTML innehåller nu bara frågor, inte svar. Google kan inte indexera FAQ-innehållet. Tidigare renderades `<AccordionContent>` fullt ut.
+2. **Rotorsak okänd**: `useId()` ska vara stabilt mellan SSR och klient. Att mismatch uppstår tyder på att *trädstrukturen* skiljer sig någonstans — vilket är en djupare bugg som kan dyka upp igen på andra ställen.
+
+**Processkontext:** Fixen committades direkt på main utan feature branch, review eller tester — bryter `commit-strategy.md` (`src/**` kräver PR). Detta är också en lärdom för process-gates (se backlog).
+
+**Aktualitet verifierad:**
+- Kolla senaste Radix UI-version: `npm list @radix-ui/react-accordion` — finns React 19-patchar?
+- Reproducera mismatch lokalt: `npm run build && npm run start` + öppna `/` → kolla console för hydration-warning
+- Jämför SSR-HTML före/efter commiten: `curl -s http://localhost:3000 | grep -A2 faqItems` — syns svaren?
+
+**Implementation:**
+
+**Del 1 — Diagnostisera rotorsaken:**
+
+1. Temporärt revertera `mounted`-gate lokalt
+2. Kör `npm run build && npm run start`, öppna `/` i browser, kolla console
+3. Noga läs hydration-warning — var skiljer sig SSR-HTML från klient-DOM?
+4. Kontrollera om det är:
+   - Radix `useId` (i så fall: uppgradera Radix till senaste version)
+   - Nested `useId` pga trädskillnad (kolla conditional rendering i omgivande kod)
+   - Något annat (datum/tid, `Math.random`, `window`-access under render)
+
+**Del 2 — Välj lösning baserat på rotorsak:**
+
+**Alternativ A — Radix-uppgradering** (om nyare version fixar):
+- `npm install @radix-ui/react-accordion@latest`
+- Ta bort `mounted`-gate
+- SSR-HTML återställs
+
+**Alternativ B — Native `<details>/<summary>`** (säkraste fallback):
+- Ersätt Radix Accordion med native `<details>`:
+  ```tsx
+  {faqItems.map((item, i) => (
+    <details key={i} className="group border-b py-4">
+      <summary className="cursor-pointer font-medium">{item.question}</summary>
+      <p className="mt-2 text-gray-600">{item.answer}</p>
+    </details>
+  ))}
+  ```
+- Zero-JS, inga hydration-problem, native a11y, fullt SEO-bart
+- Trade-off: saknar Radix animation + polerad styling (men kan stylas)
+
+**Alternativ C — `suppressHydrationWarning` riktat** (kompromiss):
+- Behåll Radix Accordion men markera id-genererande noder med `suppressHydrationWarning`
+- SSR renderar hela innehållet, mismatch ignoreras
+- Risk: maskerar andra hydration-buggar i samma subträd
+
+**Rekommendation:** A först (minst ändring), B om A inte fungerar (bäst SEO + a11y), C sista utväg.
+
+**Del 3 — Verifiera SEO-återställning:**
+- `curl -s http://localhost:3000 | grep -c "Vi följer GDPR"` (eller annan svar-text) → ska ge >0
+- Kör Lighthouse på `/` → SEO-score ska inte gått ner
+- Testa i inkognito-browser att accordionen fortfarande fungerar
+
+**Del 4 — Regression-test:**
+- Vitest-test på `src/app/page.test.tsx` (eller ny): renderar sidan, verifierar att FAQ-svar finns i DOM efter initial render (SSR-simulerat via `renderToString`)
+- Alternativt: E2E-smoke som besöker `/` och kollar att ett FAQ-svar finns i page-source
+
+**Acceptanskriterier:**
+- [ ] Rotorsak identifierad och dokumenterad i commit-message eller done-fil
+- [ ] SSR-HTML innehåller alla FAQ-svar (verifierat via `curl` eller liknande)
+- [ ] Ingen hydration-warning i console vid initial load
+- [ ] Accordion expand/collapse fungerar efter hydration (manuell verifiering)
+- [ ] Regression-test finns (Vitest eller E2E-smoke)
+- [ ] Lighthouse SEO-score på `/` oförändrad eller bättre
+- [ ] `mounted`-gaten borttagen (ersatt av riktig lösning)
+
+**Reviews:**
+- `code-reviewer` (obligatorisk, .tsx)
+- `cx-ux-reviewer` (obligatorisk, UI-komponent på landningssida)
+
+**Arkitekturcoverage:** N/A (bugg-fix)
+
+---
+
 ## Risker
 
 | Risk | Sannolikhet | Mitigering |
@@ -248,6 +331,7 @@ sections:
 - [ ] S51-1 done: Bucket verifierat i staging + prod, environments.md uppdaterad
 - [ ] S51-2 done: `seed-test-users.ts` skapar auth.users, fresh-setup verifierat
 - [ ] S51-3 done: Alla 6 S49-1-fynd adresserade, tester gröna
+- [ ] S51-4 done: FAQ-rotorsak identifierad, SEO-återställd, regression-test finns
 - [ ] `npm run check:all` 4/4 grön
 - [ ] iOS `xcodebuild test` grön
 - [ ] Procedurbrott ≤ 2 (fortsätt trend)

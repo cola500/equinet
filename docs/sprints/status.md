@@ -20,7 +20,7 @@ sections:
 
 **Sprint 51: Pre-launch-härdning** — [sprint-51.md](sprint-51.md)
 
-4 stories: MFA admin (S51-0, 1 dag, pre-launch-blocker), bucket-verify staging+prod (S51-1, 10 min), seed-test-users auth-sync (S51-2, 30-45 min), iOS auth-polish continued (S51-3, 1.5-2h). Total ~2 dagar effort. Efter S51 återstår bara externa köp (Vercel Pro + Apple Developer) innan lansering.
+5 stories: MFA admin (S51-0, 1 dag, pre-launch-blocker), bucket-verify staging+prod (S51-1, 10 min), seed-test-users auth-sync (S51-2, 30-45 min), iOS auth-polish continued (S51-3, 1.5-2h), FAQ-rotorsak + SEO-återställning (S51-4, 45-60 min — uppföljning på commit `908aee19`). Total ~2.5 dagar effort. Efter S51 återstår bara externa köp (Vercel Pro + Apple Developer) innan lansering.
 
 *(Sprint 50 klar 2026-04-21. 1/1 story done — S50-0 bevisade backend-kedjan fungerar (magic bytes → storage → signedUrl → provider-läsning). Webb-UI och iOS-login kunde INTE E2E-testas pga test-infrastruktur-begränsningar (MessagingDialog öppnar ej i headless, SecureTextField blockerar XCUITest). 3 backlog-rader: bucket-seeding (pre-launch blocker, 15 min), dialog-headless-undersökning, iOS-login-bypass. Fynd: `supabase/config.toml` hade `storage.enabled=false` — fixat i commiten. Retro: `docs/retrospectives/2026-04-21-messaging-visual.md` + `docs/retrospectives/2026-04-21-sprint-50.md`.)*
 
