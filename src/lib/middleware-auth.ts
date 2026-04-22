@@ -43,12 +43,13 @@ export function handleAuthorization(
 
     // MFA enforcement: if admin has MFA enrolled (nextLevel=aal2)
     // but hasn't verified this session (currentLevel=aal1), block access.
-    // Exception: /admin/mfa/* paths are always accessible for the verify flow.
+    // Exception: /admin/mfa/* and /api/admin/mfa/* are always accessible for the verify flow.
     if (
       user.aal &&
       user.aal.nextLevel === "aal2" &&
       user.aal.currentLevel !== "aal2" &&
-      !path.startsWith("/admin/mfa")
+      !path.startsWith("/admin/mfa") &&
+      !path.startsWith("/api/admin/mfa")
     ) {
       if (path.startsWith("/api/")) {
         return NextResponse.json(

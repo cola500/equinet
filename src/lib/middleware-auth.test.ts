@@ -102,13 +102,15 @@ describe("handleAuthorization", () => {
     it("returns 403 for admin API needing MFA verify", () => {
       const result = handleAuthorization(adminNeedsMfaVerify, makeNextUrl("/api/admin/users"))
       expect(result!.status).toBe(403)
-      const body = JSON.parse(new TextDecoder().decode((result as Response & { body: ReadableStream }).body ? undefined : undefined) || "{}")
-      // Just check status -- body assertion is complex in edge runtime
-      expect(result!.status).toBe(403)
     })
 
     it("allows access to /admin/mfa paths even without aal2", () => {
       const result = handleAuthorization(adminNeedsMfaVerify, makeNextUrl("/admin/mfa/verify"))
+      expect(result).toBeNull()
+    })
+
+    it("allows access to /api/admin/mfa/* even without aal2", () => {
+      const result = handleAuthorization(adminNeedsMfaVerify, makeNextUrl("/api/admin/mfa/verify"))
       expect(result).toBeNull()
     })
 
