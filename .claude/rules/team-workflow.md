@@ -136,9 +136,13 @@ Alla tester MASTE faila. Om nagot test passerar utan implementation -- testet te
 
 ### Review-gating: när skippa subagent-review
 
-**Triviala stories** får skippa subagent-review och gå direkt till Station 5 (VERIFY).
+**Triviala stories** får skippa subagent-review (inklusive code-reviewer) och gå direkt till Station 5 (VERIFY).
 
 **Grundregel:** Trivial-gating är **tid × yta × risk**, inte bara "är det ny logik?". Även ren refactoring eller test-migrering kan ha yta-risk (slarvfel skalar med antal filer).
+
+**Empirisk motivering (process-kost-retro 2026-04-22):** code-reviewer kördes 15 ggr under S42-S51 med 73% träffrate på Blocker/Major. Men 4 körningar (~27%) var "rena OK:s" på triviala stories. Skärp gaten så dessa faktiskt skippas i framtiden.
+
+**Default vid trivial story:** skippa **alla** subagenter. Dev:s self-review + `npm run check:all` räcker.
 
 Alla kriterier MÅSTE stämma för att en story ska klassas som trivial:
 

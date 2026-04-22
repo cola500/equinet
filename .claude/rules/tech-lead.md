@@ -3,7 +3,7 @@ title: "Tech Lead -- arbetssätt"
 description: "Hur tech lead-sessionen arbetar: plan-review, code review, merge, kommunikation"
 category: rule
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-22
 tags: [workflow, team, tech-lead, review]
 paths:
   - "docs/sprints/*"
@@ -12,6 +12,7 @@ sections:
   - Kommandon
   - Plan-review
   - Code review och merge
+  - Djävulens-advokat-review (när körs)
   - Kommunikation
   - Vad tech lead INTE gör
 ---
@@ -65,6 +66,45 @@ Utvecklaren pushar sin feature branch till remote.
    ```
 8. Om problem: meddela Johan, utvecklaren fixar
 9. **OMEDELBART efter merge: uppdatera status.md** -> story "done" + commit-hash. Committa + pusha. ALDRIG skjuta på detta -- det har glömts 5+ gånger.
+
+## Djävulens-advokat-review (när körs)
+
+Tech lead-reviews efter Dev:s egen review är värdefulla **bara med skepsis-prompt** ("vad missade Dev?") OCH **bara för specifika merge-typer**. Annars överlappar de Dev:s egen review och kostar tokens utan ROI.
+
+Källa: process-kost-retro 2026-04-22. S51-0 + S51-0.1 djävulens-advokat-reviews förbrukade ~300k tokens tillsammans, hittade 2 buggar utan launch-impact och 3 edge-case-vektorer. Negativ ROI för generell tillämpning.
+
+### Kör djävulens-advokat-review NÄR
+
+- **Auth/säkerhetskod** ändrades (`src/lib/*auth*`, `src/app/api/admin/*`, `src/app/api/auth/*`, `middleware.ts`)
+- **Schema-ändring** (`prisma/schema.prisma`)
+- **Payment-kod** (`src/app/api/**/payment*/**`, `StripePaymentGateway.ts`, `PaymentService.ts`)
+- **Dev:s egen review hittade Blocker eller Major** — något djupare kan finnas i samma branch
+- **Story klassad som pre-launch-blocker** (från sprint-planen) — extra skepsis motiverad
+
+### Kör INTE djävulens-advokat-review vid
+
+- Docs-only-stories
+- Trivial-gating-stories (<15 min, ≤1 fil per `team-workflow.md` Station 4)
+- Ren refactoring utan ny logik
+- Test-migrering (ingen ny produktionskod)
+- Dev:s egen review hittade bara Minors
+- Infra-scripts som inte är auth-relaterade
+
+### Istället för full subagent-review
+
+För övriga merge-typer:
+1. Läs done-filen
+2. Granska `git diff --stat main..<merge-commit>` och sampla 1-2 filer
+3. Notera procedurbrott (self-merge, skippade reviews, etc.) utan att starta subagenter
+4. Ge tummen upp eller nedåt i text
+
+### Prompt-mall för djävulens-advokat-review
+
+När review ska köras:
+
+> "Post-merge oberoende review av [story-ID], commit `<hash>`. Dev körde redan [lista Dev:s reviewers]. Din uppgift: hitta vad Dev:s reviews missade. Var skeptisk. [Kontext-specifika fokusområden.] Leverera: Blockers/Majors/Minors/Täckning/Gap. Under [ordgräns] ord."
+
+Prompten MÅSTE innehålla "vad missade Dev?" explicit. Utan det blir reviewern parallellt arbete, inte second opinion.
 
 ## Kommunikation
 

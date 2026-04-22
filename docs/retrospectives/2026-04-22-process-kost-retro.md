@@ -172,15 +172,25 @@ För att undvika processens-tillväxt-återkomst:
 
 ---
 
-## Beslut (att fyllas i av Johan)
+## Beslut (Johan 2026-04-22)
 
-- [ ] R1: Begränsa djävulens-advokat — ja / nej / modifierat
-- [ ] R2: Skärp trivial-gating — ja / nej / modifierat
-- [ ] R3: Flytta `check-multi-commit` — ja / nej
-- [ ] R4: Arkivera 3 döda rules — ja / nej / lista
-- [ ] R5: Konsolidera meta-filer — ja / nej / plan
-- [ ] R6: Granska kvarvarande — ja / nej
-- [ ] R7: `gh-pr-merge` — enforcement / borta / lämna
-- [ ] R8: Utvärdera Seven Dimensions + teater vid S55
+- [x] **R1: Begränsa djävulens-advokat** — GENOMFÖRT. `.claude/rules/tech-lead.md` uppdaterad med explicit trigger-lista (auth, schema, payment, Blocker/Major i Dev:s review, pre-launch-blocker-stories). Övriga merge-typer: läs done-fil + sampla diff, inga auto-subagenter.
+- [x] **R2: Skärp trivial-gating** — GENOMFÖRT. `.claude/rules/team-workflow.md` Station 4: "Default vid trivial story: skippa **alla** subagenter" (tidigare otydligt om code-reviewer var inkluderad i skipp).
+- [ ] **R3: Flytta `check-multi-commit`** — AVVISAD. Explore-agentens påstående "körs i båda pre-commit och pre-push" var fel. Hook finns bara i `.husky/pre-push` (rad 67). Ingen duplicering att fixa.
+- [ ] **R4: Arkivera 3 döda rules** — AVVISAD. Explore-agentens "död"-klassificering baserades på grep-referenser utan att beakta `paths:`-fältet. Alla kandidater (`e2e-playbook.md`, `code-review-checklist.md`, `offline-learnings.md`) har paths-fält och laddas selektivt när agenter jobbar med relevanta filer. Låg explicit refrekvens är förväntat beteende, inte bevis på obsolethet.
 
-**Nästa steg efter beslut:** Om R1-R4 godkänns → skapa S51-0.2 (process-trim, 30-45 min) eller lägg i S52.
+**Backlog-rader (för S52+ bedömning):**
+- R5 Konsolidera meta-filer
+- R6 — utgår (baserad på samma felaktighet som R4)
+- R7 `gh-pr-merge` enforcement eller bort
+- R8 Utvärdera Seven Dimensions + teater vid S55
+
+## Efter-genomförande-lärdom
+
+**Min retro använde Explore-agent-data okritiskt.** Två av fyra omedelbara rekommendationer (R3, R4) baserades på agentens klassificering som inte tog hänsyn till:
+- Hook-placering i `.husky/` (pre-commit vs pre-push)
+- `paths:`-fältet som möjliggör selektiv auto-laddning
+
+**Process-kost-retron självt blev en tokenskostnad** som hittade två giltiga förbättringar (R1, R2) och två falska problem (R3, R4). Retroformatet är fortfarande värt det — men Explore-agentens klassificering behöver faktagranskas mot filernas metadata innan beslut.
+
+**Meta-meta:** "Mät vad som faktiskt används" är svårare än det låter. Grep-referenser ≠ användning när selektiv laddning via paths finns.
