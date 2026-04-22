@@ -1,8 +1,8 @@
 ---
-title: "Sprint 52: Upptäckt och transparens"
-description: "Stänger de största friktionspunkterna från teatern 2026-04-22: pre-booking messaging, pending-transparens, review-uppmaning. Körs före lansering."
+title: "Sprint 52: Upptäckt och transparens (SKIPPAD)"
+description: "SKIPPAD 2026-04-22 — pivot till demo-scope i S53. Aldrig startad. Bevarad som referens för framtida pre-booking-messaging-epic."
 category: sprint
-status: planned
+status: archived
 last_updated: 2026-04-22
 tags: [sprint, discovery, messaging, transparency, pre-launch]
 sections:

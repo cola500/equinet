@@ -1,8 +1,8 @@
 ---
-title: "Sprint 51: Pre-launch-härdning"
-description: "Sista stora pre-launch-blockern (MFA admin) + S50-uppföljning (bucket-verify) + fresh-dev-setup-fix + iOS auth-polish-kedja avklarad."
+title: "Sprint 51: Pre-launch-härdning (AVBRUTEN)"
+description: "AVBRUTEN 2026-04-22 — pivot till demo-scope i S53. S51-0 + S51-0.1 hann levereras. Resterande stories till backlog eller bortfall."
 category: sprint
-status: planned
+status: archived
 last_updated: 2026-04-22
 tags: [sprint, pre-launch, mfa, ios, auth, hardening]
 sections:

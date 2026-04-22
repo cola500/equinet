@@ -18,11 +18,11 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 51: Pre-launch-härdning** — [sprint-51.md](sprint-51.md)
+**Sprint 53: Webb demo-värdig (leverantörsvinklad)** — [sprint-53.md](sprint-53.md)
 
-5 stories: MFA admin (S51-0, 1 dag, pre-launch-blocker), bucket-verify staging+prod (S51-1, 10 min), seed-test-users auth-sync (S51-2, 30-45 min), iOS auth-polish continued (S51-3, 1.5-2h), FAQ-rotorsak + SEO-återställning (S51-4, 45-60 min — uppföljning på commit `908aee19`). Total ~2.5 dagar effort.
+3 obligatoriska + 1 valfri story. Scope: göra webben demo-värdig för EN pilot-leverantör. Demo-publiken är en leverantör som utvärderar Equinet. S53-0 demo-flöde-smoke-test (2-3h), S53-1 FAQ-rotorsak (45-60 min, ärvd från S51-4), S53-2 demo-seed-leverantör (1.5-2h), S53-3 valfri "Se demo"-knapp. Effort-mål: ≤ 1 arbetsdag. Process-kost-retro 2026-04-22 drev ner sprint-storlek.
 
-**Planerad: Sprint 52 — Upptäckt och transparens** — [sprint-52.md](sprint-52.md). 4 stories från teater-gap-analysen 2026-04-22: pre-booking messaging design-spike (S52-0, 1h), pre-booking messaging MVP (S52-1, 1.5-2 dagar), pending-transparens för kund (S52-2, 3-4h), pro-aktiv review-uppmaning (S52-3, 4-6h). Total ~3.5-4 dagar. Körs **före lansering** — bredare produkt vid launch. Efter S52: externa köp (Vercel Pro + Apple Developer) innan lansering. Teater-retro: [2026-04-22-theater-booking-flow.md](../retrospectives/2026-04-22-theater-booking-flow.md).
+**Pivot-kontext:** S51 avbruten, S52 skippad 2026-04-22. Johan valde demo-fokus över pre-launch-härdning efter process-kost-retron ("vi har kanske skapat förtungt processnätverk"). S51-0 + S51-0.1 levererades innan avbrott. Se `memory/project_pivot_to_demo.md`.
 
 *(Sprint 50 klar 2026-04-21. 1/1 story done — S50-0 bevisade backend-kedjan fungerar (magic bytes → storage → signedUrl → provider-läsning). Webb-UI och iOS-login kunde INTE E2E-testas pga test-infrastruktur-begränsningar (MessagingDialog öppnar ej i headless, SecureTextField blockerar XCUITest). 3 backlog-rader: bucket-seeding (pre-launch blocker, 15 min), dialog-headless-undersökning, iOS-login-bypass. Fynd: `supabase/config.toml` hade `storage.enabled=false` — fixat i commiten. Retro: `docs/retrospectives/2026-04-21-messaging-visual.md` + `docs/retrospectives/2026-04-21-sprint-50.md`.)*
 
@@ -48,6 +48,8 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S52 | Upptäckt och transparens (SKIPPAD) | Aldrig startad. Pivot till demo-scope 2026-04-22. Bevarad som referens för framtida pre-booking-messaging-epic. |
+| S51 | Pre-launch-härdning (AVBRUTEN) | 2/6 done (S51-0 MFA admin, S51-0.1 MFA-hotfix). S51-1/2/3/4 avbrutna 2026-04-22 vid pivot till demo-scope. Minor-fynd från S51-0.1-review paketerade som backlog-rad. |
 | S50 | Pre-launch visuell verifiering | 1/1 done — messaging-bilagor backend bevisad via API-tester. Webb-UI + iOS-login blockerade av test-infrastruktur-begränsningar (headless dialog-problem, iOS SecureTextField). Bucket-seeding-bugg hittad (pre-launch blocker). Retro: `docs/retrospectives/2026-04-21-messaging-visual.md`. |
 | S49 | iOS auth-polish | 2/2 done — 7 minor-fynd från S48-0 paketerade. Cookie-rensning, domän-filter, JWT-rotation-observer, retry-logik, mock-tester. Banner-UI deferred (backlog). 6 nya minor-fynd från 3-reviews. Retro: `docs/retrospectives/2026-04-21-sprint-49.md`. |
 | S48 | iOS auth-desync-fix + miljö-hardening | 3/3 done — iOS auth-fix (pre-launch blocker), staging/env-struktur, gh pr merge-wrapper. 2 procedurbrott (båda premature done-markering). 4 real-world-saves av reviewer-subagenter. Första konsekvent tech-lead-review-flöde. Retro: `docs/retrospectives/2026-04-20-sprint-48.md`. |
