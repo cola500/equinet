@@ -84,6 +84,75 @@ sections:
 
 ---
 
+### S51-0.1: MFA-verify rate-limit-ordning + IDOR-verifiering (hotfix)
+
+**Prioritet:** 0 (hotfix)
+**Effort:** 30-45 min
+**Domän:** `src/app/api/admin/mfa/verify/route.ts` + `route.test.ts`
+
+**Bakgrund:** Djävulens-advokat-review 2026-04-22 (efter S51-0-merge, commit `515aabdd`) hittade två fynd som Dev:s code-reviewer + security-reviewer missade:
+
+1. **B1 (blocker):** Rate-limiten konsumeras på rad 30 direkt efter auth — FÖRE Supabase `mfa.challenge` + `mfa.verify`. Konsekvenser:
+   - Legitim admin med nätverks-glitch kan bli utlåst på 3 submit
+   - Nuvarande success konsumerar också försök (ingen reset)
+   - Zod-fail/JSON-fail räknas som "misslyckat försök"
+2. **B2 (klassad som Major, defensive fix):** `supabase.auth.mfa.challenge({factorId})` — både Supabase-docs och GoTrue-källkoden (2026-04-22) är inkonklusiva om ownership-scoping. För pre-launch säkerhetskritisk kod: implementera egen ownership-check oavsett. Defense-in-depth, 10-15 min extra — eliminerar IDOR-risk om Supabase-antagandet är fel.
+3. **M1 (bonus):** `challengeError`-pathen på rad 74-80 loggar warn men skriver INTE AdminAuditLog. Brute-force-försök mot borttagna factors osynlig i forensics.
+
+**Aktualitet verifierad:**
+- Bekräfta att rate-limit ligger på rad 30 INNAN mfa.challenge-anrop
+- Verifiera mot Supabase-docs: scopar `mfa.challenge({factorId})` till inloggad user? (Källa: `https://supabase.com/docs/reference/javascript/auth-mfa-challenge`)
+- Kolla om kommentar/test i koden redan dokumenterar B2-antagandet
+
+**Implementation:**
+
+**Del 1 — Rate-limit-ordning (B1):**
+
+*Red (TDD):*
+- Test 1: "rate-limit konsumeras INTE vid success" — skicka giltig kod, verifiera `mfaVerify(user.id)` inte triggat, eller reset-anrop observerat
+- Test 2: "rate-limit konsumeras INTE vid zod-fail" — skicka malformed body, verifiera ingen konsumering
+- Test 3: "rate-limit konsumeras VID verify-fel 401" — skicka fel kod, verifiera konsumering
+
+*Green:*
+- Flytta `rateLimiters.mfaVerify(user.id)`-konsumeringen till efter `verifyError` upptäckts på rad 86-97
+- Vid success: anropa `resetRateLimit(user.id, 'mfaVerify')` om den metoden finns; annars dokumentera varför sliding-window redan är "self-healing"
+- Vid 429 (limit nådd): behåll nuvarande beteende men gate-check INNAN mfa.challenge (pre-flight-check utan att konsumera)
+
+**Del 2 — Ownership-check för factorId (B2, defensive):**
+
+*Red:*
+- Test: "returns 403 when factorId does not belong to session user" — mocka `listFactors()` att returnera bara factor-A, skicka factor-B:s UUID, verifiera 403 + audit-log
+
+*Green:*
+- Efter zod-validering, före `mfa.challenge`: anropa `supabase.auth.mfa.listFactors()` och verifiera att `factorId` finns i `data.totp`- eller `data.all`-arrayen
+- Om inte: returnera 403 "Åtkomst nekad" + AdminAuditLog med action `"mfa.verify.idor_attempt"`
+- Kommentar: "Defense-in-depth — Supabase-docs/GoTrue-källkoden bekräftar inte explicit ownership-scoping i challenge-endpointen (verifierat 2026-04-22)"
+
+**Del 3 — AdminAuditLog vid challenge-failure (M1):**
+
+*Red:*
+- Test: "AdminAuditLog skapas vid mfa.challenge-fel"
+
+*Green:*
+- Lägg till `AdminAuditLog.create` i challengeError-path med action `"mfa.challenge.failure"`
+
+**Acceptanskriterier:**
+- [ ] Rate-limit konsumeras ENDAST vid verify-fail (401), inte vid success/zod-fail/challenge-fail
+- [ ] Success triggar reset eller dokumenterad orsak varför sliding-window räcker
+- [ ] Egen ownership-check via `listFactors()` före `challenge()` implementerad
+- [ ] Test för 403-path när factorId inte tillhör session-user
+- [ ] AdminAuditLog skapas vid challenge-failure (M1) + idor-försök
+- [ ] Alla befintliga 11 verify-tester gröna + nya 4-5 tester
+- [ ] `npm run check:all` 4/4 grön
+
+**Reviews:**
+- `code-reviewer` (obligatorisk, auth-route)
+- `security-reviewer` (obligatorisk — auth/MFA)
+
+**Arkitekturcoverage:** N/A (bugg-fix)
+
+---
+
 ### S51-1: Verifiera `message-attachments` bucket i staging + prod
 
 **Prioritet:** 1
@@ -328,6 +397,7 @@ sections:
 ## Definition of Done (sprintnivå)
 
 - [ ] S51-0 done: MFA aktivt för admin, testat end-to-end på staging
+- [ ] S51-0.1 done: Rate-limit-ordning + IDOR-verifiering fixad (hotfix på S51-0)
 - [ ] S51-1 done: Bucket verifierat i staging + prod, environments.md uppdaterad
 - [ ] S51-2 done: `seed-test-users.ts` skapar auth.users, fresh-setup verifierat
 - [ ] S51-3 done: Alla 6 S49-1-fynd adresserade, tester gröna
