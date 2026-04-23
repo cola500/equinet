@@ -18,18 +18,9 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 53: Webb demo-värdig (leverantörsvinklad)** — [sprint-53.md](sprint-53.md)
+*(Ingen aktiv sprint. Sprint 53 avslutad 2026-04-23 — demo-värdig webb i mål.)*
 
-3 obligatoriska + 1 valfri story. Scope: göra webben demo-värdig för EN pilot-leverantör. Demo-flöde: **skärmdelning, Johan kör lokalt**.
-
-- **S53-0 done 2026-04-23** (PR #269, `554db84a`) — demo-audit + dashboard-fix
-- **S53-1 done 2026-04-23** (PR #270, `66244e36`) — FAQ native `<details>` + SEO återställt
-- **S53-2 done 2026-04-23** (PR #271, `948cee25`) — Erik Järnfot seed-script + `docs/operations/demo-setup.md`
-- **S53-3 done 2026-04-23** (feature/s53-3-demo-knapp, pending PR) — "Se demo som leverantör"-knapp på landningssidan
-
-Alla stories klara inkl. valfri S53-3. Effort-mål ≤ 1 arbetsdag uppnått.
-
-**Pivot-kontext:** S51 avbruten, S52 skippad 2026-04-22. Johan valde demo-fokus över pre-launch-härdning efter process-kost-retron ("vi har kanske skapat förtungt processnätverk"). S51-0 + S51-0.1 levererades innan avbrott. Se `memory/project_pivot_to_demo.md`.
+*(Sprint 53 klar 2026-04-23. 4/4 stories done (inkl. valfri S53-3). Demo verifierat manuellt av Johan via skärmdelning-scenariot. R1+R2 + serial-review testat i praktiken — ~266k tokens total sprint-kostnad (mindre än en S51-djävulens-advokat-review). 4 procedurbrott (alla samma kategori: Dev self-merge × 3 + 0 plan-reviews av 4 stories) — trim-diskussion parkerad. Retro: `docs/retrospectives/2026-04-23-sprint-53.md`.)*
 
 *(Sprint 50 klar 2026-04-21. 1/1 story done — S50-0 bevisade backend-kedjan fungerar (magic bytes → storage → signedUrl → provider-läsning). Webb-UI och iOS-login kunde INTE E2E-testas pga test-infrastruktur-begränsningar (MessagingDialog öppnar ej i headless, SecureTextField blockerar XCUITest). 3 backlog-rader: bucket-seeding (pre-launch blocker, 15 min), dialog-headless-undersökning, iOS-login-bypass. Fynd: `supabase/config.toml` hade `storage.enabled=false` — fixat i commiten. Retro: `docs/retrospectives/2026-04-21-messaging-visual.md` + `docs/retrospectives/2026-04-21-sprint-50.md`.)*
 
@@ -55,6 +46,7 @@ Alla stories klara inkl. valfri S53-3. Effort-mål ≤ 1 arbetsdag uppnått.
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S53 | Webb demo-värdig (leverantörsvinklad) | 4/4 done — demo-audit, FAQ native `<details>`, Erik Järnfot seed, "Se demo"-knapp. Sprint ≤1 arbetsdag. R1+R2+serial-review testat empiriskt (266k tokens total, jämför S51-0.1:s 300k för EN story). Retro: `docs/retrospectives/2026-04-23-sprint-53.md`. |
 | S52 | Upptäckt och transparens (SKIPPAD) | Aldrig startad. Pivot till demo-scope 2026-04-22. Bevarad som referens för framtida pre-booking-messaging-epic. |
 | S51 | Pre-launch-härdning (AVBRUTEN) | 2/6 done (S51-0 MFA admin, S51-0.1 MFA-hotfix). S51-1/2/3/4 avbrutna 2026-04-22 vid pivot till demo-scope. Minor-fynd från S51-0.1-review paketerade som backlog-rad. |
 | S50 | Pre-launch visuell verifiering | 1/1 done — messaging-bilagor backend bevisad via API-tester. Webb-UI + iOS-login blockerade av test-infrastruktur-begränsningar (headless dialog-problem, iOS SecureTextField). Bucket-seeding-bugg hittad (pre-launch blocker). Retro: `docs/retrospectives/2026-04-21-messaging-visual.md`. |
