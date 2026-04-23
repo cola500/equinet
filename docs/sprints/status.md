@@ -20,7 +20,7 @@ sections:
 
 **Sprint 53: Webb demo-värdig (leverantörsvinklad)** — [sprint-53.md](sprint-53.md)
 
-3 obligatoriska + 1 valfri story. Scope: göra webben demo-värdig för EN pilot-leverantör. Demo-publiken är en leverantör som utvärderar Equinet. **S53-0 done 2026-04-23** (commit `554db84a`, merge via PR #269 — demo-audit + 1 dashboard-fix, 7 seed-relaterade fynd till S53-2). Kvar: S53-1 FAQ-rotorsak (45-60 min, ärvd från S51-4), S53-2 demo-seed-leverantör (1.5-2h), S53-3 valfri "Se demo"-knapp. Effort-mål: ≤ 1 arbetsdag. Process-kost-retro 2026-04-22 drev ner sprint-storlek.
+3 obligatoriska + 1 valfri story. Scope: göra webben demo-värdig för EN pilot-leverantör. Demo-publiken är en leverantör som utvärderar Equinet. **S53-0 done 2026-04-23** (commit `554db84a`, merge via PR #269). **S53-1 done 2026-04-23** (commit `fff77ce9` — FAQ-rotorsak löst, SEO återställd, native details/summary, 3 nya tester). Kvar: S53-2 demo-seed-leverantör (1.5-2h), S53-3 valfri "Se demo"-knapp. Effort-mål: ≤ 1 arbetsdag. Process-kost-retro 2026-04-22 drev ner sprint-storlek.
 
 **Pivot-kontext:** S51 avbruten, S52 skippad 2026-04-22. Johan valde demo-fokus över pre-launch-härdning efter process-kost-retron ("vi har kanske skapat förtungt processnätverk"). S51-0 + S51-0.1 levererades innan avbrott. Se `memory/project_pivot_to_demo.md`.
 
