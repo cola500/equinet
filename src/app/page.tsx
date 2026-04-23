@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/Header"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import { AnnouncementPreview } from "@/components/AnnouncementPreview"
+import { isDemoMode } from "@/lib/demo-mode"
+import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
 
 // --- Data ---
 
@@ -128,6 +130,8 @@ const faqItems = [
 // --- Page ---
 
 export default function Home() {
+  const demoMode = isDemoMode()
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[oklch(0.96_0.02_80)] to-white">
       <Header />
@@ -143,6 +147,14 @@ export default function Home() {
             Hitta hovslagare, veterinärer och terapeuter.
             Boka direkt. Få påminnelser. Allt på ett ställe -- för dig och hästen.
           </p>
+          {demoMode ? (
+            <div className="flex flex-col items-center gap-4 px-4 sm:px-0">
+              <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">
+                Demomiljö
+              </p>
+              <DemoLoginButton />
+            </div>
+          ) : (
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4 sm:px-0">
             <Link href="/register" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8">
@@ -155,6 +167,7 @@ export default function Home() {
               </Button>
             </a>
           </div>
+          )}
         </section>
 
         {/* B) Problemet */}

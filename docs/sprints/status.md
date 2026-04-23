@@ -25,8 +25,9 @@ sections:
 - **S53-0 done 2026-04-23** (PR #269, `554db84a`) — demo-audit + dashboard-fix
 - **S53-1 done 2026-04-23** (PR #270, `66244e36`) — FAQ native `<details>` + SEO återställt
 - **S53-2 done 2026-04-23** (PR #271, `948cee25`) — Erik Järnfot seed-script + `docs/operations/demo-setup.md`
+- **S53-3 done 2026-04-23** (feature/s53-3-demo-knapp, pending PR) — "Se demo som leverantör"-knapp på landningssidan
 
-Kvar: S53-3 valfri "Se demo"-knapp. S53-0-fynd B1-B7 (testdata-relaterade) lösta via S53-2. Effort-mål ≤ 1 arbetsdag uppnått.
+Alla stories klara inkl. valfri S53-3. Effort-mål ≤ 1 arbetsdag uppnått.
 
 **Pivot-kontext:** S51 avbruten, S52 skippad 2026-04-22. Johan valde demo-fokus över pre-launch-härdning efter process-kost-retron ("vi har kanske skapat förtungt processnätverk"). S51-0 + S51-0.1 levererades innan avbrott. Se `memory/project_pivot_to_demo.md`.
 
