@@ -128,7 +128,6 @@ const faqItems = [
 // --- Page ---
 
 export default function Home() {
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-[oklch(0.96_0.02_80)] to-white">
       <Header />
@@ -320,13 +319,13 @@ export default function Home() {
             Vanliga frågor
           </h2>
           <div className="w-full">
-            {faqItems.map((item, index) => (
-              <details key={index} className="group border-b last:border-b-0">
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 text-left text-sm font-medium hover:underline">
+            {faqItems.map((item) => (
+              <details key={item.question} className="group border-b last:border-b-0">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 text-left text-sm font-medium hover:underline [&::-webkit-details-marker]:hidden">
                   {item.question}
                   <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
                 </summary>
-                <p className="pb-4 text-sm text-gray-600">{item.answer}</p>
+                <p className="pb-4 text-sm leading-relaxed text-gray-600">{item.answer}</p>
               </details>
             ))}
           </div>
