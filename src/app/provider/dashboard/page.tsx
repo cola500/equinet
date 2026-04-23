@@ -210,6 +210,7 @@ export default function ProviderDashboard() {
             )}
 
             {/* Priority action -- "Vad ska jag göra nu?" */}
+            {/* Suppress onboarding prompt when Welcome card is already visible */}
             <FirstUseTooltip
               id="dashboard-priority"
               title="Din nästa åtgärd"
@@ -219,15 +220,17 @@ export default function ProviderDashboard() {
                 <PriorityActionCard
                   pendingCount={pendingCount}
                   routes={routes as PriorityRoute[]}
-                  onboardingComplete={onboardingComplete}
+                  onboardingComplete={(!onboardingComplete && !!onboardingStatus) ? true : onboardingComplete}
                 />
               </div>
             </FirstUseTooltip>
 
-            {/* Onboarding Checklist for new providers */}
-            <div className="mb-8">
-              <OnboardingChecklist />
-            </div>
+            {/* Onboarding Checklist -- hidden when Welcome card is visible to avoid duplication */}
+            {(onboardingComplete || !onboardingStatus) && (
+              <div className="mb-8">
+                <OnboardingChecklist />
+              </div>
+            )}
 
             <div className={`grid md:grid-cols-2 ${demo ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6 mb-8`}>
           {/* Stats Cards */}
