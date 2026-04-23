@@ -3,10 +3,11 @@ title: "Review-matris"
 description: "Glob-baserad matris som definierar obligatoriska subagents per ändrad filtyp. Maskinläsbar av S47-1 hook."
 category: rule
 status: active
-last_updated: 2026-04-20
+last_updated: 2026-04-23
 sections:
   - Matris
   - Globalt krav
+  - Seriell körning (experiment)
   - Docs-only-semantik
   - Trivial-gating
   - Täckning och Gap
@@ -39,6 +40,48 @@ Kör **alltid** code-reviewer. Övriga subagents bestäms av matristabellen ovan
 En ändrad fil kan matcha noll, en eller flera rader. `required_set` är alltid union av alla matchande raders subagents.
 
 För domänspecifika granskningstips per subagent: se `.claude/rules/review-manifest.md`.
+
+## Seriell körning (experiment 2026-04-23)
+
+När en story kräver flera reviewers per matrisen: **kör dem seriellt, inte parallellt**.
+
+### Regel
+
+1. Kör **code-reviewer först** (alltid obligatorisk).
+2. Kör nästa reviewer(s) i matrisen **bara om** code-reviewer:
+   - flaggar Blocker/Major **eller**
+   - flaggar fynd i reviewer-specifika domäner (UX, säkerhet, arkitektur, iOS)
+3. Om code-reviewer returnerar "inga blockers/majors utanför UI-polish/kosmetik": **skippa fallback-reviewers**, dokumentera i done-fil.
+
+### Varför
+
+S53-1 (2026-04-23) körde code-reviewer (78k tokens) + cx-ux-reviewer (39k tokens) parallellt för en FAQ-polish-story. Reviewers hittade 4 minors varav 1 var verklig (Safari webkit-detail-marker), 3 var kosmetiska. **117k tokens för 1 verklig bugg = låg ROI.**
+
+Seriell körning:
+- Gör code-reviewer till första gate
+- Låter honom bedöma om specialist-review behövs
+- Sparar ~40-80k tokens när code-reviewer säger "inga issues" på trivial UI-polish
+- Bibehåller full reviewer-täckning för stories som verkligen behöver det (Blocker/Major flaggade)
+
+### Dokumentation i done-fil
+
+Vid seriell körning som skippar fallback-reviewers:
+
+```markdown
+## Reviews körda
+
+- [x] code-reviewer — inga blockers/majors, endast kosmetiska minors. Se nedan.
+- [ ] cx-ux-reviewer — SKIPPAD (code-reviewer flaggade inga UX-concerns)
+```
+
+### Test-period
+
+Kör seriellt under S53-S55 (3 sprintar). Mät i process-kost-retro S56:
+- Tokens per review-cykel (mål: <50k genomsnitt)
+- Antal missade fynd (jämfört med vad parallell körning skulle hittat)
+- Gränsfalls-stories där code-reviewer osäker om specialist behövs
+
+Om parallell körning faktiskt hittar mer värde i praktiken: revert till parallellt default.
 
 ## Docs-only-semantik
 
