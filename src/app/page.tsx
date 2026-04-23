@@ -1,7 +1,4 @@
-"use client"
-
 import Link from "next/link"
-import { useEffect, useState } from "react"
 import {
   Search,
   CalendarDays,
@@ -13,17 +10,12 @@ import {
   Map,
   BarChart3,
   UserCheck,
+  ChevronDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/Header"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import { AnnouncementPreview } from "@/components/AnnouncementPreview"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 
 // --- Data ---
 
@@ -136,9 +128,6 @@ const faqItems = [
 // --- Page ---
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-[oklch(0.96_0.02_80)] to-white">
       <Header />
@@ -329,28 +318,17 @@ export default function Home() {
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-8">
             Vanliga frågor
           </h2>
-          {mounted ? (
-            <Accordion type="single" collapsible className="w-full">
-              {faqItems.map((item, index) => (
-                <AccordionItem key={index} value={`faq-${index}`}>
-                  <AccordionTrigger className="text-left">
-                    {item.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-gray-600">
-                    {item.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          ) : (
-            <div className="w-full divide-y">
-              {faqItems.map((item, index) => (
-                <div key={index} className="py-4 text-sm font-medium">
+          <div className="w-full">
+            {faqItems.map((item) => (
+              <details key={item.question} className="group border-b last:border-b-0">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 text-left text-sm font-medium hover:underline [&::-webkit-details-marker]:hidden">
                   {item.question}
-                </div>
-              ))}
-            </div>
-          )}
+                  <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                </summary>
+                <p className="pb-4 text-sm leading-relaxed text-gray-600">{item.answer}</p>
+              </details>
+            ))}
+          </div>
         </section>
 
         {/* I) CTA */}
