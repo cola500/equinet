@@ -47,8 +47,7 @@ export default function ProviderServicesPage() {
   const { services: allServices, mutate: mutateServices } = useServices()
   const demoFlag = useFeatureFlag("demo_mode")
   const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
-  // In demo mode, hide inactive services (stale test data)
-  const services = demo ? allServices.filter((s: Service) => s.isActive) : allServices
+  const services = allServices
   const serviceDialog = useDialogState()
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [formData, setFormData] = useState({
