@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-21
+last_updated: 2026-04-24
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,15 +18,11 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 56: Sökning och transparens** — startad 2026-04-24
-Sprint-dokument: [sprint-56.md](sprint-56.md)
+**Sprint 58** — ej planerad ännu.
 
-| Story | Status | Branch | Commit |
-|-------|--------|--------|--------|
-| S56-1: Kategori-ikoner på landningssidan filtrerar | done | feature/s56-1-kategori-ikoner-filter | dafbea47 |
-| S56-2: Tjänstetyp-filter på /providers | done | feature/s56-2-tjanstetyp-filter | 941a2132 |
-| S56-3: Transparent pending-status på kundsidan | done | feature/s56-3-transparent-pending-status | bf3568af |
-| S56-4: Review-uppmaning efter slutförd bokning | done | feature/s56-4-review-uppmaning | 78858a0e |
+*(Sprint 57 klar 2026-04-24. 4/4 stories done — ruttsynlighet för nya kunder: kommande ruttar på leverantörsprofil (S57-1), rutt-badge i söklistan (S57-2), rutt-kontext-banner i bokningskalendern (S57-3), notis vid ruttändring (S57-4). Mergad via PR #284. Hotfix landad ovanpå: serviceType-filter söker nu i businessName + description + service.name.)*
+
+*(Sprint 56 klar 2026-04-24. 4/4 stories done — sökning och transparens: kategori-ikoner filtrerar (S56-1), tjänstetyp-filter på /providers (S56-2), transparent pending-status (S56-3), review-uppmaning efter slutförd bokning (S56-4).)*
 
 *(Sprint 55 klar 2026-04-24. 1/1 story done — iOS demo mode + env-synk (NEXT_PUBLIC_DEMO_MODE) + kalender-buggfix (offset→padding för korrekt hit-testing) + dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`.)*
 
