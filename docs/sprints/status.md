@@ -18,13 +18,14 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 54: Kalenderåtgärder (demo-feedback)** — startad 2026-04-24
-Sprint-dokument: [sprint-54.md](sprint-54.md)
+**Sprint 55: iOS demo mode** — startad 2026-04-24
+Sprint-dokument: [sprint-55.md](sprint-55.md)
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S54-1: Snabb bekräfta/avvisa i kalendern | pending | - | - |
-| S54-2: Redigera bokningsdatum och tid | done | feature/s54-2-provider-reschedule | 8d217799 |
+| S55-1: iOS demo mode — NativeMoreView + NativeProfileView | pending | - | - |
+
+*(Sprint 54 klar 2026-04-24. 2/2 stories done — inline bekräfta/avvisa i kalender + redigera bokningsdatum/-tid. Demo-feedback implementerad. Bugfix: "rejected" mappades inte till "cancelled" i API-anropet. Terminologifix: "Avböj" → "Avvisa" i hela appen.)*
 
 *(Sprint 53 klar 2026-04-23. 4/4 stories done (inkl. valfri S53-3). Demo verifierat manuellt av Johan via skärmdelning-scenariot. R1+R2 + serial-review testat i praktiken — ~266k tokens total sprint-kostnad (mindre än en S51-djävulens-advokat-review). 4 procedurbrott (alla samma kategori: Dev self-merge × 3 + 0 plan-reviews av 4 stories) — trim-diskussion parkerad. Retro: `docs/retrospectives/2026-04-23-sprint-53.md`.)*
 
