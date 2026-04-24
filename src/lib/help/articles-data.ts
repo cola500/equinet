@@ -146,7 +146,7 @@ export const allArticles: HelpArticle[] = [
         "heading": "Vad händer sen?",
         "bullets": [
           "Leverantören får en notifikation om din bokning",
-          "Du får besked när leverantören accepterar eller avböjer",
+          "Du får besked när leverantören accepterar eller avvisar",
           "Vid bekräftelse kan du betala direkt i appen"
         ]
       },
@@ -665,7 +665,7 @@ export const allArticles: HelpArticle[] = [
       {
         "heading": "Du notifieras när",
         "bullets": [
-          "Leverantören bekräftar eller avböjer din bokning",
+          "Leverantören bekräftar eller avvisar din bokning",
           "En bokning markeras som genomförd",
           "Betalning har gått igenom",
           "Leverantören svarar på ditt omdöme",
@@ -1169,7 +1169,7 @@ export const allArticles: HelpArticle[] = [
     "keywords": [
       "bokningar",
       "acceptera",
-      "avböja",
+      "avvisa",
       "genomförd",
       "avbokad",
       "väntande",
@@ -1186,7 +1186,7 @@ export const allArticles: HelpArticle[] = [
       {
         "heading": "Statusar",
         "bullets": [
-          "Väntande -- Acceptera eller avböj (med anledning)",
+          "Väntande -- Acceptera eller avvisa (med anledning)",
           "Bekräftad -- Utför tjänsten, markera sedan som genomförd",
           "Genomförd -- Klar, kunden kan nu betala och lämna omdöme",
           "Ej infunnit -- Kunden infann sig inte",

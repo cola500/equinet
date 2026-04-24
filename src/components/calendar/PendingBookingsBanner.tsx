@@ -1,21 +1,36 @@
 "use client"
 
 import { useState } from "react"
-import { Clock, ChevronDown, ChevronUp } from "lucide-react"
+import { Clock, ChevronDown, ChevronUp, Check, X } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { sv } from "date-fns/locale"
 import { CalendarBooking } from "@/types"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface PendingBookingsBannerProps {
   pendingBookings: CalendarBooking[]
   onBookingClick: (booking: CalendarBooking) => void
+  onQuickAction?: (bookingId: string, action: "confirmed" | "rejected") => Promise<void> | void
 }
 
 export function PendingBookingsBanner({
   pendingBookings,
   onBookingClick,
+  onQuickAction,
 }: PendingBookingsBannerProps) {
   const [expanded, setExpanded] = useState(false)
+  const [rejectingBooking, setRejectingBooking] = useState<CalendarBooking | null>(null)
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
   if (pendingBookings.length === 0) return null
 
@@ -51,10 +66,10 @@ export function PendingBookingsBanner({
         <div className="border-t border-yellow-200 px-4 py-2">
           <ul className="divide-y divide-yellow-100">
             {sorted.map((booking) => (
-              <li key={booking.id}>
+              <li key={booking.id} className="flex items-center gap-2 py-2">
                 <button
                   onClick={() => onBookingClick(booking)}
-                  className="flex w-full items-center gap-4 py-2 text-left text-sm hover:bg-yellow-100 rounded px-2 -mx-2 transition-colors"
+                  className="flex flex-1 items-center gap-4 text-left text-sm hover:bg-yellow-100 rounded px-2 -mx-2 transition-colors min-h-[44px]"
                 >
                   <span className="font-medium text-gray-900">
                     {booking.service.name}
@@ -70,10 +85,73 @@ export function PendingBookingsBanner({
                     {booking.startTime}&#8211;{booking.endTime}
                   </span>
                 </button>
+                {onQuickAction && (
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={pendingId === booking.id}
+                      className="min-h-[44px] border-green-600 text-green-700 hover:bg-green-50"
+                      onClick={async () => {
+                        setPendingId(booking.id)
+                        await onQuickAction(booking.id, "confirmed")
+                        setPendingId(null)
+                      }}
+                      aria-label="Bekräfta"
+                    >
+                      <Check className="h-4 w-4 sm:hidden" />
+                      <span className="hidden sm:inline">Bekräfta</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={pendingId === booking.id}
+                      className="min-h-[44px] border-red-300 text-red-600 hover:bg-red-50"
+                      onClick={() => setRejectingBooking(booking)}
+                      aria-label="Avvisa"
+                    >
+                      <X className="h-4 w-4 sm:hidden" />
+                      <span className="hidden sm:inline">Avvisa</span>
+                    </Button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         </div>
+      )}
+
+      {rejectingBooking && (
+        <AlertDialog open={true}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Avvisa bokning?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Vill du avvisa{" "}
+                <span className="font-medium">{rejectingBooking.service.name}</span> med{" "}
+                <span className="font-medium">
+                  {rejectingBooking.customer.firstName} {rejectingBooking.customer.lastName}
+                </span>
+                ? Kunden meddelas om avvisningen.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setRejectingBooking(null)}>
+                Avbryt
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => {
+                  const booking = rejectingBooking
+                  setRejectingBooking(null)
+                  onQuickAction!(booking.id, "rejected")
+                }}
+              >
+                Avvisa
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   )

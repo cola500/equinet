@@ -220,7 +220,7 @@ export const TEST_DATA: TestCategory[] = [
         items: [
           { id: "pbooking-1", label: "Inkommande bokningar med filter" },
           { id: "pbooking-2", label: "Acceptera → Bekräftad" },
-          { id: "pbooking-3", label: "Avböj bokning" },
+          { id: "pbooking-3", label: "Avvisa bokning" },
           { id: "pbooking-4", label: "Markera som genomförd" },
           { id: "pbooking-5", label: "Markera som \"ej infunnen\"" },
           { id: "pbooking-6", label: "Anteckningar och snabbanteckning" },

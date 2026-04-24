@@ -366,6 +366,21 @@ function CalendarContent() {
     })
   }
 
+  const handleQuickAction = async (bookingId: string, action: "confirmed" | "rejected") => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: action === "rejected" ? "cancelled" : action }),
+      })
+      if (!response.ok) throw new Error("Failed")
+      toast.success(action === "confirmed" ? "Bokning bekräftad!" : "Bokning avvisad!")
+      mutateBookings()
+    } catch {
+      toast.error("Kunde inte uppdatera bokning")
+    }
+  }
+
   const handleReschedule = async (bookingId: string, bookingDate: string, startTime: string) => {
     const response = await fetch(`/api/provider/bookings/${bookingId}/reschedule`, {
       method: "PATCH",
@@ -422,6 +437,7 @@ function CalendarContent() {
       <PendingBookingsBanner
         pendingBookings={pendingBookings}
         onBookingClick={handleBookingClick}
+        onQuickAction={handleQuickAction}
       />
 
       <FirstUseTooltip

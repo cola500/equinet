@@ -10,6 +10,7 @@ sections:
   - Återställa data
   - Vad som ingår i demo-datan
   - Demo-flöde (manuell walkthrough)
+  - Vad demo-läget gör
 ---
 
 # Demo Setup — Erik Järnfot (leverantörsdemo)
@@ -56,7 +57,7 @@ npm run dev
 
 ### Steg 4 (valfritt): Aktivera demo-läge
 
-`demo_mode`-flaggan döljer allt utanför leverantörskärnan (sidor, nav-poster, etc.):
+`demo_mode`-flaggan fokuserar UI:t på kärnleverantörsvyerna och visar en snabb-inloggningsknapp.
 
 ```bash
 # Sätt miljövariabel i .env.local
@@ -64,6 +65,18 @@ NEXT_PUBLIC_DEMO_MODE=true
 ```
 
 Eller aktivera via adminpanelen: `/admin/system` → Feature Flags → `demo_mode`.
+
+#### Vad demo-läget gör
+
+| Beteende | Detalj |
+|----------|--------|
+| **Synliga paths** | `/provider/dashboard`, `/provider/calendar`, `/provider/bookings`, `/provider/customers`, `/provider/services`, `/provider/profile` |
+| **Dolda paths** | Allt övrigt (ruttplanering, export, verifiering, debug, etc.) döljs från navigation |
+| **DemoLoginButton** | Visas på `/login`-sidan — loggar in automatiskt som Erik Järnfot med ett klick |
+| **Tjänster** | Alla tjänster visas (aktiva **och** inaktiva) — filtrera ALDRIG på `isActive` i demo-läge |
+| **Header** | Visar "Demo"-badge och döljer inloggad-meny-poster utanför demo-scopet |
+
+> **Gotcha:** Filtrera aldrig bort data (t.ex. inaktiva tjänster) baserat på `isDemoMode()`. Demo-läget ska visa ett realistiskt urval av data, inte ett reducerat. Hotfix `ac9a36bf` åtgärdade ett sådant filter i services-sidan.
 
 ## Återställa data
 
