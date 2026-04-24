@@ -24,6 +24,7 @@ export interface ProviderFilters {
   city?: string
   isActive?: boolean
   search?: string // Search in businessName or description
+  serviceType?: string // Filter by service name (partial, case-insensitive)
   boundingBox?: {
     minLat: number
     maxLat: number

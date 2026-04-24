@@ -18,6 +18,14 @@ import { ProviderGrid } from "./ProviderGrid"
 import { ProviderFiltersDrawer } from "./ProviderFiltersDrawer"
 import { SlidersHorizontal, MapPin, Heart } from "lucide-react"
 
+const SERVICE_TYPE_CHIPS = [
+  { label: "Alla", value: "" },
+  { label: "Hovslagare", value: "hovslagare" },
+  { label: "Veterinär", value: "veterinär" },
+  { label: "Hästterapeut", value: "hästterapeut" },
+  { label: "Tränare", value: "tränare" },
+]
+
 export default function ProvidersPage() {
   return (
     <Suspense fallback={
@@ -58,6 +66,7 @@ function ProvidersContent() {
     initialCity: searchParams.get("city") || "",
     initialVisitingArea: searchParams.get("visiting") || "",
     initialSortBy: (searchParams.get("sort") as SortOption) || "default",
+    initialServiceType: searchParams.get("serviceType") || "",
     userLocation: geo.userLocation,
     radiusKm: geo.radiusKm,
     followedIds: favorites.followedIds,
@@ -70,6 +79,7 @@ function ProvidersContent() {
     search, setSearch,
     city, setCity,
     visitingArea, setVisitingArea,
+    serviceType, setServiceType,
     isLoading, isSearching, error,
     sortBy, setSortBy,
     fetchProviders,
@@ -77,13 +87,14 @@ function ProvidersContent() {
   } = providerSearch
 
   // Count active advanced filters (not counting main search)
-  const activeFilterCount = [city, visitingArea, geo.userLocation, favorites.showFavoritesOnly].filter(Boolean).length
+  const activeFilterCount = [city, visitingArea, serviceType, geo.userLocation, favorites.showFavoritesOnly].filter(Boolean).length
 
   const handleClearFilters = () => {
     clearSearch()
     geo.clearLocation()
     favorites.setShowFavoritesOnly(false)
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -95,6 +106,25 @@ function ProvidersContent() {
           <p className="text-gray-600 mb-8">
             Bläddra bland professionella hovslagare, veterinärer och andra hästtjänster
           </p>
+
+          {/* Service type filter chips */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {SERVICE_TYPE_CHIPS.map(({ label, value }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setServiceType(value)}
+                aria-pressed={serviceType === value}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors touch-target ${
+                  serviceType === value
+                    ? "bg-green-600 text-white border-green-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:border-green-500 hover:text-green-700"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
           {/* Search Bar */}
           <div className="mb-8">
@@ -157,7 +187,7 @@ function ProvidersContent() {
                     </Button>
                   )}
                 </div>
-                {(search || city || visitingArea || geo.userLocation || favorites.showFavoritesOnly) && (
+                {(search || city || visitingArea || serviceType || geo.userLocation || favorites.showFavoritesOnly) && (
                   <Button
                     type="button"
                     variant="outline"
@@ -249,13 +279,19 @@ function ProvidersContent() {
                   <span>Söker...</span>
                 </div>
               )}
-              {!isSearching && (search || city || visitingArea || geo.userLocation || favorites.showFavoritesOnly) && (
+              {!isSearching && (search || city || visitingArea || serviceType || geo.userLocation || favorites.showFavoritesOnly) && (
                 <div className="flex items-center gap-2 text-sm text-gray-600 overflow-x-auto pb-1 scrollbar-hide">
                   <span className="shrink-0">Aktiva filter:</span>
                   {search && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-green-100 text-green-800 rounded-full shrink-0 whitespace-nowrap">
                       Sökning: &quot;{search}&quot;
                       <button type="button" onClick={() => setSearch("")} className="hover:text-green-900">×</button>
+                    </span>
+                  )}
+                  {serviceType && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 touch-target bg-emerald-100 text-emerald-800 rounded-full shrink-0 whitespace-nowrap">
+                      Tjänst: &quot;{serviceType}&quot;
+                      <button type="button" onClick={() => setServiceType("")} className="hover:text-emerald-900">×</button>
                     </span>
                   )}
                   {city && (
@@ -442,7 +478,7 @@ function ProvidersContent() {
                         Visa alla leverantörer
                       </button>
                     </>
-                  ) : search || city || geo.userLocation ? (
+                  ) : search || city || serviceType || geo.userLocation ? (
                     <>
                       Prova att ändra dina sökfilter eller{" "}
                       <button

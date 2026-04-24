@@ -690,4 +690,56 @@ describe('GET /api/providers', () => {
       })
     })
   })
+
+  describe('serviceType filter', () => {
+    it('should filter providers by service type', async () => {
+      const mockProvider = {
+        id: 'provider1',
+        businessName: 'Erik Hovslagare',
+        description: 'Certifierad hovslagare',
+        city: 'Stockholm',
+        services: [{ id: 's1', name: 'Hovslagning', price: 900 }],
+        user: { firstName: 'Erik', lastName: 'Järnfot' },
+      }
+      vi.mocked(prisma.provider.findMany).mockResolvedValue([mockProvider] as never)
+
+      const request = new NextRequest('http://localhost:3000/api/providers?serviceType=hovslagare')
+      const response = await GET(request)
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].businessName).toBe('Erik Hovslagare')
+    })
+
+    it('should pass serviceType filter to database query', async () => {
+      vi.mocked(prisma.provider.findMany).mockResolvedValue([])
+
+      const request = new NextRequest('http://localhost:3000/api/providers?serviceType=veterinär')
+      await GET(request)
+
+      expect(vi.mocked(prisma.provider.findMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            services: expect.objectContaining({
+              some: expect.objectContaining({
+                name: expect.objectContaining({ contains: 'veterinär', mode: 'insensitive' }),
+              }),
+            }),
+          }),
+        })
+      )
+    })
+
+    it('should combine serviceType with search filter', async () => {
+      vi.mocked(prisma.provider.findMany).mockResolvedValue([])
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/providers?serviceType=hovslagare&search=erik'
+      )
+      const response = await GET(request)
+
+      expect(response.status).toBe(200)
+    })
+  })
 })

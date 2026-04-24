@@ -23,8 +23,8 @@ Sprint-dokument: [sprint-56.md](sprint-56.md)
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S56-1: Kategori-ikoner på landningssidan filtrerar | pending | - | - |
-| S56-2: Tjänstetyp-filter på /providers | pending | - | - |
+| S56-1: Kategori-ikoner på landningssidan filtrerar | done | feature/s56-1-kategori-ikoner-filter | dafbea47 |
+| S56-2: Tjänstetyp-filter på /providers | in_progress | feature/s56-2-tjanstetyp-filter | - |
 | S56-3: Transparent pending-status på kundsidan | pending | - | - |
 | S56-4: Review-uppmaning efter slutförd bokning | pending | - | - |
 

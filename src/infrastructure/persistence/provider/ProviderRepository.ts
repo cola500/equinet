@@ -89,6 +89,16 @@ export class ProviderRepository implements IProviderRepository {
       ]
     }
 
+    // AND with search filter: both search term AND service type must match
+    if (filters?.serviceType) {
+      where.services = {
+        some: {
+          name: { contains: filters.serviceType, mode: 'insensitive' },
+          isActive: true,
+        },
+      }
+    }
+
     // Bounding box filter - pre-filter in database before exact distance calc
     if (filters?.boundingBox) {
       const { minLat, maxLat, minLng, maxLng } = filters.boundingBox
