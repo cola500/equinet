@@ -63,20 +63,6 @@ struct BookingDetailSheet: View {
 
                     // Actions (status-dependent)
                     actionButtons
-
-                    // Open in web app
-                    if let onOpenInApp, booking.status != "cancelled", booking.status != "no_show" {
-                        Button {
-                            dismiss()
-                            onOpenInApp(booking.id)
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Label("Hantera bokning", systemImage: "list.bullet")
-                                Spacer()
-                            }
-                        }
-                    }
                 }
                 .padding(16)
             }
