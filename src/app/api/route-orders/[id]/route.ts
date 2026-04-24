@@ -11,6 +11,16 @@ const updateStatusSchema = z.object({
   status: z.enum(["cancelled"], { message: "Endast 'cancelled' status är tillåten" }),
 })
 
+// Validation schema for PUT updates
+const updateRouteSchema = z
+  .object({
+    municipality: z.string().optional(),
+    dateFrom: z.string().optional(),
+    dateTo: z.string().optional(),
+    specialInstructions: z.string().optional(),
+  })
+  .strict()
+
 /**
  * GET /api/route-orders/[id]
  *
@@ -279,5 +289,148 @@ export async function PATCH(
       { error: "Internt serverfel" },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * PUT /api/route-orders/[id]
+ *
+ * Update route details (municipality, dates, special instructions).
+ * Sends fire-and-forget notifications to affected customers when
+ * municipality or dates change.
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
+    }
+
+    const clientIp = getClientIP(request)
+    const isAllowed = await rateLimiters.api(clientIp)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "För många förfrågningar" }, { status: 429 })
+    }
+
+    if (!(await isFeatureEnabled("route_planning"))) {
+      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
+    }
+
+    const { id } = await params
+
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "Ogiltig JSON" }, { status: 400 })
+    }
+
+    const validated = updateRouteSchema.parse(body)
+
+    const provider = await prisma.provider.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    })
+
+    if (!provider) {
+      return NextResponse.json({ error: "Leverantörsprofil hittades inte" }, { status: 404 })
+    }
+
+    const existing = await prisma.routeOrder.findUnique({
+      where: { id },
+      select: { id: true, providerId: true, municipality: true, dateFrom: true, dateTo: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "Rutt-annons hittades inte" }, { status: 404 })
+    }
+
+    if (existing.providerId !== provider.id) {
+      return NextResponse.json(
+        { error: "Du har inte behörighet att ändra denna rutt-annons" },
+        { status: 403 }
+      )
+    }
+
+    const municipalityChanged =
+      validated.municipality !== undefined && validated.municipality !== existing.municipality
+
+    const dateFromChanged =
+      validated.dateFrom !== undefined &&
+      new Date(validated.dateFrom).toISOString().slice(0, 10) !==
+        existing.dateFrom.toISOString().slice(0, 10)
+
+    const dateToChanged =
+      validated.dateTo !== undefined &&
+      new Date(validated.dateTo).toISOString().slice(0, 10) !==
+        existing.dateTo.toISOString().slice(0, 10)
+
+    const relevantChanged = municipalityChanged || dateFromChanged || dateToChanged
+
+    const updateData: Record<string, unknown> = {}
+    if (validated.municipality !== undefined) updateData.municipality = validated.municipality
+    if (validated.dateFrom !== undefined) updateData.dateFrom = new Date(validated.dateFrom)
+    if (validated.dateTo !== undefined) updateData.dateTo = new Date(validated.dateTo)
+    if (validated.specialInstructions !== undefined)
+      updateData.specialInstructions = validated.specialInstructions
+
+    const updated = await prisma.routeOrder.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        municipality: true,
+        dateFrom: true,
+        dateTo: true,
+        status: true,
+        serviceType: true,
+        specialInstructions: true,
+      },
+    })
+
+    if (relevantChanged) {
+      prisma.booking
+        .findMany({
+          where: { routeOrderId: id, status: "confirmed" },
+          select: { id: true, customerId: true },
+        })
+        .then(async (bookings) => {
+          const uniqueCustomerIds = [...new Set(bookings.map((b) => b.customerId))]
+          for (const customerId of uniqueCustomerIds) {
+            await prisma.notification.create({
+              data: {
+                userId: customerId,
+                type: "route_announcement_updated",
+                message:
+                  "En ruttannons du har bokat på har uppdaterats. Kontrollera att din bokning fortfarande stämmer.",
+              },
+            })
+          }
+        })
+        .catch((err) => {
+          logger.error(
+            "Failed to send route update notifications",
+            err instanceof Error ? err : new Error(String(err))
+          )
+        })
+    }
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Valideringsfel", details: error.issues },
+        { status: 400 }
+      )
+    }
+
+    logger.error(
+      "Error updating route order",
+      error instanceof Error ? error : new Error(String(error))
+    )
+    return NextResponse.json({ error: "Internt serverfel" }, { status: 500 })
   }
 }

@@ -22,6 +22,7 @@ export const NotificationType = {
   GROUP_BOOKING_MATCHED: "group_booking_matched",
   GROUP_BOOKING_CANCELLED: "group_booking_cancelled",
   ROUTE_ANNOUNCEMENT_NEW: "route_announcement_new",
+  ROUTE_ANNOUNCEMENT_UPDATED: "route_announcement_updated",
   ROUTE_ANNOUNCEMENT_DUE_HORSE: "route_announcement_due_horse",
   MUNICIPALITY_WATCH_MATCH: "municipality_watch_match",
   MESSAGE_RECEIVED: "message_received",
