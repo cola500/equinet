@@ -11,6 +11,22 @@ import Combine
 import OSLog
 import SwiftUI
 
+/// Shape for timeSlotTapOverlay hit-testing. Covers the full calendar height
+/// minus booking areas, using even-odd fill so booking blocks receive their taps.
+private struct TimeSlotHitShape: Shape {
+    let totalHeight: CGFloat
+    let exclusions: [(CGFloat, CGFloat)]  // (top, bottom) in points
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.addRect(CGRect(x: rect.minX, y: 0, width: rect.width, height: totalHeight))
+        for (top, bottom) in exclusions {
+            p.addRect(CGRect(x: rect.minX, y: top, width: rect.width, height: bottom - top))
+        }
+        return p
+    }
+}
+
 struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToBooking: ((_ bookingId: String) -> Void)?
@@ -386,8 +402,8 @@ struct NativeCalendarView: View {
         )
         .padding(.leading, 56) // After time labels
         .padding(.trailing, 8)
-        .offset(y: top)
         .frame(height: height)
+        .offset(y: top)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(bookingAccessibilityLabel(booking))
         .accessibilityHint("Visa detaljer")
@@ -610,10 +626,16 @@ struct NativeCalendarView: View {
 
     private func timeSlotTapOverlay(for date: Date) -> some View {
         let totalHeight = CGFloat(hours.count) * hourHeight
+        let dayBookings = viewModel.bookingsForDate(date)
+        let exclusions = dayBookings.map { booking -> (CGFloat, CGFloat) in
+            let top = timePosition(booking.startTime)
+            let bottom = max(timePosition(booking.endTime), top + 28)
+            return (top, bottom)
+        }
         return Color.clear
             .frame(height: totalHeight)
             .padding(.leading, 52)
-            .contentShape(Rectangle())
+            .contentShape(TimeSlotHitShape(totalHeight: totalHeight, exclusions: exclusions), eoFill: true)
             .onTapGesture { location in
                 let time = timeFromTapPosition(location.y)
                 timeSlotTapCount += 1
