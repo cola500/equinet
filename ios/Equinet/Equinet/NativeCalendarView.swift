@@ -310,10 +310,14 @@ struct NativeCalendarView: View {
     private func bookingBlocks(for date: Date) -> some View {
         let dayBookings = viewModel.bookingsForDate(date)
         return ForEach(dayBookings) { booking in
+            let top = timePosition(booking.startTime)
+            let bottom = timePosition(booking.endTime)
+            let height = max(bottom - top, 28)
+
             Button {
                 selectedBooking = booking
             } label: {
-                bookingBlock(booking)
+                bookingBlock(booking, height: height)
                     .overlay {
                         if viewModel.actionInProgress == booking.id {
                             RoundedRectangle(cornerRadius: 6)
@@ -323,6 +327,8 @@ struct NativeCalendarView: View {
                     }
             }
             .buttonStyle(.plain)
+            // padding(.top:) shifts layout position (hit-testing follows), unlike offset() which is visual-only
+            .padding(.top, top)
             .contextMenu {
                     if booking.status == "pending" {
                         Button {
@@ -341,12 +347,8 @@ struct NativeCalendarView: View {
         }
     }
 
-    private func bookingBlock(_ booking: NativeBooking) -> some View {
-        let top = timePosition(booking.startTime)
-        let bottom = timePosition(booking.endTime)
-        let height = max(bottom - top, 28) // Min height 28pt
-
-        return HStack(spacing: 6) {
+    private func bookingBlock(_ booking: NativeBooking, height: CGFloat) -> some View {
+        HStack(spacing: 6) {
             // Color bar
             RoundedRectangle(cornerRadius: 2)
                 .fill(statusColor(booking))
@@ -403,7 +405,6 @@ struct NativeCalendarView: View {
         .padding(.leading, 56) // After time labels
         .padding(.trailing, 8)
         .frame(height: height)
-        .offset(y: top)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(bookingAccessibilityLabel(booking))
         .accessibilityHint("Visa detaljer")
