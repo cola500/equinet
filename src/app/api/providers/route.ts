@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const cityParam = searchParams.get("city")
     const searchParam = searchParams.get("search")
+    const serviceTypeParam = searchParams.get("serviceType")
     const latitudeParam = searchParams.get('latitude')
     const longitudeParam = searchParams.get('longitude')
     const radiusKmParam = searchParams.get('radiusKm')
@@ -116,6 +117,7 @@ export async function GET(request: NextRequest) {
     // Sanitize search inputs to prevent SQL injection and XSS
     const city = cityParam ? sanitizeSearchQuery(cityParam) : null
     const search = searchParam ? sanitizeSearchQuery(searchParam) : null
+    const serviceType = serviceTypeParam ? sanitizeSearchQuery(serviceTypeParam) : null
 
     // Geo-filtering validation
     let geoFilter: { latitude: number; longitude: number; radiusKm: number } | null = null
@@ -172,6 +174,7 @@ export async function GET(request: NextRequest) {
       isActive: true,
       city: city || undefined,
       search: search || undefined,
+      serviceType: serviceType || undefined,
     }
 
     // Add bounding box to pre-filter in database (reduces dataset before JS filtering)
@@ -187,6 +190,7 @@ export async function GET(request: NextRequest) {
     const cacheKey = JSON.stringify({
       city: city || null,
       search: search || null,
+      serviceType: serviceType || null,
       boundingBox: filters.boundingBox || null,
     })
 

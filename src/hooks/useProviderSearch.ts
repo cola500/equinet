@@ -45,6 +45,7 @@ interface UseProviderSearchOptions {
   initialCity: string
   initialVisitingArea: string
   initialSortBy: SortOption
+  initialServiceType: string
   userLocation: GeoLocation | null
   radiusKm: number
   followedIds: Set<string>
@@ -65,6 +66,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
   const [search, setSearch] = useState(options.initialSearch)
   const [city, setCity] = useState(options.initialCity)
   const [visitingArea, setVisitingArea] = useState(options.initialVisitingArea)
+  const [serviceType, setServiceType] = useState(options.initialServiceType)
   const [isLoading, setIsLoading] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,18 +82,20 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
     if (search) params.set("search", search)
     if (city) params.set("city", city)
     if (visitingArea) params.set("visiting", visitingArea)
+    if (serviceType) params.set("serviceType", serviceType)
     if (sortBy !== "default") params.set("sort", sortBy)
     if (showFavoritesOnly) params.set("favorites", "true")
     const qs = params.toString()
     const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
     window.history.replaceState(null, "", url)
-  }, [search, city, visitingArea, sortBy, showFavoritesOnly])
+  }, [search, city, visitingArea, serviceType, sortBy, showFavoritesOnly])
 
   const fetchProviders = useCallback(
     async (
       searchQuery?: string,
       cityQuery?: string,
-      geo?: { latitude: number; longitude: number; radiusKm: number }
+      geo?: { latitude: number; longitude: number; radiusKm: number },
+      serviceTypeQuery?: string,
     ) => {
       try {
         setIsLoading(true)
@@ -99,6 +103,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
         const params = new URLSearchParams()
         if (searchQuery) params.append("search", searchQuery)
         if (cityQuery) params.append("city", cityQuery)
+        if (serviceTypeQuery) params.append("serviceType", serviceTypeQuery)
         if (geo) {
           params.append("latitude", geo.latitude.toString())
           params.append("longitude", geo.longitude.toString())
@@ -133,7 +138,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
 
   // Debounce search
   useEffect(() => {
-    const hasFilters = search || city
+    const hasFilters = search || city || serviceType
     if (hasFilters) {
       setIsSearching(true)
     }
@@ -145,7 +150,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
     const delay = hasFilters ? 500 : 0
 
     const timer = setTimeout(() => {
-      fetchProviders(search, city, geo)
+      fetchProviders(search, city, geo, serviceType)
       setIsSearching(false)
     }, delay)
 
@@ -153,7 +158,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
       clearTimeout(timer)
       setIsSearching(false)
     }
-  }, [search, city, radiusKm, userLocation, fetchProviders])
+  }, [search, city, serviceType, radiusKm, userLocation, fetchProviders])
 
   // Fetch providers visiting a specific area
   useEffect(() => {
@@ -209,6 +214,7 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
     setSearch("")
     setCity("")
     setVisitingArea("")
+    setServiceType("")
     setVisitingProviders([])
   }, [])
 
@@ -222,6 +228,8 @@ export function useProviderSearch(options: UseProviderSearchOptions) {
     setCity,
     visitingArea,
     setVisitingArea,
+    serviceType,
+    setServiceType,
     isLoading,
     isSearching,
     error,
