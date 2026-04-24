@@ -62,8 +62,11 @@ export function CustomerBookingCalendar({
     const now = new Date()
 
     return weekData.map((day: DayAvailability) => {
-      // If dateRange is set, mark days outside range as closed
-      if (dateRange && (day.date < dateRange.from || day.date > dateRange.to)) {
+      // If dateRange is set, mark days outside range as closed.
+      // Truncate to YYYY-MM-DD since dateFrom/dateTo may arrive as full ISO strings.
+      const rangeFrom = dateRange?.from.slice(0, 10)
+      const rangeTo = dateRange?.to.slice(0, 10)
+      if (dateRange && (day.date < rangeFrom! || day.date > rangeTo!)) {
         return {
           ...day,
           isClosed: true,
@@ -72,7 +75,15 @@ export function CustomerBookingCalendar({
         }
       }
 
-      if (day.isClosed || !day.openingTime || !day.closingTime) {
+      // For route bookings (dateRange set), days within the range are always open —
+      // the provider explicitly announced availability for these dates regardless of
+      // whether they have a weekly schedule. Fall back to 08:00–18:00 if no hours set.
+      const isRouteDay = !!dateRange
+      const openingTime = day.openingTime || (isRouteDay ? "08:00" : null)
+      const closingTime = day.closingTime || (isRouteDay ? "18:00" : null)
+      const isClosed = isRouteDay ? false : day.isClosed
+
+      if (isClosed || !openingTime || !closingTime) {
         return {
           ...day,
           slots: [] as TimeSlot[],
@@ -90,14 +101,15 @@ export function CustomerBookingCalendar({
         }))
         return {
           ...day,
+          isClosed,
           slots,
         }
       }
 
       // Fallback: calculate locally (no travel time validation)
       const slots = calculateAvailableSlots({
-        openingTime: day.openingTime,
-        closingTime: day.closingTime,
+        openingTime,
+        closingTime,
         bookedSlots: day.bookedSlots.map((b) => ({
           startTime: b.startTime,
           endTime: b.endTime,
@@ -109,6 +121,7 @@ export function CustomerBookingCalendar({
 
       return {
         ...day,
+        isClosed,
         slots,
       }
     })

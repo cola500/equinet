@@ -29,6 +29,7 @@ interface Announcement {
   serviceType: string
   dateFrom: string
   dateTo: string
+  municipality?: string
   specialInstructions?: string
   provider: {
     id: string
@@ -248,12 +249,18 @@ export default function BookAnnouncementPage() {
                       Platser längs rutten
                     </p>
                     <div className="space-y-1">
-                      {announcement.routeStops.map((stop) => (
-                        <div key={stop.id} className="flex items-center gap-2 text-sm">
-                          <span className="text-gray-600">{stop.stopOrder}.</span>
-                          <span>{stop.locationName}</span>
-                        </div>
-                      ))}
+                      {announcement.routeStops.length > 0 ? (
+                        announcement.routeStops.map((stop) => (
+                          <div key={stop.id} className="flex items-center gap-2 text-sm">
+                            <span className="text-gray-600">{stop.stopOrder}.</span>
+                            <span>{stop.locationName}</span>
+                          </div>
+                        ))
+                      ) : announcement.municipality ? (
+                        <p className="text-sm">{announcement.municipality}</p>
+                      ) : (
+                        <p className="text-sm text-gray-400">Inga platser angivna</p>
+                      )}
                     </div>
                   </div>
                   {announcement.specialInstructions && (
