@@ -47,11 +47,11 @@ describe("Kategori-ikoner på landningssidan", () => {
     expect(html).toContain("Tränare")
   })
 
-  it("kategori-ikoner länkar till /providers med korrekt search-param", () => {
+  it("kategori-ikoner länkar till /providers med korrekt serviceType-param", () => {
     const html = renderToString(<Home />)
-    expect(html).toContain("/providers?search=hovslagare")
-    expect(html).toContain("/providers?search=veterinär")
-    expect(html).toContain("/providers?search=tränare")
+    expect(html).toContain("/providers?serviceType=hovslagare")
+    expect(html).toContain("/providers?serviceType=veterinär")
+    expect(html).toContain("/providers?serviceType=tränare")
   })
 })
 
