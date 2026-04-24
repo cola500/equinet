@@ -255,8 +255,20 @@ export function InsightsCharts({
     uniqueCustomers: showDelta ? computeDelta(kpis.uniqueCustomers, previousKpis.uniqueCustomers) : null,
   }
 
+  // Empty state: no bookings in the selected period
+  const isEmpty = serviceBreakdown.length === 0 && kpis.uniqueCustomers === 0
+
   return (
     <div className="space-y-6">
+      {isEmpty && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900">
+            <span className="font-semibold">Inga bokningar i den valda perioden.</span>{" "}
+            Insikterna fylls på allteftersom du får bokningar.
+          </p>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
         <KPICard label="Total intäkt" value={`${kpis.totalRevenue.toLocaleString("sv-SE")} kr`} info="Summa intäkt från genomförda bokningar i perioden." delta={deltas.totalRevenue} deltaDirection="up-good" />
@@ -276,7 +288,7 @@ export function InsightsCharts({
               <CardTitle className="text-base">Populäraste tjänster</CardTitle>
               <InfoPopover text="Baserat på genomförda bokningar. Visar antal och intäkt per tjänst." />
             </div>
-            <CardDescription>Genomförda bokningar och intäkt per tjänst</CardDescription>
+            <CardDescription>Genomförda bokningar och intäkt per tjänst (exkl. avbokade och pending)</CardDescription>
           </CardHeader>
           <CardContent>
             {serviceBreakdown.length === 0 ? (
