@@ -269,7 +269,7 @@ export function BookingDetailDialog({
                 variant="destructive"
                 className="flex-1"
               >
-                Avböj
+                Avvisa
               </Button>
             </div>
           )}
