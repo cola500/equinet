@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-21
+last_updated: 2026-04-24
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,15 +18,11 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 57: Ruttsynlighet för nya kunder** — startad 2026-04-24
-Sprint-dokument: [sprint-57.md](sprint-57.md)
+**Ingen aktiv sprint** — Sprint 58 klar 2026-04-24.
 
-| Story | Status | Branch | Commit |
-|-------|--------|--------|--------|
-| S57-1: Kommande ruttar på profil utan platsdata (GAP C) | pending | — | — |
-| S57-2: Ruttar synliga för alla, inte bara följare (GAP D) | pending | — | — |
-| S57-3: Rutt-kontext i bokningsdialogens header (GAP A) | pending | — | — |
-| S57-4: Notis vid ruttändring (GAP B) | pending | — | — |
+*(Sprint 58 klar 2026-04-24. 4/4 stories done — Affärsinsikter release-klar: total intäkt KPI (S58-1), delta-indikator mot föregående period (S58-2), tomtläge + tydligare servicebreakdown-rubrik (S58-3), business_insights feature flag borttagen (S58-4). Mergad via PR #287. check:all 4/4 gröna, 4380 tester. Demo-läget oberoende verifierat.)*
+
+*(Sprint 57 klar 2026-04-24. 4/4 stories done — ruttsynlighet för nya kunder: kommande ruttar på leverantörsprofil (S57-1), rutt-badge i söklistan (S57-2), rutt-kontext-banner i bokningskalendern (S57-3), notis vid ruttändring (S57-4). Mergad via PR #284. Hotfix landad ovanpå: serviceType-filter söker nu i businessName + description + service.name.)*
 
 *(Sprint 56 klar 2026-04-24. 4/4 stories done — kategori-ikoner navigerar till filtrerad sökning, tjänstetyp-filterchips på /providers, transparent pending-status med förväntad svarstid, review-uppmaning efter slutförd bokning.)*
 
