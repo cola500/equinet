@@ -18,12 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 55: iOS demo mode** — startad 2026-04-24
-Sprint-dokument: [sprint-55.md](sprint-55.md)
+**Sprint 56: Sökning och transparens** — startad 2026-04-24
+Sprint-dokument: [sprint-56.md](sprint-56.md)
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S55-1: iOS demo mode — NativeMoreView + NativeProfileView | done | feature/s55-1-ios-demo-mode | 2d94f766 |
+| S56-1: Kategori-ikoner på landningssidan filtrerar | pending | - | - |
+| S56-2: Tjänstetyp-filter på /providers | pending | - | - |
+| S56-3: Transparent pending-status på kundsidan | pending | - | - |
+| S56-4: Review-uppmaning efter slutförd bokning | pending | - | - |
 
 *(Sprint 55 klar 2026-04-24. 1/1 story done — iOS demo mode + env-synk (NEXT_PUBLIC_DEMO_MODE) + kalender-buggfix (offset→padding för korrekt hit-testing) + dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`.)*
 
