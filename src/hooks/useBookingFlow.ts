@@ -267,7 +267,13 @@ export function useBookingFlow({
             setStep("selectTime")
             return
           }
-          throw new Error(data.error || "Failed to create booking")
+          if (response.status >= 500) {
+            throw new Error(data.error || "Internt serverfel")
+          }
+          // 4xx validation error — show to user without logging as error
+          toast.error(data.error || "Kunde inte skapa bokning")
+          setStep("selectTime")
+          return
         }
 
         toast.success("Bokningsförfrågan skickad!")
