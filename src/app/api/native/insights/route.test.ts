@@ -23,21 +23,16 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
   RateLimitServiceError: class RateLimitServiceError extends Error {},
 }))
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
 
 import { GET } from "./route"
 import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, RateLimitServiceError } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 const mockAuth = vi.mocked(getAuthUser)
 const mockFindProvider = vi.mocked(prisma.provider.findUnique)
 const mockFindManyBookings = vi.mocked(prisma.booking.findMany)
 const mockRateLimit = vi.mocked(rateLimiters.api)
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 function createRequest(months?: number) {
   const url = new URL("http://localhost:3000/api/native/insights")
@@ -94,7 +89,6 @@ describe("GET /api/native/insights", () => {
     mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue({ id: "provider-1" } as never)
     mockRateLimit.mockResolvedValue(true)
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockFindManyBookings.mockResolvedValue([] as never)
   })
 
@@ -118,14 +112,6 @@ describe("GET /api/native/insights", () => {
     mockRateLimit.mockRejectedValue(new RateLimitServiceError("Redis error"))
     const res = await GET(createRequest())
     expect(res.status).toBe(503)
-  })
-
-  // Feature flag
-  it("returns 404 when feature flag is disabled", async () => {
-    mockIsFeatureEnabled.mockResolvedValue(false)
-    const res = await GET(createRequest())
-    expect(res.status).toBe(404)
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("business_insights")
   })
 
   // Provider

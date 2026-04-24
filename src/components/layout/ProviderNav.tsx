@@ -57,7 +57,7 @@ const providerMoreItems: MoreItem[] = [
   { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements", featureFlag: "route_announcements", section: "Planering" },
   { href: "/provider/due-for-service", label: "Besöksplanering", icon: Clock, matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service", section: "Planering" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings", section: "Planering" },
-  { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", featureFlag: "business_insights", section: "Mitt företag" },
+  { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", section: "Mitt företag" },
   { href: "/provider/reviews", label: "Recensioner", icon: Star, section: "Mitt företag" },
   { href: "/provider/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center", section: "Mitt företag" },
   { href: "/provider/profile", label: "Min profil", icon: User, section: "Mitt företag" },
@@ -81,7 +81,7 @@ const secondaryNavItems: (NavItem & { section?: string })[] = [
   { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", featureFlag: "route_announcements", section: "Planering" },
   { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", featureFlag: "due_for_service", section: "Planering" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", featureFlag: "group_bookings", section: "Planering" },
-  { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", featureFlag: "business_insights", section: "Mitt företag" },
+  { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", section: "Mitt företag" },
   { href: "/provider/help", label: "Hjälp", matchPrefix: "/provider/help", featureFlag: "help_center", section: "Mitt företag" },
   { href: "/provider/profile", label: "Min profil", section: "Mitt företag" },
 ]

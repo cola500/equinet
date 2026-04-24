@@ -386,10 +386,12 @@ export const TEST_DATA: TestCategory[] = [
       {
         id: "feat-insights",
         title: "Affärsinsikter",
-        description: "Slå PÅ business_insights i Admin → System",
+        description: "Alltid tillgänglig (ingen feature flag)",
         items: [
-          { id: "finsights-1", label: "Menyval visas när PÅ, döljs när AV" },
-          { id: "finsights-2", label: "Grafer: tjänster, tidsanalys, retention" },
+          { id: "finsights-1", label: "Menyval synligt under Mitt företag" },
+          { id: "finsights-2", label: "KPI-kort visar total intäkt, delta-indikatorer mot föregående period" },
+          { id: "finsights-3", label: "Grafer: tjänster, tidsanalys, retention" },
+          { id: "finsights-4", label: "Tomtläge visas när ingen data i perioden" },
         ],
       },
       {

@@ -2,14 +2,12 @@
  * GET /api/native/insights - Business insights for native iOS
  *
  * Auth: Bearer > Supabase
- * Feature flag: business_insights (server-side gate, defense in depth)
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { startOfMonth, subMonths, format, getDay } from "date-fns"
 import { sv } from "date-fns/locale"
 
@@ -71,10 +69,6 @@ export async function GET(request: NextRequest) {
         )
       }
       throw error
-    }
-
-    if (!(await isFeatureEnabled("business_insights"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     const provider = await prisma.provider.findUnique({
