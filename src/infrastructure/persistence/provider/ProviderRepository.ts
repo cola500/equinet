@@ -13,6 +13,20 @@ import type {
   ProviderWithFullDetails,
   ProviderForEdit,
 } from './IProviderRepository'
+
+// Chip values → synonymous service name terms used by Swedish providers.
+// Needed because providers name services freely ("Hovslagning", "Hovsmide", etc.)
+// rather than using the chip label verbatim. Remove when Service.category is added.
+const SERVICE_CATEGORY_TERMS: Record<string, string[]> = {
+  hovslagare: ['hovslagare', 'hovslagning', 'hovsmide', 'hovvård', 'skoning'],
+  veterinär: ['veterinär', 'djurläkare'],
+  hästterapeut: ['hästterapeut', 'massage', 'kiroprak', 'akupunktur', 'fysioterapi'],
+  tränare: ['tränare', 'träning', 'ridtränare', 'ridträning'],
+}
+
+export function getServiceTypeTerms(serviceType: string): string[] {
+  return SERVICE_CATEGORY_TERMS[serviceType.toLowerCase()] ?? [serviceType]
+}
 import { logger } from '@/lib/logger'
 
 export class ProviderRepository implements IProviderRepository {
@@ -91,10 +105,11 @@ export class ProviderRepository implements IProviderRepository {
 
     // AND with search filter: both search term AND service type must match
     if (filters?.serviceType) {
+      const terms = getServiceTypeTerms(filters.serviceType)
       where.services = {
         some: {
-          name: { contains: filters.serviceType, mode: 'insensitive' },
           isActive: true,
+          OR: terms.map(term => ({ name: { contains: term, mode: 'insensitive' as const } })),
         },
       }
     }
