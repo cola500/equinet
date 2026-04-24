@@ -31,6 +31,8 @@ import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { clientLogger } from "@/lib/client-logger"
 import type { Booking, RouteOrder, CombinedBooking } from "@/components/customer/bookings/types"
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+
 export default function CustomerBookingsPage() {
   const router = useRouter()
   const { isLoading, isCustomer } = useAuth()
@@ -52,6 +54,14 @@ export default function CustomerBookingsPage() {
   const mutateAll = () => { mutateBookings(); mutateRouteOrders() }
 
   const { filter, setFilter, filteredBookings } = useBookingFilters(bookings)
+
+  const sevenDaysAgo = Date.now() - SEVEN_DAYS_MS
+  const nudgeBookings = (regularBookings ?? []).filter(b =>
+    b.status === "completed" &&
+    !b.review &&
+    new Date(b.updatedAt ?? b.bookingDate).getTime() > sevenDaysAgo
+  )
+
   const [bookingToCancel, setBookingToCancel] = useState<{ id: string; type: "fixed" | "flexible" } | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null)
@@ -203,6 +213,32 @@ export default function CustomerBookingsPage() {
             </button>
           ))}
         </div>
+
+        {/* Review nudge for recently completed bookings */}
+        {nudgeBookings.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {nudgeBookings.map(booking => (
+              <div key={booking.id} className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">
+                    Hoppas det gick bra med {booking.service.name} hos {booking.provider.businessName}!
+                  </p>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    En recension hjälper andra kunder och leverantören.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => setReviewBooking(booking)}
+                >
+                  Skriv recension
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Bookings List */}
         {error ? (

@@ -220,12 +220,20 @@ export class StatusChangedPushHandler implements IEventHandler<BookingStatusChan
 
     try {
       if (p.changedByUserType === 'provider') {
-        await this.pushService.sendToUser(p.customerId, {
-          title: `Bokning ${statusLabel}`,
-          body: `${p.serviceName} hos ${p.providerName} den ${dateStr} har blivit ${statusLabel}`,
-          url: '/customer/bookings',
-          bookingId: p.bookingId,
-        })
+        const payload = p.newStatus === 'completed'
+          ? {
+              title: `${p.serviceName} slutförd`,
+              body: `Hoppas det gick bra hos ${p.providerName}! Skriv gärna en recension.`,
+              url: '/customer/bookings',
+              bookingId: p.bookingId,
+            }
+          : {
+              title: `Bokning ${statusLabel}`,
+              body: `${p.serviceName} hos ${p.providerName} den ${dateStr} har blivit ${statusLabel}`,
+              url: '/customer/bookings',
+              bookingId: p.bookingId,
+            }
+        await this.pushService.sendToUser(p.customerId, payload)
       } else {
         await this.pushService.sendToUser(p.providerUserId, {
           title: `Bokning ${statusLabel}`,
