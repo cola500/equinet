@@ -17,6 +17,8 @@ struct NativeProfileView: View {
     let featureFlags: [String: Bool]
     var onNavigateToWebPath: ((String) -> Void)?
 
+    private var isDemoMode: Bool { featureFlags["demo_mode"] ?? false }
+
     @State private var selectedTab = 0
     @State private var showEditSheet = false
     @State private var selectedPhoto: PhotosPickerItem?
@@ -113,7 +115,7 @@ struct NativeProfileView: View {
                     profileImageSection(profile)
                     personalInfoSection(profile)
                     businessInfoSection(profile)
-                    linksSection
+                    if !isDemoMode { linksSection }
                 }
                 .padding()
             }
@@ -327,19 +329,22 @@ struct NativeProfileView: View {
             errorView(error)
         } else if let profile = viewModel.profile {
             List {
+                // bookingSettingsSection and availabilitySection are intentionally visible in demo mode (per spec)
                 bookingSettingsSection(profile)
 
-                if featureFlags["self_reschedule"] ?? false {
+                if (featureFlags["self_reschedule"] ?? false) && !isDemoMode {
                     rescheduleSection(profile)
                 }
 
-                if featureFlags["recurring_bookings"] ?? false {
+                if (featureFlags["recurring_bookings"] ?? false) && !isDemoMode {
                     recurringSection(profile)
                 }
 
                 availabilitySection
 
-                dangerZoneSection
+                if !isDemoMode {
+                    dangerZoneSection
+                }
             }
         }
     }

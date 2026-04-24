@@ -70,9 +70,17 @@ struct NativeMoreView: View {
     @State private var navigationPath = NavigationPath()
     @State private var showLogoutConfirmation = false
 
-    /// Sections filtered by feature flags. Empty sections are hidden.
+    /// Sections filtered by feature flags and demo mode. Empty sections are hidden.
+    /// In demo mode only "Min profil" is shown regardless of other flags.
     private var visibleSections: [(name: String, items: [MoreMenuItem])] {
-        allMenuSections.compactMap { section in
+        let isDemoMode = featureFlags["demo_mode"] ?? false
+        if isDemoMode {
+            guard let profileItem = allMenuSections.flatMap(\.items).first(where: { $0.path == "/provider/profile" }) else {
+                return []
+            }
+            return [("Mitt företag", [profileItem])]
+        }
+        return allMenuSections.compactMap { section in
             let visible = section.items.filter { item in
                 guard let flag = item.featureFlag else { return true }
                 return featureFlags[flag] == true
