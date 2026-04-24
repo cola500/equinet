@@ -40,6 +40,7 @@ interface RetentionMonth {
 interface KPIs {
   cancellationRate: number
   noShowRate: number
+  totalRevenue: number
   averageBookingValue: number
   uniqueCustomers: number
   manualBookingRate: number
@@ -162,8 +163,8 @@ export function InsightsCharts({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} data-testid="kpi-skeleton">
               <CardContent className="pt-6">
                 <div className="h-12 bg-gray-100 animate-pulse rounded" />
@@ -196,12 +197,13 @@ export function InsightsCharts({
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <KPICard label="Total intäkt" value={`${kpis.totalRevenue.toLocaleString("sv-SE")} kr`} info="Summa intäkt från genomförda bokningar i perioden." />
         <KPICard label="Avbokningsgrad" value={kpis.cancellationRate} unit="%" color={kpis.cancellationRate > 20 ? "text-red-600" : undefined} info="Andel bokningar som avbokades av totalt antal bokningar i perioden." />
         <KPICard label="No-show-grad" value={kpis.noShowRate} unit="%" color={kpis.noShowRate > 10 ? "text-amber-600" : undefined} info="Andel bekräftade bokningar där kunden inte dök upp." />
         <KPICard label="Snittbokningsvärde" value={`${kpis.averageBookingValue.toLocaleString("sv-SE")} kr`} info="Genomsnittligt pris per genomförd bokning i perioden." />
         <KPICard label="Unika kunder" value={kpis.uniqueCustomers} info="Antal kunder med minst en bokning i perioden." />
-        <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" className="col-span-2 sm:col-span-1" info="Andel bokningar skapade manuellt av dig, jämfört med kundens självbokning." />
+        <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" info="Andel bokningar skapade manuellt av dig, jämfört med kundens självbokning." />
       </div>
 
       {/* Charts grid */}

@@ -21,6 +21,7 @@ interface InsightsData {
   kpis: {
     cancellationRate: number
     noShowRate: number
+    totalRevenue: number
     averageBookingValue: number
     uniqueCustomers: number
     manualBookingRate: number
@@ -31,7 +32,7 @@ const EMPTY_DATA: InsightsData = {
   serviceBreakdown: [],
   timeHeatmap: [],
   customerRetention: [],
-  kpis: { cancellationRate: 0, noShowRate: 0, averageBookingValue: 0, uniqueCustomers: 0, manualBookingRate: 0 },
+  kpis: { cancellationRate: 0, noShowRate: 0, totalRevenue: 0, averageBookingValue: 0, uniqueCustomers: 0, manualBookingRate: 0 },
 }
 
 export default function ProviderInsightsPage() {

@@ -177,6 +177,33 @@ describe("GET /api/provider/insights", () => {
     expect(data.kpis.averageBookingValue).toBe(900)
   })
 
+  it("should return totalRevenue from completed bookings", async () => {
+    setupAuthenticatedProvider()
+    mockBookingCount.mockResolvedValue(4)
+    mockBookingFindMany.mockResolvedValue([
+      createBooking({ status: "completed", service: { id: "s1", name: "A", price: 600 } }),
+      createBooking({ status: "completed", service: { id: "s2", name: "B", price: 900 } }),
+      createBooking({ status: "completed", service: { id: "s3", name: "C", price: 1200 } }),
+      createBooking({ status: "cancelled", service: { id: "s4", name: "D", price: 500 } }),
+    ] as never)
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    // Only completed: 600 + 900 + 1200 = 2700 (cancelled excluded)
+    expect(data.kpis.totalRevenue).toBe(2700)
+  })
+
+  it("should return totalRevenue as 0 when no completed bookings", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(data.kpis.totalRevenue).toBe(0)
+  })
+
   it("should count unique customers", async () => {
     setupAuthenticatedProvider()
     mockBookingCount.mockResolvedValue(4)

@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
     const kpis = {
       cancellationRate: totalBookings > 0 ? Math.round((cancelledCount / totalBookings) * 100) : 0,
       noShowRate: totalBookings > 0 ? Math.round((noShowCount / totalBookings) * 100) : 0,
+      totalRevenue: Math.round(totalRevenue),
       averageBookingValue:
         completedBookings.length > 0
           ? Math.round(totalRevenue / completedBookings.length)
