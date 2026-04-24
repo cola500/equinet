@@ -24,8 +24,8 @@ Sprint-dokument: [sprint-56.md](sprint-56.md)
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
 | S56-1: Kategori-ikoner på landningssidan filtrerar | done | feature/s56-1-kategori-ikoner-filter | dafbea47 |
-| S56-2: Tjänstetyp-filter på /providers | in_progress | feature/s56-2-tjanstetyp-filter | - |
-| S56-3: Transparent pending-status på kundsidan | pending | - | - |
+| S56-2: Tjänstetyp-filter på /providers | done | feature/s56-2-tjanstetyp-filter | 941a2132 |
+| S56-3: Transparent pending-status på kundsidan | in_progress | feature/s56-3-transparent-pending-status | - |
 | S56-4: Review-uppmaning efter slutförd bokning | pending | - | - |
 
 *(Sprint 55 klar 2026-04-24. 1/1 story done — iOS demo mode + env-synk (NEXT_PUBLIC_DEMO_MODE) + kalender-buggfix (offset→padding för korrekt hit-testing) + dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`.)*

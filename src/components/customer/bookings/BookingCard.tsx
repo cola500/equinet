@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -10,11 +11,11 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { StarRating } from "@/components/review/StarRating"
-import { format } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { sv } from "date-fns/locale"
 import type { CombinedBooking, Booking } from "./types"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { MessagingSection } from "./MessagingSection"
+import { MessagingDialog } from "./MessagingDialog"
 
 interface BookingCardProps {
   booking: CombinedBooking
@@ -82,6 +83,10 @@ export function BookingCard({
   onDeleteReview,
 }: BookingCardProps) {
   const messagingEnabled = useFeatureFlag("messaging")
+  const [messagingOpen, setMessagingOpen] = useState(false)
+
+  const allowedMessagingStatuses = ["pending", "confirmed", "completed"]
+  const canMessage = booking.type === "fixed" && messagingEnabled && allowedMessagingStatuses.includes(booking.status)
 
   return (
     <Card
@@ -147,6 +152,15 @@ export function BookingCard({
           <FlexibleBookingContent booking={booking} />
         )}
 
+        {/* Pending info for fixed bookings */}
+        {booking.type === "fixed" && booking.status === "pending" && (
+          <PendingInfo
+            booking={booking}
+            canMessage={canMessage}
+            onOpenMessaging={() => setMessagingOpen(true)}
+          />
+        )}
+
         {/* Payment and action buttons for fixed bookings */}
         {booking.type === "fixed" && (
           <BookingActions
@@ -169,9 +183,19 @@ export function BookingCard({
           />
         )}
 
-        {/* Messaging section for fixed bookings */}
-        {booking.type === "fixed" && messagingEnabled && (
-          <MessagingSection booking={booking} />
+        {/* Messaging button for fixed bookings */}
+        {canMessage && (
+          <div className="mt-3 pt-3 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
+              onClick={() => setMessagingOpen(true)}
+            >
+              Meddelanden
+            </Button>
+          </div>
         )}
 
         {/* Cancel button for flexible bookings */}
@@ -189,7 +213,56 @@ export function BookingCard({
             </div>
           )}
       </CardContent>
+
+      {/* Messaging dialog (shared state between pending-info link and messaging button) */}
+      {canMessage && messagingOpen && (
+        <MessagingDialog
+          bookingId={booking.id}
+          providerName={(booking as Booking).provider.businessName}
+          open={messagingOpen}
+          onOpenChange={setMessagingOpen}
+        />
+      )}
     </Card>
+  )
+}
+
+function PendingInfo({
+  booking,
+  canMessage,
+  onOpenMessaging,
+}: {
+  booking: Booking
+  canMessage: boolean
+  onOpenMessaging: () => void
+}) {
+  const createdText = booking.createdAt
+    ? formatDistanceToNow(new Date(booking.createdAt), { addSuffix: true, locale: sv })
+    : null
+
+  return (
+    <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+      {createdText && (
+        <p className="text-sm text-yellow-800 mb-1">
+          Skapad {createdText}
+        </p>
+      )}
+      <p className="text-sm text-yellow-700">
+        Leverantören bekräftar vanligtvis inom ett dygn. Du får ett meddelande när bokningen bekräftas.
+      </p>
+      {canMessage && (
+        <p className="text-sm text-yellow-700 mt-1">
+          Har du frågor?{" "}
+          <button
+            type="button"
+            className="underline font-medium"
+            onClick={onOpenMessaging}
+          >
+            Skicka ett meddelande till leverantören
+          </button>
+        </p>
+      )}
+    </div>
   )
 }
 

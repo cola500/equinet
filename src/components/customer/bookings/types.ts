@@ -14,6 +14,7 @@ export interface Booking {
   startTime: string
   endTime: string
   status: string
+  createdAt?: string
   cancellationMessage?: string
   horseName?: string
   horse?: {
