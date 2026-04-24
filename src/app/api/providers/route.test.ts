@@ -776,7 +776,7 @@ describe('GET /api/providers', () => {
       expect(result.data[0].businessName).toBe('Erik Hovslagare')
     })
 
-    it('should pass serviceType filter to database query', async () => {
+    it('should pass serviceType filter to database query as OR over synonyms', async () => {
       vi.mocked(prisma.provider.findMany).mockResolvedValue([])
 
       const request = new NextRequest('http://localhost:3000/api/providers?serviceType=veterinär')
@@ -787,7 +787,10 @@ describe('GET /api/providers', () => {
           where: expect.objectContaining({
             services: expect.objectContaining({
               some: expect.objectContaining({
-                name: expect.objectContaining({ contains: 'veterinär', mode: 'insensitive' }),
+                isActive: true,
+                OR: expect.arrayContaining([
+                  expect.objectContaining({ name: expect.objectContaining({ contains: 'veterinär' }) }),
+                ]),
               }),
             }),
           }),

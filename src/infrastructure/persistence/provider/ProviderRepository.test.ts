@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { MockProviderRepository } from './MockProviderRepository'
+import { getServiceTypeTerms } from './ProviderRepository'
 import type { Provider } from './IProviderRepository'
 
 describe('ProviderRepository', () => {
@@ -200,6 +201,32 @@ describe('ProviderRepository', () => {
       // Assert
       expect(result).toHaveLength(1)
       expect(result[0]).toEqual(provider1)
+    })
+  })
+
+  describe('getServiceTypeTerms', () => {
+    it('returns multiple terms for known category hovslagare', () => {
+      const terms = getServiceTypeTerms('hovslagare')
+      expect(terms).toContain('hovslagare')
+      expect(terms).toContain('hovslagning')
+      expect(terms.length).toBeGreaterThan(1)
+    })
+
+    it('returns multiple terms for veterinär', () => {
+      const terms = getServiceTypeTerms('veterinär')
+      expect(terms).toContain('veterinär')
+      expect(terms.length).toBeGreaterThan(1)
+    })
+
+    it('falls back to original term for unknown category', () => {
+      const terms = getServiceTypeTerms('okänd-tjänst')
+      expect(terms).toEqual(['okänd-tjänst'])
+    })
+
+    it('is case-insensitive for lookup', () => {
+      const lower = getServiceTypeTerms('hovslagare')
+      const upper = getServiceTypeTerms('Hovslagare')
+      expect(lower).toEqual(upper)
     })
   })
 

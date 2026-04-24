@@ -18,15 +18,17 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 56: Sökning och transparens** — startad 2026-04-24
-Sprint-dokument: [sprint-56.md](sprint-56.md)
+**Sprint 57: Ruttsynlighet för nya kunder** — startad 2026-04-24
+Sprint-dokument: [sprint-57.md](sprint-57.md)
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S56-1: Kategori-ikoner på landningssidan filtrerar | done | feature/s56-1-kategori-ikoner-filter | dafbea47 |
-| S56-2: Tjänstetyp-filter på /providers | done | feature/s56-2-tjanstetyp-filter | 941a2132 |
-| S56-3: Transparent pending-status på kundsidan | done | feature/s56-3-transparent-pending-status | bf3568af |
-| S56-4: Review-uppmaning efter slutförd bokning | done | feature/s56-4-review-uppmaning | 78858a0e |
+| S57-1: Kommande ruttar på profil utan platsdata (GAP C) | pending | — | — |
+| S57-2: Ruttar synliga för alla, inte bara följare (GAP D) | pending | — | — |
+| S57-3: Rutt-kontext i bokningsdialogens header (GAP A) | pending | — | — |
+| S57-4: Notis vid ruttändring (GAP B) | pending | — | — |
+
+*(Sprint 56 klar 2026-04-24. 4/4 stories done — kategori-ikoner navigerar till filtrerad sökning, tjänstetyp-filterchips på /providers, transparent pending-status med förväntad svarstid, review-uppmaning efter slutförd bokning.)*
 
 *(Sprint 55 klar 2026-04-24. 1/1 story done — iOS demo mode + env-synk (NEXT_PUBLIC_DEMO_MODE) + kalender-buggfix (offset→padding för korrekt hit-testing) + dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`.)*
 
@@ -137,6 +139,7 @@ Sprint-dokument: [sprint-56.md](sprint-56.md)
 
 | Item | Effort | Motivering |
 |------|--------|------------|
+| Lägg till `category`-fält på `Service` (schema-ändring) | 3-4h | **Bakgrund:** Hotfix (2026-04-24) lade till `SERVICE_CATEGORY_TERMS`-mappning i `ProviderRepository.ts` som workaround för att fritextnamn ("Hovslagning") inte matchade chip-label ("Hovslagare"). Rätt lösning: ett strukturerat `category`-fält på `Service`-modellen. Fix: (1) `prisma migrate dev` med ny `category String?`-kolumn, (2) Uppdatera leverantörs-UI för att sätta kategori vid skapande av tjänst, (3) Filtrera på `category` istället för `name CONTAINS`, (4) Ta bort `SERVICE_CATEGORY_TERMS` i `ProviderRepository.ts`. RLS-audit vid ny kolumn. |
 | S42-3: Full-suite flake-rapport | 45-60 min | Avbruten från S42. Kan köras när testpyramid-arbetet behöver baseline-data. |
 | S42-4: iOS native-flöde-audit via mobile-mcp | 1-1.5h | Avbruten från S42. 13 flöden, visuell baseline. Fortfarande värdefullt före lansering. |
 | Implementera iOS XCUITest smoke-svit | 2-3 dagar | Plan finns: [ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md). Login + 3 native-flöden. Post-launch. |
