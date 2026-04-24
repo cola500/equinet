@@ -371,7 +371,7 @@ function CalendarContent() {
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: action }),
+        body: JSON.stringify({ status: action === "rejected" ? "cancelled" : action }),
       })
       if (!response.ok) throw new Error("Failed")
       toast.success(action === "confirmed" ? "Bokning bekräftad!" : "Bokning avvisad!")
