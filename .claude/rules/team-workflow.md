@@ -1,327 +1,142 @@
 ---
-title: "Team Workflow -- Stationsflode"
-description: "6-stationsflode med checklistor for features, fran planering till merge"
+title: "Team Workflow — 4-stegsflöde"
+description: "Minimalt flöde per story: Branch → TDD → Check → Ship"
 category: rule
 status: active
-last_updated: 2026-04-19
-tags: [workflow, team, review, tdd, quality]
+last_updated: 2026-04-24
+tags: [workflow, team, tdd, quality]
+paths:
+  - "src/**"
+  - "ios/**"
 sections:
-  - Översikt
-  - Station 1 PLAN
-  - Station 2 RED
-  - Station 3 GREEN
-  - Station 4 REVIEW
-  - Station 5 VERIFY
-  - Station 6 MERGE
+  - Flöde
+  - Steg 1 - BRANCH
+  - Steg 2 - TDD
+  - Steg 3 - CHECK
+  - Steg 4 - SHIP
+  - Review-gating
+  - Roller
   - Undantag
 ---
 
-# Team Workflow -- Stationsflode
-
-## Översikt
-
-Varje feature passerar 6 stationer. Commit efter varje station.
-Om en station misslyckas, ga tillbaka till ratt station (aldrig framat).
+# Team Workflow — 4-stegsflöde
 
 ```
-PLAN --> RED --> GREEN --> REVIEW --> VERIFY --> MERGE
-  ^       ^       |         |          |
-  |       |       v         v          |
-  |       +--- (fix) <-- (problem) <---+
-  +--- (arkitekturproblem)
+BRANCH → TDD → CHECK → SHIP
 ```
 
----
-
-## Station 1: PLAN
-
-**Vem**: Tech lead (eller utvecklare med tech lead-granskning)
-**Syfte**: Sakerstall att vi bygger ratt sak pa ratt satt
-
-### Först: verifiera aktualitet (OBLIGATORISKT för backlog-stories)
-
-Om storyn plockats från backloggen (inte nyskriven i sprint-planeringen), **verifiera att problemet fortfarande finns INNAN detaljplanering**:
-
-- [ ] Grep/find efter det som ska åtgärdas (t.ex. `grep -r "Task.detached" ios/`)
-- [ ] Läs relaterad kod -- har någon annan sprint redan fixat det?
-- [ ] Kör relevant test -- beter sig koden som storyn beskriver?
-
-**Om problemet är löst:** Skriv `docs/done/<story-id>-done.md` med "Redan åtgärdat i S<X>-<Y> (commit <hash>). Ingen kodändring behövs." Committa done-filen + uppdatera sessionsfil. Gå till nästa story.
-
-**Varför:** S27 och S29 hade båda 2 stories var där problemet redan var löst. ~30 min slösad planering per incident. En 2-minuters verifiering undviker det.
-
-### Checklista (när problemet är verifierat)
-
-- [ ] User story definierad: "Som [roll] vill jag [handling] sa att [nytta]"
-- [ ] Paverkan identifierad: vilka filer/domaner beros?
-- [ ] Schema-andringar? -> Skissa Prisma-modeller FORE implementation
-- [ ] API-kontrakt? -> Definiera endpoints, request/response-format
-- [ ] Beror karndomaner? -> Repository pattern obligatoriskt
-- [ ] Feature flag behovs? -> Definiera i feature-flag-definitions.ts
-- [ ] iOS-paverkan? -> Behovs native vy eller racker WebView?
-- [ ] Sakerhetsovertanke: auth, IDOR, input-validering
-
-### Output
-
-- Kort designbeskrivning (kan vara kommentar i sprint-dokumentet)
-- Lista over filer som ska andras/skapas
-- Beslut om feature flag ja/nej
-
-### Gate
-
-Tech lead godkanner planen innan station 2 paborjas.
+Varje story passerar fyra steg. Commit kontinuerligt — inga minimikrav på antal commits.
 
 ---
 
-## Station 2: RED
-
-**Vem**: Utvecklare
-**Syfte**: Definiera onskad beteende genom failande tester
-
-### Regler
-
-- Skriv BARA tester -- ingen implementation
-- API routes + domain services: BDD dual-loop (yttre integrationstest forst)
-- Utilities + enkel CRUD: Enkel TDD
-- iOS: XCTest for ViewModel, visuell verifiering for UI
-
-### Checklista
-
-- [ ] Integrationstest skrivet (for BDD dual-loop)
-- [ ] Unit-tester skrivna for alla nya publika metoder
-- [ ] Tester failar av RATT anledning (inte importfel eller syntax)
-- [ ] Feature flag-test: "returns 404 when flag disabled" (om flagga anvands)
-- [ ] Edge cases identifierade: null, tom lista, ogiltig input, concurrent access
-
-### Gate
-
-Alla tester MASTE faila. Om nagot test passerar utan implementation -- testet testar inte ratt sak.
-
----
-
-## Station 3: GREEN
-
-**Vem**: Utvecklare
-**Syfte**: Minimum implementation for att passera alla tester
-
-### Regler
-
-- Implementera BARA det som behovs for att tester passerar
-- En logisk ändring per TDD-cykel
-- Om en refactor bryter ett test -- revertera refactorn
-- Vid ny API route: folj api-routes.md checklista
-- Vid ny feature flag: folj feature-flags.md checklista
-
-### Checklista
-
-- [ ] Alla RED-tester ar grona
-- [ ] Zod-schema definierad (.strict()) for alla nya endpoints
-- [ ] Auth-check i alla nya routes (session null-guard)
-- [ ] Rate limiting i alla nya routes
-- [ ] Select-block (aldrig include) i alla Prisma-queries
-- [ ] Strukturerad loggning (logger, aldrig console.*)
-- [ ] Svenska felmeddelanden i API-responses
-- [ ] Om befintlig route -- migrera till withApiHandler om rimligt
-
-### Gate
-
-`npx vitest run <berod-sokvag>` + `npm run typecheck` -- alla grona.
-
----
-
-## Station 4: REVIEW
-
-**Vem**: code-reviewer agent (automatiskt) + tech lead vid storre andringar
-**Syfte**: Fanga problem innan de nar main
-
-### Review-gating: när skippa subagent-review
-
-**Triviala stories** får skippa subagent-review (inklusive code-reviewer) och gå direkt till Station 5 (VERIFY).
-
-**Grundregel:** Trivial-gating är **tid × yta × risk**, inte bara "är det ny logik?". Även ren refactoring eller test-migrering kan ha yta-risk (slarvfel skalar med antal filer).
-
-**Empirisk motivering (process-kost-retro 2026-04-22):** code-reviewer kördes 15 ggr under S42-S51 med 73% träffrate på Blocker/Major. Men 4 körningar (~27%) var "rena OK:s" på triviala stories. Skärp gaten så dessa faktiskt skippas i framtiden.
-
-**Default vid trivial story:** skippa **alla** subagenter. Dev:s self-review + `npm run check:all` räcker.
-
-Alla kriterier MÅSTE stämma för att en story ska klassas som trivial:
-
-- [ ] Effort <15 min **OCH** ≤1 fil ändrad (yta-gräns)
-- [ ] Mekanisk ändring (inte ny logik, inga nya filer skapade)
-- [ ] Ingen API-yta ändras (inga nya routes, inga ändrade signaturer)
-- [ ] Ingen säkerhetspåverkan (ingen auth, ingen input-validering, inga behörigheter, **inga nya auth-tester**)
-- [ ] Inget UI ändras (inga komponenter, inga sidor, **ingen komponentextraktion**)
-- [ ] Tester finns OCH passerar (eller tillkommer utan att ändra beteende)
-
-**Exempel på triviala stories:**
-- `Task.detached` → `Task` (1 fil)
-- Force unwrap → `guard let` (1 fil)
-- Byt paketversion (patch) (package.json + lock)
-- Flytta en import (1 fil)
-- Rätta stavfel i UI-sträng (om det inte påverkar tester)
-
-**Exempel på INTE triviala (kräver review):**
-- Ny route/endpoint
-- Ändrad Zod-schema
-- Ny domain service-metod
-- Ändrad UI-komponent eller **komponent-extraktion till ny fil**
-- Schema-ändring
-- Säkerhets- eller auth-relaterat
-- **Test-migrering över flera filer** (nya integration/component-tester är ny kod — fel i mock-setup eller coverage-gap fångas av review)
-- **Ren refactoring som rör ≥2 filer** (slarvfel skalar med yta — även "bara flyttat kod" kan introducera bugg)
-- Alla stories med effort >15 min — **effort-tröskeln är absolut**
-
-**Regel vid osäkerhet:** Kör review. Bättre att spendera 5 min extra än att missa en bugg.
-
-**Varning från S43-lärdom (2026-04-19):** S43-1 (1 dag, 5 filer, HorseForm-extraktion + integration-test) och S43-2 (1 dag, 10+ filer, 5 nya integration-test-filer) klassades felaktigt som "trivial" av Dev med motivering "mekanisk test-migrering". Tech-lead-review vid merge fångade coverage-gaps som Dev's review hade hittat. **Review vid Station 4 (Dev) är inte ersättbar av review vid Station 7 (tech lead)** — de kompletterar varandra (närhet vs distans).
-
-**Oavsett trivial eller inte:** Station 5 (`npm run check:all`) är ALLTID obligatorisk.
-
-### Automatisk review (för icke-triviala stories)
-
-Kor `code-reviewer` subagent med:
-- Jämfor mot planen fran station 1
-- Sakerhetscheck (se code-review-checklist.md)
-- Kodkvalitet och konsistens
-
-### Review-kritik leder till
-
-| Allvarlighetsgrad | Atagard |
-|-------------------|---------|
-| Blocker | Tillbaka till station 3, MASTE fixas |
-| Major | Tillbaka till station 3, bor fixas |
-| Minor | Notera, kan fixas i nasta iteration |
-| Suggestion | Frivilligt |
-
-### Extra reviews (vid behov)
-
-- API-andringar: `security-reviewer` agent
-- UI-andringar: `cx-ux-reviewer` agent
-- Arkitektur-andringar: `tech-architect` agent
-- iOS-andringar: `ios-expert` agent
-
-### Gate
-
-Inga blocker eller major-problem kvar.
-
-### Dokumentation i done-fil
-
-**För triviala stories:** Skriv "Reviews körda: ingen (trivial story -- mekanisk ändring, <15 min, check:all grön)"
-
-**För icke-triviala:** Lista varje körd subagent enligt ordinarie mönster.
-
----
-
-## Station 5: VERIFY
-
-**Vem**: Utvecklare
-**Syfte**: Alla automatiska kvalitetsgates grona
-
-### Webb-verifiering
+## Steg 1: BRANCH
 
 ```bash
-npm run check:all    # typecheck + test:run + lint + check:swedish
+git checkout -b feature/<story-id>-<kort-beskrivning>
 ```
 
-### iOS-verifiering
+- Ingen plan-fil krävs. Komplex arkitektur diskuteras i konversationen.
+- Enkla stories börjar direkt med tester.
+
+---
+
+## Steg 2: TDD
+
+**BDD dual-loop** för API-routes och domain services:
+1. Skriv yttre integrationstest (RED)
+2. Inre cykel: unit RED → GREEN → REFACTOR
+3. Yttre integrationstest GREEN
+
+**Enkel TDD** för utilities, hooks, iOS ViewModels:
+1. RED (skriv failande test)
+2. GREEN (minimum implementation)
+3. REFACTOR
+
+**Regel:** Skriv tester INNAN implementation. Aldrig skippa RED-steget.
+
+Kör snabbtest efter varje GREEN:
+```bash
+npx vitest run src/domain/<namn>   # ~1s
+```
+
+---
+
+## Steg 3: CHECK
 
 ```bash
-# Niva 1 (default):
-xcodebuild test -project ios/Equinet/Equinet.xcodeproj -scheme Equinet \
-  -destination 'platform=iOS Simulator,id=<UDID>' \
-  -only-testing:EquinetTests/<BerordTestSvit>
-
-# Niva 2 (infor merge):
-xcodebuild test ... -only-testing:EquinetTests
+npm run check:all   # typecheck + test:run + lint + check:swedish
 ```
 
-### Visuell verifiering (vid UI-andringar)
+Alla 4 gates MÅSTE vara gröna innan SHIP.
 
-- Webb: Playwright MCP med worktree dev-server (port 3001)
-- iOS: mobile-mcp screenshots + accessibility tree
+### Review (behovsprövat, inte obligatoriskt för alla)
 
-### Checklista
+| Situation | Kör |
+|-----------|-----|
+| Ny eller ändrad API-route | security-reviewer |
+| Väsentlig ny logik (>1 timme implementation) | code-reviewer |
+| Ny iOS-vy eller komplex SwiftUI | ios-expert |
+| UI-flöde som påverkar slutanvändare | cx-ux-reviewer |
+| Enkel fix, docs, config, trivialt (<15 min, ≤1 fil) | Ingen review |
 
-- [ ] `npm run check:all` passerar (webb)
-- [ ] Relevant iOS-testsvit passerar
-- [ ] Inga nya `@ts-expect-error` utan dokumenterad anledning
-- [ ] Inga nya `any`-typer utan dokumenterad anledning
-- [ ] Inga nya console.* i produktionskod
-- [ ] Visuell verifiering vid UI-andringar
-
-### Gate
-
-Alla checklistepunkter uppfyllda.
+Kör reviewers seriellt: code-reviewer FÖRST. Om inga blockers/majors — skippa specialist-reviewer.
 
 ---
 
-## Station 6: PUSH FEATURE BRANCH (utvecklare)
+## Steg 4: SHIP
 
-**Vem**: Utvecklare
-**Syfte**: Gora arbetet tillgangligt for tech lead-granskning
+```bash
+git push -u origin feature/<story-id>-<namn>
+gh pr create --base main --head feature/<story-id>-<namn> \
+  --title "S<X>-<Y>: kort beskrivning" \
+  --body "## Summary\n- ..."
+gh pr merge <PR-nummer> --merge --delete-branch
+```
 
-### Checklista
-
-- [ ] Feature branch ar uppdaterad mot main (`git rebase main` eller merge)
-- [ ] Alla gates fortfarande grona efter rebase
-- [ ] Commit-meddelanden ar beskrivande ("varfor" > "vad")
-- [ ] `git status` visar inga ocommittade andringar
-- [ ] `docs/sprints/status.md` uppdaterat: story -> "review_requested"
-- [ ] Pusha FEATURE BRANCH: `git push -u origin feature/<namn>`
-
-### Regler
-
-- Pusha ALDRIG direkt till main
-- Pusha ALLTID din feature branch
-- Nar pushat: arbetet ar klart. Tech lead granskar och mergar.
+- **Tech lead mergar** i normalt läge.
+- **Dev self-mergar** i autonom sprint-körning.
+- Uppdatera `status.md` efter merge (story → done + commit-hash).
 
 ---
 
-## Station 7: MERGE (tech lead)
+## Review-gating
 
-**Vem**: Tech lead (triggas via "kor review")
-**Syfte**: Slutgranskning och merge till main
+Skippa all review när ALLA dessa stämmer:
 
-> **Dev MERGAR ALDRIG egen PR — tech lead är alltid gatekeeper.**
->
-> Flow: Dev pushar feature branch → tech lead triggas via "kör review" → tech lead granskar + skapar PR + mergar. Om Dev skapar PR själv: tech lead måste triggas explicit innan merge.
->
-> **Undantag 1 — rule-docs:** `.claude/rules/*`-ändringar kan mergas av den som gjorde dem efter self-review, förutsatt att *alla* ändrade filer är under `.claude/rules/`.
->
-> **Undantag 2 — autonom sprint:** I autonomt läge (`kör sprint X`) mergar Dev själv per `.claude/rules/autonomous-sprint.md` Steg 8 — det är det definierade autonoma flödet och inte ett brott mot denna regel.
->
-> **Varning från S44 (2026-04-19):** S44-0, S44-1 och S44-2 mergades av Dev utan tech-lead-review i *manuellt* läge — tre brott mot denna regel. Använd `bash scripts/check-own-pr-merge.sh <PR>` innan `gh pr merge` för att påminnas.
+- [ ] Effort <15 min **OCH** ≤1 fil ändrad
+- [ ] Mekanisk ändring (inte ny logik, inga nya filer)
+- [ ] Ingen API-yta ändras
+- [ ] Ingen säkerhetspåverkan
+- [ ] Inget UI ändras
+- [ ] Tester finns och passerar
 
-### Steg
+Vid osäkerhet: kör code-reviewer. Kostar 5 min, sparar potentiell bugg.
 
-1. `git fetch origin` + las `status.md` -- vilka stories ar "review_requested"?
-2. For varje: `git diff main..origin/feature/<branch>` -- granska andringar
-3. Kor code-reviewer subagent vid behov
-4. Om godkant: skapa PR och merga via GitHub:
-   ```bash
-   gh pr create --base main --head feature/<branch> \
-     --title "S<X>-<Y>: kort beskrivning" \
-     --body "## Summary\n- ..."
-   # Vanta pa CI (Quality Gate Passed)
-   gh pr merge <PR-nummer> --merge --delete-branch
-   ```
-5. OMEDELBART efter merge: uppdatera status.md -> "done" + commit-hash
-6. Om problem: notera i status.md, utvecklaren fixar pa sin branch
+---
+
+## Roller
+
+**Tech lead:**
+- Mergar PRs i normalt läge
+- Granskar säkerhetskänslig kod (API-routes, auth, schema)
+- Sprint-planering med Johan
+
+**Fullstack-dev (autonom körning):**
+- Plockar stories från status.md
+- Kör hela flödet: BRANCH → TDD → CHECK → SHIP
+- Self-mergar i autonom sprint
+
+**Johan (product owner):**
+- Prioriterar backlog
+- Frågas vid affärsbeslut eller scope-oklarheter
+- Aldrig vid tekniska val inom sprint-scopet
 
 ---
 
 ## Undantag
 
-### Hotfix (kritisk bugg i produktion)
+**Hotfix:** Skippa BRANCH (committa direkt på main om kritiskt). Alla övriga steg gäller.
 
-Hoppa over station 1 (PLAN). Borja pa station 2 (RED) med test som reproducerar buggen.
-Alla andra stationer ar fortfarande obligatoriska.
+**Docs-only:** Direkt till main utan PR. Kör check:swedish.
 
-### Mekanisk refaktorering (t.ex. console.* -> logger)
-
-Forenklat flode: RED (om testbart) -> GREEN -> VERIFY -> MERGE.
-Krav: tydligt avgransat scope, ingen beteendeandring.
-
-### Dokumentation
-
-Bara station 5 (VERIFY: `npm run docs:validate`) och station 6 (MERGE).
+**Schema-ändringar:** Kräver tech-architect-review och deploy-ordning per `prisma.md`.

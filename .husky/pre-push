@@ -63,7 +63,4 @@ else
   echo ""
 fi
 
-# Multi-commit-gate (BLOCKER om < 2 commits på feature branch)
-bash scripts/check-multi-commit.sh || exit 1
-
 echo "All checks passed! Pushing to remote..."

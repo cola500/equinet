@@ -17,20 +17,5 @@ if [ -n "$STAGED" ]; then
   }
 fi
 
-# 3. Docs-uppdateringscheck BARA om en done-fil är staged
-bash scripts/check-docs-updated.sh || {
-  echo "Done-fil saknar docs-uppdateringssektion."
-  exit 1
-}
-
-# 4. Plan-commit-gate (BLOCKER om plan saknas under aktiv story)
-bash scripts/check-plan-commit.sh || exit 1
-
-# 5. Sprint-avslut-gate (BLOCKER om alla stories done utan retro)
-bash scripts/check-sprint-closure.sh || exit 1
-
-# 6. Review-obligatorisk-gate (BLOCKER om done-fil saknar obligatoriska reviews)
-bash scripts/check-reviews-done.sh || exit 1
-
-# 7. Branch-check (BLOCKER om kod-commit på main under aktiv story)
+# 3. Branch-check (BLOCKER om kod-commit på main under aktiv story)
 bash scripts/check-branch-for-story.sh || exit 1
