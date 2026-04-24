@@ -22,11 +22,38 @@ vi.mock("lucide-react", () => ({
   BarChart3: () => <svg />,
   UserCheck: () => <svg />,
   ChevronDown: () => <svg />,
+  Scissors: () => <svg />,
+  Stethoscope: () => <svg />,
+  Dumbbell: () => <svg />,
 }))
 
 vi.mock("@/components/icons/HorseIcon", () => ({
   HorseIcon: () => <svg />,
 }))
+
+vi.mock("@/components/landing/DemoLoginButton", () => ({
+  DemoLoginButton: () => <button>Demo</button>,
+}))
+
+vi.mock("@/lib/demo-mode", () => ({
+  isDemoMode: () => false,
+}))
+
+describe("Kategori-ikoner på landningssidan", () => {
+  it("renderar kategori-ikoner (Hovslagare, Veterinär, Tränare) i SSR-HTML", () => {
+    const html = renderToString(<Home />)
+    expect(html).toContain("Hovslagare")
+    expect(html).toContain("Veterinär")
+    expect(html).toContain("Tränare")
+  })
+
+  it("kategori-ikoner länkar till /providers med korrekt search-param", () => {
+    const html = renderToString(<Home />)
+    expect(html).toContain("/providers?search=hovslagare")
+    expect(html).toContain("/providers?search=veterinär")
+    expect(html).toContain("/providers?search=tränare")
+  })
+})
 
 describe("Landningssidan FAQ — SSR-integritet", () => {
   it("inkluderar FAQ-svar i SSR-HTML utan JS-gates", () => {

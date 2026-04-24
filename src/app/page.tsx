@@ -11,6 +11,9 @@ import {
   BarChart3,
   UserCheck,
   ChevronDown,
+  Scissors,
+  Stethoscope,
+  Dumbbell,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/Header"
@@ -168,6 +171,29 @@ export default function Home() {
             </a>
           </div>
           )}
+
+          {/* Category shortcut icons */}
+          <div className="flex justify-center gap-8 mt-8">
+            {[
+              { label: "Hovslagare", icon: Scissors, search: "hovslagare" },
+              { label: "Veterinär", icon: Stethoscope, search: "veterinär" },
+              { label: "Tränare", icon: Dumbbell, search: "tränare" },
+            ].map(({ label, icon: Icon, search }) => (
+              <Link
+                key={label}
+                href={`/providers?search=${search}`}
+                className="flex flex-col items-center gap-2 group cursor-pointer"
+                aria-label={`Hitta ${label}`}
+              >
+                <div className="w-16 h-16 bg-white rounded-full shadow-sm border flex items-center justify-center group-hover:shadow-md group-hover:border-primary/30 transition-all">
+                  <Icon className="w-7 h-7 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition-colors">
+                  {label}
+                </span>
+              </Link>
+            ))}
+          </div>
         </section>
 
         {/* B) Problemet */}
