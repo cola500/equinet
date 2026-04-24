@@ -29,7 +29,7 @@ vi.mock('@/infrastructure/persistence/booking/PrismaBookingRepository', () => ({
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    booking: { findUnique: vi.fn() },
+    booking: { findFirst: vi.fn() },
     service: { findUnique: vi.fn() },
   },
 }))
@@ -51,7 +51,7 @@ import { rateLimiters } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 
 const mockAuth = vi.mocked(auth)
-const mockBookingFindUnique = vi.mocked(prisma.booking.findUnique)
+const mockBookingFindFirst = vi.mocked(prisma.booking.findFirst)
 const mockServiceFindUnique = vi.mocked(prisma.service.findUnique)
 
 function createRequest(body: unknown) {
@@ -103,7 +103,7 @@ describe('PATCH /api/provider/bookings/[id]/reschedule', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFindByUserId.mockResolvedValue(mockProvider)
-    mockBookingFindUnique.mockResolvedValue(mockBookingRow)
+    mockBookingFindFirst.mockResolvedValue(mockBookingRow)
     mockServiceFindUnique.mockResolvedValue(mockServiceRow)
     mockProviderRescheduleWithOverlapCheck.mockResolvedValue(mockUpdatedBooking)
   })
@@ -203,7 +203,7 @@ describe('PATCH /api/provider/bookings/[id]/reschedule', () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
     } as never)
-    mockBookingFindUnique.mockResolvedValue(null)
+    mockBookingFindFirst.mockResolvedValue(null)
 
     const response = await PATCH(createRequest(validBody), { params })
     expect(response.status).toBe(404)
@@ -213,7 +213,7 @@ describe('PATCH /api/provider/bookings/[id]/reschedule', () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
     } as never)
-    mockBookingFindUnique.mockResolvedValue({ ...mockBookingRow, status: 'completed' })
+    mockBookingFindFirst.mockResolvedValue({ ...mockBookingRow, status: 'completed' })
 
     const response = await PATCH(createRequest(validBody), { params })
     expect(response.status).toBe(400)
@@ -225,10 +225,22 @@ describe('PATCH /api/provider/bookings/[id]/reschedule', () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
     } as never)
-    mockBookingFindUnique.mockResolvedValue({ ...mockBookingRow, status: 'cancelled' })
+    mockBookingFindFirst.mockResolvedValue({ ...mockBookingRow, status: 'cancelled' })
 
     const response = await PATCH(createRequest(validBody), { params })
     expect(response.status).toBe(400)
+  })
+
+  it('returns 400 when booking status is no_show', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
+    } as never)
+    mockBookingFindFirst.mockResolvedValue({ ...mockBookingRow, status: 'no_show' })
+
+    const response = await PATCH(createRequest(validBody), { params })
+    expect(response.status).toBe(400)
+    const data = await response.json()
+    expect(data.error).toMatch(/ombokas/)
   })
 
   it('returns 409 when new time overlaps with another booking', async () => {
@@ -258,7 +270,7 @@ describe('PATCH /api/provider/bookings/[id]/reschedule', () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-1', userType: 'provider', providerId: 'provider-1' },
     } as never)
-    mockBookingFindUnique.mockResolvedValue({ ...mockBookingRow, status: 'pending' })
+    mockBookingFindFirst.mockResolvedValue({ ...mockBookingRow, status: 'pending' })
 
     const response = await PATCH(createRequest(validBody), { params })
     expect(response.status).toBe(200)

@@ -534,6 +534,7 @@ export class MockBookingRepository
       bookingDate: data.bookingDate,
       startTime: data.startTime,
       endTime: data.endTime,
+      rescheduleCount: (booking.rescheduleCount ?? 0) + 1,
       updatedAt: new Date(),
     }
     this.bookings.set(bookingId, updated)

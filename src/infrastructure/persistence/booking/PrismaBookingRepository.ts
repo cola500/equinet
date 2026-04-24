@@ -819,6 +819,7 @@ export class PrismaBookingRepository
             bookingDate: data.bookingDate,
             startTime: data.startTime,
             endTime: data.endTime,
+            rescheduleCount: { increment: 1 },
           },
           select: {
             id: true,

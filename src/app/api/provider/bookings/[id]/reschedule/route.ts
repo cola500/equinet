@@ -71,7 +71,7 @@ export async function PATCH(
     const validated = rescheduleSchema.parse(body)
 
     // 6. Fetch booking with IDOR check (atomic WHERE: id + providerId)
-    const booking = await prisma.booking.findUnique({
+    const booking = await prisma.booking.findFirst({
       where: { id, providerId: provider.id },
       select: {
         id: true,
