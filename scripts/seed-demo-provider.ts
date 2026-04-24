@@ -106,6 +106,11 @@ async function resetDemoData(providerId: string) {
     })
     console.log(`  Deleted ${notes.count} customer notes`)
 
+    const notifications = await prisma.notification.deleteMany({
+      where: { userId: { in: demoCustomerIds } },
+    })
+    console.log(`  Deleted ${notifications.count} notifications`)
+
     const customers = await prisma.user.deleteMany({
       where: { email: { endsWith: CUSTOMER_EMAIL_SUFFIX } },
     })

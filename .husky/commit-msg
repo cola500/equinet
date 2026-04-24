@@ -1,0 +1,5 @@
+. "$HOME/.nvm/nvm.sh" 2>/dev/null
+
+# Sprint-retro-gate (BLOCKER om retro committas direkt på main)
+# Körs som commit-msg hook så att $1 (commit-message-filen) är tillgänglig.
+bash scripts/check-sprint-retro.sh "$1" || exit 1

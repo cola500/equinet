@@ -3,6 +3,7 @@
 # Blockerar retro-commit direkt på main utan feature branch.
 # Sprint-avslut ska granskas av tech lead innan merge (PR-flödet).
 #
+# Körs som commit-msg hook: anropas med $1 = sökväg till commit-message-fil.
 # Override: lägg [override: <motivering>] i commit-message subject-rad.
 
 set -euo pipefail
@@ -25,11 +26,11 @@ if [[ "$CURRENT_BRANCH" != "main" ]]; then
   exit 0
 fi
 
-# Kolla override i commit-message
-GIT_DIR_PATH=$(git rev-parse --git-dir 2>/dev/null || echo ".git")
+# Läs commit-message från $1 (commit-msg hook skickar filsökväg som argument)
+COMMIT_MSG_FILE="${1:-}"
 COMMIT_SUBJECT=""
-if [[ -f "${GIT_DIR_PATH}/COMMIT_EDITMSG" ]]; then
-  COMMIT_SUBJECT=$(head -1 "${GIT_DIR_PATH}/COMMIT_EDITMSG")
+if [[ -n "$COMMIT_MSG_FILE" && -f "$COMMIT_MSG_FILE" ]]; then
+  COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
 fi
 
 # Kräver att motivering startar med bokstav/siffra (inte template-placeholder <...>)
