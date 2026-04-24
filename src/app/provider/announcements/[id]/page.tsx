@@ -115,7 +115,7 @@ export default function AnnouncementDetailPage() {
   const handleUpdateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       })
