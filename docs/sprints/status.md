@@ -18,7 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Ingen aktiv sprint** — Sprint 58 klar 2026-04-24.
+**Sprint 59** — Gruppbokningar release-klar. Planerad 2026-04-24.
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S59-1 | Filtrera döda requests från leverantörslistan | pending |
+| S59-2 | Delnings-UX för inbjudningskoden | pending |
+| S59-3 | Visa bokningsdetaljer efter match | pending |
+| S59-4 | Rate limiting på preview + atomisk join | pending |
+| S59-5 | Ta bort group_bookings feature flag (DoD) | pending |
 
 *(Sprint 58 klar 2026-04-24. 4/4 stories done — Affärsinsikter release-klar: total intäkt KPI (S58-1), delta-indikator mot föregående period (S58-2), tomtläge + tydligare servicebreakdown-rubrik (S58-3), business_insights feature flag borttagen (S58-4). Mergad via PR #287. check:all 4/4 gröna, 4380 tester. Demo-läget oberoende verifierat.)*
 
