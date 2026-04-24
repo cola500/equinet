@@ -70,9 +70,17 @@ struct NativeMoreView: View {
     @State private var navigationPath = NavigationPath()
     @State private var showLogoutConfirmation = false
 
-    /// Sections filtered by feature flags. Empty sections are hidden.
+    /// Sections filtered by feature flags and demo mode. Empty sections are hidden.
+    /// In demo mode only "Mina tjänster" and "Min profil" are shown (mirrors web demoTabs).
     private var visibleSections: [(name: String, items: [MoreMenuItem])] {
-        allMenuSections.compactMap { section in
+        let isDemoMode = featureFlags["demo_mode"] ?? false
+        if isDemoMode {
+            let allItems = allMenuSections.flatMap(\.items)
+            let demoPaths: Set<String> = ["/provider/services", "/provider/profile"]
+            let demoItems = allItems.filter { demoPaths.contains($0.path) }
+            return demoItems.isEmpty ? [] : [("", demoItems)]
+        }
+        return allMenuSections.compactMap { section in
             let visible = section.items.filter { item in
                 guard let flag = item.featureFlag else { return true }
                 return featureFlags[flag] == true

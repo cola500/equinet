@@ -11,6 +11,22 @@ import Combine
 import OSLog
 import SwiftUI
 
+/// Shape for timeSlotTapOverlay hit-testing. Covers the full calendar height
+/// minus booking areas, using even-odd fill so booking blocks receive their taps.
+private struct TimeSlotHitShape: Shape {
+    let totalHeight: CGFloat
+    let exclusions: [(CGFloat, CGFloat)]  // (top, bottom) in points
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.addRect(CGRect(x: rect.minX, y: 0, width: rect.width, height: totalHeight))
+        for (top, bottom) in exclusions {
+            p.addRect(CGRect(x: rect.minX, y: top, width: rect.width, height: bottom - top))
+        }
+        return p
+    }
+}
+
 struct NativeCalendarView: View {
     @Bindable var viewModel: CalendarViewModel
     var onNavigateToBooking: ((_ bookingId: String) -> Void)?
@@ -294,10 +310,14 @@ struct NativeCalendarView: View {
     private func bookingBlocks(for date: Date) -> some View {
         let dayBookings = viewModel.bookingsForDate(date)
         return ForEach(dayBookings) { booking in
+            let top = timePosition(booking.startTime)
+            let bottom = timePosition(booking.endTime)
+            let height = max(bottom - top, 28)
+
             Button {
                 selectedBooking = booking
             } label: {
-                bookingBlock(booking)
+                bookingBlock(booking, height: height)
                     .overlay {
                         if viewModel.actionInProgress == booking.id {
                             RoundedRectangle(cornerRadius: 6)
@@ -307,6 +327,8 @@ struct NativeCalendarView: View {
                     }
             }
             .buttonStyle(.plain)
+            // padding(.top:) shifts layout position (hit-testing follows), unlike offset() which is visual-only
+            .padding(.top, top)
             .contextMenu {
                     if booking.status == "pending" {
                         Button {
@@ -325,12 +347,8 @@ struct NativeCalendarView: View {
         }
     }
 
-    private func bookingBlock(_ booking: NativeBooking) -> some View {
-        let top = timePosition(booking.startTime)
-        let bottom = timePosition(booking.endTime)
-        let height = max(bottom - top, 28) // Min height 28pt
-
-        return HStack(spacing: 6) {
+    private func bookingBlock(_ booking: NativeBooking, height: CGFloat) -> some View {
+        HStack(spacing: 6) {
             // Color bar
             RoundedRectangle(cornerRadius: 2)
                 .fill(statusColor(booking))
@@ -386,7 +404,6 @@ struct NativeCalendarView: View {
         )
         .padding(.leading, 56) // After time labels
         .padding(.trailing, 8)
-        .offset(y: top)
         .frame(height: height)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(bookingAccessibilityLabel(booking))
@@ -610,10 +627,16 @@ struct NativeCalendarView: View {
 
     private func timeSlotTapOverlay(for date: Date) -> some View {
         let totalHeight = CGFloat(hours.count) * hourHeight
+        let dayBookings = viewModel.bookingsForDate(date)
+        let exclusions = dayBookings.map { booking -> (CGFloat, CGFloat) in
+            let top = timePosition(booking.startTime)
+            let bottom = max(timePosition(booking.endTime), top + 28)
+            return (top, bottom)
+        }
         return Color.clear
             .frame(height: totalHeight)
             .padding(.leading, 52)
-            .contentShape(Rectangle())
+            .contentShape(TimeSlotHitShape(totalHeight: totalHeight, exclusions: exclusions), eoFill: true)
             .onTapGesture { location in
                 let time = timeFromTapPosition(location.y)
                 timeSlotTapCount += 1

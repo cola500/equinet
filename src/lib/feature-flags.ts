@@ -72,7 +72,8 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
 
     // 1. Env variable (highest priority)
     const envKey = `FEATURE_${key.toUpperCase()}`
-    const envValue = process.env[envKey]
+    const envValue = process.env[envKey] ??
+      (key === "demo_mode" ? process.env.NEXT_PUBLIC_DEMO_MODE : undefined)
     if (envValue !== undefined) {
       result[key] = envValue === "true"
       continue
