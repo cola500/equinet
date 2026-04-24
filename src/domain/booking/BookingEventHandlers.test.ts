@@ -344,6 +344,7 @@ describe('StatusChangedPushHandler', () => {
     )
     const call = pushService.sendToUser.mock.calls[0][1]
     expect(call.title).toContain('bekräftad')
+    expect(call.body).not.toContain('recension')
   })
 
   it('sends push to provider when customer changes status', async () => {
@@ -362,6 +363,26 @@ describe('StatusChangedPushHandler', () => {
         bookingId: 'booking-1',
       })
     )
+  })
+
+  it('sends review nudge push to customer when provider marks booking as completed', async () => {
+    const pushService = createMockPushService()
+    const handler = new StatusChangedPushHandler(pushService)
+
+    await handler.handle(statusChangedEvent({
+      changedByUserType: 'provider',
+      newStatus: 'completed',
+    }))
+
+    expect(pushService.sendToUser).toHaveBeenCalledWith(
+      'customer-1',
+      expect.objectContaining({
+        url: '/customer/bookings',
+        bookingId: 'booking-1',
+      })
+    )
+    const call = pushService.sendToUser.mock.calls[0][1]
+    expect(call.body).toContain('recension')
   })
 
   it('does not throw when push service fails', async () => {
