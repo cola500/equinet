@@ -307,6 +307,26 @@ export default function BookAnnouncementPage() {
                     {selectedService ? (
                       <div className="space-y-2">
                         <Label>Välj tid *</Label>
+                        <div
+                          className="p-3 rounded-md border border-green-200 bg-green-50"
+                          data-testid="route-context-banner"
+                        >
+                          <p className="text-sm text-green-900">
+                            <span aria-hidden="true">📍 </span>
+                            {announcement.provider.businessName} är planerad för
+                            {announcement.municipality
+                              ? ` ${announcement.municipality}-området `
+                              : " området "}
+                            {formatDate(announcement.dateFrom)}
+                            {announcement.dateFrom !== announcement.dateTo && (
+                              <> – {formatDate(announcement.dateTo)}</>
+                            )}
+                            .
+                          </p>
+                          <p className="text-xs text-green-700 mt-1">
+                            Välj en tid som passar — leverantören bekräftar om den passar rutten.
+                          </p>
+                        </div>
                         <CustomerBookingCalendar
                           providerId={announcement.provider.id}
                           serviceDurationMinutes={selectedService.durationMinutes}
