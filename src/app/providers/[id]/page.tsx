@@ -15,6 +15,7 @@ import { Header } from "@/components/layout/Header"
 import { NearbyRoutesBanner, type NearbyRoute } from "@/components/NearbyRoutesBanner"
 import { ProviderHours } from "@/components/ProviderHours"
 import { UpcomingVisits } from "@/components/UpcomingVisits"
+import { UpcomingRoutes } from "@/components/UpcomingRoutes"
 import { ReviewList } from "@/components/review/ReviewList"
 import { StarRating } from "@/components/review/StarRating"
 import { MobileBookingFlow } from "@/components/booking/MobileBookingFlow"
@@ -395,6 +396,9 @@ export default function ProviderDetailPage() {
               <ProviderHours availability={provider.availability} />
             </div>
           )}
+
+          {/* Upcoming Routes (route announcements — visible without GPS permission) */}
+          <UpcomingRoutes providerId={provider.id} />
 
           {/* Upcoming Visits */}
           <UpcomingVisits providerId={provider.id} />

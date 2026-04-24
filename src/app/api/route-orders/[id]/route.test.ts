@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
-import { GET, PATCH } from "./route"
+import { GET, PATCH, PUT } from "./route"
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     routeOrder: {
       findUnique: vi.fn(),
       updateMany: vi.fn(),
+      update: vi.fn(),
     },
     provider: {
       findUnique: vi.fn(),
+    },
+    booking: {
+      findMany: vi.fn(),
+    },
+    notification: {
+      create: vi.fn(),
     },
   },
 }))
@@ -38,7 +45,10 @@ import { isFeatureEnabled } from "@/lib/feature-flags"
 
 const mockedFindUnique = vi.mocked(prisma.routeOrder.findUnique)
 const mockedUpdateMany = vi.mocked(prisma.routeOrder.updateMany)
+const mockedUpdate = vi.mocked(prisma.routeOrder.update)
 const mockedProviderFindUnique = vi.mocked(prisma.provider.findUnique)
+const mockedBookingFindMany = vi.mocked(prisma.booking.findMany)
+const mockedNotificationCreate = vi.mocked(prisma.notification.create)
 const mockedAuth = vi.mocked(auth)
 const mockedRateLimit = vi.mocked(rateLimiters.api)
 const mockedIsFeatureEnabled = vi.mocked(isFeatureEnabled)
@@ -289,5 +299,117 @@ describe("PATCH /api/route-orders/[id] - Validation", () => {
     expect(res.status).toBe(404)
     const body = await res.json()
     expect(body.error).toBe("Ej tillgänglig")
+  })
+})
+
+const CUSTOMER_ID = "a0000000-0000-4000-a000-000000000006"
+const BOOKING_ID = "a0000000-0000-4000-a000-000000000007"
+
+const existingRoute = {
+  id: ORDER_ID,
+  providerId: PROVIDER_ID,
+  announcementType: "provider_announced",
+  status: "open",
+  dateFrom: new Date("2026-05-10"),
+  dateTo: new Date("2026-05-11"),
+  municipality: "Södermanland",
+}
+
+describe("PUT /api/route-orders/[id] - update route details", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockedRateLimit.mockResolvedValue(true)
+    mockedIsFeatureEnabled.mockResolvedValue(true)
+    mockedAuth.mockResolvedValue(providerSession())
+    mockedProviderFindUnique.mockResolvedValue({ id: PROVIDER_ID } as never)
+    mockedFindUnique.mockResolvedValue(existingRoute as never)
+    mockedUpdate.mockResolvedValue({ ...existingRoute, municipality: "Uppland" } as never)
+    mockedBookingFindMany.mockResolvedValue([])
+    mockedNotificationCreate.mockResolvedValue({} as never)
+  })
+
+  it("returns 401 when not authenticated", async () => {
+    mockedAuth.mockResolvedValue(null as never)
+    const res = await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+    expect(res.status).toBe(401)
+  })
+
+  it("returns 404 when feature flag disabled", async () => {
+    mockedIsFeatureEnabled.mockResolvedValue(false)
+    const res = await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+    expect(res.status).toBe(404)
+  })
+
+  it("returns 404 when route order not found", async () => {
+    mockedFindUnique.mockResolvedValue(null)
+    const res = await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+    expect(res.status).toBe(404)
+  })
+
+  it("returns 403 when provider does not own the route", async () => {
+    mockedFindUnique.mockResolvedValue({ ...existingRoute, providerId: OTHER_PROVIDER_ID } as never)
+    const res = await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+    expect(res.status).toBe(403)
+  })
+
+  it("returns 200 when updating municipality", async () => {
+    const res = await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+    expect(res.status).toBe(200)
+  })
+
+  it("sends notifications to affected customers when municipality changes", async () => {
+    mockedBookingFindMany.mockResolvedValue([
+      { id: BOOKING_ID, customerId: CUSTOMER_ID, status: "confirmed" },
+    ] as never)
+
+    await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+
+    // Allow fire-and-forget to settle
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockedNotificationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: CUSTOMER_ID,
+          type: "route_announcement_updated",
+        }),
+      })
+    )
+  })
+
+  it("sends notifications to affected customers when dates change", async () => {
+    mockedBookingFindMany.mockResolvedValue([
+      { id: BOOKING_ID, customerId: CUSTOMER_ID, status: "confirmed" },
+    ] as never)
+
+    await PUT(
+      makeRequest("PUT", { dateFrom: "2026-05-15", dateTo: "2026-05-16" }),
+      { params }
+    )
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockedNotificationCreate).toHaveBeenCalled()
+  })
+
+  it("does not send notifications when nothing relevant changed", async () => {
+    mockedFindUnique.mockResolvedValue(existingRoute as never)
+
+    await PUT(
+      makeRequest("PUT", { municipality: existingRoute.municipality }),
+      { params }
+    )
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(mockedNotificationCreate).not.toHaveBeenCalled()
+  })
+
+  it("notification errors do not block the route update (fire-and-forget)", async () => {
+    mockedBookingFindMany.mockResolvedValue([
+      { id: BOOKING_ID, customerId: CUSTOMER_ID, status: "confirmed" },
+    ] as never)
+    mockedNotificationCreate.mockRejectedValue(new Error("DB error"))
+
+    const res = await PUT(makeRequest("PUT", { municipality: "Uppland" }), { params })
+    expect(res.status).toBe(200)
   })
 })

@@ -22,6 +22,11 @@ export interface ProviderData {
     date: string
     location: string
   } | null
+  upcomingRoute?: {
+    dateFrom: string
+    dateTo: string
+    municipality: string
+  } | null
   reviewStats?: {
     averageRating: number | null
     totalCount: number

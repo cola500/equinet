@@ -65,6 +65,19 @@ export function ProviderGrid({ providers }: ProviderGridProps) {
                 {formatShortDate(provider.nextVisit.date)}
               </div>
             )}
+            {provider.upcomingRoute && (
+              <div
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800"
+                data-testid="upcoming-route-badge"
+              >
+                Kommer snart till {provider.upcomingRoute.municipality}
+                {" · "}
+                {formatRouteDateRange(
+                  provider.upcomingRoute.dateFrom,
+                  provider.upcomingRoute.dateTo
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {provider.description && (
@@ -109,4 +122,21 @@ import { sv } from "date-fns/locale"
 function formatShortDate(dateString: string): string {
   const date = new Date(dateString + "T00:00:00")
   return format(date, "d MMM", { locale: sv })
+}
+
+function formatRouteDateRange(dateFromString: string, dateToString: string): string {
+  const from = new Date(dateFromString + "T00:00:00")
+  const to = new Date(dateToString + "T00:00:00")
+
+  if (from.toDateString() === to.toDateString()) {
+    return format(from, "d MMM", { locale: sv })
+  }
+
+  const sameMonth =
+    from.getMonth() === to.getMonth() && from.getFullYear() === to.getFullYear()
+  if (sameMonth) {
+    return `${format(from, "d", { locale: sv })}–${format(to, "d MMM", { locale: sv })}`
+  }
+
+  return `${format(from, "d MMM", { locale: sv })}–${format(to, "d MMM", { locale: sv })}`
 }

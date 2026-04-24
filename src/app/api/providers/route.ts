@@ -38,6 +38,77 @@ async function enrichWithReviewStats<T extends { id: string }>(
   }))
 }
 
+// Enrich providers with their earliest upcoming route announcement within 30 days
+async function enrichWithUpcomingRoute<T extends { id: string }>(
+  providers: T[]
+): Promise<
+  (T & {
+    upcomingRoute: {
+      dateFrom: string
+      dateTo: string
+      municipality: string
+    } | null
+  })[]
+> {
+  const providerIds = providers.map((p) => p.id)
+
+  if (providerIds.length === 0) {
+    return providers.map((p) => ({ ...p, upcomingRoute: null }))
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const horizon = new Date(today)
+  horizon.setDate(horizon.getDate() + 30)
+
+  const routes = await prisma.routeOrder.findMany({
+    where: {
+      providerId: { in: providerIds },
+      announcementType: "provider_announced",
+      status: "open",
+      dateFrom: { gte: today, lte: horizon },
+      municipality: { not: null },
+    },
+    select: {
+      providerId: true,
+      dateFrom: true,
+      dateTo: true,
+      municipality: true,
+    },
+    orderBy: { dateFrom: "asc" },
+  })
+
+  // Pick earliest route per provider (municipality is guaranteed non-null by filter above)
+  const routesByProvider = new Map<
+    string,
+    { dateFrom: Date; dateTo: Date; municipality: string }
+  >()
+  for (const r of routes) {
+    if (!r.providerId || !r.municipality) continue
+    if (!routesByProvider.has(r.providerId)) {
+      routesByProvider.set(r.providerId, {
+        dateFrom: r.dateFrom,
+        dateTo: r.dateTo,
+        municipality: r.municipality,
+      })
+    }
+  }
+
+  return providers.map((provider) => {
+    const route = routesByProvider.get(provider.id)
+    return {
+      ...provider,
+      upcomingRoute: route
+        ? {
+            dateFrom: format(route.dateFrom, "yyyy-MM-dd"),
+            dateTo: format(route.dateTo, "yyyy-MM-dd"),
+            municipality: route.municipality,
+          }
+        : null,
+    }
+  })
+}
+
 // Enrich providers with their next planned visit (DISTINCT ON -- 1 row per provider)
 async function enrichWithNextVisit<T extends { id: string }>(
   providers: T[]
@@ -234,14 +305,16 @@ export async function GET(request: NextRequest) {
       const total = filteredProviders.length
       const paginatedProviders = filteredProviders.slice(offset, offset + limit)
 
-      // Enrich with next visit info and review stats (parallel for performance)
-      const [withVisits, withReviews] = await Promise.all([
+      // Enrich with next visit, upcoming route and review stats (parallel for performance)
+      const [withVisits, withReviews, withRoutes] = await Promise.all([
         enrichWithNextVisit(paginatedProviders),
         enrichWithReviewStats(paginatedProviders),
+        enrichWithUpcomingRoute(paginatedProviders),
       ])
       const enrichedProviders = withVisits.map((p, i) => ({
         ...p,
         reviewStats: withReviews[i].reviewStats,
+        upcomingRoute: withRoutes[i].upcomingRoute,
       }))
 
       return NextResponse.json({
@@ -259,14 +332,16 @@ export async function GET(request: NextRequest) {
     const total = providers.length
     const paginatedProviders = providers.slice(offset, offset + limit)
 
-    // Enrich with next visit info and review stats (parallel for performance)
-    const [withVisits, withReviews] = await Promise.all([
+    // Enrich with next visit, upcoming route and review stats (parallel for performance)
+    const [withVisits, withReviews, withRoutes] = await Promise.all([
       enrichWithNextVisit(paginatedProviders),
       enrichWithReviewStats(paginatedProviders),
+      enrichWithUpcomingRoute(paginatedProviders),
     ])
     const enrichedProviders = withVisits.map((p, i) => ({
       ...p,
       reviewStats: withReviews[i].reviewStats,
+      upcomingRoute: withRoutes[i].upcomingRoute,
     }))
 
     return NextResponse.json({

@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => ({
     review: {
       groupBy: vi.fn(),
     },
+    routeOrder: {
+      findMany: vi.fn(),
+    },
   },
 }))
 
@@ -25,6 +28,8 @@ describe('GET /api/providers', () => {
     vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([])
     // Default: no reviews (groupBy returns empty array)
     vi.mocked(prisma.review.groupBy).mockResolvedValue([])
+    // Default: no upcoming routes
+    vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([])
   })
 
   it('should return all active providers with services', async () => {
@@ -545,6 +550,65 @@ describe('GET /api/providers', () => {
         date: '2026-02-03',
         location: 'Sollebrunn',
       })
+    })
+  })
+
+  describe('Upcoming route enrichment', () => {
+    it('should include upcomingRoute when provider has route within 30 days', async () => {
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Test Provider',
+          city: 'Stockholm',
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
+
+      const future = new Date()
+      future.setDate(future.getDate() + 10)
+      vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([
+        {
+          providerId: 'provider1',
+          id: 'route-1',
+          dateFrom: future,
+          dateTo: future,
+          municipality: 'Södermanland',
+        },
+      ] as never)
+
+      const request = new NextRequest('http://localhost:3000/api/providers')
+      const response = await GET(request)
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(result.data[0].upcomingRoute).toMatchObject({
+        municipality: 'Södermanland',
+      })
+      expect(result.data[0].upcomingRoute.dateFrom).toBeDefined()
+      expect(result.data[0].upcomingRoute.dateTo).toBeDefined()
+    })
+
+    it('should return null upcomingRoute when provider has no route', async () => {
+      const mockProviders = [
+        {
+          id: 'provider1',
+          businessName: 'Test Provider',
+          city: 'Stockholm',
+          services: [],
+          user: { firstName: 'John', lastName: 'Doe' },
+        },
+      ]
+      vi.mocked(prisma.provider.findMany).mockResolvedValue(mockProviders as never)
+      vi.mocked(prisma.routeOrder.findMany).mockResolvedValue([])
+
+      const request = new NextRequest('http://localhost:3000/api/providers')
+      const response = await GET(request)
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(result.data[0].upcomingRoute).toBeNull()
     })
   })
 
