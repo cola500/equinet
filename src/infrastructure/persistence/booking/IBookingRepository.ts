@@ -367,6 +367,24 @@ export interface IBookingRepository extends IRepository<Booking> {
   ): Promise<BookingWithRelations | null>
 
   /**
+   * Reschedule a booking as provider with atomic overlap check
+   *
+   * Uses WHERE clause with both id AND providerId for IDOR prevention.
+   * Provider reschedule has no window/maxReschedule restrictions.
+   *
+   * @returns Updated booking with relations, or null if overlap or unauthorized
+   */
+  providerRescheduleWithOverlapCheck(
+    bookingId: string,
+    providerId: string,
+    data: {
+      bookingDate: Date
+      startTime: string
+      endTime: string
+    }
+  ): Promise<BookingWithRelations | null>
+
+  /**
    * Delete booking with atomic authorization check
    *
    * @param id - Booking ID

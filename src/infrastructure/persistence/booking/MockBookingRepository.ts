@@ -499,6 +499,69 @@ export class MockBookingRepository
     }
   }
 
+  async providerRescheduleWithOverlapCheck(
+    bookingId: string,
+    providerId: string,
+    data: {
+      bookingDate: Date
+      startTime: string
+      endTime: string
+    }
+  ): Promise<BookingWithRelations | null> {
+    const booking = this.bookings.get(bookingId)
+    if (!booking) return null
+    if (booking.providerId !== providerId) return null
+
+    const dateStr = data.bookingDate.toISOString().split('T')[0]
+    const overlapping = Array.from(this.bookings.values()).filter((b) => {
+      if (b.id === bookingId) return false
+      if (b.providerId !== providerId) return false
+      const bDateStr = b.bookingDate.toISOString().split('T')[0]
+      if (bDateStr !== dateStr) return false
+      if (!['pending', 'confirmed'].includes(b.status)) return false
+
+      const bStart = this.parseTime(b.startTime)
+      const bEnd = this.parseTime(b.endTime)
+      const newStart = this.parseTime(data.startTime)
+      const newEnd = this.parseTime(data.endTime)
+      return bStart < newEnd && newStart < bEnd
+    })
+
+    if (overlapping.length > 0) return null
+
+    const updated: Booking = {
+      ...booking,
+      bookingDate: data.bookingDate,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      updatedAt: new Date(),
+    }
+    this.bookings.set(bookingId, updated)
+
+    return {
+      ...updated,
+      customerNotes: updated.notes,
+      customer: {
+        firstName: 'Mock',
+        lastName: 'Customer',
+        email: `customer-${updated.customerId}@example.com`,
+        phone: '+46701234567',
+      },
+      service: {
+        name: 'Mock Service',
+        price: 500,
+        durationMinutes: 60,
+      },
+      provider: {
+        businessName: 'Mock Provider AB',
+        user: { firstName: 'Mock', lastName: 'Provider', email: 'provider@example.com' },
+      },
+      horse: null,
+      payment: null,
+      customerReview: null,
+    } as unknown as BookingWithRelations
+  }
+
   async deleteWithAuth(
     id: string,
     authContext: { providerId?: string; customerId?: string }
