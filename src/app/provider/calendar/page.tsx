@@ -381,6 +381,23 @@ function CalendarContent() {
     }
   }
 
+  const handleReschedule = async (bookingId: string, bookingDate: string, startTime: string) => {
+    const response = await fetch(`/api/provider/bookings/${bookingId}/reschedule`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingDate, startTime }),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.error || "Kunde inte boka om")
+    }
+
+    toast.success("Bokningstid ändrad!")
+    handleDialogClose(false)
+    mutateBookings()
+  }
+
   // Filtrera bokningar för aktuell period (vecka eller månad)
   const periodStart = viewMode === "month"
     ? startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 })
@@ -539,6 +556,7 @@ function CalendarContent() {
         onOpenChange={handleDialogClose}
         onStatusUpdate={handleStatusUpdate}
         onReviewSuccess={() => mutateBookings()}
+        onReschedule={handleReschedule}
         onNotesUpdate={(bookingId, notes) => {
           // Update selectedBooking immediately so dialog shows fresh notes
           // (SWR mutate is async and selectedBooking is a frozen snapshot)
