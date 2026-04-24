@@ -23,7 +23,9 @@ Sprint-dokument: [sprint-55.md](sprint-55.md)
 
 | Story | Status | Branch | Commit |
 |-------|--------|--------|--------|
-| S55-1: iOS demo mode — NativeMoreView + NativeProfileView | pending | - | - |
+| S55-1: iOS demo mode — NativeMoreView + NativeProfileView | done | feature/s55-1-ios-demo-mode | 2d94f766 |
+
+*(Sprint 55 klar 2026-04-24. 1/1 story done — iOS demo mode + env-synk (NEXT_PUBLIC_DEMO_MODE) + kalender-buggfix (offset→padding för korrekt hit-testing) + dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`.)*
 
 *(Sprint 54 klar 2026-04-24. 2/2 stories done — inline bekräfta/avvisa i kalender + redigera bokningsdatum/-tid. Demo-feedback implementerad. Bugfix: "rejected" mappades inte till "cancelled" i API-anropet. Terminologifix: "Avböj" → "Avvisa" i hela appen.)*
 
