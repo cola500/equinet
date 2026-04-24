@@ -164,7 +164,7 @@ sections:
 | Krav | Status | Detaljer |
 |------|--------|----------|
 | TypeScript strict mode | Klart | strict, noImplicitAny, strictNullChecks |
-| Unit/integration-tester | Klart | 4302 tester, 363 testfiler (2026-04-20). Inkl. 20+ integration-testfiler (expanderat från 9 i S43-S44 testpyramid-omfördelning). Magic bytes-validering för bild-upload tillagd i S46 (`file-type`-paketet). |
+| Unit/integration-tester | Klart | 4327 tester, 371 testfiler (2026-04-23). Inkl. 20+ integration-testfiler (expanderat från 9 i S43-S44 testpyramid-omfördelning). Magic bytes-validering för bild-upload tillagd i S46 (`file-type`-paketet). |
 | iOS XCTest | Klart | 223 tester (APIClient, DashboardViewModel, BookingsModels, CalendarModels, CalendarViewModel, BookingsViewModel, CustomersViewModel, m.fl.) |
 | E2E-tester | Klart | Playwright, 22 specs efter S43-S44 (från 36 — 14 migrerade till integration/component-nivå). |
 | ESLint | Klart | Flat config (eslint.config.mjs) |

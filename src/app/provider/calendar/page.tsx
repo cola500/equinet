@@ -366,6 +366,21 @@ function CalendarContent() {
     })
   }
 
+  const handleQuickAction = async (bookingId: string, action: "confirmed" | "rejected") => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: action }),
+      })
+      if (!response.ok) throw new Error("Failed")
+      toast.success(action === "confirmed" ? "Bokning bekräftad!" : "Bokning avvisad!")
+      mutateBookings()
+    } catch {
+      toast.error("Kunde inte uppdatera bokning")
+    }
+  }
+
   // Filtrera bokningar för aktuell period (vecka eller månad)
   const periodStart = viewMode === "month"
     ? startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 })
@@ -405,6 +420,7 @@ function CalendarContent() {
       <PendingBookingsBanner
         pendingBookings={pendingBookings}
         onBookingClick={handleBookingClick}
+        onQuickAction={handleQuickAction}
       />
 
       <FirstUseTooltip

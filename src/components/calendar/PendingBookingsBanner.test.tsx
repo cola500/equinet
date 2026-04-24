@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { PendingBookingsBanner } from "./PendingBookingsBanner"
 import { CalendarBooking } from "@/types"
@@ -143,5 +143,121 @@ describe("PendingBookingsBanner", () => {
     await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
     expect(screen.getByText(/15 mar/i)).toBeInTheDocument()
     expect(screen.getByText(/10:00/)).toBeInTheDocument()
+  })
+
+  describe("onQuickAction (inline bekräfta/avvisa)", () => {
+    it("visar inte åtgärdsknappar om onQuickAction ej skickas", async () => {
+      const user = userEvent.setup()
+      render(
+        <PendingBookingsBanner pendingBookings={[createBooking()]} onBookingClick={vi.fn()} />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      expect(screen.queryByRole("button", { name: /bekräfta/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /avvisa/i })).not.toBeInTheDocument()
+    })
+
+    it("visar Bekräfta- och Avvisa-knappar per rad när onQuickAction skickas", async () => {
+      const user = userEvent.setup()
+      render(
+        <PendingBookingsBanner
+          pendingBookings={[createBooking()]}
+          onBookingClick={vi.fn()}
+          onQuickAction={vi.fn()}
+        />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      expect(screen.getByRole("button", { name: /bekräfta/i })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: /avvisa/i })).toBeInTheDocument()
+    })
+
+    it("anropar onQuickAction('confirmed') direkt vid klick på Bekräfta", async () => {
+      const user = userEvent.setup()
+      const booking = createBooking()
+      const onQuickAction = vi.fn()
+      render(
+        <PendingBookingsBanner
+          pendingBookings={[booking]}
+          onBookingClick={vi.fn()}
+          onQuickAction={onQuickAction}
+        />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      await user.click(screen.getByRole("button", { name: /bekräfta/i }))
+      expect(onQuickAction).toHaveBeenCalledWith(booking.id, "confirmed")
+    })
+
+    it("öppnar bekräftelsedialog vid klick på Avvisa (anropar ej direkt)", async () => {
+      const user = userEvent.setup()
+      const onQuickAction = vi.fn()
+      render(
+        <PendingBookingsBanner
+          pendingBookings={[createBooking()]}
+          onBookingClick={vi.fn()}
+          onQuickAction={onQuickAction}
+        />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      await user.click(screen.getByRole("button", { name: /avvisa/i }))
+      expect(onQuickAction).not.toHaveBeenCalled()
+      expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+    })
+
+    it("stänger dialog utan anrop när Avbryt klickas i bekräftelsedialogen", async () => {
+      const user = userEvent.setup()
+      const onQuickAction = vi.fn()
+      render(
+        <PendingBookingsBanner
+          pendingBookings={[createBooking()]}
+          onBookingClick={vi.fn()}
+          onQuickAction={onQuickAction}
+        />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      await user.click(screen.getByRole("button", { name: /avvisa/i }))
+      await user.click(screen.getByRole("button", { name: /avbryt/i }))
+      expect(onQuickAction).not.toHaveBeenCalled()
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    })
+
+    it("anropar onQuickAction('rejected') vid bekräftelse i avvisnings-dialog", async () => {
+      const user = userEvent.setup()
+      const booking = createBooking()
+      const onQuickAction = vi.fn()
+      render(
+        <PendingBookingsBanner
+          pendingBookings={[booking]}
+          onBookingClick={vi.fn()}
+          onQuickAction={onQuickAction}
+        />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      await user.click(screen.getByRole("button", { name: /avvisa/i }))
+      // Klicka på "Avvisa"-knappen inuti dialogen
+      const dialogAvvisaBtn = screen.getAllByRole("button", { name: /avvisa/i }).find(
+        (btn) => btn.closest("[role='alertdialog']")
+      )
+      await user.click(dialogAvvisaBtn!)
+      expect(onQuickAction).toHaveBeenCalledWith(booking.id, "rejected")
+    })
+
+    it("visar tjänstnamn och kundnamn i avvisnings-dialogen", async () => {
+      const user = userEvent.setup()
+      const booking = createBooking({
+        service: { name: "Omskoning", price: 1000 },
+        customer: { firstName: "Lisa", lastName: "Magnusson", email: "lisa@test.com" },
+      })
+      render(
+        <PendingBookingsBanner
+          pendingBookings={[booking]}
+          onBookingClick={vi.fn()}
+          onQuickAction={vi.fn()}
+        />
+      )
+      await user.click(screen.getByRole("button", { name: /bokning väntar/i }))
+      await user.click(screen.getByRole("button", { name: /avvisa/i }))
+      const dialog = screen.getByRole("alertdialog")
+      expect(within(dialog).getByText(/Omskoning/)).toBeInTheDocument()
+      expect(within(dialog).getByText(/Lisa Magnusson/)).toBeInTheDocument()
+    })
   })
 })

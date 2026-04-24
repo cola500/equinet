@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-04-19
+last_updated: 2026-04-23
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -1484,6 +1484,39 @@ body { padding-bottom: 0 !important; }
 **Lösning (i efterhand):** `git rebase main` på feature-branchen synkar basen.
 
 **Källa:** S44-retro-fynd — divergent branches vid PR #230. Regel i `.claude/rules/commit-strategy.md`.
+
+---
+
+---
+
+## Gotcha #38: Demo-läge ska ALDRIG filtrera datainnehåll
+
+**Problem:** `isDemoMode()` returnerar `true` när `NEXT_PUBLIC_DEMO_MODE=true` är satt. Det är frestande att använda det för att "städa upp" vyn inför demo — t.ex. dölja inaktiverade tjänster, avbokade bokningar eller testdata. Hotfix `ac9a36bf` åtgärdade ett sådant filter i `src/app/provider/services/page.tsx` som dolde inaktiva tjänster.
+
+**Lösning:** `isDemoMode()` styr **synlighet för navigation och paths** (via `DEMO_ALLOWED_PATHS`) — ingenting annat. Datainnehållet ska aldrig påverkas av flaggan. Seeda istället realistisk demo-data via `npm run db:seed:demo-provider`.
+
+**Regel:** Om du hittar `isDemoMode() ? filtreraData : allaData` i en komponent — ta bort filtret.
+
+**Källa:** S53 sprint-retro + hotfix 2026-04-23. Se `docs/operations/demo-setup.md`.
+
+---
+
+## Gotcha #39: Radix Accordion gömmer innehåll för sökmotorer (SEO)
+
+**Problem:** Radix UI:s `<Accordion>` använder `aria-hidden="true"` och `display: none` på stängda paneler. Sökmotorer indexerar inte innehåll med `display: none` — FAQ-sidor med Radix Accordion hade SEO-problem och rankade inte på frågor som faktiskt svarades i accordion-panelerna.
+
+**Lösning:** Använd native HTML `<details>/<summary>` för FAQ och expanderbara sektioner som ska indexeras. Webbläsaren renderar innehållet i DOM oavsett om det är öppet eller stängt, och sökmotorer indexerar det.
+
+```html
+<details>
+  <summary>Fråga som visas</summary>
+  <p>Svar som indexeras av sökmotorer (alltid i DOM)</p>
+</details>
+```
+
+**Regel:** Radix Accordion OK för interaktionsmönster som aldrig ska indexeras (adminpanel, inställningar). Native `<details>` för allt som SEO spelar roll för (FAQ, hjälpsidor, publika sidor).
+
+**Källa:** S53-1 FAQ-fix 2026-04-23.
 
 ---
 
