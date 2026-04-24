@@ -18,7 +18,15 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 58** — ej planerad ännu.
+**Sprint 58: Affärsinsikter — release-klar** — startad 2026-04-24
+Sprint-dokument: [sprint-58.md](sprint-58.md)
+
+| Story | Status | Branch | Commit |
+|-------|--------|--------|--------|
+| S58-1: Total intäkt som KPI-kort | pending | — | — |
+| S58-2: Delta-indikator på KPI-korten | pending | — | — |
+| S58-3: Tomtläge + servicebreakdown-rubrik | pending | — | — |
+| S58-4: Ta bort feature flag | pending | — | — |
 
 *(Sprint 57 klar 2026-04-24. 4/4 stories done — ruttsynlighet för nya kunder: kommande ruttar på leverantörsprofil (S57-1), rutt-badge i söklistan (S57-2), rutt-kontext-banner i bokningskalendern (S57-3), notis vid ruttändring (S57-4). Mergad via PR #284. Hotfix landad ovanpå: serviceType-filter söker nu i businessName + description + service.name.)*
 
