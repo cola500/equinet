@@ -105,6 +105,7 @@ export interface CalendarCustomer {
 export interface CalendarService {
   name: string
   price: number
+  durationMinutes: number
 }
 
 export interface CalendarCustomerReview {

@@ -29,6 +29,7 @@ import { StarRating } from "@/components/review/StarRating"
 import { BookingNotesSection } from "@/components/booking/BookingNotesSection"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
+import { ProviderRescheduleDialog } from "@/components/calendar/ProviderRescheduleDialog"
 import Link from "next/link"
 
 interface BookingDetailDialogProps {
@@ -38,6 +39,7 @@ interface BookingDetailDialogProps {
   onStatusUpdate?: (bookingId: string, status: string, cancellationMessage?: string) => void
   onReviewSuccess?: () => void
   onNotesUpdate?: (bookingId: string, providerNotes: string | null) => void
+  onReschedule?: (bookingId: string, bookingDate: string, startTime: string) => Promise<void>
 }
 
 function getStatusLabel(status: string, isPaid: boolean): string {
@@ -77,11 +79,13 @@ export function BookingDetailDialog({
   onStatusUpdate,
   onReviewSuccess,
   onNotesUpdate,
+  onReschedule,
 }: BookingDetailDialogProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancellationMessage, setCancellationMessage] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
   const { isOnline } = useOfflineGuard()
 
   if (!booking) return null
@@ -274,6 +278,20 @@ export function BookingDetailDialog({
             </div>
           )}
 
+          {onReschedule && ["pending", "confirmed"].includes(booking.status) && (
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRescheduleDialog(true)}
+                className="w-full"
+              >
+                Ändra datum/tid
+              </Button>
+            </div>
+          )}
+
           {onStatusUpdate && booking.status === "confirmed" && (
             <div className="flex flex-wrap gap-2 pt-2 border-t">
               <Button
@@ -385,6 +403,16 @@ export function BookingDetailDialog({
         </ResponsiveAlertDialogFooter>
       </ResponsiveAlertDialogContent>
     </ResponsiveAlertDialog>
+
+    {/* Reschedule Dialog */}
+    {booking && showRescheduleDialog && onReschedule && (
+      <ProviderRescheduleDialog
+        booking={booking}
+        open={showRescheduleDialog}
+        onOpenChange={setShowRescheduleDialog}
+        onReschedule={onReschedule}
+      />
+    )}
     </>
   )
 }

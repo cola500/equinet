@@ -18,7 +18,13 @@ sections:
 
 ## Aktiv sprint
 
-*(Ingen aktiv sprint. Sprint 53 avslutad 2026-04-23 — demo-värdig webb i mål.)*
+**Sprint 54: Kalenderåtgärder (demo-feedback)** — startad 2026-04-24
+Sprint-dokument: [sprint-54.md](sprint-54.md)
+
+| Story | Status | Branch | Commit |
+|-------|--------|--------|--------|
+| S54-1: Snabb bekräfta/avvisa i kalendern | pending | - | - |
+| S54-2: Redigera bokningsdatum och tid | done | feature/s54-2-provider-reschedule | 8d217799 |
 
 *(Sprint 53 klar 2026-04-23. 4/4 stories done (inkl. valfri S53-3). Demo verifierat manuellt av Johan via skärmdelning-scenariot. R1+R2 + serial-review testat i praktiken — ~266k tokens total sprint-kostnad (mindre än en S51-djävulens-advokat-review). 4 procedurbrott (alla samma kategori: Dev self-merge × 3 + 0 plan-reviews av 4 stories) — trim-diskussion parkerad. Retro: `docs/retrospectives/2026-04-23-sprint-53.md`.)*
 

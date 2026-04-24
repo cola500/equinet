@@ -763,6 +763,109 @@ export class PrismaBookingRepository
   }
 
   /**
+   * Reschedule a booking as provider with atomic overlap check
+   *
+   * Provider variant — uses providerId in WHERE clause instead of customerId.
+   * No window/maxReschedule checks (those are customer-facing constraints).
+   */
+  async providerRescheduleWithOverlapCheck(
+    bookingId: string,
+    providerId: string,
+    data: {
+      bookingDate: Date
+      startTime: string
+      endTime: string
+    }
+  ): Promise<BookingWithRelations | null> {
+    try {
+      // @ts-expect-error - Prisma transaction callback type inference issue
+      const booking = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const overlappingBookings = await tx.booking.findMany({
+          where: {
+            providerId,
+            bookingDate: data.bookingDate,
+            id: { not: bookingId },
+            status: { in: ['pending', 'confirmed'] },
+            OR: [
+              {
+                AND: [
+                  { startTime: { lte: data.startTime } },
+                  { endTime: { gt: data.startTime } },
+                ],
+              },
+              {
+                AND: [
+                  { startTime: { lt: data.endTime } },
+                  { endTime: { gte: data.endTime } },
+                ],
+              },
+              {
+                AND: [
+                  { startTime: { gte: data.startTime } },
+                  { endTime: { lte: data.endTime } },
+                ],
+              },
+            ],
+          },
+        })
+
+        if (overlappingBookings.length > 0) {
+          throw new Error('BOOKING_OVERLAP')
+        }
+
+        return await tx.booking.update({
+          where: { id: bookingId, providerId },
+          data: {
+            bookingDate: data.bookingDate,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            rescheduleCount: { increment: 1 },
+          },
+          select: {
+            id: true,
+            customerId: true,
+            providerId: true,
+            serviceId: true,
+            bookingDate: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            horseId: true,
+            horseName: true,
+            horseInfo: true,
+            customerNotes: true,
+            providerNotes: true,
+            cancellationMessage: true,
+            rescheduleCount: true,
+            bookingSeriesId: true,
+            isManualBooking: true,
+            createdByProviderId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: CUSTOMER_CONTACT_SELECT,
+            service: SERVICE_SELECT,
+            provider: PROVIDER_SELECT,
+            horse: HORSE_FULL_SELECT,
+          },
+        })
+      }, {
+        timeout: 15000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      })
+
+      return booking as unknown as BookingWithRelations
+    } catch (error) {
+      if (error instanceof Error && error.message === 'BOOKING_OVERLAP') {
+        return null
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
    * Delete booking with atomic authorization check
    *
    * Uses WHERE clause with both id AND owner for IDOR prevention.
