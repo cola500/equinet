@@ -177,6 +177,63 @@ describe("GET /api/provider/insights", () => {
     expect(data.kpis.averageBookingValue).toBe(900)
   })
 
+  it("should return totalRevenue from completed bookings", async () => {
+    setupAuthenticatedProvider()
+    mockBookingCount.mockResolvedValue(4)
+    mockBookingFindMany.mockResolvedValue([
+      createBooking({ status: "completed", service: { id: "s1", name: "A", price: 600 } }),
+      createBooking({ status: "completed", service: { id: "s2", name: "B", price: 900 } }),
+      createBooking({ status: "completed", service: { id: "s3", name: "C", price: 1200 } }),
+      createBooking({ status: "cancelled", service: { id: "s4", name: "D", price: 500 } }),
+    ] as never)
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    // Only completed: 600 + 900 + 1200 = 2700 (cancelled excluded)
+    expect(data.kpis.totalRevenue).toBe(2700)
+  })
+
+  it("should return totalRevenue as 0 when no completed bookings", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(data.kpis.totalRevenue).toBe(0)
+  })
+
+  // --- Previous period comparison (S58-2) ---
+
+  it("should return previousKpis with same structure as kpis", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(data.previousKpis).toBeDefined()
+    expect(data.previousKpis).toMatchObject({
+      cancellationRate: expect.any(Number),
+      noShowRate: expect.any(Number),
+      totalRevenue: expect.any(Number),
+      averageBookingValue: expect.any(Number),
+      uniqueCustomers: expect.any(Number),
+      manualBookingRate: expect.any(Number),
+    })
+  })
+
+  it("should include hasPreviousPeriod=false when provider has no history", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(data.hasPreviousPeriod).toBe(false)
+  })
+
   it("should count unique customers", async () => {
     setupAuthenticatedProvider()
     mockBookingCount.mockResolvedValue(4)

@@ -5,7 +5,7 @@ import { test, expect } from './fixtures'
  *
  * Covers exploratory test plan phases:
  * - Fas 0-1: Baseline (all toggleable flags OFF) - navigation visibility
- * - Fas 4: business_insights (env override, always ON)
+ * - Fas 4: insights (always visible — no feature flag)
  * - Fas 5: route_planning toggle
  * - Fas 6: route_announcements toggle
  * - Fas 7: due_for_service (env override, always ON)
@@ -16,7 +16,7 @@ import { test, expect } from './fixtures'
  *
  * NOTE: Flags with env overrides in playwright.config.ts cannot be toggled via admin API:
  * FEATURE_SELF_RESCHEDULE, FEATURE_CUSTOMER_INSIGHTS, FEATURE_DUE_FOR_SERVICE,
- * FEATURE_GROUP_BOOKINGS, FEATURE_BUSINESS_INSIGHTS, FEATURE_RECURRING_BOOKINGS,
+ * FEATURE_GROUP_BOOKINGS, FEATURE_RECURRING_BOOKINGS,
  * FEATURE_FOLLOW_PROVIDER, FEATURE_OFFLINE_MODE, FEATURE_MUNICIPALITY_WATCH
  *
  * ARCHITECTURE NOTE: In Next.js dev mode, API routes and Server Components
@@ -28,7 +28,7 @@ import { test, expect } from './fixtures'
  */
 
 // Flags that CAN be toggled (no env override)
-// NOTE: due_for_service, group_bookings, business_insights, recurring_bookings
+// NOTE: due_for_service, group_bookings, recurring_bookings
 // have env overrides in playwright.config.ts so they cannot be toggled via admin API.
 const TOGGLE_FLAGS = [
   'voice_logging',
@@ -47,7 +47,6 @@ const PROVIDER_FLAG_NAV = [
 const PROVIDER_ENV_NAV = [
   'Besöksplanering',  // due_for_service: env override FEATURE_DUE_FOR_SERVICE=true
   'Gruppbokningar',   // group_bookings: env override FEATURE_GROUP_BOOKINGS=true
-  'Insikter',         // business_insights: env override FEATURE_BUSINESS_INSIGHTS=true
 ] as const
 
 // Provider nav items that are always visible -- primary (direct links)
@@ -62,6 +61,7 @@ const PROVIDER_PRIMARY_NAV = [
 
 // Provider nav items that are always visible -- secondary (inside "Mer" dropdown)
 const PROVIDER_SECONDARY_ALWAYS_NAV = [
+  'Insikter',
   'Min profil',
 ] as const
 
@@ -299,22 +299,11 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     })
   })
 
-  // ─── Fas 4: business_insights (env override) ───────────────────
-  // NOTE: business_insights has env override (FEATURE_BUSINESS_INSIGHTS=true)
-  // so it cannot be toggled off via admin API. Only test that it's visible.
+  // ─── Fas 4: insights (always visible) ──────────────────────────
+  // Business insights är inte bakom feature flag längre (borttagen S58-4).
+  // Insikter-länken ska alltid vara synlig.
 
-  test.describe('Fas 4: business_insights (env override)', () => {
-
-    test('4.1 "Insikter" is always visible in provider nav (env override)', async ({ page }) => {
-      test.skip(test.info().project.name === 'mobile', 'Desktop nav test')
-
-      await loginAsProvider(page)
-      await gotoProviderDashboardWithFlags(page)
-      await openProviderMoreDropdown(page)
-
-      const nav = page.locator('nav.hidden.md\\:block')
-      await expect(nav.getByRole('link', { name: 'Insikter' })).toBeVisible()
-    })
+  test.describe('Fas 4: insights (always visible)', () => {
 
     test('4.2 click "Insikter": page loads', async ({ page }) => {
       await loginAsProvider(page)
@@ -722,7 +711,6 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     // Env-override flags are always true regardless of DB
     expect(data.flags.group_bookings).toBe(true)
     expect(data.flags.recurring_bookings).toBe(true)
-    expect(data.flags.business_insights).toBe(true)
     // Toggleable flags restored to their code defaults
     expect(data.flags.voice_logging).toBe(true)
     expect(data.flags.route_planning).toBe(true)

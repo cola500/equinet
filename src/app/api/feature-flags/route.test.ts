@@ -42,7 +42,6 @@ describe("GET /api/feature-flags", () => {
       customer_insights: true,
       due_for_service: true,
       group_bookings: true,
-      business_insights: true,
       self_reschedule: true,
       recurring_bookings: true,
       offline_mode: true,

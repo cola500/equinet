@@ -10,34 +10,48 @@ import { ErrorState } from "@/components/ui/error-state"
 import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { useRetry } from "@/hooks/useRetry"
 import { toast } from "sonner"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 type Period = 3 | 6 | 12
+
+interface KpiSet {
+  cancellationRate: number
+  noShowRate: number
+  totalRevenue: number
+  averageBookingValue: number
+  uniqueCustomers: number
+  manualBookingRate: number
+}
 
 interface InsightsData {
   serviceBreakdown: Array<{ serviceName: string; count: number; revenue: number }>
   timeHeatmap: Array<{ day: string; dayIndex: number; hour: number; count: number }>
   customerRetention: Array<{ month: string; newCustomers: number; returningCustomers: number }>
-  kpis: {
-    cancellationRate: number
-    noShowRate: number
-    averageBookingValue: number
-    uniqueCustomers: number
-    manualBookingRate: number
-  }
+  kpis: KpiSet
+  previousKpis?: KpiSet
+  hasPreviousPeriod?: boolean
+}
+
+const EMPTY_KPIS: KpiSet = {
+  cancellationRate: 0,
+  noShowRate: 0,
+  totalRevenue: 0,
+  averageBookingValue: 0,
+  uniqueCustomers: 0,
+  manualBookingRate: 0,
 }
 
 const EMPTY_DATA: InsightsData = {
   serviceBreakdown: [],
   timeHeatmap: [],
   customerRetention: [],
-  kpis: { cancellationRate: 0, noShowRate: 0, averageBookingValue: 0, uniqueCustomers: 0, manualBookingRate: 0 },
+  kpis: EMPTY_KPIS,
+  previousKpis: EMPTY_KPIS,
+  hasPreviousPeriod: false,
 }
 
 export default function ProviderInsightsPage() {
   const { isLoading: authLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const businessInsightsEnabled = useFeatureFlag("business_insights")
   const [data, setData] = useState<InsightsData>(EMPTY_DATA)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -90,17 +104,6 @@ export default function ProviderInsightsPage() {
     )
   }
 
-  if (!businessInsightsEnabled) {
-    return (
-      <ProviderLayout>
-        <div className="py-12 text-center">
-          <h1 className="text-2xl font-bold mb-2">Affärsinsikter</h1>
-          <p className="text-gray-600">Affärsinsikter är inte tillgängliga just nu.</p>
-        </div>
-      </ProviderLayout>
-    )
-  }
-
   return (
     <ProviderLayout>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
@@ -145,6 +148,8 @@ export default function ProviderInsightsPage() {
           timeHeatmap={data.timeHeatmap}
           customerRetention={data.customerRetention}
           kpis={data.kpis}
+          previousKpis={data.previousKpis}
+          hasPreviousPeriod={data.hasPreviousPeriod}
           isLoading={isLoading}
         />
       )}
