@@ -7,6 +7,40 @@ import { getCachedProviderInsights, setCachedProviderInsights } from "@/lib/cach
 import { startOfMonth, subMonths, format, getDay } from "date-fns"
 import { sv } from "date-fns/locale"
 
+type BookingForKpis = {
+  status: string
+  isManualBooking: boolean
+  customerId: string | null
+  service: { price: number | null } | null
+}
+
+function calculateKpis(bookings: BookingForKpis[]) {
+  const total = bookings.length
+  const completed = bookings.filter((b) => b.status === "completed")
+  const cancelled = bookings.filter((b) => b.status === "cancelled").length
+  const noShow = bookings.filter((b) => b.status === "no_show").length
+  const manual = bookings.filter((b) => b.isManualBooking).length
+
+  const revenue = completed.reduce(
+    (sum, b) => sum + (b.service?.price || 0),
+    0
+  )
+  const uniqueIds = new Set(
+    bookings.filter((b) => b.customerId).map((b) => b.customerId)
+  )
+
+  return {
+    cancellationRate: total > 0 ? Math.round((cancelled / total) * 100) : 0,
+    noShowRate: total > 0 ? Math.round((noShow / total) * 100) : 0,
+    totalRevenue: Math.round(revenue),
+    averageBookingValue:
+      completed.length > 0 ? Math.round(revenue / completed.length) : 0,
+    uniqueCustomers: uniqueIds.size,
+    manualBookingRate:
+      total > 0 ? Math.round((manual / total) * 100) : 0,
+  }
+}
+
 /**
  * GET /api/provider/insights
  * Returns business insights: service breakdown, time heatmap, customer retention, KPIs
@@ -52,56 +86,41 @@ export async function GET(request: NextRequest) {
     }
 
     const periodStart = subMonths(startOfMonth(new Date()), months - 1)
+    const previousPeriodStart = subMonths(periodStart, months)
 
-    // Fetch all bookings in period with select (never include)
-    const bookings = await prisma.booking.findMany({
-      where: {
-        providerId: provider.id,
-        bookingDate: { gte: periodStart },
+    const bookingSelect = {
+      id: true,
+      bookingDate: true,
+      startTime: true,
+      status: true,
+      customerId: true,
+      isManualBooking: true,
+      service: {
+        select: { id: true, name: true, price: true },
       },
-      select: {
-        id: true,
-        bookingDate: true,
-        startTime: true,
-        status: true,
-        customerId: true,
-        isManualBooking: true,
-        service: {
-          select: { id: true, name: true, price: true },
+    } as const
+
+    const [bookings, previousBookings] = await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          providerId: provider.id,
+          bookingDate: { gte: periodStart },
         },
-      },
-    })
+        select: bookingSelect,
+      }),
+      prisma.booking.findMany({
+        where: {
+          providerId: provider.id,
+          bookingDate: { gte: previousPeriodStart, lt: periodStart },
+        },
+        select: bookingSelect,
+      }),
+    ])
 
-    const totalBookings = bookings.length
-
-    // --- KPIs ---
     const completedBookings = bookings.filter((b) => b.status === "completed")
-    const cancelledCount = bookings.filter((b) => b.status === "cancelled").length
-    const noShowCount = bookings.filter((b) => b.status === "no_show").length
-    const manualCount = bookings.filter((b) => b.isManualBooking).length
-
-    const totalRevenue = completedBookings.reduce(
-      (sum, b) => sum + (b.service?.price || 0),
-      0
-    )
-    const uniqueCustomerIds = new Set(
-      bookings.filter((b) => b.customerId).map((b) => b.customerId)
-    )
-
-    const kpis = {
-      cancellationRate: totalBookings > 0 ? Math.round((cancelledCount / totalBookings) * 100) : 0,
-      noShowRate: totalBookings > 0 ? Math.round((noShowCount / totalBookings) * 100) : 0,
-      totalRevenue: Math.round(totalRevenue),
-      averageBookingValue:
-        completedBookings.length > 0
-          ? Math.round(totalRevenue / completedBookings.length)
-          : 0,
-      uniqueCustomers: uniqueCustomerIds.size,
-      manualBookingRate:
-        totalBookings > 0
-          ? Math.round((manualCount / totalBookings) * 100)
-          : 0,
-    }
+    const kpis = calculateKpis(bookings)
+    const previousKpis = calculateKpis(previousBookings)
+    const hasPreviousPeriod = previousBookings.length > 0
 
     // --- Service breakdown ---
     const serviceMap = new Map<
@@ -200,6 +219,8 @@ export async function GET(request: NextRequest) {
       timeHeatmap,
       customerRetention,
       kpis,
+      previousKpis,
+      hasPreviousPeriod,
     }
 
     // Store in cache (fire-and-forget)

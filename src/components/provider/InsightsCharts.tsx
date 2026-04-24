@@ -51,12 +51,58 @@ interface InsightsChartsProps {
   timeHeatmap: TimeHeatmapItem[]
   customerRetention: RetentionMonth[]
   kpis: KPIs
+  previousKpis?: KPIs
+  hasPreviousPeriod?: boolean
   isLoading: boolean
+}
+
+// --- Delta calculation ---
+
+type DeltaDirection = "up-good" | "up-bad" | "neutral"
+
+function computeDelta(current: number, previous: number): number | null {
+  if (previous === 0) return null
+  const pct = Math.round(((current - previous) / previous) * 100)
+  if (Math.abs(pct) < 1) return null
+  return pct
+}
+
+function DeltaIndicator({ delta, direction }: { delta: number; direction: DeltaDirection }) {
+  if (direction === "neutral") return null
+  const isGood =
+    (delta > 0 && direction === "up-good") ||
+    (delta < 0 && direction === "up-bad")
+  const color = isGood ? "text-green-600" : "text-red-600"
+  const arrow = delta > 0 ? "↑" : "↓"
+  const label = `${isGood ? "Förbättring" : "Försämring"} ${Math.abs(delta)} procent jämfört med föregående period`
+  return (
+    <span className={`text-xs font-medium ${color} ml-1`} aria-label={label}>
+      {arrow} {Math.abs(delta)}%
+    </span>
+  )
 }
 
 // --- KPI Cards ---
 
-function KPICard({ label, value, unit, color, className, info }: { label: string; value: number | string; unit?: string; color?: string; className?: string; info?: string }) {
+function KPICard({
+  label,
+  value,
+  unit,
+  color,
+  className,
+  info,
+  delta,
+  deltaDirection,
+}: {
+  label: string
+  value: number | string
+  unit?: string
+  color?: string
+  className?: string
+  info?: string
+  delta?: number | null
+  deltaDirection?: DeltaDirection
+}) {
   return (
     <Card className={className}>
       <CardContent className="pt-6">
@@ -66,6 +112,9 @@ function KPICard({ label, value, unit, color, className, info }: { label: string
         </div>
         <p className={`text-2xl font-bold ${color || "text-gray-900"}`}>
           {value}{unit}
+          {delta !== null && delta !== undefined && deltaDirection && (
+            <DeltaIndicator delta={delta} direction={deltaDirection} />
+          )}
         </p>
       </CardContent>
     </Card>
@@ -158,6 +207,8 @@ export function InsightsCharts({
   timeHeatmap,
   customerRetention,
   kpis,
+  previousKpis,
+  hasPreviousPeriod = false,
   isLoading,
 }: InsightsChartsProps) {
   if (isLoading) {
@@ -194,15 +245,25 @@ export function InsightsCharts({
 
   const BAR_COLORS = ["#16a34a", "#22c55e", "#4ade80", "#86efac", "#bbf7d0"]
 
+  // Delta calculations (only shown when previous period has data)
+  const showDelta = hasPreviousPeriod && previousKpis
+  const deltas = {
+    totalRevenue: showDelta ? computeDelta(kpis.totalRevenue, previousKpis.totalRevenue) : null,
+    cancellationRate: showDelta ? computeDelta(kpis.cancellationRate, previousKpis.cancellationRate) : null,
+    noShowRate: showDelta ? computeDelta(kpis.noShowRate, previousKpis.noShowRate) : null,
+    averageBookingValue: showDelta ? computeDelta(kpis.averageBookingValue, previousKpis.averageBookingValue) : null,
+    uniqueCustomers: showDelta ? computeDelta(kpis.uniqueCustomers, previousKpis.uniqueCustomers) : null,
+  }
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-        <KPICard label="Total intäkt" value={`${kpis.totalRevenue.toLocaleString("sv-SE")} kr`} info="Summa intäkt från genomförda bokningar i perioden." />
-        <KPICard label="Avbokningsgrad" value={kpis.cancellationRate} unit="%" color={kpis.cancellationRate > 20 ? "text-red-600" : undefined} info="Andel bokningar som avbokades av totalt antal bokningar i perioden." />
-        <KPICard label="No-show-grad" value={kpis.noShowRate} unit="%" color={kpis.noShowRate > 10 ? "text-amber-600" : undefined} info="Andel bekräftade bokningar där kunden inte dök upp." />
-        <KPICard label="Snittbokningsvärde" value={`${kpis.averageBookingValue.toLocaleString("sv-SE")} kr`} info="Genomsnittligt pris per genomförd bokning i perioden." />
-        <KPICard label="Unika kunder" value={kpis.uniqueCustomers} info="Antal kunder med minst en bokning i perioden." />
+        <KPICard label="Total intäkt" value={`${kpis.totalRevenue.toLocaleString("sv-SE")} kr`} info="Summa intäkt från genomförda bokningar i perioden." delta={deltas.totalRevenue} deltaDirection="up-good" />
+        <KPICard label="Avbokningsgrad" value={kpis.cancellationRate} unit="%" color={kpis.cancellationRate > 20 ? "text-red-600" : undefined} info="Andel bokningar som avbokades av totalt antal bokningar i perioden." delta={deltas.cancellationRate} deltaDirection="up-bad" />
+        <KPICard label="No-show-grad" value={kpis.noShowRate} unit="%" color={kpis.noShowRate > 10 ? "text-amber-600" : undefined} info="Andel bekräftade bokningar där kunden inte dök upp." delta={deltas.noShowRate} deltaDirection="up-bad" />
+        <KPICard label="Snittbokningsvärde" value={`${kpis.averageBookingValue.toLocaleString("sv-SE")} kr`} info="Genomsnittligt pris per genomförd bokning i perioden." delta={deltas.averageBookingValue} deltaDirection="up-good" />
+        <KPICard label="Unika kunder" value={kpis.uniqueCustomers} info="Antal kunder med minst en bokning i perioden." delta={deltas.uniqueCustomers} deltaDirection="up-good" />
         <KPICard label="Manuella bokningar" value={kpis.manualBookingRate} unit="%" info="Andel bokningar skapade manuellt av dig, jämfört med kundens självbokning." />
       </div>
 

@@ -14,25 +14,40 @@ import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 type Period = 3 | 6 | 12
 
+interface KpiSet {
+  cancellationRate: number
+  noShowRate: number
+  totalRevenue: number
+  averageBookingValue: number
+  uniqueCustomers: number
+  manualBookingRate: number
+}
+
 interface InsightsData {
   serviceBreakdown: Array<{ serviceName: string; count: number; revenue: number }>
   timeHeatmap: Array<{ day: string; dayIndex: number; hour: number; count: number }>
   customerRetention: Array<{ month: string; newCustomers: number; returningCustomers: number }>
-  kpis: {
-    cancellationRate: number
-    noShowRate: number
-    totalRevenue: number
-    averageBookingValue: number
-    uniqueCustomers: number
-    manualBookingRate: number
-  }
+  kpis: KpiSet
+  previousKpis?: KpiSet
+  hasPreviousPeriod?: boolean
+}
+
+const EMPTY_KPIS: KpiSet = {
+  cancellationRate: 0,
+  noShowRate: 0,
+  totalRevenue: 0,
+  averageBookingValue: 0,
+  uniqueCustomers: 0,
+  manualBookingRate: 0,
 }
 
 const EMPTY_DATA: InsightsData = {
   serviceBreakdown: [],
   timeHeatmap: [],
   customerRetention: [],
-  kpis: { cancellationRate: 0, noShowRate: 0, totalRevenue: 0, averageBookingValue: 0, uniqueCustomers: 0, manualBookingRate: 0 },
+  kpis: EMPTY_KPIS,
+  previousKpis: EMPTY_KPIS,
+  hasPreviousPeriod: false,
 }
 
 export default function ProviderInsightsPage() {
@@ -146,6 +161,8 @@ export default function ProviderInsightsPage() {
           timeHeatmap={data.timeHeatmap}
           customerRetention={data.customerRetention}
           kpis={data.kpis}
+          previousKpis={data.previousKpis}
+          hasPreviousPeriod={data.hasPreviousPeriod}
           isLoading={isLoading}
         />
       )}

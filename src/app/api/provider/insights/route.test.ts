@@ -204,6 +204,36 @@ describe("GET /api/provider/insights", () => {
     expect(data.kpis.totalRevenue).toBe(0)
   })
 
+  // --- Previous period comparison (S58-2) ---
+
+  it("should return previousKpis with same structure as kpis", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(data.previousKpis).toBeDefined()
+    expect(data.previousKpis).toMatchObject({
+      cancellationRate: expect.any(Number),
+      noShowRate: expect.any(Number),
+      totalRevenue: expect.any(Number),
+      averageBookingValue: expect.any(Number),
+      uniqueCustomers: expect.any(Number),
+      manualBookingRate: expect.any(Number),
+    })
+  })
+
+  it("should include hasPreviousPeriod=false when provider has no history", async () => {
+    setupAuthenticatedProvider()
+    setupEmptyData()
+
+    const response = await GET(createRequest())
+    const data = await response.json()
+
+    expect(data.hasPreviousPeriod).toBe(false)
+  })
+
   it("should count unique customers", async () => {
     setupAuthenticatedProvider()
     mockBookingCount.mockResolvedValue(4)
