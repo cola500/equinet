@@ -26,7 +26,7 @@ sections:
 | S62-2 | NEXTAUTH_URL som bas-URL för inbjudningslänken | done (a182d1b5) |
 | S62-3 | Merge-dialog refreshar inte kundlistan | done (f7bb5bd4) |
 | S62-4 | Merge-route kringgår GhostMergeService | done (66ad2561) |
-| S62-5 | Ingen historik om skickade inbjudningar | pending |
+| S62-5 | Ingen historik om skickade inbjudningar | done (cb216f95) |
 | S62-6 | Ta bort customer_invite feature flag (DoD) | pending |
 
 *(Sprint 62 planerad 2026-04-25. 6 stories — kundinbjudningar release-klar: UI-lösenordsvalidering (S62-1), APP_URL-byte (S62-2), merge-dialog refresh (S62-3), GhostMergeService-refaktorering (S62-4), inbjudningshistorik (S62-5), customer_invite flag borttagen (S62-6). Källa: teateranalys 2026-04-25.)*
