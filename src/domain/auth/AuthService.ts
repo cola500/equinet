@@ -394,7 +394,7 @@ export class AuthService {
 
       // Send password reset email (fire-and-forget)
       if (this.emailService?.sendPasswordReset) {
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const baseUrl = process.env.APP_URL || 'http://localhost:3000'
         const resetUrl = `${baseUrl}/reset-password?token=${token}`
         this.emailService.sendPasswordReset(user.email, user.firstName, resetUrl).catch(() => {
           // Logged at infrastructure level
