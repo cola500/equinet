@@ -44,7 +44,7 @@ describe("feature-flags", () => {
   describe("isFeatureEnabled", () => {
     it("returns default value when no override exists", async () => {
       expect(await isFeatureEnabled("voice_logging")).toBe(true)
-      expect(await isFeatureEnabled("group_bookings")).toBe(true)
+      expect(await isFeatureEnabled("route_announcements")).toBe(true)
     })
 
     it("returns false for unknown flag", async () => {
@@ -52,26 +52,26 @@ describe("feature-flags", () => {
     })
 
     it("env variable overrides default", async () => {
-      process.env.FEATURE_GROUP_BOOKINGS = "true"
-      expect(await isFeatureEnabled("group_bookings")).toBe(true)
+      process.env.FEATURE_ROUTE_ANNOUNCEMENTS = "true"
+      expect(await isFeatureEnabled("route_announcements")).toBe(true)
 
       process.env.FEATURE_VOICE_LOGGING = "false"
       expect(await isFeatureEnabled("voice_logging")).toBe(false)
     })
 
     it("DB override overrides default", async () => {
-      await mockRepo.upsert("group_bookings", true)
+      await mockRepo.upsert("route_announcements", true)
       await mockRepo.upsert("voice_logging", false)
 
       // Both overrides should be visible (single cache fetch)
-      expect(await isFeatureEnabled("group_bookings")).toBe(true)
+      expect(await isFeatureEnabled("route_announcements")).toBe(true)
       expect(await isFeatureEnabled("voice_logging")).toBe(false)
     })
 
     it("env variable overrides DB", async () => {
-      process.env.FEATURE_GROUP_BOOKINGS = "false"
-      await mockRepo.upsert("group_bookings", true)
-      expect(await isFeatureEnabled("group_bookings")).toBe(false)
+      process.env.FEATURE_ROUTE_ANNOUNCEMENTS = "false"
+      await mockRepo.upsert("route_announcements", true)
+      expect(await isFeatureEnabled("route_announcements")).toBe(false)
 
       process.env.FEATURE_VOICE_LOGGING = "true"
       await mockRepo.upsert("voice_logging", false)
@@ -88,7 +88,6 @@ describe("feature-flags", () => {
         route_announcements: true,
         customer_insights: true,
         due_for_service: true,
-        group_bookings: true,
         self_reschedule: true,
         recurring_bookings: true,
         offline_mode: true,
@@ -109,9 +108,9 @@ describe("feature-flags", () => {
     })
 
     it("reflects DB overrides", async () => {
-      await mockRepo.upsert("group_bookings", true)
+      await mockRepo.upsert("route_announcements", true)
       const flags = await getFeatureFlags()
-      expect(flags.group_bookings).toBe(true)
+      expect(flags.route_announcements).toBe(true)
     })
 
     it("reflects env overrides", async () => {
@@ -155,15 +154,15 @@ describe("feature-flags", () => {
       const flags = await getFeatureFlags()
       // Should return defaults without crashing
       expect(flags.voice_logging).toBe(true)
-      expect(flags.group_bookings).toBe(true)
+      expect(flags.route_announcements).toBe(true)
     })
   })
 
   describe("setFeatureFlagOverride", () => {
     it("writes to repository", async () => {
-      await setFeatureFlagOverride("group_bookings", "true")
+      await setFeatureFlagOverride("route_announcements", "true")
 
-      const flag = await mockRepo.findByKey("group_bookings")
+      const flag = await mockRepo.findByKey("route_announcements")
       expect(flag).not.toBeNull()
       expect(flag!.enabled).toBe(true)
     })
@@ -173,38 +172,38 @@ describe("feature-flags", () => {
       await getFeatureFlags()
 
       // Override a flag
-      await setFeatureFlagOverride("group_bookings", "true")
+      await setFeatureFlagOverride("route_announcements", "true")
 
       // Should see the override immediately (cache invalidated)
       const flags = await getFeatureFlags()
-      expect(flags.group_bookings).toBe(true)
+      expect(flags.route_announcements).toBe(true)
     })
 
     it("throws descriptive error on DB failure", async () => {
       vi.spyOn(mockRepo, "upsert").mockRejectedValueOnce(new Error("Connection refused"))
 
       await expect(
-        setFeatureFlagOverride("group_bookings", "true")
-      ).rejects.toThrow("Kunde inte uppdatera flaggan group_bookings: Connection refused")
+        setFeatureFlagOverride("route_announcements", "true")
+      ).rejects.toThrow("Kunde inte uppdatera flaggan route_announcements: Connection refused")
     })
   })
 
   describe("removeFeatureFlagOverride", () => {
     it("sets flag to default value in repository", async () => {
-      await setFeatureFlagOverride("group_bookings", "true")
-      await removeFeatureFlagOverride("group_bookings")
+      await setFeatureFlagOverride("route_announcements", "true")
+      await removeFeatureFlagOverride("route_announcements")
 
-      // group_bookings default is true
+      // route_announcements default is true
       const flags = await getFeatureFlags()
-      expect(flags.group_bookings).toBe(true)
+      expect(flags.route_announcements).toBe(true)
     })
 
     it("throws descriptive error on DB failure", async () => {
       vi.spyOn(mockRepo, "upsert").mockRejectedValueOnce(new Error("Timeout"))
 
       await expect(
-        removeFeatureFlagOverride("group_bookings")
-      ).rejects.toThrow("Kunde inte uppdatera flaggan group_bookings: Timeout")
+        removeFeatureFlagOverride("route_announcements")
+      ).rejects.toThrow("Kunde inte uppdatera flaggan route_announcements: Timeout")
     })
   })
 
@@ -238,13 +237,13 @@ describe("feature-flags", () => {
     it("reads from Edge Config when available", async () => {
       mockReadEdgeConfig.mockResolvedValue({
         voice_logging: false,
-        group_bookings: true,
+        route_announcements: true,
       })
 
       const flags = await getFeatureFlags()
 
       expect(flags.voice_logging).toBe(false)
-      expect(flags.group_bookings).toBe(true)
+      expect(flags.route_announcements).toBe(true)
       // Flags not in Edge Config fall back to code default
       expect(flags.route_planning).toBe(true)
     })
@@ -268,15 +267,15 @@ describe("feature-flags", () => {
     })
 
     it("syncs to Edge Config after setFeatureFlagOverride", async () => {
-      await setFeatureFlagOverride("group_bookings", "true")
+      await setFeatureFlagOverride("route_announcements", "true")
 
       expect(mockSyncEdgeConfig).toHaveBeenCalledWith(
-        expect.objectContaining({ group_bookings: true })
+        expect.objectContaining({ route_announcements: true })
       )
     })
 
     it("syncs to Edge Config after removeFeatureFlagOverride", async () => {
-      await removeFeatureFlagOverride("group_bookings")
+      await removeFeatureFlagOverride("route_announcements")
 
       expect(mockSyncEdgeConfig).toHaveBeenCalled()
     })

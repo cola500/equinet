@@ -2,7 +2,6 @@
  * @domain group-booking
  * @routes POST /api/group-bookings, GET /api/group-bookings, PUT /api/group-bookings/[id], POST /api/group-bookings/join, POST /api/group-bookings/[id]/match
  * @repository IGroupBookingRepository
- * @featureFlag group_bookings
  * @consumers provider/group-bookings/page.tsx, customer/group-bookings/page.tsx
  */
 

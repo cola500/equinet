@@ -54,14 +54,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "provider",
   },
-  group_bookings: {
-    key: "group_bookings",
-    label: "Gruppbokningar",
-    description: "Gruppbokningsfunktionalitet",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "provider",
-  },
   self_reschedule: {
     key: "self_reschedule",
     label: "Självservice-ombokning",

@@ -375,7 +375,7 @@ export const TEST_DATA: TestCategory[] = [
       {
         id: "feat-group",
         title: "Gruppbokningar",
-        description: "Slå PÅ group_bookings i Admin → System",
+        description: "Alltid tillgänglig (ingen feature flag)",
         items: [
           { id: "fgroup-1", label: "Menyval visas för kund och leverantör" },
           { id: "fgroup-2", label: "Kund kan skapa och bjuda in" },

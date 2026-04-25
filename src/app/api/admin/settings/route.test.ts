@@ -22,7 +22,6 @@ vi.mock("@/lib/feature-flags", async (importOriginal) => {
       route_announcements: true,
       customer_insights: true,
       due_for_service: true,
-      group_bookings: false,
       self_reschedule: true,
       recurring_bookings: false,
     }),
@@ -127,7 +126,6 @@ describe("GET /api/admin/settings", () => {
       route_announcements: true,
       customer_insights: true,
       due_for_service: true,
-      group_bookings: false,
       self_reschedule: true,
       recurring_bookings: false,
     })

@@ -126,7 +126,6 @@ export default defineConfig({
         FEATURE_FOLLOW_PROVIDER: 'true',
         FEATURE_DUE_FOR_SERVICE: 'true',
         FEATURE_MUNICIPALITY_WATCH: 'true',
-        FEATURE_GROUP_BOOKINGS: 'true',
         FEATURE_RECURRING_BOOKINGS: 'true',
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',

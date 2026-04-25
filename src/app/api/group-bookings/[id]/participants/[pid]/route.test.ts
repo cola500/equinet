@@ -3,9 +3,6 @@ import { DELETE } from './route'
 import { auth } from '@/lib/auth-server'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
-import { isFeatureEnabled } from '@/lib/feature-flags'
-
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -27,10 +24,6 @@ vi.mock('@/domain/group-booking/GroupBookingService', () => ({
   createGroupBookingService: () => mockService,
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
@@ -45,7 +38,6 @@ const makeParams = (id: string, pid: string) => Promise.resolve({ id, pid })
 describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.creator, userType: 'customer' },
     } as never)
@@ -61,16 +53,6 @@ describe('DELETE /api/group-bookings/[id]/participants/[pid]', () => {
     expect(res.status).toBe(401)
     const data = await res.json()
     expect(data.error).toBe('Ej inloggad')
-  })
-
-  it('returns 404 when group_bookings feature flag is disabled', async () => {
-    mockIsFeatureEnabled.mockResolvedValueOnce(false)
-    const req = new NextRequest('http://localhost/api/group-bookings/gb-1/participants/p-1', {
-      method: 'DELETE',
-    })
-    const res = await DELETE(req, { params: Promise.resolve({ id: 'gb-1', pid: 'p-1' }) })
-    expect(res.status).toBe(404)
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should allow participant to leave (cancel their own participation)', async () => {
