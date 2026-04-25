@@ -18,18 +18,18 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 61** — Återkommande bokningar release-klar. Planerad 2026-04-25.
+**Sprint 61** — Återkommande bokningar release-klar. Klar 2026-04-25.
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S61-1 | Atomisk serie-skapande ($transaction) | pending |
-| S61-2 | Validera att startdatum inte är i det förflutna | pending |
-| S61-3 | Kund-vy för seriebokningar | pending |
-| S61-4 | Atomisk serie-cancel ($transaction) | pending |
-| S61-5 | Trigga email-bekräftelse vid serie-skapande | pending |
-| S61-6 | Ta bort recurring_bookings feature flag (DoD) | pending |
+| S61-1 | Atomisk serie-skapande ($transaction) | done (PR #294) |
+| S61-2 | Validera att startdatum inte är i det förflutna | done (PR #295) |
+| S61-3 | Kund-vy för seriebokningar | done (PR #296) |
+| S61-4 | Atomisk serie-cancel ($transaction) | done (PR #297) |
+| S61-5 | Trigga email-bekräftelse vid serie-skapande | done (PR #297) |
+| S61-6 | Ta bort recurring_bookings feature flag (DoD) | done (4ea8b7b9) |
 
-*(Sprint 60 klar 2026-04-25. 5/5 stories done — förfallen service release-klar: inline intervalredigering i leverantörslistan (S60-2), rekommenderat intervall + varning vid >26 veckor (S60-3), native route returnerar 200+[] vid flagga AV (S60-4), due_for_service feature flag borttagen — GA (S60-5). Mergad via PR #293. check:all 4/4 gröna, 4370 tester.)*
+*(Sprint 61 klar 2026-04-25. 6/6 stories done — återkommande bokningar release-klar: atomisk serie-skapande via $transaction (S61-1), startdatumsvalidering (S61-2), kund-vy för seriebokningar med UX-review (S61-3), atomisk cancel (S61-4), email-bekräftelse vid serie-skapande (S61-5), recurring_bookings feature flag borttagen — GA (S61-6). Mergade via PR #294–298. check:all 4/4 gröna, 4368 tester.)*
 
 *(Sprint 60 klar 2026-04-25. 5/5 stories done — förfallen service release-klar: inline intervalredigering i leverantörslistan (S60-2), rekommenderat intervall + varning vid >26 veckor (S60-3), native route returnerar 200+[] vid flagga AV (S60-4), due_for_service feature flag borttagen — GA (S60-5). Mergad via PR #293. check:all 4/4 gröna, 4370 tester.)*
 
