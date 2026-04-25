@@ -25,6 +25,6 @@ export function createPaymentWebhookService(): PaymentWebhookService {
       return result.count
     },
     generateInvoiceNumber,
-    getBaseUrl: () => process.env.NEXTAUTH_URL || "http://localhost:3000",
+    getBaseUrl: () => process.env.APP_URL || "http://localhost:3000",
   })
 }

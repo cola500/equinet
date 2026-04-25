@@ -215,7 +215,7 @@ export class RouteAnnouncementNotifier {
           municipality: routeOrder.municipality,
           dateRange: dateStr,
           serviceNames,
-          announcementUrl: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/customer/announcements`,
+          announcementUrl: `${process.env.APP_URL || "http://localhost:3000"}/customer/announcements`,
           overdueHorse: overdueForEmail,
         })
 
@@ -261,7 +261,7 @@ export class RouteAnnouncementNotifier {
           municipality: routeOrder.municipality,
           dateRange: dateStr,
           serviceNames,
-          announcementUrl: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/customer/announcements`,
+          announcementUrl: `${process.env.APP_URL || "http://localhost:3000"}/customer/announcements`,
         })
 
         await this.emailService.send({

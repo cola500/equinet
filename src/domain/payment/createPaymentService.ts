@@ -74,6 +74,6 @@ export function createPaymentService(): PaymentService {
     },
     paymentGateway: getPaymentGateway(),
     generateInvoiceNumber,
-    getBaseUrl: () => process.env.NEXTAUTH_URL || "http://localhost:3000",
+    getBaseUrl: () => process.env.APP_URL || "http://localhost:3000",
   })
 }
