@@ -8,13 +8,13 @@ import { test, expect } from './fixtures'
  * - Fas 4: insights (always visible — no feature flag)
  * - Fas 5: route_planning toggle
  * - Fas 6: route_announcements toggle
- * - Fas 7: due_for_service (env override, always ON)
+ * - Fas 7: due_for_service (always ON — no feature flag)
  * - Fas 8: voice_logging toggle
  * - Fas 9: recurring_bookings (env override, always ON)
  * - Fas 11: All flags ON - combined verification
  *
  * NOTE: Flags with env overrides in playwright.config.ts cannot be toggled via admin API:
- * FEATURE_SELF_RESCHEDULE, FEATURE_CUSTOMER_INSIGHTS, FEATURE_DUE_FOR_SERVICE,
+ * FEATURE_SELF_RESCHEDULE, FEATURE_CUSTOMER_INSIGHTS,
  * FEATURE_RECURRING_BOOKINGS,
  * FEATURE_FOLLOW_PROVIDER, FEATURE_OFFLINE_MODE, FEATURE_MUNICIPALITY_WATCH
  *
@@ -27,8 +27,7 @@ import { test, expect } from './fixtures'
  */
 
 // Flags that CAN be toggled (no env override)
-// NOTE: due_for_service, recurring_bookings
-// have env overrides in playwright.config.ts so they cannot be toggled via admin API.
+// NOTE: recurring_bookings has env override in playwright.config.ts so it cannot be toggled via admin API.
 const TOGGLE_FLAGS = [
   'voice_logging',
   'route_planning',
@@ -42,9 +41,9 @@ const PROVIDER_FLAG_NAV = [
   { flag: 'route_announcements', label: 'Rutt-annonser' },
 ] as const
 
-// Provider nav items that are always visible due to env override
+// Provider nav items that are always visible (no feature flag)
 const PROVIDER_ENV_NAV = [
-  'Besöksplanering',  // due_for_service: env override FEATURE_DUE_FOR_SERVICE=true
+  'Besöksplanering',  // due_for_service: GA — no longer feature-flagged
   'Gruppbokningar',   // group_bookings: no longer feature-flagged, always visible
 ] as const
 
@@ -386,12 +385,11 @@ test.describe('Feature Flag Toggle (Admin)', () => {
   })
 
   // ─── Fas 7: due_for_service ────────────────────────────────────
-  // NOTE: due_for_service has env override (FEATURE_DUE_FOR_SERVICE=true)
-  // so it cannot be toggled off via admin API. Only test that it's visible.
+  // NOTE: due_for_service is now GA (no feature flag). Always visible.
 
-  test.describe('Fas 7: due_for_service (env override)', () => {
+  test.describe('Fas 7: due_for_service (GA, no feature flag)', () => {
 
-    test('7.1 "Besöksplanering" is always visible (env override)', async ({ page }) => {
+    test('7.1 "Besöksplanering" is always visible (GA feature)', async ({ page }) => {
       test.skip(test.info().project.name === 'mobile', 'Desktop nav test')
 
       await gotoProviderDashboardWithFlags(page)

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import {
@@ -39,12 +38,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 3. Feature flag
-    if (!(await isFeatureEnabled("due_for_service"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    // 4. Find provider
+    // 3. Find provider
     const provider = await prisma.provider.findUnique({
       where: { userId: authUser.id },
       select: { id: true },

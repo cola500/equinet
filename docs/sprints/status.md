@@ -22,12 +22,11 @@ sections:
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S60-1 | Tester för DueForServiceCalculator + Service | pending |
-| S60-2 | Redigera intervall direkt i leverantörslistan | pending |
-| S60-3 | Guard mot extrema intervallvärden (kund) | pending |
-| S60-4 | Proaktiv notifikation när hästar förfaller | pending |
-| S60-5 | Native route returnerar 404 istället för tom lista | pending |
-| S60-6 | Ta bort due_for_service feature flag (DoD) | pending |
+| S60-1 | Tester för DueForServiceCalculator + Service | done (44 tester existerade redan) |
+| S60-2 | Redigera intervall direkt i leverantörslistan | in_progress |
+| S60-3 | Guard mot extrema intervallvärden (kund) | in_progress |
+| S60-4 | Native route returnerar 404 istället för tom lista | in_progress |
+| S60-5 | Ta bort due_for_service feature flag (DoD) | in_progress |
 
 *(Sprint 59 klar 2026-04-25. 5/5 stories done — gruppbokningar release-klar: filter för döda requests (S59-1), kopiera-kod-knapp + tydligare delnings-UX (S59-2), bokningsdetaljer inline efter match med peer-sanitering (S59-3), rate-limit på preview + atomisk join-transaktion med 409 vid full grupp (S59-4), feature flag borttagen — group_bookings är GA (S59-5). Mergade via PR #288, #289, #290, #291, #292. check:all 4/4 gröna, 4374 tester.)*
 

@@ -7,9 +7,11 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
-import { Clock, AlertTriangle, CheckCircle, CalendarPlus } from "lucide-react"
+import { Clock, AlertTriangle, CheckCircle, CalendarPlus, Check, X } from "lucide-react"
+import { toast } from "sonner"
 import Link from "next/link"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 
@@ -54,6 +56,9 @@ export default function DueForServicePage() {
   const { isLoading: authLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
   const [filter, setFilter] = useState<Filter>("all")
+  const [editingKey, setEditingKey] = useState<string | null>(null)
+  const [editingValue, setEditingValue] = useState<string>("")
+  const [savingKey, setSavingKey] = useState<string | null>(null)
 
   const swrKey = isProvider
     ? `/api/provider/due-for-service${filter !== "all" ? `?filter=${filter}` : ""}`
@@ -61,6 +66,44 @@ export default function DueForServicePage() {
   const { data, error: swrError, isLoading, mutate: mutateDueItems } = useSWR<{ items: DueForServiceItem[] }>(swrKey)
   const items = data?.items ?? []
   const fetchError = !!swrError
+
+  const startEdit = (item: DueForServiceItem) => {
+    setEditingKey(`${item.horseId}:${item.serviceId}`)
+    setEditingValue(String(item.intervalWeeks))
+  }
+
+  const cancelEdit = () => {
+    setEditingKey(null)
+    setEditingValue("")
+  }
+
+  const saveInterval = async (item: DueForServiceItem) => {
+    const weeks = Number(editingValue)
+    if (!Number.isInteger(weeks) || weeks < 1 || weeks > 52) {
+      toast.error("Intervallet måste vara 1–52 veckor")
+      return
+    }
+    const key = `${item.horseId}:${item.serviceId}`
+    setSavingKey(key)
+    try {
+      const res = await fetch(`/api/provider/horses/${item.horseId}/interval`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceId: item.serviceId, revisitIntervalWeeks: weeks }),
+      })
+      if (!res.ok) {
+        toast.error("Kunde inte spara intervallet")
+        return
+      }
+      toast.success("Sparat")
+      setEditingKey(null)
+      await mutateDueItems()
+    } catch {
+      toast.error("Kunde inte spara intervallet")
+    } finally {
+      setSavingKey(null)
+    }
+  }
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("sv-SE", {
@@ -214,7 +257,50 @@ export default function DueForServicePage() {
                         <span className="block text-xs uppercase tracking-wider">
                           Intervall
                         </span>
-                        <span>{item.intervalWeeks} veckor</span>
+                        {editingKey === `${item.horseId}:${item.serviceId}` ? (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Input
+                              type="number"
+                              min={1}
+                              max={52}
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              className="h-7 w-16 px-2 text-sm"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveInterval(item)
+                                if (e.key === "Escape") cancelEdit()
+                              }}
+                            />
+                            <span className="text-xs">v</span>
+                            <button
+                              type="button"
+                              onClick={() => saveInterval(item)}
+                              disabled={savingKey === `${item.horseId}:${item.serviceId}`}
+                              className="text-green-600 hover:text-green-700 disabled:opacity-50"
+                              aria-label="Spara intervall"
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEdit}
+                              className="text-gray-400 hover:text-gray-600"
+                              aria-label="Avbryt"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(item)}
+                            className="hover:text-primary hover:underline cursor-pointer text-left"
+                            title="Klicka för att ändra intervall"
+                          >
+                            {item.intervalWeeks} veckor
+                          </button>
+                        )}
                       </div>
                       <div>
                         <span className="block text-xs uppercase tracking-wider">

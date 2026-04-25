@@ -131,6 +131,12 @@ Identifierade mönster (2026-04-17) som är smartare än vanligt men bara finns 
 | Provider subscription (monetarisering) | 1-2 veckor | Prissbeslut |
 | Fortnox-integration (fakturering) | 2-3 veckor | Fortnox API-access |
 
+## Due-for-service (uppföljning)
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| Proaktiv push-notifikation vid förfallna hästar | 45 min | Daglig cron-route (`/api/cron/due-for-service-notify`) skickar push via `PushDeliveryService` + `DueForServiceLookup` till leverantörer med ≥1 overdue-häst. Infrastrukturen finns, bara kopplingen saknas. Teateranalys 2026-04-25 (GAP 4). |
+
 ## Features som kraver arbete innan lansering
 
 | Flagga | Problem | Effort |

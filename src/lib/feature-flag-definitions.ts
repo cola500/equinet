@@ -46,14 +46,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "provider",
   },
-  due_for_service: {
-    key: "due_for_service",
-    label: "Besöksplanering",
-    description: "Planera och följ upp återkommande besök",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "provider",
-  },
   self_reschedule: {
     key: "self_reschedule",
     label: "Självservice-ombokning",

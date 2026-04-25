@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 
@@ -55,11 +54,6 @@ async function authorizeCustomer(request: NextRequest, context: RouteContext) {
     }
   }
 
-  const enabled = await isFeatureEnabled("due_for_service")
-  if (!enabled) {
-    return { featureDisabled: true, customerId: session.user.id, horseId: "" }
-  }
-
   const { horseId } = await context.params
 
   // Ownership check: horse must belong to customer
@@ -85,9 +79,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const authResult = await authorizeCustomer(request, context)
     if ("error" in authResult) return authResult.error
-    if ("featureDisabled" in authResult) {
-      return NextResponse.json({ intervals: [] })
-    }
 
     const { horseId } = authResult
 
@@ -154,9 +145,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const authResult = await authorizeCustomer(request, context)
     if ("error" in authResult) return authResult.error
-    if ("featureDisabled" in authResult) {
-      return NextResponse.json({ intervals: [] })
-    }
 
     const { horseId } = authResult
 
@@ -221,9 +209,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const authResult = await authorizeCustomer(request, context)
     if ("error" in authResult) return authResult.error
-    if ("featureDisabled" in authResult) {
-      return NextResponse.json({ intervals: [] })
-    }
 
     const { horseId } = authResult
 

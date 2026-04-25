@@ -12,10 +12,6 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     provider: { findUnique: vi.fn() },
@@ -27,7 +23,6 @@ vi.mock("@/lib/prisma", () => ({
 
 import { GET } from "./route"
 import { getAuthUser } from "@/lib/auth-dual"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { prisma } from "@/lib/prisma"
 
 const TEST_UUIDS = {
@@ -56,8 +51,6 @@ describe("GET /api/native/due-for-service", () => {
       authMethod: "supabase" as const,
     })
 
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
-
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
       id: TEST_UUIDS.provider,
     } as never)
@@ -71,12 +64,6 @@ describe("GET /api/native/due-for-service", () => {
     vi.mocked(getAuthUser).mockResolvedValue(null)
     const res = await GET(makeRequest())
     expect(res.status).toBe(401)
-  })
-
-  it("returns 404 when feature flag disabled", async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-    const res = await GET(makeRequest())
-    expect(res.status).toBe(404)
   })
 
   it("returns 404 when provider not found", async () => {

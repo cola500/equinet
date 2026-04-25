@@ -125,9 +125,25 @@ export function IntervalSection({
                 placeholder="T.ex. 6"
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">
-                1-104 veckor. T.ex. 6 veckor för hovslagare, 26 veckor för tandvård.
-              </p>
+              {(() => {
+                const rec = availableServices.find((s) => s.id === intervalForm.serviceId)?.recommendedIntervalWeeks
+                const weeks = Number(intervalForm.intervalWeeks)
+                return (
+                  <>
+                    {rec && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Rekommenderat intervall: {rec} veckor
+                      </p>
+                    )}
+                    {weeks > 26 && (
+                      <p className="text-xs text-yellow-600 mt-1">
+                        Hästen syns inte i leverantörens påminnelselista förrän om ca{" "}
+                        {Math.round(weeks / 4.3)} månader
+                      </p>
+                    )}
+                  </>
+                )
+              })()}
             </div>
             <ResponsiveDialogFooter>
               <Button

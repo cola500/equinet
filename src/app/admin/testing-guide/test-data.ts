@@ -364,9 +364,8 @@ export const TEST_DATA: TestCategory[] = [
       {
         id: "feat-dfs",
         title: "Besöksplanering",
-        description: "Slå PÅ due_for_service i Admin → System",
+        description: "Alltid tillgänglig (ingen feature flag)",
         items: [
-          { id: "fdfs-1", label: "Menyval visas när PÅ, döljs när AV" },
           { id: "fdfs-2", label: "Hästar som behöver besök listas" },
           { id: "fdfs-3", label: "Intervall kan sättas per häst/tjänst" },
           { id: "fdfs-4", label: "Förfallna besök markeras tydligt" },

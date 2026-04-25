@@ -124,7 +124,6 @@ export default defineConfig({
         FEATURE_CUSTOMER_INSIGHTS: 'true',
         FEATURE_OFFLINE_MODE: 'true',
         FEATURE_FOLLOW_PROVIDER: 'true',
-        FEATURE_DUE_FOR_SERVICE: 'true',
         FEATURE_MUNICIPALITY_WATCH: 'true',
         FEATURE_RECURRING_BOOKINGS: 'true',
         FEATURE_CUSTOMER_INVITE: 'true',
