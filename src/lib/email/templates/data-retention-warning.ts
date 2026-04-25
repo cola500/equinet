@@ -1,7 +1,7 @@
 import { baseStyles } from "./base-styles"
 
 export function dataRetentionWarningEmail(): { html: string; text: string } {
-  const baseUrl = process.env.NEXTAUTH_URL || "https://equinet.vercel.app"
+  const baseUrl = process.env.APP_URL || "https://equinet.vercel.app"
   const loginUrl = `${baseUrl}/login`
   const html = `
 <!DOCTYPE html>

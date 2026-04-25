@@ -56,7 +56,7 @@ export function paymentConfirmationEmail(data: PaymentConfirmationData): { html:
       <span class="value" style="font-size: 18px; color: #16a34a;">${data.amount} ${e(data.currency)}</span>
     </div>
 
-    <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings" class="button">
+    <a href="${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings" class="button">
       Se dina bokningar
     </a>
   </div>
@@ -87,7 +87,7 @@ Datum för tjänst: ${data.bookingDate}
 Betaldatum: ${data.paidAt}
 Totalt betalt: ${data.amount} ${data.currency}
 
-Se dina bokningar: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings
+Se dina bokningar: ${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings
 
 Boknings-ID: ${data.bookingId}
 

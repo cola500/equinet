@@ -46,7 +46,7 @@ export async function sendBugReportAdminNotification(bugReport: {
 
   if (adminEmails.length === 0) return
 
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const baseUrl = process.env.APP_URL || "http://localhost:3000"
   const adminUrl = `${baseUrl}/admin/bug-reports/${bugReport.id}`
   const truncatedDesc =
     bugReport.description.length > 200
@@ -290,7 +290,7 @@ export async function sendRebookingReminderNotification(
       return { success: false, error: "Customer not found or no email" }
     }
 
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const baseUrl = process.env.APP_URL || "http://localhost:3000"
     const rebookUrl = `${baseUrl}/providers/${data.providerId}`
 
     const { html, text } = rebookingReminderEmail({
@@ -351,7 +351,7 @@ export async function sendBookingReminderNotification(bookingId: string) {
       return { success: true, error: undefined }
     }
 
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const baseUrl = process.env.APP_URL || "http://localhost:3000"
     const unsubscribeUrl = generateUnsubscribeUrl(booking.customerId)
 
     const { html, text } = bookingReminderEmail({
@@ -427,7 +427,7 @@ export async function sendBookingRescheduleNotification(
       return { success: true, error: undefined }
     }
 
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const baseUrl = process.env.APP_URL || "http://localhost:3000"
     const formattedOldDate = oldBookingDate
     const formattedNewDate = format(new Date(booking.bookingDate), "d MMMM yyyy", { locale: sv })
 
