@@ -28,6 +28,17 @@ sections:
 | S59-4 | Rate limiting på preview + atomisk join | pending |
 | S59-5 | Ta bort group_bookings feature flag (DoD) | pending |
 
+**Sprint 60** — Förfallen service release-klar. Planerad 2026-04-25.
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S60-1 | Tester för DueForServiceCalculator + Service | pending |
+| S60-2 | Redigera intervall direkt i leverantörslistan | pending |
+| S60-3 | Guard mot extrema intervallvärden (kund) | pending |
+| S60-4 | Proaktiv notifikation när hästar förfaller | pending |
+| S60-5 | Native route returnerar 404 istället för tom lista | pending |
+| S60-6 | Ta bort due_for_service feature flag (DoD) | pending |
+
 *(Sprint 58 klar 2026-04-24. 4/4 stories done — Affärsinsikter release-klar: total intäkt KPI (S58-1), delta-indikator mot föregående period (S58-2), tomtläge + tydligare servicebreakdown-rubrik (S58-3), business_insights feature flag borttagen (S58-4). Mergad via PR #287. check:all 4/4 gröna, 4380 tester. Demo-läget oberoende verifierat.)*
 
 *(Sprint 57 klar 2026-04-24. 4/4 stories done — ruttsynlighet för nya kunder: kommande ruttar på leverantörsprofil (S57-1), rutt-badge i söklistan (S57-2), rutt-kontext-banner i bokningskalendern (S57-3), notis vid ruttändring (S57-4). Mergad via PR #284. Hotfix landad ovanpå: serviceType-filter söker nu i businessName + description + service.name.)*
