@@ -57,6 +57,12 @@ export async function GET(
             durationMinutes: true,
           },
         },
+        horse: {
+          select: { name: true },
+        },
+        provider: {
+          select: { businessName: true },
+        },
         bookings: {
           select: {
             id: true,

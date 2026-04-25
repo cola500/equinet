@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -102,12 +103,18 @@ export function BookingCard({
                 <div className="flex items-center gap-2">
                   <CardTitle>{booking.service.name}</CardTitle>
                   {booking.bookingSeriesId && (
-                    <Badge
-                      className="bg-purple-100 text-purple-800"
-                      variant="secondary"
+                    <Link
+                      href={`/customer/booking-series/${booking.bookingSeriesId}`}
+                      className="inline-flex items-center min-h-[44px] sm:min-h-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 rounded"
+                      aria-label="Visa bokningsserie"
                     >
-                      Återkommande
-                    </Badge>
+                      <Badge
+                        className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer"
+                        variant="secondary"
+                      >
+                        Återkommande
+                      </Badge>
+                    </Link>
                   )}
                   {booking.routeOrderId && (
                     <Badge
