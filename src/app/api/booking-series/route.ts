@@ -4,7 +4,6 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { BookingSeriesService, SeriesError } from "@/domain/booking/BookingSeriesService"
 import { BookingService } from "@/domain/booking/BookingService"
@@ -33,7 +32,6 @@ const createSeriesSchema = z.object({
 
 function mapSeriesErrorToStatus(error: SeriesError): number {
   switch (error.type) {
-    case 'RECURRING_FEATURE_OFF':
     case 'RECURRING_DISABLED':
     case 'NOT_OWNER':
       return 403
@@ -50,8 +48,6 @@ function mapSeriesErrorToStatus(error: SeriesError): number {
 
 function mapSeriesErrorToMessage(error: SeriesError): string {
   switch (error.type) {
-    case 'RECURRING_FEATURE_OFF':
-      return 'Återkommande bokningar är inte aktiverat'
     case 'RECURRING_DISABLED':
       return 'Leverantören har inte aktiverat återkommande bokningar'
     case 'INVALID_INTERVAL':
@@ -76,12 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 
-  // 2. Feature flag
-  if (!(await isFeatureEnabled("recurring_bookings"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
-
-  // 3. Rate limit
+  // 2. Rate limit
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.booking(clientIp)
   if (!isAllowed) {
@@ -147,7 +138,6 @@ export async function POST(request: NextRequest) {
       booking: prisma.booking,
       $transaction: prisma.$transaction.bind(prisma),
     },
-    isFeatureEnabled,
     getProvider: async (id) => prisma.provider.findUnique({
       where: { id },
       select: {

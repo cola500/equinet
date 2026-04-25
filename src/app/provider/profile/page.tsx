@@ -63,7 +63,7 @@ function ProviderProfilePageContent() {
   const demoFlag = useFeatureFlag("demo_mode")
   const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
   const selfRescheduleEnabled = useFeatureFlag("self_reschedule") && !demo
-  const recurringBookingsEnabled = useFeatureFlag("recurring_bookings") && !demo
+  const recurringBookingsEnabled = !demo
   const subscriptionEnabled = useFeatureFlag("provider_subscription")
 
   // Subscription status (only fetched when flag is on)

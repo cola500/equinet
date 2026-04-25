@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth-server"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import type { SessionUser } from "@/types/auth"
 
 export async function GET(
@@ -16,12 +15,7 @@ export async function GET(
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 
-  // 2. Feature flag
-  if (!(await isFeatureEnabled("recurring_bookings"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
-
-  // 3. Rate limit
+  // 2. Rate limit
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.api(clientIp)
   if (!isAllowed) {
