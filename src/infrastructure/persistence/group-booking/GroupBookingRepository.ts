@@ -41,6 +41,16 @@ const participantWithUserSelect = {
   updatedAt: true,
   user: { select: { firstName: true } },
   horse: { select: { name: true } },
+  booking: {
+    select: {
+      id: true,
+      bookingDate: true,
+      startTime: true,
+      endTime: true,
+      status: true,
+      service: { select: { name: true } },
+    },
+  },
 } satisfies Prisma.GroupBookingParticipantSelect
 
 const requestWithParticipantsInclude = {

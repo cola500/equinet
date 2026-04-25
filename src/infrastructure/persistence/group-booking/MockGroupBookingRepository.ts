@@ -8,6 +8,7 @@ import type {
   IGroupBookingRepository,
   GroupBookingRequest,
   GroupBookingParticipant,
+  ParticipantBookingInfo,
   ParticipantWithUser,
   GroupBookingWithParticipants,
   GroupBookingWithDetails,
@@ -23,6 +24,7 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
   private participants: Map<string, GroupBookingParticipant> = new Map()
   private userNames: Map<string, { firstName: string }> = new Map()
   private createdBookingIds: string[] = []
+  private bookingDataById: Map<string, ParticipantBookingInfo> = new Map()
 
   // ==========================================
   // QUERY METHODS
@@ -328,6 +330,13 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     this.participants.clear()
     this.userNames.clear()
     this.createdBookingIds = []
+    this.bookingDataById.clear()
+  }
+
+  seedBookingData(bookings: ParticipantBookingInfo[]): void {
+    for (const b of bookings) {
+      this.bookingDataById.set(b.id, b)
+    }
   }
 
   seedRequests(requests: GroupBookingRequest[]): void {
@@ -374,6 +383,7 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
       ...p,
       user: { firstName: this.userNames.get(p.userId)?.firstName || 'Test' },
       horse: p.horseName ? { name: p.horseName } : null,
+      booking: this.bookingDataById.get(p.bookingId ?? '') ?? null,
     }
   }
 

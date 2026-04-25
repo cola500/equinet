@@ -29,6 +29,15 @@ import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { clientLogger } from "@/lib/client-logger"
 import { Share2, Copy } from "lucide-react"
 
+interface ParticipantBooking {
+  id: string
+  bookingDate: string
+  startTime: string
+  endTime: string
+  status: string
+  service: { name: string }
+}
+
 interface Participant {
   id: string
   userId: string
@@ -39,6 +48,7 @@ interface Participant {
   notes: string | null
   user: { firstName: string }
   horse: { name: string } | null
+  booking: ParticipantBooking | null
 }
 
 interface GroupBookingDetail {
@@ -248,10 +258,11 @@ export default function GroupBookingDetailPage({
   }
 
   const isCreator = groupBooking.creatorId === user?.id
-  const _myParticipation = groupBooking.participants.find(
+  const myParticipation = groupBooking.participants.find(
     (p) => p.userId === user?.id
   )
   const isOpen = groupBooking.status === "open"
+  const myBooking = myParticipation?.booking ?? null
 
   return (
     <CustomerLayout>
@@ -311,13 +322,41 @@ export default function GroupBookingDetailPage({
         {groupBooking.status === "matched" && groupBooking.provider && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
             <CardContent className="py-4">
-              <p className="text-sm text-blue-800 font-medium">
+              <p className="text-sm text-blue-800 font-medium mb-3">
                 {groupBooking.provider.businessName} har accepterat grupprequesten.
-                Du har fått en bokning i din bokningshistorik.
               </p>
+              {myBooking ? (
+                <div className="bg-white rounded-md border border-blue-200 p-3 space-y-1 text-sm">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <div>
+                      <span className="text-gray-500">Datum:</span>{" "}
+                      <span className="font-medium">{formatDate(myBooking.bookingDate)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Tid:</span>{" "}
+                      <span className="font-medium">
+                        {myBooking.startTime}&ndash;{myBooking.endTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Tjänst:</span>{" "}
+                    <span className="font-medium">{myBooking.service.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Leverantör:</span>{" "}
+                    <span className="font-medium">{groupBooking.provider.businessName}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-blue-700">
+                  Bokningsinformation hittas i din bokningshistorik.
+                </p>
+              )}
               <Button
                 className="mt-3"
                 size="sm"
+                variant="outline"
                 onClick={() => router.push("/customer/bookings")}
               >
                 Visa mina bokningar
