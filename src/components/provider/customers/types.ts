@@ -21,6 +21,8 @@ export interface Customer {
   lastBookingDate: string | null
   horses: CustomerHorse[]
   isManuallyAdded?: boolean
+  lastInviteSentAt?: string | null
+  lastInviteExpiresAt?: string | null
 }
 
 export interface CustomerNote {

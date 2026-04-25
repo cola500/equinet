@@ -41,6 +41,9 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findUnique: vi.fn(),
     },
+    customerInviteToken: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   },
 }))
 
@@ -448,6 +451,68 @@ describe('GET /api/provider/customers', () => {
 
     expect(anna.isManuallyAdded).toBeUndefined()
     expect(manuell.isManuallyAdded).toBe(true)
+  })
+
+  it('should include active invite token info for manually added customers', async () => {
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never)
+
+    vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
+      {
+        customerId: TEST_UUIDS.customer1,
+        customer: {
+          id: TEST_UUIDS.customer1,
+          firstName: 'Manuell',
+          lastName: 'Kund',
+          email: 'manual@ghost.equinet.se',
+          phone: null,
+        },
+      },
+    ] as never)
+
+    const sentAt = new Date('2026-04-20T10:00:00.000Z')
+    const expiresAt = new Date('2026-05-20T10:00:00.000Z')
+    vi.mocked(prisma.customerInviteToken.findMany).mockResolvedValue([
+      { userId: TEST_UUIDS.customer1, createdAt: sentAt, expiresAt },
+    ] as never)
+
+    const response = await GET(makeRequest())
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    const manuell = data.customers[0]
+    expect(manuell.lastInviteSentAt).toBe(sentAt.toISOString())
+    expect(manuell.lastInviteExpiresAt).toBe(expiresAt.toISOString())
+  })
+
+  it('should return null invite fields for manual customers with no active token', async () => {
+    vi.mocked(prisma.booking.groupBy)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never)
+
+    vi.mocked(prisma.providerCustomer.findMany).mockResolvedValue([
+      {
+        customerId: TEST_UUIDS.customer1,
+        customer: {
+          id: TEST_UUIDS.customer1,
+          firstName: 'Manuell',
+          lastName: 'Kund',
+          email: 'manual@ghost.equinet.se',
+          phone: null,
+        },
+      },
+    ] as never)
+
+    vi.mocked(prisma.customerInviteToken.findMany).mockResolvedValue([] as never)
+
+    const response = await GET(makeRequest())
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    const manuell = data.customers[0]
+    expect(manuell.lastInviteSentAt).toBeNull()
+    expect(manuell.lastInviteExpiresAt).toBeNull()
   })
 })
 
