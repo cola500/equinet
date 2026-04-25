@@ -18,15 +18,18 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 61** — TBD.
+**Sprint 61** — Återkommande bokningar release-klar. Planerad 2026-04-25.
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S60-1 | Tester för DueForServiceCalculator + Service | done (44 tester existerade redan) |
-| S60-2 | Redigera intervall direkt i leverantörslistan | done (791d45b4) |
-| S60-3 | Guard mot extrema intervallvärden (kund) | done (791d45b4) |
-| S60-4 | Native route returnerar 200+[] vid flagga AV | done (791d45b4) |
-| S60-5 | Ta bort due_for_service feature flag (DoD) | done (791d45b4) |
+| S61-1 | Atomisk serie-skapande ($transaction) | pending |
+| S61-2 | Validera att startdatum inte är i det förflutna | pending |
+| S61-3 | Kund-vy för seriebokningar | pending |
+| S61-4 | Atomisk serie-cancel ($transaction) | pending |
+| S61-5 | Trigga email-bekräftelse vid serie-skapande | pending |
+| S61-6 | Ta bort recurring_bookings feature flag (DoD) | pending |
+
+*(Sprint 60 klar 2026-04-25. 5/5 stories done — förfallen service release-klar: inline intervalredigering i leverantörslistan (S60-2), rekommenderat intervall + varning vid >26 veckor (S60-3), native route returnerar 200+[] vid flagga AV (S60-4), due_for_service feature flag borttagen — GA (S60-5). Mergad via PR #293. check:all 4/4 gröna, 4370 tester.)*
 
 *(Sprint 60 klar 2026-04-25. 5/5 stories done — förfallen service release-klar: inline intervalredigering i leverantörslistan (S60-2), rekommenderat intervall + varning vid >26 veckor (S60-3), native route returnerar 200+[] vid flagga AV (S60-4), due_for_service feature flag borttagen — GA (S60-5). Mergad via PR #293. check:all 4/4 gröna, 4370 tester.)*
 
