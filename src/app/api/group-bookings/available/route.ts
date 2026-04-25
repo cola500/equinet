@@ -4,7 +4,6 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 /**
  * GET /api/group-bookings/available
@@ -18,10 +17,6 @@ export async function GET(request: NextRequest) {
       { error: "För många förfrågningar." },
       { status: 429 }
     )
-  }
-
-  if (!(await isFeatureEnabled("group_bookings"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
   }
 
   try {

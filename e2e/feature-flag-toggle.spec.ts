@@ -11,12 +11,11 @@ import { test, expect } from './fixtures'
  * - Fas 7: due_for_service (env override, always ON)
  * - Fas 8: voice_logging toggle
  * - Fas 9: recurring_bookings (env override, always ON)
- * - Fas 10: group_bookings (env override, always ON)
  * - Fas 11: All flags ON - combined verification
  *
  * NOTE: Flags with env overrides in playwright.config.ts cannot be toggled via admin API:
  * FEATURE_SELF_RESCHEDULE, FEATURE_CUSTOMER_INSIGHTS, FEATURE_DUE_FOR_SERVICE,
- * FEATURE_GROUP_BOOKINGS, FEATURE_RECURRING_BOOKINGS,
+ * FEATURE_RECURRING_BOOKINGS,
  * FEATURE_FOLLOW_PROVIDER, FEATURE_OFFLINE_MODE, FEATURE_MUNICIPALITY_WATCH
  *
  * ARCHITECTURE NOTE: In Next.js dev mode, API routes and Server Components
@@ -28,7 +27,7 @@ import { test, expect } from './fixtures'
  */
 
 // Flags that CAN be toggled (no env override)
-// NOTE: due_for_service, group_bookings, recurring_bookings
+// NOTE: due_for_service, recurring_bookings
 // have env overrides in playwright.config.ts so they cannot be toggled via admin API.
 const TOGGLE_FLAGS = [
   'voice_logging',
@@ -46,7 +45,7 @@ const PROVIDER_FLAG_NAV = [
 // Provider nav items that are always visible due to env override
 const PROVIDER_ENV_NAV = [
   'Besöksplanering',  // due_for_service: env override FEATURE_DUE_FOR_SERVICE=true
-  'Gruppbokningar',   // group_bookings: env override FEATURE_GROUP_BOOKINGS=true
+  'Gruppbokningar',   // group_bookings: no longer feature-flagged, always visible
 ] as const
 
 // Provider nav items that are always visible -- primary (direct links)
@@ -66,7 +65,6 @@ const PROVIDER_SECONDARY_ALWAYS_NAV = [
 ] as const
 
 // Customer nav items gated by feature flags
-// No customer nav items are toggleable via DB -- group_bookings has env override
 const CUSTOMER_FLAG_NAV = [] as const
 
 // Customer nav items that are always visible
@@ -497,13 +495,12 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     })
   })
 
-  // ─── Fas 10: group_bookings (env override) ─────────────────────
-  // NOTE: group_bookings has env override (FEATURE_GROUP_BOOKINGS=true)
-  // so it cannot be toggled off via admin API. Only test that it's visible.
+  // ─── Fas 10: group_bookings (no longer feature-flagged) ────────
+  // group_bookings is GA — always visible.
 
-  test.describe('Fas 10: group_bookings (env override)', () => {
+  test.describe('Fas 10: group_bookings (always on)', () => {
 
-    test('10.1 "Gruppbokningar" is always visible in provider nav (env override)', async ({ page }) => {
+    test('10.1 "Gruppbokningar" is always visible in provider nav', async ({ page }) => {
       test.skip(test.info().project.name === 'mobile', 'Desktop nav test')
 
       await loginAsProvider(page)
@@ -631,30 +628,6 @@ test.describe('Feature Flag Toggle (Admin)', () => {
 
   test.describe('API enforcement when flags are OFF', () => {
 
-    test('group_bookings API returns 404 when flag is OFF', async ({ page }) => {
-      test.skip(true, 'group_bookings has env override FEATURE_GROUP_BOOKINGS=true -- cannot toggle via DB')
-
-      await loginAsAdmin(page)
-      await setFlag(page, 'group_bookings', false)
-
-      // Login as customer for auth
-      await loginAsCustomer(page)
-      await resetRateLimit(page)
-
-      const endpoints = [
-        { method: 'GET', url: '/api/group-bookings' },
-        { method: 'POST', url: '/api/group-bookings' },
-        { method: 'GET', url: '/api/group-bookings/available' },
-      ]
-
-      for (const ep of endpoints) {
-        const response = ep.method === 'GET'
-          ? await page.request.get(ep.url)
-          : await page.request.post(ep.url, { data: {} })
-        expect(response.status(), `${ep.method} ${ep.url} should return 404`).toBe(404)
-      }
-    })
-
     test('voice_logging API returns 404 when flag is OFF', async ({ page }) => {
       await loginAsAdmin(page)
       await setFlag(page, 'voice_logging', false)
@@ -709,7 +682,6 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     const data = await response.json()
 
     // Env-override flags are always true regardless of DB
-    expect(data.flags.group_bookings).toBe(true)
     expect(data.flags.recurring_bookings).toBe(true)
     // Toggleable flags restored to their code defaults
     expect(data.flags.voice_logging).toBe(true)

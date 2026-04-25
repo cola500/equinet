@@ -41,7 +41,6 @@ describe("GET /api/feature-flags", () => {
       route_announcements: true,
       customer_insights: true,
       due_for_service: true,
-      group_bookings: true,
       self_reschedule: true,
       recurring_bookings: true,
       offline_mode: true,
@@ -59,14 +58,14 @@ describe("GET /api/feature-flags", () => {
   })
 
   it("reflects DB overrides", async () => {
-    await mockRepo.upsert("group_bookings", true)
+    await mockRepo.upsert("voice_logging", false)
 
     const request = new NextRequest("http://localhost:3000/api/feature-flags")
     const response = await GET(request)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.flags.group_bookings).toBe(true)
+    expect(data.flags.voice_logging).toBe(false)
   })
 
   it("reflects env overrides", async () => {

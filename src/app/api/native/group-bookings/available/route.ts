@@ -3,13 +3,11 @@
  * Open group booking requests for provider (native iOS).
  *
  * Auth: Bearer > Supabase
- * Feature flag: group_bookings
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
 
@@ -37,10 +35,6 @@ export async function GET(request: NextRequest) {
         )
       }
       throw error
-    }
-
-    if (!(await isFeatureEnabled("group_bookings"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     if (!authUser.providerId) {

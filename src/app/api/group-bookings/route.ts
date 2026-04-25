@@ -5,7 +5,6 @@ import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { createGroupBookingService } from "@/domain/group-booking/GroupBookingService"
 import { mapGroupBookingErrorToStatus } from "@/domain/group-booking/mapGroupBookingErrorToStatus"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 const createGroupBookingSchema = z.object({
   serviceType: z.string().min(1, "Tjänsttyp krävs").max(100),
@@ -59,10 +58,6 @@ const createGroupBookingSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    if (!(await isFeatureEnabled("group_bookings"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
@@ -151,10 +146,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await isFeatureEnabled("group_bookings"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
-
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.api(clientIp)
   if (!isAllowed) {
