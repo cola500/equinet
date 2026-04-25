@@ -190,4 +190,11 @@ export interface IAuthRepository {
    * and mark token as used. Analogous to verifyEmail.
    */
   acceptInvite(userId: string, tokenId: string): Promise<void>
+
+  /**
+   * Execute the full 11-step ghost merge transaction atomically.
+   * Redirects all data from ghost to real user, then deletes the ghost.
+   * requestingProviderId is needed to correctly handle ProviderCustomer links.
+   */
+  executeMergeTransaction(ghostUserId: string, realUserId: string, requestingProviderId: string): Promise<void>
 }
