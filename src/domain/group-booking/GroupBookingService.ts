@@ -367,15 +367,7 @@ export class GroupBookingService {
       })
     }
 
-    // 3. Not full
-    if (groupRequest._count.participants >= groupRequest.maxParticipants) {
-      return Result.fail({
-        type: 'GROUP_FULL',
-        message: 'Grupprequesten är fullt belagd',
-      })
-    }
-
-    // 4. Deadline not passed
+    // 3. Deadline not passed (cheap check before transaction)
     if (groupRequest.joinDeadline && new Date() > groupRequest.joinDeadline) {
       return Result.fail({
         type: 'JOIN_DEADLINE_PASSED',
@@ -383,7 +375,7 @@ export class GroupBookingService {
       })
     }
 
-    // 5. Not already joined
+    // 4. Not already joined (cheap check before transaction)
     const alreadyJoined = await this.repo.isUserParticipant(groupRequest.id, input.userId)
     if (alreadyJoined) {
       return Result.fail({
@@ -392,16 +384,27 @@ export class GroupBookingService {
       })
     }
 
-    // 6. Create participant
-    const participant = await this.repo.addParticipant({
-      groupBookingRequestId: groupRequest.id,
-      userId: input.userId,
-      numberOfHorses: input.numberOfHorses ?? 1,
-      horseId: input.horseId,
-      horseName: input.horseName,
-      horseInfo: input.horseInfo,
-      notes: input.notes,
-    })
+    // 5. Atomic capacity check + insert. Race-safe — two concurrent joins
+    //    that both pass the cheap pre-checks above cannot both succeed.
+    const participant = await this.repo.addParticipantIfRoom(
+      {
+        groupBookingRequestId: groupRequest.id,
+        userId: input.userId,
+        numberOfHorses: input.numberOfHorses ?? 1,
+        horseId: input.horseId,
+        horseName: input.horseName,
+        horseInfo: input.horseInfo,
+        notes: input.notes,
+      },
+      groupRequest.maxParticipants
+    )
+
+    if (!participant) {
+      return Result.fail({
+        type: 'GROUP_FULL',
+        message: 'Grupprequesten är fullt belagd',
+      })
+    }
 
     // 7. Notify creator
     if (this.notificationService) {

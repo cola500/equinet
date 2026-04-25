@@ -17,7 +17,10 @@ vi.mock("@/lib/auth-server", () => ({
 }))
 
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimiters: { api: vi.fn().mockResolvedValue(true) },
+  rateLimiters: {
+    api: vi.fn().mockResolvedValue(true),
+    inviteCodePreview: vi.fn().mockResolvedValue(true),
+  },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
@@ -156,7 +159,7 @@ describe("GET /api/group-bookings/preview", () => {
       user: { id: TEST_UUIDS.customer, userType: "customer" },
       expires: "",
     } as never)
-    vi.mocked(rateLimiters.api).mockRejectedValueOnce(new Error("Redis down"))
+    vi.mocked(rateLimiters.inviteCodePreview).mockRejectedValueOnce(new Error("Redis down"))
 
     const request = new NextRequest(
       "http://localhost:3000/api/group-bookings/preview?code=ABC12345"
@@ -166,5 +169,16 @@ describe("GET /api/group-bookings/preview", () => {
     expect(response.status).toBe(503)
     const data = await response.json()
     expect(data.error).toContain("tillfälligt")
+  })
+
+  it("returns 429 when invite-code rate limit is exceeded", async () => {
+    vi.mocked(rateLimiters.inviteCodePreview).mockResolvedValueOnce(false)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/group-bookings/preview?code=ABC12345"
+    )
+
+    const response = await GET(request)
+    expect(response.status).toBe(429)
   })
 })

@@ -242,6 +242,17 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     return this.toWithParticipants(updated)
   }
 
+  async addParticipantIfRoom(
+    data: CreateParticipantData,
+    maxParticipants: number
+  ): Promise<GroupBookingParticipant | null> {
+    const activeCount = this.getActiveParticipantsForRequest(data.groupBookingRequestId).length
+    if (activeCount >= maxParticipants) {
+      return null
+    }
+    return this.addParticipant(data)
+  }
+
   async addParticipant(data: CreateParticipantData): Promise<GroupBookingParticipant> {
     const now = new Date()
     const participant: GroupBookingParticipant = {
