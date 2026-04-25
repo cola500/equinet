@@ -24,7 +24,7 @@ sections:
 |-------|-------------|--------|
 | S59-1 | Filtrera döda requests från leverantörslistan | done (bd557693) |
 | S59-2 | Delnings-UX för inbjudningskoden | done (d8d16850) |
-| S59-3 | Visa bokningsdetaljer efter match | pending |
+| S59-3 | Visa bokningsdetaljer efter match | done (cae6e2ea) |
 | S59-4 | Rate limiting på preview + atomisk join | pending |
 | S59-5 | Ta bort group_bookings feature flag (DoD) | pending |
 
