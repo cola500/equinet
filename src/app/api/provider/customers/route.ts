@@ -23,6 +23,8 @@ interface CustomerSummary {
   lastBookingDate: string | null
   horses: { id: string; name: string }[]
   isManuallyAdded?: boolean
+  lastInviteSentAt?: string | null
+  lastInviteExpiresAt?: string | null
 }
 
 // GET /api/provider/customers?status=all|active|inactive&q=searchterm
@@ -145,8 +147,10 @@ export const GET = withApiHandler(
     })
 
     // Merge manual customers -- booking customers take priority (richer data)
+    const manualCustomerIds: string[] = []
     for (const mc of manualCustomers) {
       if (!customerMap.has(mc.customerId)) {
+        manualCustomerIds.push(mc.customerId)
         customerMap.set(mc.customerId, {
           id: mc.customer.id,
           firstName: mc.customer.firstName,
@@ -158,7 +162,36 @@ export const GET = withApiHandler(
           lastBookingDate: null,
           horses: [],
           isManuallyAdded: true,
+          lastInviteSentAt: null,
+          lastInviteExpiresAt: null,
         })
+      }
+    }
+
+    // Attach latest active invite token to manual customers
+    if (manualCustomerIds.length > 0) {
+      const now = new Date()
+      const tokens = await prisma.customerInviteToken.findMany({
+        where: {
+          invitedByProviderId: provider.id,
+          userId: { in: manualCustomerIds },
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { userId: true, createdAt: true, expiresAt: true },
+      })
+      const tokenMap = new Map<string, { createdAt: Date; expiresAt: Date }>()
+      for (const t of tokens) {
+        if (!tokenMap.has(t.userId)) tokenMap.set(t.userId, t)
+      }
+      for (const customerId of manualCustomerIds) {
+        const summary = customerMap.get(customerId)
+        const token = tokenMap.get(customerId)
+        if (summary && token) {
+          summary.lastInviteSentAt = token.createdAt.toISOString()
+          summary.lastInviteExpiresAt = token.expiresAt.toISOString()
+        }
       }
     }
 
