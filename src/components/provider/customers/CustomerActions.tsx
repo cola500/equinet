@@ -15,6 +15,7 @@ interface CustomerActionsProps {
   flags: Record<string, boolean>
   onEditCustomer: (customer: Customer) => void
   onDeleteCustomer: (customer: Customer) => void
+  onMergeSuccess?: () => void
 }
 
 export function CustomerActions({
@@ -22,6 +23,7 @@ export function CustomerActions({
   flags,
   onEditCustomer,
   onDeleteCustomer,
+  onMergeSuccess,
 }: CustomerActionsProps) {
   const [isInviting, setIsInviting] = useState(false)
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sent" | "error">("idle")
@@ -114,6 +116,7 @@ export function CustomerActions({
         customer={customer}
         open={showMergeDialog}
         onOpenChange={setShowMergeDialog}
+        onSuccess={onMergeSuccess}
       />
     </>
   )

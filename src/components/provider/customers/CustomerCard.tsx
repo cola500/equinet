@@ -28,6 +28,7 @@ interface CustomerCardProps {
   // Customer callbacks
   onEditCustomer: (customer: Customer) => void
   onDeleteCustomer: (customer: Customer) => void
+  onMergeSuccess?: () => void
 }
 
 function isSentinelEmail(email: string) {
@@ -59,6 +60,7 @@ export function CustomerCard({
   onDeleteHorse,
   onEditCustomer,
   onDeleteCustomer,
+  onMergeSuccess,
 }: CustomerCardProps) {
   const horseCount = horses.length > 0 ? horses.length : customer.horses.length
 
@@ -194,6 +196,7 @@ export function CustomerCard({
             flags={flags}
             onEditCustomer={onEditCustomer}
             onDeleteCustomer={onDeleteCustomer}
+            onMergeSuccess={onMergeSuccess}
           />
         </div>
       )}
