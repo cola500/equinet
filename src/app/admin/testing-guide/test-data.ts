@@ -394,16 +394,6 @@ export const TEST_DATA: TestCategory[] = [
         ],
       },
       {
-        id: "feat-recurring",
-        title: "Återkommande bokningar",
-        description: "Slå PÅ recurring_bookings i Admin → System",
-        items: [
-          { id: "frecurring-1", label: "Seriealternativ visas/döljs korrekt" },
-          { id: "frecurring-2", label: "Skapa serie (veckovis, varannan, månadsvis)" },
-          { id: "frecurring-3", label: "Avbryt en hel serie" },
-        ],
-      },
-      {
         id: "feat-offline",
         title: "Offlineläge",
         description: "Stäng av nätverket (flygplansläge / DevTools)",

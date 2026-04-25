@@ -54,14 +54,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "customer",
   },
-  recurring_bookings: {
-    key: "recurring_bookings",
-    label: "Återkommande bokningar",
-    description: "Möjlighet att skapa återkommande bokningsserier",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "provider",
-  },
   offline_mode: {
     key: "offline_mode",
     label: "Offlineläge",

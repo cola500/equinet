@@ -62,7 +62,6 @@ export interface CancelSeriesResult {
 }
 
 export type SeriesError =
-  | { type: 'RECURRING_FEATURE_OFF' }
   | { type: 'RECURRING_DISABLED' }
   | { type: 'INVALID_INTERVAL'; message: string }
   | { type: 'INVALID_OCCURRENCES'; message: string; max: number }
@@ -120,7 +119,6 @@ export interface BookingSeriesServiceDeps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>
   }
-  isFeatureEnabled: (key: string) => Promise<boolean>
   getProvider: (id: string) => Promise<ProviderRecurringInfo | null>
   getService: (id: string) => Promise<{ id: string; providerId: string; durationMinutes: number; isActive: boolean } | null>
   bookingService: BookingService
@@ -139,13 +137,7 @@ export class BookingSeriesService {
   async createSeries(
     dto: CreateSeriesDTO
   ): Promise<Result<CreateSeriesResult, SeriesError>> {
-    // 1. Check feature flag
-    const featureEnabled = await this.deps.isFeatureEnabled('recurring_bookings')
-    if (!featureEnabled) {
-      return Result.fail({ type: 'RECURRING_FEATURE_OFF' })
-    }
-
-    // 2. Get provider and check recurringEnabled
+    // 1. Get provider and check recurringEnabled
     const provider = await this.deps.getProvider(dto.providerId)
     if (!provider || !provider.recurringEnabled) {
       return Result.fail({ type: 'RECURRING_DISABLED' })

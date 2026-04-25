@@ -10,12 +10,10 @@ import { test, expect } from './fixtures'
  * - Fas 6: route_announcements toggle
  * - Fas 7: due_for_service (always ON — no feature flag)
  * - Fas 8: voice_logging toggle
- * - Fas 9: recurring_bookings (env override, always ON)
  * - Fas 11: All flags ON - combined verification
  *
  * NOTE: Flags with env overrides in playwright.config.ts cannot be toggled via admin API:
  * FEATURE_SELF_RESCHEDULE, FEATURE_CUSTOMER_INSIGHTS,
- * FEATURE_RECURRING_BOOKINGS,
  * FEATURE_FOLLOW_PROVIDER, FEATURE_OFFLINE_MODE, FEATURE_MUNICIPALITY_WATCH
  *
  * ARCHITECTURE NOTE: In Next.js dev mode, API routes and Server Components
@@ -27,7 +25,6 @@ import { test, expect } from './fixtures'
  */
 
 // Flags that CAN be toggled (no env override)
-// NOTE: recurring_bookings has env override in playwright.config.ts so it cannot be toggled via admin API.
 const TOGGLE_FLAGS = [
   'voice_logging',
   'route_planning',
@@ -457,42 +454,6 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     })
   })
 
-  // ─── Fas 9: recurring_bookings (env override) ──────────────────
-  // NOTE: recurring_bookings has env override (FEATURE_RECURRING_BOOKINGS=true)
-  // so it cannot be toggled off via admin API. Only test that it's visible.
-
-  test.describe('Fas 9: recurring_bookings (env override)', () => {
-
-    test('9.1 serie-toggle should be visible in booking dialog (env override)', async ({ page }) => {
-      test.skip(test.info().project.name === 'mobile', 'Desktop booking dialog test')
-
-      await loginAsCustomer(page)
-
-      // Search for "Test Stall AB" (seeded provider with services)
-      await page.goto('/providers')
-      await syncClientFlags(page)
-      await expect(page.getByRole('heading', { name: /hitta tjänsteleverantörer/i })).toBeVisible({ timeout: 10000 })
-
-      // Find the seeded provider card with "Test Stall AB"
-      const providerCard = page.locator('[data-testid="provider-card"]').filter({ hasText: 'Test Stall AB' })
-      if (!(await providerCard.isVisible({ timeout: 5000 }).catch(() => false))) {
-        test.skip(true, 'Seeded provider "Test Stall AB" not found')
-        return
-      }
-      await providerCard.getByRole('link', { name: /se profil/i }).click()
-
-      // Click "Boka" on a service
-      await page.getByRole('button', { name: /boka denna tjänst/i }).first().click({ timeout: 10000 })
-      await syncClientFlags(page)
-
-      // In the booking dialog, "Återkommande" toggle should be visible
-      await expect(page.getByText(/återkommande/i)).toBeVisible({ timeout: 10000 })
-
-      // Close dialog
-      await page.keyboard.press('Escape')
-    })
-  })
-
   // ─── Fas 10: group_bookings (no longer feature-flagged) ────────
   // group_bookings is GA — always visible.
 
@@ -652,20 +613,6 @@ test.describe('Feature Flag Toggle (Admin)', () => {
       expect(response.status()).toBe(404)
     })
 
-    test('recurring_bookings API returns 404 when flag is OFF', async ({ page }) => {
-      test.skip(true, 'recurring_bookings has env override FEATURE_RECURRING_BOOKINGS=true -- cannot toggle via DB')
-
-      await loginAsAdmin(page)
-      await setFlag(page, 'recurring_bookings', false)
-
-      await loginAsCustomer(page)
-      await resetRateLimit(page)
-
-      const response = await page.request.post('/api/booking-series', {
-        data: {},
-      })
-      expect(response.status()).toBe(404)
-    })
   })
 
   // ─── Cleanup: restore defaults ──────────────────────────────────
@@ -679,8 +626,6 @@ test.describe('Feature Flag Toggle (Admin)', () => {
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
 
-    // Env-override flags are always true regardless of DB
-    expect(data.flags.recurring_bookings).toBe(true)
     // Toggleable flags restored to their code defaults
     expect(data.flags.voice_logging).toBe(true)
     expect(data.flags.route_planning).toBe(true)

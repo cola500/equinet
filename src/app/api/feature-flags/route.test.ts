@@ -41,7 +41,6 @@ describe("GET /api/feature-flags", () => {
       route_announcements: true,
       customer_insights: true,
       self_reschedule: true,
-      recurring_bookings: true,
       offline_mode: true,
       follow_provider: true,
       municipality_watch: true,

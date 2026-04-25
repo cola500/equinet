@@ -56,7 +56,6 @@ function createDeps(overrides?: Partial<BookingSeriesServiceDeps>): BookingSerie
       booking: bookingMocks,
       $transaction,
     } as never,
-    isFeatureEnabled: vi.fn().mockResolvedValue(true),
     getProvider: vi.fn().mockResolvedValue({
       id: PROVIDER_ID,
       userId: 'provider-user-1',
@@ -119,24 +118,6 @@ describe('BookingSeriesService', () => {
   })
 
   describe('createSeries', () => {
-    it('returns RECURRING_FEATURE_OFF when feature flag is disabled', async () => {
-      const deps = createDeps({ isFeatureEnabled: vi.fn().mockResolvedValue(false) })
-      const service = new BookingSeriesService(deps)
-
-      const result = await service.createSeries({
-        customerId: CUSTOMER_ID,
-        providerId: PROVIDER_ID,
-        serviceId: SERVICE_ID,
-        firstBookingDate: futureDate(1),
-        startTime: '10:00',
-        intervalWeeks: 2,
-        totalOccurrences: 4,
-      })
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('RECURRING_FEATURE_OFF')
-    })
-
     it('returns RECURRING_DISABLED when provider has disabled recurring', async () => {
       const deps = createDeps({
         getProvider: vi.fn().mockResolvedValue({
