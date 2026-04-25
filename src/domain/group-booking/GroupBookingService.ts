@@ -228,7 +228,16 @@ export class GroupBookingService {
         message: 'Grupprequest hittades inte',
       })
     }
-    return Result.ok(result)
+
+    // Only expose booking details on the requester's own participant row;
+    // strip from other participants to avoid leaking peers' schedules.
+    const sanitized = {
+      ...result,
+      participants: result.participants.map((p) =>
+        p.userId === userId ? p : { ...p, booking: null }
+      ),
+    }
+    return Result.ok(sanitized)
   }
 
   // -----------------------------------------------------------

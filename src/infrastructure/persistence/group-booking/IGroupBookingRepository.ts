@@ -47,9 +47,19 @@ export interface GroupBookingParticipant {
   updatedAt: Date
 }
 
+export interface ParticipantBookingInfo {
+  id: string
+  bookingDate: Date
+  startTime: string
+  endTime: string
+  status: string
+  service: { name: string }
+}
+
 export interface ParticipantWithUser extends GroupBookingParticipant {
   user: { firstName: string }
   horse: { name: string } | null
+  booking: ParticipantBookingInfo | null
 }
 
 export interface GroupBookingWithParticipants extends GroupBookingRequest {

@@ -176,6 +176,76 @@ describe('GroupBookingService', () => {
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('GROUP_BOOKING_NOT_FOUND')
     })
+
+    it('should expose booking data on the requester own participant after match', async () => {
+      const bookingDate = new Date('2026-05-12T00:00:00.000Z')
+      repo.seedRequests([makeRequest({ status: 'matched' })])
+      repo.seedParticipants([
+        makeParticipant({ status: 'booked', bookingId: 'booking-123' }),
+      ])
+      repo.seedBookingData([
+        {
+          id: 'booking-123',
+          bookingDate,
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+          service: { name: 'Hovslagning' },
+        },
+      ])
+
+      const result = await service.getById('gbr-1', TEST_UUIDS.creator, 'customer')
+
+      expect(result.isSuccess).toBe(true)
+      const participant = result.value.participants[0]
+      expect(participant.booking).not.toBeNull()
+      expect(participant.booking?.startTime).toBe('10:00')
+      expect(participant.booking?.service.name).toBe('Hovslagning')
+    })
+
+    it('should hide booking data for peer participants', async () => {
+      repo.seedRequests([makeRequest({ status: 'matched' })])
+      repo.seedParticipants([
+        makeParticipant({
+          id: 'gbp-self',
+          userId: TEST_UUIDS.joiner,
+          status: 'booked',
+          bookingId: 'booking-self',
+        }),
+        makeParticipant({
+          id: 'gbp-peer',
+          userId: TEST_UUIDS.creator,
+          status: 'booked',
+          bookingId: 'booking-peer',
+        }),
+      ])
+      repo.seedBookingData([
+        {
+          id: 'booking-self',
+          bookingDate: new Date('2026-05-12'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+          service: { name: 'Hovslagning' },
+        },
+        {
+          id: 'booking-peer',
+          bookingDate: new Date('2026-05-12'),
+          startTime: '13:00',
+          endTime: '14:00',
+          status: 'confirmed',
+          service: { name: 'Hovslagning' },
+        },
+      ])
+
+      const result = await service.getById('gbr-1', TEST_UUIDS.joiner, 'customer')
+
+      expect(result.isSuccess).toBe(true)
+      const self = result.value.participants.find((p) => p.userId === TEST_UUIDS.joiner)
+      const peer = result.value.participants.find((p) => p.userId === TEST_UUIDS.creator)
+      expect(self?.booking?.startTime).toBe('10:00')
+      expect(peer?.booking).toBeNull()
+    })
   })
 
   // -----------------------------------------------------------
