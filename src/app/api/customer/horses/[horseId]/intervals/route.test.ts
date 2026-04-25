@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET, PUT, DELETE } from "./route"
 import { auth } from "@/lib/auth-server"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { NextRequest } from "next/server"
 
 vi.mock("@/lib/auth-server", () => ({
@@ -13,10 +12,6 @@ vi.mock("@/lib/rate-limit", () => ({
     api: vi.fn().mockResolvedValue(true),
   },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
-}))
-
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 const mockHorseFindFirst = vi.fn()
@@ -97,8 +92,6 @@ describe("Customer Horse Intervals API", () => {
       user: { id: CUSTOMER_ID, userType: "customer" },
     } as never)
 
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
-
     mockHorseFindFirst.mockResolvedValue({ id: HORSE_ID, ownerId: CUSTOMER_ID })
     mockIntervalFindMany.mockResolvedValue([])
     mockIntervalUpsert.mockResolvedValue({
@@ -131,16 +124,6 @@ describe("Customer Horse Intervals API", () => {
 
     const response = await GET(makeGetRequest(), makeContext())
     expect(response.status).toBe(403)
-  })
-
-  it("returns empty items when feature flag is disabled", async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const response = await GET(makeGetRequest(), makeContext())
-    const data = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(data.intervals).toEqual([])
   })
 
   it("returns 404 when horse does not belong to customer", async () => {

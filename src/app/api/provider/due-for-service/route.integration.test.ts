@@ -26,10 +26,6 @@ vi.mock('@/lib/rate-limit', () => ({
   RateLimitServiceError: class RateLimitServiceError extends Error {},
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), security: vi.fn() },
 }))
@@ -43,7 +39,6 @@ vi.mock('@/lib/prisma', () => ({
 // ---------------------------------------------------------------------------
 
 import { GET } from './route'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { rateLimiters } from '@/lib/rate-limit'
 
 // ---------------------------------------------------------------------------
@@ -126,7 +121,6 @@ function makeRecentBooking() {
 describe('GET /api/provider/due-for-service (integration)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(rateLimiters.api).mockResolvedValue(true as never)
     mockGetAuthUser.mockResolvedValue(makeProviderAuth())
     mockPrisma.provider.findUnique.mockResolvedValue({ id: PROVIDER_ID })
@@ -153,14 +147,6 @@ describe('GET /api/provider/due-for-service (integration)', () => {
     const res = await GET(makeRequest())
 
     expect(res.status).toBe(403)
-  })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await GET(makeRequest())
-
-    expect(res.status).toBe(404)
   })
 
   it('returns 429 when rate limited', async () => {

@@ -40,7 +40,6 @@ describe("GET /api/feature-flags", () => {
       route_planning: true,
       route_announcements: true,
       customer_insights: true,
-      due_for_service: true,
       self_reschedule: true,
       recurring_bookings: true,
       offline_mode: true,

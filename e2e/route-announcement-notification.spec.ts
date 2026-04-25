@@ -13,8 +13,8 @@ import { futureWeekday } from './setup/e2e-utils'
  * Tests the full flow: customer follows provider -> provider announces route ->
  * customer gets in-app notification (generic or personalized with overdue horse).
  *
- * Feature flags required: FEATURE_FOLLOW_PROVIDER=true, FEATURE_DUE_FOR_SERVICE=true
- * (set in .env + playwright.config.ts).
+ * Feature flags required: FEATURE_FOLLOW_PROVIDER=true
+ * (set in .env + playwright.config.ts). due_for_service is GA (no flag needed).
  */
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -164,7 +164,6 @@ test.describe('Route Announcement Notifications', () => {
     const page = await context.newPage()
     await loginAsAdmin(page)
     await setFlag(page, 'follow_provider', true)
-    await setFlag(page, 'due_for_service', true)
     await context.close()
   })
 
@@ -185,7 +184,6 @@ test.describe('Route Announcement Notifications', () => {
     const page = await context.newPage()
     await loginAsAdmin(page)
     await setFlag(page, 'follow_provider', false)
-    await setFlag(page, 'due_for_service', false)
     await context.close()
   })
 

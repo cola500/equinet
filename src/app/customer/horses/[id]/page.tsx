@@ -28,7 +28,6 @@ import { toast } from "sonner"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ShareProfileDialog } from "./ShareProfileDialog"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useHorseNotes } from "@/hooks/useHorseNotes"
 import { useServiceIntervals } from "@/hooks/useServiceIntervals"
 import { useHorseEdit } from "@/hooks/useHorseEdit"
@@ -51,7 +50,6 @@ export default function HorseDetailPage() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
 
   // Tabs
-  const dueForServiceEnabled = useFeatureFlag("due_for_service")
   const initialTab = searchParams.get("tab") || "historik"
   const [activeTab, setActiveTab] = useState(initialTab)
 
@@ -89,7 +87,7 @@ export default function HorseDetailPage() {
 
   // Hooks for dialog state
   const notes = useHorseNotes(horseId, fetchTimeline)
-  const intervals = useServiceIntervals(horseId, dueForServiceEnabled)
+  const intervals = useServiceIntervals(horseId, true)
   const edit = useHorseEdit(horse, fetchHorse)
 
   useEffect(() => {
@@ -176,9 +174,7 @@ export default function HorseDetailPage() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-col">
         <TabsList>
           <TabsTrigger value="historik">Historik</TabsTrigger>
-          {dueForServiceEnabled && (
-            <TabsTrigger value="intervall">Besöksschema</TabsTrigger>
-          )}
+          <TabsTrigger value="intervall">Besöksschema</TabsTrigger>
           <TabsTrigger value="info">Info</TabsTrigger>
         </TabsList>
 
@@ -289,25 +285,23 @@ export default function HorseDetailPage() {
         </TabsContent>
 
         {/* --- Intervall tab --- */}
-        {dueForServiceEnabled && (
-          <TabsContent value="intervall">
-            <IntervalSection
-              intervals={intervals.intervals}
-              availableServices={intervals.availableServices}
-              dialogOpen={intervals.intervalDialog.open}
-              onDialogOpenChange={intervals.intervalDialog.setOpen}
-              editingInterval={intervals.editingInterval}
-              intervalForm={intervals.intervalForm}
-              onIntervalFormChange={intervals.setIntervalForm}
-              isSaving={intervals.isSavingInterval}
-              onSave={intervals.handleSaveInterval}
-              onDelete={intervals.handleDeleteInterval}
-              onEditInterval={intervals.openEditInterval}
-              onNewInterval={intervals.openNewInterval}
-              onServiceSelect={intervals.handleServiceSelect}
-            />
-          </TabsContent>
-        )}
+        <TabsContent value="intervall">
+          <IntervalSection
+            intervals={intervals.intervals}
+            availableServices={intervals.availableServices}
+            dialogOpen={intervals.intervalDialog.open}
+            onDialogOpenChange={intervals.intervalDialog.setOpen}
+            editingInterval={intervals.editingInterval}
+            intervalForm={intervals.intervalForm}
+            onIntervalFormChange={intervals.setIntervalForm}
+            isSaving={intervals.isSavingInterval}
+            onSave={intervals.handleSaveInterval}
+            onDelete={intervals.handleDeleteInterval}
+            onEditInterval={intervals.openEditInterval}
+            onNewInterval={intervals.openNewInterval}
+            onServiceSelect={intervals.handleServiceSelect}
+          />
+        </TabsContent>
 
         {/* --- Info tab --- */}
         <TabsContent value="info">
