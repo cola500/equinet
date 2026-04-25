@@ -22,7 +22,7 @@ sections:
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S62-1 | UI-lösenordsvalidering saknar regex-regler | pending |
+| S62-1 | UI-lösenordsvalidering saknar regex-regler | done (4b38a1f1) |
 | S62-2 | NEXTAUTH_URL som bas-URL för inbjudningslänken | pending |
 | S62-3 | Merge-dialog refreshar inte kundlistan | pending |
 | S62-4 | Merge-route kringgår GhostMergeService | done (66ad2561) |
