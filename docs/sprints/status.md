@@ -18,15 +18,17 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 60** — Förfallen service release-klar. Planerad 2026-04-25.
+**Sprint 61** — TBD.
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
 | S60-1 | Tester för DueForServiceCalculator + Service | done (44 tester existerade redan) |
-| S60-2 | Redigera intervall direkt i leverantörslistan | in_progress |
-| S60-3 | Guard mot extrema intervallvärden (kund) | in_progress |
-| S60-4 | Native route returnerar 404 istället för tom lista | in_progress |
-| S60-5 | Ta bort due_for_service feature flag (DoD) | in_progress |
+| S60-2 | Redigera intervall direkt i leverantörslistan | done (791d45b4) |
+| S60-3 | Guard mot extrema intervallvärden (kund) | done (791d45b4) |
+| S60-4 | Native route returnerar 200+[] vid flagga AV | done (791d45b4) |
+| S60-5 | Ta bort due_for_service feature flag (DoD) | done (791d45b4) |
+
+*(Sprint 60 klar 2026-04-25. 5/5 stories done — förfallen service release-klar: inline intervalredigering i leverantörslistan (S60-2), rekommenderat intervall + varning vid >26 veckor (S60-3), native route returnerar 200+[] vid flagga AV (S60-4), due_for_service feature flag borttagen — GA (S60-5). Mergad via PR #293. check:all 4/4 gröna, 4370 tester.)*
 
 *(Sprint 59 klar 2026-04-25. 5/5 stories done — gruppbokningar release-klar: filter för döda requests (S59-1), kopiera-kod-knapp + tydligare delnings-UX (S59-2), bokningsdetaljer inline efter match med peer-sanitering (S59-3), rate-limit på preview + atomisk join-transaktion med 409 vid full grupp (S59-4), feature flag borttagen — group_bookings är GA (S59-5). Mergade via PR #288, #289, #290, #291, #292. check:all 4/4 gröna, 4374 tester.)*
 
