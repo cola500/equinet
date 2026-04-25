@@ -92,7 +92,8 @@ export default function GroupBookingDetailPage({
   const { isLoading: authLoading, isCustomer, user } = useAuth()
   const [groupBooking, setGroupBooking] = useState<GroupBookingDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isCopied, setIsCopied] = useState(false)
+  const [isLinkCopied, setIsLinkCopied] = useState(false)
+  const [isCodeCopied, setIsCodeCopied] = useState(false)
   const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null)
   const [participantToLeave, setParticipantToLeave] = useState<Participant | null>(null)
   const cancelDialog = useDialogState()
@@ -151,9 +152,21 @@ export default function GroupBookingDetailPage({
     // Fallback to clipboard
     try {
       await navigator.clipboard.writeText(link)
-      setIsCopied(true)
+      setIsLinkCopied(true)
       toast.success("Inbjudningslänk kopierad!")
-      setTimeout(() => setIsCopied(false), 2000)
+      setTimeout(() => setIsLinkCopied(false), 2000)
+    } catch {
+      toast.info(`Inbjudningskod: ${groupBooking.inviteCode}`)
+    }
+  }
+
+  const handleCopyInviteCode = async () => {
+    if (!groupBooking) return
+    try {
+      await navigator.clipboard.writeText(groupBooking.inviteCode)
+      setIsCodeCopied(true)
+      toast.success("Kod kopierad!")
+      setTimeout(() => setIsCodeCopied(false), 2000)
     } catch {
       toast.info(`Inbjudningskod: ${groupBooking.inviteCode}`)
     }
@@ -317,30 +330,34 @@ export default function GroupBookingDetailPage({
         {isOpen && (
           <Card className="mb-6 border-green-200 bg-green-50">
             <CardContent className="py-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-green-800 font-medium">Inbjudningskod</p>
-                  <p className="text-2xl font-mono font-bold text-green-900 tracking-wider">
+                  <p
+                    className="text-3xl font-mono font-bold text-green-900 tracking-widest select-all"
+                    aria-label={`Inbjudningskod ${groupBooking.inviteCode}`}
+                  >
                     {groupBooking.inviteCode}
                   </p>
                 </div>
-                <Button
-                  onClick={handleShareInviteLink}
-                  variant="outline"
-                  className="border-green-300"
-                >
-                  {isCopied ? (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Kopierad!
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Dela länk
-                    </>
-                  )}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={handleCopyInviteCode}
+                    variant="outline"
+                    className="border-green-300"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    {isCodeCopied ? "Kopierad!" : "Kopiera kod"}
+                  </Button>
+                  <Button
+                    onClick={handleShareInviteLink}
+                    variant="outline"
+                    className="border-green-300"
+                  >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    {isLinkCopied ? "Kopierad!" : "Dela länk"}
+                  </Button>
+                </div>
               </div>
               <p className="text-xs text-green-700 mt-2">
                 Dela koden eller länken med de som ska vara med.
