@@ -15,7 +15,11 @@ import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
 const createSeriesSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID"),
   serviceId: z.string().uuid("Ogiltigt tjänst-ID"),
-  firstBookingDate: dateSchema,
+  firstBookingDate: dateSchema.refine((val) => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    return new Date(val) >= today
+  }, "Startdatum kan inte vara i det förflutna."),
   startTime: strictTimeSchema,
   intervalWeeks: z.number().int().min(1, "Intervall måste vara minst 1 vecka").max(52, "Intervall får inte överstiga 52 veckor"),
   totalOccurrences: z.number().int().min(2, "Minst 2 tillfällen").max(52, "Max 52 tillfällen"),

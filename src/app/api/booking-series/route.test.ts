@@ -191,6 +191,22 @@ describe("POST /api/booking-series", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 400 when startDate is in the past", async () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const pastDate = yesterday.toISOString().split("T")[0]
+    const res = await POST(makeRequest({ ...validBody, firstBookingDate: pastDate }))
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toBe("Valideringsfel")
+  })
+
+  it("returns 201 when startDate is today", async () => {
+    const today = new Date().toISOString().split("T")[0]
+    const res = await POST(makeRequest({ ...validBody, firstBookingDate: today }))
+    expect(res.status).toBe(201)
+  })
+
   it("returns 201 on happy path as customer", async () => {
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(201)
