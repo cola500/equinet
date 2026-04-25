@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-04-25
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,16 +18,6 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 59** — Gruppbokningar release-klar. Planerad 2026-04-24.
-
-| Story | Beskrivning | Status |
-|-------|-------------|--------|
-| S59-1 | Filtrera döda requests från leverantörslistan | done (bd557693) |
-| S59-2 | Delnings-UX för inbjudningskoden | done (d8d16850) |
-| S59-3 | Visa bokningsdetaljer efter match | done (cae6e2ea) |
-| S59-4 | Rate limiting på preview + atomisk join | done (d8ff63a8) |
-| S59-5 | Ta bort group_bookings feature flag (DoD) | pending |
-
 **Sprint 60** — Förfallen service release-klar. Planerad 2026-04-25.
 
 | Story | Beskrivning | Status |
@@ -38,6 +28,8 @@ sections:
 | S60-4 | Proaktiv notifikation när hästar förfaller | pending |
 | S60-5 | Native route returnerar 404 istället för tom lista | pending |
 | S60-6 | Ta bort due_for_service feature flag (DoD) | pending |
+
+*(Sprint 59 klar 2026-04-25. 5/5 stories done — gruppbokningar release-klar: filter för döda requests (S59-1), kopiera-kod-knapp + tydligare delnings-UX (S59-2), bokningsdetaljer inline efter match med peer-sanitering (S59-3), rate-limit på preview + atomisk join-transaktion med 409 vid full grupp (S59-4), feature flag borttagen — group_bookings är GA (S59-5). Mergade via PR #288, #289, #290, #291, #292. check:all 4/4 gröna, 4374 tester.)*
 
 *(Sprint 58 klar 2026-04-24. 4/4 stories done — Affärsinsikter release-klar: total intäkt KPI (S58-1), delta-indikator mot föregående period (S58-2), tomtläge + tydligare servicebreakdown-rubrik (S58-3), business_insights feature flag borttagen (S58-4). Mergad via PR #287. check:all 4/4 gröna, 4380 tester. Demo-läget oberoende verifierat.)*
 
@@ -75,6 +67,12 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S59 | Gruppbokningar release-klar | 5/5 done — döda requests filtreras, kopiera-kod-knapp, bokningsdetaljer inline efter match, atomisk join + rate-limit på preview, group_bookings feature flag borttagen. Mergade via PR #288–292. |
+| S58 | Affärsinsikter release-klar | 4/4 done — total intäkt KPI, delta-indikator, tomtläge, business_insights flag borttagen. Mergad via PR #287. |
+| S57 | Ruttsynlighet för nya kunder | 4/4 done — kommande ruttar på leverantörsprofil, rutt-badge i söklista, rutt-kontext-banner, notis vid ruttändring. Mergad via PR #284. |
+| S56 | Förbättrade kundflöden | 4/4 done — kategori-ikon-navigation, tjänstetyp-filterchips, transparent pending-status, review-uppmaning. |
+| S55 | iOS demo mode + kalenderfix | 1/1 done — env-synk, kalender-buggfix, dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`. |
+| S54 | Inline-godkänd + redigera bokning | 2/2 done — inline bekräfta/avvisa i kalender, redigera datum/tid. Bugfix rejected→cancelled. |
 | S53 | Webb demo-värdig (leverantörsvinklad) | 4/4 done — demo-audit, FAQ native `<details>`, Erik Järnfot seed, "Se demo"-knapp. Sprint ≤1 arbetsdag. R1+R2+serial-review testat empiriskt (266k tokens total, jämför S51-0.1:s 300k för EN story). Retro: `docs/retrospectives/2026-04-23-sprint-53.md`. |
 | S52 | Upptäckt och transparens (SKIPPAD) | Aldrig startad. Pivot till demo-scope 2026-04-22. Bevarad som referens för framtida pre-booking-messaging-epic. |
 | S51 | Pre-launch-härdning (AVBRUTEN) | 2/6 done (S51-0 MFA admin, S51-0.1 MFA-hotfix). S51-1/2/3/4 avbrutna 2026-04-22 vid pivot till demo-scope. Minor-fynd från S51-0.1-review paketerade som backlog-rad. |
