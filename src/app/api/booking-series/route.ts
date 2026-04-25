@@ -140,6 +140,7 @@ export async function POST(request: NextRequest) {
     prisma: {
       bookingSeries: prisma.bookingSeries,
       booking: prisma.booking,
+      $transaction: prisma.$transaction.bind(prisma),
     },
     isFeatureEnabled,
     getProvider: async (id) => prisma.provider.findUnique({

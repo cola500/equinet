@@ -97,6 +97,7 @@ export async function POST(
     prisma: {
       bookingSeries: prisma.bookingSeries,
       booking: prisma.booking,
+      $transaction: prisma.$transaction.bind(prisma),
     },
     isFeatureEnabled,
     getProvider: async (pid) => prisma.provider.findUnique({
