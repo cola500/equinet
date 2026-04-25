@@ -11,6 +11,7 @@ import { BookingService } from "@/domain/booking/BookingService"
 import { TravelTimeService } from "@/domain/booking/TravelTimeService"
 import type { SessionUser } from "@/types/auth"
 import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
+import { sendBookingSeriesCreatedNotification } from "@/lib/email"
 
 const createSeriesSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID"),
@@ -188,6 +189,14 @@ export async function POST(request: NextRequest) {
         { status: mapSeriesErrorToStatus(result.error) }
       )
     }
+
+    sendBookingSeriesCreatedNotification({
+      customerId,
+      providerId: data.providerId,
+      series: result.value.series,
+      createdBookings: result.value.createdBookings,
+      skippedDates: result.value.skippedDates,
+    }).catch((err) => logger.error("Failed to send series created email", { err }))
 
     return NextResponse.json(result.value, { status: 201 })
   } catch (error) {
