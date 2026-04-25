@@ -26,7 +26,7 @@ export function verifyUnsubscribeToken(userId: string, token: string): boolean {
 }
 
 export function generateUnsubscribeUrl(userId: string): string {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const baseUrl = process.env.APP_URL || "http://localhost:3000"
   const token = generateUnsubscribeToken(userId)
   return `${baseUrl}/api/email/unsubscribe?userId=${userId}&token=${token}`
 }

@@ -113,7 +113,7 @@ export async function sendEmailVerificationNotification(
   firstName: string,
   token: string
 ) {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const baseUrl = process.env.APP_URL || "http://localhost:3000"
   const verificationUrl = `${baseUrl}/verify-email?token=${token}`
 
   const { html, text } = emailVerificationEmail({
@@ -188,7 +188,7 @@ export async function sendCustomerInviteNotification(
   providerBusinessName: string,
   token: string
 ) {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const baseUrl = process.env.APP_URL || "http://localhost:3000"
   const inviteUrl = `${baseUrl}/accept-invite?token=${token}`
 
   const { html, text } = customerInviteEmail({
@@ -213,7 +213,7 @@ export async function sendStableInviteNotification(
   stableName: string,
   token: string
 ) {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const baseUrl = process.env.APP_URL || "http://localhost:3000"
   const inviteUrl = `${baseUrl}/invite/stable/${token}`
 
   const { html, text } = stableInviteEmail({

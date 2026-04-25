@@ -85,7 +85,7 @@ export function bookingStatusChangeEmail(data: BookingStatusChangeData): { html:
     </ul>
     ` : ""}
 
-    <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings" class="button">
+    <a href="${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings" class="button">
       Se dina bokningar
     </a>
   </div>
@@ -119,7 +119,7 @@ Leverantör: ${data.businessName}
 Datum: ${data.bookingDate}
 Tid: ${data.startTime}
 ${preparationText}
-Se dina bokningar: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings
+Se dina bokningar: ${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings
 
 --
 Equinet - Din plattform för hästtjänster
