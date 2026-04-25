@@ -5,25 +5,13 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { Eye, EyeOff } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator"
-
-const acceptInviteSchema = z.object({
-  password: z.string()
-    .min(8, "Lösenordet måste vara minst 8 tecken")
-    .max(72, "Lösenordet är för långt"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Lösenorden matchar inte",
-  path: ["confirmPassword"],
-})
-
-type AcceptInviteInput = z.infer<typeof acceptInviteSchema>
+import { acceptInviteSchema, type AcceptInviteInput } from "./schema"
 
 function AcceptInviteForm() {
   const searchParams = useSearchParams()
