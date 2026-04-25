@@ -13,12 +13,12 @@ export function mapGroupBookingErrorToStatus(error: GroupBookingError): number {
       return 403
     case 'INVALID_STATUS_TRANSITION':
     case 'GROUP_NOT_OPEN':
-    case 'GROUP_FULL':
     case 'JOIN_DEADLINE_PASSED':
     case 'NO_ACTIVE_PARTICIPANTS':
     case 'MATCH_FAILED':
     case 'PROVIDER_NOT_FOUND':
       return 400
+    case 'GROUP_FULL':
     case 'ALREADY_JOINED':
       return 409
     default:

@@ -178,6 +178,12 @@ function getUpstashRateLimiters(): Record<string, Ratelimit> {
         analytics: true,
         prefix: "ratelimit:mfa-verify",
       }),
+      inviteCodePreview: new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(10, "1 m"),
+        analytics: true,
+        prefix: "ratelimit:invite-code-preview",
+      }),
     }
   }
 
@@ -321,6 +327,7 @@ async function checkRateLimit(
     messageConversation: { max: 100, window: 60 * 1000 },
     messageUpload: { max: 10, window: 60 * 60 * 1000 },
     mfaVerify: { max: 3, window: 15 * 60 * 1000 },
+    inviteCodePreview: { max: 100, window: 60 * 1000 },
   }
 
   const config = configs[limiterType]
@@ -465,4 +472,10 @@ export const rateLimiters = {
    * MFA verify attempts: 3 attempts per 15 minutes per admin user
    */
   mfaVerify: async (identifier: string) => checkRateLimit('mfaVerify', identifier),
+
+  /**
+   * Invite code preview: 10 requests per minute per IP (anti-enumeration)
+   */
+  inviteCodePreview: async (identifier: string) =>
+    checkRateLimit('inviteCodePreview', identifier),
 }

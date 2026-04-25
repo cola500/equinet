@@ -150,7 +150,7 @@ describe('POST /api/group-bookings/join', () => {
     expect(data.error).toContain('öppen')
   })
 
-  it('should return 400 when group is full', async () => {
+  it('should return 409 when group is full', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as never)
@@ -169,7 +169,7 @@ describe('POST /api/group-bookings/join', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(409)
     expect(data.error).toContain('fullt')
   })
 

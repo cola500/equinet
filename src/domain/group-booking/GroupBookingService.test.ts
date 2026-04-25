@@ -467,6 +467,24 @@ describe('GroupBookingService', () => {
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('ALREADY_JOINED')
     })
+
+    it('should let only one of two concurrent joins succeed at the cap', async () => {
+      // maxParticipants=2, creator already in -> only one slot left for two simultaneous joins.
+      const thirdUser = '77777777-7777-4777-8777-777777777777'
+      repo.seedRequests([makeRequest({ maxParticipants: 2 })])
+      repo.seedParticipants([makeParticipant()])
+
+      const [a, b] = await Promise.all([
+        service.joinByInviteCode({ userId: TEST_UUIDS.joiner, inviteCode: 'ABC12345' }),
+        service.joinByInviteCode({ userId: thirdUser, inviteCode: 'ABC12345' }),
+      ])
+
+      const successCount = [a, b].filter((r) => r.isSuccess).length
+      const failures = [a, b].filter((r) => r.isFailure)
+      expect(successCount).toBe(1)
+      expect(failures).toHaveLength(1)
+      expect(failures[0].error.type).toBe('GROUP_FULL')
+    })
   })
 
   // -----------------------------------------------------------

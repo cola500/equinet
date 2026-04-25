@@ -242,6 +242,15 @@ export interface IGroupBookingRepository {
   addParticipant(data: CreateParticipantData): Promise<GroupBookingParticipant>
 
   /**
+   * Add participant atomically only if active count is below maxParticipants.
+   * Returns null if the request is full (race-condition safe).
+   */
+  addParticipantIfRoom(
+    data: CreateParticipantData,
+    maxParticipants: number
+  ): Promise<GroupBookingParticipant | null>
+
+  /**
    * Soft-delete participant (set status to "cancelled")
    */
   cancelParticipant(participantId: string): Promise<void>

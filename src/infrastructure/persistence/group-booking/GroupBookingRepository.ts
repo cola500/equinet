@@ -345,6 +345,39 @@ export class GroupBookingRepository implements IGroupBookingRepository {
     })
   }
 
+  async addParticipantIfRoom(
+    data: CreateParticipantData,
+    maxParticipants: number
+  ): Promise<GroupBookingParticipant | null> {
+    // Atomic count + insert inside a serializable transaction so two
+    // concurrent joins cannot both observe count = max-1 and both insert.
+    return prisma.$transaction(async (tx) => {
+      const activeCount = await tx.groupBookingParticipant.count({
+        where: {
+          groupBookingRequestId: data.groupBookingRequestId,
+          status: { not: 'cancelled' },
+        },
+      })
+
+      if (activeCount >= maxParticipants) {
+        return null
+      }
+
+      return tx.groupBookingParticipant.create({
+        data: {
+          groupBookingRequestId: data.groupBookingRequestId,
+          userId: data.userId,
+          numberOfHorses: data.numberOfHorses,
+          horseId: data.horseId,
+          horseName: data.horseName,
+          horseInfo: data.horseInfo,
+          notes: data.notes,
+          status: 'joined',
+        },
+      })
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+  }
+
   async cancelParticipant(participantId: string): Promise<void> {
     await prisma.groupBookingParticipant.update({
       where: { id: participantId },
