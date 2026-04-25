@@ -36,6 +36,10 @@ vi.mock("@/lib/feature-flags", () => ({
   isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
+vi.mock("@/lib/email", () => ({
+  sendBookingSeriesCreatedNotification: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     provider: {

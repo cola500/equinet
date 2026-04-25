@@ -15,6 +15,7 @@ import {
   bookingReminderEmail,
   bookingRescheduleEmail,
 } from "./templates"
+import { bookingSeriesCreatedEmail } from "./templates/booking-series-created"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
 import { generateUnsubscribeUrl } from "./unsubscribe-token"
@@ -470,5 +471,67 @@ export async function sendBookingRescheduleNotification(
   } catch (error) {
     logger.error("Error sending reschedule notification", error instanceof Error ? error : new Error(String(error)))
     return { success: false, error: String(error) }
+  }
+}
+
+export async function sendBookingSeriesCreatedNotification(params: {
+  customerId: string
+  providerId: string
+  series: {
+    intervalWeeks: number
+    totalOccurrences: number
+    createdCount: number
+  }
+  createdBookings: { bookingDate: Date; startTime: string }[]
+  skippedDates?: { date: string; reason: string }[]
+}): Promise<void> {
+  try {
+    const [customer, provider] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: params.customerId },
+        select: { firstName: true, lastName: true, email: true },
+      }),
+      prisma.provider.findUnique({
+        where: { id: params.providerId },
+        select: {
+          businessName: true,
+          services: { select: { name: true }, take: 1 },
+        },
+      }),
+    ])
+
+    if (!customer?.email) {
+      logger.warn("sendBookingSeriesCreatedNotification: customer email not found", { customerId: params.customerId })
+      return
+    }
+
+    const customerName = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "Kund"
+    const businessName = provider?.businessName ?? "Leverantören"
+    const serviceName = provider?.services?.[0]?.name ?? "Tjänsten"
+
+    const bookingDates = params.createdBookings.map((b) => ({
+      date: format(new Date(b.bookingDate), "d MMMM yyyy", { locale: sv }),
+      time: b.startTime,
+    }))
+
+    const { html, text } = bookingSeriesCreatedEmail({
+      customerName,
+      serviceName,
+      businessName,
+      totalOccurrences: params.series.totalOccurrences,
+      createdCount: params.series.createdCount,
+      intervalWeeks: params.series.intervalWeeks,
+      bookingDates,
+      skippedDates: params.skippedDates,
+    })
+
+    await emailService.send({
+      to: customer.email,
+      subject: `Återkommande bokningar skapade – ${businessName}`,
+      html,
+      text,
+    })
+  } catch (error) {
+    logger.error("Error sending booking series created notification", { error, customerId: params.customerId })
   }
 }
