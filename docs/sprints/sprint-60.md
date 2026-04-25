@@ -14,7 +14,7 @@ sections:
 
 ## Sprint Overview
 
-**Mål:** Täppa de sex luckor teateranalysen identifierade och släpp `due_for_service` utan feature flag.
+**Mål:** Täppa fem luckor teateranalysen identifierade och släpp `due_for_service` utan feature flag.
 
 **Källa:** Teateranalys 2026-04-25 — leverantör + kund + iOS i samspel med koden.
 
@@ -27,11 +27,10 @@ sections:
 | S60-1 | GAP 5 — DueForServiceCalculator + Service saknar tester | 45 min |
 | S60-2 | GAP 1 — Kan inte redigera intervall direkt i leverantörslistan | 60 min |
 | S60-3 | GAP 3 — Ingen guard mot extrema intervallvärden (kund) | 30 min |
-| S60-4 | GAP 4 — Ingen proaktiv notifikation när hästar förfaller | 45 min |
-| S60-5 | GAP 6 — Native route returnerar 404 istället för tom lista | 15 min |
-| S60-6 | DoD — Ta bort due_for_service feature flag | 15 min |
+| S60-4 | GAP 6 — Native route returnerar 404 istället för tom lista | 15 min |
+| S60-5 | DoD — Ta bort due_for_service feature flag | 15 min |
 
-**Inte i sprint:** GAP 2 (optimistisk UI vid intervallredigering) — full reload fungerar, polish kan vänta.
+**Inte i sprint:** GAP 2 (optimistisk UI vid intervallredigering) — polish kan vänta. GAP 4 (proaktiv notifikation vid förfall) — lagd i backlog, bra men inte blockerande för release.
 
 ---
 
@@ -116,34 +115,7 @@ sections:
 
 ---
 
-### S60-4: Proaktiv notifikation när hästar förfaller (GAP 4)
-
-**Prioritet:** 4
-**Effort:** 45 min
-**Domän:** webb
-
-**Problem:** Systemet vet vilka hästar som är försenade (`DueForServiceLookup` finns och används redan av `RouteAnnouncementNotifierFactory` för mejlnotifikationer). Men ingen notifikation skickas proaktivt till leverantören. Leverantören måste aktivt navigera till sidan för att upptäcka förfallna hästar.
-
-**Fix:** Lägg till en cron-baserad notifikation (eller daglig sammanfattning) som skickar ett push-meddelande till leverantören vid nya "overdue"-hästar. Använd befintligt push-infrastruktur (`PushDeliveryService`) och `DueForServiceLookup`.
-
-**Enklaste implementation:** Lägg till ett anrop i befintlig cron-route (om det finns en) eller skapa `GET /api/cron/due-for-service-notify` med Vercel Cron (dagligen, t.ex. kl 08:00).
-
-**Kontrollera först:** Finns `src/app/api/cron/`-katalogen och hur är befintliga cron-routes satta upp?
-
-**Filer:**
-- `src/app/api/cron/due-for-service-notify/route.ts` — ny cron-route
-- `vercel.json` — lägg till cron-schema (eller `vercel.ts`)
-
-**Acceptanskriterier:**
-- [ ] Cron-route kör dagligen och hämtar alla leverantörer med förfallna hästar
-- [ ] Push-notifikation skickas till leverantörer med ≥1 overdue-häst
-- [ ] Om inga overdue-hästar: ingen notifikation
-- [ ] Route är skyddad (Vercel Cron auth-header eller intern secret)
-- [ ] Test: mock av DueForServiceLookup + PushDeliveryService verifierar att rätt leverantörer notifieras
-
----
-
-### S60-5: Native route returnerar tom lista istället för 404 (GAP 6)
+### S60-4: Native route returnerar tom lista istället för 404 (GAP 6)
 
 **Prioritet:** 5
 **Effort:** 15 min
@@ -162,9 +134,9 @@ sections:
 
 ---
 
-### S60-6: Ta bort due_for_service feature flag (DoD)
+### S60-5: Ta bort due_for_service feature flag (DoD)
 
-**Prioritet:** 6
+**Prioritet:** 5
 **Effort:** 15 min
 **Domän:** webb
 
@@ -195,6 +167,5 @@ sections:
 | Domäntester | 0 tester | ≥8 unit-tester (Calculator + Service) |
 | Redigera intervall | Navigera till hästtidslinjen | Inline i listan |
 | Extrema intervallvärden | Ingen vägledning | Hjälptext + varning vid >26 veckor |
-| Proaktiv notifikation | Saknas | Daglig cron-push vid overdue-hästar |
 | Native 404 | Kraschar tyst | `{ items: [] }` med 200 |
 | Feature flag | På | Borttagen |
