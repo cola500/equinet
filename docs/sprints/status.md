@@ -25,7 +25,7 @@ sections:
 | S59-1 | Filtrera döda requests från leverantörslistan | done (bd557693) |
 | S59-2 | Delnings-UX för inbjudningskoden | done (d8d16850) |
 | S59-3 | Visa bokningsdetaljer efter match | done (cae6e2ea) |
-| S59-4 | Rate limiting på preview + atomisk join | pending |
+| S59-4 | Rate limiting på preview + atomisk join | done (d8ff63a8) |
 | S59-5 | Ta bort group_bookings feature flag (DoD) | pending |
 
 **Sprint 60** — Förfallen service release-klar. Planerad 2026-04-25.
