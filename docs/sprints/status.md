@@ -27,9 +27,9 @@ sections:
 | S62-3 | Merge-dialog refreshar inte kundlistan | done (f7bb5bd4) |
 | S62-4 | Merge-route kringgår GhostMergeService | done (66ad2561) |
 | S62-5 | Ingen historik om skickade inbjudningar | done (cb216f95) |
-| S62-6 | Ta bort customer_invite feature flag (DoD) | pending |
+| S62-6 | Ta bort customer_invite feature flag (DoD) | done (bb520f91) |
 
-*(Sprint 62 planerad 2026-04-25. 6 stories — kundinbjudningar release-klar: UI-lösenordsvalidering (S62-1), APP_URL-byte (S62-2), merge-dialog refresh (S62-3), GhostMergeService-refaktorering (S62-4), inbjudningshistorik (S62-5), customer_invite flag borttagen (S62-6). Källa: teateranalys 2026-04-25.)*
+*(Sprint 62 klar 2026-04-25. 6/6 stories done — kundinbjudningar release-klar: UI-lösenordsvalidering (S62-1), APP_URL-byte (S62-2), merge-dialog refresh (S62-3), GhostMergeService-refaktorering (S62-4), inbjudningshistorik (S62-5), customer_invite flag borttagen — GA (S62-6). Mergade via PR #299–304. check:all 4/4 gröna, 4375 tester.)*
 
 *(Sprint 61 klar 2026-04-25. 6/6 stories done — återkommande bokningar release-klar: atomisk serie-skapande via $transaction (S61-1), startdatumsvalidering (S61-2), kund-vy för seriebokningar med UX-review (S61-3), atomisk cancel (S61-4), email-bekräftelse vid serie-skapande (S61-5), recurring_bookings feature flag borttagen — GA (S61-6). Mergade via PR #294–298. check:all 4/4 gröna, 4368 tester.)*
 
