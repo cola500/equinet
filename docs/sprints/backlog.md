@@ -47,6 +47,7 @@ sections:
 | group_bookings E2E + UX-review | 2-3 dagar | Medel |
 | withApiHandler resterande routes (131 st) | Löpande | Opportunistiskt |
 | console.* i legacy docs | 0.5 dag | Låg prioritet |
+| **BDD integrationstester — horses, booking-series, bookings POST, group-bookings join** | 1 dag | Kärndomäner saknar integration: Horses (8 routes, noll integration), Booking-series (3 routes, precis releasad), `POST /api/bookings` (viktigaste CREATE-routen), `POST /api/group-bookings/join` (Serializable-transaktion). 18/181 routes har integration totalt. Audit: [bdd-coverage-audit-2026-04-25.md](../research/bdd-coverage-audit-2026-04-25.md). |
 
 ## Kodeffektivitet (tech debt)
 
