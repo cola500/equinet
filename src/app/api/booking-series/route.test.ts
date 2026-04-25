@@ -63,7 +63,9 @@ vi.mock("@/lib/prisma", () => ({
     },
     booking: {
       findMany: vi.fn(),
+      updateMany: vi.fn(),
     },
+    $transaction: vi.fn(),
     availabilityException: {
       findUnique: vi.fn().mockResolvedValue(null),
     },

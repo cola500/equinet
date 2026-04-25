@@ -136,6 +136,7 @@ Identifierade mönster (2026-04-17) som är smartare än vanligt men bara finns 
 | Story | Effort | Beskrivning |
 |-------|--------|-------------|
 | Proaktiv push-notifikation vid förfallna hästar | 45 min | Daglig cron-route (`/api/cron/due-for-service-notify`) skickar push via `PushDeliveryService` + `DueForServiceLookup` till leverantörer med ≥1 overdue-häst. Infrastrukturen finns, bara kopplingen saknas. Teateranalys 2026-04-25 (GAP 4). |
+| UX: "Boka"-knappen i förfallna-listan | 30 min | Action-läget vid bokning av häst i `/provider/due-for-service`-listan är oklart. Förbättra flödet — t.ex. förifylla häst + tjänst i kalendern/manuell-bokningsdialogen istället för bara en länk till kalendern. Sprint 60 review-fynd 2026-04-25. |
 
 ## Features som kraver arbete innan lansering
 
