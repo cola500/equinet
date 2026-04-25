@@ -124,10 +124,25 @@ export class GroupBookingRepository implements IGroupBookingRepository {
       return { provider: null, requests: [] }
     }
 
+    const now = new Date()
     const requests = await prisma.groupBookingRequest.findMany({
       where: {
         status: 'open',
-        dateFrom: { gte: new Date() },
+        // Filter out requests where the request window has fully passed.
+        // dateTo is required in schema but treat dateFrom as fallback for safety.
+        OR: [
+          { dateTo: { gte: now } },
+          { dateFrom: { gte: now } },
+        ],
+        // Filter out requests where the join deadline has passed.
+        AND: [
+          {
+            OR: [
+              { joinDeadline: null },
+              { joinDeadline: { gte: now } },
+            ],
+          },
+        ],
       },
       include: requestWithParticipantsInclude,
       orderBy: { dateFrom: 'asc' },
