@@ -12,7 +12,6 @@ function isSentinelEmail(email: string) {
 
 interface CustomerActionsProps {
   customer: Customer
-  flags: Record<string, boolean>
   onEditCustomer: (customer: Customer) => void
   onDeleteCustomer: (customer: Customer) => void
   onMergeSuccess?: () => void
@@ -20,7 +19,6 @@ interface CustomerActionsProps {
 
 export function CustomerActions({
   customer,
-  flags,
   onEditCustomer,
   onDeleteCustomer,
   onMergeSuccess,
@@ -29,11 +27,8 @@ export function CustomerActions({
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sent" | "error">("idle")
   const [showMergeDialog, setShowMergeDialog] = useState(false)
 
-  const canInvite = customer.isManuallyAdded &&
-    !isSentinelEmail(customer.email) &&
-    flags.customer_invite
-
-  const canMerge = customer.isManuallyAdded && flags.customer_invite
+  const canInvite = customer.isManuallyAdded && !isSentinelEmail(customer.email)
+  const canMerge = customer.isManuallyAdded
 
   const handleInvite = async () => {
     if (isInviting) return

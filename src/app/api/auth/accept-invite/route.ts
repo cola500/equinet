@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { createAuthService } from "@/domain/auth/AuthService"
@@ -20,10 +19,6 @@ const acceptInviteSchema = z.object({
 // POST /api/auth/accept-invite -- Unauthenticated endpoint
 export async function POST(request: NextRequest) {
   try {
-    if (!(await isFeatureEnabled("customer_invite"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
     if (!isAllowed) {

@@ -86,14 +86,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "provider",
   },
-  customer_invite: {
-    key: "customer_invite",
-    label: "Kundinbjudningar",
-    description: "Leverantörer kan bjuda in manuellt tillagda kunder att skapa konto",
-    defaultEnabled: false,
-    clientVisible: true,
-    category: "provider",
-  },
   push_notifications: {
     key: "push_notifications",
     label: "Push-notiser",

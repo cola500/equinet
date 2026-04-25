@@ -9,10 +9,6 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     customerInviteToken: {
@@ -37,7 +33,6 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { prisma } from '@/lib/prisma'
 
 const validPassword = 'SecurePass1!'
@@ -64,17 +59,8 @@ const validToken = {
 describe('POST /api/auth/accept-invite', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(prisma.customerInviteToken.findUnique).mockResolvedValue(validToken as never)
     vi.mocked(prisma.$transaction).mockResolvedValue(undefined as never)
-  })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await POST(makeRequest({ token: 'abc', password: validPassword }))
-    expect(res.status).toBe(404)
-    expect(isFeatureEnabled).toHaveBeenCalledWith('customer_invite')
   })
 
   it('returns 400 for invalid JSON', async () => {

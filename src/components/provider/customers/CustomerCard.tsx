@@ -193,7 +193,6 @@ export function CustomerCard({
 
           <CustomerActions
             customer={customer}
-            flags={flags}
             onEditCustomer={onEditCustomer}
             onDeleteCustomer={onDeleteCustomer}
             onMergeSuccess={onMergeSuccess}
