@@ -22,7 +22,7 @@ sections:
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S59-1 | Filtrera döda requests från leverantörslistan | pending |
+| S59-1 | Filtrera döda requests från leverantörslistan | done (bd557693) |
 | S59-2 | Delnings-UX för inbjudningskoden | pending |
 | S59-3 | Visa bokningsdetaljer efter match | pending |
 | S59-4 | Rate limiting på preview + atomisk join | pending |
