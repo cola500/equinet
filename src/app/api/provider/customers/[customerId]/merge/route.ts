@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { requireProvider } from "@/lib/roles"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { createGhostMergeService } from "@/domain/auth/GhostMergeServiceFactory"
@@ -28,10 +27,6 @@ function mapMergeErrorToStatus(type: MergeErrorType): number {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { providerId } = requireProvider(await auth())
-
-    if (!(await isFeatureEnabled("customer_invite"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)

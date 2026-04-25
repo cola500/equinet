@@ -15,10 +15,6 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     providerCustomer: {
@@ -41,8 +37,6 @@ vi.mock('@/lib/email', () => ({
   sendCustomerInviteNotification: vi.fn().mockResolvedValue({ success: true }),
 }))
 
-import { isFeatureEnabled } from '@/lib/feature-flags'
-
 const TEST_UUIDS = {
   providerUser: 'a1111111-1111-4111-a111-111111111111',
   provider: 'a2222222-2222-4222-a222-222222222222',
@@ -59,7 +53,6 @@ const routeContext = { params: Promise.resolve({ customerId: TEST_UUIDS.customer
 describe('POST /api/provider/customers/[customerId]/invite', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     // Default: authenticated provider
     vi.mocked(auth).mockResolvedValue({
@@ -113,14 +106,6 @@ describe('POST /api/provider/customers/[customerId]/invite', () => {
 
     const res = await POST(makeRequest(), routeContext)
     expect(res.status).toBe(403)
-  })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await POST(makeRequest(), routeContext)
-    expect(res.status).toBe(404)
-    expect(isFeatureEnabled).toHaveBeenCalledWith('customer_invite')
   })
 
   it('returns 404 when customer is not in provider register', async () => {

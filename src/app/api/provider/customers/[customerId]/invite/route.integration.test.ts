@@ -25,10 +25,6 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
 
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }))
 
 vi.mock("@/lib/email", () => ({
@@ -40,7 +36,6 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { POST } from "./route"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -99,15 +94,6 @@ describe("POST /api/provider/customers/[customerId]/invite", () => {
       params: Promise.resolve({ customerId: CUSTOMER_ID }),
     })
     expect(res.status).toBe(401)
-  })
-
-  it("returns 404 when feature flag customer_invite is disabled", async () => {
-    mockAuth.mockResolvedValue(makeProviderSession())
-    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
-    const res = await POST(makeRequest(), {
-      params: Promise.resolve({ customerId: CUSTOMER_ID }),
-    })
-    expect(res.status).toBe(404)
   })
 
   it("returns 404 when customer is not in provider's register (IDOR-check)", async () => {

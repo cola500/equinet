@@ -14,10 +14,6 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 // Mock prisma for simple read lookups in GhostMergeServiceFactory
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -39,7 +35,6 @@ vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
   },
 }))
 
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { prisma } from '@/lib/prisma'
 
 const TEST_UUIDS = {
@@ -60,7 +55,6 @@ const routeContext = { params: Promise.resolve({ customerId: TEST_UUIDS.ghostCus
 describe('POST /api/provider/customers/[customerId]/merge', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     vi.mocked(auth).mockResolvedValue({
       user: {
@@ -106,13 +100,6 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
 
     const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
     expect(res.status).toBe(403)
-  })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
-    expect(res.status).toBe(404)
   })
 
   it('returns 400 for invalid JSON', async () => {

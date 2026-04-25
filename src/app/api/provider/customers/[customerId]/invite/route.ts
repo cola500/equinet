@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth-server"
 import { requireProvider } from "@/lib/roles"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { sendCustomerInviteNotification } from "@/lib/email"
 import { logger } from "@/lib/logger"
 import { randomBytes } from "crypto"
@@ -14,10 +13,6 @@ type RouteContext = { params: Promise<{ customerId: string }> }
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { providerId } = requireProvider(await auth())
-
-    if (!(await isFeatureEnabled("customer_invite"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
 
     const clientIp = getClientIP(request)
     const isAllowed = await rateLimiters.api(clientIp)
