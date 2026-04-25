@@ -66,9 +66,11 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     const now = new Date()
     const results: GroupBookingWithParticipants[] = []
     for (const request of this.requests.values()) {
-      if (request.status === 'open' && request.dateFrom >= now) {
-        results.push(this.toWithParticipants(request))
-      }
+      if (request.status !== 'open') continue
+      const endDate = request.dateTo ?? request.dateFrom
+      if (endDate < now) continue
+      if (request.joinDeadline && request.joinDeadline < now) continue
+      results.push(this.toWithParticipants(request))
     }
     return {
       provider: { id: 'mock-provider-id' },

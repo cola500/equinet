@@ -196,8 +196,10 @@ describe('GroupBookingService', () => {
     it('should not return past or non-open requests', async () => {
       const pastDate = new Date()
       pastDate.setDate(pastDate.getDate() - 7)
+      const pastEnd = new Date()
+      pastEnd.setDate(pastEnd.getDate() - 1)
       repo.seedRequests([
-        makeRequest({ id: 'gbr-past', dateFrom: pastDate }),
+        makeRequest({ id: 'gbr-past', dateFrom: pastDate, dateTo: pastEnd }),
         makeRequest({ id: 'gbr-cancelled', status: 'cancelled' }),
       ])
 
@@ -205,6 +207,37 @@ describe('GroupBookingService', () => {
 
       expect(result.isSuccess).toBe(true)
       expect(result.value.requests).toHaveLength(0)
+    })
+
+    it('should return requests where dateFrom is in past but dateTo is still in the future', async () => {
+      const pastDate = new Date()
+      pastDate.setDate(pastDate.getDate() - 3)
+      const futureEnd = new Date()
+      futureEnd.setDate(futureEnd.getDate() + 4)
+      repo.seedRequests([
+        makeRequest({ id: 'gbr-spanning', dateFrom: pastDate, dateTo: futureEnd }),
+      ])
+
+      const result = await service.listAvailableForProvider(TEST_UUIDS.providerUser)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.requests).toHaveLength(1)
+      expect(result.value.requests[0].id).toBe('gbr-spanning')
+    })
+
+    it('should not return requests where joinDeadline has passed', async () => {
+      const pastDeadline = new Date()
+      pastDeadline.setDate(pastDeadline.getDate() - 1)
+      repo.seedRequests([
+        makeRequest({ id: 'gbr-deadline-passed', joinDeadline: pastDeadline }),
+        makeRequest({ id: 'gbr-no-deadline', joinDeadline: null }),
+      ])
+
+      const result = await service.listAvailableForProvider(TEST_UUIDS.providerUser)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.requests).toHaveLength(1)
+      expect(result.value.requests[0].id).toBe('gbr-no-deadline')
     })
   })
 
