@@ -18,16 +18,18 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 61** — Återkommande bokningar release-klar. Klar 2026-04-25.
+**Sprint 62** — Kundinbjudningar release-klar.
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S61-1 | Atomisk serie-skapande ($transaction) | done (PR #294) |
-| S61-2 | Validera att startdatum inte är i det förflutna | done (PR #295) |
-| S61-3 | Kund-vy för seriebokningar | done (PR #296) |
-| S61-4 | Atomisk serie-cancel ($transaction) | done (PR #297) |
-| S61-5 | Trigga email-bekräftelse vid serie-skapande | done (PR #297) |
-| S61-6 | Ta bort recurring_bookings feature flag (DoD) | done (4ea8b7b9) |
+| S62-1 | UI-lösenordsvalidering saknar regex-regler | pending |
+| S62-2 | NEXTAUTH_URL som bas-URL för inbjudningslänken | pending |
+| S62-3 | Merge-dialog refreshar inte kundlistan | pending |
+| S62-4 | Merge-route kringgår GhostMergeService | pending |
+| S62-5 | Ingen historik om skickade inbjudningar | pending |
+| S62-6 | Ta bort customer_invite feature flag (DoD) | pending |
+
+*(Sprint 62 planerad 2026-04-25. 6 stories — kundinbjudningar release-klar: UI-lösenordsvalidering (S62-1), APP_URL-byte (S62-2), merge-dialog refresh (S62-3), GhostMergeService-refaktorering (S62-4), inbjudningshistorik (S62-5), customer_invite flag borttagen (S62-6). Källa: teateranalys 2026-04-25.)*
 
 *(Sprint 61 klar 2026-04-25. 6/6 stories done — återkommande bokningar release-klar: atomisk serie-skapande via $transaction (S61-1), startdatumsvalidering (S61-2), kund-vy för seriebokningar med UX-review (S61-3), atomisk cancel (S61-4), email-bekräftelse vid serie-skapande (S61-5), recurring_bookings feature flag borttagen — GA (S61-6). Mergade via PR #294–298. check:all 4/4 gröna, 4368 tester.)*
 
@@ -71,6 +73,9 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S62 | Kundinbjudningar release-klar | Planerad 2026-04-25. 6 stories. |
+| S61 | Återkommande bokningar release-klar | 6/6 done — atomisk create/cancel, startdatumsvalidering, kund-vy, email-bekräftelse, recurring_bookings flag borttagen. Mergade via PR #294–298. |
+| S60 | Förfallen service release-klar | 5/5 done — inline intervalredigering, varning vid >26 veckor, native 200+[], due_for_service flag borttagen. Mergad via PR #293. |
 | S59 | Gruppbokningar release-klar | 5/5 done — döda requests filtreras, kopiera-kod-knapp, bokningsdetaljer inline efter match, atomisk join + rate-limit på preview, group_bookings feature flag borttagen. Mergade via PR #288–292. |
 | S58 | Affärsinsikter release-klar | 4/4 done — total intäkt KPI, delta-indikator, tomtläge, business_insights flag borttagen. Mergad via PR #287. |
 | S57 | Ruttsynlighet för nya kunder | 4/4 done — kommande ruttar på leverantörsprofil, rutt-badge i söklista, rutt-kontext-banner, notis vid ruttändring. Mergad via PR #284. |
