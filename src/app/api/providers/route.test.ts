@@ -776,13 +776,28 @@ describe('GET /api/providers', () => {
       expect(result.data[0].businessName).toBe('Erik Hovslagare')
     })
 
-    it('should return 200 when filtering by serviceType', async () => {
+    it('should search businessName and description in addition to service names', async () => {
       vi.mocked(prisma.provider.findMany).mockResolvedValue([])
 
       const request = new NextRequest('http://localhost:3000/api/providers?serviceType=veterinär')
-      const response = await GET(request)
+      await GET(request)
 
-      expect(response.status).toBe(200)
+      // Verifierar att serviceType-filtret söker i businessName/description,
+      // inte bara service.name — annars hittas inte "Stockholms Veterinärklinik"
+      expect(vi.mocked(prisma.provider.findMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            AND: expect.arrayContaining([
+              expect.objectContaining({
+                OR: expect.arrayContaining([
+                  { businessName: { contains: 'veterinär', mode: 'insensitive' } },
+                  { description: { contains: 'veterinär', mode: 'insensitive' } },
+                ]),
+              }),
+            ]),
+          }),
+        })
+      )
     })
 
     it('should combine serviceType with search filter', async () => {
