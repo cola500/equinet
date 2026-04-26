@@ -9,35 +9,53 @@ const CUSTOMER_ID = 'a0000000-0000-4000-a000-000000000002'
 const SERVICE_ID = 'a0000000-0000-4000-a000-000000000003'
 const HORSE_ID = 'a0000000-0000-4000-a000-000000000004'
 
+function makeSharedPrismaMocks() {
+  const bookingSeriesMocks = {
+    create: vi.fn().mockResolvedValue({
+      id: 'series-1',
+      customerId: CUSTOMER_ID,
+      providerId: PROVIDER_ID,
+      serviceId: SERVICE_ID,
+      horseId: null,
+      intervalWeeks: 2,
+      totalOccurrences: 4,
+      createdCount: 0,
+      startTime: '10:00',
+      status: 'active',
+      cancelledAt: null,
+      createdAt: new Date(),
+    }),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
+    findUnique: vi.fn().mockResolvedValue(null),
+  }
+
+  const bookingMocks = {
+    findMany: vi.fn().mockResolvedValue([]),
+    updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+  }
+
+  const $transaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) => {
+    return fn({
+      bookingSeries: bookingSeriesMocks,
+      booking: bookingMocks,
+    })
+  })
+
+  return { bookingSeriesMocks, bookingMocks, $transaction }
+}
+
 function createDeps(overrides?: Partial<BookingSeriesServiceDeps>): BookingSeriesServiceDeps {
   const mockRepo = new MockBookingRepository()
+  const { bookingSeriesMocks, bookingMocks, $transaction } = makeSharedPrismaMocks()
+
   return {
     bookingRepository: mockRepo,
     prisma: {
-      bookingSeries: {
-        create: vi.fn().mockResolvedValue({
-          id: 'series-1',
-          customerId: CUSTOMER_ID,
-          providerId: PROVIDER_ID,
-          serviceId: SERVICE_ID,
-          horseId: null,
-          intervalWeeks: 2,
-          totalOccurrences: 4,
-          createdCount: 0,
-          startTime: '10:00',
-          status: 'active',
-          cancelledAt: null,
-          createdAt: new Date(),
-        }),
-        update: vi.fn().mockResolvedValue({}),
-        delete: vi.fn().mockResolvedValue({}),
-        findUnique: vi.fn().mockResolvedValue(null),
-      },
-      booking: {
-        findMany: vi.fn().mockResolvedValue([]),
-      },
+      bookingSeries: bookingSeriesMocks,
+      booking: bookingMocks,
+      $transaction,
     } as never,
-    isFeatureEnabled: vi.fn().mockResolvedValue(true),
     getProvider: vi.fn().mockResolvedValue({
       id: PROVIDER_ID,
       userId: 'provider-user-1',
@@ -100,24 +118,6 @@ describe('BookingSeriesService', () => {
   })
 
   describe('createSeries', () => {
-    it('returns RECURRING_FEATURE_OFF when feature flag is disabled', async () => {
-      const deps = createDeps({ isFeatureEnabled: vi.fn().mockResolvedValue(false) })
-      const service = new BookingSeriesService(deps)
-
-      const result = await service.createSeries({
-        customerId: CUSTOMER_ID,
-        providerId: PROVIDER_ID,
-        serviceId: SERVICE_ID,
-        firstBookingDate: futureDate(1),
-        startTime: '10:00',
-        intervalWeeks: 2,
-        totalOccurrences: 4,
-      })
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('RECURRING_FEATURE_OFF')
-    })
-
     it('returns RECURRING_DISABLED when provider has disabled recurring', async () => {
       const deps = createDeps({
         getProvider: vi.fn().mockResolvedValue({
@@ -225,7 +225,7 @@ describe('BookingSeriesService', () => {
       expect(result.error.type).toBe('INVALID_OCCURRENCES')
     })
 
-    it('creates a series with all bookings on happy path', async () => {
+    it('creates a series atomically: BookingSeries + bookingSeriesId link in $transaction', async () => {
       const deps = createDeps()
       const service = new BookingSeriesService(deps)
 
@@ -243,9 +243,20 @@ describe('BookingSeriesService', () => {
       expect(result.value.series.totalOccurrences).toBe(4)
       expect(result.value.createdBookings).toHaveLength(4)
       expect(result.value.skippedDates).toHaveLength(0)
-      expect(deps.prisma.bookingSeries.update).toHaveBeenCalledWith(
+
+      // Series created inside $transaction with correct createdCount
+      expect(deps.prisma.$transaction).toHaveBeenCalled()
+      expect(deps.prisma.bookingSeries.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { createdCount: 4 },
+          data: expect.objectContaining({ createdCount: 4, status: 'active' }),
+        })
+      )
+
+      // All bookings linked to the series via updateMany
+      expect(deps.prisma.booking.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { in: expect.any(Array) } },
+          data: { bookingSeriesId: 'series-1' },
         })
       )
     })
@@ -321,7 +332,7 @@ describe('BookingSeriesService', () => {
       expect(result.value.skippedDates).toHaveLength(1)
     })
 
-    it('returns NO_BOOKINGS_CREATED when all dates fail and deletes series', async () => {
+    it('returns NO_BOOKINGS_CREATED when all dates fail, no series written to DB', async () => {
       const deps = createDeps({
         bookingService: {
           createBooking: vi.fn().mockResolvedValue({
@@ -346,7 +357,45 @@ describe('BookingSeriesService', () => {
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('NO_BOOKINGS_CREATED')
-      expect(deps.prisma.bookingSeries.delete).toHaveBeenCalled()
+      // No series created since we short-circuit before the $transaction
+      expect(deps.prisma.bookingSeries.create).not.toHaveBeenCalled()
+    })
+
+    it('propagates exception on conflict, rolls back created bookings, no series created', async () => {
+      let callCount = 0
+      const deleteSpy = vi.fn().mockResolvedValue(undefined)
+      const deps = createDeps({
+        bookingService: {
+          createBooking: vi.fn().mockImplementation(async () => {
+            callCount++
+            if (callCount === 3) {
+              throw new Error('DB unique constraint violation')
+            }
+            return { isSuccess: true, value: makeFakeBooking() }
+          }),
+          createManualBooking: vi.fn(),
+        } as never,
+      })
+      deps.bookingRepository.delete = deleteSpy
+
+      const service = new BookingSeriesService(deps)
+
+      await expect(
+        service.createSeries({
+          customerId: CUSTOMER_ID,
+          providerId: PROVIDER_ID,
+          serviceId: SERVICE_ID,
+          firstBookingDate: futureDate(1),
+          startTime: '10:00',
+          intervalWeeks: 2,
+          totalOccurrences: 5,
+        })
+      ).rejects.toThrow('DB unique constraint violation')
+
+      // No series created (transaction never ran)
+      expect(deps.prisma.bookingSeries.create).not.toHaveBeenCalled()
+      // Cleanup attempted for bookings 1 and 2
+      expect(deleteSpy).toHaveBeenCalledTimes(2)
     })
 
     it('uses createManualBooking when isManualBooking is true', async () => {
@@ -368,25 +417,6 @@ describe('BookingSeriesService', () => {
       expect(result.isSuccess).toBe(true)
       expect(deps.bookingService.createManualBooking).toHaveBeenCalledTimes(3)
       expect(deps.bookingService.createBooking).not.toHaveBeenCalled()
-    })
-
-    it('passes bookingSeriesId to each booking', async () => {
-      const deps = createDeps()
-      const service = new BookingSeriesService(deps)
-
-      await service.createSeries({
-        customerId: CUSTOMER_ID,
-        providerId: PROVIDER_ID,
-        serviceId: SERVICE_ID,
-        firstBookingDate: futureDate(1),
-        startTime: '10:00',
-        intervalWeeks: 2,
-        totalOccurrences: 2,
-      })
-
-      const calls = vi.mocked(deps.bookingService.createBooking).mock.calls
-      expect(calls).toHaveLength(2)
-      // Each call should include the series context (bookingSeriesId set after creation)
     })
 
     it('passes horse info to each booking', async () => {
@@ -434,44 +464,34 @@ describe('BookingSeriesService', () => {
   })
 
   describe('cancelSeries', () => {
-    it('cancels future bookings and marks series as cancelled', async () => {
-      // Only future cancellable bookings -- DB WHERE filters out past/completed
-      const futureBooking = {
-        id: 'b-future',
-        bookingDate: futureDate(2),
-        status: 'confirmed',
+    function makeCancelDeps(seriesOverrides?: Record<string, unknown>, bookingUpdateCount = 1) {
+      const { bookingSeriesMocks, bookingMocks, $transaction } = makeSharedPrismaMocks()
+      bookingSeriesMocks.findUnique = vi.fn().mockResolvedValue({
+        id: 'series-1',
         customerId: CUSTOMER_ID,
         providerId: PROVIDER_ID,
-      }
-
-      const deps = createDeps({
-        prisma: {
-          bookingSeries: {
-            create: vi.fn(),
-            update: vi.fn().mockResolvedValue({}),
-            delete: vi.fn(),
-            findUnique: vi.fn().mockResolvedValue({
-              id: 'series-1',
-              customerId: CUSTOMER_ID,
-              providerId: PROVIDER_ID,
-              status: 'active',
-            }),
-          },
-          booking: {
-            findMany: vi.fn().mockResolvedValue([futureBooking]),
-          },
-        } as never,
+        status: 'active',
+        ...seriesOverrides,
       })
+      bookingMocks.updateMany = vi.fn().mockResolvedValue({ count: bookingUpdateCount })
 
-      // Mock the bookingService.updateStatus to succeed
-      deps.bookingService = {
-        ...deps.bookingService,
-        updateStatus: vi.fn().mockResolvedValue({
-          isSuccess: true,
-          value: makeFakeBooking({ status: 'cancelled' }),
-        }),
-      } as never
+      const mockRepo = new MockBookingRepository()
+      return {
+        bookingRepository: mockRepo,
+        prisma: {
+          bookingSeries: bookingSeriesMocks,
+          booking: bookingMocks,
+          $transaction,
+        } as never,
+        isFeatureEnabled: vi.fn().mockResolvedValue(true),
+        getProvider: vi.fn(),
+        getService: vi.fn(),
+        bookingService: {} as never,
+      }
+    }
 
+    it('atomically cancels future bookings and marks series as cancelled', async () => {
+      const deps = makeCancelDeps({}, 1)
       const service = new BookingSeriesService(deps)
 
       const result = await service.cancelSeries({
@@ -480,28 +500,42 @@ describe('BookingSeriesService', () => {
       })
 
       expect(result.isSuccess).toBe(true)
-      expect(result.value.cancelledCount).toBe(1) // Only future confirmed booking
+      expect(result.value.cancelledCount).toBe(1)
+
+      // Transaction ran
+      expect(deps.prisma.$transaction).toHaveBeenCalled()
+
+      // booking.updateMany called with correct filters
+      expect(deps.prisma.booking.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            bookingSeriesId: 'series-1',
+            status: { in: ['pending', 'confirmed'] },
+          }),
+          data: expect.objectContaining({ status: 'cancelled' }),
+        })
+      )
+
+      // Series marked as cancelled
       expect(deps.prisma.bookingSeries.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            status: 'cancelled',
-          }),
+          where: { id: 'series-1' },
+          data: expect.objectContaining({ status: 'cancelled' }),
         })
       )
     })
 
     it('returns error when series not found', async () => {
-      const deps = createDeps({
-        prisma: {
-          bookingSeries: {
-            create: vi.fn(),
-            update: vi.fn(),
-            delete: vi.fn(),
-            findUnique: vi.fn().mockResolvedValue(null),
-          },
-          booking: { findMany: vi.fn() },
-        } as never,
-      })
+      const { bookingSeriesMocks, bookingMocks, $transaction } = makeSharedPrismaMocks()
+      bookingSeriesMocks.findUnique = vi.fn().mockResolvedValue(null)
+      const deps: BookingSeriesServiceDeps = {
+        bookingRepository: new MockBookingRepository(),
+        prisma: { bookingSeries: bookingSeriesMocks, booking: bookingMocks, $transaction } as never,
+        isFeatureEnabled: vi.fn(),
+        getProvider: vi.fn(),
+        getService: vi.fn(),
+        bookingService: {} as never,
+      }
       const service = new BookingSeriesService(deps)
 
       const result = await service.cancelSeries({
@@ -514,21 +548,9 @@ describe('BookingSeriesService', () => {
     })
 
     it('returns error when actor is not owner', async () => {
-      const deps = createDeps({
-        prisma: {
-          bookingSeries: {
-            create: vi.fn(),
-            update: vi.fn(),
-            delete: vi.fn(),
-            findUnique: vi.fn().mockResolvedValue({
-              id: 'series-1',
-              customerId: 'other-customer',
-              providerId: 'other-provider',
-              status: 'active',
-            }),
-          },
-          booking: { findMany: vi.fn() },
-        } as never,
+      const deps = makeCancelDeps({
+        customerId: 'other-customer',
+        providerId: 'other-provider',
       })
       const service = new BookingSeriesService(deps)
 
@@ -542,30 +564,7 @@ describe('BookingSeriesService', () => {
     })
 
     it('allows provider to cancel their series', async () => {
-      const deps = createDeps({
-        prisma: {
-          bookingSeries: {
-            create: vi.fn(),
-            update: vi.fn().mockResolvedValue({}),
-            delete: vi.fn(),
-            findUnique: vi.fn().mockResolvedValue({
-              id: 'series-1',
-              customerId: CUSTOMER_ID,
-              providerId: PROVIDER_ID,
-              status: 'active',
-            }),
-          },
-          booking: {
-            findMany: vi.fn().mockResolvedValue([]),
-          },
-        } as never,
-      })
-
-      deps.bookingService = {
-        ...deps.bookingService,
-        updateStatus: vi.fn(),
-      } as never
-
+      const deps = makeCancelDeps({}, 0)
       const service = new BookingSeriesService(deps)
 
       const result = await service.cancelSeries({

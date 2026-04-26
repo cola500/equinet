@@ -95,7 +95,6 @@ export function ManualBookingDialog({
   const isOfflineEnabled = useFeatureFlag("offline_mode")
 
   // Recurring booking state
-  const recurringEnabled = useFeatureFlag("recurring_bookings")
   const [isRecurring, setIsRecurring] = useState(false)
   const [intervalWeeks, setIntervalWeeks] = useState(4)
   const [totalOccurrences, setTotalOccurrences] = useState(4)
@@ -511,17 +510,15 @@ export function ManualBookingDialog({
           </div>
 
           {/* -- Recurring -- */}
-          {recurringEnabled && (
-            <RecurringStep
-              isOnline={isOnline}
-              isRecurring={isRecurring}
-              onIsRecurringChange={setIsRecurring}
-              intervalWeeks={intervalWeeks}
-              onIntervalWeeksChange={setIntervalWeeks}
-              totalOccurrences={totalOccurrences}
-              onTotalOccurrencesChange={setTotalOccurrences}
-            />
-          )}
+          <RecurringStep
+            isOnline={isOnline}
+            isRecurring={isRecurring}
+            onIsRecurringChange={setIsRecurring}
+            intervalWeeks={intervalWeeks}
+            onIntervalWeeksChange={setIntervalWeeks}
+            totalOccurrences={totalOccurrences}
+            onTotalOccurrencesChange={setTotalOccurrences}
+          />
 
           {/* -- Submit -- */}
           <div className="flex gap-2 pt-2 border-t">

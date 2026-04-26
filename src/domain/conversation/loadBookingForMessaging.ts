@@ -19,6 +19,7 @@ export async function loadBookingForMessaging(
       providerId: true,
       status: true,
       bookingDate: true,
+      startTime: true,
       provider: {
         select: {
           id: true,
@@ -40,6 +41,7 @@ export async function loadBookingForMessaging(
     providerUserId: row.provider.user.id,
     status: row.status,
     bookingDate: row.bookingDate,
+    startTime: row.startTime,
     customerName: `${row.customer.firstName} ${row.customer.lastName}`,
     providerName: row.provider.businessName,
     serviceName: row.service?.name ?? 'Bokning',

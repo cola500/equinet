@@ -52,7 +52,7 @@ export function bookingConfirmationEmail(data: BookingConfirmationData): { html:
 
     <p style="margin-top: 20px;">Du kommer att få ett meddelande när leverantören har bekräftat din bokning.</p>
 
-    <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings" class="button">
+    <a href="${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings" class="button">
       Se dina bokningar
     </a>
   </div>
@@ -81,7 +81,7 @@ Pris: ${data.price} kr
 
 Du kommer att få ett meddelande när leverantören har bekräftat din bokning.
 
-Se dina bokningar: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings
+Se dina bokningar: ${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings
 
 Boknings-ID: ${data.bookingId}
 --

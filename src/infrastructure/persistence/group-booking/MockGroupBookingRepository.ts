@@ -8,6 +8,7 @@ import type {
   IGroupBookingRepository,
   GroupBookingRequest,
   GroupBookingParticipant,
+  ParticipantBookingInfo,
   ParticipantWithUser,
   GroupBookingWithParticipants,
   GroupBookingWithDetails,
@@ -23,6 +24,7 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
   private participants: Map<string, GroupBookingParticipant> = new Map()
   private userNames: Map<string, { firstName: string }> = new Map()
   private createdBookingIds: string[] = []
+  private bookingDataById: Map<string, ParticipantBookingInfo> = new Map()
 
   // ==========================================
   // QUERY METHODS
@@ -66,9 +68,11 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     const now = new Date()
     const results: GroupBookingWithParticipants[] = []
     for (const request of this.requests.values()) {
-      if (request.status === 'open' && request.dateFrom >= now) {
-        results.push(this.toWithParticipants(request))
-      }
+      if (request.status !== 'open') continue
+      const endDate = request.dateTo ?? request.dateFrom
+      if (endDate < now) continue
+      if (request.joinDeadline && request.joinDeadline < now) continue
+      results.push(this.toWithParticipants(request))
     }
     return {
       provider: { id: 'mock-provider-id' },
@@ -238,6 +242,17 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     return this.toWithParticipants(updated)
   }
 
+  async addParticipantIfRoom(
+    data: CreateParticipantData,
+    maxParticipants: number
+  ): Promise<GroupBookingParticipant | null> {
+    const activeCount = this.getActiveParticipantsForRequest(data.groupBookingRequestId).length
+    if (activeCount >= maxParticipants) {
+      return null
+    }
+    return this.addParticipant(data)
+  }
+
   async addParticipant(data: CreateParticipantData): Promise<GroupBookingParticipant> {
     const now = new Date()
     const participant: GroupBookingParticipant = {
@@ -326,6 +341,13 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
     this.participants.clear()
     this.userNames.clear()
     this.createdBookingIds = []
+    this.bookingDataById.clear()
+  }
+
+  seedBookingData(bookings: ParticipantBookingInfo[]): void {
+    for (const b of bookings) {
+      this.bookingDataById.set(b.id, b)
+    }
   }
 
   seedRequests(requests: GroupBookingRequest[]): void {
@@ -372,6 +394,7 @@ export class MockGroupBookingRepository implements IGroupBookingRepository {
       ...p,
       user: { firstName: this.userNames.get(p.userId)?.firstName || 'Test' },
       horse: p.horseName ? { name: p.horseName } : null,
+      booking: this.bookingDataById.get(p.bookingId ?? '') ?? null,
     }
   }
 

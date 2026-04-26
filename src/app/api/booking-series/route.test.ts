@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { POST } from "./route"
 import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 // Mock dependencies
 vi.mock("@/lib/auth-server", () => ({
@@ -32,8 +31,8 @@ vi.mock("@/domain/booking/BookingSeriesService", () => ({
   },
 }))
 
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
+vi.mock("@/lib/email", () => ({
+  sendBookingSeriesCreatedNotification: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock("@/lib/prisma", () => ({
@@ -63,7 +62,9 @@ vi.mock("@/lib/prisma", () => ({
     },
     booking: {
       findMany: vi.fn(),
+      updateMany: vi.fn(),
     },
+    $transaction: vi.fn(),
     availabilityException: {
       findUnique: vi.fn().mockResolvedValue(null),
     },
@@ -121,7 +122,6 @@ const validBody = {
 describe("POST /api/booking-series", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue(CUSTOMER_SESSION)
     mockCreateSeries.mockResolvedValue({
       isSuccess: true,
@@ -143,14 +143,6 @@ describe("POST /api/booking-series", () => {
     vi.mocked(auth).mockResolvedValue(null as never)
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(401)
-  })
-
-  it("returns 404 when recurring_bookings feature flag is disabled", async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-    const res = await POST(makeRequest(validBody))
-    expect(res.status).toBe(404)
-    const data = await res.json()
-    expect(data.error).toBe("Ej tillgänglig")
   })
 
   it("returns 429 when rate limited", async () => {
@@ -189,6 +181,22 @@ describe("POST /api/booking-series", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 400 when startDate is in the past", async () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const pastDate = yesterday.toISOString().split("T")[0]
+    const res = await POST(makeRequest({ ...validBody, firstBookingDate: pastDate }))
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toBe("Valideringsfel")
+  })
+
+  it("returns 201 when startDate is today", async () => {
+    const today = new Date().toISOString().split("T")[0]
+    const res = await POST(makeRequest({ ...validBody, firstBookingDate: today }))
+    expect(res.status).toBe(201)
+  })
+
   it("returns 201 on happy path as customer", async () => {
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(201)
@@ -223,7 +231,7 @@ describe("POST /api/booking-series", () => {
     mockCreateSeries.mockResolvedValue({
       isSuccess: false,
       isFailure: true,
-      error: { type: "RECURRING_FEATURE_OFF" },
+      error: { type: "RECURRING_DISABLED" },
     })
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(403)

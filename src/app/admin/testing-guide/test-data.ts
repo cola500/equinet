@@ -364,9 +364,8 @@ export const TEST_DATA: TestCategory[] = [
       {
         id: "feat-dfs",
         title: "Besöksplanering",
-        description: "Slå PÅ due_for_service i Admin → System",
+        description: "Alltid tillgänglig (ingen feature flag)",
         items: [
-          { id: "fdfs-1", label: "Menyval visas när PÅ, döljs när AV" },
           { id: "fdfs-2", label: "Hästar som behöver besök listas" },
           { id: "fdfs-3", label: "Intervall kan sättas per häst/tjänst" },
           { id: "fdfs-4", label: "Förfallna besök markeras tydligt" },
@@ -375,7 +374,7 @@ export const TEST_DATA: TestCategory[] = [
       {
         id: "feat-group",
         title: "Gruppbokningar",
-        description: "Slå PÅ group_bookings i Admin → System",
+        description: "Alltid tillgänglig (ingen feature flag)",
         items: [
           { id: "fgroup-1", label: "Menyval visas för kund och leverantör" },
           { id: "fgroup-2", label: "Kund kan skapa och bjuda in" },
@@ -386,20 +385,12 @@ export const TEST_DATA: TestCategory[] = [
       {
         id: "feat-insights",
         title: "Affärsinsikter",
-        description: "Slå PÅ business_insights i Admin → System",
+        description: "Alltid tillgänglig (ingen feature flag)",
         items: [
-          { id: "finsights-1", label: "Menyval visas när PÅ, döljs när AV" },
-          { id: "finsights-2", label: "Grafer: tjänster, tidsanalys, retention" },
-        ],
-      },
-      {
-        id: "feat-recurring",
-        title: "Återkommande bokningar",
-        description: "Slå PÅ recurring_bookings i Admin → System",
-        items: [
-          { id: "frecurring-1", label: "Seriealternativ visas/döljs korrekt" },
-          { id: "frecurring-2", label: "Skapa serie (veckovis, varannan, månadsvis)" },
-          { id: "frecurring-3", label: "Avbryt en hel serie" },
+          { id: "finsights-1", label: "Menyval synligt under Mitt företag" },
+          { id: "finsights-2", label: "KPI-kort visar total intäkt, delta-indikatorer mot föregående period" },
+          { id: "finsights-3", label: "Grafer: tjänster, tidsanalys, retention" },
+          { id: "finsights-4", label: "Tomtläge visas när ingen data i perioden" },
         ],
       },
       {

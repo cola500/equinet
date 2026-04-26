@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth-server"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { BookingSeriesService, SeriesError } from "@/domain/booking/BookingSeriesService"
 import { BookingService } from "@/domain/booking/BookingService"
@@ -41,12 +40,7 @@ export async function POST(
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 
-  // 2. Feature flag
-  if (!(await isFeatureEnabled("recurring_bookings"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
-
-  // 3. Rate limit
+  // 2. Rate limit
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.booking(clientIp)
   if (!isAllowed) {
@@ -97,8 +91,8 @@ export async function POST(
     prisma: {
       bookingSeries: prisma.bookingSeries,
       booking: prisma.booking,
+      $transaction: prisma.$transaction.bind(prisma),
     },
-    isFeatureEnabled,
     getProvider: async (pid) => prisma.provider.findUnique({
       where: { id: pid },
       select: { id: true, userId: true, isActive: true, recurringEnabled: true, maxSeriesOccurrences: true },

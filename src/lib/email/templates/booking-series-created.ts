@@ -65,7 +65,7 @@ export function bookingSeriesCreatedEmail(data: BookingSeriesCreatedData): { htm
     </ul>
     ${skippedHtml}
 
-    <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings" class="button">
+    <a href="${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings" class="button">
       Se dina bokningar
     </a>
   </div>
@@ -97,7 +97,7 @@ BOKADE DATUM
 ------------
 ${data.bookingDates.map(d => `${d.date} kl. ${d.time}`).join('\n')}
 ${skippedText}
-Se dina bokningar: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/customer/bookings
+Se dina bokningar: ${process.env.APP_URL || 'http://localhost:3000'}/customer/bookings
 
 --
 Equinet - Din plattform för hästtjänster

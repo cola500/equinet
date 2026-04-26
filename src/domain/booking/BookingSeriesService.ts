@@ -62,7 +62,6 @@ export interface CancelSeriesResult {
 }
 
 export type SeriesError =
-  | { type: 'RECURRING_FEATURE_OFF' }
   | { type: 'RECURRING_DISABLED' }
   | { type: 'INVALID_INTERVAL'; message: string }
   | { type: 'INVALID_OCCURRENCES'; message: string; max: number }
@@ -114,9 +113,12 @@ export interface BookingSeriesServiceDeps {
     booking: {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       findMany: (args: any) => Promise<BookingRecord[]>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      updateMany: (args: any) => Promise<{ count: number }>
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>
   }
-  isFeatureEnabled: (key: string) => Promise<boolean>
   getProvider: (id: string) => Promise<ProviderRecurringInfo | null>
   getService: (id: string) => Promise<{ id: string; providerId: string; durationMinutes: number; isActive: boolean } | null>
   bookingService: BookingService
@@ -135,13 +137,7 @@ export class BookingSeriesService {
   async createSeries(
     dto: CreateSeriesDTO
   ): Promise<Result<CreateSeriesResult, SeriesError>> {
-    // 1. Check feature flag
-    const featureEnabled = await this.deps.isFeatureEnabled('recurring_bookings')
-    if (!featureEnabled) {
-      return Result.fail({ type: 'RECURRING_FEATURE_OFF' })
-    }
-
-    // 2. Get provider and check recurringEnabled
+    // 1. Get provider and check recurringEnabled
     const provider = await this.deps.getProvider(dto.providerId)
     if (!provider || !provider.recurringEnabled) {
       return Result.fail({ type: 'RECURRING_DISABLED' })
@@ -171,22 +167,7 @@ export class BookingSeriesService {
       })
     }
 
-    // 5. Create BookingSeries record
-    const series = await this.deps.prisma.bookingSeries.create({
-      data: {
-        customerId: dto.customerId,
-        providerId: dto.providerId,
-        serviceId: dto.serviceId,
-        horseId: dto.horseId || null,
-        intervalWeeks: dto.intervalWeeks,
-        totalOccurrences: dto.totalOccurrences,
-        createdCount: 0,
-        startTime: dto.startTime,
-        status: 'active',
-      },
-    })
-
-    // 6. Loop N times, create each booking
+    // 5. Loop N times, create each booking (skip-logic runs outside transaction)
     const createdBookings: BookingWithRelations[] = []
     const skippedDates: { date: string; reason: string }[] = []
 
@@ -228,40 +209,56 @@ export class BookingSeriesService {
         if (result.isSuccess) {
           createdBookings.push(result.value)
         } else {
-          // Skippable errors -- continue with the series
           if (SKIPPABLE_ERRORS.includes(result.error.type)) {
             const message = 'message' in result.error ? result.error.message : result.error.type
             skippedDates.push({ date: dateStr, reason: message })
           } else {
-            // Non-skippable error -- log and skip
-            logger.warn(`Booking series: unexpected error for date ${dateStr}`, {
-              error: result.error,
-              seriesId: series.id,
-            })
+            logger.warn(`Booking series: unexpected error for date ${dateStr}`, { error: result.error })
             skippedDates.push({ date: dateStr, reason: result.error.type })
           }
         }
       } catch (err) {
-        logger.error(`Booking series: exception creating booking for ${dateStr}`, { err, seriesId: series.id })
-        skippedDates.push({ date: dateStr, reason: 'Oväntat fel' })
+        // Exception (e.g. DB unique constraint race condition) -- clean up and propagate
+        logger.error(`Booking series: exception creating booking for ${dateStr}`, { err })
+        for (const booking of createdBookings) {
+          await this.deps.bookingRepository.delete(booking.id).catch((cleanupErr) => {
+            logger.error(`Booking series: failed to cleanup booking ${booking.id}`, { cleanupErr })
+          })
+        }
+        throw err
       }
     }
 
-    // 7. If no bookings created, delete the series
+    // 6. If no bookings created, return error (no series record was ever written)
     if (createdBookings.length === 0) {
-      await this.deps.prisma.bookingSeries.delete({
-        where: { id: series.id },
-      })
       return Result.fail({
         type: 'NO_BOOKINGS_CREATED',
         message: 'Inga bokningar kunde skapas. Alla datum var redan upptagna eller otillgängliga.',
       })
     }
 
-    // 8. Update createdCount
-    await this.deps.prisma.bookingSeries.update({
-      where: { id: series.id },
-      data: { createdCount: createdBookings.length },
+    // 7. Atomically: create BookingSeries + link all bookings to it via bookingSeriesId
+    const series = await this.deps.prisma.$transaction(async (tx) => {
+      const newSeries = await tx.bookingSeries.create({
+        data: {
+          customerId: dto.customerId,
+          providerId: dto.providerId,
+          serviceId: dto.serviceId,
+          horseId: dto.horseId || null,
+          intervalWeeks: dto.intervalWeeks,
+          totalOccurrences: dto.totalOccurrences,
+          createdCount: createdBookings.length,
+          startTime: dto.startTime,
+          status: 'active',
+        },
+      })
+
+      await tx.booking.updateMany({
+        where: { id: { in: createdBookings.map((b) => b.id) } },
+        data: { bookingSeriesId: newSeries.id },
+      })
+
+      return newSeries
     })
 
     return Result.ok({
@@ -296,51 +293,30 @@ export class BookingSeriesService {
       return Result.fail({ type: 'NOT_OWNER' })
     }
 
-    // 3. Get future bookings in this series that are cancellable
+    // 3. Atomically cancel all future bookings + mark series as cancelled
     const now = new Date()
-    const bookings = await this.deps.prisma.booking.findMany({
-      where: {
-        bookingSeriesId: dto.seriesId,
-        bookingDate: { gte: now },
-        status: { in: ['pending', 'confirmed'] },
-      },
-      select: {
-        id: true,
-        providerId: true,
-        customerId: true,
-      },
-    })
-
-    // 4. Cancel each future booking via BookingService
-    let cancelledCount = 0
-    for (const booking of bookings) {
-      try {
-        const authContext: { providerId?: string; customerId?: string } = {}
-        if (dto.actorProviderId) authContext.providerId = dto.actorProviderId
-        if (dto.actorCustomerId) authContext.customerId = dto.actorCustomerId
-
-        const result = await this.deps.bookingService.updateStatus({
-          bookingId: booking.id,
-          newStatus: 'cancelled',
-          ...authContext,
+    const { cancelledCount } = await this.deps.prisma.$transaction(async (tx) => {
+      const { count } = await tx.booking.updateMany({
+        where: {
+          bookingSeriesId: dto.seriesId,
+          bookingDate: { gte: now },
+          status: { in: ['pending', 'confirmed'] },
+        },
+        data: {
+          status: 'cancelled',
           cancellationMessage: dto.cancellationMessage || 'Serie avbruten',
-        })
+        },
+      })
 
-        if (result.isSuccess) {
-          cancelledCount++
-        }
-      } catch (err) {
-        logger.error(`Failed to cancel booking ${booking.id} in series ${dto.seriesId}`, { err })
-      }
-    }
+      await tx.bookingSeries.update({
+        where: { id: dto.seriesId },
+        data: {
+          status: 'cancelled',
+          cancelledAt: now,
+        },
+      })
 
-    // 5. Update series status
-    await this.deps.prisma.bookingSeries.update({
-      where: { id: dto.seriesId },
-      data: {
-        status: 'cancelled',
-        cancelledAt: new Date(),
-      },
+      return { cancelledCount: count }
     })
 
     return Result.ok({ cancelledCount })

@@ -41,6 +41,16 @@ const participantWithUserSelect = {
   updatedAt: true,
   user: { select: { firstName: true } },
   horse: { select: { name: true } },
+  booking: {
+    select: {
+      id: true,
+      bookingDate: true,
+      startTime: true,
+      endTime: true,
+      status: true,
+      service: { select: { name: true } },
+    },
+  },
 } satisfies Prisma.GroupBookingParticipantSelect
 
 const requestWithParticipantsInclude = {
@@ -124,10 +134,25 @@ export class GroupBookingRepository implements IGroupBookingRepository {
       return { provider: null, requests: [] }
     }
 
+    const now = new Date()
     const requests = await prisma.groupBookingRequest.findMany({
       where: {
         status: 'open',
-        dateFrom: { gte: new Date() },
+        // Filter out requests where the request window has fully passed.
+        // dateTo is required in schema but treat dateFrom as fallback for safety.
+        OR: [
+          { dateTo: { gte: now } },
+          { dateFrom: { gte: now } },
+        ],
+        // Filter out requests where the join deadline has passed.
+        AND: [
+          {
+            OR: [
+              { joinDeadline: null },
+              { joinDeadline: { gte: now } },
+            ],
+          },
+        ],
       },
       include: requestWithParticipantsInclude,
       orderBy: { dateFrom: 'asc' },
@@ -318,6 +343,39 @@ export class GroupBookingRepository implements IGroupBookingRepository {
         status: 'joined',
       },
     })
+  }
+
+  async addParticipantIfRoom(
+    data: CreateParticipantData,
+    maxParticipants: number
+  ): Promise<GroupBookingParticipant | null> {
+    // Atomic count + insert inside a serializable transaction so two
+    // concurrent joins cannot both observe count = max-1 and both insert.
+    return prisma.$transaction(async (tx) => {
+      const activeCount = await tx.groupBookingParticipant.count({
+        where: {
+          groupBookingRequestId: data.groupBookingRequestId,
+          status: { not: 'cancelled' },
+        },
+      })
+
+      if (activeCount >= maxParticipants) {
+        return null
+      }
+
+      return tx.groupBookingParticipant.create({
+        data: {
+          groupBookingRequestId: data.groupBookingRequestId,
+          userId: data.userId,
+          numberOfHorses: data.numberOfHorses,
+          horseId: data.horseId,
+          horseName: data.horseName,
+          horseInfo: data.horseInfo,
+          notes: data.notes,
+          status: 'joined',
+        },
+      })
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
   }
 
   async cancelParticipant(participantId: string): Promise<void> {

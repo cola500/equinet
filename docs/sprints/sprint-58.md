@@ -1,180 +1,143 @@
 ---
-title: "Sprint 58: Affärsinsikter — release-klar"
-description: "Fyra gap-fixar från teateranalysen av business_insights. Definition of done: feature flag borttagen, funktionen alltid aktiv."
+title: "Sprint 58: En källa per regel"
+description: "Konsolidering av processdokumentation: review-regler på ett ställe, autonomous-sprint.md kollapsad till sektion, parallel-sessions.md ur automatisk laddning."
 category: sprint
 status: planned
 last_updated: 2026-04-24
-tags: [sprint, insights, provider, feature-flag]
+tags: [sprint, process, docs, rules]
 sections:
   - Sprint Overview
   - Stories
 ---
 
-# Sprint 58: Affärsinsikter — release-klar
+# Sprint 58: En källa per regel
 
 ## Sprint Overview
 
-**Mål:** Gör Affärsinsikter tillräckligt bra för att ta bort feature flaggan och släppa funktionen permanent.
+**Mål:** Eliminera de fyra GAP som identifierades i process-teatern (2026-04-24). Dev ska kunna starta en story och fatta ett review-beslut genom att läsa EN fil, inte tre.
 
-**Källa:** Teateranalys 2026-04-24 — fem luckor identifierade när Erik (hovslagare) öppnar Insikter-sidan.
+**Källa:** Teateranalys — "Dev plockar en story".
 
-**Definition of done (sprint):** `business_insights`-flaggan är borttagen ur kodbasen. Funktionen är alltid aktiv.
+**Nuläge:** 800 rader i fem filer som alla beskriver hur agentteamet arbetar. Samma regler upprepas på 3-4 platser. `parallel-sessions.md` (269 rader) laddas automatiskt varje session men är bara relevant vid parallella körningar.
 
-| Story | Gap | Effort | Demovärde |
-|-------|-----|--------|-----------|
-| S58-1 | Total intäkt saknas — viktigaste affärsmåttet | 1-2h | Hög |
-| S58-2 | Delta-indikator på KPIs — ger kontext | 2-3h | Medel-hög |
-| S58-3 | Tomtläge + servicebreakdown-rubrik | 1h | Medel |
-| S58-4 | Ta bort feature flag (webb-gate + permanent release) | 30 min | Kritisk |
+**Målbild efter sprint:** 3 filer i `.claude/rules/` för teamprocess (ned från 5). En auktoritativ källa för review-regler. Parallell-sessions-guiden finns kvar men laddas inte automatiskt.
+
+| Story | Gap | Effort |
+|-------|-----|--------|
+| S58-1 | GAP D — parallel-sessions.md laddas varje session trots sällan relevant | 15-30 min |
+| S58-2 | GAP B — review-regler på 4 platser med subtila skillnader | 30-45 min |
+| S58-3 | GAP A+C — autonomous-sprint.md duplicerar team-workflow.md + auto-assign.md | 30-45 min |
+
+**Inte i sprint:** Sammanslagning av `auto-assign.md` + `team-workflow.md` — de har tillräckligt distinkta ansvarsområden (startup-sekvens vs flöde) för att hålla separata. Utvärdera efter S58-3.
 
 ---
 
 ## Stories
 
-### S58-1: Total intäkt som KPI-kort
+### S58-1: Flytta parallel-sessions.md ur automatisk laddning (GAP D)
 
 **Prioritet:** 1
-**Effort:** 1-2h
-**Domän:** webb
+**Effort:** 15-30 min
+**Domän:** docs
 
-**Problem:** KPI-raden visar snittbokningsvärde men inte total intäkt. "Vad tjänade jag den här månaden?" är det mest grundläggande affärsmåttet för en hovslagare — och det saknas helt. `totalRevenue` räknas redan ut i API-routen men returneras aldrig.
+**Problem:** `parallel-sessions.md` (269 rader) finns i `.claude/rules/` och laddas in i varje agents kontext via path-matching. Parallella sessioner körs sällan (kräver aktiv session i annan domän), men filen kostar kontext-utrymme vid varje körning.
 
-**Fix:** Lägg till `totalRevenue` i API-responsen och ett nytt KPI-kort i UI:t.
+**Fix:** Flytta filen till `docs/guides/parallel-sessions.md`. Lägg till en en-rads referens i `auto-assign.md` under Worktree-beslut: "Fullständig guide: `docs/guides/parallel-sessions.md`."
 
 **Filer:**
-- `src/app/api/provider/insights/route.ts` — lägg till `totalRevenue` i `kpis`-objektet
-- `src/app/api/native/insights/route.ts` — samma ändring (paritet)
-- `src/components/provider/InsightsCharts.tsx` — nytt KPI-kort "Total intäkt"
-- `src/app/api/provider/insights/route.test.ts` — verifiera att `totalRevenue` returneras
-
-**Implementation:**
-1. I `kpis`-objektet: `totalRevenue: Math.round(totalRevenue)`
-2. I `KPIs`-interfacet: `totalRevenue: number`
-3. Nytt KPI-kort: label "Total intäkt", value `${kpis.totalRevenue.toLocaleString("sv-SE")} kr`, info "Summa intäkt från genomförda bokningar i perioden."
-4. Placera kortet före "Snittbokningsvärde" — det är mer grundläggande.
-5. Grid-uppdatering: 6 kort istället för 5 — `md:grid-cols-6` eller radbrytning.
+- `.claude/rules/parallel-sessions.md` → `docs/guides/parallel-sessions.md` (flytt, inget innehåll ändras)
+- `.claude/rules/auto-assign.md` — lägg till pekare under Worktree-beslut
 
 **Acceptanskriterier:**
-- [ ] `totalRevenue` returneras från `/api/provider/insights`
-- [ ] KPI-kort "Total intäkt" visas på insiktssidan
-- [ ] Formaterat med `toLocaleString("sv-SE")` + " kr"
-- [ ] Info-popover: "Summa intäkt från genomförda bokningar i perioden."
-- [ ] Paritet med native-route (`/api/native/insights`)
-- [ ] Test: `totalRevenue` i API-responsen
+- [ ] `parallel-sessions.md` finns inte längre under `.claude/rules/`
+- [ ] Filen finns under `docs/guides/parallel-sessions.md` med oförändrat innehåll
+- [ ] `auto-assign.md` pekar till den nya platsen
+- [ ] `docs/INDEX.md` uppdaterad om parallel-sessions var indexerad där
 
 ---
 
-### S58-2: Delta-indikator på KPI-korten
+### S58-2: Review-regler → en källa (GAP B)
 
 **Prioritet:** 2
-**Effort:** 2-3h
-**Domän:** webb
+**Effort:** 30-45 min
+**Domän:** docs
 
-**Problem:** Erik ser "15% avbokningsgrad" men vet inte om det är bra eller dåligt — ingen referenspunkt. Period-selectorn finns men ger ingen jämförelse mot föregående period. KPI-korten är informativa men inte handlingsbara.
+**Problem:** Review-regler förekommer på fyra platser:
+- `review-matrix.md` — den auktoritativa matrisen (code-reviewer + specialist, seriell körning, union-regel)
+- `team-workflow.md` — en förenklad tabell (5 rader, saknar union-regeln)
+- `auto-assign.md` — två bullet-points (security-reviewer + code-reviewer, ingen seriell ordning)
+- `autonomous-sprint.md` — två bullet-points (identiska med auto-assign.md)
 
-**Fix:** Hämta föregående periods data och visa delta (↑/↓ X%) under varje KPI-värde. Grön pil = förbättring, röd pil = försämring (riktningslogik per KPI-typ).
+När filerna säger olika saker väljer Dev den bredaste tolkningen (kör alla reviewers alltid) — inte för att det är rätt utan för att osäkerheten driver säkerhets-bias.
+
+**Fix:** `review-matrix.md` är källan. Ersätt inline-regler i de tre övriga filerna med en pekare.
 
 **Filer:**
-- `src/app/api/provider/insights/route.ts` — lägg till `previousPeriod`-beräkning
-- `src/components/provider/InsightsCharts.tsx` — delta-visning i `KPICard`
-
-**Implementation:**
-1. API: hämta bookings för föregående period (samma längd, direkt innan nuvarande). Beräkna samma KPIs. Returnera som `previousKpis`.
-2. `KPICard`-komponenten: ta emot valfri `delta?: number` och `deltaDirection?: "up-good" | "up-bad"`. Visa `↑ X%` i grönt eller `↓ X%` i rött baserat på riktning.
-3. Riktningslogik:
-   - `cancellationRate`: upp = dåligt (röd), ned = bra (grön)
-   - `noShowRate`: upp = dåligt (röd), ned = bra (grön)
-   - `averageBookingValue`: upp = bra (grön), ned = dåligt (röd)
-   - `totalRevenue`: upp = bra (grön), ned = dåligt (röd)
-   - `uniqueCustomers`: upp = bra (grön), ned = dåligt (röd)
-   - `manualBookingRate`: neutral (grå, ingen pil)
-4. Om delta < 1%: visa inte pilen (brus).
-5. Om `previousPeriod` saknar data (ny leverantör): visa inget delta.
+- `team-workflow.md` — ersätt review-tabellen med: "Se `.claude/rules/review-matrix.md` för fullständig review-gating. Kortversion: code-reviewer vid väsentlig ny logik, security-reviewer vid ny API-route. Kör seriellt."
+- `auto-assign.md` — ersätt review-bullets med en rad: "Review: se `review-matrix.md`."
+- `autonomous-sprint.md` — ersätt review-bullets med en rad: "Review: se `review-matrix.md`."
 
 **Acceptanskriterier:**
-- [ ] API returnerar `previousKpis` med samma struktur som `kpis`
-- [ ] KPI-kort visar delta med pil och färg
-- [ ] Riktningslogik är korrekt per KPI-typ
-- [ ] Delta < 1% visas inte
-- [ ] Ny leverantör (ingen föregående period): inga pilar
-- [ ] Test: delta beräknas korrekt i API
+- [ ] `review-matrix.md` är oförändrad (auktoritativ källa rör vi inte)
+- [ ] `team-workflow.md` har ingen inline review-tabell längre — bara pekare + kortversion
+- [ ] `auto-assign.md` har ingen inline review-regel — bara pekare
+- [ ] `autonomous-sprint.md` har ingen inline review-regel — bara pekare
+- [ ] En agent som bara läser `team-workflow.md` vet att den ska gå till `review-matrix.md` för detaljer
 
 ---
 
-### S58-3: Tomtläge och servicebreakdown-rubrik
+### S58-3: Kollapsa autonomous-sprint.md till sektion i team-workflow.md (GAP A+C)
 
 **Prioritet:** 3
-**Effort:** 1h
-**Domän:** webb
+**Effort:** 30-45 min
+**Domän:** docs
 
-**Problem A:** Ny leverantör utan bokningar ser fem nollor (`0%`, `0 kr`, `0`, `0%`, `0%`) utan förklaring. Det ser trasigt ut.
+**Problem:** `autonomous-sprint.md` (141 rader) innehåller nästan exakt samma 4-stegsflöde som `team-workflow.md`. Det unika innehållet är litet:
+- Kommunikationsregler ("fråga Johan vid X, fråga inte vid Y")
+- Stopp-villkor (check:all failar 3 ggr, blocker från subagent, etc.)
+- Sprint-avslut (git status, meddela Johan, retro valfri)
+- Worktree-agent-mönster (spawna bakgrundsagent för parallell domän)
 
-**Problem B:** "Populäraste tjänster"-grafen baseras bara på *genomförda* bokningar men det framgår inte av rubriken — en leverantör med bara pending-bokningar ser tomma grafer och förstår inte varför.
+Det är 30-40 rader verkligt unikt innehåll i en 141-raders fil. Resten är repetition.
 
-**Fix A:** Om alla KPI-värden är 0 (ingen data i perioden): visa ett informativt tomtläge ovanför KPI-korten.
-
-**Fix B:** Uppdatera underrubriken på servicebreakdown-kortet.
+**Fix:** Ta bort `autonomous-sprint.md`. Lägg till en sektion `## Autonom sprint-körning` i `team-workflow.md` med det unika innehållet (kommunikation, stopp-villkor, sprint-avslut, worktree-agent-mönster).
 
 **Filer:**
-- `src/components/provider/InsightsCharts.tsx` — tomtläseslogik + underrubrik
+- `team-workflow.md` — lägg till sektion `## Autonom sprint-körning` med extraherat unikt innehåll
+- `.claude/rules/autonomous-sprint.md` — tas bort
+- `auto-assign.md` — uppdatera steg 6 från "se team-workflow.md" till att vara en tydligare pekare (om det behövs efter ändringen)
+- `CLAUDE.md` — kontrollera om autonomous-sprint.md refereras och uppdatera i så fall
 
-**Implementation:**
+**Vad som bevaras från autonomous-sprint.md:**
+- Kommunikationsregler (fråga Johan / fråga inte Johan)
+- Stopp-villkor (3 misslyckade check:all, blocker, saknade env-vars, alla klara)
+- Sprint-avslut (git status, meddela Johan, retro valfri)
+- Worktree-agent-mönster + modellval-tabell
 
-Fix A — tomtläge:
-```
-Om serviceBreakdown.length === 0 && kpis.uniqueCustomers === 0:
-  Visa en informationsruta ovanför KPI-korten:
-  "Inga bokningar i den valda perioden. Insikterna fylls på allteftersom du får bokningar."
-  Visa fortfarande KPI-korten (med nollor) men med tydlig kontext.
-```
-
-Fix B — underrubrik:
-- Ändra `CardDescription` från "Genomförda bokningar och intäkt per tjänst" till "Genomförda bokningar och intäkt per tjänst (exkl. avbokade och pending)"
+**Vad som tas bort (duplicat):**
+- STOPP-REGLER (finns i auto-assign.md)
+- Flöde per story (finns i team-workflow.md)
+- Check-steget med npm run check:all (finns i team-workflow.md)
+- SHIP-steget med gh pr commands (finns i team-workflow.md)
 
 **Acceptanskriterier:**
-- [ ] Leverantör utan data i perioden ser informativt meddelande, inte bara nollor
-- [ ] Servicebreakdown-underrubriken förklarar att bara genomförda räknas
-- [ ] Befintlig data-vy är oförändrad
+- [ ] `autonomous-sprint.md` finns inte längre under `.claude/rules/`
+- [ ] `team-workflow.md` har en ny sektion `## Autonom sprint-körning` med allt unikt innehåll
+- [ ] `auto-assign.md` pekar korrekt efter ändringen
+- [ ] `CLAUDE.md` innehåller inga trasiga referenser till `autonomous-sprint.md`
+- [ ] `npm run docs:validate` är grön
 
 ---
 
-### S58-4: Ta bort feature flag
+## Förväntat resultat
 
-**Prioritet:** 4
-**Effort:** 30 min
-**Domän:** webb
+| Fil | Före | Efter |
+|-----|------|-------|
+| `team-workflow.md` | 142 rader | ~180 rader (inkl. sprint-sektion) |
+| `auto-assign.md` | 127 rader | ~110 rader (kortare review + steg) |
+| `autonomous-sprint.md` | 141 rader | **borttagen** |
+| `parallel-sessions.md` | 269 rader i `.claude/rules/` | **flyttad till `docs/guides/`** |
+| `tech-lead.md` | 121 rader | oförändrad |
+| **Total i `.claude/rules/`** | **800 rader** | **~410 rader** |
 
-**Problem:** `business_insights`-flaggan är aktiv men webb-routen `/api/provider/insights` saknar feature gate (native-routen har den). Dessutom: när S58-1–3 är klara finns inga kvarvarande skäl att ha funktionen bakom en flagga.
-
-**Fix:**
-1. Fixa webb-route (säkerhetslucka): lägg till `isFeatureEnabled`-check.
-2. Ta sedan bort flaggan ur hela kodbasen.
-
-**Filer:**
-- `src/app/api/provider/insights/route.ts` — lägg till gate (steg 1), ta bort (steg 2)
-- `src/app/api/native/insights/route.ts` — ta bort gate
-- `src/app/provider/insights/page.tsx` — ta bort `useFeatureFlag`-check
-- `src/lib/feature-flag-definitions.ts` — ta bort `business_insights`-entry
-- `src/components/layout/ProviderNav.tsx` — ta bort `featureFlag`-prop på Insikter-länken
-- `docs/sprints/backlog.md` — flytta till arkiv
-
-**Implementation:**
-Steg 1 (säkerhetslucka, innan borttag):
-```typescript
-if (!(await isFeatureEnabled("business_insights"))) {
-  return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-}
-```
-
-Steg 2 (ta bort flaggan):
-- Sök på `business_insights` i hela `src/` — ta bort alla träffar
-- Ta bort entry ur `feature-flag-definitions.ts`
-- ProviderNav: ta bort `featureFlag: "business_insights"` på Insikter-länken (länken är alltid synlig)
-- Insiktssidan: ta bort `useFeatureFlag`-blocket som returnerar "inte tillgänglig"-vy
-
-**Acceptanskriterier:**
-- [ ] `business_insights` finns inte i `feature-flag-definitions.ts`
-- [ ] Inga `isFeatureEnabled("business_insights")`-anrop i kodbasen
-- [ ] Inga `useFeatureFlag("business_insights")`-anrop i kodbasen
-- [ ] Insikter-länken visas alltid i navbaren (ingen feature-gate)
-- [ ] `npm run check:all` grön
+Halverad kontextlast. Samma regler. En källa per regel.

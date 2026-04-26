@@ -43,8 +43,6 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
     route_planning: true,
     route_announcements: true,
     customer_insights: true,
-    due_for_service: true,
-    group_bookings: false,
   }),
 }))
 

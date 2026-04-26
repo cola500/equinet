@@ -47,9 +47,19 @@ export interface GroupBookingParticipant {
   updatedAt: Date
 }
 
+export interface ParticipantBookingInfo {
+  id: string
+  bookingDate: Date
+  startTime: string
+  endTime: string
+  status: string
+  service: { name: string }
+}
+
 export interface ParticipantWithUser extends GroupBookingParticipant {
   user: { firstName: string }
   horse: { name: string } | null
+  booking: ParticipantBookingInfo | null
 }
 
 export interface GroupBookingWithParticipants extends GroupBookingRequest {
@@ -230,6 +240,15 @@ export interface IGroupBookingRepository {
    * Add participant to group booking
    */
   addParticipant(data: CreateParticipantData): Promise<GroupBookingParticipant>
+
+  /**
+   * Add participant atomically only if active count is below maxParticipants.
+   * Returns null if the request is full (race-condition safe).
+   */
+  addParticipantIfRoom(
+    data: CreateParticipantData,
+    maxParticipants: number
+  ): Promise<GroupBookingParticipant | null>
 
   /**
    * Soft-delete participant (set status to "cancelled")

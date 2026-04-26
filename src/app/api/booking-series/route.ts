@@ -4,18 +4,22 @@ import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
 import { BookingSeriesService, SeriesError } from "@/domain/booking/BookingSeriesService"
 import { BookingService } from "@/domain/booking/BookingService"
 import { TravelTimeService } from "@/domain/booking/TravelTimeService"
 import type { SessionUser } from "@/types/auth"
 import { dateSchema, strictTimeSchema } from "@/lib/zod-schemas"
+import { sendBookingSeriesCreatedNotification } from "@/lib/email"
 
 const createSeriesSchema = z.object({
   providerId: z.string().uuid("Ogiltigt provider-ID"),
   serviceId: z.string().uuid("Ogiltigt tjänst-ID"),
-  firstBookingDate: dateSchema,
+  firstBookingDate: dateSchema.refine((val) => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    return new Date(val) >= today
+  }, "Startdatum kan inte vara i det förflutna."),
   startTime: strictTimeSchema,
   intervalWeeks: z.number().int().min(1, "Intervall måste vara minst 1 vecka").max(52, "Intervall får inte överstiga 52 veckor"),
   totalOccurrences: z.number().int().min(2, "Minst 2 tillfällen").max(52, "Max 52 tillfällen"),
@@ -28,7 +32,6 @@ const createSeriesSchema = z.object({
 
 function mapSeriesErrorToStatus(error: SeriesError): number {
   switch (error.type) {
-    case 'RECURRING_FEATURE_OFF':
     case 'RECURRING_DISABLED':
     case 'NOT_OWNER':
       return 403
@@ -45,8 +48,6 @@ function mapSeriesErrorToStatus(error: SeriesError): number {
 
 function mapSeriesErrorToMessage(error: SeriesError): string {
   switch (error.type) {
-    case 'RECURRING_FEATURE_OFF':
-      return 'Återkommande bokningar är inte aktiverat'
     case 'RECURRING_DISABLED':
       return 'Leverantören har inte aktiverat återkommande bokningar'
     case 'INVALID_INTERVAL':
@@ -71,12 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
   }
 
-  // 2. Feature flag
-  if (!(await isFeatureEnabled("recurring_bookings"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
-
-  // 3. Rate limit
+  // 2. Rate limit
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.booking(clientIp)
   if (!isAllowed) {
@@ -140,8 +136,8 @@ export async function POST(request: NextRequest) {
     prisma: {
       bookingSeries: prisma.bookingSeries,
       booking: prisma.booking,
+      $transaction: prisma.$transaction.bind(prisma),
     },
-    isFeatureEnabled,
     getProvider: async (id) => prisma.provider.findUnique({
       where: { id },
       select: {
@@ -183,6 +179,14 @@ export async function POST(request: NextRequest) {
         { status: mapSeriesErrorToStatus(result.error) }
       )
     }
+
+    sendBookingSeriesCreatedNotification({
+      customerId,
+      providerId: data.providerId,
+      series: result.value.series,
+      createdBookings: result.value.createdBookings,
+      skippedDates: result.value.skippedDates,
+    }).catch((err) => logger.error("Failed to send series created email", { err }))
 
     return NextResponse.json(result.value, { status: 201 })
   } catch (error) {

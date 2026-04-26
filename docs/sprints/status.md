@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-04-26
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,19 +18,43 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 58: Affärsinsikter — release-klar** — startad 2026-04-24
-Sprint-dokument: [sprint-58.md](sprint-58.md)
+**Sprint 63** — Smart Replies release-klar.
 
-| Story | Status | Branch | Commit |
-|-------|--------|--------|--------|
-| S58-1: Total intäkt som KPI-kort | pending | — | — |
-| S58-2: Delta-indikator på KPI-korten | pending | — | — |
-| S58-3: Tomtläge + servicebreakdown-rubrik | pending | — | — |
-| S58-4: Ta bort feature flag | pending | — | — |
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S63-1 | Chip med ouppfyllt `{telefon}` skickas som rå placeholder | done (57189d7d) |
+| S63-2 | Chip-klick raderar befintlig text i skrivfältet utan varning | done (f0a447ad) |
+| S63-3 | Mallarna täcker inte vanliga fält-behov (ETA, "jag är framme") | done (f2926549) |
+| S63-4 | Ta bort smart_replies feature flag (DoD) | done (173f6bc7) |
+
+*(Sprint 63 klar 2026-04-26. 4/4 stories done — Smart Replies release-klar: telefon-placeholder disabled (S63-1), undo-toast vid chip-klick (S63-2), ETA-mallar tillagda (S63-3), smart_replies flag borttagen — GA (S63-4). Mergade via PR #306–309. check:all 4/4 gröna, 4380 tester.)*
+
+---
+
+**Sprint 62** — Kundinbjudningar release-klar.
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S62-1 | UI-lösenordsvalidering saknar regex-regler | done (4b38a1f1) |
+| S62-2 | NEXTAUTH_URL som bas-URL för inbjudningslänken | done (a182d1b5) |
+| S62-3 | Merge-dialog refreshar inte kundlistan | done (f7bb5bd4) |
+| S62-4 | Merge-route kringgår GhostMergeService | done (66ad2561) |
+| S62-5 | Ingen historik om skickade inbjudningar | done (cb216f95) |
+| S62-6 | Ta bort customer_invite feature flag (DoD) | done (bb520f91) |
+
+*(Sprint 62 klar 2026-04-25. 6/6 stories done — kundinbjudningar release-klar: UI-lösenordsvalidering (S62-1), APP_URL-byte (S62-2), merge-dialog refresh (S62-3), GhostMergeService-refaktorering (S62-4), inbjudningshistorik (S62-5), customer_invite flag borttagen — GA (S62-6). Mergade via PR #299–304. check:all 4/4 gröna, 4375 tester.)*
+
+*(Sprint 61 klar 2026-04-25. 6/6 stories done — återkommande bokningar release-klar: atomisk serie-skapande via $transaction (S61-1), startdatumsvalidering (S61-2), kund-vy för seriebokningar med UX-review (S61-3), atomisk cancel (S61-4), email-bekräftelse vid serie-skapande (S61-5), recurring_bookings feature flag borttagen — GA (S61-6). Mergade via PR #294–298. check:all 4/4 gröna, 4368 tester.)*
+
+*(Sprint 60 klar 2026-04-25. 5/5 stories done — förfallen service release-klar: inline intervalredigering i leverantörslistan (S60-2), rekommenderat intervall + varning vid >26 veckor (S60-3), native route returnerar 200+[] vid flagga AV (S60-4), due_for_service feature flag borttagen — GA (S60-5). Mergad via PR #293. check:all 4/4 gröna, 4370 tester.)*
+
+*(Sprint 59 klar 2026-04-25. 5/5 stories done — gruppbokningar release-klar: filter för döda requests (S59-1), kopiera-kod-knapp + tydligare delnings-UX (S59-2), bokningsdetaljer inline efter match med peer-sanitering (S59-3), rate-limit på preview + atomisk join-transaktion med 409 vid full grupp (S59-4), feature flag borttagen — group_bookings är GA (S59-5). Mergade via PR #288, #289, #290, #291, #292. check:all 4/4 gröna, 4374 tester.)*
+
+*(Sprint 58 klar 2026-04-24. 4/4 stories done — Affärsinsikter release-klar: total intäkt KPI (S58-1), delta-indikator mot föregående period (S58-2), tomtläge + tydligare servicebreakdown-rubrik (S58-3), business_insights feature flag borttagen (S58-4). Mergad via PR #287. check:all 4/4 gröna, 4380 tester. Demo-läget oberoende verifierat.)*
 
 *(Sprint 57 klar 2026-04-24. 4/4 stories done — ruttsynlighet för nya kunder: kommande ruttar på leverantörsprofil (S57-1), rutt-badge i söklistan (S57-2), rutt-kontext-banner i bokningskalendern (S57-3), notis vid ruttändring (S57-4). Mergad via PR #284. Hotfix landad ovanpå: serviceType-filter söker nu i businessName + description + service.name.)*
 
-*(Sprint 56 klar 2026-04-24. 4/4 stories done — sökning och transparens: kategori-ikoner filtrerar (S56-1), tjänstetyp-filter på /providers (S56-2), transparent pending-status (S56-3), review-uppmaning efter slutförd bokning (S56-4).)*
+*(Sprint 56 klar 2026-04-24. 4/4 stories done — kategori-ikoner navigerar till filtrerad sökning, tjänstetyp-filterchips på /providers, transparent pending-status med förväntad svarstid, review-uppmaning efter slutförd bokning.)*
 
 *(Sprint 55 klar 2026-04-24. 1/1 story done — iOS demo mode + env-synk (NEXT_PUBLIC_DEMO_MODE) + kalender-buggfix (offset→padding för korrekt hit-testing) + dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`.)*
 
@@ -62,6 +86,16 @@ Sprint-dokument: [sprint-58.md](sprint-58.md)
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S63 | Smart Replies release-klar | 4/4 done — telefon-placeholder disabled (S63-1), undo-toast (S63-2), ETA-mallar (S63-3), smart_replies flag borttagen — GA (S63-4). Mergade via PR #306–309. |
+| S62 | Kundinbjudningar release-klar | Planerad 2026-04-25. 6 stories. |
+| S61 | Återkommande bokningar release-klar | 6/6 done — atomisk create/cancel, startdatumsvalidering, kund-vy, email-bekräftelse, recurring_bookings flag borttagen. Mergade via PR #294–298. |
+| S60 | Förfallen service release-klar | 5/5 done — inline intervalredigering, varning vid >26 veckor, native 200+[], due_for_service flag borttagen. Mergad via PR #293. |
+| S59 | Gruppbokningar release-klar | 5/5 done — döda requests filtreras, kopiera-kod-knapp, bokningsdetaljer inline efter match, atomisk join + rate-limit på preview, group_bookings feature flag borttagen. Mergade via PR #288–292. |
+| S58 | Affärsinsikter release-klar | 4/4 done — total intäkt KPI, delta-indikator, tomtläge, business_insights flag borttagen. Mergad via PR #287. |
+| S57 | Ruttsynlighet för nya kunder | 4/4 done — kommande ruttar på leverantörsprofil, rutt-badge i söklista, rutt-kontext-banner, notis vid ruttändring. Mergad via PR #284. |
+| S56 | Förbättrade kundflöden | 4/4 done — kategori-ikon-navigation, tjänstetyp-filterchips, transparent pending-status, review-uppmaning. |
+| S55 | iOS demo mode + kalenderfix | 1/1 done — env-synk, kalender-buggfix, dubblerad knapp borttagen. Retro: `docs/retrospectives/2026-04-24-sprint-55.md`. |
+| S54 | Inline-godkänd + redigera bokning | 2/2 done — inline bekräfta/avvisa i kalender, redigera datum/tid. Bugfix rejected→cancelled. |
 | S53 | Webb demo-värdig (leverantörsvinklad) | 4/4 done — demo-audit, FAQ native `<details>`, Erik Järnfot seed, "Se demo"-knapp. Sprint ≤1 arbetsdag. R1+R2+serial-review testat empiriskt (266k tokens total, jämför S51-0.1:s 300k för EN story). Retro: `docs/retrospectives/2026-04-23-sprint-53.md`. |
 | S52 | Upptäckt och transparens (SKIPPAD) | Aldrig startad. Pivot till demo-scope 2026-04-22. Bevarad som referens för framtida pre-booking-messaging-epic. |
 | S51 | Pre-launch-härdning (AVBRUTEN) | 2/6 done (S51-0 MFA admin, S51-0.1 MFA-hotfix). S51-1/2/3/4 avbrutna 2026-04-22 vid pivot till demo-scope. Minor-fynd från S51-0.1-review paketerade som backlog-rad. |
@@ -141,6 +175,7 @@ Sprint-dokument: [sprint-58.md](sprint-58.md)
 
 | Item | Effort | Motivering |
 |------|--------|------------|
+| Lägg till `category`-fält på `Service` (schema-ändring) | 3-4h | **Bakgrund:** Hotfix (2026-04-24) lade till `SERVICE_CATEGORY_TERMS`-mappning i `ProviderRepository.ts` som workaround för att fritextnamn ("Hovslagning") inte matchade chip-label ("Hovslagare"). Rätt lösning: ett strukturerat `category`-fält på `Service`-modellen. Fix: (1) `prisma migrate dev` med ny `category String?`-kolumn, (2) Uppdatera leverantörs-UI för att sätta kategori vid skapande av tjänst, (3) Filtrera på `category` istället för `name CONTAINS`, (4) Ta bort `SERVICE_CATEGORY_TERMS` i `ProviderRepository.ts`. RLS-audit vid ny kolumn. |
 | S42-3: Full-suite flake-rapport | 45-60 min | Avbruten från S42. Kan köras när testpyramid-arbetet behöver baseline-data. |
 | S42-4: iOS native-flöde-audit via mobile-mcp | 1-1.5h | Avbruten från S42. 13 flöden, visuell baseline. Fortfarande värdefullt före lansering. |
 | Implementera iOS XCUITest smoke-svit | 2-3 dagar | Plan finns: [ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md). Login + 3 native-flöden. Post-launch. |

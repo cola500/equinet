@@ -40,7 +40,7 @@ describe("FeatureFlagProvider", () => {
     vi.useFakeTimers()
     fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ flags: { voice_logging: true, group_bookings: true } }),
+      json: () => Promise.resolve({ flags: { voice_logging: true, route_planning: true } }),
     })
     global.fetch = fetchSpy
   })
@@ -153,12 +153,12 @@ describe("FeatureFlagProvider", () => {
   })
 
   it("does not re-render children when polled flags are identical", async () => {
-    const initialFlags = { voice_logging: true, group_bookings: false }
+    const initialFlags = { voice_logging: true, route_planning: false }
 
     // Mock fetch returns identical flags
     fetchSpy.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ flags: { voice_logging: true, group_bookings: false } }),
+      json: () => Promise.resolve({ flags: { voice_logging: true, route_planning: false } }),
     })
 
     render(
@@ -181,12 +181,12 @@ describe("FeatureFlagProvider", () => {
   })
 
   it("re-renders children when polled flags actually change", async () => {
-    const initialFlags = { voice_logging: false, group_bookings: false }
+    const initialFlags = { voice_logging: false, route_planning: false }
 
     // Mock fetch returns DIFFERENT flags
     fetchSpy.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ flags: { voice_logging: true, group_bookings: false } }),
+      json: () => Promise.resolve({ flags: { voice_logging: true, route_planning: false } }),
     })
 
     render(
@@ -210,9 +210,9 @@ describe("FeatureFlagProvider", () => {
   })
 
   it("updates when a flag is removed from API response", async () => {
-    const initialFlags = { voice_logging: true, group_bookings: true }
+    const initialFlags = { voice_logging: true, route_planning: true }
 
-    // API response no longer includes group_bookings
+    // API response no longer includes route_planning
     fetchSpy.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ flags: { voice_logging: true } }),
@@ -220,7 +220,7 @@ describe("FeatureFlagProvider", () => {
 
     render(
       <FeatureFlagProvider initialFlags={initialFlags}>
-        <RenderCountConsumer flagKey="group_bookings" />
+        <RenderCountConsumer flagKey="route_planning" />
       </FeatureFlagProvider>
     )
 
@@ -232,7 +232,7 @@ describe("FeatureFlagProvider", () => {
     })
 
     expect(fetchSpy).toHaveBeenCalledTimes(1)
-    // group_bookings was removed from API response -> should be false now
+    // route_planning was removed from API response -> should be false now
     expect(screen.getByTestId("flag-value-counted").textContent).toBe("false")
     // Should have re-rendered
     expect(screen.getByTestId("render-count").textContent).toBe("2")
@@ -283,9 +283,9 @@ describe("FeatureFlagProvider", () => {
     it("returns correct value from initial flags", () => {
       render(
         <FeatureFlagProvider
-          initialFlags={{ voice_logging: true, group_bookings: false }}
+          initialFlags={{ voice_logging: true, route_planning: false }}
         >
-          <TestConsumer flagKey="group_bookings" />
+          <TestConsumer flagKey="route_planning" />
         </FeatureFlagProvider>
       )
 

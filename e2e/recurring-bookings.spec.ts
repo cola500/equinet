@@ -20,16 +20,6 @@ async function resetRateLimit(page: import('@playwright/test').Page) {
   await page.request.post('/api/test/reset-rate-limit').catch(() => {})
 }
 
-async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.context().clearCookies()
-  await resetRateLimit(page)
-  await page.goto('/login')
-  await page.getByLabel(/email/i).fill('admin@example.com')
-  await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
-  await page.getByRole('button', { name: /logga in/i }).click()
-  await expect(page).toHaveURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
-}
-
 async function loginAsProvider(page: import('@playwright/test').Page) {
   await page.context().clearCookies()
   await resetRateLimit(page)
@@ -48,13 +38,6 @@ async function loginAsCustomer(page: import('@playwright/test').Page) {
   await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!')
   await page.getByRole('button', { name: /logga in/i }).click()
   await expect(page).toHaveURL(/\/(dashboard|providers)/, { timeout: 15000 })
-}
-
-async function setFlag(page: import('@playwright/test').Page, flag: string, value: boolean) {
-  const response = await page.request.patch('/api/admin/settings', {
-    data: { key: `feature_${flag}`, value: String(value) },
-  })
-  expect(response.ok()).toBeTruthy()
 }
 
 async function syncClientFlags(page: import('@playwright/test').Page) {
@@ -124,18 +107,6 @@ test.describe('Recurring Bookings (C1)', () => {
       data: { isActive: true },
     })
 
-    // Enable recurring_bookings feature flag via admin API
-    // (other specs like feature-flag-toggle may have left it disabled)
-    const context = await browser.newContext()
-    const page = await context.newPage()
-    await page.request.post('/api/test/reset-rate-limit').catch(() => {})
-    await page.goto('/login')
-    await page.getByLabel(/email/i).fill('admin@example.com')
-    await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
-    await page.getByRole('button', { name: /logga in/i }).click()
-    await page.waitForURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
-    await setFlag(page, 'recurring_bookings', true)
-    await context.close()
   })
 
   test.afterAll(async () => {
@@ -218,12 +189,6 @@ test.describe('Recurring Bookings (C1)', () => {
   // ─── Group B: Customer dialog UI ──────────────────────────────
 
   test.describe('Group B: Customer booking dialog', () => {
-
-    test.beforeEach(async ({ page }) => {
-      // Enable feature flag via admin
-      await loginAsAdmin(page)
-      await setFlag(page, 'recurring_bookings', true)
-    })
 
     test('B1: Recurring toggle visible in booking dialog', async ({ page }) => {
       test.skip(test.info().project.name === 'mobile', 'Desktop booking dialog test')
@@ -404,13 +369,6 @@ test.describe('Recurring Bookings (C1)', () => {
         await loginAsCustomer(page)
         await resetRateLimit(page)
 
-        // Enable feature flag so the check goes to provider-level
-        await loginAsAdmin(page)
-        await setFlag(page, 'recurring_bookings', true)
-
-        // Re-login as customer
-        await loginAsCustomer(page)
-
         const futureDate = new Date()
         futureDate.setDate(futureDate.getDate() + 21)
         const dow = futureDate.getDay()
@@ -442,23 +400,5 @@ test.describe('Recurring Bookings (C1)', () => {
       }
     })
 
-    test('D2: Feature flag OFF -> no recurring toggle in booking dialog', async ({ page }) => {
-      test.skip(test.info().project.name === 'mobile', 'Desktop booking dialog test')
-
-      await loginAsAdmin(page)
-      await setFlag(page, 'recurring_bookings', false)
-
-      await loginAsCustomer(page)
-      if (!(await openBookingDialog(page, test))) return
-
-      // "Gör detta återkommande" should NOT be visible
-      await expect(page.getByText(/gör detta återkommande/i)).not.toBeVisible({ timeout: 5000 })
-
-      await page.keyboard.press('Escape')
-
-      // Cleanup: restore flag
-      await loginAsAdmin(page)
-      await setFlag(page, 'recurring_bookings', true)
-    })
   })
 })

@@ -62,10 +62,6 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 vi.mock('@/lib/logger', () => ({
   logger: {
     info: vi.fn(),
@@ -96,7 +92,6 @@ vi.mock('@/domain/notification/NotificationService', () => ({
 
 import { auth } from '@/lib/auth-server'
 import { rateLimiters } from '@/lib/rate-limit'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { POST, GET } from './route'
 import { GET as GET_AVAILABLE } from './available/route'
 
@@ -170,7 +165,6 @@ function makeInvalidJsonRequest(): NextRequest {
 describe('POST /api/group-bookings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as never)
@@ -190,18 +184,6 @@ describe('POST /api/group-bookings', () => {
       locationName: 'Stall Sjöbo',
     })
     expect(mockGroupBookingRepo.create).toHaveBeenCalledOnce()
-  })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
-
-    const res = await POST(makeRequest('POST', validBody))
-    const data = await res.json()
-
-    expect(res.status).toBe(404)
-    expect(data.error).toBe('Ej tillgänglig')
-    expect(isFeatureEnabled).toHaveBeenCalledWith('group_bookings')
-    expect(mockGroupBookingRepo.create).not.toHaveBeenCalled()
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -257,7 +239,6 @@ describe('POST /api/group-bookings', () => {
 describe('GET /api/group-bookings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'user-1', userType: 'customer' },
     } as never)
@@ -280,18 +261,6 @@ describe('GET /api/group-bookings', () => {
     })
     expect(mockGroupBookingRepo.findByUserId).toHaveBeenCalledWith('user-1')
   })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
-
-    const res = await GET(makeRequest('GET'))
-    const data = await res.json()
-
-    expect(res.status).toBe(404)
-    expect(data.error).toBe('Ej tillgänglig')
-    expect(isFeatureEnabled).toHaveBeenCalledWith('group_bookings')
-    expect(mockGroupBookingRepo.findByUserId).not.toHaveBeenCalled()
-  })
 })
 
 describe('GET /api/group-bookings/available', () => {
@@ -303,7 +272,6 @@ describe('GET /api/group-bookings/available', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: 'provider-user-1', userType: 'provider' },
     } as never)
@@ -344,14 +312,4 @@ describe('GET /api/group-bookings/available', () => {
     expect(data.error).toMatch(/leverantörer/i)
   })
 
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
-
-    const res = await GET_AVAILABLE(makeAvailableRequest())
-    const data = await res.json()
-
-    expect(res.status).toBe(404)
-    expect(data.error).toBe('Ej tillgänglig')
-    expect(mockGroupBookingRepo.findAvailableForProvider).not.toHaveBeenCalled()
-  })
 })

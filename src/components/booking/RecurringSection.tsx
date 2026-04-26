@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useBookingFlowContext } from "./BookingFlowContext"
 
 interface RecurringSectionProps {
@@ -17,7 +16,6 @@ interface RecurringSectionProps {
 }
 
 export function RecurringSection({ idSuffix = "" }: RecurringSectionProps) {
-  const recurringEnabled = useFeatureFlag("recurring_bookings")
   const {
     isRecurring,
     setIsRecurring,
@@ -26,8 +24,6 @@ export function RecurringSection({ idSuffix = "" }: RecurringSectionProps) {
     totalOccurrences,
     setTotalOccurrences,
   } = useBookingFlowContext()
-
-  if (!recurringEnabled) return null
 
   return (
     <div className="space-y-3 border-t pt-3">

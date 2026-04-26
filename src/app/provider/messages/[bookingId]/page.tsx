@@ -7,12 +7,21 @@ import { ArrowLeft, Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
 import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
 import { displayMessages } from "@/components/provider/messages/messageUtils"
 import { AttachmentBubble, AttachmentPreview } from "@/components/provider/messages/AttachmentBubble"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { MESSAGING_ALLOWED_MIME, MESSAGING_MAX_SIZE } from "@/lib/messaging-constants"
 
 interface Message {
@@ -33,12 +42,15 @@ interface MessagesResponse {
   customerName: string
   serviceName: string
   bookingDate: string
+  bookingStartTime: string
   messages: Message[]
   nextCursor: string | null
 }
 
 interface ProviderProfile {
-  phone?: string
+  user?: {
+    phone?: string | null
+  }
 }
 
 function ThreadView({ bookingId }: { bookingId: string }) {
@@ -47,7 +59,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   const [attachedFile, setAttachedFile] = useState<File | null>(null)
   const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const smartRepliesEnabled = useFeatureFlag("smart_replies")
+  const [pendingChipText, setPendingChipText] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -65,8 +77,8 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     const d = data?.bookingDate ? new Date(data.bookingDate) : null
     return {
       datum: d ? d.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" }) : "",
-      tid: d ? d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "",
-      telefon: profile?.phone ?? "",
+      tid: data?.bookingStartTime ?? "",
+      telefon: profile?.user?.phone ?? "",
     }
   })()
 
@@ -278,10 +290,16 @@ function ThreadView({ bookingId }: { bookingId: string }) {
           />
         )}
 
-        {smartRepliesEnabled && !attachedFile && (
+        {!attachedFile && (
           <SmartReplyChips
             vars={smartReplyVars}
-            onSelect={(text) => setContent(text)}
+            onSelect={(text) => {
+              if (content.trim()) {
+                setPendingChipText(text)
+              } else {
+                setContent(text)
+              }
+            }}
             disabled={isBusy}
           />
         )}
@@ -335,6 +353,32 @@ function ThreadView({ bookingId }: { bookingId: string }) {
           </Button>
         </div>
       </div>
+
+      {pendingChipText && (
+        <AlertDialog open onOpenChange={() => setPendingChipText(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ersätta texten?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Du har redan påbörjat ett svar. Vill du ersätta det med snabbsvaret?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingChipText(null)}>
+                Avbryt
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setContent(pendingChipText)
+                  setPendingChipText(null)
+                }}
+              >
+                Ersätt
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   )
 }

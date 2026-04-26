@@ -280,6 +280,10 @@ export class MockAuthRepository implements IAuthRepository {
     }
   }
 
+  async executeMergeTransaction(_ghostUserId: string, _realUserId: string, _requestingProviderId: string): Promise<void> {
+    // No-op in tests -- use vi.spyOn for assertions
+  }
+
   // -----------------------------------------------------------
   // Test helpers
   // -----------------------------------------------------------

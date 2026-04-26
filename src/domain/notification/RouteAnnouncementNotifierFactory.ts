@@ -1,6 +1,5 @@
 /**
  * Factory for creating RouteAnnouncementNotifier with production dependencies.
- * Async because it checks feature flags.
  */
 import { RouteAnnouncementNotifier } from "./RouteAnnouncementNotifier"
 import { notificationService } from "./NotificationService"
@@ -12,10 +11,7 @@ import { isFeatureEnabled } from "@/lib/feature-flags"
 import { PrismaDueForServiceLookup } from "@/domain/due-for-service/DueForServiceLookup"
 
 export async function createRouteAnnouncementNotifier(): Promise<RouteAnnouncementNotifier> {
-  const [dueForServiceEnabled, municipalityWatchEnabled] = await Promise.all([
-    isFeatureEnabled("due_for_service"),
-    isFeatureEnabled("municipality_watch"),
-  ])
+  const municipalityWatchEnabled = await isFeatureEnabled("municipality_watch")
 
   return new RouteAnnouncementNotifier({
     followRepo: followRepository,
@@ -59,9 +55,7 @@ export async function createRouteAnnouncementNotifier(): Promise<RouteAnnounceme
         })
       },
     },
-    dueForServiceLookup: dueForServiceEnabled
-      ? new PrismaDueForServiceLookup()
-      : undefined,
+    dueForServiceLookup: new PrismaDueForServiceLookup(),
     watchRepo: municipalityWatchEnabled
       ? municipalityWatchRepository
       : undefined,

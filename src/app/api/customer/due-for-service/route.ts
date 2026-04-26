@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { DueForServiceService } from "@/domain/due-for-service/DueForServiceService"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
@@ -31,11 +30,6 @@ export async function GET(request: NextRequest) {
         { error: "For manga forfragningar" },
         { status: 429 }
       )
-    }
-
-    const enabled = await isFeatureEnabled("due_for_service")
-    if (!enabled) {
-      return NextResponse.json({ items: [] })
     }
 
     const service = new DueForServiceService()

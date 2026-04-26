@@ -19,12 +19,14 @@ interface CustomerMergeDialogProps {
   customer: Customer
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
 export function CustomerMergeDialog({
   customer,
   open,
   onOpenChange,
+  onSuccess,
 }: CustomerMergeDialogProps) {
   const [mergeEmail, setMergeEmail] = useState("")
   const [isMerging, setIsMerging] = useState(false)
@@ -54,6 +56,10 @@ export function CustomerMergeDialog({
 
       if (res.ok) {
         setMergeSuccess(true)
+        setTimeout(() => {
+          onOpenChange(false)
+          onSuccess?.()
+        }, 1500)
       } else {
         const data = await res.json()
         setMergeError(data.error || "Något gick fel")

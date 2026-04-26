@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth-server"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
@@ -21,10 +20,6 @@ export async function POST(request: NextRequest) {
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
-    }
-
-    if (!(await isFeatureEnabled("group_bookings"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     // Rate limiting

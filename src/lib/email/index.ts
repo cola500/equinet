@@ -24,6 +24,7 @@ export {
   sendRebookingReminderNotification,
   sendBookingReminderNotification,
   sendBookingRescheduleNotification,
+  sendBookingSeriesCreatedNotification,
 } from "./notifications"
 export {
   generateUnsubscribeToken,

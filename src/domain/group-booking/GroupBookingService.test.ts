@@ -176,6 +176,76 @@ describe('GroupBookingService', () => {
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('GROUP_BOOKING_NOT_FOUND')
     })
+
+    it('should expose booking data on the requester own participant after match', async () => {
+      const bookingDate = new Date('2026-05-12T00:00:00.000Z')
+      repo.seedRequests([makeRequest({ status: 'matched' })])
+      repo.seedParticipants([
+        makeParticipant({ status: 'booked', bookingId: 'booking-123' }),
+      ])
+      repo.seedBookingData([
+        {
+          id: 'booking-123',
+          bookingDate,
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+          service: { name: 'Hovslagning' },
+        },
+      ])
+
+      const result = await service.getById('gbr-1', TEST_UUIDS.creator, 'customer')
+
+      expect(result.isSuccess).toBe(true)
+      const participant = result.value.participants[0]
+      expect(participant.booking).not.toBeNull()
+      expect(participant.booking?.startTime).toBe('10:00')
+      expect(participant.booking?.service.name).toBe('Hovslagning')
+    })
+
+    it('should hide booking data for peer participants', async () => {
+      repo.seedRequests([makeRequest({ status: 'matched' })])
+      repo.seedParticipants([
+        makeParticipant({
+          id: 'gbp-self',
+          userId: TEST_UUIDS.joiner,
+          status: 'booked',
+          bookingId: 'booking-self',
+        }),
+        makeParticipant({
+          id: 'gbp-peer',
+          userId: TEST_UUIDS.creator,
+          status: 'booked',
+          bookingId: 'booking-peer',
+        }),
+      ])
+      repo.seedBookingData([
+        {
+          id: 'booking-self',
+          bookingDate: new Date('2026-05-12'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'confirmed',
+          service: { name: 'Hovslagning' },
+        },
+        {
+          id: 'booking-peer',
+          bookingDate: new Date('2026-05-12'),
+          startTime: '13:00',
+          endTime: '14:00',
+          status: 'confirmed',
+          service: { name: 'Hovslagning' },
+        },
+      ])
+
+      const result = await service.getById('gbr-1', TEST_UUIDS.joiner, 'customer')
+
+      expect(result.isSuccess).toBe(true)
+      const self = result.value.participants.find((p) => p.userId === TEST_UUIDS.joiner)
+      const peer = result.value.participants.find((p) => p.userId === TEST_UUIDS.creator)
+      expect(self?.booking?.startTime).toBe('10:00')
+      expect(peer?.booking).toBeNull()
+    })
   })
 
   // -----------------------------------------------------------
@@ -196,8 +266,10 @@ describe('GroupBookingService', () => {
     it('should not return past or non-open requests', async () => {
       const pastDate = new Date()
       pastDate.setDate(pastDate.getDate() - 7)
+      const pastEnd = new Date()
+      pastEnd.setDate(pastEnd.getDate() - 1)
       repo.seedRequests([
-        makeRequest({ id: 'gbr-past', dateFrom: pastDate }),
+        makeRequest({ id: 'gbr-past', dateFrom: pastDate, dateTo: pastEnd }),
         makeRequest({ id: 'gbr-cancelled', status: 'cancelled' }),
       ])
 
@@ -205,6 +277,37 @@ describe('GroupBookingService', () => {
 
       expect(result.isSuccess).toBe(true)
       expect(result.value.requests).toHaveLength(0)
+    })
+
+    it('should return requests where dateFrom is in past but dateTo is still in the future', async () => {
+      const pastDate = new Date()
+      pastDate.setDate(pastDate.getDate() - 3)
+      const futureEnd = new Date()
+      futureEnd.setDate(futureEnd.getDate() + 4)
+      repo.seedRequests([
+        makeRequest({ id: 'gbr-spanning', dateFrom: pastDate, dateTo: futureEnd }),
+      ])
+
+      const result = await service.listAvailableForProvider(TEST_UUIDS.providerUser)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.requests).toHaveLength(1)
+      expect(result.value.requests[0].id).toBe('gbr-spanning')
+    })
+
+    it('should not return requests where joinDeadline has passed', async () => {
+      const pastDeadline = new Date()
+      pastDeadline.setDate(pastDeadline.getDate() - 1)
+      repo.seedRequests([
+        makeRequest({ id: 'gbr-deadline-passed', joinDeadline: pastDeadline }),
+        makeRequest({ id: 'gbr-no-deadline', joinDeadline: null }),
+      ])
+
+      const result = await service.listAvailableForProvider(TEST_UUIDS.providerUser)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.requests).toHaveLength(1)
+      expect(result.value.requests[0].id).toBe('gbr-no-deadline')
     })
   })
 
@@ -363,6 +466,24 @@ describe('GroupBookingService', () => {
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('ALREADY_JOINED')
+    })
+
+    it('should let only one of two concurrent joins succeed at the cap', async () => {
+      // maxParticipants=2, creator already in -> only one slot left for two simultaneous joins.
+      const thirdUser = '77777777-7777-4777-8777-777777777777'
+      repo.seedRequests([makeRequest({ maxParticipants: 2 })])
+      repo.seedParticipants([makeParticipant()])
+
+      const [a, b] = await Promise.all([
+        service.joinByInviteCode({ userId: TEST_UUIDS.joiner, inviteCode: 'ABC12345' }),
+        service.joinByInviteCode({ userId: thirdUser, inviteCode: 'ABC12345' }),
+      ])
+
+      const successCount = [a, b].filter((r) => r.isSuccess).length
+      const failures = [a, b].filter((r) => r.isFailure)
+      expect(successCount).toBe(1)
+      expect(failures).toHaveLength(1)
+      expect(failures[0].error.type).toBe('GROUP_FULL')
     })
   })
 

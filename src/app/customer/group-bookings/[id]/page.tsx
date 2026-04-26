@@ -29,6 +29,15 @@ import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { clientLogger } from "@/lib/client-logger"
 import { Share2, Copy } from "lucide-react"
 
+interface ParticipantBooking {
+  id: string
+  bookingDate: string
+  startTime: string
+  endTime: string
+  status: string
+  service: { name: string }
+}
+
 interface Participant {
   id: string
   userId: string
@@ -39,6 +48,7 @@ interface Participant {
   notes: string | null
   user: { firstName: string }
   horse: { name: string } | null
+  booking: ParticipantBooking | null
 }
 
 interface GroupBookingDetail {
@@ -92,7 +102,8 @@ export default function GroupBookingDetailPage({
   const { isLoading: authLoading, isCustomer, user } = useAuth()
   const [groupBooking, setGroupBooking] = useState<GroupBookingDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isCopied, setIsCopied] = useState(false)
+  const [isLinkCopied, setIsLinkCopied] = useState(false)
+  const [isCodeCopied, setIsCodeCopied] = useState(false)
   const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null)
   const [participantToLeave, setParticipantToLeave] = useState<Participant | null>(null)
   const cancelDialog = useDialogState()
@@ -151,9 +162,21 @@ export default function GroupBookingDetailPage({
     // Fallback to clipboard
     try {
       await navigator.clipboard.writeText(link)
-      setIsCopied(true)
+      setIsLinkCopied(true)
       toast.success("Inbjudningslänk kopierad!")
-      setTimeout(() => setIsCopied(false), 2000)
+      setTimeout(() => setIsLinkCopied(false), 2000)
+    } catch {
+      toast.info(`Inbjudningskod: ${groupBooking.inviteCode}`)
+    }
+  }
+
+  const handleCopyInviteCode = async () => {
+    if (!groupBooking) return
+    try {
+      await navigator.clipboard.writeText(groupBooking.inviteCode)
+      setIsCodeCopied(true)
+      toast.success("Kod kopierad!")
+      setTimeout(() => setIsCodeCopied(false), 2000)
     } catch {
       toast.info(`Inbjudningskod: ${groupBooking.inviteCode}`)
     }
@@ -235,10 +258,11 @@ export default function GroupBookingDetailPage({
   }
 
   const isCreator = groupBooking.creatorId === user?.id
-  const _myParticipation = groupBooking.participants.find(
+  const myParticipation = groupBooking.participants.find(
     (p) => p.userId === user?.id
   )
   const isOpen = groupBooking.status === "open"
+  const myBooking = myParticipation?.booking ?? null
 
   return (
     <CustomerLayout>
@@ -298,13 +322,41 @@ export default function GroupBookingDetailPage({
         {groupBooking.status === "matched" && groupBooking.provider && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
             <CardContent className="py-4">
-              <p className="text-sm text-blue-800 font-medium">
+              <p className="text-sm text-blue-800 font-medium mb-3">
                 {groupBooking.provider.businessName} har accepterat grupprequesten.
-                Du har fått en bokning i din bokningshistorik.
               </p>
+              {myBooking ? (
+                <div className="bg-white rounded-md border border-blue-200 p-3 space-y-1 text-sm">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <div>
+                      <span className="text-gray-500">Datum:</span>{" "}
+                      <span className="font-medium">{formatDate(myBooking.bookingDate)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Tid:</span>{" "}
+                      <span className="font-medium">
+                        {myBooking.startTime}&ndash;{myBooking.endTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Tjänst:</span>{" "}
+                    <span className="font-medium">{myBooking.service.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Leverantör:</span>{" "}
+                    <span className="font-medium">{groupBooking.provider.businessName}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-blue-700">
+                  Bokningsinformation hittas i din bokningshistorik.
+                </p>
+              )}
               <Button
                 className="mt-3"
                 size="sm"
+                variant="outline"
                 onClick={() => router.push("/customer/bookings")}
               >
                 Visa mina bokningar
@@ -317,30 +369,34 @@ export default function GroupBookingDetailPage({
         {isOpen && (
           <Card className="mb-6 border-green-200 bg-green-50">
             <CardContent className="py-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-green-800 font-medium">Inbjudningskod</p>
-                  <p className="text-2xl font-mono font-bold text-green-900 tracking-wider">
+                  <p
+                    className="text-3xl font-mono font-bold text-green-900 tracking-widest select-all"
+                    aria-label={`Inbjudningskod ${groupBooking.inviteCode}`}
+                  >
                     {groupBooking.inviteCode}
                   </p>
                 </div>
-                <Button
-                  onClick={handleShareInviteLink}
-                  variant="outline"
-                  className="border-green-300"
-                >
-                  {isCopied ? (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Kopierad!
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Dela länk
-                    </>
-                  )}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={handleCopyInviteCode}
+                    variant="outline"
+                    className="border-green-300"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    {isCodeCopied ? "Kopierad!" : "Kopiera kod"}
+                  </Button>
+                  <Button
+                    onClick={handleShareInviteLink}
+                    variant="outline"
+                    className="border-green-300"
+                  >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    {isLinkCopied ? "Kopierad!" : "Dela länk"}
+                  </Button>
+                </div>
               </div>
               <p className="text-xs text-green-700 mt-2">
                 Dela koden eller länken med de som ska vara med.

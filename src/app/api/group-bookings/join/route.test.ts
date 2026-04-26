@@ -2,11 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST } from './route'
 import { auth } from '@/lib/auth-server'
 import { rateLimiters } from '@/lib/rate-limit'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { NextRequest } from 'next/server'
 import { Result } from '@/domain/shared'
-
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const TEST_UUIDS = {
   creator: '11111111-1111-4111-8111-111111111111',
@@ -17,10 +14,6 @@ const TEST_UUIDS = {
 
 vi.mock('@/lib/auth-server', () => ({
   auth: vi.fn(),
-}))
-
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -41,7 +34,6 @@ vi.mock('@/domain/group-booking/GroupBookingService', () => ({
 describe('POST /api/group-bookings/join', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsFeatureEnabled.mockResolvedValue(true)
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as never)
@@ -58,17 +50,6 @@ describe('POST /api/group-bookings/join', () => {
     expect(res.status).toBe(401)
     const data = await res.json()
     expect(data.error).toBe('Ej inloggad')
-  })
-
-  it('returns 404 when group_bookings feature flag is disabled', async () => {
-    mockIsFeatureEnabled.mockResolvedValueOnce(false)
-    const req = new NextRequest('http://localhost/api/group-bookings/join', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    })
-    const res = await POST(req)
-    expect(res.status).toBe(404)
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith('group_bookings')
   })
 
   it('should allow a user to join via invite code', async () => {
@@ -150,7 +131,7 @@ describe('POST /api/group-bookings/join', () => {
     expect(data.error).toContain('öppen')
   })
 
-  it('should return 400 when group is full', async () => {
+  it('should return 409 when group is full', async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: TEST_UUIDS.joiner, userType: 'customer' },
     } as never)
@@ -169,7 +150,7 @@ describe('POST /api/group-bookings/join', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(409)
     expect(data.error).toContain('fullt')
   })
 

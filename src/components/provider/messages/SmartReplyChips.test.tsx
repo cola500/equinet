@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { expandTemplate } from "./SmartReplyChips"
+import { expandTemplate, hasInvalidVars } from "./SmartReplyChips"
 
 describe("expandTemplate", () => {
   it("expands {key} with matching var", () => {
@@ -24,15 +24,42 @@ describe("expandTemplate", () => {
     expect(expandTemplate("Kl {tid} {okänd}.", { tid: "09:00" })).toBe("Kl 09:00 {okänd}.")
   })
 
-  it("expands all four production templates without runtime errors", () => {
+  it("expands all production templates without runtime errors", () => {
     const vars = { datum: "måndag 5 maj", tid: "09:00", telefon: "0701234567" }
     expect(() => expandTemplate("Bokningen är bekräftad. Vi ses {datum} kl {tid}.", vars)).not.toThrow()
     expect(() => expandTemplate("Tack, jag återkommer så snart jag kan.", vars)).not.toThrow()
     expect(() => expandTemplate("Ring mig på {telefon} om det brådskar.", vars)).not.toThrow()
-    expect(() => expandTemplate("Vilken tid passar dig istället?", vars)).not.toThrow()
+    expect(() => expandTemplate("Jag är på väg! Är framme om ca 15 minuter.", vars)).not.toThrow()
+    expect(() => expandTemplate("Jag är framme nu!", vars)).not.toThrow()
   })
 
   it("replaces empty string var (not falls back to placeholder)", () => {
     expect(expandTemplate("Ring mig på {telefon}.", { telefon: "" })).toBe("Ring mig på .")
+  })
+})
+
+describe("hasInvalidVars", () => {
+  it("returns false for template with no vars", () => {
+    expect(hasInvalidVars("Tack, jag återkommer.", {})).toBe(false)
+  })
+
+  it("returns false when all vars are present and non-empty", () => {
+    expect(
+      hasInvalidVars("Vi ses {datum} kl {tid}.", { datum: "måndag 5 maj", tid: "09:00" })
+    ).toBe(false)
+  })
+
+  it("returns true when a var is empty string", () => {
+    expect(hasInvalidVars("Ring mig på {telefon}.", { telefon: "" })).toBe(true)
+  })
+
+  it("returns true when a var is undefined", () => {
+    expect(hasInvalidVars("Ring mig på {telefon}.", {})).toBe(true)
+  })
+
+  it("returns true when any var is missing even if others are present", () => {
+    expect(
+      hasInvalidVars("Vi ses {datum} kl {tid}.", { datum: "måndag 5 maj", tid: "" })
+    ).toBe(true)
   })
 })

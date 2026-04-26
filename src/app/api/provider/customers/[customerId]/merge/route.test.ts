@@ -14,10 +14,7 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-vi.mock('@/lib/feature-flags', () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
+// Mock prisma for simple read lookups in GhostMergeServiceFactory
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     providerCustomer: {
@@ -27,11 +24,17 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       findFirst: vi.fn(),
     },
-    $transaction: vi.fn(),
   },
 }))
 
-import { isFeatureEnabled } from '@/lib/feature-flags'
+// Mock PrismaAuthRepository so executeMergeTransaction is controllable
+const mockExecuteMergeTransaction = vi.fn()
+vi.mock('@/infrastructure/persistence/auth/PrismaAuthRepository', () => ({
+  PrismaAuthRepository: class {
+    executeMergeTransaction = mockExecuteMergeTransaction
+  },
+}))
+
 import { prisma } from '@/lib/prisma'
 
 const TEST_UUIDS = {
@@ -52,7 +55,6 @@ const routeContext = { params: Promise.resolve({ customerId: TEST_UUIDS.ghostCus
 describe('POST /api/provider/customers/[customerId]/merge', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     vi.mocked(auth).mockResolvedValue({
       user: {
@@ -64,7 +66,7 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
 
     // Default: ghost user exists in register
     vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValue({
-      id: 'link-1',
+      providerId: TEST_UUIDS.provider,
     } as never)
 
     // Default: ghost user
@@ -81,7 +83,7 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
       isManualCustomer: false,
     } as never)
 
-    vi.mocked(prisma.$transaction).mockResolvedValue(undefined as never)
+    mockExecuteMergeTransaction.mockResolvedValue(undefined)
   })
 
   it('returns 401 when session is null', async () => {
@@ -98,13 +100,6 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
 
     const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
     expect(res.status).toBe(403)
-  })
-
-  it('returns 404 when feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
-    expect(res.status).toBe(404)
   })
 
   it('returns 400 for invalid JSON', async () => {
@@ -147,8 +142,18 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
     expect(res.status).toBe(404)
   })
 
+  it('returns 409 when target user is also a ghost', async () => {
+    vi.mocked(prisma.user.findFirst).mockResolvedValue({
+      id: TEST_UUIDS.realCustomer,
+      email: 'other-ghost@ghost.equinet.se',
+      isManualCustomer: true,
+    } as never)
+
+    const res = await POST(makeRequest({ targetEmail: 'other-ghost@ghost.equinet.se' }), routeContext)
+    expect(res.status).toBe(409)
+  })
+
   it('returns 400 when trying to merge user with itself', async () => {
-    // findFirst returns same user as the ghost
     vi.mocked(prisma.user.findFirst).mockResolvedValue({
       id: TEST_UUIDS.ghostCustomer,
       email: 'real@example.com',
@@ -162,10 +167,17 @@ describe('POST /api/provider/customers/[customerId]/merge', () => {
     expect(data.error).toContain('sig själv')
   })
 
-  it('returns 200 and executes merge on valid request', async () => {
+  it('returns 200 and executes merge transaction on valid request', async () => {
     const res = await POST(makeRequest({ targetEmail: 'real@example.com' }), routeContext)
     expect(res.status).toBe(200)
 
-    expect(prisma.$transaction).toHaveBeenCalled()
+    expect(mockExecuteMergeTransaction).toHaveBeenCalledWith(
+      TEST_UUIDS.ghostCustomer,
+      TEST_UUIDS.realCustomer,
+      TEST_UUIDS.provider,
+    )
+
+    const data = await res.json()
+    expect(data.mergedInto).toBe(TEST_UUIDS.realCustomer)
   })
 })

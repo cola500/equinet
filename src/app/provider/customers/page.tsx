@@ -130,6 +130,7 @@ export default function ProviderCustomersPage() {
                 c.addCustomerDialog.openDialog()
               }}
               onDeleteCustomer={(cust) => c.setCustomerToDelete(cust)}
+              onMergeSuccess={c.fetchCustomers}
             />
           ))}
         </div>

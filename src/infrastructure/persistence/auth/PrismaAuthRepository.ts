@@ -256,4 +256,64 @@ export class PrismaAuthRepository implements IAuthRepository {
       }),
     ])
   }
+
+  async executeMergeTransaction(ghostUserId: string, realUserId: string, requestingProviderId: string): Promise<void> {
+    // @ts-expect-error - Prisma transaction callback type inference issue
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 1. Redirect bookings
+      await tx.booking.updateMany({ where: { customerId: ghostUserId }, data: { customerId: realUserId } })
+
+      // 2. Redirect booking series
+      await tx.bookingSeries.updateMany({ where: { customerId: ghostUserId }, data: { customerId: realUserId } })
+
+      // 3. Redirect reviews
+      await tx.review.updateMany({ where: { customerId: ghostUserId }, data: { customerId: realUserId } })
+
+      // 4. Redirect customer reviews
+      await tx.customerReview.updateMany({ where: { customerId: ghostUserId }, data: { customerId: realUserId } })
+
+      // 5. Redirect horses
+      await tx.horse.updateMany({ where: { ownerId: ghostUserId }, data: { ownerId: realUserId } })
+
+      // 6. Handle ProviderCustomer (unique constraint) — migrate ALL providers, not just the requesting one
+      const ghostLinks = await tx.providerCustomer.findMany({ where: { customerId: ghostUserId } })
+      await tx.providerCustomer.deleteMany({ where: { customerId: ghostUserId } })
+      for (const link of ghostLinks) {
+        const existingLink = await tx.providerCustomer.findUnique({
+          where: { providerId_customerId: { providerId: link.providerId, customerId: realUserId } },
+        })
+        if (!existingLink) {
+          await tx.providerCustomer.create({ data: { providerId: link.providerId, customerId: realUserId } })
+        }
+      }
+
+      // 7. Handle Follow (unique constraint)
+      const ghostFollows = await tx.follow.findMany({ where: { customerId: ghostUserId } })
+      for (const follow of ghostFollows) {
+        const existingFollow = await tx.follow.findUnique({
+          where: { customerId_providerId: { customerId: realUserId, providerId: follow.providerId } },
+        })
+        if (!existingFollow) {
+          await tx.follow.update({ where: { id: follow.id }, data: { customerId: realUserId } })
+        } else {
+          await tx.follow.delete({ where: { id: follow.id } })
+        }
+      }
+
+      // 8. Delete ghost's notification deliveries
+      await tx.notificationDelivery.deleteMany({ where: { customerId: ghostUserId } })
+
+      // 8b. Delete ghost's notifications (no cascade in schema)
+      await tx.notification.deleteMany({ where: { userId: ghostUserId } })
+
+      // 9. Delete ghost's municipality watches
+      await tx.municipalityWatch.deleteMany({ where: { customerId: ghostUserId } })
+
+      // 10. Redirect provider customer notes
+      await tx.providerCustomerNote.updateMany({ where: { customerId: ghostUserId }, data: { customerId: realUserId } })
+
+      // 11. Delete ghost user (cascades: tokens, push subscriptions)
+      await tx.user.delete({ where: { id: ghostUserId } })
+    })
+  }
 }
