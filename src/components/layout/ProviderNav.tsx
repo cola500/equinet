@@ -140,6 +140,8 @@ export function ProviderNav() {
     { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
     { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList },
     { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
+    { href: "/provider/messages", label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
+    { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
     { href: "/provider/services", label: "Tjänster", icon: Stethoscope },
   ]
 
@@ -190,7 +192,7 @@ export function ProviderNav() {
     demoAllowed(item) && (!item.featureFlag || flags[item.featureFlag])
 
   const visiblePrimaryItems = primaryNavItems.filter(isVisible)
-  const visibleSecondaryItems = demo ? [] : secondaryNavItems.filter(isVisible)
+  const visibleSecondaryItems = secondaryNavItems.filter(isVisible)
   const visibleMoreItems = demo
     ? providerMoreItems.filter(isVisible)
     : providerMoreItems.filter(isVisible)

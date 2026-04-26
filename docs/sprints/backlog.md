@@ -30,6 +30,12 @@ sections:
 | Stripe live-mode | Stripe foretagsverifiering | Config, 15 min |
 | Swish aktivering | Stripe foretagsverifiering | 1 rad kodandring |
 
+## Sökning och discovery
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| **providerCategory på Provider** | 1-2 dagar | Schemaändring: lägg till `providerCategory String?` på `Provider`-modellen (t.ex. "hovslagare", "veterinär", "tränare"). Leverantören väljer kategori i profilformuläret. `serviceType`-filtret i `ProviderRepository` söker primärt i det fältet — inte synonymhack mot tjänstenamn. Löser rotorsaken till att "Alingsås Hovservice" inte hittades. Kräver: Prisma-migration + profilformulär-UI + seed-data + ProviderRepository-filter. |
+
 ## Kritiskt
 
 | Story | Effort | Varför kritiskt |

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
+import { Repeat } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -143,6 +144,12 @@ export function BookingDetailDialog({
             {booking.isManualBooking && (
               <span className="px-2 py-1 rounded text-sm bg-purple-100 text-purple-800">
                 Manuell bokning
+              </span>
+            )}
+            {booking.bookingSeriesId && (
+              <span className="px-2 py-1 rounded text-sm bg-blue-100 text-blue-800 flex items-center gap-1 w-fit">
+                <Repeat className="h-3 w-3" />
+                Återkommande
               </span>
             )}
           </div>
