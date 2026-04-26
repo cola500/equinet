@@ -37,7 +37,9 @@ interface MessagesResponse {
 }
 
 interface ProviderProfile {
-  phone?: string
+  user?: {
+    phone?: string | null
+  }
 }
 
 function ThreadView({ bookingId }: { bookingId: string }) {
@@ -64,7 +66,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     return {
       datum: d ? d.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" }) : "",
       tid: d ? d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "",
-      telefon: profile?.phone ?? "",
+      telefon: profile?.user?.phone ?? "",
     }
   })()
 
