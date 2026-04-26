@@ -32,6 +32,7 @@ interface MessagesResponse {
   customerName: string
   serviceName: string
   bookingDate: string
+  bookingStartTime: string
   messages: Message[]
   nextCursor: string | null
 }
@@ -65,7 +66,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
     const d = data?.bookingDate ? new Date(data.bookingDate) : null
     return {
       datum: d ? d.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" }) : "",
-      tid: d ? d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "",
+      tid: data?.bookingStartTime ?? "",
       telefon: profile?.user?.phone ?? "",
     }
   })()

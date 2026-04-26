@@ -210,6 +210,7 @@ export async function GET(
       customerName: booking.customerName,
       serviceName: booking.serviceName,
       bookingDate: booking.bookingDate.toISOString(),
+      bookingStartTime: booking.startTime,
       messages: result.messages.map((m) => ({
         id: m.id,
         conversationId: m.conversationId,
