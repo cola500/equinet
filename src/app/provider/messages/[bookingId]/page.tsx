@@ -7,6 +7,16 @@ import { ArrowLeft, Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VoiceTextarea } from "@/components/ui/voice-textarea"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { clientLogger } from "@/lib/client-logger"
 import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
@@ -49,6 +59,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   const [attachedFile, setAttachedFile] = useState<File | null>(null)
   const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [pendingChipText, setPendingChipText] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -284,11 +295,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
             vars={smartReplyVars}
             onSelect={(text) => {
               if (content.trim()) {
-                const prev = content
-                setContent(text)
-                toast("Snabbsvaret ersatte din text.", {
-                  action: { label: "Ångra", onClick: () => setContent(prev) },
-                })
+                setPendingChipText(text)
               } else {
                 setContent(text)
               }
@@ -346,6 +353,32 @@ function ThreadView({ bookingId }: { bookingId: string }) {
           </Button>
         </div>
       </div>
+
+      {pendingChipText && (
+        <AlertDialog open onOpenChange={() => setPendingChipText(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ersätta texten?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Du har redan påbörjat ett svar. Vill du ersätta det med snabbsvaret?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingChipText(null)}>
+                Avbryt
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setContent(pendingChipText)
+                  setPendingChipText(null)
+                }}
+              >
+                Ersätt
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   )
 }
