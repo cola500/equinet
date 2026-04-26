@@ -12,7 +12,6 @@ import { clientLogger } from "@/lib/client-logger"
 import { SmartReplyChips } from "@/components/provider/messages/SmartReplyChips"
 import { displayMessages } from "@/components/provider/messages/messageUtils"
 import { AttachmentBubble, AttachmentPreview } from "@/components/provider/messages/AttachmentBubble"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { MESSAGING_ALLOWED_MIME, MESSAGING_MAX_SIZE } from "@/lib/messaging-constants"
 
 interface Message {
@@ -47,7 +46,6 @@ function ThreadView({ bookingId }: { bookingId: string }) {
   const [attachedFile, setAttachedFile] = useState<File | null>(null)
   const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const smartRepliesEnabled = useFeatureFlag("smart_replies")
   const bottomRef = useRef<HTMLDivElement>(null)
   const readCalledRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -278,7 +276,7 @@ function ThreadView({ bookingId }: { bookingId: string }) {
           />
         )}
 
-        {smartRepliesEnabled && !attachedFile && (
+        {!attachedFile && (
           <SmartReplyChips
             vars={smartReplyVars}
             onSelect={(text) => {
