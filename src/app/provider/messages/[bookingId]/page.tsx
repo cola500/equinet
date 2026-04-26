@@ -281,7 +281,17 @@ function ThreadView({ bookingId }: { bookingId: string }) {
         {smartRepliesEnabled && !attachedFile && (
           <SmartReplyChips
             vars={smartReplyVars}
-            onSelect={(text) => setContent(text)}
+            onSelect={(text) => {
+              if (content.trim()) {
+                const prev = content
+                setContent(text)
+                toast("Snabbsvaret ersatte din text.", {
+                  action: { label: "Ångra", onClick: () => setContent(prev) },
+                })
+              } else {
+                setContent(text)
+              }
+            }}
             disabled={isBusy}
           />
         )}
