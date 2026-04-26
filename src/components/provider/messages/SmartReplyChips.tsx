@@ -8,7 +8,8 @@ const TEMPLATES = [
   "Bokningen är bekräftad. Vi ses {datum} kl {tid}.",
   "Tack, jag återkommer så snart jag kan.",
   "Ring mig på {telefon} om det brådskar.",
-  "Vilken tid passar dig istället?",
+  "Jag är på väg! Är framme om ca 15 minuter.",
+  "Jag är framme nu!",
 ]
 
 export function expandTemplate(template: string, vars: Partial<SmartReplyVars>): string {
