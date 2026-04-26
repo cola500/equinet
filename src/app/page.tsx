@@ -175,13 +175,13 @@ export default function Home() {
           {/* Category shortcut icons */}
           <div className="flex justify-center gap-8 mt-8">
             {[
-              { label: "Hovslagare", icon: Scissors, search: "hovslagare" },
-              { label: "Veterinär", icon: Stethoscope, search: "veterinär" },
-              { label: "Tränare", icon: Dumbbell, search: "tränare" },
-            ].map(({ label, icon: Icon, search }) => (
+              { label: "Hovslagare", icon: Scissors, serviceType: "hovslagare" },
+              { label: "Veterinär", icon: Stethoscope, serviceType: "veterinär" },
+              { label: "Tränare", icon: Dumbbell, serviceType: "tränare" },
+            ].map(({ label, icon: Icon, serviceType }) => (
               <Link
                 key={label}
-                href={`/providers?search=${search}`}
+                href={`/providers?serviceType=${serviceType}`}
                 className="flex flex-col items-center gap-2 group cursor-pointer"
                 aria-label={`Hitta ${label}`}
               >

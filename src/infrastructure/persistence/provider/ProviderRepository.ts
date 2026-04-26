@@ -96,22 +96,30 @@ export class ProviderRepository implements IProviderRepository {
       }
     }
 
+    const andConditions: Prisma.ProviderWhereInput[] = []
+
     if (filters?.search) {
-      where.OR = [
-        { businessName: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-      ]
+      andConditions.push({
+        OR: [
+          { businessName: { contains: filters.search, mode: 'insensitive' } },
+          { description: { contains: filters.search, mode: 'insensitive' } },
+        ],
+      })
     }
 
-    // AND with search filter: both search term AND service type must match
     if (filters?.serviceType) {
       const terms = getServiceTypeTerms(filters.serviceType)
-      where.services = {
-        some: {
-          isActive: true,
-          OR: terms.map(term => ({ name: { contains: term, mode: 'insensitive' as const } })),
-        },
-      }
+      andConditions.push({
+        OR: [
+          { businessName: { contains: filters.serviceType, mode: 'insensitive' } },
+          { description: { contains: filters.serviceType, mode: 'insensitive' } },
+          { services: { some: { isActive: true, OR: terms.map(term => ({ name: { contains: term, mode: 'insensitive' as const } })) } } },
+        ],
+      })
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions
     }
 
     // Bounding box filter - pre-filter in database before exact distance calc
