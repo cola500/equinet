@@ -14,6 +14,7 @@ export interface BookingForConversation {
   providerUserId: string
   status: string
   bookingDate: Date
+  startTime: string
   customerName: string
   providerName: string
   serviceName: string
