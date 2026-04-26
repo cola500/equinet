@@ -31,10 +31,21 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
-const DEMO_TAG = "E2E-spec:demo-provider"
 const PROVIDER_EMAIL = "erik.jarnfot@demo.equinet.se"
 const PROVIDER_PASSWORD = "DemoProvider123!"
-const CUSTOMER_EMAIL_SUFFIX = "@demo-provider.equinet.se"
+
+// Used only for reset identification — not stored in any visible field
+const DEMO_CUSTOMER_EMAILS = [
+  "lisa.andersson@gmail.com",
+  "anders.bergman@hotmail.com",
+  "karin.lindqvist@telia.com",
+  "peter.svensson@gmail.com",
+  "emma.eriksson@outlook.com",
+  "stefan.olsson@live.se",
+  "maria.holm@gmail.com",
+  "johan.nilsson@yahoo.com",
+  "sara.magnusson@icloud.com",
+] as const
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -72,7 +83,7 @@ async function resetDemoData(providerId: string) {
   console.log("Removing demo data (keeping provider account)...")
 
   const demoCustomers = await prisma.user.findMany({
-    where: { email: { endsWith: CUSTOMER_EMAIL_SUFFIX } },
+    where: { email: { in: [...DEMO_CUSTOMER_EMAILS] } },
     select: { id: true },
   })
   const demoCustomerIds = demoCustomers.map((c) => c.id)
@@ -103,7 +114,7 @@ async function resetDemoData(providerId: string) {
     if (series.count > 0) console.log(`  Deleted ${series.count} booking series`)
 
     const horses = await prisma.horse.deleteMany({
-      where: { specialNeeds: { contains: DEMO_TAG } },
+      where: { ownerId: { in: demoCustomerIds } },
     })
     console.log(`  Deleted ${horses.count} horses`)
 
@@ -118,7 +129,7 @@ async function resetDemoData(providerId: string) {
     console.log(`  Deleted ${notifications.count} notifications`)
 
     const customers = await prisma.user.deleteMany({
-      where: { email: { endsWith: CUSTOMER_EMAIL_SUFFIX } },
+      where: { id: { in: demoCustomerIds } },
     })
     console.log(`  Deleted ${customers.count} customers`)
   } else {
@@ -193,9 +204,9 @@ async function main() {
         userId: providerUserId,
         businessName: "Järnfots Hovslageri",
         description:
-          "Certifierad hovslagare med 15 års erfarenhet i Örebro-trakten. " +
-          "Specialiserad på sporthästar, islandshästar och ponnier. " +
-          "Erbjuder omskoning, verkning, akutbesök och hovbedömningar " +
+          "Certifierad hovslagare med 15 års erfarenhet i Örebro med omnejd. " +
+          "Arbetar med alla typer av hästar — ridsporthästar, islandshästar, ponnier och kallblod. " +
+          "Erbjuder omskoning, barfotaverkning, akutbesök och hovbedömningar " +
           "inom 50 km från Örebro.",
         address: "Stallvägen 4",
         city: "Örebro",
@@ -216,9 +227,9 @@ async function main() {
       data: {
         businessName: "Järnfots Hovslageri",
         description:
-          "Certifierad hovslagare med 15 års erfarenhet i Örebro-trakten. " +
-          "Specialiserad på sporthästar, islandshästar och ponnier. " +
-          "Erbjuder omskoning, verkning, akutbesök och hovbedömningar " +
+          "Certifierad hovslagare med 15 års erfarenhet i Örebro med omnejd. " +
+          "Arbetar med alla typer av hästar — ridsporthästar, islandshästar, ponnier och kallblod. " +
+          "Erbjuder omskoning, barfotaverkning, akutbesök och hovbedömningar " +
           "inom 50 km från Örebro.",
         address: "Stallvägen 4",
         city: "Örebro",
@@ -336,69 +347,15 @@ async function main() {
   // -------------------------------------------------------------------------
 
   const customerData = [
-    {
-      email: `lisa.andersson${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Lisa",
-      lastName: "Andersson",
-      phone: "0703-112 233",
-      city: "Örebro",
-    },
-    {
-      email: `anders.bergman${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Anders",
-      lastName: "Bergman",
-      phone: "0721-445 566",
-      city: "Västerås",
-    },
-    {
-      email: `karin.lindqvist${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Karin",
-      lastName: "Lindqvist",
-      phone: "0768-778 899",
-      city: "Arboga",
-    },
-    {
-      email: `peter.svensson${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Peter",
-      lastName: "Svensson",
-      phone: "0706-334 455",
-      city: "Kumla",
-    },
-    {
-      email: `emma.eriksson${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Emma",
-      lastName: "Eriksson",
-      phone: "0735-667 788",
-      city: "Örebro",
-    },
-    {
-      email: `stefan.olsson${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Stefan",
-      lastName: "Olsson",
-      phone: "0702-990 011",
-      city: "Kungsör",
-    },
-    {
-      email: `maria.holm${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Maria",
-      lastName: "Holm",
-      phone: "0739-223 344",
-      city: "Örebro",
-    },
-    {
-      email: `johan.nilsson${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Johan",
-      lastName: "Nilsson",
-      phone: "0704-556 677",
-      city: "Hallsberg",
-    },
-    {
-      email: `sara.magnusson${CUSTOMER_EMAIL_SUFFIX}`,
-      firstName: "Sara",
-      lastName: "Magnusson",
-      phone: "0761-889 900",
-      city: "Örebro",
-    },
+    { email: "lisa.andersson@gmail.com",      firstName: "Lisa",   lastName: "Andersson", phone: "0703-112 233", city: "Örebro" },
+    { email: "anders.bergman@hotmail.com",    firstName: "Anders", lastName: "Bergman",   phone: "0721-445 566", city: "Västerås" },
+    { email: "karin.lindqvist@telia.com",     firstName: "Karin",  lastName: "Lindqvist", phone: "0768-778 899", city: "Arboga" },
+    { email: "peter.svensson@gmail.com",      firstName: "Peter",  lastName: "Svensson",  phone: "0706-334 455", city: "Kumla" },
+    { email: "emma.eriksson@outlook.com",     firstName: "Emma",   lastName: "Eriksson",  phone: "0735-667 788", city: "Örebro" },
+    { email: "stefan.olsson@live.se",         firstName: "Stefan", lastName: "Olsson",    phone: "0702-990 011", city: "Kungsör" },
+    { email: "maria.holm@gmail.com",          firstName: "Maria",  lastName: "Holm",      phone: "0739-223 344", city: "Örebro" },
+    { email: "johan.nilsson@yahoo.com",       firstName: "Johan",  lastName: "Nilsson",   phone: "0704-556 677", city: "Hallsberg" },
+    { email: "sara.magnusson@icloud.com",     firstName: "Sara",   lastName: "Magnusson", phone: "0761-889 900", city: "Örebro" },
   ]
 
   const customers: Record<string, string> = {}
@@ -428,28 +385,28 @@ async function main() {
 
   const horseData = [
     // Lisa Andersson — 2 hästar
-    { owner: "Lisa Andersson", name: "Molly", breed: "Welsh ponny", birthYear: 2017, color: "Brun", gender: "mare" as const },
-    { owner: "Lisa Andersson", name: "Storm", breed: "Svenskt varmblod", birthYear: 2014, color: "Svart", gender: "gelding" as const },
+    { owner: "Lisa Andersson", name: "Molly", breed: "Welsh ponny", birthYear: 2017, color: "Brun", gender: "mare" as const, specialNeeds: null },
+    { owner: "Lisa Andersson", name: "Storm", breed: "Svenskt varmblod", birthYear: 2014, color: "Svart", gender: "gelding" as const, specialNeeds: "Öm på höger framhov — extra uppmärksamhet vid verkning" },
     // Anders Bergman — 1 häst
-    { owner: "Anders Bergman", name: "Dante", breed: "Hanoveraner", birthYear: 2015, color: "Brun", gender: "gelding" as const },
+    { owner: "Anders Bergman", name: "Dante", breed: "Hanoveraner", birthYear: 2015, color: "Brun", gender: "gelding" as const, specialNeeds: null },
     // Karin Lindqvist — 2 hästar
-    { owner: "Karin Lindqvist", name: "Bella", breed: "Gotlandsruss", birthYear: 2019, color: "Fux", gender: "mare" as const },
-    { owner: "Karin Lindqvist", name: "Silver", breed: "Islandshäst", birthYear: 2012, color: "Skimmel", gender: "stallion" as const },
+    { owner: "Karin Lindqvist", name: "Bella", breed: "Gotlandsruss", birthYear: 2019, color: "Fux", gender: "mare" as const, specialNeeds: "Känslig i vänster bakben" },
+    { owner: "Karin Lindqvist", name: "Silver", breed: "Islandshäst", birthYear: 2012, color: "Skimmel", gender: "stallion" as const, specialNeeds: null },
     // Peter Svensson — 1 häst
-    { owner: "Peter Svensson", name: "Midnight", breed: "Araber", birthYear: 2016, color: "Svart", gender: "gelding" as const },
+    { owner: "Peter Svensson", name: "Midnight", breed: "Araber", birthYear: 2016, color: "Svart", gender: "gelding" as const, specialNeeds: "Skygg för ljud — ta det lugnt vid hovvård" },
     // Emma Eriksson — 2 hästar
-    { owner: "Emma Eriksson", name: "Samba", breed: "Lusitano", birthYear: 2013, color: "Grå", gender: "stallion" as const },
-    { owner: "Emma Eriksson", name: "Luna", breed: "Fjordhäst", birthYear: 2018, color: "Gulbrun", gender: "mare" as const },
+    { owner: "Emma Eriksson", name: "Samba", breed: "Lusitano", birthYear: 2013, color: "Grå", gender: "stallion" as const, specialNeeds: null },
+    { owner: "Emma Eriksson", name: "Luna", breed: "Fjordhäst", birthYear: 2018, color: "Gulbrun", gender: "mare" as const, specialNeeds: null },
     // Stefan Olsson — 1 häst
-    { owner: "Stefan Olsson", name: "Flash", breed: "Friesian", birthYear: 2017, color: "Svart", gender: "gelding" as const },
+    { owner: "Stefan Olsson", name: "Flash", breed: "Friesian", birthYear: 2017, color: "Svart", gender: "gelding" as const, specialNeeds: "Svår att hålla still vid bakhovarna" },
     // Maria Holm — 2 hästar
-    { owner: "Maria Holm", name: "Prince", breed: "Oldenburger", birthYear: 2011, color: "Brun", gender: "gelding" as const },
-    { owner: "Maria Holm", name: "Nova", breed: "Islandshäst", birthYear: 2020, color: "Fux", gender: "mare" as const },
+    { owner: "Maria Holm", name: "Prince", breed: "Oldenburger", birthYear: 2011, color: "Brun", gender: "gelding" as const, specialNeeds: null },
+    { owner: "Maria Holm", name: "Nova", breed: "Islandshäst", birthYear: 2020, color: "Fux", gender: "mare" as const, specialNeeds: null },
     // Johan Nilsson — 1 häst
-    { owner: "Johan Nilsson", name: "Tornado", breed: "Trakehner", birthYear: 2016, color: "Mörkbrun", gender: "gelding" as const },
+    { owner: "Johan Nilsson", name: "Tornado", breed: "Trakehner", birthYear: 2016, color: "Mörkbrun", gender: "gelding" as const, specialNeeds: null },
     // Sara Magnusson — 2 hästar
-    { owner: "Sara Magnusson", name: "Stella", breed: "Shetlandsponny", birthYear: 2015, color: "Brun", gender: "mare" as const },
-    { owner: "Sara Magnusson", name: "Blixten", breed: "Nordsvensk kallblod", birthYear: 2013, color: "Brun", gender: "gelding" as const },
+    { owner: "Sara Magnusson", name: "Stella", breed: "Shetlandsponny", birthYear: 2015, color: "Brun", gender: "mare" as const, specialNeeds: null },
+    { owner: "Sara Magnusson", name: "Blixten", breed: "Nordsvensk kallblod", birthYear: 2013, color: "Brun", gender: "gelding" as const, specialNeeds: null },
   ]
 
   const horses: Record<string, string> = {}
@@ -472,7 +429,7 @@ async function main() {
           birthYear: h.birthYear,
           color: h.color,
           gender: h.gender,
-          specialNeeds: DEMO_TAG,
+          specialNeeds: h.specialNeeds,
           isActive: true,
         },
       })
